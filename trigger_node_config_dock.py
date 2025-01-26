@@ -1,3 +1,6 @@
+import copy
+from pprint import pp
+from shutil import copy2
 from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QLabel, QWidget, QLayout
 
 
@@ -7,43 +10,55 @@ class ConfigDock(QDockWidget):
         self.initUI()
 
     def initUI(self):
-        self.configWidget = QWidget()
-        # self.layout = QVBoxLayout()
-        # self.configLabel = QLabel("Select a node to see its configuration")
-        # self.layout.addWidget(self.configLabel)
-        # self.configWidget.setLayout(self.layout)
-        # self.setWidget(self.configWidget)
+        self.dock_widget = QWidget()
+        self.dock_layout = QVBoxLayout()
+        self.setWidget(self.dock_widget)
         self.setFloating(False)
         self.setFeatures(QDockWidget.DockWidgetMovable |
                          QDockWidget.DockWidgetFloatable)
 
     def updateConfig(self, node):
+        self.clear_dock()
+        print("Updating configuration ...")
+
         if len(node) == 1:
-            print("Node configuration:", node[0]._title)
-            # self.configLabel.setText(f"Configuration for {node[0]._title}")
-            # self.configLabel.setText(f"Configuration for {node[0].content}")
-            # Add more configuration widgets based on the node's properties
-            # Get the content from the node
-            content = node[0].content
-            print("------------")
-            print(f"content: {content}")
-            layout = content.layout
-            print("***********")
-            print(f"layout: {layout}")
+            node = node[0]
+            content = node.content
+            new_layout = content.create_layout()
+            for i in range(new_layout.count()):
+                widget = new_layout.itemAt(i).widget()
+                print(f"Removing widget {i}: {widget}")
+                self.dock_layout.addWidget(widget)
+                self.dock_widget.setLayout(self.dock_layout)
+            # for i in reversed(range(self.dock_layout.count())):
+            #     widget = self.dock_layout.itemAt(i).widget()
+            #     print(f"Removing widget {i}: {widget}")
+                # self.dock_layout.addWidget(new_layout)
 
-            self.configWidget.setLayout(content.layout)
-            self.setWidget(self.configWidget)
+    def clear_dock(self):
+        for i in reversed(range(self.dock_layout.count())):
+            widget = self.dock_layout.itemAt(i).widget()
+            if widget is not None:
+                widget.deleteLater()
 
-            # if isinstance(content.layout, QLayout):
-            #     print("content.layout is a QLayout")
-
-            # Use the content inside the Config Dock
-            # if hasattr(content, 'initUI'):
-            #     content.initUI(self)
-            #     for i in reversed(range(content.layout.count())):
-            #         print(f"content.layout.count {i}")
-            # content.layout.itemAt(i).widget().setParent(None)
-            # self.layout.addLayout(content.layout)
-
-        # else:
-        #     self.configLabel.setText("Select a node to see its configuration")
+    # def clearLayout(self, layout: QLayout):
+    #     print("::::::::::::::::::::::::")
+    #     print("Clearing layout ...")
+    #     """Recursively clear a layout and its children."""
+    #     while layout.count():
+    #         print("Layout count: ", layout.count())
+    #         item = layout.takeAt(0)
+    #         widget = item.widget()  # If the item is a widget
+    #         child_layout = item.layout()
+    #         if widget:
+    #             print("Widget found: ", widget)
+    #             widget.deleteLater()  # Safely delete the widget
+    #         elif child_layout:
+    #             child_layout.deleteLater()
+    #             # print("Layout found: ", child_layout)
+    #             # Recursively clear child layouts
+    #             # self.clearLayout(child_layout)
+    #         # if item.widget():
+    #         #     item.widget().deleteLater()
+    #         # elif item.layout():
+    #         #     self.clearLayout(item.layout())

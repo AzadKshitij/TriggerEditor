@@ -1,6 +1,6 @@
-from qtpy.QtGui import QImage
+from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtCore import QRectF
-from qtpy.QtWidgets import QLabel
+from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget
 
 from nodeeditor.node_node import Node
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -10,10 +10,11 @@ from nodeeditor.utils import dumpException
 
 
 class TriggerGraphicsNode(QDMGraphicsNode):
+
     def initSizes(self):
         super().initSizes()
-        self.width = 160
-        self.height = 74
+        self.width = 200
+        self.height = 100
         self.edge_roundness = 6
         self.edge_padding = 0
         self.title_horizontal_padding = 8

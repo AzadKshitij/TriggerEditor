@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit
+from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
 from qtpy.QtCore import Qt
 from trigger_conf import register_node, OP_NODE_INPUT, OP_NODE_FILE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
@@ -9,22 +9,24 @@ import pandas as pd
 
 class TriggerFileInputContent(QDMNodeContentWidget):
     def initUI(self, parent=None):
+        self.filePath = ""
+        self.create_layout()
+
+    def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setReadOnly(True)
         self.loadButton = QPushButton("Load CSV", self)
-        # self.loadButton.clicked.connect(self.openFileDialog)
-        self.loadButton.setObjectName(self.node.content_label_objname)
+        self.tableWidget = QTableWidget(self)
+        # self.loadButton.setObjectName(self.node.content_label_objname)
 
-        self.csvPreview = QTextEdit(self)
-        self.csvPreview.setReadOnly(True)
+        layout = QVBoxLayout()
+        layout.addWidget(self.filePathEdit)
+        layout.addWidget(self.loadButton)
+        layout.addWidget(self.tableWidget)
+        # layout.addChildLayout(QVBoxLayout())
+        # self.setLayout(self.layout)
 
-        self.layout = QVBoxLayout()
-        self.layout.addWidget(self.filePathEdit)
-        self.layout.addWidget(self.loadButton)
-        self.layout.addWidget(self.csvPreview)
-        # self.setLayout(layout)
-
-        self.filePath = ""
+        return layout
 
     def openFileDialog(self):
         '''Open CSV File", "", "CSV Files (*.csv);;'''
@@ -41,8 +43,28 @@ class TriggerFileInputContent(QDMNodeContentWidget):
     def loadCSV(self, fileName):
         try:
             df = pd.read_csv(fileName)
-            # Display the head of the DataFrame
-            self.csvPreview.setPlainText(df.head().to_string())
+            data = df.head(10)
+
+            data_list = data.values.tolist()
+
+            # Set the number of rows and columns
+            self.tableWidget.setRowCount(len(data_list))
+            self.tableWidget.setColumnCount(len(data_list[0]))
+
+            self.tableWidget.setHorizontalHeaderLabels(data.columns.tolist())
+
+            # Fill in the rest of the data
+            for i in range(len(data_list)):
+                for j in range(len(data_list[i])):
+                    self.tableWidget.setItem(
+                        i, j, QTableWidgetItem(str(data_list[i][j])))
+
+            # Table will fit the screen horizontally
+            self.tableWidget.horizontalHeader().setStretchLastSection(True)
+            self.tableWidget.horizontalHeader().setSectionResizeMode(
+                QHeaderView.Stretch)
+        # Display the head of the DataFrame
+            # self.csvPreview.setPlainText(df.head().to_string())
         except Exception as e:
             dumpException(e)
 
@@ -64,7 +86,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         return res
 
 
-@register_node(OP_NODE_FILE_INPUT)
+@ register_node(OP_NODE_FILE_INPUT)
 class TriggerNode_FileInput(TriggerNode):
     icon = "icons/in.png"
     op_code = OP_NODE_FILE_INPUT
