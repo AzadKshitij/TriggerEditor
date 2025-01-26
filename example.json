@@ -1,0 +1,118 @@
+{
+    "id": 58625888,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 2396636813264,
+            "title": "Input",
+            "pos_x": -256.0,
+            "pos_y": -213.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2396636810576,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "value": "1"
+            },
+            "op_code": 1
+        },
+        {
+            "id": 2396636819280,
+            "title": "Input",
+            "pos_x": -246.0,
+            "pos_y": -84.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2396636808656,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "value": "0"
+            },
+            "op_code": 1
+        },
+        {
+            "id": 2396636756944,
+            "title": "Output",
+            "pos_x": 321.0,
+            "pos_y": -157.0,
+            "inputs": [
+                {
+                    "id": 2396636742416,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {},
+            "op_code": 2
+        },
+        {
+            "id": 2396636704656,
+            "title": "Divide",
+            "pos_x": 59.0,
+            "pos_y": -163.0,
+            "inputs": [
+                {
+                    "id": 2396636815376,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 2
+                },
+                {
+                    "id": 2396636820752,
+                    "index": 1,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 2
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2396636815440,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {},
+            "op_code": 6
+        }
+    ],
+    "edges": [
+        {
+            "id": 2396636931728,
+            "edge_type": 5,
+            "start": 2396636810576,
+            "end": 2396636815376
+        },
+        {
+            "id": 2396636855824,
+            "edge_type": 5,
+            "start": 2396636808656,
+            "end": 2396636820752
+        },
+        {
+            "id": 2396636924240,
+            "edge_type": 5,
+            "start": 2396636815440,
+            "end": 2396636742416
+        }
+    ]
+}
