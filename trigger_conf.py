@@ -8,20 +8,29 @@ OP_NODE_MUL = 5
 OP_NODE_DIV = 6
 OP_NODE_SQRT = 7
 OP_NODE_FILE_INPUT = 8
+OP_NODE_SELECT = 9
+OP_NODE_TEXT_OUTPUT = 10
 
 
 CALC_NODES = {
 }
 
 
-class ConfException(Exception): pass
-class InvalidNodeRegistration(ConfException): pass
-class OpCodeNotRegistered(ConfException): pass
+class ConfException(Exception):
+    pass
+
+
+class InvalidNodeRegistration(ConfException):
+    pass
+
+
+class OpCodeNotRegistered(ConfException):
+    pass
 
 
 def register_node_now(op_code, class_reference):
     if op_code in CALC_NODES:
-        raise InvalidNodeRegistration("Duplicate node registration of '%s'. There is already %s" %(
+        raise InvalidNodeRegistration("Duplicate node registration of '%s'. There is already %s" % (
             op_code, CALC_NODES[op_code]
         ))
     CALC_NODES[op_code] = class_reference
@@ -33,10 +42,11 @@ def register_node(op_code):
         return original_class
     return decorator
 
-def get_class_from_opcode(op_code):
-    if op_code not in CALC_NODES: raise OpCodeNotRegistered("OpCode '%d' is not registered" % op_code)
-    return CALC_NODES[op_code]
 
+def get_class_from_opcode(op_code):
+    if op_code not in CALC_NODES:
+        raise OpCodeNotRegistered("OpCode '%d' is not registered" % op_code)
+    return CALC_NODES[op_code]
 
 
 # import all nodes and register them

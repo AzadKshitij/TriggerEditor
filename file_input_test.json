@@ -1,0 +1,28 @@
+{
+    "id": 2761116174480,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 2761112894864,
+            "title": "InputFile",
+            "pos_x": -122.0,
+            "pos_y": -102.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2761113868496,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "filePath": "C:/Users/azadk/Downloads/check.csv"
+            },
+            "op_code": 8
+        }
+    ],
+    "edges": []
+}

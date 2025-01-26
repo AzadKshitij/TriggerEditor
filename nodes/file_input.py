@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
 from qtpy.QtCore import Qt
-from trigger_conf import register_node, OP_NODE_INPUT, OP_NODE_FILE_INPUT
+from trigger_conf import register_node, OP_NODE_FILE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
@@ -10,31 +10,29 @@ import pandas as pd
 class TriggerFileInputContent(QDMNodeContentWidget):
     def initUI(self, parent=None):
         self.filePath = ""
-        self.create_layout()
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setReadOnly(True)
         self.loadButton = QPushButton("Load CSV", self)
         self.tableWidget = QTableWidget(self)
-        # self.loadButton.setObjectName(self.node.content_label_objname)
+        self.loadButton.clicked.connect(self.openFileDialog)
+        if self.filePath:
+            self.filePathEdit.setText(self.filePath)
+            self.loadCSV(self.filePath)
 
         layout = QVBoxLayout()
         layout.addWidget(self.filePathEdit)
         layout.addWidget(self.loadButton)
         layout.addWidget(self.tableWidget)
-        # layout.addChildLayout(QVBoxLayout())
-        # self.setLayout(self.layout)
 
         return layout
 
     def openFileDialog(self):
         '''Open CSV File", "", "CSV Files (*.csv);;'''
         options = QFileDialog.Options()
-        # options |= QFileDialog.DontUseNativeDialog
         fileName, _ = QFileDialog.getOpenFileName(self.parent(
         ), "Open CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
-
         if fileName:
             self.filePath = fileName
             self.filePathEdit.setText(fileName)
@@ -77,9 +75,6 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         res = super().deserialize(data, hashmap)
         try:
             self.filePath = data.get('filePath', "")
-            self.filePathEdit.setText(self.filePath)
-            if self.filePath:
-                self.loadCSV(self.filePath)
             return True & res
         except Exception as e:
             dumpException(e)
@@ -95,26 +90,13 @@ class TriggerNode_FileInput(TriggerNode):
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[], outputs=[3])
-        # self.eval()
+        self.eval()
 
     def initInnerClasses(self):
         self.content = TriggerFileInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
-        self.content.loadButton.clicked.connect(self.content.openFileDialog)
-        # self.content.edit.textChanged.connect(self.onInputChanged)
 
-    # def evalImplementation(self):
-    #     u_value = self.content.edit.text()
-    #     s_value = int(u_value)
-    #     self.value = s_value
-    #     self.markDirty(False)
-    #     self.markInvalid(False)
-
-    #     self.markDescendantsInvalid(False)
-    #     self.markDescendantsDirty()
-
-    #     self.grNode.setToolTip("")
-
-    #     self.evalChildren()
-
-    #     return self.value
+    def evalImplementation(self):
+        u_value = self.content.filePath
+        print(u_value)
+        return u_value
