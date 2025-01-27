@@ -18,47 +18,26 @@ class ConfigDock(QDockWidget):
                          QDockWidget.DockWidgetFloatable)
 
     def updateConfig(self, node):
-        self.clear_dock()
-        print("Updating configuration ...")
-
+        print("Updating config for node type: ", type(node[0]))
         if len(node) == 1:
-            node = node[0]
-            content = node.content
-            new_layout = content.create_layout()
-            for i in range(new_layout.count()):
-                widget = new_layout.itemAt(i).widget()
-                print(f"Removing widget {i}: {widget}")
-                self.dock_layout.addWidget(widget)
-                self.dock_widget.setLayout(self.dock_layout)
-            # for i in reversed(range(self.dock_layout.count())):
-            #     widget = self.dock_layout.itemAt(i).widget()
-            #     print(f"Removing widget {i}: {widget}")
-                # self.dock_layout.addWidget(new_layout)
+            if hasattr(node[0], 'node') or hasattr(node[0], 'socket'):
+                self.clear_dock()
+
+                node = node[0]
+                content = node.content
+                new_layout = content.create_layout()
+                for i in range(new_layout.count()):
+                    widget = new_layout.itemAt(i).widget()
+                    print(f"Removing widget {i}: {widget}")
+                    self.dock_layout.addWidget(widget)
+                    self.dock_widget.setLayout(self.dock_layout)
+                # for i in reversed(range(self.dock_layout.count())):
+                #     widget = self.dock_layout.itemAt(i).widget()
+                #     print(f"Removing widget {i}: {widget}")
+                    # self.dock_layout.addWidget(new_layout)
 
     def clear_dock(self):
         for i in reversed(range(self.dock_layout.count())):
             widget = self.dock_layout.itemAt(i).widget()
             if widget is not None:
                 widget.deleteLater()
-
-    # def clearLayout(self, layout: QLayout):
-    #     print("::::::::::::::::::::::::")
-    #     print("Clearing layout ...")
-    #     """Recursively clear a layout and its children."""
-    #     while layout.count():
-    #         print("Layout count: ", layout.count())
-    #         item = layout.takeAt(0)
-    #         widget = item.widget()  # If the item is a widget
-    #         child_layout = item.layout()
-    #         if widget:
-    #             print("Widget found: ", widget)
-    #             widget.deleteLater()  # Safely delete the widget
-    #         elif child_layout:
-    #             child_layout.deleteLater()
-    #             # print("Layout found: ", child_layout)
-    #             # Recursively clear child layouts
-    #             # self.clearLayout(child_layout)
-    #         # if item.widget():
-    #         #     item.widget().deleteLater()
-    #         # elif item.layout():
-    #         #     self.clearLayout(item.layout())

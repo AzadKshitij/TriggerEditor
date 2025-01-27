@@ -10,6 +10,7 @@ from trigger_node_config_dock import ConfigDock
 class SelectContent(QDMNodeContentWidget):
     def initUI(self):
         self.selected_columns = ['Seed']
+        self.incoming_columns = []
         # self.selected_columns = []
         # self.edit = QLineEdit("1", self)
         # self.edit.setAlignment(Qt.AlignRight)
@@ -55,7 +56,6 @@ class TriggerNode_Select(TriggerNode):
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[1], outputs=[1])
-        # self.eval()
 
     def initInnerClasses(self):
         self.content = SelectContent(self)

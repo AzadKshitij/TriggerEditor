@@ -10,6 +10,7 @@ import pandas as pd
 class TriggerFileInputContent(QDMNodeContentWidget):
     def initUI(self, parent=None):
         self.filePath = ""
+        self.columns = []
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
@@ -44,12 +45,13 @@ class TriggerFileInputContent(QDMNodeContentWidget):
             data = df.head(10)
 
             data_list = data.values.tolist()
+            self.columns = data.columns.tolist()
 
             # Set the number of rows and columns
             self.tableWidget.setRowCount(len(data_list))
             self.tableWidget.setColumnCount(len(data_list[0]))
 
-            self.tableWidget.setHorizontalHeaderLabels(data.columns.tolist())
+            self.tableWidget.setHorizontalHeaderLabels(self.columns)
 
             # Fill in the rest of the data
             for i in range(len(data_list)):
@@ -68,7 +70,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 
     def serialize(self):
         res = super().serialize()
-        res['filePath'] = self.filePath
+        res["filePath"] = self.filePath
         return res
 
     def deserialize(self, data, hashmap={}):
@@ -90,13 +92,16 @@ class TriggerNode_FileInput(TriggerNode):
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[], outputs=[3])
-        self.eval()
+        # self.eval()
 
     def initInnerClasses(self):
         self.content = TriggerFileInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
     def evalImplementation(self):
-        u_value = self.content.filePath
-        print(u_value)
+        u_value = self.content.columns
+        print("Columns from input file:", u_value)
         return u_value
+
+    def passParam(self):
+        return self.content.columns
