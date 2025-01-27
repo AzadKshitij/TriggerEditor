@@ -33,7 +33,7 @@ class CalcNode_TextOutput(TriggerNode):
             self.markInvalid()
             return
 
-        val = input_node.passParam()
+        val = input_node.params()
 
         print("Value passed from input node:", val)
 

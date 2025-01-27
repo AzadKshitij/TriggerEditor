@@ -22,7 +22,51 @@
                 "filePath": "C:/Users/azadk/Downloads/check.csv"
             },
             "op_code": 8
+        },
+        {
+            "id": 1930081165264,
+            "title": "Select",
+            "pos_x": -7.0,
+            "pos_y": 105.0,
+            "inputs": [
+                {
+                    "id": 1930048890384,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1930051702800,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "old_columns": [
+                    "Keyword",
+                    "Seed",
+                    "Source",
+                    "Country",
+                    "Autocomplete Position",
+                    "Difficulty",
+                    "Hot Keyword",
+                    "Relevancy Score"
+                ]
+            },
+            "op_code": 9
         }
     ],
-    "edges": []
+    "edges": [
+        {
+            "id": 1930081214160,
+            "edge_type": 5,
+            "start": 2761113868496,
+            "end": 1930048890384
+        }
+    ]
 }

@@ -29,6 +29,10 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 
         return layout
 
+    def get_columns(self):
+        df = pd.read_csv(self.filePath)
+        return df.columns.tolist()
+
     def openFileDialog(self):
         '''Open CSV File", "", "CSV Files (*.csv);;'''
         options = QFileDialog.Options()
@@ -45,7 +49,6 @@ class TriggerFileInputContent(QDMNodeContentWidget):
             data = df.head(10)
 
             data_list = data.values.tolist()
-            self.columns = data.columns.tolist()
 
             # Set the number of rows and columns
             self.tableWidget.setRowCount(len(data_list))
@@ -77,6 +80,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         res = super().deserialize(data, hashmap)
         try:
             self.filePath = data.get('filePath', "")
+            self.columns = self.get_columns()
             return True & res
         except Exception as e:
             dumpException(e)
@@ -103,5 +107,5 @@ class TriggerNode_FileInput(TriggerNode):
         print("Columns from input file:", u_value)
         return u_value
 
-    def passParam(self):
+    def params(self):
         return self.content.columns
