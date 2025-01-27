@@ -1,0 +1,94 @@
+/* Accent Color */
+:root {
+    --accent-color: #3A99D9;
+}
+
+/* General Application Styles */
+QWidget {
+    background-color: #2e2e2e;
+    color: #f0f0f0;
+    font-family: "Roboto", "Segoe UI", Arial, sans-serif;
+    font-size: 12px;
+    border: none;
+}
+
+/* Buttons */
+QPushButton {
+    background-color: #3c3c3c;
+    border: 1px solid var(--accent-color);
+    border-radius: 4px;
+    padding: 5px 10px;
+    color: #f0f0f0;
+}
+QPushButton:hover {
+    background-color: var(--accent-color);
+    color: #ffffff;
+}
+QPushButton:pressed {
+    background-color: #2a7bb8;
+}
+
+/* Checkboxes */
+QCheckBox::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--accent-color);
+    background-color: #3c3c3c;
+    border-radius: 3px;
+}
+QCheckBox::indicator:checked {
+    background-color: var(--accent-color);
+    border: 1px solid #2a7bb8;
+}
+
+/* Radio Buttons */
+QRadioButton::indicator {
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--accent-color);
+    background-color: #3c3c3c;
+    border-radius: 7px;
+}
+QRadioButton::indicator:checked {
+    background-color: var(--accent-color);
+}
+
+/* Line Edits and Text Edits */
+QLineEdit, QTextEdit, QSpinBox, QComboBox {
+    background-color: #3c3c3c;
+    border: 1px solid var(--accent-color);
+    padding: 4px;
+    border-radius: 4px;
+    color: #f0f0f0;
+}
+QLineEdit:focus, QTextEdit:focus, QSpinBox:focus, QComboBox:focus {
+    border: 1px solid var(--accent-color);
+}
+
+/* ComboBox */
+QComboBox::drop-down {
+    border: none;
+    background: var(--accent-color);
+}
+
+/* Scrollbars */
+QScrollBar::handle:horizontal, QScrollBar::handle:vertical {
+    background-color: var(--accent-color);
+    border-radius: 4px;
+}
+
+/* Progress Bar */
+QProgressBar::chunk {
+    background-color: var(--accent-color);
+}
+
+/* Toolbars */
+QToolBar {
+    background-color: #3c3c3c;
+    border-bottom: 1px solid var(--accent-color);
+}
+
+/* Tabs */
+QTabBar::tab:selected {
+    background-color: var(--accent-color);
+}

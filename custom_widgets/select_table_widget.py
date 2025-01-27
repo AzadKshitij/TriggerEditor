@@ -4,21 +4,23 @@ import pandas as pd
 
 
 class TableWidget(QWidget):
-    def __init__(self, parent=None, incoming_columns=None, old_columns=None):
+    def __init__(self, parent=None, data=None):
         super().__init__(parent)
-        self.incoming_columns = incoming_columns
-        self.old_columns = old_columns
+        # self.incoming_columns = incoming_columns
+        # self.old_columns = old_columns
+        self.data = data
+        print(data)
         self.initUI()
 
-    def is_same_column(self):
-        if self.old_columns.keys() == self.incoming_columns:
-            return True
-        else:
-            # getting missing columns
-            missing_columns = set(self.old_columns.keys()) - set(
-                self.incoming_columns)
+    # def is_same_column(self):
+    #     if self.old_columns.keys() == self.incoming_columns:
+    #         return True
+    #     else:
+    #         # getting missing columns
+    #         missing_columns = set(self.old_columns.keys()) - set(
+    #             self.incoming_columns)
 
-            return False
+    #         return False
 
     def initUI(self):
         self.layout = QVBoxLayout(self)
@@ -33,9 +35,10 @@ class TableWidget(QWidget):
         self.populateTable()
 
     def populateTable(self):
-        data_types = pd.Series(['int', 'float', 'str', 'bool']).tolist()
-        row_count = len(self.incoming_columns) if self.incoming_columns else len(
-            self.old_columns)
+        data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
+        # row_count = len(self.incoming_columns) if self.incoming_columns else len(
+        #     self.old_columns)
+        row_count = len(self.data)
 
         for i in range(row_count):  # Example: 5 rows
             self.table.insertRow(i)
@@ -45,8 +48,7 @@ class TableWidget(QWidget):
             self.table.setCellWidget(i, 0, checkbox)
 
             # Editable line edit for column_name
-            column_name_item = QTableWidgetItem(str(
-                self.incoming_columns[i] if self.incoming_columns else self.old_columns[i]))
+            column_name_item = QTableWidgetItem(self.data[i]['column_name'])
             column_name_item.setFlags(
                 column_name_item.flags() ^ ~Qt.ItemIsEditable)
             self.table.setItem(i, 1, column_name_item)
@@ -54,6 +56,7 @@ class TableWidget(QWidget):
             # Dropdown for data_type
             combo_box = QComboBox()
             combo_box.addItems(data_types)
+            combo_box.setCurrentText(str(self.data[i]['dtype']))
             self.table.setCellWidget(i, 2, combo_box)
 
             # Line edit for rename

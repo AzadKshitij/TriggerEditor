@@ -10,7 +10,7 @@ import pandas as pd
 class TriggerFileInputContent(QDMNodeContentWidget):
     def initUI(self, parent=None):
         self.filePath = ""
-        self.columns = []
+        self.data = []
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
@@ -31,6 +31,15 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 
     def get_columns(self):
         df = pd.read_csv(self.filePath)
+        self.data = [
+            {
+                'column_name': col,
+                'dtype': df[col].dtype.name
+            }
+            for col in df.columns
+        ]
+        # self.data = df.dtypes.apply(
+        #     lambda x: {'column_name': x.name, 'dtype': x}).to_list()
         return df.columns.tolist()
 
     def openFileDialog(self):
@@ -47,14 +56,14 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         try:
             df = pd.read_csv(fileName)
             data = df.head(10)
+            columns = data.columns.tolist()
 
             data_list = data.values.tolist()
 
             # Set the number of rows and columns
             self.tableWidget.setRowCount(len(data_list))
             self.tableWidget.setColumnCount(len(data_list[0]))
-
-            self.tableWidget.setHorizontalHeaderLabels(self.columns)
+            self.tableWidget.setHorizontalHeaderLabels(columns)
 
             # Fill in the rest of the data
             for i in range(len(data_list)):
@@ -63,9 +72,11 @@ class TriggerFileInputContent(QDMNodeContentWidget):
                         i, j, QTableWidgetItem(str(data_list[i][j])))
 
             # Table will fit the screen horizontally
-            self.tableWidget.horizontalHeader().setStretchLastSection(True)
-            self.tableWidget.horizontalHeader().setSectionResizeMode(
-                QHeaderView.Stretch)
+            self.tableWidget.setSortingEnabled(True)
+            # self.tableWidget.horizontalHeader().setStretchLastSection(True)
+            # self.tableWidget.horizontalHeader().setSectionResizeMode(
+            #     QHeaderView.Stretch)
+            self.tableWidget.horizontalHeader().setSectionsMovable(True)
         # Display the head of the DataFrame
             # self.csvPreview.setPlainText(df.head().to_string())
         except Exception as e:
@@ -103,9 +114,13 @@ class TriggerNode_FileInput(TriggerNode):
         self.grNode = TriggerGraphicsNode(self)
 
     def evalImplementation(self):
-        u_value = self.content.columns
+        u_value = 0
         print("Columns from input file:", u_value)
         return u_value
 
     def params(self):
-        return self.content.columns
+        param = {
+            "columns": self.content.get_columns(),
+            "data": self.content.data
+        }
+        return param

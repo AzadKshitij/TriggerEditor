@@ -28,12 +28,12 @@ class SelectContent(QDMNodeContentWidget):
     """
 
     def initUI(self):
-        self.old_columns = {}
+        self.data = {}
         self.incoming_columns = []
+        self.old_columns = {}
 
     def create_layout(self) -> QLayout:
-        self.table_widget = TableWidget(
-            incoming_columns=self.incoming_columns, old_columns=self.old_columns)
+        self.table_widget = TableWidget(data=self.data)
 
         layout = QVBoxLayout()
         layout.addWidget(self.table_widget)
@@ -139,7 +139,8 @@ class TriggerNode_Select(TriggerNode):
             return
 
         # self.content.lbl.setText("%s" % val)
-        self.content.incoming_columns = val
+        self.content.incoming_columns = val.get('columns')
+        self.content.data = val.get('data')
         self.markInvalid(False)
         self.markDirty(False)
         self.grNode.setToolTip("")

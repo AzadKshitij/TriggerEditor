@@ -1,3 +1,4 @@
+import nodeeditor
 import qss.nodeeditor_dark_resources
 import os
 from qtpy.QtGui import QIcon, QKeySequence
@@ -41,12 +42,13 @@ class TriggerWindow(NodeEditorWindow):
         self.name_company = 'Blenderfreak'
         self.name_product = 'Calculator NodeEditor'
 
-        self.stylesheet_filename = os.path.join(
-            os.path.dirname(__file__), "qss/nodeeditor.qss")
-        loadStylesheets(
-            os.path.join(os.path.dirname(__file__), "qss/nodeeditor.qss"),
-            self.stylesheet_filename
-        )
+        # self.stylesheet_filename = os.path.join(
+        #     os.path.dirname(__file__), "blender_style_ascent.qss")
+        # loadStylesheets(
+        #     os.path.join(os.path.dirname(__file__),
+        #                  "blender_style_ascent.qss"),
+        #     self.stylesheet_filename
+        # )
 
         self.empty_icon = QIcon(".")
 
@@ -275,7 +277,7 @@ class TriggerWindow(NodeEditorWindow):
         nodeeditor.scene.history.addHistoryModifiedListener(
             self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
-        nodeeditor.nodeSelected.connect(self.onNodeSelected)
+        nodeeditor.itemSelected.connect(self.onNodeSelected)
         return subwnd
 
     def onSubWndClose(self, widget, event):
@@ -294,4 +296,5 @@ class TriggerWindow(NodeEditorWindow):
         return None
 
     def onNodeSelected(self, node):
+        # self.nodeeditor.getSelectedItems()
         self.configDock.updateConfig(node)

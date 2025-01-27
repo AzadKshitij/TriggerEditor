@@ -13,7 +13,7 @@ DEBUG_CONTEXT = True
 
 
 class TriggerSubWindow(NodeEditorWidget):
-    nodeSelected = Signal(object)
+    itemSelected = Signal(object)
 
     def __init__(self):
         super().__init__()
@@ -28,12 +28,12 @@ class TriggerSubWindow(NodeEditorWidget):
         self.scene.addDragEnterListener(self.onDragEnter)
         self.scene.addDropListener(self.onDrop)
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
-        self.scene.addItemSelectedListener(self.onNodeSelected)
+        self.scene.addItemSelectedListener(self.onItemSelected)
         self._close_event_listeners = []
 
-    def onNodeSelected(self):
+    def onItemSelected(self):
         print(f'node: {self.scene._last_selected_items}')
-        self.nodeSelected.emit(self.scene._last_selected_items)
+        self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
         if 'op_code' not in data:

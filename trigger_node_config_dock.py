@@ -36,6 +36,11 @@ class ConfigDock(QDockWidget):
                 #     print(f"Removing widget {i}: {widget}")
                     # self.dock_layout.addWidget(new_layout)
 
+        else:
+            self.clear_dock()
+            # self.dock_layout.addWidget(QLabel("Multiple nodes selected"))
+            # self.dock_widget.setLayout(self.dock_layout)
+
     def clear_dock(self):
         for i in reversed(range(self.dock_layout.count())):
             widget = self.dock_layout.itemAt(i).widget()
