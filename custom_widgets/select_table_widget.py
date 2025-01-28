@@ -12,16 +12,6 @@ class TableWidget(QWidget):
         print(data)
         self.initUI()
 
-    # def is_same_column(self):
-    #     if self.old_columns.keys() == self.incoming_columns:
-    #         return True
-    #     else:
-    #         # getting missing columns
-    #         missing_columns = set(self.old_columns.keys()) - set(
-    #             self.incoming_columns)
-
-    #         return False
-
     def initUI(self):
         self.layout = QVBoxLayout(self)
         self.table = QTableWidget(self)

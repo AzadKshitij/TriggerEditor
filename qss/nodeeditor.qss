@@ -4,18 +4,18 @@ QDMNodeContentWidget {
 QDMNodeContentWidget QFrame {
   background: transparent;
 }
-QDMGraphicsNode QGraphicsTextItem{
+/* QDMGraphicsNode QGraphicsTextItem{
   color: #000000;
   background: #000000;
   border: 1px solid #0f0;
   border-radius: 5px;
   padding: 5px;
-}
+} */
 
 QDMGraphicsNode QPainterPath#nodeTitle {
   background: #2c313a;
   color: #fff;
-  border: 1px solid #0f0;
+  /* border: 1px solid #0f0; */
   border-radius: 5px;
   padding: 5px;
 }
@@ -27,7 +27,7 @@ QDMNodeContentWidget QLineEdit {
 QDMNodeContentWidget QLabel {
   color: #000000;
   background: #000000;
-  border: 1px solid #0f0;
+  /* border: 1px solid #0f0; */
   border-radius: 5px;
   padding: 5px;
 }
@@ -36,7 +36,7 @@ QDMNodeContentWidget QLabel#calc_node_mul,
 QDMNodeContentWidget QLabel#calc_node_div {
   background: transparent;
   height: 0px;
-  color: #fe0000;
+  /* color: #fe0000; */
   font-size: 72px;
   max-height: 49px;
   min-height: 49px;
@@ -67,7 +67,7 @@ QDMNodeContentWidget QLineEdit#calc_node_input {
   font-size: 28px;
   color: #000;
   background: #fff;
-  border: 1px solid #0f0;
+  /* border: 1px solid #0f0; */
   border-radius: 5px;
 }
 QGraphicsView {

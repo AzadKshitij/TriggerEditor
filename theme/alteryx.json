@@ -1,0 +1,20 @@
+{
+    "input": {
+        "_brush_color": "#009d8d"
+    },
+    "preparation": {
+        "_brush_color": "#0065a8"
+    },
+    "join": {
+        "_brush_color": "#7a52a0"
+    },
+    "parse": {
+        "_brush_color": "#96b149"
+    },
+    "transform": {
+        "_brush_color": "#e25f45" 
+    },
+    "documentation": {
+        "_brush_color": "#647492"
+    }
+}

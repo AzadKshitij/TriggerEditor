@@ -5,6 +5,9 @@ from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
 import pandas as pd
+from theme.theme import Theme
+
+theme = Theme()
 
 
 class TriggerFileInputContent(QDMNodeContentWidget):
@@ -30,17 +33,20 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         return layout
 
     def get_columns(self):
-        df = pd.read_csv(self.filePath)
-        self.data = [
-            {
-                'column_name': col,
-                'dtype': df[col].dtype.name
-            }
-            for col in df.columns
-        ]
+        if self.filePath:
+            df = pd.read_csv(self.filePath)
+            self.data = [
+                {
+                    'column_name': col,
+                    'dtype': df[col].dtype.name
+                }
+                for col in df.columns
+            ]
+            return df.columns.tolist()
+
+        return []
         # self.data = df.dtypes.apply(
         #     lambda x: {'column_name': x.name, 'dtype': x}).to_list()
-        return df.columns.tolist()
 
     def openFileDialog(self):
         '''Open CSV File", "", "CSV Files (*.csv);;'''
@@ -102,10 +108,10 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 class TriggerNode_FileInput(TriggerNode):
     icon = "icons/in.png"
     op_code = OP_NODE_FILE_INPUT
-    op_title = "InputFile"
+    op_title = "File Input"
     content_label_objname = "trigger_node_file_input"
     style = {
-        'brush_color': "#009d8d"
+        'brush_color': theme.brush_color('input')
     }
     # brush_color = "#ff0066"
 

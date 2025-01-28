@@ -25,6 +25,7 @@ class CalcNode_Sub(TriggerNode):
     def evalOperation(self, input1, input2):
         return input1 - input2
 
+
 @register_node(OP_NODE_MUL)
 class TriggerNode_Mul(TriggerNode):
     icon = "icons/mul.png"
@@ -37,6 +38,7 @@ class TriggerNode_Mul(TriggerNode):
         print('foo')
         return input1 * input2
 
+
 @register_node(OP_NODE_DIV)
 class TriggerNode_Div(TriggerNode):
     icon = "icons/divide.png"
@@ -47,6 +49,7 @@ class TriggerNode_Div(TriggerNode):
 
     def evalOperation(self, input1, input2):
         return input1 / input2
+
 
 @register_node(OP_NODE_SQRT)
 class TriggerNode_Sqrt(TriggerNode):

@@ -10,6 +10,9 @@ from nodeeditor.utils import dumpException
 from custom_widgets.select_table_widget import TableWidget
 
 import pandas as pd
+from theme.theme import Theme
+
+theme = Theme()
 
 
 class SelectContent(QDMNodeContentWidget):
@@ -23,7 +26,6 @@ class SelectContent(QDMNodeContentWidget):
         incoming_columns (list): [column_name]
 
     Extra: 
-
 
     """
 
@@ -114,11 +116,11 @@ class TriggerNode_Select(TriggerNode):
     op_title = "Select"
     content_label_objname = "trigger_node_select"
     style = {
-        'brush_color': "#0065a8"
+        'brush_color': theme.brush_color('preparation')
     }
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[1], outputs=[1])
+        super().__init__(scene, inputs=[3], outputs=[1])
         self.eval()
 
     def initInnerClasses(self):
