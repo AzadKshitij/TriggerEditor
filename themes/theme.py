@@ -4,7 +4,7 @@ import json
 class Theme:
     _instance = None
 
-    def __new__(cls, file_name="theme/alteryx.json"):
+    def __new__(cls, file_name="themes/alteryx.json"):
         if cls._instance is None:
             cls._instance = super(Theme, cls).__new__(cls)
             cls._instance.theme_data = cls.read_file(file_name)
@@ -15,7 +15,7 @@ class Theme:
 
     def read_file(file_name):
         print("%%%%%%%%%%%%%%%%%%%%%%%%")
-        print("Reading the file!")
+        print("Reading Theme file!")
         print("%%%%%%%%%%%%%%%%%%%%%%%%")
         with open(file_name, 'r') as f:
             theme_data = json.load(f)

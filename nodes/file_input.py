@@ -5,7 +5,7 @@ from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
 import pandas as pd
-from theme.theme import Theme
+from themes.theme import Theme
 
 theme = Theme()
 

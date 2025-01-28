@@ -8,11 +8,11 @@ from qtpy.QtCore import Qt, QSignalMapper
 from nodeeditor.utils import loadStylesheets
 from nodeeditor.node_editor_window import NodeEditorWindow
 from trigger_sub_window import TriggerSubWindow
-from trigger_drag_listbox import QTRDragListbox
+from widgets.node_drag_listbox import QTRDragListbox
 from nodeeditor.utils import dumpException, pp
 from trigger_conf import CALC_NODES
-from trigger_nodes_dock import NodesDock
-from trigger_node_config_dock import ConfigDock
+from docks.nodes_list import NodesDock
+from docks.node_config import ConfigDock
 
 
 # Enabling edge validators
@@ -39,8 +39,8 @@ class TriggerWindow(NodeEditorWindow):
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
 
-        self.name_company = 'Blenderfreak'
-        self.name_product = 'Calculator NodeEditor'
+        self.name_company = 'Trigger'
+        self.name_product = 'Trigger Editor'
 
         self.stylesheet_filename = os.path.join(
             os.path.dirname(__file__), "qss/nodeeditor.qss")
@@ -258,7 +258,7 @@ class TriggerWindow(NodeEditorWindow):
     # Nodes Dock
     def createNodesDock(self):
         self.nodesDock = NodesDock(self)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.nodesDock)
+        self.addDockWidget(Qt.TopDockWidgetArea, self.nodesDock)
 
     # Config dock
     def createConfigDock(self):

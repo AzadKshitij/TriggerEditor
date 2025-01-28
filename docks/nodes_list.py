@@ -1,5 +1,5 @@
 from qtpy.QtWidgets import QDockWidget
-from trigger_drag_listbox import QTRDragListbox
+from widgets.node_drag_listbox import QTRDragListbox
 
 
 class NodesDock(QDockWidget):

@@ -4,7 +4,7 @@ from trigger_conf import register_node, OP_NODE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
-from trigger_node_config_dock import ConfigDock
+from docks.node_config import ConfigDock
 
 
 class CalcInputContent(QDMNodeContentWidget):
