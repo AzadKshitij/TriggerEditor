@@ -113,6 +113,9 @@ class TriggerNode_Select(TriggerNode):
     op_code = OP_NODE_SELECT
     op_title = "Select"
     content_label_objname = "trigger_node_select"
+    style = {
+        'brush_color': "#0065a8"
+    }
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[1], outputs=[1])

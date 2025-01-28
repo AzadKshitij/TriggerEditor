@@ -1,4 +1,4 @@
-from qtpy.QtGui import QImage, QPixmap
+from qtpy.QtGui import QImage, QPixmap, QBrush, QColor
 from qtpy.QtCore import QRectF
 from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget
 
@@ -11,6 +11,11 @@ from nodeeditor.utils import dumpException
 
 class TriggerGraphicsNode(QDMGraphicsNode):
 
+    def __init__(self, node, parent=None):
+        super().__init__(node, parent)
+
+        # self._brush_title = QBrush(QColor(style['brush_color']))
+
     def initSizes(self):
         super().initSizes()
         self.width = 200
@@ -20,9 +25,14 @@ class TriggerGraphicsNode(QDMGraphicsNode):
         self.title_horizontal_padding = 8
         self.title_vertical_padding = 10
 
-    def initAssets(self):
+    def initAssets(self, style=None):
         super().initAssets()
+        style = self.node.style
         self.icons = QImage("icons/status_icons.png")
+        self._brush_title = QBrush(QColor(style['brush_color']))
+        # self.node.style
+        # self._brush_title = QBrush(QColor("#0f0"))
+        # self._brush_title = QBrush(QColor("#FF313131"))
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
         super().paint(painter, QStyleOptionGraphicsItem, widget)
@@ -52,6 +62,9 @@ class TriggerNode(Node):
     op_title = "Undefined"
     content_label = ""
     content_label_objname = "calc_node_bg"
+    style = {
+        'brush_color': "#000000"
+    }
 
     GraphicsNode_class = TriggerGraphicsNode
     NodeContent_class = TriggerContent

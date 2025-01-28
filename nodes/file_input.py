@@ -104,6 +104,10 @@ class TriggerNode_FileInput(TriggerNode):
     op_code = OP_NODE_FILE_INPUT
     op_title = "InputFile"
     content_label_objname = "trigger_node_file_input"
+    style = {
+        'brush_color': "#009d8d"
+    }
+    # brush_color = "#ff0066"
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[], outputs=[3])

@@ -10,7 +10,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
 
     print(QStyleFactory.keys())
-    app.setStyle('windows11')
+    app.setStyle('Fusion')
 
     wnd = TriggerWindow()
     wnd.show()

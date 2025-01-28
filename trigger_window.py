@@ -42,13 +42,13 @@ class TriggerWindow(NodeEditorWindow):
         self.name_company = 'Blenderfreak'
         self.name_product = 'Calculator NodeEditor'
 
-        # self.stylesheet_filename = os.path.join(
-        #     os.path.dirname(__file__), "blender_style_ascent.qss")
-        # loadStylesheets(
-        #     os.path.join(os.path.dirname(__file__),
-        #                  "blender_style_ascent.qss"),
-        #     self.stylesheet_filename
-        # )
+        self.stylesheet_filename = os.path.join(
+            os.path.dirname(__file__), "qss/nodeeditor.qss")
+        loadStylesheets(
+            os.path.join(os.path.dirname(__file__),
+                         "qss/nodeeditor.qss"),
+            self.stylesheet_filename
+        )
 
         self.empty_icon = QIcon(".")
 
