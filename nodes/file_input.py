@@ -112,7 +112,7 @@ class TriggerNode_FileInput(TriggerNode):
     op_title = "File Input"
     content_label_objname = "trigger_node_file_input"
     style = {
-        'brush_color': theme.brush_color('input')
+        'brush_color': theme.brush_color('INPUT')
     }
     # brush_color = "#ff0066"
 

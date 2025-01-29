@@ -7,6 +7,10 @@ from qtpy.QtWidgets import (
 from trigger_conf import check_node_type, get_class_from_opcode, LISTBOX_MIMETYPE
 from nodeeditor.utils import dumpException
 
+from themes.theme import Theme
+
+theme = Theme()
+
 
 class QTRDragListbox(QListWidget):
     def __init__(self, parent=None, node_type=None):
@@ -35,28 +39,9 @@ class QTRDragListbox(QListWidget):
             node = get_class_from_opcode(key, self.node_type)
             self.addMyItem(node.op_title, node.icon, node.op_code)
 
-    # def addMyItem(self, name, icon=None, op_code=0):
-    #     # can be (icon, text, parent, <int>type)
-    #     item = QListWidgetItem(name, self)
-    #     # item.setTextAlignment(Qt.AlignmentFlag.AlignBottom)
-    #     item_widget = ListWidgetItemWidget(name, icon)
-    #     item.setSizeHint(item_widget.sizeHint())
-    #     self.addItem(item)
-
-    #     pixmap = QPixmap(icon if icon is not None else ".")
-    #     item.setIcon(QIcon(pixmap))
-    #     item.setSizeHint(QSize(32, 32))
-
-    #     item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable |
-    #                   Qt.ItemIsDragEnabled)
-
-    #     # setup data
-    #     item.setData(Qt.UserRole, pixmap)
-    #     item.setData(Qt.UserRole + 1, op_code)
-
     def addMyItem(self, name, icon=None, op_code=0):
         item = QListWidgetItem(self)
-        item_widget = ListWidgetItemWidget(name, icon)
+        item_widget = ListWidgetItemWidget(name, icon, self.node_type)
         item.setSizeHint(item_widget.sizeHint())
         self.addItem(item)
         self.setItemWidget(item, item_widget)
@@ -100,7 +85,7 @@ class QTRDragListbox(QListWidget):
 
 
 class ListWidgetItemWidget(QWidget):
-    def __init__(self, name, icon=None, parent=None):
+    def __init__(self, name, icon=None, node_type="DEFAULT", parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
 
@@ -111,12 +96,14 @@ class ListWidgetItemWidget(QWidget):
         self.text_label = QLabel(name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.text_label.setFixedHeight(20)
+        self.text_label.setMinimumWidth(self.icon_label.width())
 
         if icon:
             pixmap = QPixmap(icon)
             painter = QPainter(pixmap)
             painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
-            painter.fillRect(pixmap.rect(), QColor("#0f0"))
+            painter.fillRect(pixmap.rect(), QColor(
+                theme.brush_color(node_type)))
             painter.end()
             self.icon_label.setPixmap(pixmap)
 
@@ -129,4 +116,11 @@ class ListWidgetItemWidget(QWidget):
         self.setMinimumSize(fixed_size)
         self.setMaximumSize(fixed_size)
 
-        self.setStyleSheet("border: 1px solid white;")
+    def enterEvent(self, event):
+        self.setStyleSheet(
+            "background-color: #373737;")
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        self.setStyleSheet("background-color: transparent;")
+        super().leaveEvent(event)

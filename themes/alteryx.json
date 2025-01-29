@@ -1,20 +1,27 @@
 {
-    "input": {
+    "INPUT": {
         "_brush_color": "#009d8d"
     },
-    "preparation": {
+    "PREPARATION": {
         "_brush_color": "#0065a8"
     },
-    "join": {
+    "JOIN": {
         "_brush_color": "#7a52a0"
     },
-    "parse": {
+    "PARSE": {
         "_brush_color": "#96b149"
     },
     "transform": {
         "_brush_color": "#e25f45" 
     },
-    "documentation": {
+    "DEFAULT": {
+        "_brush_color": "#647492"
+    },
+    "DOCUMENTATION": {
+        "_brush_color": "#647492"
+    },
+    "CALC": {
         "_brush_color": "#647492"
     }
+
 }
