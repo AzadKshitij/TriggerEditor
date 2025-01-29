@@ -12,7 +12,7 @@ class CalcOutputContent(QDMNodeContentWidget):
         self.lbl.setObjectName(self.node.content_label_objname)
 
 
-@register_node(OP_NODE_OUTPUT)
+@register_node(OP_NODE_OUTPUT, "CALC")
 class CalcNode_Output(TriggerNode):
     icon = "icons/out.png"
     op_code = OP_NODE_OUTPUT

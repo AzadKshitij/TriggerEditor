@@ -109,7 +109,7 @@ class SelectContent(QDMNodeContentWidget):
         return res
 
 
-@register_node(OP_NODE_SELECT)
+@register_node(OP_NODE_SELECT, "PREPARATION")
 class TriggerNode_Select(TriggerNode):
     icon = "icons/in.png"
     op_code = OP_NODE_SELECT

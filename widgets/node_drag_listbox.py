@@ -1,17 +1,21 @@
 from turtle import width
-from qtpy.QtGui import QPixmap, QIcon, QDrag
+from qtpy.QtGui import QPixmap, QIcon, QDrag, QPainter, QColor
 from qtpy.QtCore import QSize, Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
-from qtpy.QtWidgets import QListWidget, QAbstractItemView, QListWidgetItem, QWidget, QVBoxLayout, QLabel
+from qtpy.QtWidgets import (
+    QListWidget, QAbstractItemView, QListWidgetItem, QWidget, QVBoxLayout, QLabel)
 
-from trigger_conf import CALC_NODES, get_class_from_opcode, LISTBOX_MIMETYPE
+from trigger_conf import check_node_type, get_class_from_opcode, LISTBOX_MIMETYPE
 from nodeeditor.utils import dumpException
 
 
 class QTRDragListbox(QListWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, node_type=None):
         super().__init__(parent)
+        self.node_type = node_type
+
         self.initUI()
         self.setFlow(QListWidget.LeftToRight)
+        # self.setStyleSheet("border: 1px solid white; background: green")
 
     def initUI(self):
         # init
@@ -22,10 +26,13 @@ class QTRDragListbox(QListWidget):
         self.addMyItems()
 
     def addMyItems(self):
-        keys = list(CALC_NODES.keys())
+        current_node_type = check_node_type(self.node_type)
+
+        keys = list(current_node_type.keys())
+        print(f"node_type: {self.node_type}")
         keys.sort()
         for key in keys:
-            node = get_class_from_opcode(key)
+            node = get_class_from_opcode(key, self.node_type)
             self.addMyItem(node.op_title, node.icon, node.op_code)
 
     # def addMyItem(self, name, icon=None, op_code=0):
@@ -96,17 +103,30 @@ class ListWidgetItemWidget(QWidget):
     def __init__(self, name, icon=None, parent=None):
         super().__init__(parent)
         layout = QVBoxLayout(self)
+
         self.icon_label = QLabel(self)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.icon_label.setFixedSize(QSize(64, 64))
+
         self.text_label = QLabel(name, self)
-        self.icon_label.setFixedHeight(32)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.text_label.setFixedHeight(20)
 
         if icon:
             pixmap = QPixmap(icon)
+            painter = QPainter(pixmap)
+            painter.setCompositionMode(QPainter.CompositionMode_SourceIn)
+            painter.fillRect(pixmap.rect(), QColor("#0f0"))
+            painter.end()
             self.icon_label.setPixmap(pixmap)
 
         layout.addWidget(self.icon_label)
         layout.addWidget(self.text_label)
         self.setLayout(layout)
+
+        # Set fixed size for the widget
+        fixed_size = QSize(80, 100)  # Adjust the size as needed
+        self.setMinimumSize(fixed_size)
+        self.setMaximumSize(fixed_size)
+
+        self.setStyleSheet("border: 1px solid white;")

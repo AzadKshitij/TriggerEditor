@@ -2,7 +2,7 @@ from trigger_conf import register_node, OP_NODE_ADD, OP_NODE_SUB, OP_NODE_MUL, O
 from trigger_node_base import TriggerNode
 
 
-@register_node(OP_NODE_ADD)
+@register_node(OP_NODE_ADD, "CALC")
 class TriggerNode_Add(TriggerNode):
     icon = "icons/add.png"
     op_code = OP_NODE_ADD
@@ -14,7 +14,7 @@ class TriggerNode_Add(TriggerNode):
         return input1 + input2
 
 
-@register_node(OP_NODE_SUB)
+@register_node(OP_NODE_SUB, "CALC")
 class CalcNode_Sub(TriggerNode):
     icon = "icons/sub.png"
     op_code = OP_NODE_SUB
@@ -26,7 +26,7 @@ class CalcNode_Sub(TriggerNode):
         return input1 - input2
 
 
-@register_node(OP_NODE_MUL)
+@register_node(OP_NODE_MUL, "CALC")
 class TriggerNode_Mul(TriggerNode):
     icon = "icons/mul.png"
     op_code = OP_NODE_MUL
@@ -39,7 +39,7 @@ class TriggerNode_Mul(TriggerNode):
         return input1 * input2
 
 
-@register_node(OP_NODE_DIV)
+@register_node(OP_NODE_DIV, "CALC")
 class TriggerNode_Div(TriggerNode):
     icon = "icons/divide.png"
     op_code = OP_NODE_DIV
@@ -51,7 +51,7 @@ class TriggerNode_Div(TriggerNode):
         return input1 / input2
 
 
-@register_node(OP_NODE_SQRT)
+@register_node(OP_NODE_SQRT, "CALC")
 class TriggerNode_Sqrt(TriggerNode):
     icon = "icons/sqrt.png"
     op_code = OP_NODE_SQRT

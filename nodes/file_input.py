@@ -95,6 +95,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
+
         try:
             self.filePath = data.get('filePath', "")
             self.columns = self.get_columns()
@@ -104,9 +105,9 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         return res
 
 
-@ register_node(OP_NODE_FILE_INPUT)
+@ register_node(OP_NODE_FILE_INPUT, 'INPUT')
 class TriggerNode_FileInput(TriggerNode):
-    icon = "icons/in.png"
+    icon = "icons/file_input (Custom).png"
     op_code = OP_NODE_FILE_INPUT
     op_title = "File Input"
     content_label_objname = "trigger_node_file_input"

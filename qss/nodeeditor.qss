@@ -11,6 +11,10 @@ QDMNodeContentWidget QFrame {
   border-radius: 5px;
   padding: 5px;
 } */
+QTRDragListbox {
+  /* background: #0f0; */
+
+}
 
 QDMGraphicsNode QPainterPath#nodeTitle {
   background: #2c313a;

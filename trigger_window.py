@@ -36,6 +36,7 @@ DEBUG = False
 class TriggerWindow(NodeEditorWindow):
 
     def initUI(self, parent=None):
+        print("&*&^*&^*&^%&^%**&^(&((*)*_)*)(&(*%^&$%W$#W^&*&()*))")
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
 

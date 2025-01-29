@@ -29,7 +29,7 @@ class CalcInputContent(QDMNodeContentWidget):
         return res
 
 
-@register_node(OP_NODE_INPUT)
+@register_node(OP_NODE_INPUT, "CALC")
 class CalcNode_Input(TriggerNode):
     icon = "icons/in.png"
     op_code = OP_NODE_INPUT
