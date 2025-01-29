@@ -97,6 +97,8 @@ class TriggerSubWindow(NodeEditorWidget):
             dataStream = QDataStream(eventData, QIODevice.ReadOnly)
             pixmap = QPixmap()
             dataStream >> pixmap
+            # print("eventData::::::::::", eventData)
+            # print("dataStream::::::::: ", dataStream)
             op_code = dataStream.readInt()
             text = dataStream.readQString()
 
@@ -109,7 +111,7 @@ class TriggerSubWindow(NodeEditorWidget):
                       "mouse:", mouse_position, "scene:", scene_position)
 
             try:
-                node = get_class_from_opcode(op_code)(self.scene)
+                node = get_class_from_opcode(op_code, text)(self.scene)
                 node.setPos(scene_position.x(), scene_position.y())
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__)

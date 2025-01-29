@@ -50,6 +50,7 @@ class QTRDragListbox(QListWidget):
                       Qt.ItemIsDragEnabled)
 
         # setup data
+        # item.setData(Qt.UserRole, pixmap)
         item.setData(Qt.UserRole + 1, op_code)
 
     def startDrag(self, *args, **kwargs):
@@ -68,7 +69,8 @@ class QTRDragListbox(QListWidget):
             dataStream = QDataStream(itemData, QIODevice.WriteOnly)
             dataStream << pixmap
             dataStream.writeInt(op_code)
-            dataStream.writeQString(item.text())
+            dataStream.writeQString(self.node_type)
+            # dataStream.writeQString(item.text())
 
             mimeData = QMimeData()
             mimeData.setData(LISTBOX_MIMETYPE, itemData)

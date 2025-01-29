@@ -14,6 +14,8 @@ class TriggerFileInputContent(QDMNodeContentWidget):
     def initUI(self, parent=None):
         self.filePath = ""
         self.data = []
+        self.variable_name = f'file_input_{self.id}'
+        print(self.variable_name)
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
@@ -45,8 +47,6 @@ class TriggerFileInputContent(QDMNodeContentWidget):
             return df.columns.tolist()
 
         return []
-        # self.data = df.dtypes.apply(
-        #     lambda x: {'column_name': x.name, 'dtype': x}).to_list()
 
     def openFileDialog(self):
         '''Open CSV File", "", "CSV Files (*.csv);;'''
@@ -88,6 +88,9 @@ class TriggerFileInputContent(QDMNodeContentWidget):
         except Exception as e:
             dumpException(e)
 
+    def get_code(self):
+        return f"import pandas as pd\n{self.variable_name} = pd.read_csv('{self.file_path}')"
+
     def serialize(self):
         res = super().serialize()
         res["filePath"] = self.filePath
@@ -114,7 +117,6 @@ class TriggerNode_FileInput(TriggerNode):
     style = {
         'brush_color': theme.brush_color('INPUT')
     }
-    # brush_color = "#ff0066"
 
     def __init__(self, scene):
         super().__init__(scene, inputs=[], outputs=[3])
