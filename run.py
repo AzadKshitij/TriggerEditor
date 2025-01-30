@@ -6,7 +6,7 @@ class MainApp():
     def __init__(self):
         super().__init__()
         # Create Nodes
-        node1 = InputNode("Input Node", 'input', )
+        node1 = InputNode("Input Node", 'input', 1000)
         node2 = PrintNode("Print Node", node1.variable_name)
 
         # Execution Manager

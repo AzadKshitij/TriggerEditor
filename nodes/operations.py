@@ -13,6 +13,10 @@ class TriggerNode_Add(TriggerNode):
     def evalOperation(self, input1, input2):
         return input1 + input2
 
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)
+
 
 @register_node(OP_NODE_SUB, "CALC")
 class CalcNode_Sub(TriggerNode):
@@ -24,6 +28,10 @@ class CalcNode_Sub(TriggerNode):
 
     def evalOperation(self, input1, input2):
         return input1 - input2
+
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)
 
 
 @register_node(OP_NODE_MUL, "CALC")
@@ -38,6 +46,10 @@ class TriggerNode_Mul(TriggerNode):
         print('foo')
         return input1 * input2
 
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)
+
 
 @register_node(OP_NODE_DIV, "CALC")
 class TriggerNode_Div(TriggerNode):
@@ -50,6 +62,10 @@ class TriggerNode_Div(TriggerNode):
     def evalOperation(self, input1, input2):
         return input1 / input2
 
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)
+
 
 @register_node(OP_NODE_SQRT, "CALC")
 class TriggerNode_Sqrt(TriggerNode):
@@ -61,6 +77,10 @@ class TriggerNode_Sqrt(TriggerNode):
 
     def evalOperation(self, input1, input2):
         return input1 ** (1/input2)
+
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)
 
 
 # way how to register by function call

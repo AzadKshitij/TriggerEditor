@@ -1,12 +1,19 @@
+from unittest import result
 from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
-from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu
+from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
 from trigger_conf import CALC_NODES, get_class_from_opcode, LISTBOX_MIMETYPE
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_edge import EDGE_TYPE_DIRECT, EDGE_TYPE_BEZIER, EDGE_TYPE_SQUARE
 from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
 from nodeeditor.utils import dumpException
+
+from collections import deque
+
+from ExecutionCheck.executor import NodeExecutor
+# from ExecutionCheck.exec_node import InputNode, PrintNode
+
 
 DEBUG = True
 DEBUG_CONTEXT = True
@@ -17,9 +24,11 @@ class TriggerSubWindow(NodeEditorWidget):
 
     def __init__(self):
         super().__init__()
+        # self.initUI()
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.setTitle()
+        self.addRunButton()
 
         self.initNewNodeActions()
 
@@ -30,6 +39,26 @@ class TriggerSubWindow(NodeEditorWidget):
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
         self.scene.addItemSelectedListener(self.onItemSelected)
         self._close_event_listeners = []
+
+    def addRunButton(self):
+        self.fixed_button = QPushButton("Run", self)
+        self.fixed_button.setFixedSize(100, 30)  # Set the size of the button
+        self.fixed_button.move(10, 10)
+        self.fixed_button.clicked.connect(self.run_workflow)
+
+    # def initUI(self):
+    #     super().initUI()
+    #     # self.central_widget = QWidget(self)
+    #     # self.layout = QVBoxLayout(self.central_widget)
+    #     # self.layout = QVBoxLayout(self)
+
+    #     self.fixed_button = QPushButton("Run", self)
+    #     self.fixed_button.setFixedSize(100, 30)  # Set the size of the button
+    #     self.fixed_button.move(10, 10)
+    #     self.fixed_button.clicked.connect(self.run_workflow)
+    #     # Position the button
+    #     # self.fixed_button.move(10, 10)
+    #     # self.fixed_button.raise_()
 
     def onItemSelected(self):
         print(f'node: {self.scene._last_selected_items}')
@@ -244,3 +273,100 @@ class TriggerSubWindow(NodeEditorWidget):
             else:
                 self.scene.history.storeHistory(
                     "Created %s" % new_calc_node.__class__.__name__)
+
+    def run_workflow(self):
+        # all_nodes = self.getAllNodes()
+        # connections = self.getNodeConnections()
+        # sorted_nodes = self.topologicalSort(connections)
+        # print('%%%%%%%%%%%%%%%%%%%%%')
+        # print(sorted_nodes)
+        # print('%%%%%%%%%%%%%%%%%%%%%')
+        self.executeWorkflow()
+        # for node in all_nodes:
+        #     print(node)
+        # for k, v in self.getNodeConnections().items():
+        #     print(k)
+        #     print(v)
+        #     print("----------")
+
+    def getAllNodes(self):
+        return self.scene.nodes
+
+    def getNodeConnections(self) -> dict:
+        connections = {}
+        for node in self.getAllNodes():
+            connections[node] = {
+                'inputs': [edge.start_socket.node for socket in node.inputs for edge in socket.edges] if node.inputs else [],
+                'outputs': [edge.end_socket.node for socket in node.outputs for edge in socket.edges] if node.outputs else []
+            }
+        return connections
+
+    def topologicalSort(self, connections):
+        in_degree = {node: 0 for node in connections}
+        for node in connections:
+            for output_node in connections[node]['outputs']:
+                in_degree[output_node] += 1
+
+        queue = deque([node for node in connections if in_degree[node] == 0])
+        sorted_nodes = []
+
+        while queue:
+            node = queue.popleft()
+            sorted_nodes.append(node)
+            for output_node in connections[node]['outputs']:
+                in_degree[output_node] -= 1
+                if in_degree[output_node] == 0:
+                    queue.append(output_node)
+
+        if len(sorted_nodes) != len(connections):
+            raise Exception("Graph has at least one cycle")
+
+        return sorted_nodes
+
+    def executeWorkflow(self):
+        connections = self.getNodeConnections()
+        sorted_nodes = self.topologicalSort(connections)
+        node_data = {}
+        executor = NodeExecutor()
+
+        for node in sorted_nodes:
+            # Collect data from all input nodes
+            input_data = []
+            for input_node in connections[node]['inputs']:
+                # print(":::::::::::::::::::::::::::::::::")
+                # print(input_node)
+                # print(":::::::::::::::::::::::::::::::::")
+                if input_node in node_data:
+                    input_data.append(node_data[input_node])
+
+            l = executor.execute_node(node.get_code())
+            print(":::::::::::::::::::::::::::::::::")
+            print("executor: ", l)
+            print(":::::::::::::::::::::::::::::::::")
+
+            # result = node.execute(input_data)
+            # node_data[node] = result
+            # print("Input Data::::", input_data)
+            # print(connections[node]['inputs'])
+            # print(connections[node]['outputs'])
+            # print(":::::::::::::::::::::::::::::::::")
+
+            # Execute the node's code
+            # result = node.execute(input_data)
+            # node_data[node] = result
+
+    # def executeWorkflow(self):
+    #     connections = self.getNodeConnections()
+    #     sorted_nodes = self.topologicalSort(connections)
+    #     node_data = {}
+
+    #     for node in sorted_nodes:
+    #         input_data = [
+    #             input_node for input_node in connections[node]['inputs']]
+    #         # input_data = [node_data[input_node]
+    #         #               for input_node in connections[node]['inputs']]
+    #         print(":::::::::::::::::::::::::::::::::")
+    #         print("Input Data::::", input_data)
+    #         print(":::::::::::::::::::::::::::::::::")
+            # result = node.execute(input_data)
+            # node_data[node] = result

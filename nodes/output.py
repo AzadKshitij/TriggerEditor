@@ -46,3 +46,7 @@ class CalcNode_Output(TriggerNode):
         self.grNode.setToolTip("")
 
         return val
+
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)

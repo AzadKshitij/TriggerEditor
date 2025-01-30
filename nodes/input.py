@@ -46,7 +46,6 @@ class CalcNode_Input(TriggerNode):
         self.content.edit.textChanged.connect(self.onInputChanged)
 
     def evalImplementation(self):
-
         u_value = self.content.edit.text()
         s_value = int(u_value)
         self.value = s_value
@@ -61,3 +60,7 @@ class CalcNode_Input(TriggerNode):
         self.evalChildren()
 
         return self.value
+
+    def execute(self, node_input):
+        print("Input")
+        print(node_input)

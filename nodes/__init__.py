@@ -1,9 +1,16 @@
-
-
-# __all__ = [ "operations", "input", "output" ]
-
+import os
 from os.path import dirname, basename, isfile, join
-import glob
-modules = glob.glob(join(dirname(__file__), "*.py"))
-__all__ = [basename(f)[:-3] for f in modules if isfile(f)
-           and not f.endswith('__init__.py')]
+
+modules = []
+base_dir = dirname(__file__)
+
+for root, dirs, files in os.walk(base_dir):
+    for file in files:
+        if file.endswith(".py") and not file == "__init__.py":
+            relative_path = os.path.relpath(join(root, file), base_dir)
+            module_name = relative_path.replace(os.sep, ".")[:-3]
+            modules.append(module_name)
+
+
+for module in modules:
+    __import__(f"{__name__}.{module}")

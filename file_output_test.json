@@ -1,0 +1,55 @@
+{
+    "id": 1881690821968,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1881690829840,
+            "title": "File Input",
+            "pos_x": -436.0,
+            "pos_y": -54.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1881690830096,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 1
+        },
+        {
+            "id": 1881690832336,
+            "title": "File Output",
+            "pos_x": 3.0,
+            "pos_y": -25.0,
+            "inputs": [
+                {
+                    "id": 1881650568848,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/output_check.csv"
+            },
+            "op_code": 2
+        }
+    ],
+    "edges": [
+        {
+            "id": 1881690867984,
+            "edge_type": 5,
+            "start": 1881690830096,
+            "end": 1881650568848
+        }
+    ]
+}

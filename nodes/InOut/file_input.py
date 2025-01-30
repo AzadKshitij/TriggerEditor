@@ -89,7 +89,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
             dumpException(e)
 
     def get_code(self):
-        return f"import pandas as pd\n{self.variable_name} = pd.read_csv('{self.file_path}')"
+        return f"import pandas as pd\n{self.variable_name} = pd.read_csv('{self.filePath}')"
 
     def serialize(self):
         res = super().serialize()
@@ -110,7 +110,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 
 @ register_node(OP_NODE_FILE_INPUT, 'INPUT')
 class TriggerNode_FileInput(TriggerNode):
-    icon = "icons/file_input (Custom).png"
+    icon = "icons/001-input (Custom).png"
     op_code = OP_NODE_FILE_INPUT
     op_title = "File Input"
     content_label_objname = "trigger_node_file_input"
@@ -129,11 +129,18 @@ class TriggerNode_FileInput(TriggerNode):
     def evalImplementation(self):
         u_value = 0
         print("Columns from input file:", u_value)
+        # variable = self.content.variable_name
         return u_value
 
     def params(self):
         param = {
             "columns": self.content.get_columns(),
-            "data": self.content.data
+            "data": self.content.data,
+            "variable_name": self.content.variable_name
         }
         return param
+
+    def get_code(self):
+        print("getting code for file input: ")
+        print(self.content.get_code())
+        return self.content.get_code()

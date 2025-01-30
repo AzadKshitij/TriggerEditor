@@ -33,6 +33,8 @@ class SelectContent(QDMNodeContentWidget):
         self.data = {}
         self.incoming_columns = []
         self.old_columns = {}
+        self.variable_name = f'select_{self.id}'
+        self.incoming_variable = ''
 
     def create_layout(self) -> QLayout:
         self.table_widget = TableWidget(data=self.data)
@@ -94,6 +96,9 @@ class SelectContent(QDMNodeContentWidget):
         self.table_widget.horizontalHeader().setSectionResizeMode(
             QHeaderView.Stretch)
 
+    def get_code(self):
+        return f"print({self.incoming_variable}.head(10))"
+
     def serialize(self):
         res = super().serialize()
         res['old_columns'] = self.incoming_columns
@@ -120,7 +125,7 @@ class TriggerNode_Select(TriggerNode):
     }
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[3], outputs=[1])
+        super().__init__(scene, inputs=[1], outputs=[1])
         self.eval()
 
     def initInnerClasses(self):
@@ -146,11 +151,17 @@ class TriggerNode_Select(TriggerNode):
         # self.content.lbl.setText("%s" % val)
         self.content.incoming_columns = val.get('columns')
         self.content.data = val.get('data')
+        self.content.incoming_variable = val.get('variable_name')
         self.markInvalid(False)
         self.markDirty(False)
         self.grNode.setToolTip("")
 
         print("Value passed from input node:", val)
+
+    def get_code(self):
+        print("getting code for file select: ")
+        print(self.content.get_code())
+        return self.content.get_code()
 
     # def evalImplementation(self):
 
