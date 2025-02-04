@@ -281,13 +281,28 @@ class TriggerSubWindow(NodeEditorWidget):
         # print('%%%%%%%%%%%%%%%%%%%%%')
         # print(sorted_nodes)
         # print('%%%%%%%%%%%%%%%%%%%%%')
-        self.executeWorkflow()
+
+        # self.executeWorkflow()
+
         # for node in all_nodes:
         #     print(node)
         # for k, v in self.getNodeConnections().items():
         #     print(k)
         #     print(v)
         #     print("----------")
+
+        self.getPyFile()
+
+    def getPyFile(self):
+        connections = self.getNodeConnections()
+        sorted_nodes = self.topologicalSort(connections)
+        code = """"""
+        for node in sorted_nodes:
+            code += node.get_code()
+
+        with open("check_output.py", "w") as file:
+            # Write the string to the file
+            file.write(code)
 
     def getAllNodes(self):
         return self.scene.nodes

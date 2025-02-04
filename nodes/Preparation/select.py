@@ -97,7 +97,7 @@ class SelectContent(QDMNodeContentWidget):
             QHeaderView.Stretch)
 
     def get_code(self):
-        return f"print({self.incoming_variable}.head(10))"
+        return f"print({self.incoming_variable}.head(10))\n"
 
     def serialize(self):
         res = super().serialize()

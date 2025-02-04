@@ -89,7 +89,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
             dumpException(e)
 
     def get_code(self):
-        return f"import pandas as pd\n{self.variable_name} = pd.read_csv('{self.filePath}')"
+        return f"import pandas as pd\n{self.variable_name} = pd.read_csv('{self.filePath}')\n"
 
     def serialize(self):
         res = super().serialize()
