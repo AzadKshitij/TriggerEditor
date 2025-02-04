@@ -21,7 +21,8 @@
             "content": {
                 "filePath": "C:/Users/azadk/Downloads/check.csv"
             },
-            "op_code": 8
+            "op_code": 1,
+            "op_type": "INPUT"
         },
         {
             "id": 1930081165264,

@@ -1,17 +1,17 @@
 {
-    "id": 1881690821968,
+    "id": 2834208788816,
     "scene_width": 64000,
     "scene_height": 64000,
     "nodes": [
         {
-            "id": 1881690829840,
+            "id": 2834205697040,
             "title": "File Input",
-            "pos_x": -436.0,
-            "pos_y": -54.0,
+            "pos_x": -406.0,
+            "pos_y": -62.0,
             "inputs": [],
             "outputs": [
                 {
-                    "id": 1881690830096,
+                    "id": 2834178343632,
                     "index": 0,
                     "multi_edges": true,
                     "position": 5,
@@ -19,19 +19,19 @@
                 }
             ],
             "content": {
-                "filePath": "C:/Projects/TriggerEditor/check.csv"
+                "filePath": ""
             },
             "op_code": 1,
             "op_type": "INPUT"
         },
         {
-            "id": 1881690832336,
+            "id": 2834208799760,
             "title": "File Output",
-            "pos_x": 3.0,
-            "pos_y": -25.0,
+            "pos_x": 63.0,
+            "pos_y": 48.0,
             "inputs": [
                 {
-                    "id": 1881650568848,
+                    "id": 2834203787152,
                     "index": 0,
                     "multi_edges": false,
                     "position": 2,
@@ -40,7 +40,7 @@
             ],
             "outputs": [],
             "content": {
-                "filePath": "C:/Projects/TriggerEditor/output_check.csv"
+                "filePath": ""
             },
             "op_code": 2,
             "op_type": "INPUT"
@@ -48,10 +48,10 @@
     ],
     "edges": [
         {
-            "id": 1881690867984,
+            "id": 2834208796176,
             "edge_type": 5,
-            "start": 1881690830096,
-            "end": 1881650568848
+            "start": 2834178343632,
+            "end": 2834203787152
         }
     ]
 }

@@ -61,6 +61,7 @@ class TriggerNode_FileOutput(TriggerNode):
     icon = "icons/002-output (Custom).png"
     op_code = OP_NODE_FILE_OUTPUT
     op_title = "File Output"
+    op_type = "INPUT"
     content_label_objname = "trigger_node_file_output"
     style = {
         'brush_color': theme.brush_color('INPUT')

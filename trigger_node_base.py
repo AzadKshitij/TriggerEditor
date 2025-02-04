@@ -60,6 +60,7 @@ class TriggerNode(Node):
     icon = ""
     op_code = 0
     op_title = "Undefined"
+    op_type = ""
     content_label = ""
     content_label_objname = "calc_node_bg"
     style = {
@@ -134,6 +135,7 @@ class TriggerNode(Node):
     def serialize(self):
         res = super().serialize()
         res['op_code'] = self.__class__.op_code
+        res['op_type'] = self.__class__.op_type
         return res
 
     def deserialize(self, data, hashmap={}, restore_id=True):

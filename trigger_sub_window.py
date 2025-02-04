@@ -65,9 +65,10 @@ class TriggerSubWindow(NodeEditorWidget):
         self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
+        print(f'getNodeClassFromData: {data}')
         if 'op_code' not in data:
             return Node
-        return get_class_from_opcode(data['op_code'])
+        return get_class_from_opcode(data['op_code'], data['op_type'])
 
     def doEvalOutputs(self):
         # eval all output nodes
