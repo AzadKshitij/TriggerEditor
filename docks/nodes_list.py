@@ -1,22 +1,24 @@
 from qtpy.QtWidgets import QDockWidget, QTabWidget, QWidget, QVBoxLayout, QSizePolicy
 from widgets.node_drag_listbox import QTRDragListbox
-from qtpy.QtCore import QSize
+from qtpy.QtCore import QSize, Qt
 
 
 class NodesDock(QDockWidget):
     def __init__(self, parent=None):
-        super().__init__("Nodes", parent)
+        super().__init__(parent)
         self.initUI()
+        self.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.setTitleBarWidget(QWidget())
 
     def initUI(self):
         # Create the tab widget
         tab_widget = QTabWidget()
-        tab_widget.setFixedHeight(180)
+        # tab_widget.setFixedHeight(180)
         # print("tab_widget.childrenRect().size():",
         #       tab_widget.childrenRect().size())
-        # tab_widget.setSizePolicy(
-        #     QSizePolicy.Expanding, QSizePolicy.Fixed
-        # )
+        tab_widget.setSizePolicy(
+            QSizePolicy.Expanding, QSizePolicy.Fixed
+        )
 
         # Create the tabs
         tab_input = QWidget()
@@ -46,8 +48,6 @@ class NodesDock(QDockWidget):
         tab_input_layout = QVBoxLayout()
         tab_input_layout.addWidget(inputListWidget)
         tab_input.setLayout(tab_input_layout)
-        print("tab_widget.childrenRect().size():",
-              tab_widget.rect().size())
 
         tab_preparation_layout = QVBoxLayout()
         tab_preparation_layout.addWidget(preparationListWidget)
@@ -63,9 +63,14 @@ class NodesDock(QDockWidget):
         tab_widget.addTab(tab_join, "Join")
 
         # nodesListWidget = QTRDragListbox(node_type="lol node tyupe")
-
+        # tab_widget.adjustSize()
+        tab_widget.adjustSize()
         self.setWidget(tab_widget)
         self.setFloating(False)
         self.setFeatures(QDockWidget.DockWidgetMovable |
                          QDockWidget.DockWidgetFloatable)
         # self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        current_wid = tab_widget.currentWidget()
+        tab_widget.setMaximumHeight(160)
+        self.adjustSize()

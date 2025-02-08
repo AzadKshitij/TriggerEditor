@@ -2,13 +2,12 @@ import nodeeditor
 import qss.nodeeditor_dark_resources
 import os
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog
-from qtpy.QtCore import Qt, QSignalMapper
+from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy
+from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
 from nodeeditor.utils import loadStylesheets
 from nodeeditor.node_editor_window import NodeEditorWindow
 from trigger_sub_window import TriggerSubWindow
-from widgets.node_drag_listbox import QTRDragListbox
 from nodeeditor.utils import dumpException, pp
 from trigger_conf import CALC_NODES
 from docks.nodes_list import NodesDock
@@ -35,15 +34,40 @@ DEBUG = False
 
 class TriggerWindow(NodeEditorWindow):
 
+    # def __init__(self):
+    #     super().__init__()
+    # try:
+    #     QResource.registerResource("Resource/check.qrc")
+    # except:
+    #     print("Not able to load resource file!")
+
+    # def loadResourceFile(self, resource_path: str):
+    #     """ Load a Qt resource file (.qrc) """
+    #     print()
+    #     print(resource_path)
+    #     print()
+    #     try:
+    #         if not QResource.registerResource(resource_path):
+    #             raise FileNotFoundError(
+    #                 f"Resource file {resource_path} could not be loaded.")
+    #         # else:
+    #         #     print(f"Resource file {resource_path} loaded successfully.")
+    #     except Exception as e:
+    #         print(f"Error loading resource file {resource_path}: {e}")
+
     def initUI(self, parent=None):
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
 
         self.name_company = 'Trigger'
         self.name_product = 'Trigger Editor'
+        QResource.registerResource("Resource/Icons.qrc")
+        # self.loadResourceFile("Resource/nodeeditor_dark_resources.py")
+        # self.loadResourceFile("Resource/Icons.qrc")
 
         self.stylesheet_filename = os.path.join(
             os.path.dirname(__file__), "qss/nodeeditor.qss")
+
         loadStylesheets(
             os.path.join(os.path.dirname(__file__),
                          "qss/nodeeditor.qss"),

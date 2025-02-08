@@ -1,7 +1,7 @@
 from xml.dom import Node
 from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QSaveFile
 from trigger_conf import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -116,9 +116,10 @@ class SelectContent(QDMNodeContentWidget):
 
 @register_node(OP_NODE_SELECT, "PREPARATION")
 class TriggerNode_Select(TriggerNode):
-    icon = "icons/in.png"
+    icon = "Resource/icons/in.png"
     op_code = OP_NODE_SELECT
     op_title = "Select"
+    op_type = "PREPARATION"
     content_label_objname = "trigger_node_select"
     style = {
         'brush_color': theme.brush_color('PREPARATION')

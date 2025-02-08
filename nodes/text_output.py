@@ -14,7 +14,7 @@ class CalcTextOutputContent(QDMNodeContentWidget):
 
 @register_node(OP_NODE_TEXT_OUTPUT, "INPUT")
 class CalcNode_TextOutput(TriggerNode):
-    icon = "icons/out.png"
+    icon = "Resource/icons/out.png"
     op_code = OP_NODE_TEXT_OUTPUT
     op_title = "Text Output"
     content_label_objname = "calc_node_text_output"

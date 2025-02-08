@@ -4,7 +4,7 @@ from trigger_node_base import TriggerNode
 
 @register_node(OP_NODE_ADD, "CALC")
 class TriggerNode_Add(TriggerNode):
-    icon = "icons/add.png"
+    icon = "Resource/icons/add.png"
     op_code = OP_NODE_ADD
     op_title = "Add"
     content_label = "+"
@@ -20,7 +20,7 @@ class TriggerNode_Add(TriggerNode):
 
 @register_node(OP_NODE_SUB, "CALC")
 class CalcNode_Sub(TriggerNode):
-    icon = "icons/sub.png"
+    icon = "Resource/icons/sub.png"
     op_code = OP_NODE_SUB
     op_title = "Substract"
     content_label = "-"
@@ -36,7 +36,7 @@ class CalcNode_Sub(TriggerNode):
 
 @register_node(OP_NODE_MUL, "CALC")
 class TriggerNode_Mul(TriggerNode):
-    icon = "icons/mul.png"
+    icon = "Resource/icons/mul.png"
     op_code = OP_NODE_MUL
     op_title = "Multiply"
     content_label = "*"
@@ -53,7 +53,7 @@ class TriggerNode_Mul(TriggerNode):
 
 @register_node(OP_NODE_DIV, "CALC")
 class TriggerNode_Div(TriggerNode):
-    icon = "icons/divide.png"
+    icon = "Resource/icons/divide.png"
     op_code = OP_NODE_DIV
     op_title = "Divide"
     content_label = "/"
@@ -69,7 +69,7 @@ class TriggerNode_Div(TriggerNode):
 
 @register_node(OP_NODE_SQRT, "CALC")
 class TriggerNode_Sqrt(TriggerNode):
-    icon = "icons/sqrt.png"
+    icon = "Resource/icons/sqrt.png"
     op_code = OP_NODE_SQRT
     op_title = "Square Root"
     content_label = "√"

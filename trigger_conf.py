@@ -16,14 +16,14 @@ OP_NODE_TEXT_OUTPUT = 3
 
 # Preparation
 OP_NODE_SELECT = 1
+OP_NODE_FORMULA = 2
 
 
-CALC_NODES = {
-}
-
+CALC_NODES = {}
 INPUT_NODES = {}
-
 PREPARATION_NODES = {}
+
+
 
 
 class ConfException(Exception):

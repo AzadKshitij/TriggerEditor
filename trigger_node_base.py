@@ -28,7 +28,7 @@ class TriggerGraphicsNode(QDMGraphicsNode):
     def initAssets(self, style=None):
         super().initAssets()
         style = self.node.style
-        self.icons = QImage("icons/status_icons.png")
+        self.icons = QImage("Resource/icons/status_icons.png")
         self._brush_title = QBrush(QColor(style['brush_color']))
         # self.node.style
         # self._brush_title = QBrush(QColor("#0f0"))

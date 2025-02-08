@@ -56,9 +56,10 @@ class TriggerFileOutputContent(QDMNodeContentWidget):
         return res
 
 
-@ register_node(OP_NODE_FILE_OUTPUT, "INPUT")
+@register_node(OP_NODE_FILE_OUTPUT, "INPUT")
 class TriggerNode_FileOutput(TriggerNode):
-    icon = "icons/002-output (Custom).png"
+    # icon = ":/output_icon"
+    icon = "Resource/icons/Input/File Output.png"
     op_code = OP_NODE_FILE_OUTPUT
     op_title = "File Output"
     op_type = "INPUT"
