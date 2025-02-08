@@ -86,27 +86,58 @@ class TriggerNode(Node):
     def evalOperation(self, input1, input2):
         return 123
 
+    def processInputs(self, input_values):
+        # Override this method in subclasses to process the input values
+        return input_values
+
     def evalImplementation(self):
-        i1 = self.getInput(0)
-        i2 = self.getInput(1)
+        input_values = []
+        for i in range(len(self.inputs)):
+            input_node = self.getInput(i)
+            if not input_node:
+                self.markInvalid()
+                self.markDescendantsDirty()
+                self.grNode.setToolTip(f"Input {i} is not connected")
+                return None
 
-        if i1 is None or i2 is None:
-            self.markInvalid()
-            self.markDescendantsDirty()
-            self.grNode.setToolTip("Connect all inputs")
-            return None
+            val = input_node.eval()
+            if val is None:
+                self.markInvalid()
+                self.markDescendantsDirty()
+                self.grNode.setToolTip(f"Input {i} is NaN")
+                return None
 
-        else:
-            val = self.evalOperation(i1.eval(), i2.eval())
-            self.value = val
-            self.markDirty(False)
-            self.markInvalid(False)
-            self.grNode.setToolTip("")
+            input_values.append(val)
 
-            self.markDescendantsDirty()
-            self.evalChildren()
+        self.value = self.processInputs(input_values)
+        self.markInvalid(False)
+        self.markDirty(False)
+        self.grNode.setToolTip("")
+        self.evalChildren()
+        return self.value
 
-            return val
+    # Uncomment if you want to use the default evalImplementation for calculator application
+    # def evalImplementation(self):
+    #     i1 = self.getInput(0)
+    #     i2 = self.getInput(1)
+
+    #     if i1 is None or i2 is None:
+    #         self.markInvalid()
+    #         self.markDescendantsDirty()
+    #         self.grNode.setToolTip("Connect all inputs")
+    #         return None
+
+    #     else:
+    #         val = self.evalOperation(i1.eval(), i2.eval())
+    #         self.value = val
+    #         self.markDirty(False)
+    #         self.markInvalid(False)
+    #         self.grNode.setToolTip("")
+
+    #         self.markDescendantsDirty()
+    #         self.evalChildren()
+
+    #         return val
 
     def eval(self):
         if not self.isDirty() and not self.isInvalid():
@@ -115,7 +146,6 @@ class TriggerNode(Node):
             return self.value
 
         try:
-
             val = self.evalImplementation()
             return val
         except ValueError as e:

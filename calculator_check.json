@@ -1,0 +1,168 @@
+{
+    "id": 2503166067984,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 2503138808208,
+            "title": "Input",
+            "pos_x": -493.0,
+            "pos_y": -197.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2503138807312,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "value": "1"
+            },
+            "op_code": 1,
+            "op_type": ""
+        },
+        {
+            "id": 2503166074896,
+            "title": "Input",
+            "pos_x": -497.0,
+            "pos_y": 7.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2503166072208,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "value": "1"
+            },
+            "op_code": 1,
+            "op_type": ""
+        },
+        {
+            "id": 2503166075664,
+            "title": "Add",
+            "pos_x": -127.0,
+            "pos_y": -6.0,
+            "inputs": [
+                {
+                    "id": 2503135642128,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 2
+                },
+                {
+                    "id": 2503135299600,
+                    "index": 1,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 2
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2503166078416,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {},
+            "op_code": 3,
+            "op_type": "CALC"
+        },
+        {
+            "id": 2503166079760,
+            "title": "Substract",
+            "pos_x": 196.0,
+            "pos_y": -99.0,
+            "inputs": [
+                {
+                    "id": 2503161798608,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 2
+                },
+                {
+                    "id": 2503166075792,
+                    "index": 1,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 2
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2503166080656,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {},
+            "op_code": 4,
+            "op_type": "CALC"
+        },
+        {
+            "id": 2503166199568,
+            "title": "Output",
+            "pos_x": 636.0,
+            "pos_y": -103.0,
+            "inputs": [
+                {
+                    "id": 2503136201680,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {},
+            "op_code": 2,
+            "op_type": ""
+        }
+    ],
+    "edges": [
+        {
+            "id": 2503138991568,
+            "edge_type": 5,
+            "start": 2503138807312,
+            "end": 2503135642128
+        },
+        {
+            "id": 2503130632528,
+            "edge_type": 5,
+            "start": 2503138807312,
+            "end": 2503161798608
+        },
+        {
+            "id": 2503166210128,
+            "edge_type": 5,
+            "start": 2503166072208,
+            "end": 2503135299600
+        },
+        {
+            "id": 2503166211344,
+            "edge_type": 5,
+            "start": 2503166078416,
+            "end": 2503166075792
+        },
+        {
+            "id": 2503166078032,
+            "edge_type": 5,
+            "start": 2503166080656,
+            "end": 2503136201680
+        }
+    ]
+}

@@ -30,7 +30,7 @@ class TableWidget(QWidget):
         #     self.old_columns)
         row_count = len(self.data)
 
-        for i in range(row_count):  # Example: 5 rows
+        for i in range(row_count):
             self.table.insertRow(i)
 
             # Checkbox for isSelected
@@ -62,3 +62,19 @@ class TableWidget(QWidget):
             rename = self.table.item(row, 3).text()
             data.append((is_selected, column_name, data_type, rename))
         return data
+
+    def get_renamed_columns(self):
+        """Extract renamed columns from the table widget."""
+        rename_dict = {}
+
+        for row in range(self.table_widget.rowCount()):
+            original_name = self.table_widget.item(row, 1).text()
+            new_name_item = self.table_widget.item(row, 3)
+
+            if new_name_item:  # Check if user entered a rename value
+                new_name = new_name_item.text().strip()
+                if new_name and new_name != original_name:
+                    # Store rename mapping
+                    rename_dict[original_name] = new_name
+
+        return rename_dict

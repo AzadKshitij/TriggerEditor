@@ -61,7 +61,7 @@ class TriggerSubWindow(NodeEditorWidget):
     #     # self.fixed_button.raise_()
 
     def onItemSelected(self):
-        print(f'node: {self.scene._last_selected_items}')
+        # print(f'node: {self.scene._last_selected_items}')
         self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
@@ -73,8 +73,8 @@ class TriggerSubWindow(NodeEditorWidget):
     def doEvalOutputs(self):
         # eval all output nodes
         for node in self.scene.nodes:
-            if node.__class__.__name__ == "CalcNode_Output":
-                node.eval()
+            # if node.__class__.__name__ == "CalcNode_Output":
+            node.eval()
 
     def onHistoryRestored(self):
         self.doEvalOutputs()

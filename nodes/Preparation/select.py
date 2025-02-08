@@ -1,4 +1,3 @@
-from xml.dom import Node
 from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtCore import Qt, QSaveFile
@@ -30,14 +29,30 @@ class SelectContent(QDMNodeContentWidget):
     """
 
     def initUI(self):
-        self.data = {}
-        self.incoming_columns = []
-        self.old_columns = {}
-        self.variable_name = f'select_{self.id}'
-        self.incoming_variable = ''
+        # local Variables
+        self.old_data: dict = []
+        self.table_data: list = []
+
+        # incoming variables
+        self.incoming_variable: str = ''
+        self.incom_data: pd.DataFrame = None
+
+        # pass on variables
+        self.data: pd.DataFrame = None
+        self.variable_name: str = f'var_select_{self.id}'
 
     def create_layout(self) -> QLayout:
-        self.table_widget = TableWidget(data=self.data)
+        self.table_data = [
+            {
+                'column_name': col,
+                'dtype': self.incom_data[col].dtype.name
+            }
+            for col in self.incom_data.columns
+        ]
+        # if self.old_data != {}:
+        #     self.old_data = table_data
+
+        self.table_widget = TableWidget(data=self.table_data)
 
         layout = QVBoxLayout()
         layout.addWidget(self.table_widget)
@@ -55,7 +70,7 @@ class SelectContent(QDMNodeContentWidget):
             return False
 
     def set_table_widget(self):
-        # self.table_widget.clear()
+        self.table_widget.clear()
         # if self.is_same_column():
 
         row_count = len(self.incoming_columns) if self.incoming_columns else len(
@@ -66,6 +81,8 @@ class SelectContent(QDMNodeContentWidget):
         for i in range(row_count):
             print("inserting row:", i)
             self.table_widget.insertRow(i)
+            column_name = self.incoming_columns[i] if self.incoming_columns else self.old_columns.get(
+                i, "")
 
             print("Inserting checkbox")
             # # Checkbox for isSelected
@@ -74,14 +91,15 @@ class SelectContent(QDMNodeContentWidget):
 
             print("Inserting column name:", self.incoming_columns[i])
             # Editable line edit for column_name
-            column_name_item = QTableWidgetItem(
-                self.incoming_columns[i] if self.incoming_columns else self.old_columns[i])
+            column_name_item = QTableWidgetItem(column_name)
             self.table_widget.setItem(i, 1, column_name_item)
 
             print("Inserting data type")
             # Dropdown for data_type
             combo_box = QComboBox()
             combo_box.addItems(data_types)
+            # default_type = self.data.get(column_name, ["", "str"])[1]
+            # combo_box.setCurrentText(default_type)
             self.table_widget.setCellWidget(i, 2, combo_box)
 
             print("Inserting rename")
@@ -101,7 +119,7 @@ class SelectContent(QDMNodeContentWidget):
 
     def serialize(self):
         res = super().serialize()
-        res['old_columns'] = self.incoming_columns
+        res['old_columns'] = self.table_data
         return res
 
     def deserialize(self, data, hashmap={}):
@@ -134,30 +152,48 @@ class TriggerNode_Select(TriggerNode):
         self.grNode = TriggerGraphicsNode(self)
         # self.content.edit.textChanged.connect(self.onInputChanged)
 
-    def evalImplementation(self):
-        input_node = self.getInput(0)
+    def processInputs(self, input_values):
+        print("#############")
+        print("Select process Inputs")
+        print("#############")
+        # Custom processing logic for the Select node
+        input_value = input_values[0]  # Assuming single input for simplicity
+        self.content.incom_data = input_value.get('data')
+        self.content.incoming_variable = input_value.get('variable_name')
+        # self.content.set_table_widget()
+        return {
+            "data": self.content.incom_data,
+            "variable_name": self.content.variable_name
+        }
 
-        if not input_node:
-            self.grNode.setToolTip("Input is not connected")
-            self.markInvalid()
-            return
+    # def evalImplementation(self):
+    #     print("#############")
+    #     print("Select evalImplementation")
+    #     print("#############")
+    #     input_node = self.getInput(0)
+    #     print(input_node)
 
-        val = input_node.params()
+    #     if not input_node:
+    #         self.grNode.setToolTip("Input is not connected")
+    #         self.markInvalid()
+    #         return
 
-        if val is None:
-            self.grNode.setToolTip("Input is NaN")
-            self.markInvalid()
-            return
+    #     # val = input_node.params()
+    #     val = input_node.eval()
 
-        # self.content.lbl.setText("%s" % val)
-        self.content.incoming_columns = val.get('columns')
-        self.content.data = val.get('data')
-        self.content.incoming_variable = val.get('variable_name')
-        self.markInvalid(False)
-        self.markDirty(False)
-        self.grNode.setToolTip("")
+    #     if val is None:
+    #         self.grNode.setToolTip("Input is NaN")
+    #         self.markInvalid()
+    #         return
 
-        print("Value passed from input node:", val)
+    #     # self.content.lbl.setText("%s" % val)
+    #     self.content.incom_data = val.get('data')
+    #     self.content.incoming_variable = val.get('variable_name')
+    #     self.markInvalid(False)
+    #     self.markDirty(False)
+    #     self.grNode.setToolTip("")
+
+    #     print("Value passed from input node:", val)
 
     def get_code(self):
         print("getting code for file select: ")

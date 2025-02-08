@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QLineEdit
+from qtpy.QtWidgets import QLineEdit, QLayout, QVBoxLayout
 from qtpy.QtCore import Qt
 from trigger_conf import register_node, OP_NODE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
@@ -6,12 +6,20 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
 from docks.node_config import ConfigDock
 
+from themes.theme import Theme
+
+theme = Theme()
+
 
 class CalcInputContent(QDMNodeContentWidget):
     def initUI(self):
         self.edit = QLineEdit("1", self)
         self.edit.setAlignment(Qt.AlignRight)
         self.edit.setObjectName(self.node.content_label_objname)
+
+    def create_layout(self) -> QLayout:
+        layout = QVBoxLayout()
+        return layout
 
     def serialize(self):
         res = super().serialize()
@@ -34,6 +42,7 @@ class CalcNode_Input(TriggerNode):
     icon = "Resource/icons/in.png"
     op_code = OP_NODE_INPUT
     op_title = "Input"
+    op_type = "CALC"
     content_label_objname = "calc_node_input"
 
     def __init__(self, scene):
@@ -46,6 +55,9 @@ class CalcNode_Input(TriggerNode):
         self.content.edit.textChanged.connect(self.onInputChanged)
 
     def evalImplementation(self):
+        print("#############")
+        print("Input evalImplementation")
+        print("#############")
         u_value = self.content.edit.text()
         s_value = int(u_value)
         self.value = s_value

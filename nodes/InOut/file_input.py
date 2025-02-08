@@ -5,6 +5,7 @@ from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
 import pandas as pd
+# from pandas import DataFrame
 from themes.theme import Theme
 
 theme = Theme()
@@ -12,17 +13,22 @@ theme = Theme()
 
 class TriggerFileInputContent(QDMNodeContentWidget):
     def initUI(self, parent=None):
+        # local Variables
         self.filePath = ""
-        self.data = []
-        self.variable_name = f'file_input_{self.id}'
-        print(self.variable_name)
+
+        # pass on variables
+        self.data: pd.DataFrame = None
+        self.variable_name = f'var_file_input_{self.id}'
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setReadOnly(True)
+
         self.loadButton = QPushButton("Load CSV", self)
-        self.tableWidget = QTableWidget(self)
         self.loadButton.clicked.connect(self.openFileDialog)
+
+        self.tableWidget = QTableWidget(self)
+
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
             self.loadCSV(self.filePath)
@@ -37,13 +43,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
     def get_columns(self):
         if self.filePath:
             df = pd.read_csv(self.filePath)
-            self.data = [
-                {
-                    'column_name': col,
-                    'dtype': df[col].dtype.name
-                }
-                for col in df.columns
-            ]
+            self.data = df.head(10)
             return df.columns.tolist()
 
         return []
@@ -61,10 +61,10 @@ class TriggerFileInputContent(QDMNodeContentWidget):
     def loadCSV(self, fileName):
         try:
             df = pd.read_csv(fileName)
-            data = df.head(10)
-            columns = data.columns.tolist()
+            self.data = df.head(10)
+            columns = self.data.columns.tolist()
 
-            data_list = data.values.tolist()
+            data_list = self.data.values.tolist()
 
             # Set the number of rows and columns
             self.tableWidget.setRowCount(len(data_list))
@@ -89,7 +89,7 @@ class TriggerFileInputContent(QDMNodeContentWidget):
             dumpException(e)
 
     def get_code(self):
-        return f"import pandas as pd\n{self.variable_name} = pd.read_csv('{self.filePath}')\n"
+        return f"""import pandas as pd\n{self.variable_name} = pd.read_csv('{self.filePath}')\n"""
 
     def serialize(self):
         res = super().serialize()
@@ -121,22 +121,40 @@ class TriggerNode_FileInput(TriggerNode):
     }
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[], outputs=[3])
+        super().__init__(scene, inputs=[], outputs=[1])
         # self.eval()
 
     def initInnerClasses(self):
         self.content = TriggerFileInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
-    def evalImplementation(self):
-        u_value = 0
-        print("Columns from input file:", u_value)
-        # variable = self.content.variable_name
-        return u_value
+    # def evalImplementation(self):
+    #     param = {
+    #         "data": self.content.data,
+    #         "variable_name": self.content.variable_name
+    #     }
+    #     # variable = self.content.variable_name
+    #     return param
+
+    def processInputs(self, input_values):
+        print("#############")
+        print("File Input process Inputs")
+        print("#############")
+        # Custom processing logic for the File Input node
+        if not self.content.filePath:
+            self.grNode.setToolTip("No file selected")
+            self.markInvalid()
+            return None
+
+        self.content.loadCSV(self.content.filePath)
+        param = {
+            "data": self.content.data,
+            "variable_name": self.content.variable_name
+        }
+        return param
 
     def params(self):
         param = {
-            "columns": self.content.get_columns(),
             "data": self.content.data,
             "variable_name": self.content.variable_name
         }

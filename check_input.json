@@ -1,0 +1,98 @@
+{
+    "id": 3024021388752,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 3023987836624,
+            "title": "File Input",
+            "pos_x": -289.0,
+            "pos_y": -59.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 3024018530704,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 1,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 3024021512848,
+            "title": "Select",
+            "pos_x": 39.0,
+            "pos_y": -163.0,
+            "inputs": [
+                {
+                    "id": 3024017134800,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 3024016489872,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "old_columns": [
+                    {
+                        "column_name": "Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Seed",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Source",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Country",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Autocomplete Position",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Difficulty",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Hot Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Relevancy Score",
+                        "dtype": "float64"
+                    }
+                ]
+            },
+            "op_code": 1,
+            "op_type": "PREPARATION"
+        }
+    ],
+    "edges": [
+        {
+            "id": 3023987348816,
+            "edge_type": 5,
+            "start": 3024018530704,
+            "end": 3024017134800
+        }
+    ]
+}
