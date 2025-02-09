@@ -1,4 +1,5 @@
 import nodeeditor
+from docks.result import ResultDock
 import qss.nodeeditor_dark_resources
 import os
 from qtpy.QtGui import QIcon, QKeySequence
@@ -58,21 +59,23 @@ class TriggerWindow(NodeEditorWindow):
     def initUI(self, parent=None):
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
+        # Create logger
 
         self.name_company = 'Trigger'
         self.name_product = 'Trigger Editor'
-        QResource.registerResource("Resource/Icons.qrc")
+        # QResource.registerResource("Resource/Icons.qrc")
         # self.loadResourceFile("Resource/nodeeditor_dark_resources.py")
         # self.loadResourceFile("Resource/Icons.qrc")
 
-        self.stylesheet_filename = os.path.join(
-            os.path.dirname(__file__), "qss/nodeeditor.qss")
+        # -----------------------------------
+        # self.stylesheet_filename = os.path.join(
+        #     os.path.dirname(__file__), "qss/nodeeditor.qss")
 
-        loadStylesheets(
-            os.path.join(os.path.dirname(__file__),
-                         "qss/nodeeditor.qss"),
-            self.stylesheet_filename
-        )
+        # loadStylesheets(
+        #     os.path.join(os.path.dirname(__file__),
+        #                  "qss/nodeeditor.qss"),
+        #     self.stylesheet_filename
+        # )
 
         self.empty_icon = QIcon(".")
 
@@ -93,8 +96,10 @@ class TriggerWindow(NodeEditorWindow):
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)
 
+        # Docks
         self.createNodesDock()
         self.createConfigDock()
+        self.createResultDock()
 
         self.createActions()
         self.createMenus()
@@ -105,6 +110,9 @@ class TriggerWindow(NodeEditorWindow):
         self.readSettings()
 
         self.setWindowTitle("Calculator NodeEditor Example")
+
+        self.setDockNestingEnabled(True)
+        # self.tabifyDockWidget(self.configDock, self.resultDock)
 
     def closeEvent(self, event):
         self.mdiArea.closeAllSubWindows()
@@ -213,6 +221,7 @@ class TriggerWindow(NodeEditorWindow):
         self.actSeparator.setVisible(hasMdiChild)
 
         self.updateEditMenu()
+        self.onSubWindowActivated(self.mdiArea.activeSubWindow())
 
     def updateEditMenu(self):
         try:
@@ -278,16 +287,17 @@ class TriggerWindow(NodeEditorWindow):
         pass
 
     # Dock Widgets #
-
-    # Nodes Dock
     def createNodesDock(self):
         self.nodesDock = NodesDock(self)
         self.addDockWidget(Qt.TopDockWidgetArea, self.nodesDock)
 
-    # Config dock
     def createConfigDock(self):
         self.configDock = ConfigDock(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
+
+    def createResultDock(self):
+        self.resultDock = ResultDock(self)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
 
     def createStatusBar(self):
         self.statusBar().showMessage("Ready")
@@ -303,6 +313,13 @@ class TriggerWindow(NodeEditorWindow):
         nodeeditor.addCloseEventListener(self.onSubWndClose)
         nodeeditor.itemSelected.connect(self.onNodeSelected)
         return subwnd
+
+    def onSubWindowActivated(self, sub_window):
+        if sub_window:
+            widget = sub_window.widget()
+            if isinstance(widget, TriggerSubWindow):
+                self.resultDock.set_logger(widget.logger)
+                widget.logger.set_result_dock(self.resultDock)
 
     def onSubWndClose(self, widget, event):
         existing = self.findMdiChild(widget.filename)

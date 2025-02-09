@@ -101,7 +101,6 @@ class TriggerFileInputContent(QDMNodeContentWidget):
 
         try:
             self.filePath = data.get('filePath', "")
-            self.columns = self.get_columns()
             return True & res
         except Exception as e:
             dumpException(e)
@@ -147,6 +146,8 @@ class TriggerNode_FileInput(TriggerNode):
             return None
 
         self.content.loadCSV(self.content.filePath)
+
+        # self.content.loadCSV(self.content.filePath)
         param = {
             "data": self.content.data,
             "variable_name": self.content.variable_name

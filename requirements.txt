@@ -1,0 +1,17 @@
+click==8.1.8
+colorama==0.4.6
+debugpy==1.8.12
+nodeeditor @ git+https://gitlab.com/pavel.krupala/pyqt-node-editor.git@34fe4b4cb0daafa6e2f748db4612ba4d580427a1
+numpy==2.2.2
+packaging==24.2
+pandas==2.2.3
+py-hot-reload==1.0.6
+PyQt6==6.8.0
+PyQt6-Qt6==6.8.1
+PyQt6_sip==13.9.1
+python-dateutil==2.9.0.post0
+pytz==2024.2
+QtPy==2.4.2
+six==1.17.0
+tzdata==2025.1
+watchdog==6.0.0

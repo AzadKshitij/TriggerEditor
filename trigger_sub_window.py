@@ -13,7 +13,7 @@ from collections import deque
 
 from ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
-
+from utils.logger import Logger
 
 DEBUG = True
 DEBUG_CONTEXT = True
@@ -22,11 +22,10 @@ DEBUG_CONTEXT = True
 class TriggerSubWindow(NodeEditorWidget):
     itemSelected = Signal(object)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         # self.initUI()
-        # self.setAttribute(Qt.WA_DeleteOnClose)
-
+        self.logger = Logger()
         self.setTitle()
         self.addRunButton()
 
@@ -39,6 +38,7 @@ class TriggerSubWindow(NodeEditorWidget):
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
         self.scene.addItemSelectedListener(self.onItemSelected)
         self._close_event_listeners = []
+        # self.setAttribute(Qt.WA_DeleteOnClose)
 
     def addRunButton(self):
         self.fixed_button = QPushButton("Run", self)
@@ -292,7 +292,13 @@ class TriggerSubWindow(NodeEditorWidget):
         #     print(v)
         #     print("----------")
 
-        self.getPyFile()
+        # self.getPyFile()
+        # Add some dummy logs for testing
+        print("Adding Logs")
+        self.logger.log("This is an info log.", "info")
+        self.logger.log("This is a warning log.", "warning")
+        self.logger.log("This is an error log.", "error")
+        self.logger.log("This is a debug log.", "debug")
 
     def getPyFile(self):
         connections = self.getNodeConnections()

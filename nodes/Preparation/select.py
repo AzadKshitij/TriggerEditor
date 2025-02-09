@@ -153,11 +153,12 @@ class TriggerNode_Select(TriggerNode):
         # self.content.edit.textChanged.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
+        input_value = input_values[0]  # Assuming single input for simplicity
         print("#############")
         print("Select process Inputs")
+        print(input_value)
         print("#############")
         # Custom processing logic for the Select node
-        input_value = input_values[0]  # Assuming single input for simplicity
         self.content.incom_data = input_value.get('data')
         self.content.incoming_variable = input_value.get('variable_name')
         # self.content.set_table_widget()
