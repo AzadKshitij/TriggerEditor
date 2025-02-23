@@ -25,24 +25,20 @@ class ConfigDock(QDockWidget):
 
                 node = node[0]
                 content = node.content
-                new_layout = content.create_layout()
-                for i in range(new_layout.count()):
-                    widget = new_layout.itemAt(i).widget()
-                    print(f"Removing widget {i}: {widget}")
-                    self.dock_layout.addWidget(widget)
-                    self.dock_widget.setLayout(self.dock_layout)
-                # for i in reversed(range(self.dock_layout.count())):
-                #     widget = self.dock_layout.itemAt(i).widget()
-                #     print(f"Removing widget {i}: {widget}")
-                    # self.dock_layout.addWidget(new_layout)
-
+                content.create_layout(
+                    self.dock_layout)
+                self.dock_widget.setLayout(self.dock_layout)
         else:
             self.clear_dock()
-            # self.dock_layout.addWidget(QLabel("Multiple nodes selected"))
-            # self.dock_widget.setLayout(self.dock_layout)
 
     def clear_dock(self):
-        for i in reversed(range(self.dock_layout.count())):
-            widget = self.dock_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.deleteLater()
+        # for i in reversed(range(self.dock_layout.count())):
+        #     widget = self.dock_layout.itemAt(i).widget()
+        #     if widget is not None:
+        #         widget.deleteLater()
+        while self.dock_layout.count():
+            item = self.dock_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+            # Clear spacer items as well
+            self.dock_layout.removeItem(item)

@@ -14,10 +14,11 @@ theme = Theme()
 
 class TriggerFileInputContent(QDMNodeIconContentWidget):
     def initUI(self):
-        self.data = []
-        self.variable_name = f'file_input_{self.id}'
         icon = QPixmap("Resource/icons/Join/Join.png")
         super().initUI(icon)
+
+        self.data = []
+        self.variable_name = f'join_{self.id}'
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)
@@ -59,7 +60,7 @@ class TriggerNode_FileInput(TriggerNode):
     }
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[1], outputs=[3])
+        super().__init__(scene, inputs=[1, 1], outputs=[2, 2, 2])
         # self.eval()
 
     def initInnerClasses(self):

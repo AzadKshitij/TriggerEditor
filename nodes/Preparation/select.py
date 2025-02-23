@@ -1,9 +1,11 @@
 from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
-from qtpy.QtCore import Qt, QSaveFile
+from qtpy.QtGui import QPixmap
+from qtpy.QtCore import Qt, QSaveFile, Signal
 from trigger_conf import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
+from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 
 from widgets.select_table_widget import TableWidget
@@ -14,7 +16,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class SelectContent(QDMNodeContentWidget):
+class SelectContent(QDMNodeIconContentWidget):
     """_summary_
 
     Args:
@@ -28,7 +30,10 @@ class SelectContent(QDMNodeContentWidget):
 
     """
 
-    def initUI(self):
+    evaluate = Signal()  # Emit when evaluate button is clicked
+
+    def __init__(self, node, parent=None):
+        super().__init__(node, parent)
         # local Variables
         self.old_data: dict = []
         self.table_data: list = []
@@ -41,23 +46,30 @@ class SelectContent(QDMNodeContentWidget):
         self.data: pd.DataFrame = None
         self.variable_name: str = f'var_select_{self.id}'
 
-    def create_layout(self) -> QLayout:
-        self.table_data = [
-            {
-                'column_name': col,
-                'dtype': self.incom_data[col].dtype.name
-            }
-            for col in self.incom_data.columns
-        ]
-        # if self.old_data != {}:
-        #     self.old_data = table_data
+    def initUI(self):
+        icon = QPixmap("Resource/icons/Preparation/Select.png")
+        super().initUI(icon)
 
-        self.table_widget = TableWidget(data=self.table_data)
+    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
+        if self.incom_data is not None:
+            self.table_data = [
+                {
+                    'column_name': col,
+                    'dtype': self.incom_data[col].dtype.name
+                }
+                for col in self.incom_data.columns
+            ]
+            # if self.old_data != {}:
+            #     self.old_data = table_data
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.table_widget)
+            self.table_widget = TableWidget(data=self.table_data)
+            self.table_widget.dataChanged.connect(self.handleDataChanged)
+            dock_layout.addWidget(self.table_widget)
 
-        return layout
+        # return layout
+
+    def handleDataChanged(self, data):
+        print("Data changed:", data)
 
     def is_same_column(self):
         if self.old_columns.keys() == self.incoming_columns:
@@ -134,7 +146,7 @@ class SelectContent(QDMNodeContentWidget):
 
 @register_node(OP_NODE_SELECT, "PREPARATION")
 class TriggerNode_Select(TriggerNode):
-    icon = "Resource/icons/in.png"
+    icon = "Resource/icons/Preparation/Select.png"
     op_code = OP_NODE_SELECT
     op_title = "Select"
     op_type = "PREPARATION"
@@ -154,66 +166,29 @@ class TriggerNode_Select(TriggerNode):
 
     def processInputs(self, input_values):
         input_value = input_values[0]  # Assuming single input for simplicity
+        print()
         print("#############")
-        print("Select process Inputs")
+        print("#############")
         print(input_value)
         print("#############")
-        # Custom processing logic for the Select node
-        self.content.incom_data = input_value.get('data')
-        self.content.incoming_variable = input_value.get('variable_name')
-        # self.content.set_table_widget()
-        return {
-            "data": self.content.incom_data,
-            "variable_name": self.content.variable_name
-        }
-
-    # def evalImplementation(self):
-    #     print("#############")
-    #     print("Select evalImplementation")
-    #     print("#############")
-    #     input_node = self.getInput(0)
-    #     print(input_node)
-
-    #     if not input_node:
-    #         self.grNode.setToolTip("Input is not connected")
-    #         self.markInvalid()
-    #         return
-
-    #     # val = input_node.params()
-    #     val = input_node.eval()
-
-    #     if val is None:
-    #         self.grNode.setToolTip("Input is NaN")
-    #         self.markInvalid()
-    #         return
-
-    #     # self.content.lbl.setText("%s" % val)
-    #     self.content.incom_data = val.get('data')
-    #     self.content.incoming_variable = val.get('variable_name')
-    #     self.markInvalid(False)
-    #     self.markDirty(False)
-    #     self.grNode.setToolTip("")
-
-    #     print("Value passed from input node:", val)
+        print("#############")
+        print()
+        if input_value:
+            self.markDirty(False)
+            self.markInvalid(False)
+            # Custom processing logic for the Select node
+            self.content.incom_data = input_value.get('data')
+            self.content.incoming_variable = input_value.get('variable_name')
+            # self.content.set_table_widget()
+            return {
+                "data": self.content.incom_data,
+                "variable_name": self.content.variable_name
+            }
+        else:
+            self.markDirty(True)
+            self.markInvalid(True)
 
     def get_code(self):
         print("getting code for file select: ")
         print(self.content.get_code())
         return self.content.get_code()
-
-    # def evalImplementation(self):
-
-    #     u_value = self.content.edit.text()
-    #     s_value = int(u_value)
-    #     self.value = s_value
-    #     self.markDirty(False)
-    #     self.markInvalid(False)
-
-    #     self.markDescendantsInvalid(False)
-    #     self.markDescendantsDirty()
-
-    #     self.grNode.setToolTip("")
-
-    #     self.evalChildren()
-
-    #     return self.value

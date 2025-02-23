@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from trigger_conf import register_node, OP_NODE_FILE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -16,6 +16,8 @@ theme = Theme()
 
 class TriggerFileInputContent(QDMNodeIconContentWidget):
 
+    evaluate = Signal()
+
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
         # local Variables
@@ -26,10 +28,10 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
         self.variable_name = f'var_file_input_{self.id}'
 
     def initUI(self):
-        icon = QPixmap("Resource/icons/Input/File Input.svg")
+        icon = QPixmap("Resource/icons/Input/File Input.png")
         super().initUI(icon)
 
-    def create_layout(self) -> QLayout:
+    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setReadOnly(True)
 
@@ -42,12 +44,11 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
             self.filePathEdit.setText(self.filePath)
             self.loadCSV(self.filePath)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.filePathEdit)
-        layout.addWidget(self.loadButton)
-        layout.addWidget(self.tableWidget)
+        dock_layout.addWidget(self.filePathEdit)
+        dock_layout.addWidget(self.loadButton)
+        dock_layout.addWidget(self.tableWidget)
 
-        return layout
+        # return dock_layout
 
     def get_columns(self):
         if self.filePath:
@@ -66,6 +67,7 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
             self.filePath = fileName
             self.filePathEdit.setText(fileName)
             self.loadCSV(fileName)
+            self.evaluate.emit()
 
     def loadCSV(self, fileName):
         try:
@@ -119,7 +121,7 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
 @register_node(OP_NODE_FILE_INPUT, 'INPUT')
 class TriggerNode_FileInput(TriggerNode):
     # icon = "Resource/icons/Input/File Output_check.png"
-    icon = "Resource/icons/Input/File Input.svg"
+    icon = "Resource/icons/Input/File Input.png"
     op_code = OP_NODE_FILE_INPUT
     op_type = 'INPUT'
     op_title = "File Input"
@@ -135,6 +137,7 @@ class TriggerNode_FileInput(TriggerNode):
     def initInnerClasses(self):
         self.content = TriggerFileInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     # def evalImplementation(self):
     #     param = {
@@ -151,16 +154,23 @@ class TriggerNode_FileInput(TriggerNode):
         # Custom processing logic for the File Input node
         if not self.content.filePath:
             self.grNode.setToolTip("No file selected")
-            self.markInvalid()
+            self.markInvalid(True)
             return None
 
-        self.content.loadCSV(self.content.filePath)
+        self.markDirty(False)
+        self.markInvalid(False)
+        self.markDescendantsInvalid(False)
+        self.markDescendantsDirty()
 
+        self.content.loadCSV(self.content.filePath)
         # self.content.loadCSV(self.content.filePath)
         param = {
             "data": self.content.data,
             "variable_name": self.content.variable_name
         }
+
+        self.evalChildren()
+
         return param
 
     def params(self):
@@ -171,6 +181,4 @@ class TriggerNode_FileInput(TriggerNode):
         return param
 
     def get_code(self):
-        print("getting code for file input: ")
-        print(self.content.get_code())
         return self.content.get_code()

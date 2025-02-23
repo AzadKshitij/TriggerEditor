@@ -52,14 +52,6 @@ class ResultDock(QDockWidget):
         self.setFeatures(QDockWidget.DockWidgetMovable |
                          QDockWidget.DockWidgetFloatable)
 
-    def set_logger(self, logger: Logger):
-        print("Setting Logger")
-        print(logger)
-        print("Setting Logger")
-        self.logger = logger
-        self.logs = logger.logs if logger else []
-        self.update_log_area()
-
     def add_log(self, message, log_type='info'):
         log_entry = {'message': message, 'type': log_type}
         self.logs.append(log_entry)

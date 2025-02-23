@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
+from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QSpacerItem, QSizePolicy
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt
 from trigger_conf import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
@@ -14,26 +14,35 @@ theme = Theme()
 
 
 class TriggerFileOutputContent(QDMNodeIconContentWidget):
-    def initUI(self):
+    def __init__(self, node, parent=None):
+        super().__init__(node, parent)
         self.filePath = ""
         self.input_variable_name = ""
+
+    def initUI(self):
         icon = QPixmap("Resource/icons/Input/File Output.png")
         super().initUI(icon)
 
-    def create_layout(self) -> QLayout:
+    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setReadOnly(True)
         self.loadButton = QPushButton("Save CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.filePathEdit)
-        layout.addWidget(self.loadButton)
+        # layout.setContentsMargins(0, 0, 0, 0)
+        # layout.setSpacing(2)
+        dock_layout.addWidget(self.filePathEdit)
+        dock_layout.addWidget(self.loadButton)
+        dock_layout.setContentsMargins(0, 0, 0, 0)
+        dock_layout.addSpacerItem(QSpacerItem(
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        # layout.addStretch(0)
+        # layout.addSpacerItem(QSpacerItem(
+        #     20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
-        return layout
+        # return dock_layout
 
     def openFileDialog(self):
-        # options = QFileDialog.Options()
         filePath, _ = QFileDialog.getSaveFileName(
             self.parent(
             ), "Save CSV File", "", "CSV Files (*.csv);;All Files (*)")
@@ -43,7 +52,7 @@ class TriggerFileOutputContent(QDMNodeIconContentWidget):
             self.filePathEdit.setText(filePath)
 
     def get_code(self):
-        return f"""import pandas as pd\n{self.input_variable_name}.to_csv('{self.filePath}')"""
+        return f"""import pandas as pd\n{self.input_variable_name}.to_csv('{self.filePath}')\n"""
 
     def serialize(self):
         res = super().serialize()
@@ -105,6 +114,8 @@ class TriggerNode_FileOutput(TriggerNode):
 
         print("Value passed from input node:", val)
 
+    def get_code(self):
+        return self.content.get_code()
     # def params(self):
         # param = {
         #     "columns": self.content.get_columns(),

@@ -319,7 +319,6 @@ class TriggerWindow(NodeEditorWindow):
         if sub_window:
             widget = sub_window.widget()
             if isinstance(widget, TriggerSubWindow):
-                self.resultDock.set_logger(widget.logger)
                 widget.logger.set_result_dock(self.resultDock)
 
     def onSubWndClose(self, widget, event):

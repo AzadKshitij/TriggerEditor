@@ -1,3 +1,4 @@
+import time
 from unittest import result
 from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
@@ -283,7 +284,7 @@ class TriggerSubWindow(NodeEditorWidget):
         # print(sorted_nodes)
         # print('%%%%%%%%%%%%%%%%%%%%%')
 
-        # self.executeWorkflow()
+        self.executeWorkflow()
 
         # for node in all_nodes:
         #     print(node)
@@ -294,11 +295,11 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # self.getPyFile()
         # Add some dummy logs for testing
-        print("Adding Logs")
-        self.logger.log("This is an info log.", "info")
-        self.logger.log("This is a warning log.", "warning")
-        self.logger.log("This is an error log.", "error")
-        self.logger.log("This is a debug log.", "debug")
+        # print("Adding Logs")
+        # self.logger.log("This is an info log.", "info")
+        # self.logger.log("This is a warning log.", "warning")
+        # self.logger.log("This is an error log.", "error")
+        # self.logger.log("This is a debug log.", "debug")
 
     def getPyFile(self):
         connections = self.getNodeConnections()
@@ -349,7 +350,9 @@ class TriggerSubWindow(NodeEditorWidget):
         connections = self.getNodeConnections()
         sorted_nodes = self.topologicalSort(connections)
         node_data = {}
-        executor = NodeExecutor()
+        executor = NodeExecutor(self.logger)
+
+        start_time = time.time()
 
         for node in sorted_nodes:
             # Collect data from all input nodes
@@ -361,21 +364,23 @@ class TriggerSubWindow(NodeEditorWidget):
                 if input_node in node_data:
                     input_data.append(node_data[input_node])
 
-            l = executor.execute_node(node.get_code())
+            l = executor.execute_node(node)
             print(":::::::::::::::::::::::::::::::::")
             print("executor: ", l)
             print(":::::::::::::::::::::::::::::::::")
 
-            # result = node.execute(input_data)
-            # node_data[node] = result
-            # print("Input Data::::", input_data)
-            # print(connections[node]['inputs'])
-            # print(connections[node]['outputs'])
-            # print(":::::::::::::::::::::::::::::::::")
+        end_time = time.time()
+        print("Execution Time: ", end_time - start_time, " seconds")
+        # result = node.execute(input_data)
+        # node_data[node] = result
+        # print("Input Data::::", input_data)
+        # print(connections[node]['inputs'])
+        # print(connections[node]['outputs'])
+        # print(":::::::::::::::::::::::::::::::::")
 
-            # Execute the node's code
-            # result = node.execute(input_data)
-            # node_data[node] = result
+        # Execute the node's code
+        # result = node.execute(input_data)
+        # node_data[node] = result
 
     # def executeWorkflow(self):
     #     connections = self.getNodeConnections()
@@ -390,5 +395,5 @@ class TriggerSubWindow(NodeEditorWidget):
     #         print(":::::::::::::::::::::::::::::::::")
     #         print("Input Data::::", input_data)
     #         print(":::::::::::::::::::::::::::::::::")
-            # result = node.execute(input_data)
-            # node_data[node] = result
+        # result = node.execute(input_data)
+        # node_data[node] = result

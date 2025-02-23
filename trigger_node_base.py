@@ -1,5 +1,5 @@
 from qtpy.QtGui import QImage, QPixmap, QBrush, QColor
-from qtpy.QtCore import QRectF, Qt
+from qtpy.QtCore import QRectF, Qt, Signal, QTimer
 from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget, QVBoxLayout
 
 from nodeeditor.node_node import Node
@@ -14,6 +14,7 @@ from nodeeditor.utils import dumpException
 
 
 class TriggerGraphicsNode(QDMIconGraphicsNode):
+    # Add signal for evaluation requests
 
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
@@ -64,8 +65,6 @@ class TriggerContent(QDMNodeIconContentWidget):
         lbl = QLabel(self.node.content_label, self)
         lbl.setObjectName(self.node.content_label_objname)
 
-        
-
 
 class TriggerNode(Node):
     icon = ""
@@ -80,6 +79,8 @@ class TriggerNode(Node):
 
     GraphicsNode_class = TriggerGraphicsNode
     NodeContent_class = TriggerContent
+
+    evaluationRequested = Signal()
 
     def __init__(self, scene, inputs=[2, 2], outputs=[1]):
         super().__init__(scene, self.__class__.op_title, inputs, outputs)
@@ -155,7 +156,6 @@ class TriggerNode(Node):
             print(" _> returning cached %s value:" %
                   self.__class__.__name__, self.value)
             return self.value
-
         try:
             val = self.evalImplementation()
             return val
@@ -167,6 +167,11 @@ class TriggerNode(Node):
             self.markInvalid()
             self.grNode.setToolTip(str(e))
             dumpException(e)
+
+    def onEdgeConnectionChanged(self, new_edge):
+        print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
+        self.markDirty()
+        self.eval()
 
     def onInputChanged(self, socket=None):
         print("%s::__onInputChanged" % self.__class__.__name__)
