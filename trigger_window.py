@@ -68,12 +68,13 @@ class TriggerWindow(NodeEditorWindow):
         # self.loadResourceFile("Resource/Icons.qrc")
 
         # -----------------------------------
+        self.stylesheet_filename = "qss/darkstyle.qss"
         # self.stylesheet_filename = os.path.join(
         #     os.path.dirname(__file__), "qss/nodeeditor.qss")
 
         # loadStylesheets(
-        #     os.path.join(os.path.dirname(__file__),
-        #                  "qss/nodeeditor.qss"),
+        #     # os.path.join(os.path.dirname(__file__),
+        #     #              "qss/nodeeditor.qss"),
         #     self.stylesheet_filename
         # )
 

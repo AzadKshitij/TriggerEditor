@@ -1,8 +1,11 @@
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
+from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt
 from trigger_conf import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
+from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+
 from nodeeditor.utils import dumpException
 import pandas as pd
 from themes.theme import Theme
@@ -10,10 +13,12 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class TriggerFileOutputContent(QDMNodeContentWidget):
+class TriggerFileOutputContent(QDMNodeIconContentWidget):
     def initUI(self):
         self.filePath = ""
         self.input_variable_name = ""
+        icon = QPixmap("Resource/icons/Input/File Output.png")
+        super().initUI(icon)
 
     def create_layout(self) -> QLayout:
         self.filePathEdit = QLineEdit(self)

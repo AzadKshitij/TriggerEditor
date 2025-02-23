@@ -1,21 +1,24 @@
 from qtpy.QtWidgets import QLabel
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QPixmap
 from trigger_conf import register_node, OP_NODE_OUTPUT, OP_NODE_TEXT_OUTPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
+from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 
-class CalcTextOutputContent(QDMNodeContentWidget):
+class CalcTextOutputContent(QDMNodeIconContentWidget):
     def initUI(self):
-        self.lbl = QLabel("Passed Param", self)
-        self.lbl.setAlignment(Qt.AlignLeft)
-        self.lbl.setObjectName(self.node.content_label_objname)
+        # self.lbl = QLabel("Passed Param", self)
+        icon = QPixmap("Resource/icons/out.png")
+        super().initUI(icon)
 
 
 @register_node(OP_NODE_TEXT_OUTPUT, "INPUT")
 class CalcNode_TextOutput(TriggerNode):
     icon = "Resource/icons/out.png"
     op_code = OP_NODE_TEXT_OUTPUT
+    op_type = 'INPUT'
     op_title = "Text Output"
     content_label_objname = "calc_node_text_output"
 

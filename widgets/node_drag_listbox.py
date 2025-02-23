@@ -21,6 +21,16 @@ class QTRDragListbox(QListWidget):
         self.initUI()
         self.setViewMode(QListWidget.IconMode)
         self.setFlow(QListWidget.LeftToRight)
+        self.setWrapping(True)
+        self.setResizeMode(QListWidget.ResizeMode.Adjust)
+        # # Center items in the QListWidget
+        self.setItemAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        # self.setUniformItemSizes(True)
+        # self.setIconSize(QSize(64, 64))
+        # self.setMovement(QListWidget.Movement.Static)
+        self.setSpacing(10)
         # self.setStyleSheet("border: 1px solid white; background: green")
 
     def initUI(self):
@@ -51,12 +61,12 @@ class QTRDragListbox(QListWidget):
         item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable |
                       Qt.ItemIsDragEnabled)
 
-        spacer = QListWidgetItem(self)
-        spacer.setSizeHint(QSize(self.horizontal_spacing, 0))
-        spacer.setFlags(spacer.flags() & ~spacer.flags())
-        # spacer.setSizeHint(card.sizeHint().expandedTo(spacer.sizeHint()))
-        # spacer.setSizeHint(spacer.sizeHint().grownBy(horizontal_spacing))
-        self.addItem(spacer)
+        # spacer = QListWidgetItem(self)
+        # spacer.setSizeHint(QSize(self.horizontal_spacing, 0))
+        # spacer.setFlags(spacer.flags() & ~spacer.flags())
+        # # spacer.setSizeHint(card.sizeHint().expandedTo(spacer.sizeHint()))
+        # # spacer.setSizeHint(spacer.sizeHint().grownBy(horizontal_spacing))
+        # self.addItem(spacer)
 
         # setup data
         # item.setData(Qt.UserRole, pixmap)
@@ -127,9 +137,9 @@ class ListWidgetItemWidget(QWidget):
 
         # self.text_label.setFixedHeight(20)
 
-        layout.addWidget(self.icon_label, 0, 0, Qt.AlignCenter)
+        layout.addWidget(self.icon_label, 0, 0, Qt.AlignmentFlag.AlignCenter)
         # icon_layout.addWidget(self.icon_label)
-        layout.addWidget(self.text_label, 1, 0, Qt.AlignCenter)
+        layout.addWidget(self.text_label, 1, 0, Qt.AlignmentFlag.AlignCenter)
 
         self.setLayout(layout)
         # Set fixed size for the widget

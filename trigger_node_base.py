@@ -1,15 +1,19 @@
 from qtpy.QtGui import QImage, QPixmap, QBrush, QColor
-from qtpy.QtCore import QRectF
-from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget
+from qtpy.QtCore import QRectF, Qt
+from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget, QVBoxLayout
 
 from nodeeditor.node_node import Node
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_graphics_node import QDMGraphicsNode
+
+from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from nodeeditor.node_icon_graphics_node import QDMIconGraphicsNode
+
 from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
 
-class TriggerGraphicsNode(QDMGraphicsNode):
+class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
@@ -18,8 +22,8 @@ class TriggerGraphicsNode(QDMGraphicsNode):
 
     def initSizes(self):
         super().initSizes()
-        self.width = 200
-        self.height = 100
+        self.width = 120
+        self.height = 120
         self.edge_roundness = 6
         self.edge_padding = 0
         self.title_horizontal_padding = 8
@@ -43,17 +47,24 @@ class TriggerGraphicsNode(QDMGraphicsNode):
         if self.node.isInvalid():
             offset = 48.0
 
+        # Calculate the position for bottom center
+        icon_width = 24.0
+        icon_x = (self.width - icon_width) / 2
+        icon_y = self.height - 12  # 5 pixels padding from the bottom
+
         painter.drawImage(
-            QRectF(-10, -10, 24.0, 24.0),
+            QRectF(icon_x, icon_y, 24.0, 24.0),
             self.icons,
             QRectF(offset, 0, 24.0, 24.0)
         )
 
 
-class TriggerContent(QDMNodeContentWidget):
+class TriggerContent(QDMNodeIconContentWidget):
     def initUI(self):
         lbl = QLabel(self.node.content_label, self)
         lbl.setObjectName(self.node.content_label_objname)
+
+        
 
 
 class TriggerNode(Node):

@@ -10,20 +10,37 @@ OP_NODE_DIV = 6
 OP_NODE_SQRT = 7
 
 # InOut
-OP_NODE_FILE_INPUT = 1
-OP_NODE_FILE_OUTPUT = 2
-OP_NODE_TEXT_OUTPUT = 3
+OP_NODE_BROWSER = 1
+OP_NODE_DIRECTORY = 2
+OP_NODE_TEXT_INPUT = 3
+OP_NODE_FILE_INPUT = 4
+OP_NODE_FILE_OUTPUT = 5
+OP_NODE_TEXT_OUTPUT = 6
+
 
 # Preparation
-OP_NODE_SELECT = 1
-OP_NODE_FORMULA = 2
+OP_NODE_CLEANSING = 1
+OP_NODE_FILTER = 2
+OP_NODE_FORMULA = 3
+OP_NODE_SELECT = 4
+OP_NODE_SORT = 5
+OP_NODE_UNIQUE = 6
+
+# Join
+OP_NODE_APPEND = 1
+OP_NODE_JOIN = 2
+OP_NODE_UNION = 3
+
+# Transform
+OP_NODE_ARRANGE = 1
+OP_NODE_COUNTRECORDS = 2
 
 
 CALC_NODES = {}
 INPUT_NODES = {}
 PREPARATION_NODES = {}
-
-
+JOIN_NODES = {}
+TRANSFORM_NODES = {}
 
 
 class ConfException(Exception):
@@ -64,6 +81,10 @@ def check_node_type(node_type):
             return CALC_NODES
         case "PREPARATION":
             return PREPARATION_NODES
+        case "JOIN":
+            return JOIN_NODES
+        case "TRANSFORM":
+            return TRANSFORM_NODES
 
         case _:
             return "You have another type of pet."
