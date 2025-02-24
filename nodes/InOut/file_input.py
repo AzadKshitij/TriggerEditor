@@ -133,6 +133,7 @@ class TriggerNode_FileInput(TriggerNode):
     def __init__(self, scene):
         super().__init__(scene, inputs=[], outputs=[1])
         # self.eval()
+        self.markInvalid(True)
 
     def initInnerClasses(self):
         self.content = TriggerFileInputContent(self)

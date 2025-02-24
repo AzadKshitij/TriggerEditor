@@ -83,7 +83,7 @@ class TableWidget(QWidget):
                 column_name = self.table.item(row, 1).text()
                 data_type = self.table.cellWidget(row, 2).currentText()
                 rename = self.table.cellWidget(row, 3).text()
-                data.append((is_selected, column_name, data_type, rename))
+                data.append((column_name, data_type, rename))
         return data
 
     def get_renamed_columns(self):
