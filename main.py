@@ -14,8 +14,8 @@ if __name__ == '__main__':
     dark_stylesheet = qdarkstyle.load_stylesheet()
 
     print(QStyleFactory.keys())
-    # app.setStyle('Fusion')
-    # app.setStyleSheet(dark_stylesheet)
+    app.setStyle('Fusion')
+    app.setStyleSheet(dark_stylesheet)
 
     wnd = TriggerWindow()
     wnd.show()

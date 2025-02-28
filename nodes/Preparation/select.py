@@ -209,14 +209,7 @@ class TriggerNode_Select(TriggerNode):
         # self.content.edit.textChanged.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
-        input_value = input_values[0]  # Assuming single input for simplicity
-        print()
-        print("#############")
-        print("#############")
-        print(input_value)
-        print("#############")
-        print("#############")
-        print()
+        input_value = input_values[0]
         if input_value:
             self.markDirty(False)
             self.markInvalid(False)
@@ -224,6 +217,9 @@ class TriggerNode_Select(TriggerNode):
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
             # self.content.set_table_widget()
+
+            self.evalChildren()
+
             return {
                 "data": self.content.data,
                 "variable_name": self.content.variable_name
@@ -231,8 +227,7 @@ class TriggerNode_Select(TriggerNode):
         else:
             self.markDirty(True)
             self.markInvalid(True)
+            self.grNode.setToolTip("Input is not connected")
 
     def get_code(self):
-        print("getting code for file select: ")
-        print(self.content.get_code())
         return self.content.get_code()

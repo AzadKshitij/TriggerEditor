@@ -16,8 +16,12 @@ theme = Theme()
 class TriggerFileOutputContent(QDMNodeIconContentWidget):
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
+        # local Variables
         self.filePath = ""
-        self.input_variable_name = ""
+
+        # incoming variables
+        self.incoming_variable = ""
+        self.data: pd.DataFrame = None
 
     def initUI(self):
         icon = QPixmap("Resource/icons/Input/File Output.png")
@@ -28,6 +32,9 @@ class TriggerFileOutputContent(QDMNodeIconContentWidget):
         self.filePathEdit.setReadOnly(True)
         self.loadButton = QPushButton("Save CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
+
+        if self.filePath:
+            self.filePathEdit.setText(self.filePath)
 
         # layout.setContentsMargins(0, 0, 0, 0)
         # layout.setSpacing(2)
@@ -52,7 +59,39 @@ class TriggerFileOutputContent(QDMNodeIconContentWidget):
             self.filePathEdit.setText(filePath)
 
     def get_code(self):
-        return f"""import pandas as pd\n{self.input_variable_name}.to_csv('{self.filePath}')\n"""
+
+        if self.incoming_variable is None:
+            return ""
+
+        code_lines = []
+        # Add import statement
+        code_lines.append("import pandas as pd")
+
+        # Get file extension
+        file_ext = self.filePath.lower().split(
+            '.')[-1] if '.' in self.filePath else 'csv'
+
+        print("🐍 File: InOut/file_output.py | Line: 66 | get_code ~ file_ext", file_ext)
+
+        # Generate appropriate export code based on file extension
+        if file_ext == 'csv':
+            code_lines.append(
+                f"{self.incoming_variable}.to_csv('{self.filePath}', index=False)")
+        elif file_ext == 'xlsx' or file_ext == 'xls':
+            code_lines.append(
+                f"{self.incoming_variable}.to_excel('{self.filePath}', index=False)")
+        elif file_ext == 'json':
+            code_lines.append(
+                f"{self.incoming_variable}.to_json('{self.filePath}', orient='records')")
+        elif file_ext == 'parquet':
+            code_lines.append(
+                f"{self.incoming_variable}.to_parquet('{self.filePath}', index=False)")
+        else:
+            # Default to CSV if extension is not recognized
+            code_lines.append(
+                f"{self.incoming_variable}.to_csv('{self.filePath}', index=False)")
+
+        return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()
@@ -60,12 +99,18 @@ class TriggerFileOutputContent(QDMNodeIconContentWidget):
         return res
 
     def deserialize(self, data, hashmap={}):
+        print("🐍 File: InOut/file_output.py | Line: 99 | serialize ~ deserialize", data)
         res = super().deserialize(data, hashmap)
 
         try:
-            self.filePath = data.get('filePath', "")
+
+            print(
+                "🐍 File: InOut/file_output.py | Line: 104 | deserialize ~ filePath", self.filePath)
+            # self.filePath = data.get('filePath', "")
+            self.filePath = data['filePath']
             return True & res
         except Exception as e:
+
             dumpException(e)
         return res
 
@@ -90,31 +135,29 @@ class TriggerNode_FileOutput(TriggerNode):
         self.content = TriggerFileOutputContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
-    def evalImplementation(self):
+    def processInputs(self, input_values):
+        input_value = input_values[0]
         # u_value = 0
         # print("Columns from input file:", u_value)
         # return u_value
 
-        input_node = self.getInput(0)
-        if not input_node:
+        if not input_value:
             self.grNode.setToolTip("Input is not connected")
-            self.markInvalid()
-            return
-        val = input_node.params()
+            self.markInvalid(True)
+            return None
 
-        if val is None:
-            self.grNode.setToolTip("Input is NaN")
-            self.markInvalid()
-            return
-
-        self.content.input_variable_name = val.get('variable_name')
-        self.markInvalid(False)
         self.markDirty(False)
+        self.markInvalid(False)
+
+        self.content.incoming_variable = input_value.get('variable_name')
         self.grNode.setToolTip("")
 
-        print("Value passed from input node:", val)
+        print(f"Value Received in {self.__class__.__name__}:", input_value)
+
+        return input_value
 
     def get_code(self):
+        # print("getting code for file output: ", self.content.get_code())
         return self.content.get_code()
     # def params(self):
         # param = {

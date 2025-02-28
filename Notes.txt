@@ -1,0 +1,1 @@
+1. Can add default code for all the different types of libraries.

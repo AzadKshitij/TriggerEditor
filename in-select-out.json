@@ -1,0 +1,125 @@
+{
+    "id": 1429604924624,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1429604924240,
+            "title": "File Input",
+            "pos_x": -364.0,
+            "pos_y": -20.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1429579904400,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1429614326224,
+            "title": "Select",
+            "pos_x": -138.0,
+            "pos_y": -63.0,
+            "inputs": [
+                {
+                    "id": 1429614346384,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1429614347088,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "old_columns": [
+                    {
+                        "column_name": "Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Seed",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Source",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Country",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Autocomplete Position",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Difficulty",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Hot Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Relevancy Score",
+                        "dtype": "float64"
+                    }
+                ]
+            },
+            "op_code": 4,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 2441464837840,
+            "title": "File Output",
+            "pos_x": 104.0,
+            "pos_y": -38.0,
+            "inputs": [
+                {
+                    "id": 2441464803728,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/out_check_W_select.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        }
+    ],
+    "edges": [
+        {
+            "id": 1429583084176,
+            "edge_type": 5,
+            "start": 1429579904400,
+            "end": 1429614346384
+        },
+        {
+            "id": 2441464804560,
+            "edge_type": 5,
+            "start": 1429614347088,
+            "end": 2441464803728
+        }
+    ]
+}

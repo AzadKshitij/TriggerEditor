@@ -38,16 +38,18 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
         self.loadButton = QPushButton("Load CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
 
-        self.tableWidget = QTableWidget(self)
-
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
             self.loadCSV(self.filePath)
 
         dock_layout.addWidget(self.filePathEdit)
         dock_layout.addWidget(self.loadButton)
-        dock_layout.addWidget(self.tableWidget)
-
+        # Create table widget only if it doesn't exist
+        if not hasattr(self, 'tableWidget') or self.tableWidget is None:
+            self.tableWidget = QTableWidget(self)
+            dock_layout.addWidget(self.tableWidget)
+        else:
+            dock_layout.addWidget(self.tableWidget)
         # return dock_layout
 
     def get_columns(self):
@@ -70,6 +72,10 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
             self.evaluate.emit()
 
     def loadCSV(self, fileName):
+        # Create table widget only if it doesn't exist
+        if not hasattr(self, 'tableWidget') or self.tableWidget is None:
+            self.tableWidget = QTableWidget(self)
+
         try:
             df = pd.read_csv(fileName)
             self.data = df.head(10)
@@ -160,8 +166,8 @@ class TriggerNode_FileInput(TriggerNode):
 
         self.markDirty(False)
         self.markInvalid(False)
-        self.markDescendantsInvalid(False)
-        self.markDescendantsDirty()
+        # self.markDescendantsInvalid(False)
+        # self.markDescendantsDirty()
 
         self.content.loadCSV(self.content.filePath)
         # self.content.loadCSV(self.content.filePath)

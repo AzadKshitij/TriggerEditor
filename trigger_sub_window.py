@@ -366,6 +366,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
             l = executor.execute_node(node)
             print(":::::::::::::::::::::::::::::::::")
+            print("Code: ", node.get_code())
             print("executor: ", l)
             print(":::::::::::::::::::::::::::::::::")
 
