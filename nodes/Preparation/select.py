@@ -34,7 +34,7 @@ class SelectContent(QDMNodeIconContentWidget):
 
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
-        # local Variables
+        # local variables
         self.old_data: dict = []
         self.table_data: list = []
 
@@ -61,8 +61,16 @@ class SelectContent(QDMNodeIconContentWidget):
             ]
             # if self.old_data != {}:
             #     self.old_data = table_data
+            # Initialize changes if not already present
+            if not hasattr(self, 'changes'):
+                self.changes = {
+                    'selected_columns': [],
+                    'rename_mapping': {},
+                    'dtype_mapping': {}
+                }
 
-            self.table_widget = TableWidget(data=self.table_data)
+            self.table_widget = TableWidget(
+                data=self.table_data, changes=self.changes)
             self.table_widget.dataChanged.connect(self.handleDataChanged)
             dock_layout.addWidget(self.table_widget)
 
@@ -73,6 +81,13 @@ class SelectContent(QDMNodeIconContentWidget):
         # only take selected columns from incoming data
         # data_ contains (column_name, data_type, rename)
         if self.incom_data is not None:
+            # Store the changes in a serializable format
+            self.changes = {
+                'selected_columns': [],
+                'rename_mapping': {},
+                'dtype_mapping': {}
+            }
+
             # Extract selected columns, their new names and data types
             selected_columns = []
             rename_mapping = {}
@@ -82,13 +97,18 @@ class SelectContent(QDMNodeIconContentWidget):
                 column_name, data_type, new_name = column_info
                 selected_columns.append(column_name)
 
+                # Store changes for serialization
+                self.changes['selected_columns'].append(column_name)
+
                 # Add to rename mapping if new name exists
                 if new_name:
                     rename_mapping[column_name] = new_name
+                    self.changes['rename_mapping'][column_name] = new_name
 
                 # Add to dtype mapping if data_type exists
                 if data_type:
                     dtype_mapping[column_name] = data_type
+                    self.changes['dtype_mapping'][column_name] = data_type
 
             # Select only the specified columns from incom_data
             self.data = self.incom_data[selected_columns].copy()
@@ -109,10 +129,6 @@ class SelectContent(QDMNodeIconContentWidget):
             if rename_mapping:
                 self.data.rename(columns=rename_mapping, inplace=True)
 
-            get_code = self.get_code()
-            print(get_code)
-            print(self.data)
-            # Emit the evaluate signal
             self.evaluate.emit()
 
     def is_same_column(self):
@@ -131,57 +147,45 @@ class SelectContent(QDMNodeIconContentWidget):
 
         code_lines = []
 
-        # Get selected columns
-        selected_columns = [f"'{col}'" for col in self.incom_data.columns
-                            if col in self.data.columns]
-
-        # Select columns
+        # Get selected columns using the stored changes
+        selected_columns = [
+            f"'{col}'" for col in self.changes['selected_columns']]
         columns_str = ', '.join(selected_columns)
         code_lines.append(
             f"{self.variable_name} = {self.incoming_variable}[[{columns_str}]].copy()")
 
-        # Apply data type changes
-        dtype_changes = {}
-        for col in self.data.columns:
-            if self.data[col].dtype != self.incom_data[col].dtype:
-                dtype_changes[col] = str(self.data[col].dtype)
-
-        if dtype_changes:
-            for col, dtype in dtype_changes.items():
-                if dtype in ['int64', 'int32', 'float64', 'float32']:
-                    code_lines.append(
-                        f"{self.variable_name}['{col}'] = pd.to_numeric({self.variable_name}['{col}'], errors='coerce')")
+        # Apply data type changes from stored changes
+        for col, dtype in self.changes['dtype_mapping'].items():
+            if dtype in ['int64', 'int32', 'float64', 'float32']:
                 code_lines.append(
-                    f"{self.variable_name}['{col}'] = {self.variable_name}['{col}'].astype('{dtype}', errors='ignore')")
+                    f"{self.variable_name}['{col}'] = pd.to_numeric({self.variable_name}['{col}'], errors='coerce')")
+            code_lines.append(
+                f"{self.variable_name}['{col}'] = {self.variable_name}['{col}'].astype('{dtype}', errors='ignore')")
 
-        # Apply column renaming if names are different
-        rename_dict = {}
-        for old_col in self.incom_data.columns:
-            if old_col not in self.data.columns:
-                new_col = next((col for col in self.data.columns
-                                if self.data[col].equals(self.incom_data[old_col])), None)
-                if new_col:
-                    rename_dict[old_col] = new_col
-
-        if rename_dict:
-            rename_str = ', '.join(
-                [f"'{old}': '{new}'" for old, new in rename_dict.items()])
+        # Apply column renaming from stored changes
+        if self.changes['rename_mapping']:
+            rename_str = ', '.join([f"'{old}': '{new}'"
+                                    for old, new in self.changes['rename_mapping'].items()])
             code_lines.append(
                 f"{self.variable_name}.rename(columns={{{rename_str}}}, inplace=True)")
-
-        # print('\n'.join(code_lines) + '\n')
 
         return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()
-        res['old_columns'] = self.table_data
+        res['table_data'] = self.table_data
+        res['changes'] = getattr(self, 'changes', {
+            'selected_columns': [],
+            'rename_mapping': {},
+            'dtype_mapping': {}
+        })
         return res
 
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
         try:
-            self.old_columns = data['old_columns']
+            self.old_columns = data['table_data']
+            self.changes = data['changes']
             return True & res
         except Exception as e:
             dumpException(e)

@@ -1,8 +1,10 @@
-from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
-from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout
+from qtpy.QtGui import QPixmap
+from qtpy.QtCore import Qt, Signal
 from trigger_conf import OP_NODE_FORMULA, register_node, OP_NODE_FILE_INPUT
 from trigger_node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
+from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 import pandas as pd
 from themes.theme import Theme
@@ -10,46 +12,162 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class TriggerFormulaContent(QDMNodeContentWidget):
+class FormulaContent(QDMNodeIconContentWidget):
+
+    evaluate = Signal()  # Emit when evaluate button is clicked
+
+    def __init__(self, node, parent=None):
+        super().__init__(node, parent)
+        # local variables
+        self.formula: str = ''
+        self.target_column: str = ''
+        self.is_new_column: bool = True
+
+        # incoming variables
+        self.incoming_variable: str = ''
+        self.incom_data: pd.DataFrame = None
+
+        # pass on variables
+        self.data: pd.DataFrame = None
+        self.variable_name = f'var_formula_{self.id}'
+
     def initUI(self, parent=None):
-        self.data = []
-        self.variable_name = f'file_input_{self.id}'
+        icon = QPixmap("Resource/icons/Preparation/Formula.png")
+        super().initUI(icon)
 
-    def create_layout(self) -> QLayout:
-        self.filePathEdit = QLineEdit(self)
-        self.filePathEdit.setReadOnly(True)
+    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
+        if self.incom_data is not None:
+            # Column selection
+            column_layout = QHBoxLayout()
+            self.column_name = QComboBox()
+            self.column_name.setEditable(False)  # Initially not editable
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.filePathEdit)
+            # Add existing columns and the "+" button
+            self.column_name.addItem("+ add column")
+            self.column_name.addItems(self.incom_data.columns)
+            # Connect the activation signal
+            self.column_name.activated.connect(self.handle_column_activation)
 
-        return layout
+            if self.target_column:
+                self.column_name.setCurrentText(self.target_column)
+            column_layout.addWidget(QLabel("Target:"))
+            column_layout.addWidget(self.column_name)
+
+            # Formula input with multiline support
+            formula_layout = QVBoxLayout()
+            self.formula_input = QTextEdit()
+            self.formula_input.setPlaceholderText(
+                "Enter formula e.g.:\nCASE WHEN [Age] > 30 then 'Adult' else 'Young'")
+            self.formula_input.setMinimumHeight(100)
+            if self.formula:
+                self.formula_input.setPlainText(self.formula)
+            self.formula_input.textChanged.connect(self.generate_formula)
+            formula_layout.addWidget(QLabel("Formula:"))
+            formula_layout.addWidget(self.formula_input)
+
+            # Add layouts
+            dock_layout.addLayout(column_layout)
+            dock_layout.addLayout(formula_layout)
+
+        # return layout
+
+    def handle_column_activation(self, index):
+        print("🐍 File: Preparation/formula.py | Line: 78 | handle_column_activation ~ self.column_name.itemText(index)",
+              self.column_name.itemText(index))
+        if self.column_name.itemText(index) == "+ add column":
+            self.column_name.setEditable(True)
+            self.column_name.clearEditText()
+            self.column_name.lineEdit().returnPressed.connect(self.handle_new_column)
+        else:
+            self.target_column = self.column_name.itemText(index)
+
+    def handle_new_column(self):
+        print("🐍 File: Preparation/formula.py | Line: 80 | handle_new_column ~ self.column_name",
+              self.column_name.currentText().strip())
+
+        new_column = self.column_name.currentText().strip()
+        if new_column and new_column != "+ add column":
+            # Clear existing items
+            self.column_name.clear()
+
+            # Add the new column and the "+" button
+            self.column_name.addItem(new_column)
+
+            # Add back original columns
+            self.column_name.addItems(self.incom_data.columns)
+
+            # Add the "+" button
+            self.column_name.addItem("+ add column")
+            self.target_column = new_column
+
+            # Select the new column
+            self.column_name.setCurrentIndex(0)
+
+        # Reset to non-editable state
+        self.column_name.setEditable(False)
+
+    def generate_formula(self):
+        self.formula = self.formula_input.toPlainText()
+        print("🐍 File: Preparation/formula.py | Line: 106 | generate_formula ~ self.formula", self.formula)
+
+        # If target column changed, remove the old column
+        self.data = self.incom_data.copy()
+
+        # Replace column names in formula
+        self.formula
+        # replace column names in formula
+        for col in self.data.columns:
+            self.formula = self.formula.replace(f'[{col}]', f'{col}')
+
+        print(
+            "🐍 File: Preparation/formula.py | Line: 113 | generate_formula ~ query", self.formula)
+
+        if self.target_column:
+            self.data[self.target_column] = None
 
     def get_code(self):
-        return f"print('New Node')"
+        if not self.formula or not self.target_column:
+            return ""
+
+        code_lines = []
+
+        # Add import statement
+        code_lines.append("import duckdb")
+        code_lines.append("duck= duckdb.connect(':memory:')")
+        code_lines.append(f"duck.register('df', {self.incoming_variable})")
+        code_lines.append(
+            f"# Apply formula to create/update column {self.target_column}"
+        )
+        code_lines.append(
+            f"{self.variable_name} = duck.execute('''SELECT *, {self.formula} as {self.target_column} FROM df''').fetchdf()"
+        )
+        return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()
-        res["filePath"] = self.filePath
+        res['formula'] = self.formula
+        res['target_column'] = self.target_column
         return res
 
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
 
         try:
-            self.filePath = data.get('filePath', "")
+            self.formula = data.get('formula', '')
+            self.target_column = data.get('target_column', '')
             return True & res
         except Exception as e:
             dumpException(e)
         return res
 
 
-@ register_node(OP_NODE_FORMULA, 'PREPARATION')
+@register_node(OP_NODE_FORMULA, 'PREPARATION')
 class TriggerNode_Formula(TriggerNode):
-    icon = "Resource/icons/001-input-(Custom).png"
+    icon = "Resource/icons/Preparation/Formula.png"
     op_code = OP_NODE_FORMULA
     op_type = 'PREPARATION'
     op_title = "Formula"
-    content_label_objname = "trigger_node_formula"
+    content_label_objname = "trigger_node_node_title"
     style = {
         'brush_color': theme.brush_color('PREPARATION')
     }
@@ -59,23 +177,30 @@ class TriggerNode_Formula(TriggerNode):
         # self.eval()
 
     def initInnerClasses(self):
-        self.content = TriggerFormulaContent(self)
+        self.content = FormulaContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
-    def evalImplementation(self):
-        u_value = 0
-        print("Columns from input file:", u_value)
-        # variable = self.content.variable_name
-        return u_value
+    def processInputs(self, input_values):
+        # Only one input for simplicity
+        input_value = input_values[0]
+        if input_value:
+            self.markDirty(False)
+            self.markInvalid(False)
+            # Custom processing logic for the Select node
+            self.content.incom_data = input_value.get('data')
+            self.content.data = input_value.get('data')
+            self.content.incoming_variable = input_value.get('variable_name')
+            self.evalChildren()
 
-    def params(self):
-        param = {
-            "data": self.content.data,
-            "variable_name": self.content.variable_name
-        }
-        return param
+            return {
+                'data': self.content.data,
+                'variable_name': self.content.variable_name
+            }
+        # variable = self.content.variable_name
+        else:
+            self.markDirty(True)
+            self.markInvalid(True)
+            self.grNode.setToolTip('Input is not connected')
 
     def get_code(self):
-        print("getting code for file input: ")
-        print(self.content.get_code())
         return self.content.get_code()

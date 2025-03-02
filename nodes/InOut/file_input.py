@@ -14,7 +14,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class TriggerFileInputContent(QDMNodeIconContentWidget):
+class FileInputContent(QDMNodeIconContentWidget):
 
     evaluate = Signal()
 
@@ -38,18 +38,16 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
         self.loadButton = QPushButton("Load CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
 
+        # Always create a new table widget when creating layout
+        self.tableWidget = QTableWidget(self)
+
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
             self.loadCSV(self.filePath)
 
         dock_layout.addWidget(self.filePathEdit)
         dock_layout.addWidget(self.loadButton)
-        # Create table widget only if it doesn't exist
-        if not hasattr(self, 'tableWidget') or self.tableWidget is None:
-            self.tableWidget = QTableWidget(self)
-            dock_layout.addWidget(self.tableWidget)
-        else:
-            dock_layout.addWidget(self.tableWidget)
+        dock_layout.addWidget(self.tableWidget)
         # return dock_layout
 
     def get_columns(self):
@@ -106,7 +104,15 @@ class TriggerFileInputContent(QDMNodeIconContentWidget):
             dumpException(e)
 
     def get_code(self):
-        return f"""import pandas as pd\n{self.variable_name} = pd.read_csv('{self.filePath}')\n"""
+        if not self.filePath:
+            return ""
+
+        code_lines = []
+        code_lines.append(f"import pandas as pd")
+        code_lines.append(
+            f"{self.variable_name} = pd.read_csv('{self.filePath}')")
+
+        return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()
@@ -142,7 +148,7 @@ class TriggerNode_FileInput(TriggerNode):
         self.markInvalid(True)
 
     def initInnerClasses(self):
-        self.content = TriggerFileInputContent(self)
+        self.content = FileInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
 

@@ -48,7 +48,7 @@
                 }
             ],
             "content": {
-                "old_columns": [
+                "table_data": [
                     {
                         "column_name": "Keyword",
                         "dtype": "object"
@@ -81,7 +81,24 @@
                         "column_name": "Relevancy Score",
                         "dtype": "float64"
                     }
-                ]
+                ],
+                "changes": {
+                    "selected_columns": [
+                        "Keyword",
+                        "Seed",
+                        "Source",
+                        "Relevancy Score"
+                    ],
+                    "rename_mapping": {
+                        "Relevancy Score": "Score"
+                    },
+                    "dtype_mapping": {
+                        "Keyword": "object",
+                        "Seed": "object",
+                        "Source": "object",
+                        "Relevancy Score": "float64"
+                    }
+                }
             },
             "op_code": 4,
             "op_type": "PREPARATION"

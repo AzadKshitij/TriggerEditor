@@ -13,7 +13,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class TriggerFileOutputContent(QDMNodeIconContentWidget):
+class FileOutputContent(QDMNodeIconContentWidget):
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
         # local Variables
@@ -64,8 +64,6 @@ class TriggerFileOutputContent(QDMNodeIconContentWidget):
             return ""
 
         code_lines = []
-        # Add import statement
-        code_lines.append("import pandas as pd")
 
         # Get file extension
         file_ext = self.filePath.lower().split(
@@ -132,7 +130,7 @@ class TriggerNode_FileOutput(TriggerNode):
         # self.eval()
 
     def initInnerClasses(self):
-        self.content = TriggerFileOutputContent(self)
+        self.content = FileOutputContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
     def processInputs(self, input_values):

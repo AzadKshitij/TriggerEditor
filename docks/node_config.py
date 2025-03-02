@@ -40,5 +40,19 @@ class ConfigDock(QDockWidget):
             item = self.dock_layout.takeAt(0)
             if item.widget():
                 item.widget().deleteLater()
+            elif item.layout():
+                # Recursively clear nested layouts
+                self.clear_layout(item.layout())
             # Clear spacer items as well
             self.dock_layout.removeItem(item)
+            del item
+
+    def clear_layout(self, layout):
+        # Helper method to clear nested layouts
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+            elif item.layout():
+                self.clear_layout(item.layout())
+            del item

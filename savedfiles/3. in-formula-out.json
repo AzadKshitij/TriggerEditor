@@ -1,0 +1,93 @@
+{
+    "id": 2676717414032,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 2676751646608,
+            "title": "Formula",
+            "pos_x": -75.0,
+            "pos_y": -116.0,
+            "inputs": [
+                {
+                    "id": 2676716541392,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2676743155024,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "formula": "CASE \n    WHEN Difficulty > 7 THEN 'High'\n    WHEN Difficulty > 6 THEN 'Medium'\n    ELSE 'Low'\nEND",
+                "target_column": "Category"
+            },
+            "op_code": 3,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 2676751682064,
+            "title": "File Input",
+            "pos_x": -484.0,
+            "pos_y": -30.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2676721995280,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1428367663056,
+            "title": "File Output",
+            "pos_x": 225.0,
+            "pos_y": -28.0,
+            "inputs": [
+                {
+                    "id": 1428327996688,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/out_check_W_formula.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        }
+    ],
+    "edges": [
+        {
+            "id": 2676739796112,
+            "edge_type": 5,
+            "start": 2676721995280,
+            "end": 2676716541392
+        },
+        {
+            "id": 1428367641680,
+            "edge_type": 5,
+            "start": 2676743155024,
+            "end": 1428327996688
+        }
+    ]
+}

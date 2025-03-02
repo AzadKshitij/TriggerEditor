@@ -364,14 +364,17 @@ class TriggerSubWindow(NodeEditorWidget):
                 if input_node in node_data:
                     input_data.append(node_data[input_node])
 
+            print(":::::::::::::::::::::::::::::::::")
+            print(f"Code for {self.__class__.__name__}: ", node.get_code())
+            print(":::::::::::::::::::::::::::::::::")
             l = executor.execute_node(node)
             print(":::::::::::::::::::::::::::::::::")
-            print("Code: ", node.get_code())
             print("executor: ", l)
             print(":::::::::::::::::::::::::::::::::")
 
         end_time = time.time()
         print("Execution Time: ", end_time - start_time, " seconds")
+        self.getPyFile()
         # result = node.execute(input_data)
         # node_data[node] = result
         # print("Input Data::::", input_data)

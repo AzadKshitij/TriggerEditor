@@ -6,12 +6,14 @@ import pandas as pd
 class TableWidget(QWidget):
     dataChanged = Signal(list)
 
-    def __init__(self, parent=None, data=None):
+    def __init__(self, parent=None, data=None, changes=None):
         super().__init__(parent)
-        # self.incoming_columns = incoming_columns
-        # self.old_columns = old_columns
         self.data = data
-        print(data)
+        self.changes = changes or {
+            'selected_columns': [],
+            'rename_mapping': {},
+            'dtype_mapping': {}
+        }
         self.initUI()
         self.setupConnections()
 
@@ -43,19 +45,20 @@ class TableWidget(QWidget):
 
     def populateTable(self):
         data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
-        # row_count = len(self.incoming_columns) if self.incoming_columns else len(
-        #     self.old_columns)
         row_count = len(self.data)
 
         for i in range(row_count):
             self.table.insertRow(i)
+            column_name = self.data[i]['column_name']
 
             # Checkbox for isSelected
             checkbox = QCheckBox()
+            checkbox.setChecked(
+                column_name in self.changes['selected_columns'])
             self.table.setCellWidget(i, 0, checkbox)
 
-            # Editable line edit for column_name
-            column_name_item = QTableWidgetItem(self.data[i]['column_name'])
+            # Column name (non-editable)
+            column_name_item = QTableWidgetItem(column_name)
             column_name_item.setFlags(
                 column_name_item.flags() ^ ~Qt.ItemIsEditable)
             self.table.setItem(i, 1, column_name_item)
@@ -63,11 +66,18 @@ class TableWidget(QWidget):
             # Dropdown for data_type
             combo_box = QComboBox()
             combo_box.addItems(data_types)
-            combo_box.setCurrentText(str(self.data[i]['dtype']))
+            # Set saved dtype if exists, otherwise use original
+            saved_dtype = self.changes['dtype_mapping'].get(column_name)
+            current_dtype = saved_dtype if saved_dtype else str(
+                self.data[i]['dtype'])
+            combo_box.setCurrentText(current_dtype)
             self.table.setCellWidget(i, 2, combo_box)
 
             # Line edit for rename
-            rename_item = QLineEdit("")
+            rename_item = QLineEdit()
+            # Set saved rename if exists
+            saved_rename = self.changes['rename_mapping'].get(column_name, "")
+            rename_item.setText(saved_rename)
             self.table.setCellWidget(i, 3, rename_item)
 
     def onDataChanged(self):
