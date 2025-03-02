@@ -1,0 +1,181 @@
+{
+    "id": 2631341926480,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 2631351330128,
+            "title": "File Input",
+            "pos_x": -418.0,
+            "pos_y": -61.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2631351644048,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 2631351705104,
+            "title": "File Input",
+            "pos_x": -415.0,
+            "pos_y": 82.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2631351705232,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 2631351298320,
+            "title": "Join",
+            "pos_x": -124.68749999999994,
+            "pos_y": -1.2890625000000284,
+            "inputs": [
+                {
+                    "id": 2631341922576,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                },
+                {
+                    "id": 2631351698192,
+                    "index": 1,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2631351710928,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                },
+                {
+                    "id": 2631351713232,
+                    "index": 1,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                },
+                {
+                    "id": 2631351712592,
+                    "index": 2,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                }
+            ],
+            "content": {
+                "join_type": "inner",
+                "mapping_data": [
+                    {
+                        "left_column": "Keyword",
+                        "right_column": "Keyword"
+                    },
+                    {
+                        "left_column": "Seed",
+                        "right_column": "Seed"
+                    }
+                ],
+                "output_columns": [
+                    {
+                        "name": "Country",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Difficulty",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Hot Keyword",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Keyword",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Relevancy Score",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Seed",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Source",
+                        "source": "L"
+                    },
+                    {
+                        "name": "Country",
+                        "source": "R"
+                    },
+                    {
+                        "name": "Difficulty",
+                        "source": "R"
+                    },
+                    {
+                        "name": "Hot Keyword",
+                        "source": "R"
+                    },
+                    {
+                        "name": "Keyword",
+                        "source": "R"
+                    },
+                    {
+                        "name": "Relevancy Score",
+                        "source": "R"
+                    },
+                    {
+                        "name": "Seed",
+                        "source": "R"
+                    },
+                    {
+                        "name": "Source",
+                        "source": "R"
+                    }
+                ]
+            },
+            "op_code": 2,
+            "op_type": "JOIN"
+        }
+    ],
+    "edges": [
+        {
+            "id": 2631312679952,
+            "edge_type": 5,
+            "start": 2631351644048,
+            "end": 2631341922576
+        },
+        {
+            "id": 2631351648144,
+            "edge_type": 5,
+            "start": 2631351705232,
+            "end": 2631351698192
+        }
+    ]
+}

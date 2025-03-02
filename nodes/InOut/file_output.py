@@ -135,6 +135,7 @@ class TriggerNode_FileOutput(TriggerNode):
 
     def processInputs(self, input_values):
         input_value = input_values[0]
+        print("🐍 File: InOut/file_output.py | Line: 138 | processInputs ~ input_value", input_value)
         # u_value = 0
         # print("Columns from input file:", u_value)
         # return u_value

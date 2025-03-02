@@ -167,7 +167,7 @@ class TriggerNode_Formula(TriggerNode):
     op_code = OP_NODE_FORMULA
     op_type = 'PREPARATION'
     op_title = "Formula"
-    content_label_objname = "trigger_node_node_title"
+    content_label_objname = "trigger_node_formula"
     style = {
         'brush_color': theme.brush_color('PREPARATION')
     }

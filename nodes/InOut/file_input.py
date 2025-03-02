@@ -132,7 +132,6 @@ class FileInputContent(QDMNodeIconContentWidget):
 
 @register_node(OP_NODE_FILE_INPUT, 'INPUT')
 class TriggerNode_FileInput(TriggerNode):
-    # icon = "Resource/icons/Input/File Output_check.png"
     icon = "Resource/icons/Input/File Input.png"
     op_code = OP_NODE_FILE_INPUT
     op_type = 'INPUT'
