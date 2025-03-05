@@ -213,7 +213,9 @@ class TriggerNode_Select(TriggerNode):
         # self.content.edit.textChanged.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
-        input_value = input_values[0]
+        input_node = self.getInput(0)
+        socket_index = self.getSocketValue(input_node.outputs, self)
+        input_value = input_values[0][socket_index]
         if input_value:
             self.markDirty(False)
             self.markInvalid(False)
@@ -224,10 +226,10 @@ class TriggerNode_Select(TriggerNode):
 
             self.evalChildren()
 
-            return {
+            return [{
                 "data": self.content.data,
                 "variable_name": self.content.variable_name
-            }
+            }]
         else:
             self.markDirty(True)
             self.markInvalid(True)

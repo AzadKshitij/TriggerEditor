@@ -435,10 +435,20 @@ class TriggerNode_Join(TriggerNode):
             # self.content.init_output_columns()
 
             self.evalChildren()
-            return {
-                'data': self.content.data,
-                'variable_name': self.content.variable_name
-            }
+            return [
+                {
+                    'data': self.content.left_data,
+                    'variable_name': self.content.left_variable
+                },
+                {
+                    'data': self.content.data,
+                    'variable_name': self.content.variable_name
+                },
+                {
+                    'data': self.content.right_data,
+                    'variable_name': self.content.right_variable
+                },
+            ]
 
         # variable = self.content.variable_name
         else:

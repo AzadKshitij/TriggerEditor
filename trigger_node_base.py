@@ -95,6 +95,17 @@ class TriggerNode(Node):
         self.input_socket_position = LEFT_CENTER
         self.output_socket_position = RIGHT_CENTER
 
+    def getSocketValue(self, socket_list, target_node):
+        """Get value based on socket connection"""
+        socket_index = 0
+        for i, socket in enumerate(socket_list):
+            if socket.edges:
+                for edge in socket.edges:
+                    if edge.getOtherSocket(socket).node == target_node:
+                        socket_index = i
+                        break
+        return socket_index
+
     def evalOperation(self, input1, input2):
         return 123
 

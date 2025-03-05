@@ -160,14 +160,11 @@ class TriggerNode_FileInput(TriggerNode):
     #     return param
 
     def processInputs(self, input_values):
-        print("#############")
-        print("File Input process Inputs")
-        print("#############")
         # Custom processing logic for the File Input node
         if not self.content.filePath:
             self.grNode.setToolTip("No file selected")
             self.markInvalid(True)
-            return None
+            return [None]
 
         self.markDirty(False)
         self.markInvalid(False)
@@ -176,10 +173,10 @@ class TriggerNode_FileInput(TriggerNode):
 
         self.content.loadCSV(self.content.filePath)
         # self.content.loadCSV(self.content.filePath)
-        param = {
+        param = [{
             "data": self.content.data,
             "variable_name": self.content.variable_name
-        }
+        }]
 
         self.evalChildren()
 

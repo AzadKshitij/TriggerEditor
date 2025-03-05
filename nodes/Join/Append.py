@@ -167,6 +167,17 @@ class Join1Content(QDMNodeIconContentWidget):
         # Add to container
         self.mapping_container.addLayout(row_layout)
 
+    def delete_layout(self, layout):
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    self.delete_layout(item.layout())
+            layout.deleteLater()
+
     def remove_mapping_row(self, mapping_pair):
         if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
             # Remove from layout
@@ -436,8 +447,17 @@ class TriggerNode_Join_1(TriggerNode):
 
     def processInputs(self, input_values):
         # Only one input for simplicity
-        left_input = input_values[0]
-        right_input = input_values[1]
+        this_left_skt = 0
+        this_right_skt = 1
+
+        # Get socket index of incoming data
+        input_node = self.getInput(this_left_skt)
+        left_skt = self.getSocketValue(input_node.outputs, self)
+        input_node = self.getInput(this_right_skt)
+        right_skt = self.getSocketValue(input_node.outputs, self)
+
+        left_input = input_values[this_left_skt][left_skt]
+        right_input = input_values[this_right_skt][right_skt]
 
         if left_input and right_input:
             self.markDirty(False)

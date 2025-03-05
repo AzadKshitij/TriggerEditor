@@ -134,11 +134,11 @@ class TriggerNode_FileOutput(TriggerNode):
         self.grNode = TriggerGraphicsNode(self)
 
     def processInputs(self, input_values):
-        input_value = input_values[0]
-        print("🐍 File: InOut/file_output.py | Line: 138 | processInputs ~ input_value", input_value)
-        # u_value = 0
-        # print("Columns from input file:", u_value)
-        # return u_value
+        # Only one input for simplicity
+        this_socket_index = 0
+        input_node = self.getInput(this_socket_index)
+        socket_index = self.getSocketValue(input_node.outputs, self)
+        input_value = input_values[this_socket_index][socket_index]
 
         if not input_value:
             self.grNode.setToolTip("Input is not connected")

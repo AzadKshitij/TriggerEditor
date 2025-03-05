@@ -182,7 +182,10 @@ class TriggerNode_Formula(TriggerNode):
 
     def processInputs(self, input_values):
         # Only one input for simplicity
-        input_value = input_values[0]
+        this_socket_index = 0
+        input_node = self.getInput(this_socket_index)
+        socket_index = self.getSocketValue(input_node.outputs, self)
+        input_value = input_values[this_socket_index][socket_index]
         if input_value:
             self.markDirty(False)
             self.markInvalid(False)
@@ -192,10 +195,10 @@ class TriggerNode_Formula(TriggerNode):
             self.content.incoming_variable = input_value.get('variable_name')
             self.evalChildren()
 
-            return {
+            return [{
                 'data': self.content.data,
                 'variable_name': self.content.variable_name
-            }
+            }]
         # variable = self.content.variable_name
         else:
             self.markDirty(True)
