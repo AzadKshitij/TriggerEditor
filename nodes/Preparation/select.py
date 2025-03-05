@@ -3,7 +3,7 @@ from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget,
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, QSaveFile, Signal
 from trigger_conf import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -16,7 +16,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class SelectContent(QDMNodeIconContentWidget):
+class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     """_summary_
 
     Args:
@@ -37,6 +37,7 @@ class SelectContent(QDMNodeIconContentWidget):
         # local variables
         self.old_data: dict = []
         self.table_data: list = []
+        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # incoming variables
         self.incoming_variable: str = ''
@@ -78,6 +79,8 @@ class SelectContent(QDMNodeIconContentWidget):
 
     def handleDataChanged(self, data_):
         print("Data changed:", data_)
+        self.node.scene.has_been_modified = True
+        self.node.scene.history.storeHistory("Input Modified")
         # only take selected columns from incoming data
         # data_ contains (column_name, data_type, rename)
         if self.incom_data is not None:

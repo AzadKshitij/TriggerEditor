@@ -66,6 +66,69 @@ class TriggerContent(QDMNodeIconContentWidget):
         lbl.setObjectName(self.node.content_label_objname)
 
 
+class TriggerChangeHandler:
+    def __init__(self, scene: 'Scene'):
+        self._scene = scene
+        self._input_widgets = []
+
+    def registerInputWidget(self, widget):
+        """Register a single input widget for change tracking"""
+        if widget in self._input_widgets:
+            return
+
+        if hasattr(widget, 'textChanged'):
+            widget.textChanged.connect(self.onInputChanged)
+        elif hasattr(widget, 'valueChanged'):
+            widget.valueChanged.connect(self.onInputChanged)
+        elif hasattr(widget, 'currentTextChanged'):
+            widget.currentTextChanged.connect(self.onInputChanged)
+        elif hasattr(widget, 'stateChanged'):
+            widget.stateChanged.connect(self.onInputChanged)
+        elif hasattr(widget, 'dataChanged'):
+            widget.dataChanged.connect(self.onInputChanged)
+
+        self._input_widgets.append(widget)
+
+    def onInputChanged(self, *args):
+        """Called when any input widget changes"""
+        if hasattr(self.node, 'scene'):
+            self.node.scene.has_been_modified = True
+            self.node.scene.history.storeHistory("Input Modified")
+            # Trigger node evaluation
+            # self.node.markDirty()
+            # self.node.eval()
+
+    def clearInputWidgets(self):
+        """Clear all input widget connections"""
+        for widget in self._input_widgets:
+            if hasattr(widget, 'textChanged'):
+                try:
+                    widget.textChanged.disconnect(self.onInputChanged)
+                except:
+                    pass
+            elif hasattr(widget, 'valueChanged'):
+                try:
+                    widget.valueChanged.disconnect(self.onInputChanged)
+                except:
+                    pass
+            elif hasattr(widget, 'currentTextChanged'):
+                try:
+                    widget.currentTextChanged.disconnect(self.onInputChanged)
+                except:
+                    pass
+            elif hasattr(widget, 'stateChanged'):
+                try:
+                    widget.stateChanged.disconnect(self.onInputChanged)
+                except:
+                    pass
+            elif hasattr(widget, 'dataChanged'):
+                try:
+                    widget.dataChanged.disconnect(self.onInputChanged)
+                except:
+                    pass
+        self._input_widgets.clear()
+
+
 class TriggerNode(Node):
     icon = ""
     op_code = 0

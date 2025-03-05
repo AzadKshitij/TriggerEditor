@@ -3,7 +3,7 @@ from docks.result import ResultDock
 import qss.nodeeditor_dark_resources
 import os
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy
+from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
 from nodeeditor.utils import loadStylesheets
@@ -266,7 +266,7 @@ class TriggerWindow(NodeEditorWindow):
         self.actSeparator.setVisible(len(windows) != 0)
 
         for i, window in enumerate(windows):
-            child = window.widget()
+            child: QMdiSubWindow = window.widget()
 
             text = "%d %s" % (i + 1, child.getUserFriendlyFilename())
             if i < 9:

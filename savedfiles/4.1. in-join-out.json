@@ -183,6 +183,48 @@
             },
             "op_code": 5,
             "op_type": "INPUT"
+        },
+        {
+            "id": 2062067222544,
+            "title": "File Output",
+            "pos_x": 284.0,
+            "pos_y": -163.0,
+            "inputs": [
+                {
+                    "id": 2062101746384,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/out_check_W_left-join.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 2062101972688,
+            "title": "File Output",
+            "pos_x": 290.0,
+            "pos_y": 89.0,
+            "inputs": [
+                {
+                    "id": 2062101971152,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/out_check_W_right-join.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
         }
     ],
     "edges": [
@@ -199,10 +241,22 @@
             "end": 2811054162192
         },
         {
-            "id": 3045123533840,
+            "id": 2062101905104,
+            "edge_type": 5,
+            "start": 2810927631184,
+            "end": 3045130521104
+        },
+        {
+            "id": 2062101674256,
             "edge_type": 5,
             "start": 2811047589456,
-            "end": 3045130521104
+            "end": 2062101746384
+        },
+        {
+            "id": 2062101740176,
+            "edge_type": 5,
+            "start": 2809066455632,
+            "end": 2062101971152
         }
     ]
 }
