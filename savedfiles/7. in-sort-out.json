@@ -1,0 +1,105 @@
+{
+    "id": 2613419668752,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 2613419741264,
+            "title": "File Input",
+            "pos_x": -332.0,
+            "pos_y": -65.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 2613419543120,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 2613419740240,
+            "title": "Sort",
+            "pos_x": 30.0,
+            "pos_y": -79.0,
+            "inputs": [
+                {
+                    "id": 2613133745232,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2613419740048,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "sort_data": [
+                    {
+                        "column": "Keyword",
+                        "order": "Ascending"
+                    },
+                    {
+                        "column": "Autocomplete Position",
+                        "order": "Ascending"
+                    },
+                    {
+                        "column": "Hot Keyword",
+                        "order": "Ascending"
+                    }
+                ]
+            },
+            "op_code": 5,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 2613419745360,
+            "title": "File Output",
+            "pos_x": 312.0,
+            "pos_y": -74.0,
+            "inputs": [
+                {
+                    "id": 2613380715344,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/7. out_check_W_sort.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        }
+    ],
+    "edges": [
+        {
+            "id": 2613388000912,
+            "edge_type": 5,
+            "start": 2613419543120,
+            "end": 2613133745232
+        },
+        {
+            "id": 2613419749840,
+            "edge_type": 5,
+            "start": 2613419740048,
+            "end": 2613380715344
+        }
+    ]
+}
