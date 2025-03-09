@@ -1,0 +1,128 @@
+{
+    "id": 1728622096528,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1728622098256,
+            "title": "File Input",
+            "pos_x": -391.0,
+            "pos_y": -58.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1728613322320,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1728622170832,
+            "title": "Filter",
+            "pos_x": -50.0,
+            "pos_y": -73.0,
+            "inputs": [
+                {
+                    "id": 1728615880464,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1728622173712,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                },
+                {
+                    "id": 1919908580624,
+                    "index": 1,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                }
+            ],
+            "content": {
+                "column": "Difficulty",
+                "operation": "Greater Than or Equal",
+                "value": "7"
+            },
+            "op_code": 2,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 1728622028944,
+            "title": "File Output",
+            "pos_x": 183.0,
+            "pos_y": -101.0,
+            "inputs": [
+                {
+                    "id": 1728622173840,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/6. out_check_W_filter.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 2924879300432,
+            "title": "File Output",
+            "pos_x": 182.0,
+            "pos_y": 51.0,
+            "inputs": [
+                {
+                    "id": 2924913493584,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/6.1. out_check_W_false-filter.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        }
+    ],
+    "edges": [
+        {
+            "id": 1728622179408,
+            "edge_type": 5,
+            "start": 1728613322320,
+            "end": 1728615880464
+        },
+        {
+            "id": 1728622233296,
+            "edge_type": 5,
+            "start": 1728622173712,
+            "end": 1728622173840
+        },
+        {
+            "id": 2924913371536,
+            "edge_type": 5,
+            "start": 1919908580624,
+            "end": 2924913493584
+        }
+    ]
+}

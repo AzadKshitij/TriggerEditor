@@ -38,7 +38,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_join_{self.id}'
 
     def initUI(self, parent=None):
-        icon = QPixmap("Resource/icons/Join/Append.png")
+        icon = QPixmap("Resource/icons/Join/Join.png")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -95,9 +95,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         main_layout.addLayout(output_layout)
 
         # add a button to transform data
-        self.eval_button = QPushButton("Evaluate")
-        self.eval_button.clicked.connect(self.transform_data)
-        main_layout.addWidget(self.eval_button)
+        # self.eval_button = QPushButton("Evaluate")
+        # self.eval_button.clicked.connect(self.transform_data)
+        # main_layout.addWidget(self.eval_button)
 
         dock_layout.addLayout(main_layout)
         # Update UI after layout is created
@@ -402,7 +402,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"    {cols_str}\n"
                 f"]]"
             )
-        return "\n".join(code_lines)
+        return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()
@@ -432,7 +432,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(OP_NODE_JOIN, 'JOIN')
 class TriggerNode_Join_1(TriggerNode):
-    icon = "Resource/icons/Join/Append.png"
+    icon = "Resource/icons/Join/Join.png"
     op_code = OP_NODE_JOIN
     op_type = 'JOIN'
     op_title = "Join"

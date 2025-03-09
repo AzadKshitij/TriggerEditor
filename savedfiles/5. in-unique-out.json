@@ -1,0 +1,94 @@
+{
+    "id": 1911235188752,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1911232383248,
+            "title": "File Input",
+            "pos_x": -410.0,
+            "pos_y": -85.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1911229178384,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/check.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1911235262416,
+            "title": "Unique",
+            "pos_x": -184.0,
+            "pos_y": -56.0,
+            "inputs": [
+                {
+                    "id": 1911204006544,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1911207343184,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "selected_columns": [
+                    "Difficulty"
+                ]
+            },
+            "op_code": 6,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 1842306808336,
+            "title": "File Output",
+            "pos_x": 79.0,
+            "pos_y": -61.0,
+            "inputs": [
+                {
+                    "id": 1842271720272,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/5. out_check_W_uniquecsv.csv"
+            },
+            "op_code": 5,
+            "op_type": "INPUT"
+        }
+    ],
+    "edges": [
+        {
+            "id": 1911198432400,
+            "edge_type": 5,
+            "start": 1911229178384,
+            "end": 1911204006544
+        },
+        {
+            "id": 1842275106704,
+            "edge_type": 5,
+            "start": 1911207343184,
+            "end": 1842271720272
+        }
+    ]
+}

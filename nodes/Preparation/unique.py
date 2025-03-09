@@ -78,10 +78,6 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def on_item_changed(self, item):
         """Handle checkbox state changes"""
-        # self.node.scene.has_been_modified = True
-        # self.node.scene.history.storeHistory("Input Modified")
-        # self.registerInputWidget(item)
-
         # Prevent storing history during restoration
         if self.history.is_restoring_history:
             return
@@ -101,28 +97,16 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 'old_selected_columns': old_selected_columns,
                 'new_selected_columns': self.selected_columns.copy()
             }
-            # print("")
-            # print(
-            #     "🐍 File: Preparation/unique.py | Line: 98 | on_item_changed ~ history_data")
-            # pprint.pp(history_data)
-            # print("")
-
-            # Force scene to be active
-            # self.node.scene.setFocus()
 
             self.history.storeHistory(
                 desc=f"Column '{item.text()}' Selection Changed",
                 data=history_data,
                 setModified=True
             )
-            # print("🐍 File: Preparation/unique.py | Line: 116 | on_item_changed ~ self.node.scene.history.history_stack",
-            #       self.node.scene.history.history_stack[-1])
+        self.handle_data_changed()
 
     def history_stamp_callback(self, history_data, is_undo):
         """Callback for undo/redo operations"""
-        # print("🐍 File: Preparation/unique.py | Line: 100 | on_item_changed ~ history_data")
-        # pprint.pp(history_data)
-
         if is_undo:
             # Undo operation
             self.selected_columns = history_data['old_selected_columns']
@@ -130,27 +114,6 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Redo operation
             self.selected_columns = history_data['new_selected_columns']
         self.update_column_list()
-
-        # get selected node
-        # selection = self.node.scene.getSelectedItems()
-        # if len(selection) == 1 and self == selection[0].content:
-        # Update UI to reflect changes
-        # self.update_column_list()
-
-        # Process data with new selection
-        # if node.content.incom_data is not None and node.content.selected_columns:
-        #     node.content.data = node.content.incom_data[node.content.selected_columns].drop_duplicates(
-        #     )
-        #     node.content.evaluate.emit()
-
-        # Update UI to reflect changes
-        # self.update_column_list()
-
-        # Process data with new selection
-        # if node.content.incom_data is not None and node.content.selected_columns:
-        #     node.content.data = node.content.incom_data[node.content.selected_columns].drop_duplicates(
-        #     )
-        #     node.content.evaluate.emit()
 
     def get_selected_columns(self):
         """Get list of selected column names"""
@@ -161,8 +124,30 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 selected_columns.append(item.text())
         return selected_columns
 
+    def handle_data_changed(self):
+        self.data = self.incom_data.copy()
+        self.data = self.data[self.selected_columns]
+
     def get_code(self):
-        return f"print('New Node')"
+        if not self.selected_columns:
+            return ""
+
+        selected_columns_str = [f"'{col}'" for col in self.selected_columns]
+        selected_columns_str = ", ".join(selected_columns_str)
+        code_lines = []
+
+        # Add import statement
+        code_lines.append("import pandas as pd")
+        code_lines.append(f"df = {self.incoming_variable}")
+
+        # Add code to find unique values
+        code_lines.append(
+            f"unique_df = df.drop_duplicates(subset=[{selected_columns_str}])")
+
+        # Register the resulting DataFrame
+        code_lines.append(f"{self.variable_name} = unique_df")
+
+        return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()

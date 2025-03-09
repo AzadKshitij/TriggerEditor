@@ -101,12 +101,18 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Add the "+" button
             self.column_name.addItem("+ add column")
             self.target_column = new_column
+            self.handle_data_changed()
 
             # Select the new column
             self.column_name.setCurrentIndex(0)
 
         # Reset to non-editable state
         self.column_name.setEditable(False)
+
+    def handle_data_changed(self):
+        # add new column in the data
+        self.data = self.incom_data.copy()
+        self.data[self.target_column] = None
 
     def generate_formula(self):
         self.formula = self.formula_input.toPlainText()
