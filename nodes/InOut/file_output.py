@@ -2,7 +2,7 @@ from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLa
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt
 from trigger_conf import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
@@ -13,11 +13,12 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class FileOutputContent(QDMNodeIconContentWidget):
+class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
+        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # incoming variables
         self.incoming_variable = ""
@@ -29,9 +30,11 @@ class FileOutputContent(QDMNodeIconContentWidget):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
         self.filePathEdit = QLineEdit(self)
-        self.filePathEdit.setReadOnly(True)
+        self.filePathEdit.setPlaceholderText("Enter file path")
+        # self.filePathEdit.setReadOnly(True)
         self.loadButton = QPushButton("Save CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
+        self.registerInputWidget(self.filePathEdit)
 
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
@@ -101,7 +104,6 @@ class FileOutputContent(QDMNodeIconContentWidget):
         res = super().deserialize(data, hashmap)
 
         try:
-
             print(
                 "🐍 File: InOut/file_output.py | Line: 104 | deserialize ~ filePath", self.filePath)
             # self.filePath = data.get('filePath', "")

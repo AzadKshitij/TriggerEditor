@@ -1,20 +1,22 @@
+import pandas as pd
+import os
+
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_conf import register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
-import pandas as pd
 # from pandas import DataFrame
 from themes.theme import Theme
 
 theme = Theme()
 
 
-class FileInputContent(QDMNodeIconContentWidget):
+class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()
 
@@ -22,6 +24,7 @@ class FileInputContent(QDMNodeIconContentWidget):
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
+        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # pass on variables
         self.data: pd.DataFrame = None
@@ -33,7 +36,10 @@ class FileInputContent(QDMNodeIconContentWidget):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
         self.filePathEdit = QLineEdit(self)
-        self.filePathEdit.setReadOnly(True)
+        self.filePathEdit.setPlaceholderText("Enter file path")
+        # self.filePathEdit.connect(self.check_file_path)
+        # self.filePathEdit.textChanged.connect(self.on_input_changed)
+        self.registerInputWidget(self.filePathEdit)
 
         self.loadButton = QPushButton("Load CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
@@ -49,6 +55,23 @@ class FileInputContent(QDMNodeIconContentWidget):
         dock_layout.addWidget(self.loadButton)
         dock_layout.addWidget(self.tableWidget)
         # return dock_layout
+
+    def check_file_path(self):
+        file_path = self.filePathEdit.text()
+        # self.evaluate.emit()
+
+        # Check if the file exists
+        if not os.path.exists(file_path):
+            print(f"Error: File '{file_path}' does not exist.")
+            return
+
+        # Check if the file is a CSV file
+        # if not file_path.endswith('.csv'):
+        #     print(f"Error: File '{file_path}' is not a CSV file.")
+        #     return
+
+        if self.filePath:
+            self.loadCSV(self.filePath)
 
     def get_columns(self):
         if self.filePath:

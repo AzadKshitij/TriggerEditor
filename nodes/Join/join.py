@@ -3,7 +3,7 @@ from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTe
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_conf import OP_NODE_APPEND, OP_NODE_JOIN, register_node
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -13,7 +13,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class JoinContent(QDMNodeIconContentWidget):
+class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
@@ -24,6 +24,8 @@ class JoinContent(QDMNodeIconContentWidget):
         self.mapping_data = []  # Store mapping pairs
         self.selected_columns = []
         self.mapping_pairs = []
+
+        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # incoming variables
         self.left_data: pd.DataFrame = None
@@ -103,6 +105,8 @@ class JoinContent(QDMNodeIconContentWidget):
             #     self.update_columns()
             self.load_saved_data()
             self.update_output_columns()
+
+        self.recursively_find_widgets(dock_layout)
 
         return dock_layout
 

@@ -16,8 +16,8 @@ from ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
 from utils.logger import Logger
 
-DEBUG = True
-DEBUG_CONTEXT = True
+DEBUG = False
+DEBUG_CONTEXT = False
 
 
 class TriggerSubWindow(NodeEditorWidget):

@@ -1,4 +1,5 @@
 from qtpy.QtGui import QImage, QPixmap, QBrush, QColor
+from qtpy.QtWidgets import QWidget, QLineEdit, QSpinBox, QComboBox, QCheckBox
 from qtpy.QtCore import QRectF, Qt, Signal, QTimer
 from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget, QVBoxLayout
 
@@ -88,6 +89,39 @@ class TriggerChangeHandler:
             widget.dataChanged.connect(self.onInputChanged)
 
         self._input_widgets.append(widget)
+
+    def is_input_widget(self, widget):
+        """Check if a widget is an input widget"""
+        input_widget_types = (QLineEdit, QSpinBox, QComboBox, QCheckBox)
+        return isinstance(widget, input_widget_types)
+
+    def recursively_find_widgets(self, layout):
+        """Recursively find all input widgets in a parent widget"""
+        # input_widgets = []
+
+        for i in range(layout.count()):
+            item = layout.itemAt(i)
+            if item.widget():
+                # Found a widget
+                widget = item.widget()
+                self.registerInputWidget(widget)
+
+                # Check if widget has its own layout
+                if widget.layout():
+                    self.recursively_find_widgets(widget.layout())
+            elif item.layout():
+                # Found a nested layout
+                self.recursively_find_widgets(item.layout())
+
+        # def recursive_search(widget):
+        #     if self.is_input_widget(widget):
+        #         # input_widgets.append(widget)
+        #         self.registerInputWidget(widget)
+        #     for child in widget.findChildren(QWidget):
+        #         recursive_search(child)
+
+        # recursive_search(parent_widget)
+        # return input_widgets
 
     def onInputChanged(self, *args):
         """Called when any input widget changes"""
@@ -227,8 +261,8 @@ class TriggerNode(Node):
 
     def eval(self):
         if not self.isDirty() and not self.isInvalid():
-            print(" _> returning cached %s value:" %
-                  self.__class__.__name__, self.value)
+            # print(" _> returning cached %s value:" %
+            #       self.__class__.__name__, self.value)
             return self.value
         try:
             val = self.evalImplementation()
@@ -243,12 +277,12 @@ class TriggerNode(Node):
             dumpException(e)
 
     def onEdgeConnectionChanged(self, new_edge):
-        print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
+        # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
         self.markDirty()
         self.eval()
 
     def onInputChanged(self, socket=None):
-        print("%s::__onInputChanged" % self.__class__.__name__)
+        # print("%s::__onInputChanged" % self.__class__.__name__)
         self.markDirty()
         self.eval()
 
@@ -260,6 +294,6 @@ class TriggerNode(Node):
 
     def deserialize(self, data, hashmap={}, restore_id=True):
         res = super().deserialize(data, hashmap, restore_id)
-        print("Deserialized CalcNode '%s'" %
-              self.__class__.__name__, "res:", res)
+        # print("Deserialized CalcNode '%s'" %
+        #       self.__class__.__name__, "res:", res)
         return res

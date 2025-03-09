@@ -2,7 +2,7 @@ from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTe
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_conf import OP_NODE_FORMULA, register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -12,7 +12,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class FormulaContent(QDMNodeIconContentWidget):
+class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
@@ -22,6 +22,7 @@ class FormulaContent(QDMNodeIconContentWidget):
         self.formula: str = ''
         self.target_column: str = ''
         self.is_new_column: bool = True
+        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # incoming variables
         self.incoming_variable: str = ''
@@ -49,6 +50,7 @@ class FormulaContent(QDMNodeIconContentWidget):
             self.column_name.activated.connect(self.handle_column_activation)
 
             if self.target_column:
+                self.column_name.addItem(self.target_column)
                 self.column_name.setCurrentText(self.target_column)
             column_layout.addWidget(QLabel("Target:"))
             column_layout.addWidget(self.column_name)
@@ -68,7 +70,7 @@ class FormulaContent(QDMNodeIconContentWidget):
             # Add layouts
             dock_layout.addLayout(column_layout)
             dock_layout.addLayout(formula_layout)
-
+            self.recursively_find_widgets(dock_layout)
         # return layout
 
     def handle_column_activation(self, index):

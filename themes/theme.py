@@ -14,9 +14,6 @@ class Theme:
         return self.theme_data[node_type]['_brush_color']
 
     def read_file(file_name):
-        print("%%%%%%%%%%%%%%%%%%%%%%%%")
-        print("Reading Theme file!")
-        print("%%%%%%%%%%%%%%%%%%%%%%%%")
         with open(file_name, 'r') as f:
             theme_data = json.load(f)
             return theme_data
