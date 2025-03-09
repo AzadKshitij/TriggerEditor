@@ -352,9 +352,15 @@ class TriggerSubWindow(NodeEditorWidget):
         node_data = {}
         executor = NodeExecutor(self.logger)
 
+        # Reset all node borders
+        for node in self.getAllNodes():
+            node.grNode.resetPen()
+
         start_time = time.time()
 
         for node in sorted_nodes:
+            node.grNode.setPenExecuting()
+            node.grNode.update()
             # Collect data from all input nodes
             input_data = []
             for input_node in connections[node]['inputs']:
@@ -371,6 +377,8 @@ class TriggerSubWindow(NodeEditorWidget):
             print(":::::::::::::::::::::::::::::::::")
             print("executor: ", l)
             print(":::::::::::::::::::::::::::::::::")
+            node.grNode.setPenExecuted()
+            node.grNode.update()
 
         end_time = time.time()
         print("Execution Time: ", end_time - start_time, " seconds")

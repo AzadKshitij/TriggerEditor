@@ -55,11 +55,7 @@
                     },
                     {
                         "column": "Autocomplete Position",
-                        "order": "Ascending"
-                    },
-                    {
-                        "column": "Hot Keyword",
-                        "order": "Ascending"
+                        "order": "Descending"
                     }
                 ]
             },

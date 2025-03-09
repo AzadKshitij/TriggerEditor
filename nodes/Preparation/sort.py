@@ -4,7 +4,7 @@ from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QT
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_conf import OP_NODE_SORT, register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -14,7 +14,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class SortContent(QDMNodeIconContentWidget):
+class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
@@ -25,6 +25,8 @@ class SortContent(QDMNodeIconContentWidget):
         self.sort_rows = []
         self.row_widgets = {}  # Store references to row widgets with their indices
         self.next_row_id = 0   # Unique identifier for each row
+
+        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # incoming variables
         self.incoming_variable: str = ''
@@ -63,6 +65,7 @@ class SortContent(QDMNodeIconContentWidget):
         main_layout.addStretch()
 
         dock_layout.addLayout(main_layout)
+        self.recursively_find_widgets(dock_layout)
         return dock_layout
 
     def add_sort_row(self, restore_data=None):

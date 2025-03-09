@@ -1,4 +1,4 @@
-from qtpy.QtGui import QImage, QPixmap, QBrush, QColor
+from qtpy.QtGui import QImage, QPixmap, QBrush, QColor, QPen
 from qtpy.QtWidgets import QWidget, QLineEdit, QSpinBox, QComboBox, QCheckBox
 from qtpy.QtCore import QRectF, Qt, Signal, QTimer
 from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget, QVBoxLayout
@@ -19,6 +19,17 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
+
+        self._default_pen = QPen(QColor("#7F000000"))
+        self._default_pen.setWidth(2)
+        self._selected_pen = QPen(QColor("#FFFFA637"))
+        self._selected_pen.setWidth(3)
+        self._executing_pen = QPen(QColor("#FF800080"))  # Purple color
+        self._executing_pen.setWidth(3)
+        self._executed_pen = QPen(QColor("#FF008000"))   # Green color
+        self._executed_pen.setWidth(3)
+
+        self._pen = self._default_pen  # Current pen
 
         # self._brush_title = QBrush(QColor(style['brush_color']))
 
@@ -41,6 +52,13 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         # self._brush_title = QBrush(QColor("#FF313131"))
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
+
+        # Draw the border first
+        path_outline = self.shape()  # Get the shape path
+        painter.setPen(self._pen)
+        painter.drawPath(path_outline)
+
+        # Draw node content
         super().paint(painter, QStyleOptionGraphicsItem, widget)
 
         offset = 24.0
@@ -59,6 +77,21 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
             self.icons,
             QRectF(offset, 0, 24.0, 24.0)
         )
+
+    def setPenExecuting(self):
+        """Set node border to purple while executing"""
+        self._pen = self._executing_pen
+        self.update()
+
+    def setPenExecuted(self):
+        """Set node border to green after execution"""
+        self._pen = self._executed_pen
+        self.update()
+
+    def resetPen(self):
+        """Reset to default border color"""
+        self._pen = self._default_pen
+        self.update()
 
 
 class TriggerContent(QDMNodeIconContentWidget):
