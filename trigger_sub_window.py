@@ -347,6 +347,7 @@ class TriggerSubWindow(NodeEditorWidget):
         return sorted_nodes
 
     def executeWorkflow(self):
+        self.fixed_button.setEnabled(False)
         connections = self.getNodeConnections()
         sorted_nodes = self.topologicalSort(connections)
         node_data = {}
@@ -393,6 +394,12 @@ class TriggerSubWindow(NodeEditorWidget):
         # Execute the node's code
         # result = node.execute(input_data)
         # node_data[node] = result
+
+        # Reset all node borders
+        for node in self.getAllNodes():
+            node.grNode.resetPen()
+
+        self.fixed_button.setEnabled(True)
 
     # def executeWorkflow(self):
     #     connections = self.getNodeConnections()

@@ -7,6 +7,7 @@ from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphics
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
+from nodeeditor.node_scene_history import SceneHistory
 import pandas as pd
 from themes.theme import Theme
 
@@ -24,6 +25,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.mapping_data = []  # Store mapping pairs
         self.selected_columns = []
         self.mapping_pairs = []
+        self.history: SceneHistory = self.node.scene.history
 
         TriggerChangeHandler.__init__(self, self.node.scene)
 
@@ -51,6 +53,10 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.join_type_combo.addItems(["inner", "left", "right", "outer"])
         self.join_type_combo.currentTextChanged.connect(
             self.on_join_type_changed)
+        self.join_type_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.join_type_combo.setMinimumWidth(80)
+        self.join_type_combo.setMaximumWidth(120)
         join_type_layout.addWidget(join_type_label)
         join_type_layout.addWidget(self.join_type_combo)
         self.join_type_combo.setCurrentText(self.join_type)
@@ -81,7 +87,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.output_columns_list = QListWidget()
         self.output_columns_list.setSelectionMode(
             QAbstractItemView.SelectionMode.MultiSelection)
-        self.output_columns_list.setMaximumHeight(150)
+        # self.output_columns_list.setMaximumHeight(150)
         output_layout.addWidget(output_label)
         output_layout.addWidget(self.output_columns_list)
 
@@ -120,7 +126,28 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # check if col exist in output_column it it does check the checkbox or uncheck it
 
     def on_join_type_changed(self, join_type):
+        # self.join_type = join_type
+        if self.history.is_restoring_history:
+            return
+
+        old_join_type = self.join_type
         self.join_type = join_type
+
+        history_data = {
+            'node': self.node,
+            'old_join_type': old_join_type,
+            'new_join_type': join_type,
+            'old_mapping_data': self.mapping_data.copy(),
+            'new_mapping_data': self.mapping_data.copy(),
+            'old_selected_columns': self.selected_columns.copy(),
+            'new_selected_columns': self.selected_columns.copy()
+        }
+
+        self.history.storeHistory(
+            desc=f"Join type changed to {join_type}",
+            data=history_data,
+            setModified=True
+        )
 
     # def update_combo_boxes(self):
 
@@ -129,6 +156,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout = QHBoxLayout()
         left_column_combo = QComboBox()
         right_column_combo = QComboBox()
+
+        # Set size policies for mapping combos
+        for combo in [left_column_combo, right_column_combo]:
+            combo.setSizeAdjustPolicy(
+                QComboBox.SizeAdjustPolicy.AdjustToContents)
+            combo.setMinimumWidth(120)  # Set minimum width
+            # Set maximum width to prevent too wide combos
+            # combo.setMaximumWidth(200)
 
         if hasattr(self, 'left_data') and self.left_data is not None:
             left_column_combo.addItems(self.left_data.columns.tolist())
@@ -141,7 +176,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 right_column_combo.setCurrentText(right_col)
 
         row_layout.addWidget(left_column_combo)
-        row_layout.addWidget(QLabel("="))
+        row_layout.addSpacing(10)
         row_layout.addWidget(right_column_combo)
         remove_button = QPushButton("-")
         remove_button.setMaximumWidth(30)
@@ -183,9 +218,24 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             layout.deleteLater()
 
     def remove_mapping_row(self, mapping_pair):
+        # if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
+        # # Remove from layout
+        # self.delete_layout(mapping_pair['layout'])
+
+        # # Find and remove corresponding mapping data
+        # idx = self.mapping_pairs.index(mapping_pair)
+        # if idx < len(self.mapping_data):
+        #     self.mapping_data.pop(idx)
+
+        # # Remove from UI storage
+        # self.mapping_pairs.remove(mapping_pair)
+
         if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
-            # Remove from layout
-            self.delete_layout(mapping_pair['layout'])
+            if self.history.is_restoring_history:
+                return
+
+            # Store old state before removal
+            old_mapping_data = self.mapping_data.copy()
 
             # Find and remove corresponding mapping data
             idx = self.mapping_pairs.index(mapping_pair)
@@ -194,22 +244,71 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Remove from UI storage
             self.mapping_pairs.remove(mapping_pair)
+            # Remove from layout
+            self.delete_layout(mapping_pair['layout'])
+
+            # Store history
+            history_data = {
+                'node': self.node,
+                'old_join_type': self.join_type,
+                'new_join_type': self.join_type,
+                'old_mapping_data': old_mapping_data,
+                'new_mapping_data': self.mapping_data.copy(),
+                'old_selected_columns': self.selected_columns.copy(),
+                'new_selected_columns': self.selected_columns.copy()
+            }
+
+            self.history.storeHistory(
+                desc="Removed mapping row",
+                data=history_data,
+                setModified=True
+            )
 
     def update_mapping_data(self):
         """Update mapping data when UI changes"""
-        for i, pair in enumerate(self.mapping_pairs):
-            if i < len(self.mapping_data):
-                self.mapping_data[i] = {
-                    'left_column': pair['left_combo'].currentText(),
-                    'right_column': pair['right_combo'].currentText()
-                }
-            else:
-                self.mapping_data.append({
-                    'left_column': pair['left_combo'].currentText(),
-                    'right_column': pair['right_combo'].currentText()
-                })
-        # Trim extra mapping data if UI has fewer rows
-        self.mapping_data = self.mapping_data[:len(self.mapping_pairs)]
+
+        if self.history.is_restoring_history:
+            return
+
+        old_mapping_data = self.mapping_data.copy()
+
+        # Update current mapping data
+
+        for pair in self.mapping_pairs:
+            self.mapping_data.append({
+                'left_column': pair['left_combo'].currentText(),
+                'right_column': pair['right_combo'].currentText()
+            })
+
+        history_data = {
+            'node': self.node,
+            'old_join_type': self.join_type,
+            'new_join_type': self.join_type,
+            'old_mapping_data': old_mapping_data,
+            'new_mapping_data': self.mapping_data.copy(),
+            'old_selected_columns': self.selected_columns.copy(),
+            'new_selected_columns': self.selected_columns.copy()
+        }
+
+        self.history.storeHistory(
+            desc="Join mapping updated",
+            data=history_data,
+            setModified=True
+        )
+
+        # for i, pair in enumerate(self.mapping_pairs):
+        #     if i < len(self.mapping_data):
+        #         self.mapping_data[i] = {
+        #             'left_column': pair['left_combo'].currentText(),
+        #             'right_column': pair['right_combo'].currentText()
+        #         }
+        #     else:
+        #         self.mapping_data.append({
+        #             'left_column': pair['left_combo'].currentText(),
+        #             'right_column': pair['right_combo'].currentText()
+        #         })
+        # # Trim extra mapping data if UI has fewer rows
+        # self.mapping_data = self.mapping_data[:len(self.mapping_pairs)]
 
     def update_output_columns(self):
         self.output_columns_list.clear()
@@ -296,25 +395,100 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _on_output_checkbox_changed(self, checkbox):
         """Handle checkbox state changes"""
+        # col_name = checkbox.text()
+        # source = checkbox.property('source')
+        # col_data = {'name': col_name, 'source': source}
+
+        # if checkbox.isChecked():
+        #     # Check if column already exists
+        #     exists = False
+        #     for existing in self.selected_columns:
+        #         if existing['name'] == col_name and existing['source'] == source:
+        #             exists = True
+        #             break
+        #     if not exists:
+        #         self.selected_columns.append(col_data)
+        # else:
+        #     # Remove the column if it exists
+        #     self.selected_columns = [col for col in self.selected_columns
+        #                              if not (col['name'] == col_name and col['source'] == source)]
+
+        if self.history.is_restoring_history:
+            return
+
         col_name = checkbox.text()
         source = checkbox.property('source')
         col_data = {'name': col_name, 'source': source}
 
+        old_selected_columns = self.selected_columns.copy()
+
         if checkbox.isChecked():
-            # Check if column already exists
-            exists = False
-            for existing in self.selected_columns:
-                if existing['name'] == col_name and existing['source'] == source:
-                    exists = True
-                    break
-            if not exists:
+            if col_data not in self.selected_columns:
                 self.selected_columns.append(col_data)
         else:
-            # Remove the column if it exists
             self.selected_columns = [col for col in self.selected_columns
                                      if not (col['name'] == col_name and col['source'] == source)]
-        print("🐍 File: Join/Append.py | Line: 283 | _on_output_checkbox_changed ~ self.selected_columns",
-              self.selected_columns)
+
+        history_data = {
+            'node': self.node,
+            'old_join_type': self.join_type,
+            'new_join_type': self.join_type,
+            'old_mapping_data': self.mapping_data.copy(),
+            'new_mapping_data': self.mapping_data.copy(),
+            'old_selected_columns': old_selected_columns,
+            'new_selected_columns': self.selected_columns.copy()
+        }
+
+        self.history.storeHistory(
+            desc=f"Column '{col_name}' selection changed",
+            data=history_data,
+            setModified=True
+        )
+
+    def history_stamp_callback(self, history_data, is_undo):
+        """Callback for undo/redo operations"""
+        node_data = history_data.get('node', None)
+        if node_data != self.node:
+            return
+
+        self.history.is_restoring_history = True
+        try:
+
+            if is_undo:
+                # Undo operation
+                self.join_type = history_data.get('old_join_type', 'inner')
+                self.mapping_data = history_data.get(
+                    'old_mapping_data', []).copy()
+                self.selected_columns = history_data.get(
+                    'old_selected_columns', []).copy()
+            else:
+                # Redo operation
+                self.join_type = history_data.get('new_join_type', 'inner')
+                self.mapping_data = history_data.get(
+                    'new_mapping_data', []).copy()
+                self.selected_columns = history_data.get(
+                    'new_selected_columns', []).copy()
+
+            # Update UI to reflect changes
+            self.join_type_combo.setCurrentText(self.join_type)
+
+            # Clear existing mapping rows
+            for pair in self.mapping_pairs[:]:
+                self.delete_layout(pair['layout'])
+            self.mapping_pairs.clear()
+
+            # Rebuild mapping rows
+            for mapping in self.mapping_data:
+                self.add_mapping_row(
+                    left_col=mapping['left_column'],
+                    right_col=mapping['right_column']
+                )
+
+            # Update output columns
+            self.update_output_columns()
+
+        finally:
+            self.history.is_restoring_history = False
 
     def transform_data(self):
         """Transform input data based on join settings"""

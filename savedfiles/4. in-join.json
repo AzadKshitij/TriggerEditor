@@ -101,7 +101,11 @@
                         "right_column": "Seed"
                     }
                 ],
-                "output_columns": [
+                "selected_columns": [
+                    {
+                        "name": "Autocomplete Position",
+                        "source": "L"
+                    },
                     {
                         "name": "Country",
                         "source": "L"
@@ -129,6 +133,10 @@
                     {
                         "name": "Source",
                         "source": "L"
+                    },
+                    {
+                        "name": "Autocomplete Position",
+                        "source": "R"
                     },
                     {
                         "name": "Country",
