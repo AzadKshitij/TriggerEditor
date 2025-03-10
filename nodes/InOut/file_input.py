@@ -122,6 +122,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             #     QHeaderView.Stretch)
             self.tableWidget.horizontalHeader().setSectionsMovable(True)
         # Display the head of the DataFrame
+            # self.evaluate.emit()
             # self.csvPreview.setPlainText(df.head().to_string())
         except Exception as e:
             dumpException(e)
@@ -183,6 +184,7 @@ class TriggerNode_FileInput(TriggerNode):
     #     return param
 
     def processInputs(self, input_values):
+        print("⚠️⚠️⚠️ File Input ⚠️⚠️⚠️")
         # Custom processing logic for the File Input node
         if not self.content.filePath:
             self.grNode.setToolTip("No file selected")
@@ -194,7 +196,7 @@ class TriggerNode_FileInput(TriggerNode):
         # self.markDescendantsInvalid(False)
         # self.markDescendantsDirty()
 
-        self.content.loadCSV(self.content.filePath)
+        # self.content.loadCSV(self.content.filePath)
         # self.content.loadCSV(self.content.filePath)
         param = [{
             "data": self.content.data,

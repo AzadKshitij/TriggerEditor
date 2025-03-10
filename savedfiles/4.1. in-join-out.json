@@ -47,7 +47,7 @@
         },
         {
             "id": 2809066642640,
-            "title": "Join_1",
+            "title": "Join",
             "pos_x": 3.0,
             "pos_y": -35.0,
             "inputs": [
@@ -160,7 +160,7 @@
                     }
                 ]
             },
-            "op_code": 1,
+            "op_code": 2,
             "op_type": "JOIN"
         },
         {

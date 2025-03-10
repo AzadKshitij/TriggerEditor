@@ -1,4 +1,5 @@
 from sys import prefix
+from numpy import r_
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QAbstractItemView, QFormLayout, QListWidgetItem, QCheckBox, QWidget
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
@@ -36,8 +37,12 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.right_variable: str = ''
 
         # pass on variables
-        self.data = []
+        self.data: pd.DataFrame = None
+        self.l_data: pd.DataFrame = None
+        self.r_data: pd.DataFrame = None
         self.variable_name = f'var_join_{self.id}'
+        self.l_variable_name = f'var_l_join_{self.id}'
+        self.r_variable_name = f'var_r_join_{self.id}'
 
     def initUI(self, parent=None):
         icon = QPixmap("Resource/icons/Join/Join.png")
@@ -101,9 +106,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         main_layout.addLayout(output_layout)
 
         # add a button to transform data
-        # self.eval_button = QPushButton("Evaluate")
-        # self.eval_button.clicked.connect(self.transform_data)
-        # main_layout.addWidget(self.eval_button)
+        self.eval_button = QPushButton("Evaluate")
+        self.eval_button.clicked.connect(self.transform_data)
+        main_layout.addWidget(self.eval_button)
 
         dock_layout.addLayout(main_layout)
         # Update UI after layout is created
@@ -509,30 +514,57 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.right_data,
                 left_on=left_cols,
                 right_on=right_cols,
-                how=self.join_type,
-                suffixes=('_left', '_right')
+                how='outer',
+                suffixes=('_left', '_right'),
+                indicator=True
             )
 
             # Filter columns based on selected_columns
+            # Filter columns based on selected_columns
             if self.selected_columns:
                 selected_cols = []
+                l_rename_map = {}
+                r_rename_map = {}
                 for col in self.selected_columns:
                     col_name = col['name']
                     if col['source'] == 'L':
                         # Add suffix if it's not a key column
                         if col_name not in left_cols:
-                            col_name = f"{col_name}_left"
+                            suffixed_name = f"{col_name}_left"
+                            l_rename_map[suffixed_name] = col_name
+                        selected_cols.append(
+                            col_name if col_name in left_cols else f"{col_name}_left")
+
                     else:  # 'R'
                         if col_name not in right_cols:
-                            col_name = f"{col_name}_right"
-                    if col_name in result.columns:
-                        selected_cols.append(col_name)
+                            suffixed_name = f"{col_name}_right"
+                            r_rename_map[suffixed_name] = col_name
+                        selected_cols.append(
+                            col_name if col_name in right_cols else f"{col_name}_right")
+            # Main join data - result based on join type
+            self.data = result[result['_merge'] == 'both'][selected_cols]
+            print(
+                "🐍 File: Join/join.py | Line: 546 | transform_data ~ selected_cols", selected_cols)
+            print(
+                "🐍 File: Join/join.py | Line: 544 | transform_data ~ self.data", self.data)
 
-                result = result[selected_cols]
+            result.to_csv('check_join_data.csv', index=False)
+
+            # Left only data - rows that exist only in left table
+            left_only = result[result['_merge'] == 'left_only']
+            left_only = left_only.rename(columns=l_rename_map)
+            self.l_data = left_only[self.left_data.columns]
+
+            self.l_data.to_csv('check_left_data.csv', index=False)
+
+            # Right only data - rows that exist only in right table
+            right_only = result[result['_merge']
+                                == 'right_only']
+            right_only = right_only.rename(columns=r_rename_map)
+            self.r_data = right_only[self.right_data.columns]
+            self.r_data.to_csv('check_right_data.csv', index=False)
 
             # self.data = result
-            print("🐍 File: Join/Append.py | Line: 318 | transform_data ~ result", result)
-            self.data = result
             return result
         except Exception as e:
             print(f"Error during transformation: {str(e)}")
@@ -540,42 +572,75 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self):
         if not self.mapping_data:
-            return None
+            return ""
+
         code_lines = []
         left_cols = [m['left_column'] for m in self.mapping_data]
         right_cols = [m['right_column'] for m in self.mapping_data]
+
+        # Create rename maps for all columns
+        l_rename_map = {
+            f"{col}_left": col for col in self.left_data.columns if col not in left_cols}
+        r_rename_map = {
+            f"{col}_right": col for col in self.right_data.columns if col not in right_cols}
+
         code_lines.append(
-            f"{self.variable_name} = pd.merge(\n"
+            f"# Create rename maps for columns\n"
+            f"_l_rename_map = {l_rename_map}\n"
+            f"_r_rename_map = {r_rename_map}\n\n"
+            f"# Perform merge operation\n"
+            f"_merge_result = pd.merge(\n"
             f"    {self.left_variable},\n"
             f"    {self.right_variable},\n"
             f"    left_on={left_cols},\n"
             f"    right_on={right_cols},\n"
-            f"    how='{self.join_type}',\n"
-            f"    suffixes=('_left', '_right')\n"
+            f"    how='outer',\n"
+            f"    suffixes=('_left', '_right'),\n"
+            f"    indicator=True\n"
             f")"
         )
+
         # Filter columns based on selected_columns
         if self.selected_columns:
+            # Process selected columns
             selected_cols = []
             for col in self.selected_columns:
                 col_name = col['name']
                 if col['source'] == 'L':
-                    # Add suffix if it's not a key column
-                    if col_name not in left_cols:
-                        col_name = f"{col_name}_left"
+                    selected_cols.append(
+                        f"'{col_name if col_name in left_cols else f'{col_name}_left'}'"
+                    )
                 else:  # 'R'
-                    if col_name not in right_cols:
-                        col_name = f"{col_name}_right"
-                selected_cols.append(f"'{col_name}'")
-            # Add column selection code
+                    selected_cols.append(
+                        f"'{col_name if col_name in right_cols else f'{col_name}_right'}'"
+                    )
+            selected_cols = set(selected_cols)
+            # Add main join output code
             cols_str = ",\n    ".join(selected_cols)
-
             code_lines.append(
-                f"\n# Select specific columns\n"
-                f"{self.variable_name} = {self.variable_name}[[\n"
+                f"\n# Main join result with selected columns\n"
+                f"{self.variable_name} = _merge_result[_merge_result['_merge'] == 'both'][[\n"
                 f"    {cols_str}\n"
                 f"]]"
             )
+
+        # Generate code for left/right outputs with proper column names
+        left_cols = [f"'{col}'" for col in self.left_data.columns]
+        right_cols = [f"'{col}'" for col in self.right_data.columns]
+
+        code_lines.extend([
+            f"\n# Left-only data with original column names\n"
+            f"_left_only = _merge_result[_merge_result['_merge'] == 'left_only'].rename(columns=_l_rename_map)\n"
+            f"{self.l_variable_name} = _left_only[[{', '.join(left_cols)}]]",
+
+            f"\n# Right-only data with original column names\n"
+            f"_right_only = _merge_result[_merge_result['_merge'] == 'right_only'].rename(columns=_r_rename_map)\n"
+            f"{self.r_variable_name} = _right_only[[{', '.join(right_cols)}]]",
+
+            "\n# Clean up temporary variables\n"
+            "del _merge_result, _left_only, _right_only, _l_rename_map, _r_rename_map"
+        ])
+
         return '\n'.join(code_lines) + '\n'
 
     def serialize(self):
@@ -622,8 +687,11 @@ class TriggerNode_Join_1(TriggerNode):
     def initInnerClasses(self):
         self.content = JoinContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
+
+        print("⚠️⚠️⚠️⚠️Join processInputs⚠️⚠️⚠️⚠️")
         # Only one input for simplicity
         this_left_skt = 0
         this_right_skt = 1
@@ -654,8 +722,8 @@ class TriggerNode_Join_1(TriggerNode):
             return [
                 # Output 0 - Left data pass-through
                 {
-                    'data': self.content.left_data,
-                    'variable_name': self.content.left_variable
+                    'data': self.content.l_data,
+                    'variable_name': self.content.l_variable_name
                 },
                 # Output 1 - Joined data
                 {
@@ -664,8 +732,8 @@ class TriggerNode_Join_1(TriggerNode):
                 },
                 # Output 2 - Right data pass-through
                 {
-                    'data': self.content.right_data,
-                    'variable_name': self.content.right_variable
+                    'data': self.content.r_data,
+                    'variable_name': self.content.r_variable_name
                 }
             ]
 
