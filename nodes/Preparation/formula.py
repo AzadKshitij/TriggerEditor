@@ -187,6 +187,7 @@ class TriggerNode_Formula(TriggerNode):
     def initInnerClasses(self):
         self.content = FormulaContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         # Only one input for simplicity

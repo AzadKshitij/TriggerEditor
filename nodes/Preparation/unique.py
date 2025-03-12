@@ -183,6 +183,7 @@ class TriggerNode_Unique(TriggerNode):
     def initInnerClasses(self):
         self.content = UniqueContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         this_socket_index = 0

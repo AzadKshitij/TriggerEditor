@@ -212,7 +212,7 @@ class TriggerNode_Select(TriggerNode):
     def initInnerClasses(self):
         self.content = SelectContent(self)
         self.grNode = TriggerGraphicsNode(self)
-        # self.content.edit.textChanged.connect(self.onInputChanged)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         input_node = self.getInput(0)

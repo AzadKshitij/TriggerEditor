@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QSpacerItem, QSizePolicy
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, Signal
 from trigger_conf import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
 from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -14,6 +14,9 @@ theme = Theme()
 
 
 class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+
+    evaluate = Signal()
+
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
         # local Variables
@@ -134,6 +137,7 @@ class TriggerNode_FileOutput(TriggerNode):
     def initInnerClasses(self):
         self.content = FileOutputContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         # Only one input for simplicity

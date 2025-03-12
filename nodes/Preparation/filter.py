@@ -273,6 +273,7 @@ class TriggerNode_Filter(TriggerNode):
     def initInnerClasses(self):
         self.content = FilterContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         # Only one input for simplicity

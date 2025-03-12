@@ -204,6 +204,7 @@ class TriggerNode_Sort(TriggerNode):
     def initInnerClasses(self):
         self.content = SortContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         # Only one input for simplicity
