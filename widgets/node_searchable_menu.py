@@ -31,6 +31,8 @@ class SearchableMenu(QMenu):
         self.all_submenus = {}  # Add this line
         self.is_flat_view = False
 
+        self.setFixedWidth(300)
+
     def showFlatList(self):
         if self.is_flat_view:
             return
@@ -47,10 +49,24 @@ class SearchableMenu(QMenu):
         # Sort actions by their text and add to menu
         all_actions.sort(key=lambda x: x.text())
         for action in all_actions:
+            action.triggered.connect(self.on_action_triggered)
             self.addAction(action)
 
         self.is_flat_view = True
         self.searchBox.setFocus()
+
+        # Keep the first element in focus
+        if all_actions:
+            self.setActiveAction(all_actions[0])
+
+    def on_action_triggered(self):
+        print("Action was triggered!")
+        # Add the node to the scene here
+        parent = self.parent()
+        action = self.sender()
+        if action:
+            parent.set_selected_action_data(action.data())
+            parent.add_node_to_scene()
 
     def filterNodes(self, text):
         if not self.is_flat_view:
@@ -60,13 +76,36 @@ class SearchableMenu(QMenu):
         search_text = text.lower()
 
         # Skip first action (search box) when filtering
+        visible_actions = []
         for action in self.actions()[1:]:
-            action.setVisible(search_text in action.text().lower())
+            if search_text in action.text().lower():
+                action.setVisible(True)
+                visible_actions.append(action)
+            else:
+                action.setVisible(False)
+
+        # Keep the first visible element in focus
+        if visible_actions:
+            self.setActiveAction(visible_actions[0])
 
     def hideEvent(self, event):
         self.searchBox.clear()
         self.is_flat_view = False
         super().hideEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            print("Enter key pressed")
+            active_action = self.activeAction()
+            if active_action:
+                print("Active action:", active_action.text())
+                active_action.trigger()
+                # self.close()
+                self.hide()
+        if event.key() == Qt.Key_Escape:
+            self.hide()
+        else:
+            super().keyPressEvent(event)
 
 
 class ClickableLineEdit(QLineEdit):

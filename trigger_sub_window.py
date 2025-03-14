@@ -1,5 +1,5 @@
 import time
-from qtpy.QtGui import QIcon, QPixmap
+from qtpy.QtGui import QIcon, QPixmap, QCursor
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
@@ -310,6 +310,22 @@ class TriggerSubWindow(NodeEditorWidget):
         new_calc_node.grNode.doSelect(True)
         new_calc_node.grNode.onSelected()
 
+    def set_selected_action_data(self, data):
+        self.selected_action_data = data
+
+    def add_node_to_scene(self):
+        # This method should add the node to the scene
+        # You can customize this method based on your requirements
+        print("Adding node to the scene")
+        # Example implementation:
+        op_code, op_type = self.selected_action_data
+        new_calc_node = get_class_from_opcode(op_code, op_type)(self.scene)
+        cursor_pos = self.mapFromGlobal(QCursor.pos())
+        scene_pos = self.scene.getView().mapToScene(cursor_pos)
+        new_calc_node.setPos(scene_pos.x(), scene_pos.y())
+        self.scene.history.storeHistory(
+            "Created %s" % new_calc_node.__class__.__name__)
+
     def showNodeContextMenu(self, position):
         if DEBUG_CONTEXT:
             print("CONTEXT: EMPTY SPACE")
@@ -318,26 +334,8 @@ class TriggerSubWindow(NodeEditorWidget):
 
         if action is not None and action.data():
             try:
-                op_code, op_type = action.data()
-                new_calc_node = get_class_from_opcode(
-                    op_code, op_type)(self.scene)
-                scene_pos = self.scene.getView().mapToScene(position)
-                new_calc_node.setPos(scene_pos.x(), scene_pos.y())
-                if DEBUG_CONTEXT:
-                    print("Selected node:", new_calc_node)
-
-                if self.scene.getView().mode == MODE_EDGE_DRAG:
-                    # if we were dragging an edge...
-                    target_socket = self.determine_target_socket_of_node(
-                        self.scene.getView().dragging.drag_start_socket.is_output, new_calc_node)
-                    if target_socket is not None:
-                        self.scene.getView().dragging.edgeDragEnd(target_socket.grSocket)
-                        self.finish_new_node_state(new_calc_node)
-
-                else:
-                    self.scene.history.storeHistory(
-                        "Created %s" % new_calc_node.__class__.__name__)
-
+                self.selected_action_data = action.data()
+                self.add_node_to_scene()
             except Exception as e:
                 dumpException(e)
 

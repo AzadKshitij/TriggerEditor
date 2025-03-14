@@ -1,131 +1,70 @@
+from qtpy.QtWidgets import QApplication, QMainWindow, QMenu, QAction, QScrollArea, QVBoxLayout, QWidget, QPushButton, QWidgetAction
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QApplication, QMainWindow, QDockWidget, QVBoxLayout, QWidget
-import sys
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QLineEdit, QTableView, QListWidget, QListWidgetItem
-import pandas as pd
-from qtpy.QtCore import QAbstractTableModel, Qt
 
 
-class CustomWidget(QWidget):
-    def __init__(self, parent=None):
-        super(CustomWidget, self).__init__(parent)
+class ScrollableMenu(QMenu):
+    def __init__(self, parent=None, max_visible_items=10):
+        super().__init__(parent)
+        self.max_visible_items = max_visible_items
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        self.initUI()
+        self.container = QWidget()
+        self.layout = QVBoxLayout(self.container)
+        self.layout.setSpacing(0)
+        self.layout.setContentsMargins(0, 0, 0, 0)
 
-    def initUI(self):
-        layout = QVBoxLayout()
+        self.scroll_area.setWidget(self.container)
 
-        self.label = QLabel("Hello, this is a custom widget!", self)
-        layout.addWidget(self.label)
+    def add_scrollable_action(self, action):
+        button = QPushButton(action.text())
+        button.clicked.connect(action.trigger)  # Connect action click
+        self.layout.addWidget(button)
 
-        self.button1 = QPushButton("Button 1", self)
-        layout.addWidget(self.button1)
+    def exec_(self, pos):
+        # Adjust height based on number of items
+        total_items = self.layout.count()
+        item_height = 30  # Approximate height per item
+        max_height = self.max_visible_items * item_height
 
-        self.button2 = QPushButton("Button 2", self)
-        layout.addWidget(self.button2)
+        self.scroll_area.setFixedHeight(
+            min(max_height, total_items * item_height))
+        self.scroll_area.setMinimumWidth(150)
 
-        self.setLayout(layout)
+        # Wrap QScrollArea inside the menu
+        self.clear()
+        action_widget = QWidgetAction(self)
+        action_widget.setDefaultWidget(self.scroll_area)
+        self.addAction(action_widget)
 
-
-class PandasModel(QAbstractTableModel):
-    def __init__(self, data):
-        super(PandasModel, self).__init__()
-        self._data = data
-
-    def rowCount(self, parent=None):
-        return self._data.shape[0]
-
-    def columnCount(self, parent=None):
-        return self._data.shape[1]
-
-    def data(self, index, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
-            return None
-        return str(self._data.iloc[index.row(), index.column()])
-
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
-        if role != Qt.DisplayRole:
-            return None
-        if orientation == Qt.Horizontal:
-            return self._data.columns[section]
-        return None
-
-
-def create_widgets_for_button1(parent):
-    line_edit = QLineEdit(parent)
-    button = QPushButton("Submit", parent)
-    table_view = QTableView(parent)
-    data = pd.DataFrame({
-        'Column 1': ['A', 'B', 'C'],
-        'Column 2': [1, 2, 3]
-    })
-    model = PandasModel(data)
-    table_view.setModel(model)
-    return [line_edit, button, table_view]
-
-
-def create_widgets_for_button2(parent):
-    list_widget = QListWidget(parent)
-    for i in range(5):
-        item = QListWidgetItem(f"Option {i+1}")
-        item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
-        item.setCheckState(Qt.Unchecked)
-        list_widget.addItem(item)
-    return [list_widget]
+        super().exec_(pos)
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
-        super(MainWindow, self).__init__()
+        super().__init__()
+        self.setWindowTitle("Scrollable Context Menu in QtPy")
+        self.setGeometry(100, 100, 400, 300)
 
-        self.initUI()
+        self.button = QPushButton("Right-click me!", self)
+        self.button.setGeometry(100, 100, 200, 50)
+        self.button.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.button.customContextMenuRequested.connect(self.show_context_menu)
 
-    def initUI(self):
-        self.setWindowTitle("QtPy Custom Widget Example")
+    def show_context_menu(self, pos):
+        context_menu = ScrollableMenu(self)
 
-        custom_widget = CustomWidget(self)
-        self.setCentralWidget(custom_widget)
+        # Add many actions to test scrolling
+        for i in range(20):
+            action = QAction(f"Option {i+1}", self)
+            context_menu.add_scrollable_action(action)
 
-        self.createDockWidget()
-
-        custom_widget.button1.clicked.connect(self.on_button1_clicked)
-        custom_widget.button2.clicked.connect(self.on_button2_clicked)
-
-        self.resize(600, 400)
-
-    def createDockWidget(self):
-        self.dock = QDockWidget("Sidebar", self)
-        self.dock.setAllowedAreas(
-            Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-
-        self.dock_widget = QWidget()
-        self.dock_layout = QVBoxLayout()
-        self.dock_widget.setLayout(self.dock_layout)
-
-        self.dock.setWidget(self.dock_widget)
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.dock)
-
-    def on_button1_clicked(self):
-        self.clear_dock()
-        widgets = create_widgets_for_button1(self.dock_widget)
-        for widget in widgets:
-            self.dock_layout.addWidget(widget)
-
-    def on_button2_clicked(self):
-        self.clear_dock()
-        widgets = create_widgets_for_button2(self.dock_widget)
-        for widget in widgets:
-            self.dock_layout.addWidget(widget)
-
-    def clear_dock(self):
-        for i in reversed(range(self.dock_layout.count())):
-            widget = self.dock_layout.itemAt(i).widget()
-            if widget is not None:
-                widget.deleteLater()
+        context_menu.exec_(self.mapToGlobal(pos))
 
 
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    main_window = MainWindow()
-    main_window.show()
-    sys.exit(app.exec_())
+    app = QApplication([])
+    window = MainWindow()
+    window.show()
+    app.exec_()
