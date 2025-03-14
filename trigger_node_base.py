@@ -262,7 +262,14 @@ class TriggerNode(Node):
 
             input_values.append(val)
 
-        self.value = self.processInputs(input_values)
+        result = self.processInputs(input_values)
+        if result is None:
+            self.markInvalid()
+            self.markDescendantsDirty()
+            self.grNode.setToolTip("Invalid operation")
+            return None
+
+        self.value = result
         self.markInvalid(False)
         self.markDirty(False)
         self.grNode.setToolTip("")
@@ -295,7 +302,7 @@ class TriggerNode(Node):
     def eval(self):
         if not self.isDirty() and not self.isInvalid():
             print(" _> returning cached %s value:" %
-                  self.__class__.__name__, self.value)
+                  self.__class__.__name__)
             return self.value
         try:
             val = self.evalImplementation()
@@ -315,7 +322,7 @@ class TriggerNode(Node):
         self.eval()
 
     def onInputChanged(self, socket=None):
-        # print("%s::__onInputChanged" % self.__class__.__name__)
+        print("🟡%s::__onInputChanged" % self.__class__.__name__)
         self.markDirty()
         self.markChildrenDirty()
         self.eval()

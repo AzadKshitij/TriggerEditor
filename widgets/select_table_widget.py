@@ -85,6 +85,46 @@ class SelectTableWidget(QWidget):
         data = self.getData()
         self.dataChanged.emit(data)
 
+    def update_from_changes(self, changes):
+        """Update table state from changes dictionary"""
+        for row in range(self.table.rowCount()):
+            # Changed from 0 to 1 for column name
+            column_name = self.table.item(row, 1).text()
+
+            # Update selection checkbox
+            # Changed from 1 to 0 for checkbox
+            checkbox = self.table.cellWidget(row, 0)
+            checkbox.setChecked(column_name in changes['selected_columns'])
+
+            # Update data type combobox
+            dtype_combo = self.table.cellWidget(row, 2)
+            if column_name in changes['dtype_mapping']:
+                index = dtype_combo.findText(
+                    changes['dtype_mapping'][column_name])
+                if index >= 0:
+                    dtype_combo.setCurrentIndex(index)
+
+            # Update rename field
+            rename_edit = self.table.cellWidget(row, 3)
+            new_name = changes['rename_mapping'].get(column_name, '')
+            rename_edit.setText(new_name)
+
+    def get_renamed_columns(self):
+        """Extract renamed columns from the table widget."""
+        rename_dict = {}
+
+        for row in range(self.table.rowCount()):  # Changed from table_widget to table
+            original_name = self.table.item(row, 1).text()
+            rename_edit = self.table.cellWidget(row, 3)
+
+            if rename_edit:  # Check if rename widget exists
+                new_name = rename_edit.text().strip()
+                if new_name and new_name != original_name:
+                    # Store rename mapping
+                    rename_dict[original_name] = new_name
+
+        return rename_dict
+
     def getData(self):
         data = []
         for row in range(self.table.rowCount()):
@@ -95,19 +135,3 @@ class SelectTableWidget(QWidget):
                 rename = self.table.cellWidget(row, 3).text()
                 data.append((column_name, data_type, rename))
         return data
-
-    def get_renamed_columns(self):
-        """Extract renamed columns from the table widget."""
-        rename_dict = {}
-
-        for row in range(self.table_widget.rowCount()):
-            original_name = self.table_widget.item(row, 1).text()
-            new_name_item = self.table_widget.item(row, 3)
-
-            if new_name_item:  # Check if user entered a rename value
-                new_name = new_name_item.text().strip()
-                if new_name and new_name != original_name:
-                    # Store rename mapping
-                    rename_dict[original_name] = new_name
-
-        return rename_dict

@@ -3,7 +3,7 @@ from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, QSaveFile, Signal
 from trigger_conf import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -16,7 +16,7 @@ from themes.theme import Theme
 theme = Theme()
 
 
-class SelectContent(QDMNodeIconContentWidget):
+class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     """_summary_
 
     Args:
@@ -37,6 +37,7 @@ class SelectContent(QDMNodeIconContentWidget):
         # local variables
         self.old_data: dict = []
         self.table_data: list = []
+        self.history = self.node.scene.history
 
         # incoming variables
         self.incoming_variable: str = ''
@@ -173,18 +174,60 @@ class SelectContent(QDMNodeIconContentWidget):
             self.data.rename(columns=rename_mapping, inplace=True)
 
     def handleDataChanged(self, data_):
-        print("Data changed:", data_)
-        self.node.scene.has_been_modified = True
-        self.node.scene.history.storeHistory("Input Modified")
-        # only take selected columns from incoming data
-        # data_ contains (column_name, data_type, rename)
+        if self.history.is_restoring_history:
+            return
 
-        self.process_data_changes(
-            data_)
+        # Store old state before changes
+        old_changes = {
+            'selected_columns': self.changes['selected_columns'].copy() if hasattr(self, 'changes') else [],
+            'rename_mapping': self.changes['rename_mapping'].copy() if hasattr(self, 'changes') else {},
+            'dtype_mapping': self.changes['dtype_mapping'].copy() if hasattr(self, 'changes') else {}
+        }
+
+        # Process the new changes
+        self.process_data_changes(data_)
         self.apply_changes()
-        # self.update_data_dtype(selected_columns, rename_mapping, dtype_mapping)
+
+        # Store history only if there are actual changes
+        if old_changes != self.changes:
+            history_data = {
+                'node': self.node,
+                'old_changes': old_changes,
+                'new_changes': {
+                    'selected_columns': self.changes['selected_columns'].copy(),
+                    'rename_mapping': self.changes['rename_mapping'].copy(),
+                    'dtype_mapping': self.changes['dtype_mapping'].copy()
+                }
+            }
+
+            self.history.storeHistory(
+                desc="Column Selection/Rename/Type Changed",
+                data=history_data,
+                setModified=True
+            )
+
+        # self.node.scene.has_been_modified = True
+        # self.node.scene.history.storeHistory("Input Modified")
+
+        # self.process_data_changes(
+        #     data_)
+        # self.apply_changes()
 
         self.evaluate.emit()
+
+    def history_stamp_callback(self, history_data, is_undo):
+        """Callback for undo/redo operations"""
+        if is_undo:
+            # Undo operation
+            self.changes = history_data['old_changes']
+        else:
+            # Redo operation
+            self.changes = history_data['new_changes']
+
+        # Apply the changes and update the table
+        self.apply_changes()
+        if hasattr(self, 'table_widget'):
+            self.table_widget.update_from_changes(self.changes)
 
     def is_same_column(self):
         if self.old_columns.keys() == self.incoming_columns:
@@ -275,6 +318,8 @@ class TriggerNode_Select(TriggerNode):
         print("🐍 File: Preparation/select.py | Line: 268 | processInputs ~ socket_index", socket_index)
         input_value = input_values[0][socket_index]
         print("🐍 File: Preparation/select.py | Line: 269 | processInputs ~ input_value", input_value)
+        # print("🐍 File: Preparation/select.py | Line: 322 | processInputs ~ input_value.get('data')",
+        #       input_value.get('data'))
 
         if input_value:
             print("We have input")
@@ -303,13 +348,14 @@ class TriggerNode_Select(TriggerNode):
 
             return param
         else:
+            print("We don't have input")
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip("Input is not connected")
             print(
                 "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid", self._is_invalid)
 
-            return
+            return None
 
     def get_code(self):
         return self.content.get_code()

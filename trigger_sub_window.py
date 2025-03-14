@@ -68,6 +68,11 @@ class TriggerSubWindow(NodeEditorWidget):
             # Get the cursor position and map it to scene coordinates
             cursor_pos = self.mapFromGlobal(self.cursor().pos())
             self.showNodeContextMenu(cursor_pos)
+        if event.key() == Qt.Key_P and event.modifiers() == Qt.ShiftModifier:
+            print()
+            print(
+                "------------------------------------------------------------------------------")
+            print()
         else:
             super().keyPressEvent(event)
 
