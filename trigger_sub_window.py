@@ -316,7 +316,7 @@ class TriggerSubWindow(NodeEditorWidget):
     def add_node_to_scene(self):
         # This method should add the node to the scene
         # You can customize this method based on your requirements
-        print("Adding node to the scene")
+        print("🍒 Adding node to the scene")
         # Example implementation:
         op_code, op_type = self.selected_action_data
         new_calc_node = get_class_from_opcode(op_code, op_type)(self.scene)
@@ -334,8 +334,18 @@ class TriggerSubWindow(NodeEditorWidget):
 
         if action is not None and action.data():
             try:
+                print("Action was triggered!")
                 self.selected_action_data = action.data()
                 self.add_node_to_scene()
+                # Create node directly without storing action data
+                # op_code, op_type = action.data()
+                # new_calc_node = get_class_from_opcode(
+                #     op_code, op_type)(self.scene)
+                # cursor_pos = self.mapFromGlobal(QCursor.pos())
+                # scene_pos = self.scene.getView().mapToScene(cursor_pos)
+                # new_calc_node.setPos(scene_pos.x(), scene_pos.y())
+                # self.scene.history.storeHistory(
+                #     "Created %s" % new_calc_node.__class__.__name__)
             except Exception as e:
                 dumpException(e)
 
