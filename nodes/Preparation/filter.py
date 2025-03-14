@@ -111,33 +111,8 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # return layout
 
-    def update_columns(self):
-        if self.incom_data is not None:
-            self.column_selector.clear()
-            self.column_selector.addItems(list(self.incom_data.columns))
-
-            # Apply stored settings if they exist
-            if hasattr(self, 'column'):
-                index = self.column_selector.findText(self.column)
-                if index >= 0:
-                    self.column_selector.setCurrentIndex(index)
-                    self.column = self.column
-
-            if hasattr(self, 'operation'):
-                index = self.operation_selector.findText(
-                    self.operation)
-                if index >= 0:
-                    self.operation_selector.setCurrentIndex(index)
-
-            if hasattr(self, 'value'):
-                self.value_input.setText(self.value)
-
-    def on_filter_changed(self):
+    def update_data(self):
         if hasattr(self, 'incom_data') and self.incom_data is not None:
-            self.column = self.column_selector.currentText()
-            self.operation = self.operation_selector.currentText()
-            self.value = self.value_input.text()
-
             if self.column and self.operation and self.value:
                 try:
                     # Get column data type
@@ -188,9 +163,36 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.data = self.incom_data[mask]
                     self.f_data = self.incom_data[~(mask)]
 
-                    self.evaluate.emit()
                 except Exception as e:
                     print(f"Filter error: {str(e)}")
+
+    def update_columns(self):
+        if self.incom_data is not None:
+            self.column_selector.clear()
+            self.column_selector.addItems(list(self.incom_data.columns))
+
+            # Apply stored settings if they exist
+            if hasattr(self, 'column'):
+                index = self.column_selector.findText(self.column)
+                if index >= 0:
+                    self.column_selector.setCurrentIndex(index)
+                    self.column = self.column
+
+            if hasattr(self, 'operation'):
+                index = self.operation_selector.findText(
+                    self.operation)
+                if index >= 0:
+                    self.operation_selector.setCurrentIndex(index)
+
+            if hasattr(self, 'value'):
+                self.value_input.setText(self.value)
+
+    def on_filter_changed(self):
+        self.column = self.column_selector.currentText()
+        self.operation = self.operation_selector.currentText()
+        self.value = self.value_input.text()
+        self.evaluate.emit()
+        self.update_data()
 
     def get_code(self):
         self.column = self.column
@@ -269,6 +271,7 @@ class TriggerNode_Filter(TriggerNode):
     def __init__(self, scene):
         super().__init__(scene, inputs=[1], outputs=[2, 2])
         # self.eval()
+        self.markInvalid(True)
 
     def initInnerClasses(self):
         self.content = FilterContent(self)
@@ -290,8 +293,8 @@ class TriggerNode_Filter(TriggerNode):
             # Custom processing logic for the Select node
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
-            self.evalChildren()
-            return [
+            self.content.update_data()
+            params = [
                 {
                     'data': self.content.data,
                     'variable_name': self.content.variable_name
@@ -301,6 +304,8 @@ class TriggerNode_Filter(TriggerNode):
                     'variable_name': self.content.f_variable_name
                 }
             ]
+            self.evalChildren()
+            return params
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

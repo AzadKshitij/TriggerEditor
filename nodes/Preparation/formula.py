@@ -20,6 +20,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().__init__(node, parent)
         # local variables
         self.formula: str = ''
+        self.formula_text: str = ''
         self.target_column: str = ''
         self.is_new_column: bool = True
         TriggerChangeHandler.__init__(self, self.node.scene)
@@ -49,7 +50,9 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Connect the activation signal
             self.column_name.activated.connect(self.handle_column_activation)
 
-            if self.target_column:
+            if self.target_column in self.incom_data.columns:
+                self.column_name.setCurrentText(self.target_column)
+            else:
                 self.column_name.addItem(self.target_column)
                 self.column_name.setCurrentText(self.target_column)
             column_layout.addWidget(QLabel("Target:"))
@@ -61,8 +64,8 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.formula_input.setPlaceholderText(
                 "Enter formula e.g.:\nCASE WHEN [Age] > 30 then 'Adult' else 'Young'")
             self.formula_input.setMinimumHeight(100)
-            if self.formula:
-                self.formula_input.setPlainText(self.formula)
+            if self.formula_text:
+                self.formula_input.setPlainText(self.formula_text)
             self.formula_input.textChanged.connect(self.generate_formula)
             formula_layout.addWidget(QLabel("Formula:"))
             formula_layout.addWidget(self.formula_input)
@@ -72,6 +75,11 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addLayout(formula_layout)
             self.recursively_find_widgets(dock_layout)
         # return layout
+        else:
+            no_data_label = QLabel("No incoming data available")
+            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setStyleSheet("color: gray;")
+            dock_layout.addWidget(no_data_label)
 
     def handle_column_activation(self, index):
         print("🐍 File: Preparation/formula.py | Line: 78 | handle_column_activation ~ self.column_name.itemText(index)",
@@ -88,7 +96,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
               self.column_name.currentText().strip())
 
         new_column = self.column_name.currentText().strip()
-        if new_column and new_column != "+ add column":
+        if new_column and new_column != "+ add column" and new_column not in self.incom_data.columns:
             # Clear existing items
             self.column_name.clear()
 
@@ -115,45 +123,67 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data[self.target_column] = None
 
     def generate_formula(self):
-        self.formula = self.formula_input.toPlainText()
-        print("🐍 File: Preparation/formula.py | Line: 106 | generate_formula ~ self.formula", self.formula)
+        if not getattr(self, 'formula_input', None) is None:
+            self.formula_text = self.formula_input.toPlainText()
+
+        print("🐍 File: Preparation/formula.py | Line: 125 | generate_formula ~ self.formula_text", self.formula_text)
 
         # If target column changed, remove the old column
         self.data = self.incom_data.copy()
+        self.formula = self.formula_text
 
         # Replace column names in formula
-        self.formula
+        # self.formula
         # replace column names in formula
         for col in self.data.columns:
-            self.formula = self.formula.replace(f'[{col}]', f'{col}')
+            self.formula = self.formula.replace(
+                f'[{col}]', f'"{col}"')
 
         print(
-            "🐍 File: Preparation/formula.py | Line: 113 | generate_formula ~ query", self.formula)
+            "🐍 File: Preparation/formula.py | Line: 134 | generate_formula ~ self.formula", self.formula)
 
         if self.target_column:
             self.data[self.target_column] = None
 
     def get_code(self):
-        if not self.formula or not self.target_column:
+        if not self.formula_text or not self.target_column:
             return ""
+        print("Formula get_code: 1")
+        self.generate_formula()
+        print("Formula get_code: 2")
+
+        if self.target_column in self.data.columns:
+            self.is_new_column = False
+        else:
+            self.is_new_column = True
 
         code_lines = []
 
         # Add import statement
-        code_lines.append("import duckdb")
-        code_lines.append("duck= duckdb.connect(':memory:')")
-        code_lines.append(f"duck.register('df', {self.incoming_variable})")
-        code_lines.append(
-            f"# Apply formula to create/update column {self.target_column}"
-        )
-        code_lines.append(
-            f"{self.variable_name} = duck.execute('''SELECT *, {self.formula} as {self.target_column} FROM df''').fetchdf()"
-        )
-        return '\n'.join(code_lines) + '\n'
+        code_lines.extend([
+            "import duckdb",
+            "duck= duckdb.connect(':memory:')",
+            f"duck.register('df', {self.incoming_variable})",
+            "# save original columns",
+            f"original_columns = {self.incoming_variable}.columns",
+            "# Apply formula to create/update column",
+            f"{self.variable_name} = duck.execute('''SELECT *, {self.formula} as \"{self.target_column}\" FROM df''').fetchdf()",  # noqa
+            "",
+        ])
+        if not self.is_new_column:
+            code_lines.extend([
+                "# Restore original columns",
+                f"new_columns = {self.variable_name}.columns",
+                f'new_column_name = list(set(new_columns) - set(original_columns))[0]',
+                "# Rename it to the original column name",
+                f'''{self.variable_name}['{self.target_column}'] = {self.variable_name}[new_column_name]'''
+            ])
+
+        return '\n' + '\n'.join(code_lines) + '\n'
 
     def serialize(self):
         res = super().serialize()
-        res['formula'] = self.formula
+        res['formula'] = self.formula_text
         res['target_column'] = self.target_column
         return res
 
@@ -161,7 +191,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
 
         try:
-            self.formula = data.get('formula', '')
+            self.formula_text = data.get('formula', '')
             self.target_column = data.get('target_column', '')
             return True & res
         except Exception as e:

@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget,
+from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, QSaveFile, Signal
@@ -8,7 +8,7 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 
-from widgets.select_table_widget import TableWidget
+from widgets.select_table_widget import SelectTableWidget
 
 import pandas as pd
 from themes.theme import Theme
@@ -50,15 +50,28 @@ class SelectContent(QDMNodeIconContentWidget):
         icon = QPixmap("Resource/icons/Preparation/Select.png")
         super().initUI(icon)
 
+    # def set_table_data(self):
+    #     if self.incom_data:
+    #         self.table_data = [
+    #             {
+    #                 'column_name': col,
+    #                 'dtype': self.incom_data[col].dtype.name
+    #             }
+    #             for col in self.incom_data.columns
+    #         ]
+    #         print(
+    #             "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self.node._is_invalid)
+
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
         if self.incom_data is not None:
-            self.table_data = [
-                {
-                    'column_name': col,
-                    'dtype': self.incom_data[col].dtype.name
-                }
-                for col in self.incom_data.columns
-            ]
+            if not self.table_data:
+                self.table_data = [
+                    {
+                        'column_name': col,
+                        'dtype': self.incom_data[col].dtype.name
+                    }
+                    for col in self.incom_data.columns
+                ]
             # if self.old_data != {}:
             #     self.old_data = table_data
             # Initialize changes if not already present
@@ -69,54 +82,27 @@ class SelectContent(QDMNodeIconContentWidget):
                     'dtype_mapping': {}
                 }
 
-            self.table_widget = TableWidget(
+            self.table_widget = SelectTableWidget(
                 data=self.table_data, changes=self.changes)
             self.table_widget.dataChanged.connect(self.handleDataChanged)
             dock_layout.addWidget(self.table_widget)
+        else:
+            no_data_label = QLabel("No incoming data available")
+            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setStyleSheet("color: gray;")
+            dock_layout.addWidget(no_data_label)
 
         # return layout
 
-    def handleDataChanged(self, data_):
-        print("Data changed:", data_)
-        self.node.scene.has_been_modified = True
-        self.node.scene.history.storeHistory("Input Modified")
-        # only take selected columns from incoming data
-        # data_ contains (column_name, data_type, rename)
-        if self.incom_data is not None:
-            # Store the changes in a serializable format
-            self.changes = {
-                'selected_columns': [],
-                'rename_mapping': {},
-                'dtype_mapping': {}
-            }
-
-            # Extract selected columns, their new names and data types
-            selected_columns = []
-            rename_mapping = {}
-            dtype_mapping = {}
-
-            for column_info in data_:
-                column_name, data_type, new_name = column_info
-                selected_columns.append(column_name)
-
-                # Store changes for serialization
-                self.changes['selected_columns'].append(column_name)
-
-                # Add to rename mapping if new name exists
-                if new_name:
-                    rename_mapping[column_name] = new_name
-                    self.changes['rename_mapping'][column_name] = new_name
-
-                # Add to dtype mapping if data_type exists
-                if data_type:
-                    dtype_mapping[column_name] = data_type
-                    self.changes['dtype_mapping'][column_name] = data_type
-
-            # Select only the specified columns from incom_data
+    def apply_changes(self):
+        """Apply changes from self.changes to self.data"""
+        # Select only the specified columns from incom_data
+        if getattr(self, 'changes', None) is not None:
+            selected_columns = self.changes['selected_columns']
             self.data = self.incom_data[selected_columns].copy()
 
             # Apply data type changes if any
-            for col, dtype in dtype_mapping.items():
+            for col, dtype in self.changes['dtype_mapping'].items():
                 try:
                     if dtype in ['int64', 'int32', 'float64', 'float32']:
                         self.data[col] = pd.to_numeric(
@@ -128,10 +114,77 @@ class SelectContent(QDMNodeIconContentWidget):
                         f"Failed to convert column {col} to {dtype}: {str(e)}")
 
             # Apply renaming if any
-            if rename_mapping:
-                self.data.rename(columns=rename_mapping, inplace=True)
+            if self.changes['rename_mapping']:
+                rename_dict = self.changes['rename_mapping']
+                self.data.rename(columns=rename_dict, inplace=True)
 
-            self.evaluate.emit()
+            print(
+                "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self.node._is_invalid)
+
+    def process_data_changes(self, data_):
+        # Store the changes in a serializable format
+        self.changes = {
+            'selected_columns': [],
+            'rename_mapping': {},
+            'dtype_mapping': {}
+        }
+
+        # Extract selected columns, their new names and data types
+        selected_columns = []
+        rename_mapping = {}
+        dtype_mapping = {}
+
+        for column_info in data_:
+            column_name, data_type, new_name = column_info
+            selected_columns.append(column_name)
+
+            # Store changes for serialization
+            self.changes['selected_columns'].append(column_name)
+
+            # Add to rename mapping if new name exists
+            if new_name:
+                rename_mapping[column_name] = new_name
+                self.changes['rename_mapping'][column_name] = new_name
+
+            # Add to dtype mapping if data_type exists
+            if data_type:
+                dtype_mapping[column_name] = data_type
+                self.changes['dtype_mapping'][column_name] = data_type
+
+        return selected_columns, rename_mapping, dtype_mapping
+
+    def update_data_dtype(self, selected_columns, rename_mapping, dtype_mapping):
+        """Update self.data based on the processed changes"""
+        # Select only the specified columns from incom_data
+        self.data = self.incom_data[selected_columns].copy()
+
+        # Apply data type changes if any
+        for col, dtype in dtype_mapping.items():
+            try:
+                if dtype in ['int64', 'int32', 'float64', 'float32']:
+                    self.data[col] = pd.to_numeric(
+                        self.data[col], errors='coerce')
+                self.data[col] = self.data[col].astype(dtype, errors='ignore')
+            except Exception as e:
+                print(f"Failed to convert column {col} to {dtype}: {str(e)}")
+
+        # Apply renaming if any
+        if rename_mapping:
+            self.data.rename(columns=rename_mapping, inplace=True)
+
+    def handleDataChanged(self, data_):
+        print("Data changed:", data_)
+        self.node.scene.has_been_modified = True
+        self.node.scene.history.storeHistory("Input Modified")
+        # only take selected columns from incoming data
+        # data_ contains (column_name, data_type, rename)
+
+        self.process_data_changes(
+            data_)
+        self.apply_changes()
+        # self.update_data_dtype(selected_columns, rename_mapping, dtype_mapping)
+
+        self.evaluate.emit()
 
     def is_same_column(self):
         if self.old_columns.keys() == self.incoming_columns:
@@ -186,6 +239,7 @@ class SelectContent(QDMNodeIconContentWidget):
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
         try:
+            print("deserialize Select node")
             self.old_columns = data['table_data']
             self.changes = data['changes']
             return True & res
@@ -210,32 +264,52 @@ class TriggerNode_Select(TriggerNode):
         self.eval()
 
     def initInnerClasses(self):
-        self.content = SelectContent(self)
+        self.content: SelectContent = SelectContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
+        print("⚠️⚠️⚠️ Select ⚠️⚠️⚠️")
         input_node = self.getInput(0)
         socket_index = self.getSocketValue(input_node.outputs, self)
+        print("🐍 File: Preparation/select.py | Line: 268 | processInputs ~ socket_index", socket_index)
         input_value = input_values[0][socket_index]
+        print("🐍 File: Preparation/select.py | Line: 269 | processInputs ~ input_value", input_value)
+
         if input_value:
+            print("We have input")
             self.markDirty(False)
+            print("1")
             self.markInvalid(False)
+            print("2")
             # Custom processing logic for the Select node
             self.content.incom_data = input_value.get('data')
+            print("3")
             self.content.incoming_variable = input_value.get('variable_name')
+            print("4")
+            # self.content.set_table_data()
+            print("5")
+            self.content.apply_changes()
+            print("6")
             # self.content.set_table_widget()
 
-            self.evalChildren()
-
-            return [{
+            param = [{
                 "data": self.content.data,
                 "variable_name": self.content.variable_name
             }]
+            self.evalChildren()
+            print(
+                "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self._is_invalid)
+
+            return param
         else:
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip("Input is not connected")
+            print(
+                "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid", self._is_invalid)
+
+            return
 
     def get_code(self):
         return self.content.get_code()

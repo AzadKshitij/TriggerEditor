@@ -1,48 +1,41 @@
+import duckdb
 import pandas as pd
-var_file_input_2898034804192 = pd.read_csv('C:/Projects/TriggerEditor/check.csv')
-import pandas as pd
-var_file_input_2898034806208 = pd.read_csv('C:/Projects/TriggerEditor/check_1.csv')
-# Create rename maps for columns
-_l_rename_map = {'Source_left': 'Source', 'Country_left': 'Country', 'Autocomplete Position_left': 'Autocomplete Position', 'Difficulty_left': 'Difficulty', 'Hot Keyword_left': 'Hot Keyword', 'Relevancy Score_left': 'Relevancy Score'}
-_r_rename_map = {'Source_right': 'Source', 'Country_right': 'Country', 'Autocomplete Position_right': 'Autocomplete Position', 'Difficulty_right': 'Difficulty', 'Hot Keyword_right': 'Hot Keyword', 'Relevancy Score_right': 'Relevancy Score'}
+var_file_input_1837005836720 = pd.read_csv(
+    'C:/Projects/TriggerEditor/examples/BL-Flickr-Images-Book.csv')
+var_select_1837005840320 = var_file_input_1837005836720[[
+    'Identifier', 'Place of Publication', 'Date of Publication', 'Publisher', 'Title', 'Author', 'Flickr URL']].copy()
+var_select_1837005840320['Identifier'] = pd.to_numeric(
+    var_select_1837005840320['Identifier'], errors='coerce')
+var_select_1837005840320['Identifier'] = var_select_1837005840320['Identifier'].astype(
+    'int64', errors='ignore')
+var_select_1837005840320['Place of Publication'] = var_select_1837005840320['Place of Publication'].astype(
+    'object', errors='ignore')
+var_select_1837005840320['Date of Publication'] = var_select_1837005840320['Date of Publication'].astype(
+    'object', errors='ignore')
+var_select_1837005840320['Publisher'] = var_select_1837005840320['Publisher'].astype(
+    'object', errors='ignore')
+var_select_1837005840320['Title'] = var_select_1837005840320['Title'].astype(
+    'object', errors='ignore')
+var_select_1837005840320['Author'] = var_select_1837005840320['Author'].astype(
+    'object', errors='ignore')
+var_select_1837005840320['Flickr URL'] = var_select_1837005840320['Flickr URL'].astype(
+    'object', errors='ignore')
 
-# Perform merge operation
-_merge_result = pd.merge(
-    var_file_input_2898034804192,
-    var_file_input_2898034806208,
-    left_on=['Keyword', 'Seed'],
-    right_on=['Keyword', 'Seed'],
-    how='outer',
-    suffixes=('_left', '_right'),
-    indicator=True
-)
+duck = duckdb.connect(':memory:')
+duck.register('df', var_select_1837005840320)
+# save original columns
+original_columns = var_select_1837005840320.columns
+# Apply formula to create/update column
+var_formula_1837005841472 = duck.execute('''SELECT *, CASE 
+WHEN "Place of Publication" LIKE '%London%' THEN 'London' 
+WHEN "Place of Publication" LIKE '%Oxford%' THEN 'Oxford' 
+ELSE REPLACE("Place of Publication", '-', ' ') 
+END as "Place of Publication" FROM df''').fetchdf()
 
-# Main join result with selected columns
-var_join_2898034807216 = _merge_result[_merge_result['_merge'] == 'both'][[
-    'Difficulty_right',
-    'Difficulty_left',
-    'Seed',
-    'Hot Keyword_left',
-    'Source_right',
-    'Relevancy Score_right',
-    'Relevancy Score_left',
-    'Keyword',
-    'Country_left',
-    'Hot Keyword_right',
-    'Source_left',
-    'Country_right'
-]]
-
-# Left-only data with original column names
-_left_only = _merge_result[_merge_result['_merge'] == 'left_only'].rename(columns=_l_rename_map)
-var_l_join_2898034807216 = _left_only[['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score']]
-
-# Right-only data with original column names
-_right_only = _merge_result[_merge_result['_merge'] == 'right_only'].rename(columns=_r_rename_map)
-var_r_join_2898034807216 = _right_only[['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score']]
-
-# Clean up temporary variables
-del _merge_result, _left_only, _right_only, _l_rename_map, _r_rename_map
-var_l_join_2898034807216.to_csv('C:/Projects/TriggerEditor/savedfiles/out_check_W_left-join.csv', index=False)
-var_join_2898034807216.to_csv('C:/Projects/TriggerEditor/savedfiles/out_check_W_join.csv', index=False)
-var_r_join_2898034807216.to_csv('C:/Projects/TriggerEditor/savedfiles/out_check_W_right-join.csv', index=False)
+# Restore original columns
+new_columns = var_formula_1837005841472.columns
+new_column_name = list(set(new_columns) - set(original_columns))[0]
+# Rename it to the original column name
+var_formula_1837005841472['Place of Publication'] = var_formula_1837005841472[new_column_name]
+var_formula_1837005841472.to_csv(
+    'C:/Projects/TriggerEditor/examples/Updated-wWorkflow-BL-Flickr-Images-Book.csv', index=False)

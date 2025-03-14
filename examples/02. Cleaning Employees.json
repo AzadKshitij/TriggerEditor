@@ -1,0 +1,159 @@
+{
+    "id": 1810170723664,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1808200482704,
+            "title": "File Input",
+            "pos_x": -425.0,
+            "pos_y": -51.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1808200444432,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/examples/employees_info.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1810168870032,
+            "title": "Filter",
+            "pos_x": -253.0,
+            "pos_y": -64.0,
+            "inputs": [
+                {
+                    "id": 1808200439440,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1808200478544,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                },
+                {
+                    "id": 1808200473872,
+                    "index": 1,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                }
+            ],
+            "content": {
+                "column": "department",
+                "operation": "Equals",
+                "value": "Accounting"
+            },
+            "op_code": 2,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 2528420177040,
+            "title": "Select",
+            "pos_x": -37.0,
+            "pos_y": -16.0,
+            "inputs": [
+                {
+                    "id": 2528419465808,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2528443773200,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "table_data": [
+                    {
+                        "column_name": "name",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "gender",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "job title",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "department",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "phone",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "email",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "residence",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "address",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "time zone",
+                        "dtype": "object"
+                    }
+                ],
+                "changes": {
+                    "selected_columns": [
+                        "name",
+                        "job title",
+                        "department"
+                    ],
+                    "rename_mapping": {},
+                    "dtype_mapping": {
+                        "name": "object",
+                        "job title": "object",
+                        "department": "object"
+                    }
+                }
+            },
+            "op_code": 4,
+            "op_type": "PREPARATION"
+        }
+    ],
+    "edges": [
+        {
+            "id": 1808200562960,
+            "edge_type": 5,
+            "start": 1808200444432,
+            "end": 1808200439440
+        },
+        {
+            "id": 2528448507472,
+            "edge_type": 5,
+            "start": 1808200478544,
+            "end": 2528419465808
+        }
+    ]
+}

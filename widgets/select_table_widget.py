@@ -3,7 +3,7 @@ from qtpy.QtCore import Qt, Signal
 import pandas as pd
 
 
-class TableWidget(QWidget):
+class SelectTableWidget(QWidget):
     dataChanged = Signal(list)
 
     def __init__(self, parent=None, data=None, changes=None):

@@ -1,0 +1,183 @@
+{
+    "id": 1926633468432,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1926633438608,
+            "title": "File Input",
+            "pos_x": -554.0,
+            "pos_y": -15.0,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1926627683856,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/examples/BL-Flickr-Images-Book.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1926773300560,
+            "title": "Select",
+            "pos_x": -372.0,
+            "pos_y": -16.0,
+            "inputs": [
+                {
+                    "id": 1926633635984,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1926597837456,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "table_data": [
+                    {
+                        "column_name": "Identifier",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Edition Statement",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Place of Publication",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Date of Publication",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Publisher",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Title",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Author",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Contributors",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Corporate Author",
+                        "dtype": "float64"
+                    },
+                    {
+                        "column_name": "Corporate Contributors",
+                        "dtype": "float64"
+                    },
+                    {
+                        "column_name": "Former owner",
+                        "dtype": "float64"
+                    },
+                    {
+                        "column_name": "Engraver",
+                        "dtype": "float64"
+                    },
+                    {
+                        "column_name": "Issuance type",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Flickr URL",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Shelfmarks",
+                        "dtype": "object"
+                    }
+                ],
+                "changes": {
+                    "selected_columns": [
+                        "Identifier",
+                        "Place of Publication",
+                        "Date of Publication",
+                        "Publisher",
+                        "Title",
+                        "Author",
+                        "Flickr URL"
+                    ],
+                    "rename_mapping": {},
+                    "dtype_mapping": {
+                        "Identifier": "int64",
+                        "Place of Publication": "object",
+                        "Date of Publication": "object",
+                        "Publisher": "object",
+                        "Title": "object",
+                        "Author": "object",
+                        "Flickr URL": "object"
+                    }
+                }
+            },
+            "op_code": 4,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 2784770166544,
+            "title": "Formula",
+            "pos_x": -186.0,
+            "pos_y": -63.0,
+            "inputs": [
+                {
+                    "id": 2784770174224,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 2784770174864,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "formula": "CASE \nWHEN [Place of Publication] LIKE '%London%' THEN 'London' \nWHEN [Place of Publication] LIKE '%Oxford%' THEN 'Oxford' \nELSE REPLACE([Place of Publication], '-', ' ') \nEND",
+                "target_column": "Place of Publication"
+            },
+            "op_code": 3,
+            "op_type": "PREPARATION"
+        }
+    ],
+    "edges": [
+        {
+            "id": 1926633552016,
+            "edge_type": 5,
+            "start": 1926627683856,
+            "end": 1926633635984
+        },
+        {
+            "id": 2784670263376,
+            "edge_type": 5,
+            "start": 1926597837456,
+            "end": 2784770174224
+        }
+    ]
+}

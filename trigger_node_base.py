@@ -294,8 +294,8 @@ class TriggerNode(Node):
 
     def eval(self):
         if not self.isDirty() and not self.isInvalid():
-            # print(" _> returning cached %s value:" %
-            #       self.__class__.__name__, self.value)
+            print(" _> returning cached %s value:" %
+                  self.__class__.__name__, self.value)
             return self.value
         try:
             val = self.evalImplementation()

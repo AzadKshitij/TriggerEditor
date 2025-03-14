@@ -24,6 +24,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
+        self.preview_rows = 10
         TriggerChangeHandler.__init__(self, self.node.scene)
 
         # pass on variables
@@ -38,7 +39,9 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
         # self.filePathEdit.connect(self.check_file_path)
-        # self.filePathEdit.textChanged.connect(self.on_input_changed)
+        self.filePathEdit.textChanged.connect(
+            self._on_filePathEdit_textChanged)
+        # textChanged.connect(self.onDataChanged)
         self.registerInputWidget(self.filePathEdit)
 
         self.loadButton = QPushButton("Load CSV", self)
@@ -49,29 +52,40 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
-            self.loadCSV(self.filePath)
+            if self.data is not None:
+                self.loadCSV(self.filePath)
 
         dock_layout.addWidget(self.filePathEdit)
         dock_layout.addWidget(self.loadButton)
         dock_layout.addWidget(self.tableWidget)
         # return dock_layout
 
-    def check_file_path(self):
-        file_path = self.filePathEdit.text()
+    def _on_filePathEdit_textChanged(self):
+        self.filePath = self.filePathEdit.text()
+        self.check_file_path()
+
+    def check_file_path(self) -> bool:
+        if not self.filePath:
+            return False
         # self.evaluate.emit()
 
         # Check if the file exists
-        if not os.path.exists(file_path):
-            print(f"Error: File '{file_path}' does not exist.")
+        if not os.path.exists(self.filePath):
+            print(f"Error: File '{self.filePath}' does not exist.")
+            self.node.grNode.setToolTip("File does not exist")
+            self.node.markInvalid(True)
             return
+        else:
+            print(f"File '{self.filePath}' exists.")
+            self.node.grNode.setToolTip("")
+            self.node.markInvalid(False)
+
+        self.loadCSV(self.filePath)
 
         # Check if the file is a CSV file
         # if not file_path.endswith('.csv'):
         #     print(f"Error: File '{file_path}' is not a CSV file.")
         #     return
-
-        if self.filePath:
-            self.loadCSV(self.filePath)
 
     def get_columns(self):
         if self.filePath:
@@ -89,31 +103,36 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if fileName:
             self.filePath = fileName
             self.filePathEdit.setText(fileName)
-            self.loadCSV(fileName)
+            # self.loadCSV(fileName)
             self.evaluate.emit()
 
     def loadCSV(self, fileName):
+
         # Create table widget only if it doesn't exist
         if not hasattr(self, 'tableWidget') or self.tableWidget is None:
             self.tableWidget = QTableWidget(self)
 
         try:
-            df = pd.read_csv(fileName)
-            self.data = df.head(10)
+            self.data = pd.read_csv(fileName, nrows=self.preview_rows)
             columns = self.data.columns.tolist()
 
             data_list = self.data.values.tolist()
 
             # Set the number of rows and columns
             self.tableWidget.setRowCount(len(data_list))
-            self.tableWidget.setColumnCount(len(data_list[0]))
+            self.tableWidget.setColumnCount(len(columns))
             self.tableWidget.setHorizontalHeaderLabels(columns)
 
             # Fill in the rest of the data
-            for i in range(len(data_list)):
-                for j in range(len(data_list[i])):
-                    self.tableWidget.setItem(
-                        i, j, QTableWidgetItem(str(data_list[i][j])))
+            # for i in range(len(data_list)):
+            #     for j in range(len(data_list[i])):
+            #         self.tableWidget.setItem(
+            #             i, j, QTableWidgetItem(str(data_list[i][j])))
+
+            for i, row in enumerate(data_list):
+                for j, value in enumerate(row):
+                    item = QTableWidgetItem(str(value))
+                    self.tableWidget.setItem(i, j, item)
 
             # Table will fit the screen horizontally
             self.tableWidget.setSortingEnabled(True)
@@ -197,7 +216,7 @@ class TriggerNode_FileInput(TriggerNode):
         # self.markDescendantsDirty()
 
         # self.content.loadCSV(self.content.filePath)
-        # self.content.loadCSV(self.content.filePath)
+        self.content.check_file_path()
         param = [{
             "data": self.content.data,
             "variable_name": self.content.variable_name
