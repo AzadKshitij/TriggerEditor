@@ -1,4 +1,5 @@
 from functools import partial
+import pprint
 from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout)
 from qtpy.QtGui import QPixmap
@@ -26,6 +27,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.row_widgets = {}  # Store references to row widgets with their indices
         self.next_row_id = 0   # Unique identifier for each row
 
+        self.history = self.node.scene.history
         TriggerChangeHandler.__init__(self, self.node.scene)
 
         # incoming variables
@@ -69,6 +71,13 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return dock_layout
 
     def add_sort_row(self, restore_data=None):
+        if not restore_data and not self.history.is_restoring_history:
+            # Store old state before adding new row
+            old_state = {
+                # Deep copy
+                'sort_data': [item.copy() for item in self.sort_data]
+            }
+
         row_layout = QHBoxLayout()
         column_selector = QComboBox()
         column_selector.addItems(self.incom_data.columns)
@@ -76,16 +85,19 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_id = self.next_row_id
         self.next_row_id += 1
 
+        # Add column selector
         column_selector.currentTextChanged.connect(
             partial(self.on_column_changed, row_id))
         row_layout.addWidget(column_selector)
 
+        # Add order selector
         order_selector = QComboBox()
         order_selector.addItems(['Ascending', 'Descending'])
         order_selector.currentTextChanged.connect(
             partial(self.on_order_changed, row_id))
         row_layout.addWidget(order_selector)
 
+        # Add remove button
         remove_button = QPushButton("-")
         remove_button.setMaximumWidth(30)
         remove_button.clicked.connect(partial(self.remove_sort_row, row_id))
@@ -101,30 +113,91 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         }
 
         if restore_data:
+            # Restoring existing data
             column_selector.setCurrentText(restore_data['column'])
             order_selector.setCurrentText(restore_data['order'])
+            self.sort_data.append(restore_data.copy())
+        else:
+            new_sort_item = {
+                'column': column_selector.currentText(),
+                'order': order_selector.currentText()
+            }
+            self.sort_data.append(new_sort_item)
 
         self.sort_layout.addLayout(row_layout)
 
-        if not restore_data:
-            self.sort_data.append({
-                'column': column_selector.currentText(),
-                'order': order_selector.currentText()
-            })
-            print(
-                "🐍 File: Preparation/sort.py | Line: 111 | add_sort_row ~ self.sort_data", self.sort_data)
+        if not restore_data and not self.history.is_restoring_history:
+            new_state = {
+                'sort_data': [item.copy() for item in self.sort_data]
+            }
+            self.store_history(old_state, new_state)
+            self.evaluate.emit()
+            # self.sort_data.append({
+            #     'column': column_selector.currentText(),
+            #     'order': order_selector.currentText()
+            # })
 
     def on_column_changed(self, row_id, text):
+        if self.history.is_restoring_history:
+            return
+
+        # Store old state
+        old_state = {
+            'sort_data': [item.copy() for item in self.sort_data]  # Deep copy
+        }
+
+        # row_index = self.row_widgets[row_id]['index']
+        # self.sort_data[row_index]['column'] = text
+        # Get current column value
         row_index = self.row_widgets[row_id]['index']
-        self.sort_data[row_index]['column'] = text
-        print("🐍 File: Preparation/sort.py | Line: 100 | on_column_changed ~ self.sort_data", self.sort_data)
+        old_column = self.sort_data[row_index]['column']
+
+        # Only update if value actually changed
+        if old_column != text:
+            self.sort_data[row_index]['column'] = text
+            new_state = {
+                # Deep copy
+                'sort_data': [item.copy() for item in self.sort_data]
+            }
+            self.store_history(old_state, new_state)
+            self.evaluate.emit()
 
     def on_order_changed(self, row_id, text):
+        if self.history.is_restoring_history:
+            return
+
+        # Store old state
+        old_state = {
+            'sort_data': [item.copy() for item in self.sort_data]  # Deep copy
+        }
+
+        # Get current order value
         row_index = self.row_widgets[row_id]['index']
-        self.sort_data[row_index]['order'] = text
-        print("🐍 File: Preparation/sort.py | Line: 105 | on_order_changed ~ self.sort_data", self.sort_data)
+        old_order = self.sort_data[row_index]['order']
+
+        # row_index = self.row_widgets[row_id]['index']
+        # self.sort_data[row_index]['order'] = text
+
+        # Only update if value actually changed
+        if old_order != text:
+            self.sort_data[row_index]['order'] = text
+            new_state = {
+                # Deep copy
+                'sort_data': [item.copy() for item in self.sort_data]
+            }
+            self.store_history(old_state, new_state)
+            self.evaluate.emit()
 
     def remove_sort_row(self, row_id):
+        """Remove a sort row with history tracking"""
+        if self.history.is_restoring_history or row_id not in self.row_widgets:
+            return
+
+        # Store old state before removal
+        old_state = {
+            'sort_data': [item.copy() for item in self.sort_data]  # Deep copy
+        }
+
         if row_id not in self.row_widgets:
             return
 
@@ -142,7 +215,10 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if widget:
                 widget.deleteLater()
             row_layout.removeItem(row_layout.itemAt(0))
+
+        # Remove the layout from parent layout
         self.sort_layout.removeItem(row_layout)
+        # row_layout.setParent(None)
 
         # Remove from our tracking dict
         del self.row_widgets[row_id]
@@ -151,6 +227,36 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         for row in self.row_widgets.values():
             if row['index'] > row_index:
                 row['index'] -= 1
+
+        # Store new state after removal
+        new_state = {
+            'sort_data': [item.copy() for item in self.sort_data]  # Deep copy
+        }
+
+        # Store history only if there was a change
+        self.store_history(old_state, new_state)
+        self.evaluate.emit()
+
+    def store_history(self, old_state, new_state):
+        """Store history data for undo/redo only if states are different"""
+        if self.history.is_restoring_history:
+            return
+
+        # Compare states
+        if old_state['sort_data'] != new_state['sort_data']:
+            history_data = {
+                'node': self.node,
+                'old_state': old_state,
+                'new_state': new_state
+            }
+            print("👴👉", end="")
+            pprint.pp(history_data)
+
+            self.history.storeHistory(
+                desc="Sort Configuration Changed",
+                data=history_data,
+                setModified=True
+            )
 
     def get_code(self):
         if not self.sort_data:
