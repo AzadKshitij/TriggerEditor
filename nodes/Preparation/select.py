@@ -355,7 +355,7 @@ class TriggerNode_Select(TriggerNode):
             print(
                 "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid", self._is_invalid)
 
-            return None
+            return [None]
 
     def get_code(self):
         return self.content.get_code()

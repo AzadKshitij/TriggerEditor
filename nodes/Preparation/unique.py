@@ -207,6 +207,7 @@ class TriggerNode_Unique(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip('Input is not connected')
+            return [None]
 
     def get_code(self):
         return self.content.get_code()

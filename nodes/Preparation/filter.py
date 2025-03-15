@@ -21,9 +21,12 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
         # local variables
+        # self.column: str = None
         self.column: str = None
-        self.operation: str = None
-        self.value: Union[str, float, int] = None
+        # self.column: str = ""
+        self.operation: str = "Equals"
+        self.value: Union[str, float, int] = ""
+        self.history = self.node.scene.history
 
         TriggerChangeHandler.__init__(self, self.node.scene)
 
@@ -75,6 +78,11 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.value_input = QLineEdit()
         self.value_input.setObjectName("valueInput")
         self.value_input.setPlaceholderText("Enter filter value...")
+
+        # Initialize default values after creating widgets
+        # self.column = self.column_selector.currentText()
+        # self.operation = self.operation_selector.currentText()
+        # self.value = self.value_input.text()
 
         self.update_columns()
 
@@ -171,12 +179,19 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.column_selector.clear()
             self.column_selector.addItems(list(self.incom_data.columns))
 
+            # Block signals during initial setup
+            self.column_selector.blockSignals(True)
+            self.operation_selector.blockSignals(True)
+            self.value_input.blockSignals(True)
+
             # Apply stored settings if they exist
             if hasattr(self, 'column'):
                 index = self.column_selector.findText(self.column)
                 if index >= 0:
                     self.column_selector.setCurrentIndex(index)
-                    self.column = self.column
+                    # self.column = self.column
+                else:
+                    self.column = self.column_selector.currentText()
 
             if hasattr(self, 'operation'):
                 index = self.operation_selector.findText(
@@ -187,11 +202,100 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if hasattr(self, 'value'):
                 self.value_input.setText(self.value)
 
+            # Unblock signals
+            self.column_selector.blockSignals(False)
+            self.operation_selector.blockSignals(False)
+            self.value_input.blockSignals(False)
+
     def on_filter_changed(self):
-        self.column = self.column_selector.currentText()
-        self.operation = self.operation_selector.currentText()
-        self.value = self.value_input.text()
+        # Prevent storing history during restoration
+        if self.history.is_restoring_history:
+            return
+
+        # Get current values before updating
+        new_column = self.column_selector.currentText()
+        new_operation = self.operation_selector.currentText()
+        new_value = self.value_input.text()
+
+        # Don't store history if nothing has changed
+        if (new_column == self.column and
+            new_operation == self.operation and
+                new_value == self.value):
+            return
+
+        # Store old state before changes
+        old_state = {
+            'column': self.column,
+            'operation': self.operation,
+            'value': self.value
+        }
+
+        # Update current state
+        self.column = new_column
+        self.operation = new_operation
+        self.value = new_value
+
+        # Store new state
+        new_state = {
+            'column': self.column,
+            'operation': self.operation,
+            'value': self.value
+        }
+
+        # Only store history if there are actual changes
+        if old_state != new_state:
+            history_data = {
+                'node': self.node,
+                'old_state': old_state,
+                'new_state': new_state
+            }
+
+            self.history.storeHistory(
+                desc="Filter Settings Changed",
+                data=history_data,
+                setModified=True
+            )
+
         self.evaluate.emit()
+        self.update_data()
+
+    def history_stamp_callback(self, history_data, is_undo):
+        """Callback for undo/redo operations"""
+        if is_undo:
+            # Undo operation
+            state = history_data['old_state']
+        else:
+            # Redo operation
+            state = history_data['new_state']
+
+        # Update the UI elements without triggering change events
+        self.column_selector.blockSignals(True)
+        self.operation_selector.blockSignals(True)
+        self.value_input.blockSignals(True)
+
+        # Set the values
+        if state['column']:
+            index = self.column_selector.findText(state['column'])
+            if index >= 0:
+                self.column_selector.setCurrentIndex(index)
+                self.column = state['column']
+
+        if state['operation']:
+            index = self.operation_selector.findText(state['operation'])
+            if index >= 0:
+                self.operation_selector.setCurrentIndex(index)
+                self.operation = state['operation']
+
+        if state['value'] is not None:
+            self.value_input.setText(state['value'])
+            self.value = state['value']
+
+        # Unblock signals
+        self.column_selector.blockSignals(False)
+        self.operation_selector.blockSignals(False)
+        self.value_input.blockSignals(False)
+
+        # Update the data
         self.update_data()
 
     def get_code(self):
@@ -311,6 +415,7 @@ class TriggerNode_Filter(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip('Input is not connected')
+            return [None]
 
     def get_code(self):
         return self.content.get_code()
