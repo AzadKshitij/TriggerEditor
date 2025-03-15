@@ -1,5 +1,6 @@
 from functools import partial
 import pprint
+from typing import final
 from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout)
 from qtpy.QtGui import QPixmap
@@ -236,6 +237,60 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Store history only if there was a change
         self.store_history(old_state, new_state)
         self.evaluate.emit()
+
+    def history_stamp_callback(self, history_data, is_undo):
+        """Callback for undo/redo operations"""
+        try:
+            self.history.is_restoring_history = True
+
+            # Get the appropriate state
+            if is_undo:
+                state = history_data['old_state']
+            else:
+                state = history_data['new_state']
+
+            # Block signals during restoration
+            self.blockSignals(True)
+            try:
+                # Store current rows before clearing
+                current_row_ids = list(self.row_widgets.keys())
+
+                # Remove all existing rows first
+                for row_id in current_row_ids:
+                    row = self.row_widgets[row_id]
+                    row_layout = row['layout']
+
+                    # Clean up widgets
+                    while row_layout.count():
+                        item = row_layout.itemAt(0)
+                        if item:
+                            widget = item.widget()
+                            if widget:
+                                # widget.setParent(None)
+                                widget.deleteLater()
+                            row_layout.removeItem(item)
+
+                    # Remove layout
+                    if self.sort_layout.indexOf(row_layout) >= 0:
+                        self.sort_layout.removeItem(row_layout)
+                    # row_layout.setParent(None)
+
+                # Clear the tracking dict
+                self.row_widgets.clear()
+                self.next_row_id = 0
+                self.sort_data.clear()
+
+                # Rebuild rows from stored state
+                for sort_item in state['sort_data']:
+                    self.add_sort_row(restore_data=sort_item)
+
+            finally:
+                self.blockSignals(False)
+
+            self.evaluate.emit()
+
+        finally:
+            self.history.is_restoring_history = False
 
     def store_history(self, old_state, new_state):
         """Store history data for undo/redo only if states are different"""
