@@ -261,42 +261,46 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def history_stamp_callback(self, history_data, is_undo):
         """Callback for undo/redo operations"""
-        if is_undo:
-            # Undo operation
-            state = history_data['old_state']
-        else:
-            # Redo operation
-            state = history_data['new_state']
+        try:
+            self.history.is_restoring_history = True
+            if is_undo:
+                # Undo operation
+                state = history_data['old_state']
+            else:
+                # Redo operation
+                state = history_data['new_state']
 
-        # Update the UI elements without triggering change events
-        self.column_selector.blockSignals(True)
-        self.operation_selector.blockSignals(True)
-        self.value_input.blockSignals(True)
+            # Update the UI elements without triggering change events
+            self.column_selector.blockSignals(True)
+            self.operation_selector.blockSignals(True)
+            self.value_input.blockSignals(True)
 
-        # Set the values
-        if state['column']:
-            index = self.column_selector.findText(state['column'])
-            if index >= 0:
-                self.column_selector.setCurrentIndex(index)
-                self.column = state['column']
+            # Set the values
+            if state['column']:
+                index = self.column_selector.findText(state['column'])
+                if index >= 0:
+                    self.column_selector.setCurrentIndex(index)
+                    self.column = state['column']
 
-        if state['operation']:
-            index = self.operation_selector.findText(state['operation'])
-            if index >= 0:
-                self.operation_selector.setCurrentIndex(index)
-                self.operation = state['operation']
+            if state['operation']:
+                index = self.operation_selector.findText(state['operation'])
+                if index >= 0:
+                    self.operation_selector.setCurrentIndex(index)
+                    self.operation = state['operation']
 
-        if state['value'] is not None:
-            self.value_input.setText(state['value'])
-            self.value = state['value']
+            if state['value'] is not None:
+                self.value_input.setText(state['value'])
+                self.value = state['value']
 
-        # Unblock signals
-        self.column_selector.blockSignals(False)
-        self.operation_selector.blockSignals(False)
-        self.value_input.blockSignals(False)
+            # Unblock signals
+            self.column_selector.blockSignals(False)
+            self.operation_selector.blockSignals(False)
+            self.value_input.blockSignals(False)
 
-        # Update the data
-        self.update_data()
+            # Update the data
+            self.update_data()
+        finally:
+            self.history.is_restoring_history = False
 
     def get_code(self):
         self.column = self.column
@@ -415,7 +419,7 @@ class TriggerNode_Filter(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip('Input is not connected')
-            return [None]
+            return None
 
     def get_code(self):
         return self.content.get_code()

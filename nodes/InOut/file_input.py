@@ -208,7 +208,7 @@ class TriggerNode_FileInput(TriggerNode):
         if not self.content.filePath:
             self.grNode.setToolTip("No file selected")
             self.markInvalid(True)
-            return [None]
+            return None
 
         self.markDirty(False)
         self.markInvalid(False)
@@ -224,13 +224,6 @@ class TriggerNode_FileInput(TriggerNode):
 
         self.evalChildren()
 
-        return param
-
-    def params(self):
-        param = {
-            "data": self.content.data,
-            "variable_name": self.content.variable_name
-        }
         return param
 
     def get_code(self):

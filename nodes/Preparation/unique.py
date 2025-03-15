@@ -107,13 +107,27 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def history_stamp_callback(self, history_data, is_undo):
         """Callback for undo/redo operations"""
-        if is_undo:
-            # Undo operation
-            self.selected_columns = history_data['old_selected_columns']
-        else:
-            # Redo operation
-            self.selected_columns = history_data['new_selected_columns']
-        self.update_column_list()
+        try:
+            self.history.is_restoring_history = True
+            if is_undo:
+                # Undo operation
+                self.selected_columns = history_data['old_selected_columns']
+            else:
+                # Redo operation
+                self.selected_columns = history_data['new_selected_columns']
+
+            # Update UI elements
+            if hasattr(self, 'column_list'):
+                try:
+                    self.column_list.blockSignals(True)
+                    self.update_column_list()
+                finally:
+                    self.column_list.blockSignals(False)
+            # Update data
+            self.handle_data_changed()
+
+        finally:
+            self.history.is_restoring_history = False
 
     def get_selected_columns(self):
         """Get list of selected column names"""

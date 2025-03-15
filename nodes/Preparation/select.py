@@ -315,9 +315,7 @@ class TriggerNode_Select(TriggerNode):
         print("⚠️⚠️⚠️ Select ⚠️⚠️⚠️")
         input_node = self.getInput(0)
         socket_index = self.getSocketValue(input_node.outputs, self)
-        print("🐍 File: Preparation/select.py | Line: 268 | processInputs ~ socket_index", socket_index)
         input_value = input_values[0][socket_index]
-        print("🐍 File: Preparation/select.py | Line: 269 | processInputs ~ input_value", input_value)
         # print("🐍 File: Preparation/select.py | Line: 322 | processInputs ~ input_value.get('data')",
         #       input_value.get('data'))
 
@@ -355,7 +353,7 @@ class TriggerNode_Select(TriggerNode):
             print(
                 "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid", self._is_invalid)
 
-            return [None]
+            return None
 
     def get_code(self):
         return self.content.get_code()

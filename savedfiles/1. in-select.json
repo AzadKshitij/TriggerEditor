@@ -48,11 +48,50 @@
                 }
             ],
             "content": {
-                "table_data": [],
+                "table_data": [
+                    {
+                        "column_name": "Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Seed",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Source",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Country",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Autocomplete Position",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Difficulty",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Hot Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Relevancy Score",
+                        "dtype": "float64"
+                    }
+                ],
                 "changes": {
-                    "selected_columns": [],
+                    "selected_columns": [
+                        "Keyword",
+                        "Seed"
+                    ],
                     "rename_mapping": {},
-                    "dtype_mapping": {}
+                    "dtype_mapping": {
+                        "Keyword": "object",
+                        "Seed": "object"
+                    }
                 }
             },
             "op_code": 4,

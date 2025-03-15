@@ -742,7 +742,7 @@ class TriggerNode_Join_1(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip('Both inputs must be connected')
-            return [None, None, None]
+            return None
 
     def get_code(self):
         return self.content.get_code()
