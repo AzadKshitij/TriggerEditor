@@ -56,5 +56,5 @@ class NodesDock(QDockWidget):
         # tab_widget.adjustSize()
         # tab_widget.adjustSize()
         self.setWidget(tab_widget)
-        tab_widget.setMaximumHeight(160)
+        tab_widget.setMaximumHeight(120)
         self.adjustSize()

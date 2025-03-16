@@ -19,12 +19,12 @@ class SelectTableWidget(QWidget):
 
     def initUI(self):
         self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
         self.table = QTableWidget(self)
+        self.table.horizontalHeader().setSectionsMovable(True)
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(
             ["Status", "Column Name", "Data Type", "Rename"])
-        self.table.horizontalHeader().setSectionResizeMode(
-            QHeaderView.Stretch)
         self.layout.addWidget(self.table)
         self.setLayout(self.layout)
         self.populateTable()

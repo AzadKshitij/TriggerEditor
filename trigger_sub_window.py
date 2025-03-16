@@ -28,8 +28,10 @@ class TriggerSubWindow(NodeEditorWidget):
         super().__init__(parent)
         # self.initUI()
         self.logger = Logger()
+        self._last_scale = 1.0
+
         self.setTitle()
-        self.addRunButton()
+        self.addButtons()
 
         self.initNewNodeActions()
 
@@ -42,25 +44,110 @@ class TriggerSubWindow(NodeEditorWidget):
         self._close_event_listeners = []
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
-    def addRunButton(self):
+    def addButtons(self):
+        # Run button
         self.fixed_button = QPushButton("Run", self)
-        self.fixed_button.setFixedSize(100, 30)  # Set the size of the button
+        self.fixed_button.setFixedSize(100, 30)
         self.fixed_button.move(10, 10)
         self.fixed_button.clicked.connect(self.run_workflow)
 
-    # def initUI(self):
-    #     super().initUI()
-    #     # self.central_widget = QWidget(self)
-    #     # self.layout = QVBoxLayout(self.central_widget)
-    #     # self.layout = QVBoxLayout(self)
+        # Zoom In button
+        self.zoom_in_button = QPushButton("Zoom In", self)
+        self.zoom_in_button.setFixedSize(100, 30)
+        self.zoom_in_button.move(120, 10)
+        self.zoom_in_button.clicked.connect(self.zoomIn)
 
-    #     self.fixed_button = QPushButton("Run", self)
-    #     self.fixed_button.setFixedSize(100, 30)  # Set the size of the button
-    #     self.fixed_button.move(10, 10)
-    #     self.fixed_button.clicked.connect(self.run_workflow)
-    #     # Position the button
-    #     # self.fixed_button.move(10, 10)
-    #     # self.fixed_button.raise_()
+        # Zoom Out button
+        self.zoom_out_button = QPushButton("Zoom Out", self)
+        self.zoom_out_button.setFixedSize(100, 30)
+        self.zoom_out_button.move(230, 10)
+        self.zoom_out_button.clicked.connect(self.zoomOut)
+
+        # Fit View button
+        self.fit_button = QPushButton("Fit View", self)
+        self.fit_button.setFixedSize(100, 30)
+        self.fit_button.move(340, 10)
+        self.fit_button.clicked.connect(self.fitView)
+
+    def zoomIn(self):
+        zoom_factor = self.view.zoomIn()
+        print("🐍 File: TriggerEditor/trigger_sub_window.py | Line: 74 | zoomIn ~ zoom_factor", zoom_factor)
+        self._last_scale *= zoom_factor
+        self.view.applyZoom(zoom_factor)
+
+    def zoomOut(self):
+        zoom_factor = self.view.zoomOut()
+        print("🐍 File: TriggerEditor/trigger_sub_window.py | Line: 80 | zoomOut ~ zoom_factor", zoom_factor)
+        self._last_scale *= zoom_factor
+        self.view.applyZoom(zoom_factor)
+
+    def fitView(self):
+        nodes = self.scene.nodes
+        if not nodes:
+            return
+        start_time = time.time()
+
+        try:
+            # Calculate the bounding rectangle of all nodes
+            rect = None
+            for node in nodes:
+                if rect is None:
+                    rect = node.grNode.boundingRect()
+                    rect.moveTopLeft(node.pos)
+                else:
+                    node_rect = node.grNode.boundingRect()
+                    node_rect.moveTopLeft(node.pos)
+                    rect = rect.united(node_rect)
+
+            if rect is None:
+                return
+
+            # Add padding around the nodes
+            padding = 50
+            rect = rect.adjusted(-padding, -padding, padding, padding)
+
+            # Fit the view while preserving current scale
+            self.view.fitInView(rect, Qt.KeepAspectRatio)
+            self._last_scale = self.view.transform().m11()  # Store current scale
+            self.view.zoom = self._last_scale*10
+            self.view.centerOn(rect.center())
+
+            print(f"⌚ Fit View Time: {time.time() - start_time:.4f}s")
+            print(f"Current scale: {self._last_scale}")
+
+        except Exception as e:
+            dumpException(e)
+
+    # def fitView(self):
+    #     # Get all nodes in the scene
+    #     nodes = self.scene.nodes
+    #     if not nodes:
+    #         return
+    #     start_time = time.time()
+    #     # Calculate the bounding rectangle of all nodes
+    #     rect = None
+    #     for node in nodes:
+    #         if rect is None:
+    #             rect = node.grNode.boundingRect()
+    #             # Use pos() values directly
+    #             rect.moveTopLeft(node.pos)
+    #         else:
+    #             node_rect = node.grNode.boundingRect()
+    #             # Use pos() values directly
+    #             node_rect.moveTopLeft(node.pos)
+    #             rect = rect.united(node_rect)
+
+    #     if rect is None:
+    #         return
+
+    #     # Add some padding around the nodes
+    #     padding = 50
+    #     rect = rect.adjusted(-padding, -padding, padding, padding)
+
+    #     # Fit the view to show all nodes
+    #     self.view.fitInView(rect, Qt.KeepAspectRatio)
+    #     self.view.centerOn(rect.center())
+    #     print("⌚⌛Fit View Time FitView2: ", time.time() - start_time)
 
     def keyPressEvent(self, event):
         # Check for Shift+A

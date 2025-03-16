@@ -21,17 +21,11 @@ class QTRDragListbox(QListWidget):
         self.initUI()
         self.setViewMode(QListWidget.IconMode)
         self.setFlow(QListWidget.LeftToRight)
-        self.setWrapping(True)
-        self.setResizeMode(QListWidget.ResizeMode.Adjust)
-        # # Center items in the QListWidget
-        self.setItemAlignment(Qt.AlignmentFlag.AlignCenter)
-        # self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-        # self.setUniformItemSizes(True)
-        # self.setIconSize(QSize(64, 64))
-        # self.setMovement(QListWidget.Movement.Static)
-        self.setSpacing(10)
-        # self.setStyleSheet("border: 1px solid white; background: green")
+        self.setWrapping(False)
+        self.setResizeMode(QListWidget.ResizeMode.Fixed)
+        self.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def initUI(self):
         # init
@@ -112,8 +106,8 @@ class ListWidgetItemWidget(QWidget):
         layout = QGridLayout(self)
         layout.setObjectName("listItemWidget")
         layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(10)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(2)
         # layout.setAlignment(Qt.AlignmentFlag.AlignJustify)
 
         self.icon_label = QLabel(self)
@@ -124,9 +118,9 @@ class ListWidgetItemWidget(QWidget):
             pixmap = QPixmap(icon)
             # pixmap.setDevicePixelRatio(2)  # High-DPI fix
             pixmap = pixmap.scaled(
-                64, 64, Qt.KeepAspectRatio, Qt.FastTransformation)
+                48, 48, Qt.KeepAspectRatio, Qt.FastTransformation)
             self.icon_label.setPixmap(pixmap)
-            self.icon_label.setFixedSize(QSize(64, 64))
+            self.icon_label.setFixedSize(QSize(48, 48))
 
         self.text_label = QLabel(name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -145,5 +139,5 @@ class ListWidgetItemWidget(QWidget):
         # Set fixed size for the widget
         # self.setMinimumHeight(100)
         # self.setMinimumHeight(100)
-        self.setFixedHeight(100)
+        # self.setFixedHeight(100)
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))

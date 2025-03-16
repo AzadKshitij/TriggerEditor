@@ -1,0 +1,262 @@
+{
+    "id": 2680111744336,
+    "scene_width": 64000,
+    "scene_height": 64000,
+    "nodes": [
+        {
+            "id": 1859404355984,
+            "title": "File Input",
+            "pos_x": -856.9892578124997,
+            "pos_y": 112.84667968749991,
+            "inputs": [],
+            "outputs": [
+                {
+                    "id": 1859377780624,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "filePath": "C:/Projects/TriggerEditor/savedfiles/6.1. out_check_W_false-filter.csv"
+            },
+            "op_code": 4,
+            "op_type": "INPUT"
+        },
+        {
+            "id": 1859404365136,
+            "title": "Filter",
+            "pos_x": -500.4882812499998,
+            "pos_y": -247.1923828124999,
+            "inputs": [
+                {
+                    "id": 1859404360080,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1859404357776,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                },
+                {
+                    "id": 1859404359888,
+                    "index": 1,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 2
+                }
+            ],
+            "content": {
+                "column": "Keyword",
+                "operation": "Equals",
+                "value": ""
+            },
+            "op_code": 2,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 1859404365072,
+            "title": "Formula",
+            "pos_x": -503.5400390624998,
+            "pos_y": -61.035156249999986,
+            "inputs": [
+                {
+                    "id": 1859375994576,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1859399587408,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "formula": null,
+                "target_column": null
+            },
+            "op_code": 3,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 1859404364880,
+            "title": "Select",
+            "pos_x": -509.6435546874997,
+            "pos_y": 94.60449218749997,
+            "inputs": [
+                {
+                    "id": 1859404365584,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1859404361936,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 1
+                }
+            ],
+            "content": {
+                "table_data": [
+                    {
+                        "column_name": "Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Seed",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Source",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Country",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Autocomplete Position",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Difficulty",
+                        "dtype": "int64"
+                    },
+                    {
+                        "column_name": "Hot Keyword",
+                        "dtype": "object"
+                    },
+                    {
+                        "column_name": "Relevancy Score",
+                        "dtype": "float64"
+                    }
+                ],
+                "changes": {
+                    "selected_columns": [
+                        "Seed"
+                    ],
+                    "rename_mapping": {},
+                    "dtype_mapping": {
+                        "Seed": "object"
+                    }
+                }
+            },
+            "op_code": 4,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 1859404365456,
+            "title": "Sort",
+            "pos_x": -506.5917968749997,
+            "pos_y": 262.45117187499994,
+            "inputs": [
+                {
+                    "id": 1859404212816,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1859372357072,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "sort_data": [
+                    {
+                        "column": "Keyword",
+                        "order": "Ascending"
+                    }
+                ]
+            },
+            "op_code": 5,
+            "op_type": "PREPARATION"
+        },
+        {
+            "id": 1859404409104,
+            "title": "Unique",
+            "pos_x": -503.5400390624997,
+            "pos_y": 424.1943359374997,
+            "inputs": [
+                {
+                    "id": 1859404410960,
+                    "index": 0,
+                    "multi_edges": false,
+                    "position": 2,
+                    "socket_type": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "id": 1859404411344,
+                    "index": 0,
+                    "multi_edges": true,
+                    "position": 5,
+                    "socket_type": 3
+                }
+            ],
+            "content": {
+                "selected_columns": []
+            },
+            "op_code": 6,
+            "op_type": "PREPARATION"
+        }
+    ],
+    "edges": [
+        {
+            "id": 1859399017424,
+            "edge_type": 2,
+            "start": 1859377780624,
+            "end": 1859404360080
+        },
+        {
+            "id": 1859459338960,
+            "edge_type": 2,
+            "start": 1859377780624,
+            "end": 1859375994576
+        },
+        {
+            "id": 1859459343312,
+            "edge_type": 5,
+            "start": 1859377780624,
+            "end": 1859404365584
+        },
+        {
+            "id": 1859459337872,
+            "edge_type": 5,
+            "start": 1859377780624,
+            "end": 1859404212816
+        },
+        {
+            "id": 1859459343632,
+            "edge_type": 5,
+            "start": 1859377780624,
+            "end": 1859404410960
+        }
+    ]
+}

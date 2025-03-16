@@ -3,7 +3,7 @@ from docks.result import ResultDock
 import qss.nodeeditor_dark_resources
 import os
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow
+from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
 from nodeeditor.utils import loadStylesheets
@@ -35,27 +35,6 @@ DEBUG = False
 
 class TriggerWindow(NodeEditorWindow):
 
-    # def __init__(self):
-    #     super().__init__()
-    # try:
-    #     QResource.registerResource("Resource/check.qrc")
-    # except:
-    #     print("Not able to load resource file!")
-
-    # def loadResourceFile(self, resource_path: str):
-    #     """ Load a Qt resource file (.qrc) """
-    #     print()
-    #     print(resource_path)
-    #     print()
-    #     try:
-    #         if not QResource.registerResource(resource_path):
-    #             raise FileNotFoundError(
-    #                 f"Resource file {resource_path} could not be loaded.")
-    #         # else:
-    #         #     print(f"Resource file {resource_path} loaded successfully.")
-    #     except Exception as e:
-    #         print(f"Error loading resource file {resource_path}: {e}")
-
     def initUI(self, parent=None):
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
@@ -63,20 +42,17 @@ class TriggerWindow(NodeEditorWindow):
 
         self.name_company = 'Trigger'
         self.name_product = 'Trigger Editor'
-        # QResource.registerResource("Resource/Icons.qrc")
-        # self.loadResourceFile("Resource/nodeeditor_dark_resources.py")
-        # self.loadResourceFile("Resource/Icons.qrc")
 
         # -----------------------------------
         self.stylesheet_filename = "qss/darkstyle.qss"
         # self.stylesheet_filename = os.path.join(
         #     os.path.dirname(__file__), "qss/nodeeditor.qss")
 
-        # loadStylesheets(
-        #     # os.path.join(os.path.dirname(__file__),
-        #     #              "qss/nodeeditor.qss"),
-        #     self.stylesheet_filename
-        # )
+        loadStylesheets(
+            os.path.join(os.path.dirname(__file__),
+                         "qss/nodeeditor.qss"),
+            self.stylesheet_filename
+        )
 
         self.empty_icon = QIcon(".")
 
@@ -93,6 +69,10 @@ class TriggerWindow(NodeEditorWindow):
         self.mdiArea.setDocumentMode(True)
         self.mdiArea.setTabsClosable(True)
         self.mdiArea.setTabsMovable(True)
+
+        # Enable window tiling and docking behavior
+        self.setDockNestingEnabled(True)
+        self.setTabPosition(Qt.AllDockWidgetAreas, QTabWidget.North)
         self.setCentralWidget(self.mdiArea)
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)

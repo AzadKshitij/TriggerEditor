@@ -46,32 +46,48 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
         """Create the basic layout for sort node with a single condition"""
         # TODO: Add default text if no incoming data.
+        if self.incom_data is None:
+            no_data_label = QLabel("No incoming data available")
+            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setStyleSheet("color: gray;")
+            dock_layout.addWidget(no_data_label)
+            return dock_layout
+
         main_layout = QVBoxLayout()
         self.sort_layout = QVBoxLayout()
-
+        print("👴👉 1")
         # Create rows based on saved sort_data or add initial row if none exists
         if self.sort_data:
             # Create rows for each saved sort condition
             for sort_item in self.sort_data:
+                print("👴👉 1.1")
                 self.add_sort_row(restore_data=sort_item)
+            print("👴👉 2")
         else:
             # Add default first row if no saved data
             self.add_sort_row()
+            print("👴👉 3")
 
+        print("👴👉 4")
         # Add row for the add button
         add_btn = QPushButton("+")
         add_btn.setFixedWidth(30)
         add_btn.clicked.connect(self.add_sort_row)
 
+        print("👴👉 5")
         main_layout.addLayout(self.sort_layout)
         main_layout.addWidget(add_btn)
         main_layout.addStretch()
 
+        print("👴👉 6")
         dock_layout.addLayout(main_layout)
+        print("👴👉 7")
         self.recursively_find_widgets(dock_layout)
+        print("👴👉 8")
         return dock_layout
 
     def add_sort_row(self, restore_data=None):
+        print("👴👉 1.1.1")
         if not restore_data and not self.history.is_restoring_history:
             # Store old state before adding new row
             old_state = {
@@ -79,25 +95,30 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 'sort_data': [item.copy() for item in self.sort_data]
             }
 
+        print("👴👉 1.1.2")
         row_layout = QHBoxLayout()
         column_selector = QComboBox()
         column_selector.addItems(self.incom_data.columns)
 
+        print("👴👉 1.1.3")
         row_id = self.next_row_id
         self.next_row_id += 1
 
         # Add column selector
+        print("👴👉 1.1.4")
         column_selector.currentTextChanged.connect(
             partial(self.on_column_changed, row_id))
         row_layout.addWidget(column_selector)
 
         # Add order selector
+        print("👴👉 1.1.5")
         order_selector = QComboBox()
         order_selector.addItems(['Ascending', 'Descending'])
         order_selector.currentTextChanged.connect(
             partial(self.on_order_changed, row_id))
         row_layout.addWidget(order_selector)
 
+        print("👴👉 1.1.6")
         # Add remove button
         remove_button = QPushButton("-")
         remove_button.setMaximumWidth(30)
@@ -105,6 +126,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout.addWidget(remove_button)
 
         # Store references to widgets and their layout
+        print("👴👉 1.1.7")
         self.row_widgets[row_id] = {
             'layout': row_layout,
             'column_selector': column_selector,
@@ -113,19 +135,23 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             'index': self.sort_layout.count()
         }
 
+        print("👴👉 1.1.8")
         if restore_data:
             # Restoring existing data
             column_selector.setCurrentText(restore_data['column'])
             order_selector.setCurrentText(restore_data['order'])
-            self.sort_data.append(restore_data.copy())
+            # self.sort_data.append(restore_data.copy())
+            print("👴👉 1.1.9")
         else:
             new_sort_item = {
                 'column': column_selector.currentText(),
                 'order': order_selector.currentText()
             }
             self.sort_data.append(new_sort_item)
+            print("👴👉 1.1.10")
 
         self.sort_layout.addLayout(row_layout)
+        print("👴👉 1.1.11")
 
         if not restore_data and not self.history.is_restoring_history:
             new_state = {
@@ -133,6 +159,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             }
             self.store_history(old_state, new_state)
             self.evaluate.emit()
+            print("👴👉 1.1.12")
             # self.sort_data.append({
             #     'column': column_selector.currentText(),
             #     'order': order_selector.currentText()
@@ -379,6 +406,7 @@ class TriggerNode_Sort(TriggerNode):
             # Custom processing logic for the Select node
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
+            self.content.data = self.content.incom_data
             self.evalChildren()
             return [{
                 'data': self.content.data,
