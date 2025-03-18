@@ -23,7 +23,8 @@ class FormulaContent(QDMNodeIconContentWidget):
         self.is_new_column: bool = True
 
     def initUI(self):
-        icon = QPixmap("Resource/icons/Preparation/Formula.png")
+        icon = QPixmap(
+            "src/trigger_designer/Resource/icons/Preparation/Formula.png")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout):
@@ -147,7 +148,7 @@ class FormulaContent(QDMNodeIconContentWidget):
 
 @register_node(OP_NODE_FORMULA, "PREPARATION")
 class TriggerNode_Formula(TriggerNode):
-    icon = "Resource/icons/Preparation/Formula.png"
+    icon = "src/trigger_designer/Resource/icons/Preparation/Formula.png"
     op_code = OP_NODE_FORMULA
     op_title = "Formula"
     content_label_objname = "trigger_node_formula"
