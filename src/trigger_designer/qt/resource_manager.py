@@ -4,9 +4,11 @@ from typing import Any
 from loguru import logger
 from PIL import Image, ImageQt
 from numpy import byte
+from qtpy.QtCore import QSettings
 from qtpy.QtGui import QPixmap, QImage
 
 import json
+import toml
 
 logger = logger.bind(resource_manager=True)
 
@@ -33,6 +35,30 @@ class ResourceManager:
             ResourceManager._map = json.load(f)
             logger.info(
                 f"{self.__class__.__name__} Loaded {len(ResourceManager._map.items())} resources")
+
+    def load_theme(self, theme_file: str = 'dark') -> str:
+        """To load theme.json file.
+
+        Args:
+            theme_file (str): Theme file name.
+
+        Raises:
+            AttributeError: _description_
+
+        Returns:
+            str: will return theme in qss format.
+        """
+
+        with open(ResourceManager._res_folder / "resources/qt/themes" / f"{theme_file}.json", encoding="utf-8", mode="r") as f:
+            theme_variables = json.load(f)
+
+        with open(ResourceManager._res_folder / "resources/qt/themes" / f"base.qss", encoding="utf-8", mode="r") as f:
+            theme_qss = f.read()
+
+        if theme_qss and theme_variables:
+            theme_qss = theme_qss.format(**theme_variables)
+
+        return theme_qss
 
     @staticmethod
     def get_path(id: str) -> Path | None:

@@ -43,15 +43,15 @@ class TriggerWindow(NodeEditorWindow):
         self.name_product = 'Trigger Editor'
 
         # -----------------------------------
-        self.stylesheet_filename = "trigger_designer/qss/darkstyle.qss"
+        # self.stylesheet_filename = "trigger_designer/qss/darkstyle.qss"
         # self.stylesheet_filename = os.path.join(
         #     os.path.dirname(__file__), "qss/nodeeditor.qss")
 
-        loadStylesheets(
-            os.path.join(os.path.dirname(__file__),
-                         "../qss/nodeeditor.qss"),
-            self.stylesheet_filename
-        )
+        # loadStylesheets(
+        #     os.path.join(os.path.dirname(__file__),
+        #                  "../qss/nodeeditor.qss"),
+        #     self.stylesheet_filename
+        # )
 
         self.empty_icon = QIcon(".")
 

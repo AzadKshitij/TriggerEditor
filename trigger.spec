@@ -15,7 +15,7 @@ system = platform.system()
 name = "TriggerEditor" if system == "Windows" else "tagstudio"
 icon = None
 if system == "Windows":
-    icon = "src/trigger_designer/Resource/TriEditorLogo.ico"
+    icon = "src/trigger_designer/resources/TriEditorLogo.ico"
 elif system == "Darwin":
     icon = "src/trigger_designer/Resource/TriEditorLogo.ico"
 
@@ -25,7 +25,9 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[("src/trigger_designer", "trigger_designer")],
-    hiddenimports=[],
+    hiddenimports=[
+        'pandas'
+    ],
     hookspath=[],
     hooksconfig={},
     excludes=[],

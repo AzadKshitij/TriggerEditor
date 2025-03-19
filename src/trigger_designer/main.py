@@ -1,7 +1,7 @@
 import os
 import sys
 from qtpy.QtWidgets import QApplication, QStyleFactory, QMainWindow, QLabel, QWidget, QVBoxLayout, QPushButton
-from qtpy.QtCore import QResource, Qt
+from qtpy.QtCore import QResource, Qt, QSettings
 from qtpy.QtGui import QIcon, QPalette, QColor, QGuiApplication
 from loguru import logger
 
@@ -31,6 +31,13 @@ if __name__ == '__main__':
     app.setStyle('Fusion')
     app.setApplicationName("trigger designer")
     app.setApplicationDisplayName("Trigger Designer")
+    settings = QSettings('Blue Octa', 'Trigger Designer')
+
+    theme_qss = rsm.load_theme(settings.value('theme', 'dark'))
+    # theme_qss = None
+
+    if theme_qss:
+        app.setStyleSheet(theme_qss)
 
     splash: Splash = Splash(
         resource_manager=rsm,

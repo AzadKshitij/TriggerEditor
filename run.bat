@@ -1,1 +1,0 @@
-python src/trigger_designer/main.py

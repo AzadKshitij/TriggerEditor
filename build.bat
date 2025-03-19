@@ -1,0 +1,1 @@
+pyinstaller --clean trigger.spec -y
