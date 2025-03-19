@@ -6,7 +6,9 @@ from qtpy.QtWidgets import (
 
 from nodeeditor.utils import dumpException
 
-from trigger_conf import check_node_type, get_class_from_opcode, LISTBOX_MIMETYPE
+from trigger_designer.qt.resource_manager import ResourceManager
+from trigger_designer.qt.node_base import TriggerNode
+from trigger_designer.core.node_configuration import check_node_type, get_class_from_opcode, LISTBOX_MIMETYPE
 
 
 class QTRDragListbox(QListWidget):
@@ -32,14 +34,13 @@ class QTRDragListbox(QListWidget):
 
         self.addMyItems()
 
-    def addMyItems(self):
+    def addMyItems(self) -> None:
         current_node_type = check_node_type(self.node_type)
 
         keys = list(current_node_type.keys())
-        print(f"node_type: {self.node_type}")
         keys.sort()
         for key in keys:
-            node = get_class_from_opcode(key, self.node_type)
+            node: TriggerNode = get_class_from_opcode(key, self.node_type)
             self.addMyItem(node.op_title, node.icon, node.op_code)
 
     def addMyItem(self, name, icon=None, op_code=0):
@@ -109,10 +110,10 @@ class ListWidgetItemWidget(QWidget):
 
         self.icon_label = QLabel(self)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.rsm = ResourceManager()
+        pixmap = self.rsm.get(icon)
 
-        if icon:
-            # .scaled(64, 64, Qt.KeepAspectRatio, Qt.SmoothTransformation)
-            pixmap = QPixmap(icon)
+        if pixmap:
             # pixmap.setDevicePixelRatio(2)  # High-DPI fix
             pixmap = pixmap.scaled(
                 48, 48, Qt.KeepAspectRatio, Qt.FastTransformation)

@@ -2,7 +2,7 @@ import io
 import sys
 import threading
 
-from utils.logger import Logger
+from trigger_designer.qt.helpers.logger import Logger
 
 
 class NodeExecutor:

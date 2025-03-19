@@ -1,13 +1,13 @@
 from qtpy.QtWidgets import QLineEdit, QLayout, QVBoxLayout, QLabel
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
-from trigger_conf import register_node, OP_NODE_INPUT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import register_node, OP_NODE_INPUT
+from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
-from docks.node_config import ConfigDock
-from Resource.rc_uicon import *
+from trigger_designer.qt.docks.node_config import ConfigDock
+from trigger_designer.resources.rc_uicon import *
 
 
 class CalcInputContent(QDMNodeIconContentWidget):

@@ -4,17 +4,18 @@ import os
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_conf import register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.qt.resource_manager import ResourceManager
+from trigger_designer.core.node_configuration import register_node, OP_NODE_FILE_INPUT
+from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
+from loguru import logger
 # from pandas import DataFrame
 
 
 class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-
     evaluate = Signal()
 
     def __init__(self, node, parent=None):
@@ -29,8 +30,9 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_file_input_{self.id}'
 
     def initUI(self):
-        icon = QPixmap(
-            "src/trigger_designer/Resource/icons/Input/File Input.png")
+        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+        # icon = QPixmap(
+        #     "src/trigger_designer/Resource/icons/Input/File Input.png")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -142,7 +144,8 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # self.evaluate.emit()
             # self.csvPreview.setPlainText(df.head().to_string())
         except Exception as e:
-            dumpException(e)
+            logger.error(f"Exception in loading csv file")
+            logger.trace(e)
 
     def get_code(self):
         if not self.filePath:
@@ -173,7 +176,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(OP_NODE_FILE_INPUT, 'INPUT')
 class TriggerNode_FileInput(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/Input/File Input.png"
+    icon = "node_file_input"
     op_code = OP_NODE_FILE_INPUT
     op_type = 'INPUT'
     op_title = "File Input"

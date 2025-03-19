@@ -3,7 +3,7 @@ from qtpy.QtWidgets import QLineEdit, QWidget, QVBoxLayout, QMenu, QWidgetAction
 from qtpy.QtCore import Qt, Signal, QTimer
 from qtpy.QtGui import QCursor
 
-from trigger_conf import get_class_from_opcode
+from trigger_designer.core.node_configuration import get_class_from_opcode
 
 
 class SearchableMenu(QMenu):

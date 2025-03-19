@@ -1,8 +1,8 @@
 from qtpy.QtWidgets import QLayout, QVBoxLayout
 
-from trigger_conf import register_node, OP_NODE_ADD, OP_NODE_SUB, OP_NODE_MUL, OP_NODE_DIV, OP_NODE_SQRT
-from trigger_node_base import TriggerNode
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import register_node, OP_NODE_ADD, OP_NODE_SUB, OP_NODE_MUL, OP_NODE_DIV, OP_NODE_SQRT
+from trigger_designer.qt.node_base import TriggerNode
+from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 

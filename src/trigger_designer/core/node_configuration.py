@@ -98,4 +98,4 @@ def get_class_from_opcode(op_code, node_type):
 
 
 # import all nodes and register them
-from nodes import *
+from trigger_designer.qt.widgets.nodes import *  # noqa: E402

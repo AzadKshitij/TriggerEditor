@@ -3,13 +3,13 @@ from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, QSaveFile, Signal
-from trigger_conf import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
-from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
+from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 
-from widgets.select_table_widget import SelectTableWidget
+from trigger_designer.qt.widgets.select_table_widget import SelectTableWidget
 
 
 class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
@@ -44,8 +44,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name: str = f'var_select_{self.id}'
 
     def initUI(self):
-        icon = QPixmap(
-            "src/trigger_designer/Resource/icons/Preparation/Select.png")
+        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     # def set_table_data(self):
@@ -290,7 +289,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(OP_NODE_SELECT, "PREPARATION")
 class TriggerNode_Select(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/Preparation/Select.png"
+    icon = "node_select"
     op_code = OP_NODE_SELECT
     op_title = "Select"
     op_type = "PREPARATION"

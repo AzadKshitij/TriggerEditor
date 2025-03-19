@@ -1,11 +1,8 @@
-import copy
-from pprint import pp
-from shutil import copy2
 from qtpy.QtWidgets import QVBoxLayout, QLabel, QWidget, QLayout, QPushButton, QHBoxLayout, QTextEdit, QDockWidget
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QPixmap, QIcon, QDrag, QPainter, QColor, QFont, QCursor, QMouseEvent
 
-from utils.logger import Logger
+from trigger_designer.qt.helpers.logger import Logger
 
 
 class ResultDock(QDockWidget):

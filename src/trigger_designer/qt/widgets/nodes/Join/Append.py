@@ -1,9 +1,8 @@
-from sys import prefix
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QAbstractItemView, QFormLayout, QListWidgetItem, QCheckBox, QWidget
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_conf import OP_NODE_APPEND, OP_NODE_JOIN, register_node
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import OP_NODE_APPEND, OP_NODE_JOIN, register_node
+from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -33,7 +32,7 @@ class Join1Content(QDMNodeIconContentWidget):
         self.variable_name = f'var_join_{self.id}'
 
     def initUI(self, parent=None):
-        icon = QPixmap("src/trigger_designer/Resource/icons/Join/Append.png")
+        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -425,7 +424,7 @@ class Join1Content(QDMNodeIconContentWidget):
 
 @register_node(OP_NODE_APPEND, 'JOIN')
 class TriggerNode_Join_1(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/Join/Append.png"
+    icon = "node_append"
     op_code = OP_NODE_APPEND
     op_type = 'JOIN'
     op_title = "Join_1"

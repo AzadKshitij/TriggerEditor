@@ -1,8 +1,8 @@
 from qtpy.QtWidgets import QLabel
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
-from trigger_conf import register_node, OP_NODE_OUTPUT, OP_NODE_TEXT_OUTPUT
-from trigger_node_base import TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import register_node, OP_NODE_OUTPUT, OP_NODE_TEXT_OUTPUT
+from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 

@@ -13,24 +13,29 @@ from nodeeditor.node_icon_graphics_node import QDMIconGraphicsNode
 from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
+from trigger_designer.qt.resource_manager import ResourceManager
+
+from loguru import logger
+
 
 class TriggerGraphicsNode(QDMIconGraphicsNode):
     # Add signal for evaluation requests
+
+    rsm = ResourceManager()
 
     def __init__(self, node, parent=None):
         super().__init__(node, parent)
 
         self._default_pen = QPen(QColor("#7F000000"))
-        self._default_pen.setWidth(2)
+        self._default_pen.setWidth(5)
         self._selected_pen = QPen(QColor("#FFFFA637"))
-        self._selected_pen.setWidth(3)
+        self._selected_pen.setWidth(5)
         self._executing_pen = QPen(QColor("#FF800080"))  # Purple color
-        self._executing_pen.setWidth(3)
+        self._executing_pen.setWidth(5)
         self._executed_pen = QPen(QColor("#FF008000"))   # Green color
-        self._executed_pen.setWidth(3)
+        self._executed_pen.setWidth(5)
 
         self._pen = self._default_pen  # Current pen
-
         # self._brush_title = QBrush(QColor(style['brush_color']))
 
     def initSizes(self):
@@ -44,13 +49,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     def initAssets(self, style=None):
         super().initAssets()
-        style = self.node.style
-        self.icons = QImage(
-            "src/trigger_designer/Resource/icons/status_icons.png")
-        self._brush_title = QBrush(QColor(style['brush_color']))
-        # self.node.style
-        # self._brush_title = QBrush(QColor("#0f0"))
-        # self._brush_title = QBrush(QColor("#FF313131"))
+        self.icons = self.rsm.get('status_icons')
 
     def paint(self, painter, QStyleOptionGraphicsItem, widget=None):
 
@@ -147,16 +146,6 @@ class TriggerChangeHandler:
                 # Found a nested layout
                 self.recursively_find_widgets(item.layout())
 
-        # def recursive_search(widget):
-        #     if self.is_input_widget(widget):
-        #         # input_widgets.append(widget)
-        #         self.registerInputWidget(widget)
-        #     for child in widget.findChildren(QWidget):
-        #         recursive_search(child)
-
-        # recursive_search(parent_widget)
-        # return input_widgets
-
     def onInputChanged(self, *args):
         """Called when any input widget changes"""
         if hasattr(self.node, 'scene'):
@@ -210,8 +199,9 @@ class TriggerNode(Node):
 
     GraphicsNode_class = TriggerGraphicsNode
     NodeContent_class = TriggerContent
+    rsm = ResourceManager()
 
-    evaluationRequested = Signal()
+    # evaluationRequested = Signal()
 
     def __init__(self, scene, inputs=[2, 2], outputs=[1]):
         super().__init__(scene, self.__class__.op_title, inputs, outputs)
@@ -225,6 +215,7 @@ class TriggerNode(Node):
         super().initSettings()
         self.input_socket_position = LEFT_CENTER
         self.output_socket_position = RIGHT_CENTER
+        # self.evaluationRequested.connect(self.onInputChanged)
 
     def getSocketValue(self, socket_list, target_node):
         """Get value based on socket connection"""

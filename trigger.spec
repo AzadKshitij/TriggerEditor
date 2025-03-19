@@ -22,10 +22,7 @@ elif system == "Darwin":
 
 a = Analysis(
     ["src/trigger_designer/main.py"],
-    pathex=[
-        'src/trigger_designer',  # Add the main source directory to Python path
-        'src'                    # Add parent directory for imports
-    ],
+    pathex=[],
     binaries=[],
     datas=[("src/trigger_designer", "trigger_designer")],
     hiddenimports=[],

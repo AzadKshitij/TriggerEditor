@@ -3,8 +3,8 @@ from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QT
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_conf import OP_NODE_FILTER, register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import OP_NODE_FILTER, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -38,8 +38,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.f_variable_name = f'var_f_filter_{self.id}'
 
     def initUI(self, parent=None):
-        icon = QPixmap(
-            'src/trigger_designer/Resource/icons/Preparation/Filter.png')
+        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -365,7 +364,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(OP_NODE_FILTER, 'PREPARATION')
 class TriggerNode_Filter(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/Preparation/Filter.png"
+    icon = "node_filter"
     op_code = OP_NODE_FILTER
     op_type = 'PREPARATION'
     op_title = "Filter"

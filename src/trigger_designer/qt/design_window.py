@@ -3,7 +3,7 @@ from qtpy.QtGui import QIcon, QPixmap, QCursor
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
-from trigger_conf import CALC_NODES, INPUT_NODES, JOIN_NODES, PREPARATION_NODES, TRANSFORM_NODES, get_class_from_opcode, LISTBOX_MIMETYPE
+from trigger_designer.core.node_configuration import CALC_NODES, INPUT_NODES, JOIN_NODES, PREPARATION_NODES, TRANSFORM_NODES, get_class_from_opcode, LISTBOX_MIMETYPE
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_edge import EDGE_TYPE_DIRECT, EDGE_TYPE_BEZIER, EDGE_TYPE_SQUARE
 from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
@@ -11,10 +11,10 @@ from nodeeditor.utils import dumpException
 
 from collections import deque
 
-from ExecutionCheck.executor import NodeExecutor
+from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
-from utils.logger import Logger
-from widgets.node_searchable_menu import SearchableMenu
+from trigger_designer.qt.helpers.logger import Logger
+from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 
 
 DEBUG = False

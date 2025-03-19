@@ -4,7 +4,7 @@ from typing import Any
 from loguru import logger
 from PIL import Image, ImageQt
 from numpy import byte
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QPixmap, QImage
 
 import json
 
@@ -15,7 +15,7 @@ class ResourceManager:
     _map: dict = {}
     _cache: dict[str, Any] = {}
     _initialized: bool = False
-    _res_folder: Path = Path(__file__).parent[1]
+    _res_folder: Path = Path(__file__).parents[1]
 
     def __init__(self) -> None:
         """Load JSON resource map
@@ -25,7 +25,7 @@ class ResourceManager:
             self.load_resource_map()
             ResourceManager._initialized = True
 
-    def load_Resource_map(self) -> None:
+    def load_resource_map(self) -> None:
         """Load JSON resource map
         """
         logger.debug("Loading resource map")
@@ -64,6 +64,7 @@ class ResourceManager:
         """
         cached_res = ResourceManager._cache.get(id)
         if cached_res:
+            logger.debug("Loading cached resource!")
             return cached_res
         else:
             res: dict = ResourceManager._map.get(id)
@@ -73,6 +74,7 @@ class ResourceManager:
             try:
                 file_path = ResourceManager._res_folder / \
                     "resources" / res.get("path")
+
                 if res.get("mode") in ["r", "rb"]:
                     with open(
                         (file_path),
@@ -83,17 +85,24 @@ class ResourceManager:
                             data = bytes(data)
                         ResourceManager._cache[id] = data
                         return data
-                elif res and res.get("mode") = "pil":
+                elif res and res.get("mode") == "pil":
                     data = Image.open(file_path)
+                    ResourceManager._cache[id] = data
                     return data
+                elif res and res.get("mode") == "qimg":
+                    data = Image.open(file_path)
+                    qim = ImageQt.ImageQt(data)
+                    ResourceManager._cache[id] = qim
+                    return qim
                 elif res and res.get("mode") in ["qpixmap"]:
                     data = Image.open(file_path)
-                    qim = ImageQt.fromqimage(data)
+                    qim = ImageQt.ImageQt(data)
                     pixmap = QPixmap.fromImage(qim)
+                    ResourceManager._cache[id] = pixmap
                     return pixmap
             except FileNotFoundError:
                 logger.error(
-                    "[ResourceManager][ERROR]: Could not find resource: ", path=file_path)
+                    f"[ResourceManager][ERROR]: Could not find resource: {file_path}")
                 return None
 
     def __getattr__(self, __name: str) -> Any:

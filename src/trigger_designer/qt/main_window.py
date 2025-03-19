@@ -1,6 +1,5 @@
 import nodeeditor
-from docks.result import ResultDock
-import qss.nodeeditor_dark_resources
+from trigger_designer.qt.docks.result import ResultDock
 import os
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget
@@ -8,11 +7,11 @@ from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
 from nodeeditor.utils import loadStylesheets
 from nodeeditor.node_editor_window import NodeEditorWindow
-from trigger_sub_window import TriggerSubWindow
+from trigger_designer.qt.design_window import TriggerSubWindow
 from nodeeditor.utils import dumpException, pp
-from trigger_conf import CALC_NODES
-from docks.nodes_list import NodesDock
-from docks.node_config import ConfigDock
+from trigger_designer.core.node_configuration import CALC_NODES
+from trigger_designer.qt.docks.nodes_list import NodesDock
+from trigger_designer.qt.docks.node_config import ConfigDock
 
 
 # Enabling edge validators
@@ -44,13 +43,13 @@ class TriggerWindow(NodeEditorWindow):
         self.name_product = 'Trigger Editor'
 
         # -----------------------------------
-        self.stylesheet_filename = "src/trigger_designer/qss/darkstyle.qss"
+        self.stylesheet_filename = "trigger_designer/qss/darkstyle.qss"
         # self.stylesheet_filename = os.path.join(
         #     os.path.dirname(__file__), "qss/nodeeditor.qss")
 
         loadStylesheets(
             os.path.join(os.path.dirname(__file__),
-                         "qss/nodeeditor.qss"),
+                         "../qss/nodeeditor.qss"),
             self.stylesheet_filename
         )
 

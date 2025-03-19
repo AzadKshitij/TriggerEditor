@@ -1,8 +1,8 @@
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_conf import OP_NODE_FORMULA, register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import OP_NODE_FORMULA, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
@@ -32,8 +32,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_formula_{self.id}'
 
     def initUI(self, parent=None):
-        icon = QPixmap(
-            "src/trigger_designer/Resource/icons/Preparation/Formula.png")
+        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -317,7 +316,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(OP_NODE_FORMULA, 'PREPARATION')
 class TriggerNode_Formula(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/Preparation/Formula.png"
+    icon = "node_formula"
     op_code = OP_NODE_FORMULA
     op_type = 'PREPARATION'
     op_title = "Formula"

@@ -1,8 +1,8 @@
 from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QSpacerItem, QSizePolicy
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_conf import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
-from trigger_node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
@@ -25,8 +25,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: pd.DataFrame = None
 
     def initUI(self):
-        icon = QPixmap(
-            "src/trigger_designer/Resource/icons/Input/File Output.png")
+        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -119,7 +118,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 @register_node(OP_NODE_FILE_OUTPUT, "INPUT")
 class TriggerNode_FileOutput(TriggerNode):
     # icon = ":/output_icon"
-    icon = "src/trigger_designer/Resource/icons/Input/File Output.png"
+    icon = "node_file_output"
     op_code = OP_NODE_FILE_OUTPUT
     op_title = "File Output"
     op_type = "INPUT"

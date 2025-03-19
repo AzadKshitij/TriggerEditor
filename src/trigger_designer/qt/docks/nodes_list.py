@@ -1,6 +1,6 @@
 from csv import list_dialects
 from qtpy.QtWidgets import QDockWidget, QTabWidget, QWidget, QVBoxLayout, QSizePolicy
-from widgets.node_drag_listbox import QTRDragListbox
+from trigger_designer.qt.widgets.node_drag_listbox import QTRDragListbox
 from qtpy.QtCore import QSize, Qt
 
 
