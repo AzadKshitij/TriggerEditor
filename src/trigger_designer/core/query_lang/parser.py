@@ -1,6 +1,16 @@
 from typing import List
 from .tokenizer import Token, TokenType
-from .ast import Node, Field, Literal, BinaryOp, IfThen, Function, NodeType
+from .ast import (
+    Node, Field, Literal, BinaryOp, IfThen, Function,
+    Between, In, Case, Null, NodeType
+)
+from .error_handler import ErrorListener
+# from trigger_designer.core.query_lang.tokenizer import Token, TokenType
+# from trigger_designer.core.query_lang.ast import (
+#     Node, Field, Literal, BinaryOp, IfThen, Function,
+#     Between, In, Case, Null, NodeType
+# )
+# from .error_handler import ErrorListener
 
 
 class ParserError(Exception):
@@ -18,7 +28,13 @@ class Parser:
 
     def parse(self) -> Node:
         """Parse the entire expression"""
-        return self.expression()
+        if not self.tokens:
+            raise ParserError(None, "No tokens to parse")
+        node = self.expression()
+        if self.current < len(self.tokens) - 1:  # -1 for EOF token
+            raise ParserError(
+                self.peek(), "Unexpected tokens after expression")
+        return node
 
     def expression(self) -> Node:
         """Parse expression with precedence climbing"""
@@ -40,6 +56,23 @@ class Parser:
         left = self.equality()
 
         while self.match(TokenType.KEYWORD) and self.peek().value.upper() == "AND":
+            # Check if this AND is part of a BETWEEN expression
+            is_between_and = False
+            if self.current > 0:
+                prev_token = self.tokens[self.current - 1]
+                if prev_token.type == TokenType.NUMBER:
+                    # Look back further to check for BETWEEN keyword
+                    for i in range(self.current - 2, -1, -1):
+                        if self.tokens[i].type == TokenType.KEYWORD and self.tokens[i].value.upper() == "BETWEEN":
+                            is_between_and = True
+                            break
+                        # Skip only numbers and operators while looking back
+                        elif self.tokens[i].type not in {TokenType.NUMBER, TokenType.OPERATOR}:
+                            break
+
+            if is_between_and:
+                break
+
             self.advance()  # consume AND
             right = self.equality()
             left = BinaryOp(NodeType.BINARY_OP, left, "AND", right)
@@ -91,7 +124,7 @@ class Parser:
         return left
 
     def primary(self) -> Node:
-        """Parse primary expressions (literals, fields, functions, etc)"""
+        """Parse primary expressions"""
         token = self.peek()
 
         if self.match(TokenType.NUMBER):
@@ -101,10 +134,29 @@ class Parser:
             return Literal(NodeType.LITERAL, self.advance().value)
 
         if self.match(TokenType.FIELD):
-            return Field(NodeType.FIELD, self.advance().value)
+            field = Field(name=self.advance().value)
 
-        if self.match(TokenType.KEYWORD) and token.value.upper() == "IF":
-            return self.if_statement()
+            # Check for BETWEEN expression
+            if self.match(TokenType.KEYWORD) and self.peek().value.upper() == "BETWEEN":
+                return self.between_expression(field)
+
+            # Check for IN expression
+            if self.match(TokenType.KEYWORD) and self.peek().value.upper() == "IN":
+                return self.in_expression(field)
+
+            return field
+
+        if self.match(TokenType.KEYWORD):
+            keyword = token.value.upper()
+            if keyword == "CASE":
+                return self.case_statement()
+            elif keyword == "NULL":
+                self.advance()
+                return Null()
+            elif keyword == "IF":
+                return self.if_statement()
+            else:
+                raise ParserError(token, f"Unexpected keyword: {keyword}")
 
         if self.match(TokenType.IDENTIFIER):
             return self.function_call()
@@ -116,6 +168,36 @@ class Parser:
             return expr
 
         raise ParserError(token, f"Unexpected token: {token.value}")
+
+    def between_expression(self, field: Field) -> Between:
+        """Parse BETWEEN expression: [Field] BETWEEN start AND end"""
+        self.advance()  # consume BETWEEN
+        start = self.expression()
+
+        # Check for AND keyword
+        if not (self.match(TokenType.KEYWORD) and self.peek().value.upper() == "AND"):
+            raise ParserError(
+                self.peek(), "Expected 'AND' in BETWEEN expression")
+
+        self.advance()  # consume AND
+        end = self.term()  # Use term() instead of expression() to limit the scope
+
+        return Between(NodeType.BETWEEN, field, start, end)
+
+    def in_expression(self, field: Field) -> In:
+        """Parse IN expression: [Field] IN (value1, value2, ...)"""
+        self.advance()  # consume IN
+        self.consume(TokenType.LPAREN, "Expected '(' after IN")
+
+        values = []
+        values.append(self.expression())
+
+        while self.match(TokenType.COMMA):
+            self.advance()  # consume comma
+            values.append(self.expression())
+
+        self.consume(TokenType.RPAREN, "Expected ')' after IN list")
+        return In(NodeType.IN, field, values)
 
     def if_statement(self) -> Node:
         """Parse IF/THEN/ELSE statements"""
@@ -146,6 +228,36 @@ class Parser:
 
         self.consume(TokenType.RPAREN, "Expected ')' after arguments")
         return Function(NodeType.FUNCTION, name, arguments)
+
+    def case_statement(self) -> Case:
+        """Parse CASE statement"""
+        self.advance()  # consume CASE
+
+        conditions = []
+        results = []
+
+        while self.match(TokenType.KEYWORD) and self.peek().value.upper() == "WHEN":
+            self.advance()  # consume WHEN
+            condition = self.expression()
+
+            if not (self.match(TokenType.KEYWORD) and self.peek().value.upper() == "THEN"):
+                raise ParserError(
+                    self.peek(), "Expected 'THEN' after WHEN condition")
+
+            self.advance()  # consume THEN
+            result = self.expression()
+
+            conditions.append(condition)
+            results.append(result)
+
+        else_result = None
+        if self.match(TokenType.KEYWORD) and self.peek().value.upper() == "ELSE":
+            self.advance()  # consume ELSE
+            else_result = self.expression()
+
+        self.consume(TokenType.KEYWORD,
+                     "Expected 'END' to close CASE statement", "END")
+        return Case(NodeType.CASE, conditions, results, else_result)
 
     def peek(self) -> Token:
         """Look at current token without consuming it"""

@@ -13,6 +13,7 @@ class TokenType(Enum):
     LPAREN = "LPAREN"        # (
     RPAREN = "RPAREN"        # )
     COMMA = "COMMA"          # ,
+    WHITESPACE = "WHITESPACE"  # Space, tab, newline
     EOF = "EOF"
 
 
@@ -51,139 +52,163 @@ class Tokenizer:
         self.pos = 0
         self.line = 1
         self.column = 1
+        self.current_char = self.text[0] if text else None
 
     def advance(self):
-        """Advance the position tracker."""
-        if self.pos < len(self.text):
-            if self.text[self.pos] == "\n":
+        """Advance the position tracker and update current_char."""
+        self.pos += 1
+        if self.pos >= len(self.text):
+            self.current_char = None
+        else:
+            self.current_char = self.text[self.pos]
+            if self.current_char == '\n':
                 self.line += 1
                 self.column = 1
             else:
                 self.column += 1
-            self.pos += 1
 
-    def next_token(self) -> Token:
-        """Main function to retrieve the next token."""
-        while self.pos < len(self.text):
-            char = self.text[self.pos]
+    def peek(self) -> Optional[str]:
+        """Look at the next character without consuming it."""
+        peek_pos = self.pos + 1
+        return self.text[peek_pos] if peek_pos < len(self.text) else None
 
-            # Skip whitespace
-            if char.isspace():
-                self.advance()
-                continue
-
-            # Field names [Name]
-            if char == "[":
-                return self.read_field()
-
-            # Numbers
-            if char.isdigit():
-                return self.read_number()
-
-            # Strings
-            if char in "'\"":
-                return self.read_string()
-
-            # Operators
-            if char in "+-*/=<>":
-                return self.read_operator()
-
-            # Keywords and identifiers
-            if char.isalpha():
-                return self.read_identifier()
-
-            # Parentheses
-            if char == "(":
-                self.advance()
-                return Token(TokenType.LPAREN, "(", self.line, self.column)
-            if char == ")":
-                self.advance()
-                return Token(TokenType.RPAREN, ")", self.line, self.column)
-
-            # Unknown character
+    def skip_whitespace(self):
+        """Skip whitespace characters."""
+        while self.current_char and self.current_char.isspace():
             self.advance()
 
-        return Token(TokenType.EOF, "", self.line, self.column)
-
     def read_field(self) -> Token:
-        """Read a field like [Name]"""
-        start_pos = self.pos
+        """Read a field reference like [FieldName]."""
+        start_col = self.column
         self.advance()  # Skip '['
         field_name = ""
 
-        while self.pos < len(self.text) and self.text[self.pos] != "]":
-            field_name += self.text[self.pos]
+        while self.current_char and self.current_char != ']':
+            field_name += self.current_char
             self.advance()
 
-        if self.pos < len(self.text) and self.text[self.pos] == "]":
-            self.advance()  # Skip closing ']'
-            return Token(TokenType.FIELD, field_name, self.line, self.column)
+        if not self.current_char:
+            raise SyntaxError(
+                f"Unclosed field reference at line {self.line}, column {start_col}")
 
-        raise SyntaxError(
-            f"Unclosed field name starting at line {self.line}, column {self.column}")
+        self.advance()  # Skip closing ']'
+        return Token(TokenType.FIELD, field_name, self.line, start_col)
 
     def read_number(self) -> Token:
-        """Read a number token (integer or float)."""
-        start_pos = self.pos
+        """Read a number (integer or decimal)."""
+        start_col = self.column
         num_str = ""
+        dot_count = 0
 
-        while self.pos < len(self.text) and (self.text[self.pos].isdigit() or self.text[self.pos] == "."):
-            num_str += self.text[self.pos]
+        while self.current_char and (self.current_char.isdigit() or self.current_char == '.'):
+            if self.current_char == '.':
+                dot_count += 1
+                if dot_count > 1:
+                    raise SyntaxError(
+                        f"Invalid number format at line {self.line}, column {self.column}")
+            num_str += self.current_char
             self.advance()
 
-        if num_str.count(".") > 1:
-            raise SyntaxError(
-                f"Invalid number at line {self.line}, column {self.column}")
-
-        return Token(TokenType.NUMBER, num_str, self.line, self.column)
+        return Token(TokenType.NUMBER, num_str, self.line, start_col)
 
     def read_string(self) -> Token:
-        """Read a string token."""
-        start_pos = self.pos
-        quote_type = self.text[self.pos]  # Either ' or "
+        """Read a string literal."""
+        start_col = self.column
+        quote = self.current_char
         self.advance()  # Skip opening quote
-        str_value = ""
+        value = ""
 
-        while self.pos < len(self.text) and self.text[self.pos] != quote_type:
-            if self.text[self.pos] == "\\" and self.pos + 1 < len(self.text):
-                # Handle escaped quotes
-                str_value += self.text[self.pos + 1]
-                self.pos += 2
-            else:
-                str_value += self.text[self.pos]
+        while self.current_char and self.current_char != quote:
+            if self.current_char == '\\':
                 self.advance()
-
-        if self.pos < len(self.text) and self.text[self.pos] == quote_type:
-            self.advance()  # Skip closing quote
-            return Token(TokenType.STRING, str_value, self.line, self.column)
-
-        raise SyntaxError(
-            f"Unclosed string at line {self.line}, column {self.column}")
-
-    def read_operator(self) -> Token:
-        """Read an operator (+, -, *, /, ==, <=, >=, !=)."""
-        start_pos = self.pos
-        op = self.text[self.pos]
-        self.advance()
-
-        # Check for two-character operators (==, <=, >=, !=)
-        if self.pos < len(self.text) and self.text[self.pos] in "=<>":
-            op += self.text[self.pos]
+                if not self.current_char:
+                    raise SyntaxError(
+                        f"Unexpected end of string at line {self.line}, column {self.column}")
+                value += self.current_char
+            else:
+                value += self.current_char
             self.advance()
 
-        return Token(TokenType.OPERATOR, op, self.line, self.column)
+        if not self.current_char:
+            raise SyntaxError(
+                f"Unclosed string at line {self.line}, column {start_col}")
+
+        self.advance()  # Skip closing quote
+        return Token(TokenType.STRING, value, self.line, start_col)
 
     def read_identifier(self) -> Token:
-        """Read an identifier (keywords or function names)."""
-        start_pos = self.pos
+        """Read an identifier or keyword."""
+        start_col = self.column
         identifier = ""
 
-        while self.pos < len(self.text) and self.text[self.pos].isalnum():
-            identifier += self.text[self.pos]
+        while self.current_char and (self.current_char.isalnum() or self.current_char == '_'):
+            identifier += self.current_char
             self.advance()
 
-        # Check if it's a keyword
-        if identifier.upper() in self.KEYWORDS:
-            return Token(TokenType.KEYWORD, identifier.upper(), self.line, self.column)
+        upper_id = identifier.upper()
+        if upper_id in self.KEYWORDS:
+            return Token(TokenType.KEYWORD, upper_id, self.line, start_col)
+        return Token(TokenType.IDENTIFIER, identifier, self.line, start_col)
 
-        return Token(TokenType.IDENTIFIER, identifier, self.line, self.column)
+    def read_operator(self) -> Token:
+        """Read an operator."""
+        start_col = self.column
+        op = self.current_char
+        self.advance()
+
+        # Check for two-character operators
+        if self.current_char in "=<>":
+            op += self.current_char
+            self.advance()
+
+        return Token(TokenType.OPERATOR, op, self.line, start_col)
+
+    def next_token(self) -> Token:
+        """Get the next token from the input."""
+        while self.current_char:
+            if self.current_char.isspace():
+                self.skip_whitespace()
+                continue
+
+            if self.current_char == '[':
+                return self.read_field()
+
+            if self.current_char.isdigit():
+                return self.read_number()
+
+            if self.current_char in '"\'':
+                return self.read_string()
+
+            if self.current_char.isalpha():
+                return self.read_identifier()
+
+            if self.current_char in "+-*/=<>!":
+                return self.read_operator()
+
+            if self.current_char == '(':
+                self.advance()
+                return Token(TokenType.LPAREN, '(', self.line, self.column - 1)
+
+            if self.current_char == ')':
+                self.advance()
+                return Token(TokenType.RPAREN, ')', self.line, self.column - 1)
+
+            if self.current_char == ',':
+                self.advance()
+                return Token(TokenType.COMMA, ',', self.line, self.column - 1)
+
+            raise SyntaxError(
+                f"Invalid character '{self.current_char}' at line {self.line}, column {self.column}")
+
+        return Token(TokenType.EOF, '', self.line, self.column)
+
+    def __iter__(self):
+        """Make Tokenizer iterable"""
+        return self
+
+    def __next__(self) -> Token:
+        """Get next token for iteration"""
+        token = self.next_token()
+        if token.type == TokenType.EOF:
+            raise StopIteration
+        return token
