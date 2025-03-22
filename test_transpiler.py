@@ -4,6 +4,7 @@ from src.trigger_designer.core.query_lang.tokenizer import Tokenizer, TokenType
 from src.trigger_designer.core.query_lang.parser import Parser
 from src.trigger_designer.core.query_lang.ast import Node, Field, Literal, BinaryOp, IfThen, Function, NodeType
 from src.trigger_designer.core.query_lang.transpiler import DuckDBTranspiler
+from src.trigger_designer.core.query_lang.validator import FormulaValidator
 
 
 # class DuckDBTranspiler:
@@ -150,15 +151,31 @@ formulas = [
         END
     """,
 
+    # Invalid formulas
+    "[Age] BETWEEN 20 30",  # Missing AND
+    "IF [Salary] > THEN 'High'",  # Missing comparison value
+    "CASE WHEN [Age] > 30 'Adult' END",  # Missing THEN
+    "[FirstName] + [LastName",  # Unclosed field reference
+
 ]
 
+for formula in formulas:
+    print(f"\nTesting formula:\n{formula}\n{'-' * 50}")
+    is_valid, ast, error = FormulaValidator.validate(formula)
 
-# Run tests
-for i, formula in enumerate(formulas, 1):
-    print(f"\nTesting Formula {i}:")
-    print(f"{'='*50}")
-    print(f"Formula:\n{formula}\n")
-    result = test_formula(formula, df)
-    print("\nResult:")
-    print(result[["FirstName", "LastName", "result"]])
-    print(f"{'='*50}\n")
+    if is_valid:
+        print("✓ Valid formula")
+    else:
+        print("✗ Invalid formula")
+        print(error)
+
+
+# Run Result tests for each formula
+# for i, formula in enumerate(formulas, 1):
+#     print(f"\nTesting Formula {i}:")
+#     print(f"{'='*50}")
+#     print(f"Formula:\n{formula}\n")
+#     result = test_formula(formula, df)
+#     print("\nResult:")
+#     print(result[["FirstName", "LastName", "result"]])
+#     print(f"{'='*50}\n")

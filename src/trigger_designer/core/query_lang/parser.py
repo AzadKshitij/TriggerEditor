@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from .tokenizer import Token, TokenType
 from .ast import (
     Node, Field, Literal, BinaryOp, IfThen, Function,
@@ -22,19 +22,29 @@ class ParserError(Exception):
 
 
 class Parser:
-    def __init__(self, tokens: List[Token]):
+    def __init__(self, tokens: List[Token], formula: str):
         self.tokens = tokens
         self.current = 0
+        self.error_listener = ErrorListener(formula)
 
-    def parse(self) -> Node:
+    def parse(self) -> Optional[Node]:
         """Parse the entire expression"""
         if not self.tokens:
-            raise ParserError(None, "No tokens to parse")
-        node = self.expression()
-        if self.current < len(self.tokens) - 1:  # -1 for EOF token
-            raise ParserError(
-                self.peek(), "Unexpected tokens after expression")
-        return node
+            self.error_listener.add_error(None, "No tokens to parse")
+            return None
+
+        try:
+            node = self.expression()
+            if self.current < len(self.tokens) - 1:  # -1 for EOF token
+                self.error_listener.add_error(
+                    self.peek(),
+                    "Unexpected tokens after expression"
+                )
+                return None
+            return node
+        except ParserError as e:
+            self.error_listener.add_error(e.token, e.message)
+            return None
 
     def expression(self) -> Node:
         """Parse expression with precedence climbing"""
@@ -275,7 +285,7 @@ class Parser:
             return False
         return self.peek().type == type
 
-    def consume(self, type: TokenType, error: str, value: str = None) -> Token:
+    def consume(self, type: TokenType, error: str, value: str = None) -> Optional[Token]:
         """Consume token of expected type or raise error"""
         if self.match(type):
             if value is None or self.peek().value.upper() == value.upper():
