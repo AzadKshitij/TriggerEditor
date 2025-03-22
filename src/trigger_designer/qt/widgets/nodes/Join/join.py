@@ -46,8 +46,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
-
-        print("🐍 File: Join/join_1.py | Line: 42 | initUI ~ create_layout")
         # Join type selection with label
         join_type_layout = QHBoxLayout()
         join_type_label = QLabel("Join Type:")

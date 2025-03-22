@@ -4,6 +4,7 @@ version = "0.0.1"
 dependencies = [
     "click==8.1.8",
     "colorama==0.4.6",
+    "duckdb>=1.2.1",
     "llvmlite==0.44.0",
     "loguru>=0.7.3",
     "nodeeditor @ git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@fc6444f29c465491b4cb0156453e4fb9a7873809",
