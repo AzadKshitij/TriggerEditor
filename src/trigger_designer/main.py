@@ -26,15 +26,19 @@ if s:
 # sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 
-if __name__ == '__main__':
+def main():
     rsm: ResourceManager = ResourceManager()
     app = QApplication(sys.argv)
+    file_path = sys.argv[1] if len(sys.argv) > 1 else None
+
+    logger.info("Starting Trigger Designer...")
+    logger.info(f"System arguments:{sys.argv}")
+
     app.setStyle('Fusion')
     app.setApplicationName("trigger designer")
     app.setApplicationDisplayName("Trigger Designer")
+
     settings = QSettings('Blue Octa', 'Trigger Designer')
-    print("🐍 File: trigger_designer/main.py | Line: 36 | undefined ~ settings",
-          settings.allKeys())
 
     theme_qss = rsm.load_theme(settings.value('theme', 'dark'))
     # theme_qss = None
@@ -51,8 +55,8 @@ if __name__ == '__main__':
 
     splash.show()
 
-    test_window = StyleTestWindow()
-    trigger_window = TriggerWindow()
+    # test_window = StyleTestWindow()
+    trigger_window = TriggerWindow(file_path=file_path)
 
     trigger_window.show()
     trigger_window.activateWindow()
@@ -60,3 +64,7 @@ if __name__ == '__main__':
     splash.finish(trigger_window)
 
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    main()

@@ -38,6 +38,10 @@ DEBUG = False
 
 class TriggerWindow(NodeEditorWindow):
 
+    def __init__(self, file_path: str = None):
+        super().__init__()
+        self.openFile(file_path)
+
     def initUI(self, parent=None):
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
@@ -93,7 +97,7 @@ class TriggerWindow(NodeEditorWindow):
 
         self.readSettings()
 
-        self.setWindowTitle("Calculator NodeEditor Example")
+        self.setWindowTitle("Trigger Designer")
 
         self.setDockNestingEnabled(True)
         # self.tabifyDockWidget(self.configDock, self.resultDock)
@@ -159,9 +163,28 @@ class TriggerWindow(NodeEditorWindow):
         except Exception as e:
             dumpException(e)
 
+    def openFile(self, fname):
+        try:
+            if fname:
+                existing = self.findMdiChild(fname)
+                if existing:
+                    self.mdiArea.setActiveSubWindow(existing)
+                else:
+                    # we need to create new subWindow and open the file
+                    nodeeditor = TriggerSubWindow()
+                    if nodeeditor.fileLoad(fname):
+                        self.statusBar().showMessage("File %s loaded" % fname, 5000)
+                        nodeeditor.setTitle()
+                        subwnd = self.createMdiChild(nodeeditor)
+                        subwnd.show()
+                    else:
+                        nodeeditor.close()
+        except Exception as e:
+            dumpException(e)
+
     def onFileOpen(self):
         fnames, filter = QFileDialog.getOpenFileNames(
-            self, 'Open graph from file', self.getFileDialogDirectory(), self.getFileDialogFilter())
+            self, 'Open design from file', self.getFileDialogDirectory(), self.getFileDialogFilter())
 
         try:
             for fname in fnames:

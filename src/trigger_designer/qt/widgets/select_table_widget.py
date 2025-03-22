@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QLineEdit, QVBoxLayout, QWidget, QHeaderView
+from qtpy.QtWidgets import QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QLineEdit, QVBoxLayout, QWidget, QHeaderView, QHBoxLayout
 from qtpy.QtCore import Qt, Signal
 import pandas as pd
 
@@ -32,7 +32,8 @@ class SelectTableWidget(QWidget):
     def setupConnections(self):
         # Connect to checkbox state changes
         for row in range(self.table.rowCount()):
-            checkbox: QCheckBox = self.table.cellWidget(row, 0)
+            checkbox_container = self.table.cellWidget(row, 0)
+            checkbox: QCheckBox = checkbox_container.layout().itemAt(0).widget()
             checkbox.stateChanged.connect(self.onDataChanged)
 
             # Connect to combobox changes
@@ -51,11 +52,19 @@ class SelectTableWidget(QWidget):
             self.table.insertRow(i)
             column_name = self.data[i]['column_name']
 
+            # Create container widget for checkbox
+            checkbox_container = QWidget()
+            checkbox_layout = QHBoxLayout(checkbox_container)
+            checkbox_layout.setContentsMargins(0, 0, 0, 0)
+            checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
             # Checkbox for isSelected
             checkbox = QCheckBox()
             checkbox.setChecked(
                 column_name in self.changes['selected_columns'])
-            self.table.setCellWidget(i, 0, checkbox)
+            checkbox_layout.addWidget(checkbox)
+
+            self.table.setCellWidget(i, 0, checkbox_container)
 
             # Column name (non-editable)
             column_name_item = QTableWidgetItem(column_name)
@@ -128,7 +137,11 @@ class SelectTableWidget(QWidget):
     def getData(self):
         data = []
         for row in range(self.table.rowCount()):
-            is_selected = self.table.cellWidget(row, 0).isChecked()
+            # Get checkbox from container
+            checkbox_container = self.table.cellWidget(row, 0)
+            checkbox = checkbox_container.layout().itemAt(0).widget()
+            is_selected = checkbox.isChecked()
+            # is_selected = self.table.cellWidget(row, 0).isChecked()
             if is_selected:
                 column_name = self.table.item(row, 1).text()
                 data_type = self.table.cellWidget(row, 2).currentText()
