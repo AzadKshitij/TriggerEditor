@@ -3,7 +3,6 @@ from typing import Any
 
 from loguru import logger
 from PIL import Image, ImageQt
-from numpy import byte
 from qtpy.QtCore import QSettings
 from qtpy.QtGui import QPixmap, QImage
 
@@ -49,14 +48,22 @@ class ResourceManager:
             str: will return theme in qss format.
         """
 
-        with open(ResourceManager._res_folder / "resources/qt/themes" / f"{theme_file}.json", encoding="utf-8", mode="r") as f:
-            theme_variables = json.load(f)
+        try:
+            with open(ResourceManager._res_folder / "resources/qt/themes" / f"{theme_file}.json", encoding="utf-8", mode="r") as f:
+                theme_variables: dict = json.load(f)
 
-        with open(ResourceManager._res_folder / "resources/qt/themes" / f"base.qss", encoding="utf-8", mode="r") as f:
-            theme_qss = f.read()
+            with open(ResourceManager._res_folder / "resources/qt/themes" / f"base.qss", encoding="utf-8", mode="r") as f:
+                theme_qss = f.read()
 
-        if theme_qss and theme_variables:
-            theme_qss = theme_qss.format(**theme_variables)
+            if theme_qss and theme_variables:
+                theme_qss = theme_qss.format(**theme_variables)
+
+        except Exception as e:
+            logger.error(e)
+
+        # Save this theme to a file
+        # with open(str(ResourceManager._res_folder/"resources/qt/themes/runtime_theme.qss"), 'w') as f:
+        #     f.write(theme_qss)
 
         return theme_qss
 

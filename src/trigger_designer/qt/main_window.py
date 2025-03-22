@@ -2,16 +2,20 @@ import nodeeditor
 from trigger_designer.qt.docks.result import ResultDock
 import os
 from qtpy.QtGui import QIcon, QKeySequence
-from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget
+from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget, QDialog
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
+
+from loguru import logger as glogger
 
 from nodeeditor.utils import loadStylesheets
 from nodeeditor.node_editor_window import NodeEditorWindow
-from trigger_designer.qt.design_window import TriggerSubWindow
 from nodeeditor.utils import dumpException, pp
+
+from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.core.node_configuration import CALC_NODES
 from trigger_designer.qt.docks.nodes_list import NodesDock
 from trigger_designer.qt.docks.node_config import ConfigDock
+from trigger_designer.qt.models.settings_panel import SettingsDialog
 
 
 # Enabling edge validators
@@ -108,6 +112,10 @@ class TriggerWindow(NodeEditorWindow):
     def createActions(self):
         super().createActions()
 
+        self.actSettings = QAction("Settings", self,
+                                   statusTip="Open settings dialog",
+                                   triggered=self.showSettings)
+
         self.actClose = QAction("Cl&ose", self, statusTip="Close the active window",
                                 triggered=self.mdiArea.closeActiveSubWindow)
         self.actCloseAll = QAction(
@@ -126,6 +134,15 @@ class TriggerWindow(NodeEditorWindow):
 
         self.actAbout = QAction(
             "&About", self, statusTip="Show the application's About box", triggered=self.about)
+
+    def showSettings(self):
+        dialog = SettingsDialog(self)
+        if dialog.exec_() == QDialog.Accepted:
+            # Reload settings and apply them
+            self.loadSettings()
+
+    def loadSettings(self):
+        glogger.debug("Loading settings...")
 
     def getCurrentNodeEditorWidget(self):
         """ we're returning NodeEditorWidget here... """
@@ -173,6 +190,9 @@ class TriggerWindow(NodeEditorWindow):
 
     def createMenus(self):
         super().createMenus()
+
+        self.editMenu.addSeparator()
+        self.editMenu.addAction(self.actSettings)
 
         self.windowMenu = self.menuBar().addMenu("&Window")
         self.updateWindowMenu()

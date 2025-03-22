@@ -1,0 +1,60 @@
+{
+    "name": "light",
+
+    "background_primary": "#ffffff",
+    "background_secondary": "#f5f5f5",
+    "background_tertiary": "#eeeeee",
+    "background_hover": "#e8e8e8",
+    "background_pressed": "#dadada",
+    "background_disabled": "#f0f0f0",
+    "background_alternate": "#f9f9f9",
+
+    "scroll_background": "#f0f0f0",
+
+    "menu_background": "#ffffff",
+    "menu_separator": "#e0e0e0",
+
+    "statusbar_background": "#f5f5f5",
+
+    "separator_background": "#e0e0e0",
+
+    "text_primary": "#000000",
+    "text_secondary": "#444444",
+    "text_disabled": "#999999",
+    "text_inactive": "#666666",
+
+    "accent_primary": "#0078d4",
+    "accent_secondary": "#0091ea",
+    "accent_tertiary": "#40c4ff",
+    "accent_disabled": "#b3e5fc",
+
+    "selection_color": "#000000",
+
+    "border_primary": "#e0e0e0",
+    "border_light": "#f0f0f0",
+    "border_dark": "#cccccc",
+    "border_accent": "#0078d4",
+
+    "border_width": "1px",
+    "border_radius": "4px",
+
+    "spacing_tiny": "2px",
+    "spacing_small": "4px",
+    "spacing_medium": "8px",
+    "spacing_large": "12px",
+    "spacing_xlarge": "16px",
+
+    "control_scrollbar_bg": "#191919",
+    "control_scrollbar_handle": "#4b4b4b",
+    "control_menu_bg": "#232323",
+    "control_toolbar_bg": "#2b2b2b",
+    
+    "button_bg": "#2b2b2b",
+    "button_hover": "#383838",
+    "button_pressed": "#4b4b4b",
+
+    "icon_size_small": "12px",
+    "icon_size_medium": "16px",
+    "icon_size_large": "24px",
+    "icon_opacity": 1.0
+}

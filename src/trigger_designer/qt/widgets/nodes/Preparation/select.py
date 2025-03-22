@@ -297,7 +297,7 @@ class TriggerNode_Select(TriggerNode):
     style = {}
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[1], outputs=[1])
+        super().__init__(scene, inputs=[1], outputs=[3])
         self.eval()
 
     def initInnerClasses(self):

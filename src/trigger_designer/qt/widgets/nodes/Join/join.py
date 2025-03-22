@@ -677,7 +677,7 @@ class TriggerNode_Join_1(TriggerNode):
     }
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[1, 1], outputs=[2, 2, 2])
+        super().__init__(scene, inputs=[1, 1], outputs=[3, 3, 3])
         # self.eval()
 
     def initInnerClasses(self):

@@ -184,7 +184,7 @@ class TriggerNode_FileInput(TriggerNode):
     style = {}
 
     def __init__(self, scene):
-        super().__init__(scene, inputs=[], outputs=[1])
+        super().__init__(scene, inputs=[], outputs=[3])
         # self.eval()
         self.markInvalid(True)
 

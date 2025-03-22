@@ -8,6 +8,7 @@ from loguru import logger
 from trigger_designer.qt import main_window
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.splash import Splash
+import trigger_designer.qt.darkstyle_rc  # noqa
 
 logger = logger.bind()
 logger.level('DEBUG')
@@ -32,6 +33,8 @@ if __name__ == '__main__':
     app.setApplicationName("trigger designer")
     app.setApplicationDisplayName("Trigger Designer")
     settings = QSettings('Blue Octa', 'Trigger Designer')
+    print("🐍 File: trigger_designer/main.py | Line: 36 | undefined ~ settings",
+          settings.allKeys())
 
     theme_qss = rsm.load_theme(settings.value('theme', 'dark'))
     # theme_qss = None
