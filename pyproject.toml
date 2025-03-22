@@ -1,0 +1,33 @@
+[project]
+name = 'TriggerDesigner'
+version = "0.0.1"
+dependencies = [
+    "click==8.1.8",
+    "colorama==0.4.6",
+    "llvmlite==0.44.0",
+    "loguru>=0.7.3",
+    "nodeeditor @ git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@fc6444f29c465491b4cb0156453e4fb9a7873809",
+    "numba==0.61.0",
+    "numexpr==2.10.2",
+    "numpy==2.1.3",
+    "orjson>=3.10.15",
+    "packaging==24.2",
+    "pandas==2.2.3",
+    "pillow>=11.1.0",
+    "pyqt6==6.8.0",
+    "pyqt6-qt6==6.8.1",
+    "pyqt6-sip==13.9.1",
+    "python-dateutil==2.9.0.post0",
+    "pytz==2024.2",
+    "qtpy==2.4.2",
+    "six==1.17.0",
+    "tzdata==2025.1",
+]
+
+[tool.uv]
+package = false
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.12.0",
+]

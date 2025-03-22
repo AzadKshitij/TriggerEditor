@@ -3,7 +3,7 @@ from qtpy.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTabWidget,
                             QPushButton, QLabel, QComboBox, QSpinBox,
                             QCheckBox, QGroupBox, QFormLayout, QWidget, QApplication)
 from qtpy.QtCore import Qt, QSettings
-import json
+import orjson as json
 import os
 from trigger_designer.qt.resource_manager import ResourceManager
 

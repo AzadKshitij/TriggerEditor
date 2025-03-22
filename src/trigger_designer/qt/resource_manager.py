@@ -6,8 +6,7 @@ from PIL import Image, ImageQt
 from qtpy.QtCore import QSettings
 from qtpy.QtGui import QPixmap, QImage
 
-import json
-import toml
+import orjson as json
 
 logger = logger.bind(resource_manager=True)
 
@@ -31,7 +30,9 @@ class ResourceManager:
         """
         logger.debug("Loading resource map")
         with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
-            ResourceManager._map = json.load(f)
+            # Read file content as string first
+            content = f.read()
+            ResourceManager._map = json.loads(content)
             logger.info(
                 f"{self.__class__.__name__} Loaded {len(ResourceManager._map.items())} resources")
 
@@ -50,13 +51,19 @@ class ResourceManager:
 
         try:
             with open(ResourceManager._res_folder / "resources/qt/themes" / f"{theme_file}.json", encoding="utf-8", mode="r") as f:
-                theme_variables: dict = json.load(f)
+                # Read file content as string first
+                content = f.read()
+                theme_variables: dict = json.loads(content)
 
             with open(ResourceManager._res_folder / "resources/qt/themes" / f"base.qss", encoding="utf-8", mode="r") as f:
                 theme_qss = f.read()
 
             if theme_qss and theme_variables:
                 theme_qss = theme_qss.format(**theme_variables)
+        except FileNotFoundError:
+            print("Error: File not found.")
+        except json.JSONDecodeError:
+            print("Error: Invalid JSON format in file.")
 
         except Exception as e:
             logger.error(e)
