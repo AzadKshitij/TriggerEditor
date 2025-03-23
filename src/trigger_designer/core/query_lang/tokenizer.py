@@ -1,19 +1,21 @@
 from enum import Enum
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 
 class TokenType(Enum):
-    FIELD = "FIELD"           # [Name]
-    NUMBER = "NUMBER"         # 123, 45.67
-    STRING = "STRING"         # 'text'
-    OPERATOR = "OPERATOR"     # +, -, *, /, =, <, >, <=, >=, !=, AND, OR
-    KEYWORD = "KEYWORD"       # IF, THEN, ELSE, BETWEEN, IN, CASE, WHEN, END, NULL
+    FIELD = "FIELD"            # [Name]
+    NUMBER = "NUMBER"          # 123, 45.67
+    STRING = "STRING"          # 'text'
+    OPERATOR = "OPERATOR"      # +, -, *, /, =, <, >, <=, >=, !=, AND, OR
+    KEYWORD = "KEYWORD"        # IF, THEN, ELSE, BETWEEN, IN, CASE, WHEN, END, NULL
     IDENTIFIER = "IDENTIFIER"  # Function names
-    LPAREN = "LPAREN"        # (
-    RPAREN = "RPAREN"        # )
-    COMMA = "COMMA"          # ,
+    LPAREN = "LPAREN"          # (
+    RPAREN = "RPAREN"          # )
+    COMMA = "COMMA"            # ,
     WHITESPACE = "WHITESPACE"  # Space, tab, newline
+    DOT = "DOT"                # .
+    SPECIAL = "SPECIAL"        # Special characters like @, #, $, etc.
     EOF = "EOF"
 
 
@@ -37,14 +39,34 @@ class Tokenizer:
     # Valid operators
     OPERATORS = {
         # Arithmetic
-        "+": "+", "-": "-", "*": "*", "/": "/",
+        "+",
+        "-",
+        "*",
+        "/",
 
         # Comparison
-        "=": "=", "<": "<", ">": ">",
-        "<=": "<=", ">=": ">=", "!=": "!=",
+        "=",
+        "<",
+        ">",
+        "<=",
+        ">=",
+        "!=",
 
         # Logical
-        "AND": "AND", "OR": "OR"
+        "AND",
+        "OR"
+    }
+
+    # Valid special characters
+    SPECIAL_CHARS = {
+        '@',
+        '#',
+        '$',
+        '%',
+        '&',
+        '.',
+        ';',
+        ':'
     }
 
     def __init__(self, text: str):
@@ -78,16 +100,21 @@ class Tokenizer:
             self.advance()
 
     def read_field(self) -> Token:
-        """Read a field reference like [FieldName]."""
+        """Read a field reference like [FieldName]"""
         start_col = self.column
         self.advance()  # Skip '['
         field_name = ""
 
         while self.current_char and self.current_char != ']':
-            field_name += self.current_char
-            self.advance()
+            if self.current_char.isalnum() or self.current_char in self.SPECIAL_CHARS:
+                field_name += self.current_char
+                self.advance()
+            else:
+                raise SyntaxError(
+                    f"Invalid character '{self.current_char}' in field name at line {self.line}, column {self.column}")
 
         if not self.current_char:
+            # Use the improved error handling
             raise SyntaxError(
                 f"Unclosed field reference at line {self.line}, column {start_col}")
 
@@ -185,6 +212,9 @@ class Tokenizer:
             if self.current_char in "+-*/=<>!":
                 return self.read_operator()
 
+            # if self.current_char in self.SPECIAL_CHARS:
+            #     return self.read_special()
+
             if self.current_char == '(':
                 self.advance()
                 return Token(TokenType.LPAREN, '(', self.line, self.column - 1)
@@ -202,6 +232,29 @@ class Tokenizer:
 
         return Token(TokenType.EOF, '', self.line, self.column)
 
+    def tokenize(self) -> List[Token]:
+        tokens = []
+        while self.current_char:
+            token = self.next_token()
+            tokens.append(token)
+            if token.type == TokenType.EOF:
+                break
+        return tokens
+
+    def read_special(self) -> Token:
+        """Read a special character."""
+        start_col = self.column
+        special = self.current_char
+        self.advance()
+
+        # Handle special character sequences (e.g., @@ or ##)
+        while (self.current_char and self.current_char in self.SPECIAL_CHARS
+               and self.current_char == special):
+            special += self.current_char
+            self.advance()
+
+        return Token(TokenType.SPECIAL, special, self.line, start_col)
+
     def __iter__(self):
         """Make Tokenizer iterable"""
         return self
@@ -212,3 +265,30 @@ class Tokenizer:
         if token.type == TokenType.EOF:
             raise StopIteration
         return token
+
+    def read_literal(self) -> Token:
+        """Read a literal value including special characters"""
+        start_col = self.column
+        value = ""
+
+        # Handle numbers with special suffixes (e.g., 99.9%)
+        if self.current_char.isdigit():
+            while self.current_char and (self.current_char.isdigit() or self.current_char == '.'):
+                value += self.current_char
+                self.advance()
+
+            # Handle special suffix
+            if self.current_char in self.SPECIAL_CHARS:
+                value += self.current_char
+                self.advance()
+
+            return Token(TokenType.NUMBER, value, self.line, start_col)
+
+        # Handle special character literals
+        if self.current_char in self.SPECIAL_CHARS:
+            while self.current_char and (self.current_char in self.SPECIAL_CHARS):
+                value += self.current_char
+                self.advance()
+            return Token(TokenType.SPECIAL, value, self.line, start_col)
+
+        return Token(TokenType.LITERAL, value, self.line, start_col)

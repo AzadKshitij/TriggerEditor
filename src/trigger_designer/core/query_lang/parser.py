@@ -35,6 +35,12 @@ class Parser:
 
         try:
             node = self.expression()
+
+            # Skip any remaining whitespace tokens
+            while self.current < len(self.tokens) and self.peek().type == TokenType.WHITESPACE:
+                self.advance()
+
+            # Check for unexpected tokens
             if self.current < len(self.tokens) - 1:  # -1 for EOF token
                 self.error_listener.add_error(
                     self.peek(),
@@ -49,6 +55,25 @@ class Parser:
     def expression(self) -> Node:
         """Parse expression with precedence climbing"""
         return self.logical_or()
+
+    # def string_or_expression(self) -> Node:
+    #     """Parse a string literal or expression"""
+    #     token = self.peek()
+
+    #     # Handle string literals first
+    #     if self.match(TokenType.STRING):
+    #         value = token.value
+    #         self.advance()
+    #         return Literal(NodeType.LITERAL, value)
+
+    #     # Handle numbers
+    #     if self.match(TokenType.NUMBER):
+    #         value = float(token.value)
+    #         self.advance()
+    #         return Literal(NodeType.LITERAL, value)
+
+    #     # Handle other expressions
+    #     return self.expression()
 
     def logical_or(self) -> Node:
         """Parse OR expressions"""
@@ -137,6 +162,10 @@ class Parser:
         """Parse primary expressions"""
         token = self.peek()
 
+        # Special character handling
+        if self.match(TokenType.SPECIAL):
+            return Literal(NodeType.LITERAL, self.advance().value)
+
         if self.match(TokenType.NUMBER):
             return Literal(NodeType.LITERAL, float(self.advance().value))
 
@@ -197,17 +226,41 @@ class Parser:
     def in_expression(self, field: Field) -> In:
         """Parse IN expression: [Field] IN (value1, value2, ...)"""
         self.advance()  # consume IN
-        self.consume(TokenType.LPAREN, "Expected '(' after IN")
+
+        # Handle opening parenthesis
+        if not self.match(TokenType.LPAREN):
+            raise ParserError(self.peek(), "Expected '(' after IN")
+        self.advance()  # consume '('
 
         values = []
-        values.append(self.expression())
 
+        # Handle empty list case
+        if self.match(TokenType.RPAREN):
+            self.advance()  # consume ')'
+            return In(NodeType.IN, field, values)
+
+        # Parse first value
+        values.append(self.parse_in_value())
+
+        # Parse remaining values
         while self.match(TokenType.COMMA):
             self.advance()  # consume comma
-            values.append(self.expression())
+            values.append(self.parse_in_value())
 
-        self.consume(TokenType.RPAREN, "Expected ')' after IN list")
+        # Handle closing parenthesis
+        if not self.match(TokenType.RPAREN):
+            raise ParserError(self.peek(), "Expected ')' after IN list")
+        self.advance()  # consume ')'
+
         return In(NodeType.IN, field, values)
+
+    def parse_in_value(self) -> Node:
+        """Parse a value in an IN list (string literal or expression)"""
+        if self.match(TokenType.STRING):
+            token = self.peek()
+            self.advance()  # consume string token
+            return Literal(NodeType.LITERAL, token.value)
+        return self.expression()
 
     def if_statement(self) -> Node:
         """Parse IF/THEN/ELSE statements"""
@@ -232,7 +285,7 @@ class Parser:
         arguments = []
         if not self.match(TokenType.RPAREN):
             arguments.append(self.expression())
-            while self.match(TokenType.OPERATOR) and self.peek().value == ",":
+            while self.match(TokenType.COMMA):
                 self.advance()  # consume comma
                 arguments.append(self.expression())
 
