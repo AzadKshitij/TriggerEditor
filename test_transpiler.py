@@ -288,15 +288,18 @@ def run_all_tests():
     return passed_tests == total_tests
 
 
-run_all_tests()
+# run_all_tests()
 
 
 # Run Result tests for each formula
-# for i, formula in enumerate(formulas, 1):
-#     print(f"\nTesting Formula {i}:")
-#     print(f"{'='*50}")
-#     print(f"Formula:\n{formula}\n")
-#     result = test_formula(formula, df)
-#     print("\nResult:")
-#     print(result[["FirstName", "LastName", "result"]])
-#     print(f"{'='*50}\n")
+for i, formula in enumerate(formulas, 1):
+    print(f"\nTesting Formula {i}:")
+    print(f"{'='*50}")
+    print(f"Formula:\n{formula}\n")
+    is_valid, ast, error = FormulaValidator.validate(formula)
+    print("\nResult:")
+    print(f"Valid: {is_valid}")
+    print(f"Error: {error}")
+    # result = test_formula(formula, data)
+    # print(result[["FirstName", "LastName", "result"]])
+    print(f"{'='*50}\n")

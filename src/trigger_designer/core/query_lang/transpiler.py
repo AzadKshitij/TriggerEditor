@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 import duckdb
 import pandas as pd
 from .tokenizer import Tokenizer, TokenType

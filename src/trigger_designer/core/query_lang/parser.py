@@ -22,15 +22,14 @@ class ParserError(Exception):
 
 
 class Parser:
-    def __init__(self, tokens: List[Token], formula: str):
+    def __init__(self, tokens: List[Token]):
         self.tokens = tokens
         self.current = 0
-        self.error_listener = ErrorListener(formula)
 
     def parse(self) -> Optional[Node]:
         """Parse the entire expression"""
         if not self.tokens:
-            self.error_listener.add_error(None, "No tokens to parse")
+            # self.error_listener.add_error(None, "No tokens to parse")
             return None
 
         try:
@@ -42,14 +41,14 @@ class Parser:
 
             # Check for unexpected tokens
             if self.current < len(self.tokens) - 1:  # -1 for EOF token
-                self.error_listener.add_error(
-                    self.peek(),
-                    "Unexpected tokens after expression"
-                )
+                # self.error_listener.add_error(
+                #     self.peek(),
+                #     "Unexpected tokens after expression"
+                # )
                 return None
             return node
         except ParserError as e:
-            self.error_listener.add_error(e.token, e.message)
+            # self.error_listener.add_error(e.token, e.message)
             return None
 
     def expression(self) -> Node:

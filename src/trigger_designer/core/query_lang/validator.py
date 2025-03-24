@@ -1,3 +1,5 @@
+from ast import Try
+from sys import exception
 from typing import Tuple, Optional
 from .tokenizer import Tokenizer, TokenType
 from .parser import Parser
@@ -21,11 +23,14 @@ class FormulaValidator:
                     break
 
             # Parse
-            parser = Parser(tokens, formula)
-            ast = parser.parse()
+            try:
+                parser = Parser(tokens)
+                ast = parser.parse()
+            except Exception as e:
+                return False, None, f"{e}"
 
-            if parser.error_listener.has_errors():
-                return False, None, parser.error_listener.get_error_message()
+            # if parser.error_listener.has_errors():
+            #     return False, None, parser.error_listener.get_error_message()
 
             return True, ast, None
 

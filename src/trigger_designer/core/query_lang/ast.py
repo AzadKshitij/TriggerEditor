@@ -13,6 +13,7 @@ class NodeType(Enum):
     IN = "IN"                # List membership
     CASE = "CASE"           # CASE WHEN expressions
     NULL = "NULL"           # NULL value
+    NONE = "NULL"           # NULL value
 
 
 @dataclass
