@@ -15,6 +15,11 @@ from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.resource_manager import ResourceManager
 
+from typing import TYPE_CHECKING, Any, List, Optional, Type
+
+if TYPE_CHECKING:
+    from nodeeditor.node_scene import Scene
+
 from loguru import logger
 
 
@@ -103,7 +108,7 @@ class TriggerContent(QDMNodeIconContentWidget):
 class TriggerChangeHandler:
     def __init__(self, scene: 'Scene'):
         self._scene = scene
-        self._input_widgets = []
+        self._input_widgets: list = []
 
     def registerInputWidget(self, widget):
         """Register a single input widget for change tracking"""
@@ -187,26 +192,27 @@ class TriggerChangeHandler:
 
 
 class TriggerNode(Node):
-    icon = ""
-    op_code = 0
-    op_title = "Undefined"
-    op_type = ""
-    content_label = ""
-    content_label_objname = "calc_node_bg"
-    style = {
+    icon: str = ""
+    op_code: int = 0
+    op_title: str = "Undefined"
+    op_type: str = ""
+    content_label: str = ""
+    content_label_objname: str = "calc_node_bg"
+    style: dict[str, str] = {
         'brush_color': "#000000"
     }
 
-    GraphicsNode_class = TriggerGraphicsNode
-    NodeContent_class = TriggerContent
-    rsm = ResourceManager()
+    # Explicitly define types for Node classes
+    GraphicsNode_class: TriggerGraphicsNode = TriggerGraphicsNode  # type: ignore
+    NodeContent_class: TriggerContent = TriggerContent  # type: ignore
+    rsm: ResourceManager = ResourceManager()
 
     # evaluationRequested = Signal()
 
-    def __init__(self, scene, inputs=[2, 2], outputs=[1]):
+    def __init__(self, scene: 'Scene', inputs: List[int] = [2, 2], outputs: List[int] = [1]):
         super().__init__(scene, self.__class__.op_title, inputs, outputs)
 
-        self.value = None
+        self.value: Optional[Any] = None
 
         # it's really important to mark all nodes Dirty by default
         self.markDirty()

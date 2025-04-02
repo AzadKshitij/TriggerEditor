@@ -16,6 +16,7 @@ from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 
+from typing import Callable, Optional
 
 DEBUG = False
 DEBUG_CONTEXT = False
@@ -24,11 +25,11 @@ DEBUG_CONTEXT = False
 class TriggerSubWindow(NodeEditorWidget):
     itemSelected = Signal(object)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
         # self.initUI()
-        self.logger = Logger()
-        self._last_scale = 1.0
+        self.logger: Logger = Logger()
+        self._last_scale: float = 1.0
 
         self.setTitle()
         self.addButtons()
@@ -41,7 +42,7 @@ class TriggerSubWindow(NodeEditorWidget):
         self.scene.addDropListener(self.onDrop)
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
         self.scene.addItemSelectedListener(self.onItemSelected)
-        self._close_event_listeners = []
+        self._close_event_listeners: list[Callable] = []
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
     def addButtons(self):

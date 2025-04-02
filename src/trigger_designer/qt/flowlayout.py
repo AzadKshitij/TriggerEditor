@@ -5,6 +5,7 @@
 
 """qtpy port of the widgets/layouts/flowlayout example from Qt v6.x."""
 
+from typing import Optional
 from qtpy.QtCore import QMargins, QPoint, QRect, QSize, Qt
 from qtpy.QtWidgets import QLayout, QSizePolicy, QWidget
 
@@ -86,12 +87,12 @@ class FlowLayout(QLayout):
             return size
 
     def _do_layout(self, rect: QRect, test_only: bool) -> float:
-        x = rect.x()
-        y = rect.y()
-        line_height = 0
+        x: int = rect.x()
+        y: int = rect.y()
+        line_height: float = 0
         spacing = self.spacing()
-        layout_spacing_x = None
-        layout_spacing_y = None
+        layout_spacing_x: float = 0
+        layout_spacing_y: float = 0
 
         if self.grid_efficiency and self._item_list:
             item = self._item_list[0]
@@ -132,7 +133,7 @@ class FlowLayout(QLayout):
                 next_x = x + item.sizeHint().width() + space_x
                 if next_x - space_x > rect.right() and line_height > 0:
                     x = rect.x()
-                    y = y + line_height + space_y
+                    y = int(y + line_height + space_y)
                     next_x = x + item.sizeHint().width() + space_x
                     line_height = 0
 

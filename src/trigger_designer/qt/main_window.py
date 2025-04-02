@@ -38,17 +38,20 @@ DEBUG = False
 
 class TriggerWindow(NodeEditorWindow):
 
-    def __init__(self, file_path: str = None):
+    def __init__(self, file_path: str = None, name_company: str = 'Trigger', name_product: str = 'Trigger Editor'):
         super().__init__()
         self.openFile(file_path)
+        self.name_company = name_company
+        self.name_product = name_product
+        self.setObjectName("MainWindow")
+        self.readSettings()
+
+        # self.setWindowIcon(QIcon(":/trigger_designer/images/icon.png"))
 
     def initUI(self, parent=None):
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
         # Create logger
-
-        self.name_company = 'Trigger'
-        self.name_product = 'Trigger Editor'
 
         # -----------------------------------
         # self.stylesheet_filename = "trigger_designer/qss/darkstyle.qss"

@@ -36,11 +36,11 @@ OP_NODE_ARRANGE = 1
 OP_NODE_COUNTRECORDS = 2
 
 
-CALC_NODES = {}
-INPUT_NODES = {}
-PREPARATION_NODES = {}
-JOIN_NODES = {}
-TRANSFORM_NODES = {}
+CALC_NODES: dict = {}
+INPUT_NODES: dict = {}
+PREPARATION_NODES: dict = {}
+JOIN_NODES: dict = {}
+TRANSFORM_NODES: dict = {}
 
 
 class ConfException(Exception):

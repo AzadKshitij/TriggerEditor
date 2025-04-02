@@ -85,9 +85,9 @@ class ResourceManager:
             Path: The resource path if found, else None.
         """
 
-        res: dict = ResourceManager._map.get(id)
+        res: dict = ResourceManager._map.get(id, {})
         if res:
-            return ResourceManager._res_folder / "resources" / res.get("path")
+            return ResourceManager._res_folder / "resources" / res.get("path", "")
         return None
 
     def get(self, id: str) -> Any:
@@ -107,18 +107,18 @@ class ResourceManager:
             logger.debug("Loading cached resource!")
             return cached_res
         else:
-            res: dict = ResourceManager._map.get(id)
+            res: dict = ResourceManager._map.get(id, {})
             if not res:
                 return None
 
             try:
                 file_path = ResourceManager._res_folder / \
-                    "resources" / res.get("path")
+                    "resources" / res.get("path", "")
 
                 if res.get("mode") in ["r", "rb"]:
                     with open(
                         (file_path),
-                        res.get("mode")
+                        res.get("mode", "r"),
                     ) as f:
                         data = f.read()
                         if res.get("mode") == 'rb':
