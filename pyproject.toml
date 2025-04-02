@@ -28,8 +28,10 @@ dependencies = [
 [tool.uv]
 package = false
 
+
 [tool.mypy]
 python_version = ">3.11"
+exclude = "^.venv/ | build/ | dist/* | migrations/ | docs/ | /examples | /tests | ./dist/TriggerEditor/_internal/"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -45,6 +47,7 @@ warn_unreachable = true
 
 [dependency-groups]
 dev = [
+    "autotyping>=24.9.0",
     "mypy>=1.15.0",
     "pyinstaller>=6.12.0",
 ]

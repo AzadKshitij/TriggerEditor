@@ -1,6 +1,3 @@
-import copy
-from pprint import pp
-from shutil import copy2
 from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QLabel, QWidget, QLayout
 
 

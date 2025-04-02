@@ -6,9 +6,9 @@
 import math
 
 from PIL import ImageQt
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication, QPixmap
-from PySide6.QtWidgets import (
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QGuiApplication, QPixmap
+from qtpy.QtWidgets import (
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -18,8 +18,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tagstudio.core.constants import VERSION, VERSION_BRANCH
-from tagstudio.core.enums import Theme
+from trigger_designer.core.constants import VERSION, VERSION_BRANCH
+# from tagstudio.core.enums import Theme
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
 from tagstudio.qt.resource_manager import ResourceManager

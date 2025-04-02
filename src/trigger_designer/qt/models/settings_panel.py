@@ -92,7 +92,6 @@ class SettingsDialog(QDialog):
 
         with open(settings_file, 'w') as f:
             json.dump(settings, f, indent=4)
-        print("🐍 File: models/settings_panel.py | Line: 99 | save_settings ~ 1", 1)
         qsettings = QSettings('Blue Octa', 'Trigger Designer')
 
         logger.info(settings)
@@ -101,11 +100,8 @@ class SettingsDialog(QDialog):
         )
 
         qsettings.setValue('theme', settings.get('theme', 'dark'))
-        print("🐍 File: models/settings_panel.py | Line: 99 | save_settings ~ 1", 2)
 
         style_sheet = ResourceManager.load_theme(settings.get('theme', 'dark'))
-        print("🐍 File: models/settings_panel.py | Line: 99 | save_settings ~ 1", 3)
         QApplication.instance().setStyleSheet(style_sheet)
-        print("🐍 File: models/settings_panel.py | Line: 99 | save_settings ~ 1", 4)
 
         self.accept()

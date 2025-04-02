@@ -1,4 +1,3 @@
-from turtle import width
 from qtpy.QtGui import QPixmap, QIcon, QDrag, QPainter, QColor, QFont, QCursor, QMouseEvent
 from qtpy.QtCore import QSize, Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
 from qtpy.QtWidgets import (
@@ -6,13 +5,15 @@ from qtpy.QtWidgets import (
 
 from nodeeditor.utils import dumpException
 
+from typing import Any, Optional
+
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.node_base import TriggerNode
 from trigger_designer.core.node_configuration import check_node_type, get_class_from_opcode, LISTBOX_MIMETYPE
 
 
 class QTRDragListbox(QListWidget):
-    def __init__(self, parent=None, node_type=None):
+    def __init__(self, parent: Optional[QWidget] = None, node_type: Optional[str] = None) -> None:
         super().__init__(parent)
         self.node_type = node_type
         self.horizontal_spacing = 15
@@ -26,7 +27,7 @@ class QTRDragListbox(QListWidget):
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-    def initUI(self):
+    def initUI(self) -> None:
         # init
         self.setIconSize(QSize(32, 32))
         self.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -43,7 +44,7 @@ class QTRDragListbox(QListWidget):
             node: TriggerNode = get_class_from_opcode(key, self.node_type)
             self.addMyItem(node.op_title, node.icon, node.op_code)
 
-    def addMyItem(self, name, icon=None, op_code=0):
+    def addMyItem(self, name: str = "", icon: str = "", op_code: int = 0) -> None:
         item = QListWidgetItem(self)
         item_widget = ListWidgetItemWidget(name, icon, self.node_type)
         item.setSizeHint(item_widget.sizeHint())
@@ -64,7 +65,7 @@ class QTRDragListbox(QListWidget):
         # item.setData(Qt.UserRole, pixmap)
         item.setData(Qt.UserRole + 1, op_code)
 
-    def startDrag(self, *args, **kwargs):
+    def startDrag(self, *args: list[Any], **kwargs: dict[Any, Any]) -> None:
         try:
             # item = self.currentItem()
             # op_code = item.data(Qt.UserRole + 1)
@@ -98,7 +99,7 @@ class QTRDragListbox(QListWidget):
 
 
 class ListWidgetItemWidget(QWidget):
-    def __init__(self, name, icon=None, node_type="DEFAULT", parent=None):
+    def __init__(self, name: str, icon: str = "", node_type: Optional[str] = "DEFAULT", parent: Optional[QWidget] = None):
         super().__init__(parent)
 
         layout = QGridLayout(self)
@@ -124,7 +125,7 @@ class ListWidgetItemWidget(QWidget):
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.text_label.setFont(QFont("Arial", 8))
         self.text_label.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)  # ✅ Correct usage
+            QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.text_label.setMinimumWidth(self.icon_label.width())
 
         # self.text_label.setFixedHeight(20)

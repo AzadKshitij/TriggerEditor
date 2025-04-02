@@ -6,12 +6,12 @@ from trigger_designer.qt.helpers.logger import Logger
 
 
 class ResultDock(QDockWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.logs = []
-        self.filtered_logs = []
+        self.logs: list[dict] = []
+        self.filtered_logs: list[dict] = []
         self.current_filter = 'all'
-        self.logger: Logger = None
+        self.logger: Logger
         self.initUI()
 
     def initUI(self):

@@ -6,7 +6,7 @@ import pandas as pd
 class SelectTableWidget(QWidget):
     dataChanged = Signal(list)
 
-    def __init__(self, parent=None, data=None, changes=None):
+    def __init__(self, parent: QWidget, data: list, changes: dict) -> None:
         super().__init__(parent)
         self.data = data
         self.changes = changes or {
@@ -17,19 +17,19 @@ class SelectTableWidget(QWidget):
         self.initUI()
         self.setupConnections()
 
-    def initUI(self):
-        self.layout = QVBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.table = QTableWidget(self)
+    def initUI(self) -> None:
+        self.v_layout = QVBoxLayout(self)
+        self.v_layout.setContentsMargins(0, 0, 0, 0)
+        self.table: QTableWidget = QTableWidget(self)
         self.table.horizontalHeader().setSectionsMovable(True)
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(
             ["Status", "Column Name", "Data Type", "Rename"])
-        self.layout.addWidget(self.table)
-        self.setLayout(self.layout)
+        self.v_layout.addWidget(self.table)
+        self.setLayout(self.v_layout)
         self.populateTable()
 
-    def setupConnections(self):
+    def setupConnections(self) -> None:
         # Connect to checkbox state changes
         for row in range(self.table.rowCount()):
             checkbox_container = self.table.cellWidget(row, 0)
@@ -44,7 +44,7 @@ class SelectTableWidget(QWidget):
             rename_item: QLineEdit = self.table.cellWidget(row, 3)
             rename_item.textChanged.connect(self.onDataChanged)
 
-    def populateTable(self):
+    def populateTable(self) -> None:
         data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
         row_count = len(self.data)
 
@@ -89,12 +89,12 @@ class SelectTableWidget(QWidget):
             rename_item.setText(saved_rename)
             self.table.setCellWidget(i, 3, rename_item)
 
-    def onDataChanged(self):
+    def onDataChanged(self) -> None:
         # Emit the updated data whenever changes occur
         data = self.getData()
         self.dataChanged.emit(data)
 
-    def update_from_changes(self, changes):
+    def update_from_changes(self, changes: dict) -> None:
         """Update table state from changes dictionary"""
         for row in range(self.table.rowCount()):
             # Changed from 0 to 1 for column name
@@ -118,7 +118,7 @@ class SelectTableWidget(QWidget):
             new_name = changes['rename_mapping'].get(column_name, '')
             rename_edit.setText(new_name)
 
-    def get_renamed_columns(self):
+    def get_renamed_columns(self) -> dict:
         """Extract renamed columns from the table widget."""
         rename_dict = {}
 
@@ -134,7 +134,7 @@ class SelectTableWidget(QWidget):
 
         return rename_dict
 
-    def getData(self):
+    def getData(self) -> list:
         data = []
         for row in range(self.table.rowCount()):
             # Get checkbox from container

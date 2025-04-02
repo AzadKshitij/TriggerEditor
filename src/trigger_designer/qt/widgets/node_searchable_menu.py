@@ -1,13 +1,14 @@
 # Add these imports at the top of the file
+from typing import Optional
 from qtpy.QtWidgets import QLineEdit, QWidget, QVBoxLayout, QMenu, QWidgetAction, QAction
 from qtpy.QtCore import Qt, Signal, QTimer
-from qtpy.QtGui import QCursor
+from qtpy.QtGui import QCursor, QHideEvent
 
 from trigger_designer.core.node_configuration import get_class_from_opcode
 
 
 class SearchableMenu(QMenu):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
         # Create main container
@@ -35,11 +36,11 @@ class SearchableMenu(QMenu):
         self.addAction(self.searchAction)
 
         # Store all menu items for filtering
-        self.all_actions = {}
-        self.all_submenus = {}
-        self.is_flat_view = False
+        self.all_actions: dict = {}
+        self.all_submenus: dict = {}
+        self.is_flat_view: bool = False
         self.visible_range = (0, 10)  # Show 10 items at a time
-        self.filtered_actions = []  # Cache for filtered actions
+        self.filtered_actions: list = []  # Cache for filtered actions
 
         self.setFixedWidth(300)
         self.setAttribute(Qt.WA_TranslucentBackground)
@@ -51,11 +52,11 @@ class SearchableMenu(QMenu):
 
         self._connected_actions = set()
 
-    def _on_text_changed(self, text):
+    def _on_text_changed(self, text: str) -> None:
         # Debounce search to avoid frequent updates
         self.search_timer.start(150)
 
-    def _filter_nodes(self):
+    def _filter_nodes(self) -> None:
         if not self.is_flat_view:
             return
 
@@ -67,7 +68,7 @@ class SearchableMenu(QMenu):
         self.visible_range = (0, 10)
         self.updateVisibleActions()
 
-    def scrollUp(self):
+    def scrollUp(self) -> None:
         print("Scroll up")
         if not self.is_flat_view:
             return
@@ -76,7 +77,7 @@ class SearchableMenu(QMenu):
             self.visible_range = (start - 1, end - 1)
             self.updateVisibleActions()
 
-    def scrollDown(self):
+    def scrollDown(self) -> None:
         print("Scroll down")
         print("🐍 File: widgets/node_searchable_menu.py | Line: 70 | scrollDown ~ self.is_flat_view", self.is_flat_view)
         if not self.is_flat_view:
@@ -90,7 +91,7 @@ class SearchableMenu(QMenu):
             self.visible_range = (start + 1, end + 1)
             self.updateVisibleActions()
 
-    def updateVisibleActions(self):
+    def updateVisibleActions(self) -> None:
         start, end = self.visible_range
         visible_range = self.filtered_actions[start:end]
         visible_set = set(visible_range)
@@ -109,7 +110,7 @@ class SearchableMenu(QMenu):
                               self.activeAction() not in visible_set):
             self.setActiveAction(visible_range[0])
 
-    def showFlatList(self):
+    def showFlatList(self) -> None:
         if self.is_flat_view:
             return
 
@@ -145,7 +146,7 @@ class SearchableMenu(QMenu):
         self.updateVisibleActions()
         self.searchBox.setFocus()
 
-    def on_action_triggered(self):
+    def on_action_triggered(self) -> None:
         parent = self.parent()
         action = self.sender()
         if action and action in self._connected_actions:
@@ -153,7 +154,7 @@ class SearchableMenu(QMenu):
             parent.add_node_to_scene()
             self.hide()
 
-    def filterNodes(self, text):
+    def filterNodes(self, text: str) -> None:
         if not self.is_flat_view:
             return
 
@@ -187,7 +188,7 @@ class SearchableMenu(QMenu):
     #     if visible_actions:
     #         self.setActiveAction(visible_actions[0])
 
-    def hideEvent(self, event):
+    def hideEvent(self, event: QHideEvent) -> None:
         # Disconnect all actions when hiding
         for action in self._connected_actions:
             try:
@@ -202,7 +203,7 @@ class SearchableMenu(QMenu):
         self.filtered_actions = []  # Clear filtered actions cache
         super().hideEvent(event)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             print("Enter key pressed")
             active_action = self.activeAction()
@@ -216,7 +217,7 @@ class SearchableMenu(QMenu):
         else:
             super().keyPressEvent(event)
 
-    def wheelEvent(self, event):
+    def wheelEvent(self, event) -> None:
         if not self.is_flat_view:
             return
 
@@ -236,7 +237,7 @@ class SearchableMenu(QMenu):
 class ClickableLineEdit(QLineEdit):
     clicked = Signal()
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event) -> None:
         if event.button() == Qt.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)

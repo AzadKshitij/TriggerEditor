@@ -1,3 +1,5 @@
+from typing import Dict
+
 LISTBOX_MIMETYPE = "application/x-item"
 
 # Calc
@@ -36,11 +38,11 @@ OP_NODE_ARRANGE = 1
 OP_NODE_COUNTRECORDS = 2
 
 
-CALC_NODES: dict = {}
-INPUT_NODES: dict = {}
-PREPARATION_NODES: dict = {}
-JOIN_NODES: dict = {}
-TRANSFORM_NODES: dict = {}
+CALC_NODES: Dict = {}
+INPUT_NODES: Dict = {}
+PREPARATION_NODES: Dict = {}
+JOIN_NODES: Dict = {}
+TRANSFORM_NODES: Dict = {}
 
 
 class ConfException(Exception):
