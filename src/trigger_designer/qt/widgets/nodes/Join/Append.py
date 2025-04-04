@@ -13,7 +13,7 @@ class Join1Content(QDMNodeIconContentWidget):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local variables
         self.join_type = "inner"  # Default join type
@@ -31,7 +31,7 @@ class Join1Content(QDMNodeIconContentWidget):
         self.data = []
         self.variable_name = f'var_join_{self.id}'
 
-    def initUI(self, parent=None):
+    def initUI(self, parent=None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -102,7 +102,7 @@ class Join1Content(QDMNodeIconContentWidget):
 
         return dock_layout
 
-    def load_saved_data(self):
+    def load_saved_data(self) -> None:
         if self.mapping_data:
             for mapping in self.mapping_data:
                 self.add_mapping_row(
@@ -111,12 +111,12 @@ class Join1Content(QDMNodeIconContentWidget):
                 )
         # check if col exist in output_column it it does check the checkbox or uncheck it
 
-    def on_join_type_changed(self, join_type):
+    def on_join_type_changed(self, join_type) -> None:
         self.join_type = join_type
 
     # def update_combo_boxes(self):
 
-    def add_mapping_row(self, left_col=None, right_col=None):
+    def add_mapping_row(self, left_col=None, right_col=None) -> None:
         # Create a new row for mapping
         row_layout = QHBoxLayout()
         left_column_combo = QComboBox()
@@ -163,7 +163,7 @@ class Join1Content(QDMNodeIconContentWidget):
         # Add to container
         self.mapping_container.addLayout(row_layout)
 
-    def delete_layout(self, layout):
+    def delete_layout(self, layout) -> None:
         if layout is not None:
             while layout.count():
                 item = layout.takeAt(0)
@@ -174,7 +174,7 @@ class Join1Content(QDMNodeIconContentWidget):
                     self.delete_layout(item.layout())
             layout.deleteLater()
 
-    def remove_mapping_row(self, mapping_pair):
+    def remove_mapping_row(self, mapping_pair) -> None:
         if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
             # Remove from layout
             self.delete_layout(mapping_pair['layout'])
@@ -187,7 +187,7 @@ class Join1Content(QDMNodeIconContentWidget):
             # Remove from UI storage
             self.mapping_pairs.remove(mapping_pair)
 
-    def update_mapping_data(self):
+    def update_mapping_data(self) -> None:
         """Update mapping data when UI changes"""
         for i, pair in enumerate(self.mapping_pairs):
             if i < len(self.mapping_data):
@@ -203,7 +203,7 @@ class Join1Content(QDMNodeIconContentWidget):
         # Trim extra mapping data if UI has fewer rows
         self.mapping_data = self.mapping_data[:len(self.mapping_pairs)]
 
-    def update_output_columns(self):
+    def update_output_columns(self) -> None:
         self.output_columns_list.clear()
         if self.left_data is not None and self.right_data is not None:
             if not self.selected_columns:
@@ -241,7 +241,7 @@ class Join1Content(QDMNodeIconContentWidget):
                 self._add_output_column_item(
                     col, "R", "#9c2a2a", self.selected_columns)
 
-    def _add_output_column_item(self, col, prefix, color, existing_selections):
+    def _add_output_column_item(self, col, prefix: str, color, existing_selections) -> None:
         """Helper method to add a column item to the output columns list"""
         item = QListWidgetItem()
         widget = QWidget()
@@ -286,7 +286,7 @@ class Join1Content(QDMNodeIconContentWidget):
         self.output_columns_list.addItem(item)
         self.output_columns_list.setItemWidget(item, widget)
 
-    def _on_output_checkbox_changed(self, checkbox):
+    def _on_output_checkbox_changed(self, checkbox) -> None:
         """Handle checkbox state changes"""
         col_name = checkbox.text()
         source = checkbox.property('source')
@@ -431,11 +431,11 @@ class TriggerNode_Join_1(TriggerNode):
     content_label_objname = "trigger_node_join"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1, 1], outputs=[3, 3, 3])
         # self.eval()
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = Join1Content(self)
         self.grNode = TriggerGraphicsNode(self)
 

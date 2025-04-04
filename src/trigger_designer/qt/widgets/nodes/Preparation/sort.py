@@ -17,7 +17,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local variables
         self.sort_data: list[dict] = []
@@ -36,7 +36,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data = []
         self.variable_name = f'var_sort_{self.id}'
 
-    def initUI(self, parent=None):
+    def initUI(self, parent=None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -83,7 +83,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         print("👴👉 8")
         return dock_layout
 
-    def add_sort_row(self, restore_data=None):
+    def add_sort_row(self, restore_data=None) -> None:
         print("👴👉 1.1.1")
         if not restore_data and not self.history.is_restoring_history:
             # Store old state before adding new row
@@ -162,7 +162,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             #     'order': order_selector.currentText()
             # })
 
-    def on_column_changed(self, row_id, text):
+    def on_column_changed(self, row_id, text: str) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -187,7 +187,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.store_history(old_state, new_state)
             self.evaluate.emit()
 
-    def on_order_changed(self, row_id, text):
+    def on_order_changed(self, row_id, text: str) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -213,7 +213,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.store_history(old_state, new_state)
             self.evaluate.emit()
 
-    def remove_sort_row(self, row_id):
+    def remove_sort_row(self, row_id) -> None:
         """Remove a sort row with history tracking"""
         if self.history.is_restoring_history or row_id not in self.row_widgets:
             return
@@ -262,7 +262,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.store_history(old_state, new_state)
         self.evaluate.emit()
 
-    def history_stamp_callback(self, history_data, is_undo):
+    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         try:
             self.history.is_restoring_history = True
@@ -316,7 +316,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         finally:
             self.history.is_restoring_history = False
 
-    def store_history(self, old_state, new_state):
+    def store_history(self, old_state, new_state) -> None:
         """Store history data for undo/redo only if states are different"""
         if self.history.is_restoring_history:
             return
@@ -380,11 +380,11 @@ class TriggerNode_Sort(TriggerNode):
     content_label_objname = "trigger_node_sort"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
         # self.eval()
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = SortContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

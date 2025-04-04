@@ -16,7 +16,7 @@ class CalcInputContent(QDMNodeIconContentWidget):
     #     self.icon = QPixmap("src/trigger_designer/Resource/icons/Input/File Output.png")
     #     print("Input Icon icon: ", self.icon)
     #     super().__init__(node, parent)
-    def initUI(self):
+    def initUI(self) -> None:
         icon = QPixmap(
             "src/trigger_designer/Resource/icons/Input/File Output.png")
         super().initUI(icon)
@@ -50,11 +50,11 @@ class CalcNode_Input(TriggerNode):
     op_type = "CALC"
     content_label_objname = "calc_node_input"
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[], outputs=[3])
         self.eval()
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = CalcInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
         # self.content.edit.textChanged.connect(self.onInputChanged)
@@ -79,6 +79,6 @@ class CalcNode_Input(TriggerNode):
 
         return self.value
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)

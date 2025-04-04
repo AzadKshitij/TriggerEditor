@@ -24,7 +24,7 @@ class TriggerNode_Add(TriggerNode):
     style = {
     }
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
@@ -34,7 +34,7 @@ class TriggerNode_Add(TriggerNode):
         print("#############")
         return input1 + input2
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)
 
@@ -50,7 +50,7 @@ class CalcNode_Sub(TriggerNode):
     style = {
     }
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
@@ -60,7 +60,7 @@ class CalcNode_Sub(TriggerNode):
         print("#############")
         return input1 - input2
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)
 
@@ -76,7 +76,7 @@ class TriggerNode_Mul(TriggerNode):
     style = {
     }
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
@@ -84,7 +84,7 @@ class TriggerNode_Mul(TriggerNode):
         print('foo')
         return input1 * input2
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)
 
@@ -100,14 +100,14 @@ class TriggerNode_Div(TriggerNode):
     style = {
     }
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
     def evalOperation(self, input1, input2):
         return input1 / input2
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)
 
@@ -123,14 +123,14 @@ class TriggerNode_Sqrt(TriggerNode):
     style = {
     }
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
     def evalOperation(self, input1, input2):
         return input1 ** (1/input2)
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)
 

@@ -13,7 +13,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local variables
         self.formula: str = ''
@@ -31,7 +31,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: pd.DataFrame = None
         self.variable_name = f'var_formula_{self.id}'
 
-    def initUI(self, parent=None):
+    def initUI(self, parent=None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -89,7 +89,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
 
-    def handle_column_activation(self, index):
+    def handle_column_activation(self, index) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -108,7 +108,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.target_column = current_text
             self.store_history(old_state)
 
-    def handle_new_column(self):
+    def handle_new_column(self) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -139,12 +139,12 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Reset to non-editable state
         self.column_name.setEditable(False)
 
-    def handle_data_changed(self):
+    def handle_data_changed(self) -> None:
         # add new column in the data
         self.data = self.incom_data.copy()
         self.data[self.target_column] = None
 
-    def generate_formula(self):
+    def generate_formula(self) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -171,7 +171,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 if self.target_column:
                     self.data[self.target_column] = None
 
-    def store_history(self, old_state):
+    def store_history(self, old_state) -> None:
         new_state = {
             'target_column': self.target_column,
             'formula_text': self.formula_text
@@ -191,14 +191,14 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             self.evaluate.emit()
 
-    def update_column_list(self, new_column):
+    def update_column_list(self, new_column) -> None:
         self.column_name.clear()
         self.column_name.addItem(new_column)
         self.column_name.addItems(self.incom_data.columns)
         self.column_name.addItem("+ add column")
         self.column_name.setCurrentIndex(0)
 
-    def history_stamp_callback(self, history_data, is_undo):
+    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         try:
             self.history.is_restoring_history = True
@@ -323,11 +323,11 @@ class TriggerNode_Formula(TriggerNode):
     content_label_objname = "trigger_node_formula"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
         self.markInvalid(True)
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = FormulaContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

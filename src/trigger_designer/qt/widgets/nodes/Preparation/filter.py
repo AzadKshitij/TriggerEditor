@@ -15,7 +15,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local variables
         # self.column: str = None
@@ -37,7 +37,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_t_filter_{self.id}'
         self.f_variable_name = f'var_f_filter_{self.id}'
 
-    def initUI(self, parent=None):
+    def initUI(self, parent=None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -171,7 +171,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 except Exception as e:
                     print(f"Filter error: {str(e)}")
 
-    def update_columns(self):
+    def update_columns(self) -> None:
         if self.incom_data is not None:
             self.column_selector.clear()
             self.column_selector.addItems(list(self.incom_data.columns))
@@ -204,7 +204,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.operation_selector.blockSignals(False)
             self.value_input.blockSignals(False)
 
-    def on_filter_changed(self):
+    def on_filter_changed(self) -> None:
         # Prevent storing history during restoration
         if self.history.is_restoring_history:
             return
@@ -256,7 +256,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.evaluate.emit()
         self.update_data()
 
-    def history_stamp_callback(self, history_data, is_undo):
+    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         try:
             self.history.is_restoring_history = True
@@ -371,12 +371,12 @@ class TriggerNode_Filter(TriggerNode):
     content_label_objname = "trigger_node_filter"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[3, 3])
         # self.eval()
         self.markInvalid(True)
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = FilterContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

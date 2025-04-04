@@ -28,7 +28,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local variables
         self.old_data: dict = []
@@ -43,7 +43,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: pd.DataFrame = None
         self.variable_name: str = f'var_select_{self.id}'
 
-    def initUI(self):
+    def initUI(self) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -91,7 +91,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # return layout
 
-    def apply_changes(self):
+    def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
         # Select only the specified columns from incom_data
         if getattr(self, 'changes', None) is not None:
@@ -150,7 +150,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         return selected_columns, rename_mapping, dtype_mapping
 
-    def update_data_dtype(self, selected_columns, rename_mapping, dtype_mapping):
+    def update_data_dtype(self, selected_columns, rename_mapping, dtype_mapping) -> None:
         """Update self.data based on the processed changes"""
         # Select only the specified columns from incom_data
         self.data = self.incom_data[selected_columns].copy()
@@ -169,7 +169,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if rename_mapping:
             self.data.rename(columns=rename_mapping, inplace=True)
 
-    def handleDataChanged(self, data_):
+    def handleDataChanged(self, data_) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -211,7 +211,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.evaluate.emit()
 
-    def history_stamp_callback(self, history_data, is_undo):
+    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         if is_undo:
             # Undo operation
@@ -225,7 +225,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if hasattr(self, 'table_widget'):
             self.table_widget.update_from_changes(self.changes)
 
-    def is_same_column(self):
+    def is_same_column(self) -> bool:
         if self.old_columns.keys() == self.incoming_columns:
             return True
         else:
@@ -296,11 +296,11 @@ class TriggerNode_Select(TriggerNode):
     content_label_objname = "trigger_node_select"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
         self.eval()
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content: SelectContent = SelectContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

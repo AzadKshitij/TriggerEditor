@@ -49,5 +49,6 @@ warn_unreachable = true
 dev = [
     "autotyping>=24.9.0",
     "mypy>=1.15.0",
+    "pandas-stubs>=2.2.3.250308",
     "pyinstaller>=6.12.0",
 ]

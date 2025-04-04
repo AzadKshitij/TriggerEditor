@@ -6,7 +6,7 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 
 
 class CalcOutputContent(QDMNodeContentWidget):
-    def initUI(self):
+    def initUI(self) -> None:
         self.lbl = QLabel("42", self)
         self.lbl.setAlignment(Qt.AlignLeft)
         self.lbl.setObjectName(self.node.content_label_objname)
@@ -24,10 +24,10 @@ class CalcNode_Output(TriggerNode):
     op_type = "CALC"
     content_label_objname = "calc_node_output"
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[])
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = CalcOutputContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
@@ -55,6 +55,6 @@ class CalcNode_Output(TriggerNode):
 
         return val
 
-    def execute(self, node_input):
+    def execute(self, node_input) -> None:
         print("Input")
         print(node_input)

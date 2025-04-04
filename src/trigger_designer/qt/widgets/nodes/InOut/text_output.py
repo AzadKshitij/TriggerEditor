@@ -8,7 +8,7 @@ from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 
 class CalcTextOutputContent(QDMNodeIconContentWidget):
-    def initUI(self):
+    def initUI(self) -> None:
         # self.lbl = QLabel("Passed Param", self)
         icon = QPixmap("src/trigger_designer/Resource/icons/out.png")
         super().initUI(icon)
@@ -22,10 +22,10 @@ class CalcNode_TextOutput(TriggerNode):
     op_title = "Text Output"
     content_label_objname = "calc_node_text_output"
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[])
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = CalcTextOutputContent(self)
         self.grNode = TriggerGraphicsNode(self)
 

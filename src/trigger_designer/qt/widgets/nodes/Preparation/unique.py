@@ -16,7 +16,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local variables
         self.selected_columns = []
@@ -32,7 +32,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data = []
         self.variable_name = f'var_union_{self.id}'
 
-    def initUI(self, parent=None):
+    def initUI(self, parent=None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -58,7 +58,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # self.recursively_find_widgets(dock_layout)
         # return layout
 
-    def update_column_list(self):
+    def update_column_list(self) -> None:
         """Update the column list when input data changes"""
         self.column_list.clear()
         if self.incom_data is not None:
@@ -73,7 +73,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
                 self.column_list.addItem(item)
 
-    def on_item_changed(self, item):
+    def on_item_changed(self, item) -> None:
         """Handle checkbox state changes"""
         # Prevent storing history during restoration
         if self.history.is_restoring_history:
@@ -102,7 +102,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
         self.handle_data_changed()
 
-    def history_stamp_callback(self, history_data, is_undo):
+    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         try:
             self.history.is_restoring_history = True
@@ -135,7 +135,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 selected_columns.append(item.text())
         return selected_columns
 
-    def handle_data_changed(self):
+    def handle_data_changed(self) -> None:
         self.data = self.incom_data.copy()
         self.data = self.data[self.selected_columns]
 
@@ -185,11 +185,11 @@ class TriggerNode_Unique(TriggerNode):
     content_label_objname = "trigger_node_unique"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
         # self.eval()
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = UniqueContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

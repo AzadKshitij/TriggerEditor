@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
+from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.qt.resource_manager import ResourceManager
@@ -12,13 +12,15 @@ from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
 from loguru import logger
+from typing import Any, Optional, OrderedDict
+
 # from pandas import DataFrame
 
 
 class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     evaluate = Signal()
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
@@ -26,16 +28,16 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         TriggerChangeHandler.__init__(self, self.node.scene)
 
         # pass on variables
-        self.data: pd.DataFrame = None
+        self.data: pd.DataFrame = pd.DataFrame()
         self.variable_name = f'var_file_input_{self.id}'
 
-    def initUI(self):
+    def initUI(self) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         # icon = QPixmap(
         #     "src/trigger_designer/Resource/icons/Input/File Input.png")
         super().initUI(icon)
 
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
         # self.filePathEdit.connect(self.check_file_path)
@@ -52,15 +54,14 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
-            if self.data is not None:
+            if self.data.empty:
                 self.loadCSV(self.filePath)
 
         dock_layout.addWidget(self.filePathEdit)
         dock_layout.addWidget(self.loadButton)
         dock_layout.addWidget(self.tableWidget)
-        # return dock_layout
 
-    def _on_filePathEdit_textChanged(self):
+    def _on_filePathEdit_textChanged(self) -> None:
         self.filePath = self.filePathEdit.text()
         self.check_file_path()
 
@@ -74,20 +75,16 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             print(f"Error: File '{self.filePath}' does not exist.")
             self.node.grNode.setToolTip("File does not exist")
             self.node.markInvalid(True)
-            return
+            return False
         else:
             print(f"File '{self.filePath}' exists.")
             self.node.grNode.setToolTip("")
             self.node.markInvalid(False)
 
         self.loadCSV(self.filePath)
+        return True
 
-        # Check if the file is a CSV file
-        # if not file_path.endswith('.csv'):
-        #     print(f"Error: File '{file_path}' is not a CSV file.")
-        #     return
-
-    def get_columns(self):
+    def get_columns(self) -> list[str]:
         if self.filePath:
             df = pd.read_csv(self.filePath)
             self.data = df.head(10)
@@ -95,7 +92,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         return []
 
-    def openFileDialog(self):
+    def openFileDialog(self) -> None:
         '''Open CSV File", "", "CSV Files (*.csv);;'''
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self.parent(
@@ -106,7 +103,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # self.loadCSV(fileName)
             self.evaluate.emit()
 
-    def loadCSV(self, fileName):
+    def loadCSV(self, fileName: str) -> None:
 
         # Create table widget only if it doesn't exist
         if not hasattr(self, 'tableWidget') or self.tableWidget is None:
@@ -147,7 +144,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             logger.error(f"Exception in loading csv file")
             logger.trace(e)
 
-    def get_code(self):
+    def get_code(self) -> str:
         if not self.filePath:
             return ""
 
@@ -158,17 +155,17 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         return '\n'.join(code_lines) + '\n'
 
-    def serialize(self):
+    def serialize(self) -> OrderedDict[Any, Any]:
         res = super().serialize()
         res["filePath"] = self.filePath
         return res
 
-    def deserialize(self, data, hashmap={}):
+    def deserialize(self, data: dict[Any, Any], hashmap: dict[Any, Any] = {}) -> OrderedDict[Any, Any]:
         res = super().deserialize(data, hashmap)
 
         try:
             self.filePath = data.get('filePath', "")
-            return True & res
+            return res
         except Exception as e:
             dumpException(e)
         return res
@@ -183,12 +180,12 @@ class TriggerNode_FileInput(TriggerNode):
     content_label_objname = "trigger_node_file_input"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[], outputs=[3])
         # self.eval()
         self.markInvalid(True)
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = FileInputContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

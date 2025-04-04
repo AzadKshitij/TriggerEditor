@@ -14,7 +14,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()
 
-    def __init__(self, node, parent=None):
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
@@ -24,7 +24,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.incoming_variable = ""
         self.data: pd.DataFrame = None
 
-    def initUI(self):
+    def initUI(self) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -52,7 +52,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # return dock_layout
 
-    def openFileDialog(self):
+    def openFileDialog(self) -> None:
         filePath, _ = QFileDialog.getSaveFileName(
             self.parent(
             ), "Save CSV File", "", "CSV Files (*.csv);;All Files (*)")
@@ -125,11 +125,11 @@ class TriggerNode_FileOutput(TriggerNode):
     content_label_objname = "trigger_node_file_output"
     style = {}
 
-    def __init__(self, scene):
+    def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[])
         # self.eval()
 
-    def initInnerClasses(self):
+    def initInnerClasses(self) -> None:
         self.content = FileOutputContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
