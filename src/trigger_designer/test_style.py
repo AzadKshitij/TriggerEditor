@@ -9,7 +9,7 @@ from qtpy.QtCore import Qt
 
 
 class StyleTestWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("Style Test Window")
         self.resize(1200, 800)
@@ -29,7 +29,7 @@ class StyleTestWindow(QMainWindow):
         # Create status bar
         self.statusBar().showMessage("Status Bar Message")
 
-    def create_menu_bar(self):
+    def create_menu_bar(self) -> None:
         menubar = self.menuBar()
         file_menu = menubar.addMenu("File")
         file_menu.addAction("New")
@@ -41,7 +41,7 @@ class StyleTestWindow(QMainWindow):
         edit_menu.addAction("Copy")
         edit_menu.addAction("Paste")
 
-    def create_tool_bar(self):
+    def create_tool_bar(self) -> None:
         toolbar = QToolBar()
         self.addToolBar(toolbar)
         toolbar.addAction("Tool 1")
@@ -49,7 +49,7 @@ class StyleTestWindow(QMainWindow):
         toolbar.addSeparator()
         toolbar.addAction("Tool 3")
 
-    def create_central_widget(self):
+    def create_central_widget(self) -> None:
         tab_widget = QTabWidget()
 
         # Input widgets tab
@@ -104,7 +104,7 @@ class StyleTestWindow(QMainWindow):
 
         self.setCentralWidget(tab_widget)
 
-    def create_dock_widgets(self):
+    def create_dock_widgets(self) -> None:
         # Left dock
         left_dock = QDockWidget("Left Dock")
         left_widget = QWidget()

@@ -13,8 +13,8 @@ class ClickableLabel(QLabel):
 
     clicked = Signal()
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event) -> None:  # noqa: N802
         self.clicked.emit()

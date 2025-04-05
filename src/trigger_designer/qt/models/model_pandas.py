@@ -1,15 +1,17 @@
 from qtpy.QtCore import QAbstractTableModel, Qt
+from qtpy.QtWidgets import QWidget
+from typing import Optional
 
 
 class PandasModel(QAbstractTableModel):
-    def __init__(self, data):
+    def __init__(self, data) -> None:
         super(PandasModel, self).__init__()
         self._data = data
 
-    def rowCount(self, parent=None):
+    def rowCount(self, parent: Optional[QWidget]=None):
         return self._data.shape[0]
 
-    def columnCount(self, parent=None):
+    def columnCount(self, parent: Optional[QWidget]=None):
         return self._data.shape[1]
 
     def data(self, index, role=Qt.DisplayRole):

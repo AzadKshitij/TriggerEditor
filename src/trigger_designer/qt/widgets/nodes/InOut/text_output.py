@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QLabel
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
-from trigger_designer.core.node_configuration import register_node, OP_NODE_OUTPUT, OP_NODE_TEXT_OUTPUT
+from trigger_designer.core.node_configuration import register_node, IONodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -14,12 +14,12 @@ class CalcTextOutputContent(QDMNodeIconContentWidget):
         super().initUI(icon)
 
 
-@register_node(OP_NODE_TEXT_OUTPUT, "INPUT")
+@register_node(IONodes.TEXT_OUTPUT, NodeTypes.IO)
 class CalcNode_TextOutput(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/out.png"
-    op_code = OP_NODE_TEXT_OUTPUT
-    op_type = 'INPUT'
-    op_title = "Text Output"
+    node_code = IONodes.TEXT_OUTPUT
+    node_type = NodeTypes.IO
+    node_title = "Text Output"
     content_label_objname = "calc_node_text_output"
 
     def __init__(self, scene) -> None:

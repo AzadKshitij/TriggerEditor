@@ -1,22 +1,24 @@
 import pprint
-from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
+from qtpy.QtWidgets import (QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QListWidgetItem)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_designer.core.node_configuration import OP_NODE_UNIQUE, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 from nodeeditor.node_scene_history import SceneHistory
+from nodeeditor.node_scene import Scene
 import pandas as pd
+from typing import Optional
 
 
 class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.selected_columns = []
@@ -32,7 +34,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data = []
         self.variable_name = f'var_union_{self.id}'
 
-    def initUI(self, parent=None) -> None:
+    def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -176,22 +178,22 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_UNIQUE, 'PREPARATION')
+@register_node(PreparationNodes.UNIQUE, NodeTypes.PREPARATION)
 class TriggerNode_Unique(TriggerNode):
     icon = 'node_unique'
-    op_code = OP_NODE_UNIQUE
-    op_type = 'PREPARATION'
-    op_title = "Unique"
+    node_code = PreparationNodes.UNIQUE
+    node_type = NodeTypes.PREPARATION
+    node_title = "Unique"
     content_label_objname = "trigger_node_unique"
     style = {}
 
-    def __init__(self, scene) -> None:
+    def __init__(self, scene: 'Scene') -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
         # self.eval()
 
     def initInnerClasses(self) -> None:
-        self.content = UniqueContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.content: UniqueContent = UniqueContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):

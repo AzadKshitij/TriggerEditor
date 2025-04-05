@@ -5,14 +5,20 @@ from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLa
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.qt.resource_manager import ResourceManager
-from trigger_designer.core.node_configuration import register_node, OP_NODE_FILE_INPUT
+from trigger_designer.core.node_configuration import register_node, IONodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils import dumpException
 from loguru import logger
-from typing import Any, Optional, OrderedDict
+from typing import Any, Optional, OrderedDict, TYPE_CHECKING, Type, TypeVar, Union, cast
+
+
+if TYPE_CHECKING:
+    from nodeeditor.node_scene import Scene
+    from trigger_designer.qt.node_base import TriggerNode
+    from nodeeditor.node_node import Node
 
 # from pandas import DataFrame
 
@@ -20,19 +26,25 @@ from typing import Any, Optional, OrderedDict
 class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     evaluate = Signal()
 
-    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: QWidget = None) -> None:
+        """Initialize the FileInputContent widget.
+
+        Args:
+            node (TriggerNode): The node this content belongs to
+            parent (Optional[QWidget], optional): Parent widget. Defaults to None.
+        """
         super().__init__(node, parent)
+        TriggerChangeHandler.__init__(self, self.node.scene)
         # local Variables
         self.filePath = ""
         self.preview_rows = 10
-        TriggerChangeHandler.__init__(self, self.node.scene)
 
         # pass on variables
         self.data: pd.DataFrame = pd.DataFrame()
         self.variable_name = f'var_file_input_{self.id}'
 
-    def initUI(self) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+    def initUI(self, _icon: Optional[QPixmap] = None) -> None:
+        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         # icon = QPixmap(
         #     "src/trigger_designer/Resource/icons/Input/File Input.png")
         super().initUI(icon)
@@ -95,8 +107,8 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def openFileDialog(self) -> None:
         '''Open CSV File", "", "CSV Files (*.csv);;'''
         options = QFileDialog.Options()
-        fileName, _ = QFileDialog.getOpenFileName(self.parent(
-        ), "Open CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
+        fileName, _ = QFileDialog.getOpenFileName(self.parent(),
+                                                  "Open CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
         if fileName:
             self.filePath = fileName
             self.filePathEdit.setText(fileName)
@@ -160,7 +172,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res["filePath"] = self.filePath
         return res
 
-    def deserialize(self, data: dict[Any, Any], hashmap: dict[Any, Any] = {}) -> OrderedDict[Any, Any]:
+    def deserialize(self, data: dict, hashmap: dict = {}, restore_id: Optional[bool] = True) -> bool:
         res = super().deserialize(data, hashmap)
 
         try:
@@ -171,22 +183,26 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_FILE_INPUT, 'INPUT')
+@register_node(IONodes.FILE_INPUT, NodeTypes.IO)
 class TriggerNode_FileInput(TriggerNode):
     icon = "node_file_input"
-    op_code = OP_NODE_FILE_INPUT
-    op_type = 'INPUT'
-    op_title = "File Input"
+    node_code = IONodes.FILE_INPUT
+    node_type = NodeTypes.IO
+    node_title = "File Input"
     content_label_objname = "trigger_node_file_input"
     style = {}
 
-    def __init__(self, scene) -> None:
+    NodeContetnt_Type: Type[FileInputContent] = cast(
+        FileInputContent, 'QDMNodeContentWidget')  # type: ignore
+
+    def __init__(self, scene: 'Scene') -> None:
         super().__init__(scene, inputs=[], outputs=[3])
         # self.eval()
         self.markInvalid(True)
 
     def initInnerClasses(self) -> None:
-        self.content = FileInputContent(self)
+        self.content = self.NodeContetnt_Type(self)
+        # self.content = cast('QDMNodeContentWidget', FileInputContent(self))
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
 
@@ -198,7 +214,7 @@ class TriggerNode_FileInput(TriggerNode):
     #     # variable = self.content.variable_name
     #     return param
 
-    def processInputs(self, input_values):
+    def processInputs(self, input_values: list[Any]) -> None:
         print("⚠️⚠️⚠️ File Input ⚠️⚠️⚠️")
         # Custom processing logic for the File Input node
         if not self.content.filePath:

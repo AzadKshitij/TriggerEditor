@@ -1,20 +1,21 @@
 from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QSpacerItem, QSizePolicy
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_designer.core.node_configuration import OP_NODE_FILE_OUTPUT, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.core.node_configuration import register_node, IONodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.utils import dumpException
 import pandas as pd
+from typing import Optional
 
 
 class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
@@ -115,13 +116,13 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_FILE_OUTPUT, "INPUT")
+@register_node(IONodes.FILE_OUTPUT, NodeTypes.IO)
 class TriggerNode_FileOutput(TriggerNode):
     # icon = ":/output_icon"
     icon = "node_file_output"
-    op_code = OP_NODE_FILE_OUTPUT
-    op_title = "File Output"
-    op_type = "INPUT"
+    node_code = IONodes.FILE_OUTPUT
+    node_title = "File Output"
+    node_type = NodeTypes.IO
     content_label_objname = "trigger_node_file_output"
     style = {}
 

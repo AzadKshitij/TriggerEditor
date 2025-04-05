@@ -1,19 +1,20 @@
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QAbstractItemView, QFormLayout, QListWidgetItem, QCheckBox, QWidget
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_designer.core.node_configuration import OP_NODE_APPEND, OP_NODE_JOIN, register_node
+from trigger_designer.core.node_configuration import register_node, JoinNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 import pandas as pd
+from typing import Optional
 
 
 class Join1Content(QDMNodeIconContentWidget):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.join_type = "inner"  # Default join type
@@ -31,7 +32,7 @@ class Join1Content(QDMNodeIconContentWidget):
         self.data = []
         self.variable_name = f'var_join_{self.id}'
 
-    def initUI(self, parent=None) -> None:
+    def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -422,12 +423,12 @@ class Join1Content(QDMNodeIconContentWidget):
         return res
 
 
-@register_node(OP_NODE_APPEND, 'JOIN')
+@register_node(JoinNodes.APPEND, NodeTypes.JOIN)
 class TriggerNode_Join_1(TriggerNode):
     icon = "node_append"
-    op_code = OP_NODE_APPEND
-    op_type = 'JOIN'
-    op_title = "Join_1"
+    node_code = JoinNodes.APPEND
+    node_type = NodeTypes.JOIN
+    node_title = "Join_1"
     content_label_objname = "trigger_node_join"
     style = {}
 

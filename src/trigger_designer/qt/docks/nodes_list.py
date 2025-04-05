@@ -1,11 +1,13 @@
 from csv import list_dialects
 from qtpy.QtWidgets import QDockWidget, QTabWidget, QWidget, QVBoxLayout, QSizePolicy
+from trigger_designer.core.node_configuration import NodeTypes
 from trigger_designer.qt.widgets.node_drag_listbox import QTRDragListbox
 from qtpy.QtCore import QSize, Qt
+from typing import Optional
 
 
 class NodesDock(QDockWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.initUI()
         self.setFeatures(QDockWidget.NoDockWidgetFeatures)
@@ -16,7 +18,7 @@ class NodesDock(QDockWidget):
         # self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
 
-    def initUI(self):
+    def initUI(self) -> None:
         # Create the tab widget
         tab_widget = QTabWidget()
         tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
@@ -29,11 +31,11 @@ class NodesDock(QDockWidget):
         tab_transform = QWidget()
 
         # Create the drag list boxes
-        calcListWidget = QTRDragListbox(node_type="CALC")
-        inputListWidget = QTRDragListbox(node_type="INPUT")
-        preparationListWidget = QTRDragListbox(node_type="PREPARATION")
-        joinListWidget = QTRDragListbox(node_type="JOIN")
-        transformListWidget = QTRDragListbox(node_type="TRANSFORM")
+        calcListWidget = QTRDragListbox(node_type=NodeTypes.CALC)
+        inputListWidget = QTRDragListbox(node_type=NodeTypes.IO)
+        preparationListWidget = QTRDragListbox(node_type=NodeTypes.PREPARATION)
+        joinListWidget = QTRDragListbox(node_type=NodeTypes.JOIN)
+        transformListWidget = QTRDragListbox(node_type=NodeTypes.TRANSFORM)
 
         tabs = [tab_calc, tab_input, tab_preparation, tab_join, tab_transform]
         drag_list_boxes = [calcListWidget, inputListWidget,

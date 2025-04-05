@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QLabel, QLayout, QVBoxLayout
 from qtpy.QtCore import Qt
-from trigger_designer.core.node_configuration import register_node, OP_NODE_OUTPUT
+from trigger_designer.core.node_configuration import NodeTypes, register_node, CalcNodes
 from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 
@@ -16,12 +16,12 @@ class CalcOutputContent(QDMNodeContentWidget):
         return layout
 
 
-@register_node(OP_NODE_OUTPUT, "CALC")
+@register_node(CalcNodes.OUTPUT, NodeTypes.CALC)
 class CalcNode_Output(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/out.png"
-    op_code = OP_NODE_OUTPUT
-    op_title = "Output"
-    op_type = "CALC"
+    node_code = CalcNodes.OUTPUT
+    node_title = "Output"
+    node_typepe = NodeTypes.CALC
     content_label_objname = "calc_node_output"
 
     def __init__(self, scene) -> None:

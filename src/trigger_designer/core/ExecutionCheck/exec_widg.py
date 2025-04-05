@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QPushButton, QTextEdit, QVBoxLayout, QWidget
 
 
 class NodeExecutionWidget(QWidget):
-    def __init__(self, node):
+    def __init__(self, node) -> None:
         super().__init__()
         self.node = node
         self.executor = NodeExecutor()  # Shared across nodes
@@ -18,6 +18,6 @@ class NodeExecutionWidget(QWidget):
 
         self.execute_button.clicked.connect(self.run_code)
 
-    def run_code(self):
+    def run_code(self) -> None:
         output = self.executor.execute_node(self.node)
         self.output_area.setText(output)

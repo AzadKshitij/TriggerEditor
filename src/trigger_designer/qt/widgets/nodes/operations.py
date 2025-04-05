@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QLayout, QVBoxLayout
 
-from trigger_designer.core.node_configuration import register_node, OP_NODE_ADD, OP_NODE_SUB, OP_NODE_MUL, OP_NODE_DIV, OP_NODE_SQRT
+from trigger_designer.core.node_configuration import register_node, NodeTypes, CalcNodes
 from trigger_designer.qt.node_base import TriggerNode
 from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 
@@ -13,12 +13,12 @@ class OperationContent(QDMNodeContentWidget):
         return layout
 
 
-@register_node(OP_NODE_ADD, "CALC")
+@register_node(CalcNodes.ADD, NodeTypes.CALC)
 class TriggerNode_Add(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/add.png"
-    op_code = OP_NODE_ADD
-    op_title = "Add"
-    op_type = "CALC"
+    node_code = CalcNodes.ADD
+    node_title = "Add"
+    node_type = NodeTypes.CALC
     content_label = "+"
     content_label_objname = "calc_node_bg"
     style = {
@@ -39,12 +39,12 @@ class TriggerNode_Add(TriggerNode):
         print(node_input)
 
 
-@register_node(OP_NODE_SUB, "CALC")
+@register_node(CalcNodes.SUB, NodeTypes.CALC)
 class CalcNode_Sub(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/sub.png"
-    op_code = OP_NODE_SUB
-    op_title = "Substract"
-    op_type = "CALC"
+    node_code = CalcNodes.SUB
+    node_title = "Substract"
+    node_type = NodeTypes.CALC
     content_label = "-"
     content_label_objname = "calc_node_bg"
     style = {
@@ -65,12 +65,12 @@ class CalcNode_Sub(TriggerNode):
         print(node_input)
 
 
-@register_node(OP_NODE_MUL, "CALC")
+@register_node(CalcNodes.MUL, NodeTypes.CALC)
 class TriggerNode_Mul(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/mul.png"
-    op_code = OP_NODE_MUL
-    op_title = "Multiply"
-    op_type = "CALC"
+    node_code = CalcNodes.MUL
+    node_title = "Multiply"
+    node_type = NodeTypes.CALC
     content_label = "*"
     content_label_objname = "calc_node_mul"
     style = {
@@ -89,12 +89,12 @@ class TriggerNode_Mul(TriggerNode):
         print(node_input)
 
 
-@register_node(OP_NODE_DIV, "CALC")
+@register_node(CalcNodes.DIV, NodeTypes.CALC)
 class TriggerNode_Div(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/divide.png"
-    op_code = OP_NODE_DIV
-    op_title = "Divide"
-    op_type = "CALC"
+    node_code = CalcNodes.DIV
+    node_title = "Divide"
+    node_type = NodeTypes.CALC
     content_label = "/"
     content_label_objname = "calc_node_div"
     style = {
@@ -112,12 +112,12 @@ class TriggerNode_Div(TriggerNode):
         print(node_input)
 
 
-@register_node(OP_NODE_SQRT, "CALC")
+@register_node(CalcNodes.SQRT, NodeTypes.CALC)
 class TriggerNode_Sqrt(TriggerNode):
     icon = "src/trigger_designer/Resource/icons/sqrt.png"
-    op_code = OP_NODE_SQRT
-    op_title = "Square Root"
-    op_type = "CALC"
+    node_code = CalcNodes.SQRT
+    node_title = "Square Root"
+    node_type = NodeTypes.CALC
     content_label = "√"
     content_label_objname = "calc_node_sqrt"
     style = {

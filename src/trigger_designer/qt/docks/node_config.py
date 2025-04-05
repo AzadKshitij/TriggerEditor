@@ -1,12 +1,13 @@
 from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QLabel, QWidget, QLayout
+from typing import Optional
 
 
 class ConfigDock(QDockWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget]=None) -> None:
         super().__init__("Node Configuration", parent)
         self.initUI()
 
-    def initUI(self):
+    def initUI(self) -> None:
         self.dock_widget = QWidget()
         self.dock_layout = QVBoxLayout()
         self.setWidget(self.dock_widget)
@@ -14,7 +15,7 @@ class ConfigDock(QDockWidget):
         self.setFeatures(QDockWidget.DockWidgetMovable |
                          QDockWidget.DockWidgetFloatable)
 
-    def updateConfig(self, node):
+    def updateConfig(self, node) -> None:
         print("Updating config for node type: ", type(node[0]))
         if len(node) == 1:
             if hasattr(node[0], 'node') or hasattr(node[0], 'socket'):
@@ -28,7 +29,7 @@ class ConfigDock(QDockWidget):
         else:
             self.clear_dock()
 
-    def clear_dock(self):
+    def clear_dock(self) -> None:
         # for i in reversed(range(self.dock_layout.count())):
         #     widget = self.dock_layout.itemAt(i).widget()
         #     if widget is not None:
@@ -44,7 +45,7 @@ class ConfigDock(QDockWidget):
             self.dock_layout.removeItem(item)
             del item
 
-    def clear_layout(self, layout):
+    def clear_layout(self, layout) -> None:
         # Helper method to clear nested layouts
         while layout.count():
             item = layout.takeAt(0)

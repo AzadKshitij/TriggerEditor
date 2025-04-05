@@ -1,7 +1,10 @@
+from nodeeditor.node_editor_widget import NodeEditorWidget
+from typing import Optional, cast
+from typing_extensions import override
 import nodeeditor
 from trigger_designer.qt.docks.result import ResultDock
 import os
-from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtGui import QIcon, QKeySequence, QCloseEvent, QPalette, QColor, QGuiApplication, QScreen
 from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget, QDialog
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
@@ -12,7 +15,6 @@ from nodeeditor.node_editor_window import NodeEditorWindow
 from nodeeditor.utils import dumpException, pp
 
 from trigger_designer.qt.design_window import TriggerSubWindow
-from trigger_designer.core.node_configuration import CALC_NODES
 from trigger_designer.qt.docks.nodes_list import NodesDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.models.settings_panel import SettingsDialog
@@ -29,7 +31,6 @@ Edge.registerEdgeValidator(edge_validator_debug)
 Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
 Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
 
-
 # images for the dark skin
 
 
@@ -38,7 +39,7 @@ DEBUG = False
 
 class TriggerWindow(NodeEditorWindow):
 
-    def __init__(self, file_path: str = None, name_company: str = 'Trigger', name_product: str = 'Trigger Editor'):
+    def __init__(self, file_path: Optional[str] = None, name_company: str = 'Trigger', name_product: str = 'Trigger Editor') -> None:
         super().__init__()
         self.openFile(file_path)
         self.name_company = name_company
@@ -48,7 +49,7 @@ class TriggerWindow(NodeEditorWindow):
 
         # self.setWindowIcon(QIcon(":/trigger_designer/images/icon.png"))
 
-    def initUI(self, parent=None):
+    def initUI(self, parent: Optional[QWidget] = None) -> None:
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
         # Create logger
@@ -68,7 +69,6 @@ class TriggerWindow(NodeEditorWindow):
 
         if DEBUG:
             print("Registered nodes:")
-            pp(CALC_NODES)
 
         self.mdiArea = QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(
@@ -82,7 +82,8 @@ class TriggerWindow(NodeEditorWindow):
 
         # Enable window tiling and docking behavior
         self.setDockNestingEnabled(True)
-        self.setTabPosition(Qt.AllDockWidgetAreas, QTabWidget.North)
+        self.setTabPosition(
+            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North)
         self.setCentralWidget(self.mdiArea)
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)
@@ -105,18 +106,19 @@ class TriggerWindow(NodeEditorWindow):
         self.setDockNestingEnabled(True)
         # self.tabifyDockWidget(self.configDock, self.resultDock)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event: Optional[QCloseEvent]) -> None:
         self.mdiArea.closeAllSubWindows()
-        if self.mdiArea.currentSubWindow():
+        if self.mdiArea.currentSubWindow() and event is not None:
             event.ignore()
         else:
             self.writeSettings()
-            event.accept()
+            if event is not None:
+                event.accept()
             # hacky fix for PyQt 5.14.x
             import sys
             sys.exit(0)
 
-    def createActions(self):
+    def createActions(self) -> None:
         super().createActions()
 
         self.actSettings = QAction("Settings", self,
@@ -131,9 +133,9 @@ class TriggerWindow(NodeEditorWindow):
             "&Tile", self, statusTip="Tile the windows", triggered=self.mdiArea.tileSubWindows)
         self.actCascade = QAction(
             "&Cascade", self, statusTip="Cascade the windows", triggered=self.mdiArea.cascadeSubWindows)
-        self.actNext = QAction("Ne&xt", self, shortcut=QKeySequence.NextChild,
+        self.actNext = QAction("Ne&xt", self, shortcut=QKeySequence.StandardKey.NextChild,
                                statusTip="Move the focus to the next window", triggered=self.mdiArea.activateNextSubWindow)
-        self.actPrevious = QAction("Pre&vious", self, shortcut=QKeySequence.PreviousChild,
+        self.actPrevious = QAction("Pre&vious", self, shortcut=QKeySequence.StandardKey.PreviousChild,
                                    statusTip="Move the focus to the previous window", triggered=self.mdiArea.activatePreviousSubWindow)
 
         self.actSeparator = QAction(self)
@@ -142,23 +144,24 @@ class TriggerWindow(NodeEditorWindow):
         self.actAbout = QAction(
             "&About", self, statusTip="Show the application's About box", triggered=self.about)
 
-    def showSettings(self):
+    def showSettings(self) -> None:
         dialog = SettingsDialog(self)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec() == QDialog.DialogCode.Accepted:
             # Reload settings and apply them
             self.loadSettings()
 
-    def loadSettings(self):
+    def loadSettings(self) -> None:
         glogger.debug("Loading settings...")
 
-    def getCurrentNodeEditorWidget(self):
+    @override
+    def getCurrentNodeEditorWidget(self) -> 'NodeEditorWidget':
         """ we're returning NodeEditorWidget here... """
         activeSubWindow = self.mdiArea.activeSubWindow()
         if activeSubWindow:
-            return activeSubWindow.widget()
-        return None
+            return cast(NodeEditorWidget, activeSubWindow.widget())
+        return cast(NodeEditorWidget, None)
 
-    def onFileNew(self):
+    def onFileNew(self) -> None:
         try:
             subwnd = self.createMdiChild()
             subwnd.widget().fileNew()
@@ -166,7 +169,7 @@ class TriggerWindow(NodeEditorWindow):
         except Exception as e:
             dumpException(e)
 
-    def openFile(self, fname):
+    def openFile(self, fname: Optional[str]) -> None:
         try:
             if fname:
                 existing = self.findMdiChild(fname)
@@ -176,7 +179,8 @@ class TriggerWindow(NodeEditorWindow):
                     # we need to create new subWindow and open the file
                     nodeeditor = TriggerSubWindow()
                     if nodeeditor.fileLoad(fname):
-                        self.statusBar().showMessage("File %s loaded" % fname, 5000)
+                        if self.statusBar() is not None:
+                            self.statusBar().showMessage("File %s loaded" % fname, 5000)
                         nodeeditor.setTitle()
                         subwnd = self.createMdiChild(nodeeditor)
                         subwnd.show()
@@ -185,7 +189,7 @@ class TriggerWindow(NodeEditorWindow):
         except Exception as e:
             dumpException(e)
 
-    def onFileOpen(self):
+    def onFileOpen(self) -> None:
         fnames, filter = QFileDialog.getOpenFileNames(
             self, 'Open design from file', self.getFileDialogDirectory(), self.getFileDialogFilter())
 
@@ -199,7 +203,8 @@ class TriggerWindow(NodeEditorWindow):
                         # we need to create new subWindow and open the file
                         nodeeditor = TriggerSubWindow()
                         if nodeeditor.fileLoad(fname):
-                            self.statusBar().showMessage("File %s loaded" % fname, 5000)
+                            if self.statusBar() is not None:
+                                self.statusBar().showMessage("File %s loaded" % fname, 5000)
                             nodeeditor.setTitle()
                             subwnd = self.createMdiChild(nodeeditor)
                             subwnd.show()
@@ -208,13 +213,13 @@ class TriggerWindow(NodeEditorWindow):
         except Exception as e:
             dumpException(e)
 
-    def about(self):
+    def about(self) -> None:
         QMessageBox.about(self, "About Calculator NodeEditor Example",
                           "The <b>Calculator NodeEditor</b> example demonstrates how to write multiple "
                           "document interface applications using PyQt5 and NodeEditor. For more information visit: "
                           "<a href='https://www.blenderfreak.com/'>www.BlenderFreak.com</a>")
 
-    def createMenus(self):
+    def createMenus(self) -> None:
         super().createMenus()
 
         self.editMenu.addSeparator()
@@ -231,7 +236,7 @@ class TriggerWindow(NodeEditorWindow):
 
         self.editMenu.aboutToShow.connect(self.updateEditMenu)
 
-    def updateMenus(self):
+    def updateMenus(self) -> None:
         # print("update Menus")
         active = self.getCurrentNodeEditorWidget()
         hasMdiChild = (active is not None)
@@ -249,7 +254,7 @@ class TriggerWindow(NodeEditorWindow):
         self.updateEditMenu()
         self.onSubWindowActivated(self.mdiArea.activeSubWindow())
 
-    def updateEditMenu(self):
+    def updateEditMenu(self) -> None:
         try:
             # print("update Edit Menu")
             active = self.getCurrentNodeEditorWidget()
@@ -267,7 +272,7 @@ class TriggerWindow(NodeEditorWindow):
         except Exception as e:
             dumpException(e)
 
-    def updateWindowMenu(self):
+    def updateWindowMenu(self) -> None:
         self.windowMenu.clear()
 
         toolbar_nodes = self.windowMenu.addAction("Nodes Toolbar")
@@ -303,29 +308,29 @@ class TriggerWindow(NodeEditorWindow):
             action.triggered.connect(self.windowMapper.map)
             self.windowMapper.setMapping(action, window)
 
-    def onWindowNodesToolbar(self):
+    def onWindowNodesToolbar(self) -> None:
         if self.nodesDock.isVisible():
             self.nodesDock.hide()
         else:
             self.nodesDock.show()
 
-    def createToolBars(self):
+    def createToolBars(self) -> None:
         pass
 
     # Dock Widgets #
-    def createNodesDock(self):
+    def createNodesDock(self) -> None:
         self.nodesDock = NodesDock(self)
         self.addDockWidget(Qt.TopDockWidgetArea, self.nodesDock)
 
-    def createConfigDock(self):
+    def createConfigDock(self) -> None:
         self.configDock = ConfigDock(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
 
-    def createResultDock(self):
+    def createResultDock(self) -> None:
         self.resultDock = ResultDock(self)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
 
-    def createStatusBar(self):
+    def createStatusBar(self) -> None:
         self.statusBar().showMessage("Ready")
 
     def createMdiChild(self, child_widget=None):
@@ -340,13 +345,13 @@ class TriggerWindow(NodeEditorWindow):
         nodeeditor.itemSelected.connect(self.onNodeSelected)
         return subwnd
 
-    def onSubWindowActivated(self, sub_window):
+    def onSubWindowActivated(self, sub_window) -> None:
         if sub_window:
             widget = sub_window.widget()
             if isinstance(widget, TriggerSubWindow):
                 widget.logger.set_result_dock(self.resultDock)
 
-    def onSubWndClose(self, widget, event):
+    def onSubWndClose(self, widget, event) -> None:
         existing = self.findMdiChild(widget.filename)
         self.mdiArea.setActiveSubWindow(existing)
 
@@ -361,6 +366,6 @@ class TriggerWindow(NodeEditorWindow):
                 return window
         return None
 
-    def onNodeSelected(self, node):
+    def onNodeSelected(self, node) -> None:
         # self.nodeeditor.getSelectedItems()
         self.configDock.updateConfig(node)

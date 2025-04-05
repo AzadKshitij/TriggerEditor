@@ -1,11 +1,11 @@
 from functools import partial
 import pprint
-from typing import final
-from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
+from typing import Optional, final
+from qtpy.QtWidgets import (QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_designer.core.node_configuration import OP_NODE_SORT, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -17,7 +17,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.sort_data: list[dict] = []
@@ -36,7 +36,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data = []
         self.variable_name = f'var_sort_{self.id}'
 
-    def initUI(self, parent=None) -> None:
+    def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -371,12 +371,12 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_SORT, 'PREPARATION')
+@register_node(PreparationNodes.SORT, NodeTypes.PREPARATION)
 class TriggerNode_Sort(TriggerNode):
     icon = 'node_sort'
-    op_code = OP_NODE_SORT
-    op_type = 'PREPARATION'
-    op_title = "Sort"
+    node_code = PreparationNodes.SORT
+    node_type = NodeTypes.PREPARATION
+    node_title = "Sort"
     content_label_objname = "trigger_node_sort"
     style = {}
 

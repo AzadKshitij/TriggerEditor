@@ -1,15 +1,16 @@
 import pandas as pd
-from qtpy.QtWidgets import (QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel,
+from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, QSaveFile, Signal
-from trigger_designer.core.node_configuration import register_node, OP_NODE_INPUT,  OP_NODE_SELECT
+from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.widgets.select_table_widget import SelectTableWidget
+from typing import Optional
 
 
 class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
@@ -28,7 +29,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.old_data: dict = []
@@ -235,7 +236,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             return False
 
-    def get_code(self):
+    def get_code(self) -> str:
         if self.data is None or self.incoming_variable is None:
             return ""
 
@@ -287,12 +288,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_SELECT, "PREPARATION")
+@register_node(PreparationNodes.SELECT, NodeTypes.PREPARATION)
 class TriggerNode_Select(TriggerNode):
     icon = "node_select"
-    op_code = OP_NODE_SELECT
-    op_title = "Select"
-    op_type = "PREPARATION"
+    node_code = PreparationNodes.SELECT
+    node_title = NodeTypes.PREPARATION
+    node_type = "PREPARATION"
     content_label_objname = "trigger_node_select"
     style = {}
 

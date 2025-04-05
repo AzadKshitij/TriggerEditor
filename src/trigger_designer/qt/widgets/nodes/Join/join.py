@@ -3,20 +3,21 @@ from numpy import r_
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QAbstractItemView, QFormLayout, QListWidgetItem, QCheckBox, QWidget
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_designer.core.node_configuration import OP_NODE_APPEND, OP_NODE_JOIN, register_node
+from trigger_designer.core.node_configuration import register_node, JoinNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 import pandas as pd
+from typing import Optional
 
 
 class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.join_type = "inner"  # Default join type
@@ -41,7 +42,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.l_variable_name = f'var_l_join_{self.id}'
         self.r_variable_name = f'var_r_join_{self.id}'
 
-    def initUI(self, parent=None) -> None:
+    def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -666,12 +667,12 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_JOIN, 'JOIN')
+@register_node(JoinNodes.JOIN, NodeTypes.JOIN)
 class TriggerNode_Join_1(TriggerNode):
     icon = "node_join"
-    op_code = OP_NODE_JOIN
-    op_type = 'JOIN'
-    op_title = "Join"
+    node_code = JoinNodes.JOIN
+    node_type = NodeTypes.JOIN
+    node_title = "Join"
     content_label_objname = "trigger_node_join"
     style = {
     }

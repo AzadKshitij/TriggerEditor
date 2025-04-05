@@ -6,7 +6,7 @@ from trigger_designer.qt.helpers.logger import Logger
 
 
 class NodeExecutor:
-    def __init__(self, logger: Logger = None):
+    def __init__(self, logger: Logger = None) -> None:
         self.execution_context: dict = {}  # Shared execution context
         self.logger = logger
         # self.logger = logger

@@ -3,7 +3,7 @@ from ExecutionCheck.exec_node import InputNode, PrintNode
 
 
 class MainApp():
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # Create Nodes
         node1 = InputNode("Input Node", 'input', 1000)

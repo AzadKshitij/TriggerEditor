@@ -1,9 +1,9 @@
-from typing import Union
-from qtpy.QtWidgets import (QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
+from typing import Optional, Union
+from qtpy.QtWidgets import (QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
-from trigger_designer.core.node_configuration import OP_NODE_FILTER, register_node, OP_NODE_FILE_INPUT
+from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -15,7 +15,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent=None) -> None:
+    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         # self.column: str = None
@@ -37,7 +37,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_t_filter_{self.id}'
         self.f_variable_name = f'var_f_filter_{self.id}'
 
-    def initUI(self, parent=None) -> None:
+    def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -116,7 +116,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # return layout
 
-    def update_data(self):
+    def update_data(self) -> None:
         if hasattr(self, 'incom_data') and self.incom_data is not None:
             if self.column and self.operation and self.value:
                 try:
@@ -362,12 +362,12 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return res
 
 
-@register_node(OP_NODE_FILTER, 'PREPARATION')
+@register_node(PreparationNodes.FILTER, NodeTypes.PREPARATION)
 class TriggerNode_Filter(TriggerNode):
     icon = "node_filter"
-    op_code = OP_NODE_FILTER
-    op_type = 'PREPARATION'
-    op_title = "Filter"
+    node_code = PreparationNodes.FILTER
+    node_type = NodeTypes.PREPARATION
+    node_title = "Filter"
     content_label_objname = "trigger_node_filter"
     style = {}
 

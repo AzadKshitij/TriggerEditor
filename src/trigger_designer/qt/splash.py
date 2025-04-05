@@ -24,7 +24,7 @@ class Splash:
         screen_width: int,
         splash_name: str,
         device_ratio: float = 1,
-    ):
+    ) -> None:
         self.rm = resource_manager
         self.screen_width = screen_width
         self.ratio: float = device_ratio
@@ -80,19 +80,19 @@ class Splash:
 
         return pixmap
 
-    def _build_splash_screen(self):
+    def _build_splash_screen(self) -> None:
         """Build the internal splash screen."""
         self.splash_screen = QSplashScreen(
             self.get_pixmap(), Qt.WindowType.WindowStaysOnTopHint)
 
-    def show(self):
+    def show(self) -> None:
         """Show the splash screen."""
         if not self.splash_screen:
             self._build_splash_screen()
         if self.splash_screen:
             self.splash_screen.show()
 
-    def finish(self, widget: QWidget):
+    def finish(self, widget: QWidget) -> None:
         """Hide the splash screen with this widget is finished displaying."""
         if self.splash_screen:
             self.splash_screen.finish(widget)

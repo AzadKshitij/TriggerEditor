@@ -27,7 +27,7 @@ from tagstudio.qt.translations import Translations
 
 
 class AboutModal(QWidget):
-    def __init__(self, config_path):
+    def __init__(self, config_path) -> None:
         super().__init__()
         self.setWindowTitle(Translations["about.title"])
 

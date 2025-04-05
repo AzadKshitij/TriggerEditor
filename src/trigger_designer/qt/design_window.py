@@ -1,9 +1,9 @@
 import time
-from qtpy.QtGui import QIcon, QPixmap, QCursor
+from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
-from trigger_designer.core.node_configuration import CALC_NODES, INPUT_NODES, JOIN_NODES, PREPARATION_NODES, TRANSFORM_NODES, get_class_from_opcode, LISTBOX_MIMETYPE
+from trigger_designer.core.node_configuration import NODE_REGISTRIES, NodeTypes, get_class_from_opcode, LISTBOX_MIMETYPE
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_edge import EDGE_TYPE_DIRECT, EDGE_TYPE_BEZIER, EDGE_TYPE_SQUARE
 from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
@@ -25,7 +25,7 @@ DEBUG_CONTEXT = False
 class TriggerSubWindow(NodeEditorWidget):
     itemSelected = Signal(object)
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         # self.initUI()
         self.logger: Logger = Logger()
@@ -45,7 +45,7 @@ class TriggerSubWindow(NodeEditorWidget):
         self._close_event_listeners: list[Callable] = []
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
-    def addButtons(self):
+    def addButtons(self) -> None:
         # Run button
         self.fixed_button = QPushButton("Run", self)
         self.fixed_button.setFixedSize(100, 30)
@@ -70,19 +70,19 @@ class TriggerSubWindow(NodeEditorWidget):
         self.fit_button.move(340, 10)
         self.fit_button.clicked.connect(self.fitView)
 
-    def zoomIn(self):
+    def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
         print("🐍 File: TriggerEditor/trigger_sub_window.py | Line: 74 | zoomIn ~ zoom_factor", zoom_factor)
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 
-    def zoomOut(self):
+    def zoomOut(self) -> None:
         zoom_factor = self.view.zoomOut()
         print("🐍 File: TriggerEditor/trigger_sub_window.py | Line: 80 | zoomOut ~ zoom_factor", zoom_factor)
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 
-    def fitView(self):
+    def fitView(self) -> None:
         nodes = self.scene.nodes
         if not nodes:
             return
@@ -150,7 +150,7 @@ class TriggerSubWindow(NodeEditorWidget):
     #     self.view.centerOn(rect.center())
     #     print("⌚⌛Fit View Time FitView2: ", time.time() - start_time)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         # Check for Shift+A
         if event.key() == Qt.Key_A and event.modifiers() == Qt.ShiftModifier:
             # Get the cursor position and map it to scene coordinates
@@ -164,50 +164,66 @@ class TriggerSubWindow(NodeEditorWidget):
         else:
             super().keyPressEvent(event)
 
-    def onItemSelected(self):
+    def onItemSelected(self) -> None:
         # print(f'node: {self.scene._last_selected_items}')
         self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
         print(f'getNodeClassFromData: {data}')
-        if 'op_code' not in data:
+        if 'node_code' not in data:
             return Node
-        return get_class_from_opcode(data['op_code'], data['op_type'])
+        return get_class_from_opcode(data['node_code'], data['node_type'])
 
-    def doEvalOutputs(self):
+    def doEvalOutputs(self) -> None:
         # eval all output nodes
         for node in self.scene.nodes:
             # if node.__class__.__name__ == "CalcNode_Output":
             node.eval()
 
-    def onHistoryRestored(self):
+    def onHistoryRestored(self) -> None:
         self.doEvalOutputs()
 
-    def fileLoad(self, filename):
+    def fileLoad(self, filename) -> bool:
         if super().fileLoad(filename):
             self.doEvalOutputs()
             return True
 
         return False
 
-    def initNewNodeActions(self):
+    def initNewNodeActions(self) -> None:
         self.node_actions = {}
         self.nodes_by_type = {
-            'Calculation': CALC_NODES,
-            'Input/Output': INPUT_NODES,
-            'Preparation': PREPARATION_NODES,
-            'Join': JOIN_NODES,
-            'Transform': TRANSFORM_NODES
+            'Calculation': NODE_REGISTRIES[NodeTypes.CALC],
+            'Input/Output': NODE_REGISTRIES[NodeTypes.IO],
+            'Preparation': NODE_REGISTRIES[NodeTypes.PREPARATION],
+            'Join': NODE_REGISTRIES[NodeTypes.JOIN],
+            'Transform': NODE_REGISTRIES[NodeTypes.TRANSFORM],
+            'Report': NODE_REGISTRIES[NodeTypes.REPORT]
         }
 
         # Create actions for all nodes across all types
         for category, nodes in self.nodes_by_type.items():
-            for key in nodes.keys():
-                node = nodes[key]
-                self.node_actions[f"{category}_{node.op_code}"] = QAction(
-                    QIcon(node.icon), node.op_title)
-                self.node_actions[f"{category}_{node.op_code}"].setData(
-                    [node.op_code, node.op_type])
+            for node_code, node_class in nodes.items():
+                action_key = f"{category}_{node_code}"
+                self.node_actions[action_key] = QAction(
+                    QIcon(node_class.icon),
+                    node_class.node_title
+                )
+                # Store both node code and type for later use
+                node_type = next(
+                    type_name for type_name, registry in NODE_REGISTRIES.items()
+                    if node_class in registry.values()
+                )
+                self.node_actions[action_key].setData([node_code, node_type])
+
+        # # Create actions for all nodes across all types
+        # for category, nodes in self.nodes_by_type.items():
+        #     for key in nodes.keys():
+        #         node = nodes[key]
+        #         self.node_actions[f"{category}_{node.node_code}"] = QAction(
+        #             QIcon(node.icon), node.node_title)
+        #         self.node_actions[f"{category}_{node.node_code}"].setData(
+        #             [node.node_code, node.node_type])
 
     def initNodesContextMenu(self):
         context_menu = SearchableMenu(self)
@@ -227,10 +243,10 @@ class TriggerSubWindow(NodeEditorWidget):
 
             # Add sorted nodes to submenu
             node_list = list(nodes.values())
-            node_list.sort(key=lambda x: x.op_title)
+            node_list.sort(key=lambda x: x.node_title)
 
             for node in node_list:
-                action = self.node_actions[f"{category}_{node.op_code}"]
+                action = self.node_actions[f"{category}_{node.node_code}"]
                 submenu.addAction(action)
                 context_menu.all_actions[category].append(action)
 
@@ -250,32 +266,32 @@ class TriggerSubWindow(NodeEditorWidget):
 
     #         # Add sorted nodes to submenu
     #         node_list = list(nodes.values())
-    #         node_list.sort(key=lambda x: x.op_title)
+    #         node_list.sort(key=lambda x: x.node_title)
 
     #         for node in node_list:
     #             submenu.addAction(
-    #                 self.node_actions[f"{category}_{node.op_code}"])
+    #                 self.node_actions[f"{category}_{node.node_code}"])
 
     #     return context_menu
 
-    def setTitle(self):
+    def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
 
-    def addCloseEventListener(self, callback):
+    def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         for callback in self._close_event_listeners:
             callback(self, event)
 
-    def onDragEnter(self, event):
+    def onDragEnter(self, event) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             event.acceptProposedAction()
         else:
             # print(" ... denied drag enter event")
             event.setAccepted(False)
 
-    def onDrop(self, event):
+    def onDrop(self, event: QDropEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             eventData = event.mimeData().data(LISTBOX_MIMETYPE)
             dataStream = QDataStream(eventData, QIODevice.ReadOnly)
@@ -283,22 +299,29 @@ class TriggerSubWindow(NodeEditorWidget):
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
             # print("dataStream::::::::: ", dataStream)
-            op_code = dataStream.readInt()
-            text = dataStream.readQString()
+            node_code = dataStream.readInt()
+            node_type = dataStream.readQString()
 
             mouse_position = event.pos()
             scene_position = self.scene.grScene.views()[
                 0].mapToScene(mouse_position)
 
             if DEBUG:
-                print("GOT DROP: [%d] '%s'" % (op_code, text),
+                print("GOT DROP: [%d] '%s'" % (node_code, node_type),
                       "mouse:", mouse_position, "scene:", scene_position)
 
             try:
-                node = get_class_from_opcode(op_code, text)(self.scene)
+                print("1...")
+                node_type_enum = NodeTypes(node_type)
+                print("2...")
+                node = get_class_from_opcode(
+                    node_code, node_type_enum)(self.scene)
+                print("3...")
                 node.setPos(scene_position.x(), scene_position.y())
+                print("4...")
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__)
+                print("5...")
             except Exception as e:
                 dumpException(e)
 
@@ -329,7 +352,7 @@ class TriggerSubWindow(NodeEditorWidget):
         except Exception as e:
             dumpException(e)
 
-    def handleNodeContextMenu(self, event):
+    def handleNodeContextMenu(self, event) -> None:
         if DEBUG_CONTEXT:
             print("CONTEXT: NODE")
         context_menu = QMenu(self)
@@ -366,7 +389,7 @@ class TriggerSubWindow(NodeEditorWidget):
             if DEBUG_CONTEXT:
                 print("EVALUATED:", val)
 
-    def handleEdgeContextMenu(self, event):
+    def handleEdgeContextMenu(self, event) -> None:
         if DEBUG_CONTEXT:
             print("CONTEXT: EDGE")
         context_menu = QMenu(self)
@@ -398,28 +421,28 @@ class TriggerSubWindow(NodeEditorWidget):
                 target_socket = new_calc_node.outputs[0]
         return target_socket
 
-    def finish_new_node_state(self, new_calc_node):
+    def finish_new_node_state(self, new_calc_node) -> None:
         self.scene.doDeselectItems()
         new_calc_node.grNode.doSelect(True)
         new_calc_node.grNode.onSelected()
 
-    def set_selected_action_data(self, data):
+    def set_selected_action_data(self, data) -> None:
         self.selected_action_data = data
 
-    def add_node_to_scene(self):
+    def add_node_to_scene(self) -> None:
         # This method should add the node to the scene
         # You can customize this method based on your requirements
         print("🍒 Adding node to the scene")
         # Example implementation:
-        op_code, op_type = self.selected_action_data
-        new_calc_node = get_class_from_opcode(op_code, op_type)(self.scene)
+        node_code, node_type = self.selected_action_data
+        new_calc_node = get_class_from_opcode(node_code, node_type)(self.scene)
         cursor_pos = self.mapFromGlobal(QCursor.pos())
         scene_pos = self.scene.getView().mapToScene(cursor_pos)
         new_calc_node.setPos(scene_pos.x(), scene_pos.y())
         self.scene.history.storeHistory(
             "Created %s" % new_calc_node.__class__.__name__)
 
-    def showNodeContextMenu(self, position):
+    def showNodeContextMenu(self, position) -> None:
         if DEBUG_CONTEXT:
             print("CONTEXT: EMPTY SPACE")
         context_menu = self.initNodesContextMenu()
@@ -431,9 +454,9 @@ class TriggerSubWindow(NodeEditorWidget):
                 self.selected_action_data = action.data()
                 self.add_node_to_scene()
                 # Create node directly without storing action data
-                # op_code, op_type = action.data()
+                # node_code, node_type = action.data()
                 # new_calc_node = get_class_from_opcode(
-                #     op_code, op_type)(self.scene)
+                #     node_code, node_type)(self.scene)
                 # cursor_pos = self.mapFromGlobal(QCursor.pos())
                 # scene_pos = self.scene.getView().mapToScene(cursor_pos)
                 # new_calc_node.setPos(scene_pos.x(), scene_pos.y())
@@ -442,12 +465,12 @@ class TriggerSubWindow(NodeEditorWidget):
             except Exception as e:
                 dumpException(e)
 
-    def handleNewNodeContextMenu(self, event):
+    def handleNewNodeContextMenu(self, event) -> None:
         if DEBUG_CONTEXT:
             print("CONTEXT: EMPTY SPACE")
         self.showNodeContextMenu(event.pos())
 
-    def run_workflow(self):
+    def run_workflow(self) -> None:
         # all_nodes = self.getAllNodes()
         # connections = self.getNodeConnections()
         # sorted_nodes = self.topologicalSort(connections)
@@ -472,7 +495,7 @@ class TriggerSubWindow(NodeEditorWidget):
         # self.logger.log("This is an error log.", "error")
         # self.logger.log("This is a debug log.", "debug")
 
-    def getPyFile(self):
+    def getPyFile(self) -> None:
         connections = self.getNodeConnections()
         sorted_nodes = self.topologicalSort(connections)
         code = """"""
@@ -517,7 +540,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
         return sorted_nodes
 
-    def executeWorkflow(self):
+    def executeWorkflow(self) -> None:
         self.fixed_button.setEnabled(False)
         connections = self.getNodeConnections()
         sorted_nodes = self.topologicalSort(connections)

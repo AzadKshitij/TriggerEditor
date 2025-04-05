@@ -13,11 +13,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QLabel
 
 from tagstudio.qt.helpers.silent_popen import silent_Popen
+from qtpy.QtWidgets import QWidget
+from typing import Optional
 
 logger = structlog.get_logger(__name__)
 
 
-def open_file(path: str | Path, file_manager: bool = False):
+def open_file(path: str | Path, file_manager: bool = False) -> None:
     """Open a file in the default application or file explorer.
 
     Args:
@@ -90,7 +92,7 @@ def open_file(path: str | Path, file_manager: bool = False):
 
 
 class FileOpenerHelper:
-    def __init__(self, filepath: str | Path):
+    def __init__(self, filepath: str | Path) -> None:
         """Initialize the FileOpenerHelper.
 
         Args:
@@ -98,7 +100,7 @@ class FileOpenerHelper:
         """
         self.filepath = str(filepath)
 
-    def set_filepath(self, filepath: str | Path):
+    def set_filepath(self, filepath: str | Path) -> None:
         """Set the filepath to open.
 
         Args:
@@ -106,17 +108,17 @@ class FileOpenerHelper:
         """
         self.filepath = str(filepath)
 
-    def open_file(self):
+    def open_file(self) -> None:
         """Open the file in the default application."""
         open_file(self.filepath)
 
-    def open_explorer(self):
+    def open_explorer(self) -> None:
         """Open the file in the default file explorer."""
         open_file(self.filepath, file_manager=True)
 
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget]=None) -> None:
         """Initialize the FileOpenerLabel.
 
         Args:
@@ -124,7 +126,7 @@ class FileOpenerLabel(QLabel):
         """
         super().__init__(parent)
 
-    def set_file_path(self, filepath):
+    def set_file_path(self, filepath) -> None:
         """Set the filepath to open.
 
         Args:
@@ -132,7 +134,7 @@ class FileOpenerLabel(QLabel):
         """
         self.filepath = filepath
 
-    def mousePressEvent(self, event):  # noqa: N802
+    def mousePressEvent(self, event) -> None:  # noqa: N802
         """Handle mouse press events.
 
         On a left click, open the file in the default file explorer.

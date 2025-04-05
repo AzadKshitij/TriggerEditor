@@ -6,10 +6,11 @@ from qtpy.QtCore import Qt, QSettings
 import orjson as json
 import os
 from trigger_designer.qt.resource_manager import ResourceManager
+from typing import Optional
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget]=None) -> None:
         super().__init__(parent)
         self.parent = parent
         self.setWindowTitle("Settings")
@@ -17,7 +18,7 @@ class SettingsDialog(QDialog):
         self.settings = QSettings('Blue Octa', 'Trigger Designer')
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         layout = QVBoxLayout()
         self.setLayout(layout)
 
@@ -77,7 +78,7 @@ class SettingsDialog(QDialog):
 
         return {}
 
-    def save_settings(self):
+    def save_settings(self) -> None:
         settings = {
             "theme": self.theme_combo.currentText(),
             "grid_size": self.grid_size.value(),

@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QLineEdit, QLayout, QVBoxLayout, QLabel
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
-from trigger_designer.core.node_configuration import register_node, OP_NODE_INPUT
+from trigger_designer.core.node_configuration import register_node, NodeTypes, CalcNodes
 from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -41,13 +41,13 @@ class CalcInputContent(QDMNodeIconContentWidget):
         return res
 
 
-@register_node(OP_NODE_INPUT, "CALC")
+@register_node(CalcNodes.INPUT, NodeTypes.CALC)
 class CalcNode_Input(TriggerNode):
     icon = ":/icons/001-input.png"
     # icon = "src/trigger_designer/Resource/icons/in.png"
-    op_code = OP_NODE_INPUT
-    op_title = "Input"
-    op_type = "CALC"
+    node_code = CalcNodes.INPUT
+    node_title = "Input"
+    node_type = NodeTypes.CALC
     content_label_objname = "calc_node_input"
 
     def __init__(self, scene) -> None:

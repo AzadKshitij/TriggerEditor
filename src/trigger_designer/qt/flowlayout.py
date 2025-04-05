@@ -11,13 +11,13 @@ from qtpy.QtWidgets import QLayout, QSizePolicy, QWidget
 
 
 class FlowWidget(QWidget):
-    def __init__(self, parent=None) -> None:
+    def __init__(self, parent: Optional[QWidget]=None) -> None:
         super().__init__(parent)
         self.ignore_size: bool = False
 
 
 class FlowLayout(QLayout):
-    def __init__(self, parent=None):
+    def __init__(self, parent: Optional[QWidget]=None) -> None:
         super().__init__(parent)
 
         if parent is not None:
@@ -26,12 +26,12 @@ class FlowLayout(QLayout):
         self._item_list = []
         self.grid_efficiency = False
 
-    def __del__(self):
+    def __del__(self) -> None:
         item = self.takeAt(0)
         while item:
             item = self.takeAt(0)
 
-    def addItem(self, item):  # noqa: N802
+    def addItem(self, item) -> None:  # noqa: N802
         self._item_list.append(item)
 
     def count(self):
@@ -52,18 +52,18 @@ class FlowLayout(QLayout):
     def expandingDirections(self):  # noqa: N802
         return Qt.Orientation(0)
 
-    def hasHeightForWidth(self):  # noqa: N802
+    def hasHeightForWidth(self) -> bool:  # noqa: N802
         return True
 
-    def heightForWidth(self, width):  # noqa: N802
+    def heightForWidth(self, width: int):  # noqa: N802
         height = self._do_layout(QRect(0, 0, width, 0), test_only=True)
         return height
 
-    def setGeometry(self, rect):  # noqa: N802
+    def setGeometry(self, rect) -> None:  # noqa: N802
         super().setGeometry(rect)
         self._do_layout(rect, test_only=False)
 
-    def enable_grid_optimizations(self, value: bool):
+    def enable_grid_optimizations(self, value: bool) -> None:
         """Enable or Disable efficiencies when all objects are equally sized."""
         self.grid_efficiency = value
 

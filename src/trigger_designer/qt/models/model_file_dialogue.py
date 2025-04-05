@@ -2,7 +2,7 @@ from qtpy.QtWidgets import QFileDialog
 
 
 class FileDialogLogic:
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         self.parent = parent
 
     def open_file_dialog(self, file_types: str):

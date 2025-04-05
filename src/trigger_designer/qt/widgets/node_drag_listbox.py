@@ -9,11 +9,11 @@ from typing import Any, Optional
 
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.node_base import TriggerNode
-from trigger_designer.core.node_configuration import check_node_type, get_class_from_opcode, LISTBOX_MIMETYPE
+from trigger_designer.core.node_configuration import NodeTypes, get_class_from_opcode, LISTBOX_MIMETYPE, NODE_REGISTRIES
 
 
 class QTRDragListbox(QListWidget):
-    def __init__(self, parent: Optional[QWidget] = None, node_type: Optional[str] = None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None, node_type: Optional[NodeTypes] = None) -> None:
         super().__init__(parent)
         self.node_type = node_type
         self.horizontal_spacing = 15
@@ -35,16 +35,36 @@ class QTRDragListbox(QListWidget):
 
         self.addMyItems()
 
+    # def addMyItems(self) -> None:
+
+    #     current_node_type = check_node_type(self.node_type)
+
+    #     keys = list(current_node_type.keys())
+    #     keys.sort()
+    #     for key in keys:
+    #         node: TriggerNode = get_class_from_opcode(key, self.node_type)
+    #         self.addMyItem(node.node_title, node.icon, node.node_code)
+
     def addMyItems(self) -> None:
-        current_node_type = check_node_type(self.node_type)
+        """Add items to the listbox based on node type"""
+        if not self.node_type:
+            return
 
-        keys = list(current_node_type.keys())
-        keys.sort()
+        # Get registry for this node type
+        node_registry = NODE_REGISTRIES[self.node_type]
+
+        # Sort keys for consistent ordering
+        keys = sorted(node_registry.keys())
+
         for key in keys:
-            node: TriggerNode = get_class_from_opcode(key, self.node_type)
-            self.addMyItem(node.op_title, node.icon, node.op_code)
+            node_class = node_registry[key]
+            self.addMyItem(
+                name=node_class.node_title,
+                icon=node_class.icon,
+                node_code=key
+            )
 
-    def addMyItem(self, name: str = "", icon: str = "", op_code: int = 0) -> None:
+    def addMyItem(self, name: str = "", icon: str = "", node_code: int = 0) -> None:
         item = QListWidgetItem(self)
         item_widget = ListWidgetItemWidget(name, icon, self.node_type)
         item.setSizeHint(item_widget.sizeHint())
@@ -63,24 +83,24 @@ class QTRDragListbox(QListWidget):
 
         # setup data
         # item.setData(Qt.UserRole, pixmap)
-        item.setData(Qt.UserRole + 1, op_code)
+        item.setData(Qt.UserRole + 1, node_code)
 
     def startDrag(self, *args: list[Any], **kwargs: dict[Any, Any]) -> None:
         try:
             # item = self.currentItem()
-            # op_code = item.data(Qt.UserRole + 1)
+            # node_code = item.data(Qt.UserRole + 1)
 
             # pixmap = QPixmap(item.data(Qt.UserRole))
 
             item = self.currentItem()
-            op_code = item.data(Qt.UserRole + 1)
+            node_code = item.data(Qt.UserRole + 1)
             item_widget = self.itemWidget(item)
             pixmap = item_widget.icon_label.pixmap()
 
             itemData = QByteArray()
             dataStream = QDataStream(itemData, QIODevice.WriteOnly)
             dataStream << pixmap
-            dataStream.writeInt(op_code)
+            dataStream.writeInt(node_code)
             dataStream.writeQString(self.node_type)
             # dataStream.writeQString(item.text())
 
@@ -99,7 +119,7 @@ class QTRDragListbox(QListWidget):
 
 
 class ListWidgetItemWidget(QWidget):
-    def __init__(self, name: str, icon: str = "", node_type: Optional[str] = "DEFAULT", parent: Optional[QWidget] = None):
+    def __init__(self, name: str, icon: str = "", node_type: Optional[str] = "DEFAULT", parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
 
         layout = QGridLayout(self)
