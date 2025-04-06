@@ -406,7 +406,7 @@ wheels = [
 [[package]]
 name = "nodeeditor"
 version = "0.1.5"
-source = { git = "https://github.com/AzadKshitij/qtpy-nodeeditor.git?rev=main#121d4160e8b4463e3849456f9bdec77dd5067f3f" }
+source = { git = "https://github.com/AzadKshitij/qtpy-nodeeditor.git?rev=main#e4963ddc3e9a3bf2c3d5a03b63fd34ff51541a44" }
 dependencies = [
     { name = "orjson" },
     { name = "qtpy" },

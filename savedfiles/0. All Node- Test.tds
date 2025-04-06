@@ -21,8 +21,8 @@
       "content": {
         "filePath": "C:/Projects/TriggerEditor/savedfiles/6.1. out_check_W_false-filter.csv"
       },
-      "op_code": 4,
-      "op_type": "INPUT"
+      "node_code": 4,
+      "node_type": "input"
     },
     {
       "id": 1859404365136,
@@ -59,8 +59,8 @@
         "operation": "Equals",
         "value": ""
       },
-      "op_code": 2,
-      "op_type": "PREPARATION"
+      "node_code": 2,
+      "node_type": "preparation"
     },
     {
       "id": 1859404365072,
@@ -89,8 +89,8 @@
         "formula": null,
         "target_column": null
       },
-      "op_code": 3,
-      "op_type": "PREPARATION"
+      "node_code": 3,
+      "node_type": "preparation"
     },
     {
       "id": 1859404364880,
@@ -127,8 +127,8 @@
           }
         }
       },
-      "op_code": 4,
-      "op_type": "PREPARATION"
+      "node_code": 4,
+      "node_type": "PREPARATION"
     },
     {
       "id": 1859404365456,
@@ -161,8 +161,8 @@
           }
         ]
       },
-      "op_code": 5,
-      "op_type": "PREPARATION"
+      "node_code": 5,
+      "node_type": "preparation"
     },
     {
       "id": 1859404409104,
@@ -190,8 +190,92 @@
       "content": {
         "selected_columns": []
       },
-      "op_code": 6,
-      "op_type": "PREPARATION"
+      "node_code": 6,
+      "node_type": "preparation"
+    },
+    {
+      "id": 1691577709904,
+      "title": "Join",
+      "pos_x": -505.37109374999983,
+      "pos_y": 576.1718749999998,
+      "inputs": [
+        {
+          "id": 1691576271504,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1691577704656,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1691573648592,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1691579541008,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1691579538832,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [],
+        "selected_columns": []
+      },
+      "node_code": 2,
+      "node_type": "join"
+    },
+    {
+      "id": 1691579476112,
+      "title": "Graph",
+      "pos_x": 34.179687499999986,
+      "pos_y": 224.60937499999991,
+      "inputs": [
+        {
+          "id": 1691579310992,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1691571810832,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "graph_type": "line",
+        "x_column": "Keyword",
+        "y_column": "Keyword",
+        "title": ""
+      },
+      "node_code": 3,
+      "node_type": "report"
     }
   ],
   "edges": [
@@ -224,6 +308,24 @@
       "edge_type": 5,
       "start": 1859377780624,
       "end": 1859404410960
+    },
+    {
+      "id": 1691578241360,
+      "edge_type": 5,
+      "start": 1859377780624,
+      "end": 1691579310992
+    },
+    {
+      "id": 1691579542416,
+      "edge_type": 5,
+      "start": 1859377780624,
+      "end": 1691576271504
+    },
+    {
+      "id": 1691579544976,
+      "edge_type": 5,
+      "start": 1859377780624,
+      "end": 1691577704656
     }
   ]
 }

@@ -1,5 +1,5 @@
 import time
-from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent
+from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
@@ -15,8 +15,9 @@ from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
 from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
+from trigger_designer.qt.widgets.node_group import NodeGroup
 
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 DEBUG = False
 DEBUG_CONTEXT = False
@@ -314,8 +315,8 @@ class TriggerSubWindow(NodeEditorWidget):
                 print("1...")
                 node_type_enum = NodeTypes(node_type)
                 print("2...")
-                node = get_class_from_opcode(
-                    node_code, node_type_enum)(self.scene)
+                node = get_class_from_opcode(node_code, node_type_enum)(
+                    self.scene)  # type: ignore
                 print("3...")
                 node.setPos(scene_position.x(), scene_position.y())
                 print("4...")
@@ -340,7 +341,10 @@ class TriggerSubWindow(NodeEditorWidget):
             if type(item) == QGraphicsProxyWidget:
                 item = item.widget()
 
-            if hasattr(item, 'node') or hasattr(item, 'socket'):
+            # Check for groups first
+            if isinstance(item, NodeGroup):
+                self.handleGroupContextMenu(event)
+            elif hasattr(item, 'node') or hasattr(item, 'socket'):
                 self.handleNodeContextMenu(event)
             elif hasattr(item, 'edge'):
                 self.handleEdgeContextMenu(event)
@@ -352,7 +356,30 @@ class TriggerSubWindow(NodeEditorWidget):
         except Exception as e:
             dumpException(e)
 
-    def handleNodeContextMenu(self, event) -> None:
+    def handleGroupContextMenu(self, event):
+        """Handle context menu for node groups"""
+        context_menu = QMenu(self)
+
+        # Add group-specific actions
+        ungroupAct = context_menu.addAction("Ungroup")
+        deleteGroupAct = context_menu.addAction("Delete Group")
+        context_menu.addSeparator()
+
+        action = context_menu.exec_(self.mapToGlobal(event.pos()))
+
+        item = self.scene.getItemAt(event.pos())
+        if isinstance(item, NodeGroup):
+            if action == ungroupAct:
+                # Keep nodes but remove group
+                self.ungroupSelected()
+            elif action == deleteGroupAct:
+                # Remove both group and contained nodes
+                for node in item.nodes:
+                    self.scene.removeNode(node)
+                self.scene.removeItem(item)
+                self.scene.history.storeHistory("Deleted Group and Nodes")
+
+    def handleNodeContextMenu(self, event: QContextMenuEvent) -> None:
         if DEBUG_CONTEXT:
             print("CONTEXT: NODE")
         context_menu = QMenu(self)
@@ -362,12 +389,21 @@ class TriggerSubWindow(NodeEditorWidget):
         markInvalidAct = context_menu.addAction("Mark Invalid")
         unmarkInvalidAct = context_menu.addAction("Unmark Invalid")
         evalAct = context_menu.addAction("Eval")
-        action = context_menu.exec_(self.mapToGlobal(event.pos()))
 
         selected = None
         item = self.scene.getItemAt(event.pos())
         if type(item) == QGraphicsProxyWidget:
             item = item.widget()
+
+        selected_nodes = [
+            item.node for item in self.scene.getSelectedItems() if hasattr(item, 'node')]
+        print("🐍 File: qt/design_window.py:375 | handleNodeContextMenu ~ selected_nodes", selected_nodes)
+
+        if len(selected_nodes) > 1:
+            groupAct = context_menu.addAction("Group Nodes")
+            context_menu.addSeparator()
+
+        action = context_menu.exec(self.mapToGlobal(event.pos()))
 
         if hasattr(item, 'node'):
             selected = item.node
@@ -388,8 +424,11 @@ class TriggerSubWindow(NodeEditorWidget):
             val = selected.eval()
             if DEBUG_CONTEXT:
                 print("EVALUATED:", val)
+        # Handle group action
+        if selected_nodes and action == groupAct:
+            self.createGroup(selected_nodes)
 
-    def handleEdgeContextMenu(self, event) -> None:
+    def handleEdgeContextMenu(self, event: QContextMenuEvent) -> None:
         if DEBUG_CONTEXT:
             print("CONTEXT: EDGE")
         context_menu = QMenu(self)
@@ -421,7 +460,7 @@ class TriggerSubWindow(NodeEditorWidget):
                 target_socket = new_calc_node.outputs[0]
         return target_socket
 
-    def finish_new_node_state(self, new_calc_node) -> None:
+    def finish_new_node_state(self, new_calc_node: Any) -> None:
         self.scene.doDeselectItems()
         new_calc_node.grNode.doSelect(True)
         new_calc_node.grNode.onSelected()
@@ -471,29 +510,7 @@ class TriggerSubWindow(NodeEditorWidget):
         self.showNodeContextMenu(event.pos())
 
     def run_workflow(self) -> None:
-        # all_nodes = self.getAllNodes()
-        # connections = self.getNodeConnections()
-        # sorted_nodes = self.topologicalSort(connections)
-        # print('%%%%%%%%%%%%%%%%%%%%%')
-        # print(sorted_nodes)
-        # print('%%%%%%%%%%%%%%%%%%%%%')
-
         self.executeWorkflow()
-
-        # for node in all_nodes:
-        #     print(node)
-        # for k, v in self.getNodeConnections().items():
-        #     print(k)
-        #     print(v)
-        #     print("----------")
-
-        # self.getPyFile()
-        # Add some dummy logs for testing
-        # print("Adding Logs")
-        # self.logger.log("This is an info log.", "info")
-        # self.logger.log("This is a warning log.", "warning")
-        # self.logger.log("This is an error log.", "error")
-        # self.logger.log("This is a debug log.", "debug")
 
     def getPyFile(self) -> None:
         connections = self.getNodeConnections()
@@ -581,35 +598,31 @@ class TriggerSubWindow(NodeEditorWidget):
         end_time = time.time()
         print("Execution Time: ", end_time - start_time, " seconds")
         self.getPyFile()
-        # result = node.execute(input_data)
-        # node_data[node] = result
-        # print("Input Data::::", input_data)
-        # print(connections[node]['inputs'])
-        # print(connections[node]['outputs'])
-        # print(":::::::::::::::::::::::::::::::::")
 
-        # Execute the node's code
-        # result = node.execute(input_data)
-        # node_data[node] = result
-
-        # Reset all node borders
         for node in self.getAllNodes():
             node.grNode.resetPen()
 
         self.fixed_button.setEnabled(True)
 
-    # def executeWorkflow(self):
-    #     connections = self.getNodeConnections()
-    #     sorted_nodes = self.topologicalSort(connections)
-    #     node_data = {}
+    def createGroup(self, nodes=None):
+        """Create a new node group containing the selected nodes"""
+        if nodes is None:
+            nodes = [item.node for item in self.scene.selectedItems()
+                     if hasattr(item, 'node')]
 
-    #     for node in sorted_nodes:
-    #         input_data = [
-    #             input_node for input_node in connections[node]['inputs']]
-    #         # input_data = [node_data[input_node]
-    #         #               for input_node in connections[node]['inputs']]
-    #         print(":::::::::::::::::::::::::::::::::")
-    #         print("Input Data::::", input_data)
-    #         print(":::::::::::::::::::::::::::::::::")
-        # result = node.execute(input_data)
-        # node_data[node] = result
+        if len(nodes) < 2:
+            return
+
+        group = NodeGroup(self.scene)
+        for node in nodes:
+            group.add_node(node)
+
+        self.scene.history.storeHistory("Created Node Group")
+        return group
+
+    def ungroupSelected(self):
+        """Ungroup the selected group"""
+        for item in self.scene.getSelectedItems():
+            if isinstance(item, NodeGroup):
+                self.scene.grScene.removeItem(item)
+                self.scene.history.storeHistory("Ungroup Nodes")
