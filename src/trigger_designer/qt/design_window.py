@@ -568,9 +568,12 @@ class TriggerSubWindow(NodeEditorWidget):
             print(":::::::::::::::::::::::::::::::::")
             print(f"Code for {self.__class__.__name__}: ", node.get_code())
             print(":::::::::::::::::::::::::::::::::")
-            l = executor.execute_node(node)
+            stdoutput, local_variables = executor.execute_node(node)
             print(":::::::::::::::::::::::::::::::::")
-            print("executor: ", l)
+            print(
+                "🐍 File: qt/design_window.py:572 | executeWorkflow ~ stdoutput", stdoutput)
+            print(
+                "🐍 File: qt/design_window.py:572 | executeWorkflow ~ local_variables", local_variables)
             print(":::::::::::::::::::::::::::::::::")
             node.grNode.setPenExecuted()
             node.grNode.update()

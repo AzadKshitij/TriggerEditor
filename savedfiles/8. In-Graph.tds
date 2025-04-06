@@ -1,0 +1,68 @@
+{
+  "id": 2522862089360,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2522854061840,
+      "title": "File Input",
+      "pos_x": -376.0,
+      "pos_y": -112.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2522863516112,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2522860850704,
+      "title": "Graph",
+      "pos_x": -82.81249999999997,
+      "pos_y": -199.75,
+      "inputs": [
+        {
+          "id": 2522863515984,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2522863158992,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "graph_type": "line",
+        "x_column": "Difficulty",
+        "y_column": "Relevancy Score",
+        "title": "Lol"
+      },
+      "node_code": 3,
+      "node_type": "report"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2522858897872,
+      "edge_type": 5,
+      "start": 2522863516112,
+      "end": 2522863515984
+    }
+  ]
+}

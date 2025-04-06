@@ -19,7 +19,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable = ""

@@ -26,7 +26,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.mapping_pairs = []
         self.history: SceneHistory = self.node.scene.history
 
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.left_data: pd.DataFrame = None

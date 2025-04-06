@@ -7,6 +7,7 @@ dependencies = [
     "duckdb>=1.2.1",
     "llvmlite==0.44.0",
     "loguru>=0.7.3",
+    "matplotlib[performance]>=3.10.1",
     "nodeeditor @ git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@main",
     "numba==0.61.0",
     "numexpr==2.10.2",
@@ -30,7 +31,7 @@ package = false
 
 
 [tool.mypy]
-python_version = "3.11.4"
+python_version = "3.11"
 exclude = "^.venv/ | build/ | dist/* | migrations/ | docs/ | /examples | /tests | ./dist/TriggerEditor/_internal/"
 warn_return_any = true
 warn_unused_configs = true

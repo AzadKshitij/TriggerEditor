@@ -12,7 +12,7 @@ class Logger:
     def set_result_dock(self, result_dock: 'ResultDock') -> None:
         self.result_dock = result_dock
 
-    def log(self, message, log_type: str='info') -> None:
+    def log(self, message: str, log_type: str = 'info') -> None:
         # log_entry = {'message': message, 'type': log_type}
         # self.logs.append(log_entry)
         # print("self.result_dock")

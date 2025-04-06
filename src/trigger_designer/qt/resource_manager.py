@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from loguru import logger
 from PIL import Image, ImageQt
@@ -75,7 +75,7 @@ class ResourceManager:
         return theme_qss
 
     @staticmethod
-    def get_path(id: str) -> Path | None:
+    def get_path(id: str) -> Optional[Path]:
         """Get a resource's path from the ResourceManager.
 
         Args:
@@ -85,10 +85,22 @@ class ResourceManager:
             Path: The resource path if found, else None.
         """
 
+        # res: dict = ResourceManager._map.get(id, {})
+        # if res:
+        #     path_str = res.get("path")
+        #     if path_str:
+        #         return ResourceManager._res_folder / "resources" / path_str
+        # return None
+
         res: dict = ResourceManager._map.get(id, {})
-        if res:
-            return ResourceManager._res_folder / "resources" / res.get("path", "")
-        return None
+        if not res:
+            return None
+
+        path_str = res.get("path")
+        if not path_str:
+            return None
+
+        return ResourceManager._res_folder / "resources" / path_str
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.

@@ -10,53 +10,41 @@ class NodesDock(QDockWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.initUI()
-        self.setFeatures(QDockWidget.NoDockWidgetFeatures)
+        self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
         self.setTitleBarWidget(QWidget())
         self.setFloating(False)
         self.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable |
                          QDockWidget.DockWidgetFeature.DockWidgetFloatable)
         # self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred,
+                           QSizePolicy.Policy.Fixed)
 
     def initUI(self) -> None:
         # Create the tab widget
         tab_widget = QTabWidget()
-        tab_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        tab_widget.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        # Create the tabs
-        tab_calc = QWidget()
-        tab_input = QWidget()
-        tab_preparation = QWidget()
-        tab_join = QWidget()
-        tab_transform = QWidget()
+        # Create the tabs and drag list boxes dynamically
+        tabs = {}
+        drag_list_boxes = {}
 
-        # Create the drag list boxes
-        calcListWidget = QTRDragListbox(node_type=NodeTypes.CALC)
-        inputListWidget = QTRDragListbox(node_type=NodeTypes.IO)
-        preparationListWidget = QTRDragListbox(node_type=NodeTypes.PREPARATION)
-        joinListWidget = QTRDragListbox(node_type=NodeTypes.JOIN)
-        transformListWidget = QTRDragListbox(node_type=NodeTypes.TRANSFORM)
-
-        tabs = [tab_calc, tab_input, tab_preparation, tab_join, tab_transform]
-        drag_list_boxes = [calcListWidget, inputListWidget,
-                           preparationListWidget, joinListWidget, transformListWidget]
-
-        for item in zip(tabs, drag_list_boxes):
-            item[-1].setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        # Iterate through the NodeTypes enum
+        for node_type in NodeTypes:
+            tab = QWidget()
+            list_widget = QTRDragListbox(node_type=node_type)
+            list_widget.setSizePolicy(
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             tab_layout = QVBoxLayout()
-            tab_layout.addWidget(item[-1])
-            item[0].setLayout(tab_layout)
+            tab_layout.addWidget(list_widget)
+            tab.setLayout(tab_layout)
 
-        # Add tabs to the tab widget
-        tab_widget.addTab(tab_calc, "Calc")
-        tab_widget.addTab(tab_input, "Input")
-        tab_widget.addTab(tab_preparation, "Preparation")
-        tab_widget.addTab(tab_join, "Join")
-        tab_widget.addTab(tab_transform, "Transform")
+            tabs[node_type] = tab
+            drag_list_boxes[node_type] = list_widget
 
-        # nodesListWidget = QTRDragListbox(node_type="lol node tyupe")
-        # tab_widget.adjustSize()
-        # tab_widget.adjustSize()
+            # Use the enum member name as the tab name (you might want to customize this)
+            tab_widget.addTab(tab, node_type.value.title())
+
         self.setWidget(tab_widget)
         tab_widget.setMaximumHeight(105)
         self.adjustSize()

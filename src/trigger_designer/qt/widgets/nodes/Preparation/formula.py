@@ -22,7 +22,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.target_column: str = None
         self.is_new_column: bool = False
         self.history = self.node.scene.history
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable: str = ''

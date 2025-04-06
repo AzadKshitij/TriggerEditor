@@ -24,7 +24,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.selected_columns = []
         self.history: SceneHistory = self.node.scene.history
 
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable: str = ''

@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     evaluate = Signal()
 
-    def __init__(self, node: 'TriggerNode', parent: QWidget = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         """Initialize the FileInputContent widget.
 
         Args:
@@ -34,10 +34,11 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             parent (Optional[QWidget], optional): Parent widget. Defaults to None.
         """
         super().__init__(node, parent)
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
         # local Variables
         self.filePath = ""
         self.preview_rows = 10
+        self.node = node
 
         # pass on variables
         self.data: pd.DataFrame = pd.DataFrame()
@@ -192,16 +193,13 @@ class TriggerNode_FileInput(TriggerNode):
     content_label_objname = "trigger_node_file_input"
     style = {}
 
-    NodeContetnt_Type: Type[FileInputContent] = cast(
-        FileInputContent, 'QDMNodeContentWidget')  # type: ignore
-
     def __init__(self, scene: 'Scene') -> None:
         super().__init__(scene, inputs=[], outputs=[3])
         # self.eval()
         self.markInvalid(True)
 
     def initInnerClasses(self) -> None:
-        self.content = self.NodeContetnt_Type(self)
+        self.content: FileInputContent = FileInputContent(self)
         # self.content = cast('QDMNodeContentWidget', FileInputContent(self))
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)

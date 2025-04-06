@@ -26,7 +26,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.next_row_id = 0   # Unique identifier for each row
 
         self.history = self.node.scene.history
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable: str = ''

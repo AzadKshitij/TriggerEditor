@@ -18,7 +18,7 @@ from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.resource_manager import ResourceManager
 
-from typing import TYPE_CHECKING, Any, List, Optional, OrderedDict, Type, TypeVar
+from typing import TYPE_CHECKING, Any, List, Optional, OrderedDict, Type, TypeVar, Union
 
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
@@ -31,7 +31,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     rsm = ResourceManager()
 
-    def __init__(self, node: 'TriggerNode', parent: QGraphicsItem = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QGraphicsItem] = None) -> None:
         super().__init__(node, parent)
 
         self._default_pen = QPen(QColor("#7F000000"))
@@ -115,15 +115,16 @@ class TriggerContent(QDMNodeIconContentWidget):
 
 
 class TriggerChangeHandler:
-    def __init__(self, scene: 'Scene') -> None:
+    def __init__(self, scene: 'Scene', node: 'TriggerNode') -> None:
         self._scene = scene
         self._input_widgets: list = []
+        self.node = node
 
     # @property
     # def node(self) -> 'TriggerNode':
     #     return self.node
 
-    def registerInputWidget(self, widget: QWidget) -> None:
+    def registerInputWidget(self, widget: Union[QLineEdit, QSpinBox, QComboBox, QCheckBox, QWidget]) -> None:
         """Register a single input widget for change tracking"""
         if widget in self._input_widgets:
             return
@@ -352,3 +353,9 @@ class TriggerNode(Node):
         # print("Deserialized CalcNode '%s'" %
         #       self.__class__.__name__, "res:", res)
         return res
+
+    def get_code(self) -> str:
+        """
+        Meant to be overridden in subclasses to provide the code for the node.
+        """
+        return ""

@@ -7,7 +7,7 @@ from typing import Optional
 
 
 class ResultDock(QDockWidget):
-    def __init__(self, parent: Optional[QWidget]=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.logs: list[dict] = []
         self.filtered_logs: list[dict] = []
@@ -47,10 +47,10 @@ class ResultDock(QDockWidget):
         self.dock_widget.setLayout(self.dock_layout)
         self.setWidget(self.dock_widget)
         self.setFloating(False)
-        self.setFeatures(QDockWidget.DockWidgetMovable |
-                         QDockWidget.DockWidgetFloatable)
+        self.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable |
+                         QDockWidget.DockWidgetFeature.DockWidgetFloatable)
 
-    def add_log(self, message, log_type: str='info') -> None:
+    def add_log(self, message: str, log_type: str = 'info') -> None:
         log_entry = {'message': message, 'type': log_type}
         self.logs.append(log_entry)
         self.update_log_area()
@@ -59,7 +59,7 @@ class ResultDock(QDockWidget):
         self.logs = []
         self.update_log_area()
 
-    def filter_logs(self, log_type) -> None:
+    def filter_logs(self, log_type: str) -> None:
         self.current_filter = log_type
         self.update_log_area()
 

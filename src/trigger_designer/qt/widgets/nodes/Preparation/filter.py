@@ -25,7 +25,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.value: Union[str, float, int] = ""
         self.history = self.node.scene.history
 
-        TriggerChangeHandler.__init__(self, self.node.scene)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable: str = ''
