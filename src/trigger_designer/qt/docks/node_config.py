@@ -1,9 +1,13 @@
+from loguru import logger
 from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QLabel, QWidget, QLayout
-from typing import Optional
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from trigger_designer.qt.node_base import TriggerNode
 
 
 class ConfigDock(QDockWidget):
-    def __init__(self, parent: Optional[QWidget]=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__("Node Configuration", parent)
         self.initUI()
 
@@ -15,17 +19,22 @@ class ConfigDock(QDockWidget):
         self.setFeatures(QDockWidget.DockWidgetMovable |
                          QDockWidget.DockWidgetFloatable)
 
-    def updateConfig(self, node) -> None:
-        print("Updating config for node type: ", type(node[0]))
-        if len(node) == 1:
-            if hasattr(node[0], 'node') or hasattr(node[0], 'socket'):
-                self.clear_dock()
-
-                node = node[0]
-                content = node.content
-                content.create_layout(
-                    self.dock_layout)
-                self.dock_widget.setLayout(self.dock_layout)
+    def updateConfig(self, nodes: List['TriggerNode']) -> None:
+        print("Updating config for node type: ", type(nodes[0]))
+        if len(nodes) == 1:
+            node = nodes[0]
+            if hasattr(node, 'node') or hasattr(node, 'socket'):
+                try:
+                    logger.debug(
+                        f"Updating config for node type: {type(node)}")
+                    self.clear_dock()
+                    logger.debug("Cleared the dock!!!")
+                    content = node.content
+                    content.create_layout(
+                        self.dock_layout)
+                    self.dock_widget.setLayout(self.dock_layout)
+                except Exception as e:
+                    logger.error(e)
         else:
             self.clear_dock()
 
@@ -45,7 +54,20 @@ class ConfigDock(QDockWidget):
             self.dock_layout.removeItem(item)
             del item
 
-    def clear_layout(self, layout) -> None:
+        # # Reset the dock widget's layout to ensure it's clean
+        # print("Clearing layout")
+        # old_layout = self.dock_widget.layout()
+        # if old_layout is not None:
+        #     # self.dock_widget.setLayout(None)  # Detach the layout
+        #     del old_layout
+
+        # # self.dock_layout = QVBoxLayout()
+        # self.dock_layout = QVBoxLayout()
+        # self.dock_widget.setLayout(self.dock_layout)  # Detach the layout
+
+        print("Layout cleared")
+
+    def clear_layout(self, layout: QLayout) -> None:
         # Helper method to clear nested layouts
         while layout.count():
             item = layout.takeAt(0)

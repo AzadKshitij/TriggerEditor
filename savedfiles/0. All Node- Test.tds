@@ -116,7 +116,40 @@
         }
       ],
       "content": {
-        "table_data": [],
+        "table_data": [
+          {
+            "column_name": "Keyword",
+            "dtype": "object"
+          },
+          {
+            "column_name": "Seed",
+            "dtype": "object"
+          },
+          {
+            "column_name": "Source",
+            "dtype": "object"
+          },
+          {
+            "column_name": "Country",
+            "dtype": "object"
+          },
+          {
+            "column_name": "Autocomplete Position",
+            "dtype": "int64"
+          },
+          {
+            "column_name": "Difficulty",
+            "dtype": "int64"
+          },
+          {
+            "column_name": "Hot Keyword",
+            "dtype": "object"
+          },
+          {
+            "column_name": "Relevancy Score",
+            "dtype": "float64"
+          }
+        ],
         "changes": {
           "selected_columns": [
             "Seed"
@@ -128,7 +161,7 @@
         }
       },
       "node_code": 4,
-      "node_type": "PREPARATION"
+      "node_type": "preparation"
     },
     {
       "id": 1859404365456,
@@ -188,7 +221,9 @@
         }
       ],
       "content": {
-        "selected_columns": []
+        "selected_columns": [
+          "Relevancy Score"
+        ]
       },
       "node_code": 6,
       "node_type": "preparation"
@@ -240,7 +275,72 @@
       "content": {
         "join_type": "inner",
         "mapping_data": [],
-        "selected_columns": []
+        "selected_columns": [
+          {
+            "name": "Autocomplete Position",
+            "source": "L"
+          },
+          {
+            "name": "Country",
+            "source": "L"
+          },
+          {
+            "name": "Difficulty",
+            "source": "L"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "L"
+          },
+          {
+            "name": "Seed",
+            "source": "L"
+          },
+          {
+            "name": "Source",
+            "source": "L"
+          },
+          {
+            "name": "Autocomplete Position",
+            "source": "R"
+          },
+          {
+            "name": "Country",
+            "source": "R"
+          },
+          {
+            "name": "Difficulty",
+            "source": "R"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "Seed",
+            "source": "R"
+          },
+          {
+            "name": "Source",
+            "source": "R"
+          }
+        ]
       },
       "node_code": 2,
       "node_type": "join"

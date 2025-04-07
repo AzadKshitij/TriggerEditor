@@ -1,7 +1,7 @@
 {
     "app_icon":{
-        "path":"",
-        "mode": ""
+        "path":"Icon.ico",
+        "mode": "qimg"
     },
     "splash_screen":{
         "path":"classic.png",

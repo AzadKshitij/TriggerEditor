@@ -100,7 +100,7 @@ class ResourceManager:
         if not path_str:
             return None
 
-        return ResourceManager._res_folder / "resources" / path_str
+        return ResourceManager._res_folder / "resources" / path_str  # type: ignore
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.

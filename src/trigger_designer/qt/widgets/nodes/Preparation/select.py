@@ -80,8 +80,8 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     'dtype_mapping': {}
                 }
 
-            self.table_widget = SelectTableWidget(
-                data=self.table_data, changes=self.changes)
+            self.table_widget = SelectTableWidget(self,
+                                                  data=self.table_data, changes=self.changes)
             self.table_widget.dataChanged.connect(self.handleDataChanged)
             dock_layout.addWidget(self.table_widget)
         else:
@@ -292,8 +292,8 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 class TriggerNode_Select(TriggerNode):
     icon = "node_select"
     node_code = PreparationNodes.SELECT
-    node_title = NodeTypes.PREPARATION
-    node_type = "PREPARATION"
+    node_title = "Select"
+    node_type = NodeTypes.PREPARATION
     content_label_objname = "trigger_node_select"
     style = {}
 

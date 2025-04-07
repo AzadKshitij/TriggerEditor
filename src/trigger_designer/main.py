@@ -43,6 +43,7 @@ def main() -> None:
     name_product = "Trigger Designer"
     app.setApplicationName(name_company)
     app.setApplicationDisplayName(name_product)
+    app.setWindowIcon(QIcon(str(rsm.get_path("app_icon"))))
 
     settings: QSettings = QSettings(name_company, name_product)
     print("🐍 File: trigger_designer/main.py | Line: 48 | main ~ settings",
