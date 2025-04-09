@@ -7,37 +7,56 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 import pandas as pd
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, cast, Union
+
+if TYPE_CHECKING:
+    from nodeeditor.node_scene import Scene
+    import pandas as pd
+    from nodeeditor.node_node import Node
 
 
 class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.formula: str = ''
-        self.formula_text: str = None
-        self.target_column: str = None
+        self.formula_text: Optional[str] = None
+        self.target_column: Optional[str] = None
         self.is_new_column: bool = False
         self.history = self.node.scene.history
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable: str = ''
-        self.incom_data: pd.DataFrame = None
+        self.incom_data: Optional[pd.DataFrame] = None
 
         # pass on variables
-        self.data: pd.DataFrame = None
+        self.data: Optional[pd.DataFrame] = None
         self.variable_name = f'var_formula_{self.id}'
 
-    def initUI(self, parent: Optional[QWidget] = None) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
+    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
-        if self.incom_data is not None:
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
+        if self.incom_data is None:
+            no_data_label = QLabel("No incoming data available")
+            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setStyleSheet("color: gray;")
+            dock_layout.addWidget(no_data_label)
+        # return layout
+        else:
             # Column selection
             column_layout = QHBoxLayout()
             self.column_name = QComboBox()
@@ -61,9 +80,6 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 if index >= 0:
                     self.column_name.setCurrentIndex(index)
 
-            # Connect the activation signal
-            self.column_name.activated.connect(self.handle_column_activation)
-
             column_layout.addWidget(QLabel("Target:"))
             column_layout.addWidget(self.column_name)
 
@@ -75,22 +91,22 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.formula_input.setMinimumHeight(100)
             if self.formula_text:
                 self.formula_input.setPlainText(self.formula_text)
-            self.formula_input.textChanged.connect(self.generate_formula)
+
             formula_layout.addWidget(QLabel("Formula:"))
             formula_layout.addWidget(self.formula_input)
+
+            # Connect the activation signal
+            self.column_name.activated.connect(self.handle_column_activation)
+            self.formula_input.textChanged.connect(self.generate_formula)
 
             # Add layouts
             dock_layout.addLayout(column_layout)
             dock_layout.addLayout(formula_layout)
-            self.recursively_find_widgets(dock_layout)
-        # return layout
-        else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
 
-    def handle_column_activation(self, index) -> None:
+            self.recursively_find_widgets(dock_layout)
+
+    def handle_column_activation(self, index: int) -> None:
+        print(f"handle_column_activation called with index: {index}")
         if self.history.is_restoring_history:
             return
 
@@ -172,7 +188,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 if self.target_column:
                     self.data[self.target_column] = None
 
-    def store_history(self, old_state) -> None:
+    def store_history(self, old_state: dict) -> None:
         new_state = {
             'target_column': self.target_column,
             'formula_text': self.formula_text
@@ -192,14 +208,14 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             self.evaluate.emit()
 
-    def update_column_list(self, new_column) -> None:
+    def update_column_list(self, new_column: str) -> None:
         self.column_name.clear()
         self.column_name.addItem(new_column)
         self.column_name.addItems(self.incom_data.columns)
         self.column_name.addItem("+ add column")
         self.column_name.setCurrentIndex(0)
 
-    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
+    def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         try:
             self.history.is_restoring_history = True
@@ -320,7 +336,7 @@ class TriggerNode_Formula(TriggerNode):
     icon = "node_formula"
     node_code = PreparationNodes.FORMULA
     node_type = NodeTypes.PREPARATION
-    op_title = "Formula"
+    node_title = "Formula"
     content_label_objname = "trigger_node_formula"
     style = {}
 

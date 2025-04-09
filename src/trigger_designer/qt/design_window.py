@@ -184,12 +184,40 @@ class TriggerSubWindow(NodeEditorWidget):
     def onHistoryRestored(self) -> None:
         self.doEvalOutputs()
 
-    def fileLoad(self, filename) -> bool:
+    def fileLoad(self, filename: str) -> bool:
         if super().fileLoad(filename):
+            # self.validateConnections()
             self.doEvalOutputs()
             return True
 
         return False
+
+    def validateConnections(self) -> None:
+        """Validate all edge connections and remove invalid ones"""
+        invalid_edges = []
+
+        # Check all edges in the scene
+        for edge in self.scene.edges:
+            if (edge.start_socket is None or
+                edge.end_socket is None or
+                edge.start_socket.node is None or
+                    edge.end_socket.node is None):
+                invalid_edges.append(edge)
+                continue
+
+            # Validate socket indices
+            start_node = edge.start_socket.node
+            end_node = edge.end_socket.node
+
+            if (edge.start_socket not in start_node.outputs or
+                    edge.end_socket not in end_node.inputs):
+                invalid_edges.append(edge)
+
+        # Remove invalid edges
+        for edge in invalid_edges:
+            if edge in self.scene.edges:
+                self.scene.removeEdge(edge)
+                print(f"Removed invalid edge: {edge}")
 
     def initNewNodeActions(self) -> None:
         self.node_actions = {}

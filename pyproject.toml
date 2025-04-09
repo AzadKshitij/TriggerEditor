@@ -22,6 +22,7 @@ dependencies = [
     "python-dateutil==2.9.0.post0",
     "pytz==2024.2",
     "qtpy==2.4.2",
+    "seaborn>=0.13.2",
     "six==1.17.0",
     "tzdata==2025.1",
 ]
@@ -54,6 +55,7 @@ target-version = "py311"
 [dependency-groups]
 dev = [
     "autotyping>=24.9.0",
+    "faker>=37.1.0",
     "mypy>=1.15.0",
     "pandas-stubs>=2.2.3.250308",
     "pyinstaller>=6.12.0",

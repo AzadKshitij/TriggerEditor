@@ -106,7 +106,7 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QDMNodeIconContentWidget] = None) -> None:
         # super().__init__(graph_node, parent)
         QDMNodeIconContentWidget.__init__(self, node, parent)
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
@@ -129,11 +129,11 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_graph_{self.id}'
 
     @property
-    def node(self) -> Node:
+    def node(self) -> 'TriggerNode':
         return self._node
 
     @node.setter
-    def node(self, value: Node) -> None:
+    def node(self, value: 'TriggerNode') -> None:
         self._node = value
 
     def initUI(self, icon: Optional[QPixmap] = None) -> None:

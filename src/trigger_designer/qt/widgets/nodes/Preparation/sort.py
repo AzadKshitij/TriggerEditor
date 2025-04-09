@@ -1,6 +1,6 @@
 from functools import partial
 import pprint
-from typing import Optional, final
+from typing import Dict, Optional, Union, final
 from qtpy.QtWidgets import (QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget,
                             QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout)
 from qtpy.QtGui import QPixmap
@@ -17,12 +17,12 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.sort_data: list[dict] = []
-        self.sort_rows = []
-        self.row_widgets = {}  # Store references to row widgets with their indices
+        # Store references to row widgets with their indices
+        self.row_widgets: Dict[int, Dict] = {}
         self.next_row_id = 0   # Unique identifier for each row
 
         self.history = self.node.scene.history
@@ -30,14 +30,22 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # incoming variables
         self.incoming_variable: str = ''
-        self.incom_data: pd.DataFrame = None
+        self.incom_data: Optional[pd.DataFrame] = None
 
         # pass on variables
-        self.data = []
+        self.data: Optional[pd.DataFrame] = None
         self.variable_name = f'var_sort_{self.id}'
 
-    def initUI(self, parent: Optional[QWidget] = None) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
+    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
@@ -83,7 +91,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         print("👴👉 8")
         return dock_layout
 
-    def add_sort_row(self, restore_data=None) -> None:
+    def add_sort_row(self, restore_data: Optional[dict] = None) -> None:
         print("👴👉 1.1.1")
         if not restore_data and not self.history.is_restoring_history:
             # Store old state before adding new row
@@ -162,7 +170,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             #     'order': order_selector.currentText()
             # })
 
-    def on_column_changed(self, row_id, text: str) -> None:
+    def on_column_changed(self, row_id: int, text: str) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -187,7 +195,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.store_history(old_state, new_state)
             self.evaluate.emit()
 
-    def on_order_changed(self, row_id, text: str) -> None:
+    def on_order_changed(self, row_id: int, text: str) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -213,7 +221,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.store_history(old_state, new_state)
             self.evaluate.emit()
 
-    def remove_sort_row(self, row_id) -> None:
+    def remove_sort_row(self, row_id: int) -> None:
         """Remove a sort row with history tracking"""
         if self.history.is_restoring_history or row_id not in self.row_widgets:
             return
@@ -262,7 +270,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.store_history(old_state, new_state)
         self.evaluate.emit()
 
-    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
+    def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         try:
             self.history.is_restoring_history = True
@@ -316,7 +324,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         finally:
             self.history.is_restoring_history = False
 
-    def store_history(self, old_state, new_state) -> None:
+    def store_history(self, old_state: dict, new_state: dict) -> None:
         """Store history data for undo/redo only if states are different"""
         if self.history.is_restoring_history:
             return

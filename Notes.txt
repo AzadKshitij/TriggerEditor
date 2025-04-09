@@ -1,1 +1,9 @@
 1. Can add default code for all the different types of libraries.
+2. Will add different styles for buttons using setObjectName to set ID for the button and then use style sheet to set the style for the button.
+3. 
+4.
+5.
+6.
+7.
+8.
+9.

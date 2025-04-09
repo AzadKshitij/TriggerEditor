@@ -15,11 +15,11 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QDMNodeIconContentWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         # self.column: str = None
-        self.column: str = None
+        self.column: Optional[str] = None
         # self.column: str = ""
         self.operation: str = "Equals"
         self.value: Union[str, float, int] = ""
@@ -37,82 +37,80 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_t_filter_{self.id}'
         self.f_variable_name = f'var_f_filter_{self.id}'
 
-    def initUI(self, parent: Optional[QWidget] = None) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
+    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
-
-        main_layout = QVBoxLayout()
-
-        # Create a label for no data message
-        self.no_data_label = QLabel("No incoming data available")
-        self.no_data_label.setAlignment(Qt.AlignCenter)
-        self.no_data_label.setStyleSheet("color: gray;")
-
-        # Create filter container
-        filter_layout = QHBoxLayout()
-
-        # Column selector combobox
-        self.column_selector = QComboBox()
-        self.column_selector.setObjectName("columnSelector")
-        self.column_selector.setMinimumWidth(100)
-
-        # Operation selector combobox
-        self.operation_selector = QComboBox()
-        self.operation_selector.setObjectName("operationSelector")
-        self.operation_selector.addItems([
-            "Equals",
-            "Not Equals",
-            "Contains",
-            "Less Than",
-            "Greater Than",
-            "Less Than or Equal",
-            "Greater Than or Equal"
-        ])
-
-        # Value input line edit
-        self.value_input = QLineEdit()
-        self.value_input.setObjectName("valueInput")
-        self.value_input.setPlaceholderText("Enter filter value...")
-
-        # Initialize default values after creating widgets
-        # self.column = self.column_selector.currentText()
-        # self.operation = self.operation_selector.currentText()
-        # self.value = self.value_input.text()
-
-        self.update_columns()
-
-        # Add widgets to filter layout
-        main_layout.addWidget(self.column_selector)
-        main_layout.addWidget(self.operation_selector)
-        main_layout.addWidget(self.value_input)
-
-        main_layout.addWidget(self.no_data_label)
-
-        main_layout.addStretch()
-
-        main_layout.addLayout(filter_layout)
-        dock_layout.addLayout(main_layout)
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
 
         if self.incom_data is None:
-            self.no_data_label.show()
-            self.column_selector.hide()
-            self.operation_selector.hide()
-            self.value_input.hide()
+            no_data_label = QLabel("No incoming data available")
+            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setStyleSheet("color: gray;")
+            dock_layout.addWidget(no_data_label)
+            # return layout
         else:
-            self.no_data_label.hide()
-            self.column_selector.show()
-            self.operation_selector.show()
-            self.value_input.show()
+            main_layout = QVBoxLayout()
 
-        self.recursively_find_widgets(dock_layout)
+            # Create filter container
+            filter_layout = QHBoxLayout()
 
-        # Connect signals
-        self.column_selector.currentTextChanged.connect(self.on_filter_changed)
-        self.operation_selector.currentTextChanged.connect(
-            self.on_filter_changed)
-        self.value_input.textChanged.connect(self.on_filter_changed)
+            # Column selector combobox
+            self.column_selector = QComboBox()
+            self.column_selector.setObjectName("columnSelector")
+            self.column_selector.setMinimumWidth(100)
+
+            # Operation selector combobox
+            self.operation_selector = QComboBox()
+            self.operation_selector.setObjectName("operationSelector")
+            self.operation_selector.addItems([
+                "Equals",
+                "Not Equals",
+                "Contains",
+                "Less Than",
+                "Greater Than",
+                "Less Than or Equal",
+                "Greater Than or Equal"
+            ])
+
+            # Value input line edit
+            self.value_input = QLineEdit()
+            self.value_input.setObjectName("valueInput")
+            self.value_input.setPlaceholderText("Enter filter value...")
+
+            # Initialize default values after creating widgets
+            # self.column = self.column_selector.currentText()
+            # self.operation = self.operation_selector.currentText()
+            # self.value = self.value_input.text()
+
+            self.update_columns()
+
+            # Add widgets to filter layout
+            main_layout.addWidget(self.column_selector)
+            main_layout.addWidget(self.operation_selector)
+            main_layout.addWidget(self.value_input)
+
+            main_layout.addStretch()
+
+            main_layout.addLayout(filter_layout)
+            dock_layout.addLayout(main_layout)
+
+            self.recursively_find_widgets(dock_layout)
+
+            # Connect signals
+            self.column_selector.currentTextChanged.connect(
+                self.on_filter_changed)
+            self.operation_selector.currentTextChanged.connect(
+                self.on_filter_changed)
+            self.value_input.textChanged.connect(self.on_filter_changed)
 
         # return layout
 

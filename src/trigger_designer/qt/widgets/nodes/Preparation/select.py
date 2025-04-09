@@ -10,7 +10,12 @@ from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.widgets.select_table_widget import SelectTableWidget
-from typing import Optional
+from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, cast, Union
+
+if TYPE_CHECKING:
+    from nodeeditor.node_scene import Scene
+    import pandas as pd
+    from nodeeditor.node_node import Node
 
 
 class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
@@ -29,7 +34,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.old_data: dict = []
@@ -44,8 +49,16 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: pd.DataFrame = None
         self.variable_name: str = f'var_select_{self.id}'
 
-    def initUI(self) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
+    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     # def set_table_data(self):

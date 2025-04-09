@@ -1,0 +1,3 @@
+Python version: 3.11.4 (tags/v3.11.4:d2340ef, Jun  7 2023, 05:45:37) [MSC v.1934 64 bit (AMD64)]
+Script run time: 2025-04-08 18:54:50.447427
+Rows in final dataset: 2000
