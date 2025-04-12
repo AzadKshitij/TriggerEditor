@@ -15,7 +15,7 @@ class LogLevel(StrEnum):
 
 
 # Define your custom log levels
-logger.level(LogLevel.SUCCESS, 65, color="<green>", icon="✅")
+logger.level(LogLevel.SUCCESS, 65, color="<green>")
 logger.level(LogLevel.ENGINE, 15, color="<magenta>")
 logger.level(LogLevel.INFO, 25, color="<blue>")
 logger.level(LogLevel.WARNING, 35, color="<yellow>")

@@ -34,11 +34,7 @@ class NodeExecutor:
         if not self.logger:
             self.logger = Logger()
         try:
-            # code = code  # Each node should implement a get_code() method
-            # Execute in shared context
             exec(code, self.execution_context, local_variables)
-            # threading.Thread(target=lambda: exec(
-            #     code, self.execution_context), daemon=True).start()
             self.logger.log(
                 f" Executed Node {node.__class__.__name__}", "debug")
 

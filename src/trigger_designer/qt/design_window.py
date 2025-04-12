@@ -10,10 +10,11 @@ from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
 from nodeeditor.utils import dumpException
 
 from collections import deque
+from loguru import logger
 
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
-from trigger_designer.qt.helpers.logger import Logger
+from trigger_designer.qt.helpers.logger import Logger, LogLevel
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 from trigger_designer.qt.widgets.node_group import NodeGroup
 
@@ -73,7 +74,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
-        print("🐍 File: TriggerEditor/trigger_sub_window.py | Line: 74 | zoomIn ~ zoom_factor", zoom_factor)
+        logger.log(LogLevel.SUCCESS, f"zoomIn ~ zoom_factor {zoom_factor}")
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 
