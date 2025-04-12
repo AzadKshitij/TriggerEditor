@@ -18,6 +18,7 @@ from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.docks.nodes_list import NodesDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.models.settings_panel import SettingsDialog
+from trigger_designer.qt.helpers.signal_handler import SignalHandler
 
 
 # Enabling edge validators
@@ -91,7 +92,7 @@ class TriggerWindow(NodeEditorWindow):
         # Docks
         self.createNodesDock()
         self.createConfigDock()
-        self.createResultDock()
+        # self.createResultDock()
 
         self.createActions()
         self.createMenus()
@@ -326,15 +327,16 @@ class TriggerWindow(NodeEditorWindow):
         self.configDock = ConfigDock(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
 
-    def createResultDock(self) -> None:
-        self.resultDock = ResultDock(self)
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
+    # def createResultDock(self) -> None:
+    #     self.resultDock = ResultDock(self)
+    #     self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
 
     def createStatusBar(self) -> None:
         self.statusBar().showMessage("Ready")
 
     def createMdiChild(self, child_widget=None):
-        nodeeditor = child_widget if child_widget is not None else TriggerSubWindow()
+        nodeeditor = child_widget if child_widget is not None else TriggerSubWindow(
+            self)
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
         # nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
@@ -345,13 +347,17 @@ class TriggerWindow(NodeEditorWindow):
         nodeeditor.itemSelected.connect(self.onNodeSelected)
         return subwnd
 
-    def onSubWindowActivated(self, sub_window) -> None:
+    def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
+        print("Subwindow activated")
         if sub_window:
             widget = sub_window.widget()
             if isinstance(widget, TriggerSubWindow):
-                widget.logger.set_result_dock(self.resultDock)
+                SignalHandler.instance().emit_sub_window_activated(widget.design_window_id)
 
-    def onSubWndClose(self, widget, event) -> None:
+                # widget.logger.set_result_dock(
+                #     self.resultDock, widget.design_window_id)
+
+    def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         existing = self.findMdiChild(widget.filename)
         self.mdiArea.setActiveSubWindow(existing)
 

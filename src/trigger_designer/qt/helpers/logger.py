@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict, List, Optional
 from enum import StrEnum
 from loguru import logger
 import queue
@@ -10,6 +10,7 @@ import loguru
 
 if TYPE_CHECKING:
     from trigger_designer.qt.docks.result import ResultDock
+    from trigger_designer.qt.design_window import TriggerSubWindow
 
 
 class LogLevel(StrEnum):
@@ -22,29 +23,65 @@ class LogLevel(StrEnum):
 
 
 class Logger:
-    def __init__(self) -> None:
-        self.logs: list[dict] = list()
-        self.result_dock: 'ResultDock'
-        self.log_queue: queue.Queue[loguru.Record] = queue.Queue()
-        self.add_log_levels()
+
+    _log_levels_added = False
+    # _thread_local = threading.local()
+
+    def __init__(self, parent: 'TriggerSubWindow') -> None:
+        self.logs: Dict[str, List[dict]] = {}
+        self.design_window_id: Optional[str] = "global"
+        # self.result_dock: 'ResultDock' = parent.result_dock
+        self.ensure_log_levels()
         logger.add(self.custom_log_sink, format="{message}")
 
-    def start_logging(self):
-        self.viewer_thread = threading.Thread(
-            target=self.log_viewer_thread, daemon=True)
-        self.viewer_thread.start()
+    @classmethod
+    def ensure_log_levels(cls):
+        """Ensure custom log levels are added only once."""
+        if not cls._log_levels_added:
+            cls.add_log_levels()
+            cls._log_levels_added = True
+
+    def set_context(self, design_window_id: str) -> None:
+        """Set the current design_window context."""
+        logger.info(
+            f"Setting context to design_window_id: {design_window_id}")
+        self.design_window_id = design_window_id
+
+    def clear_context(self) -> None:
+        """Clear the current design_window context."""
+        self.design_window_id = None
+
+    # @classmethod
+    # def get_context(cls) -> str:
+    #     """Get the current design_window context."""
+    #     return getattr(cls._thread_local, "design_window_id", "global")
 
     def custom_log_sink(self, message: 'loguru.Message') -> None:
         """ Custom sink function to update the log viewer UI """
         # self.log_queue.put(message.record)
-        self.log(message.record['message'], message.record['level'].name)
+        # self.log(message.record['message'], message.record['level'].name)
+        if not self.design_window_id == "global":
+            self.log(self.design_window_id,
+                     message.record['message'], message.record['level'].name)
 
-    def set_result_dock(self, result_dock: 'ResultDock') -> None:
+    def set_result_dock(self, result_dock: 'ResultDock', desing_window_id: str) -> None:
         self.result_dock = result_dock
+        self.result_dock.current_design_window_id = desing_window_id
 
-    def log(self, message: str, log_type: str = 'info') -> None:
-        if self.result_dock:
-            self.result_dock.add_log(message, log_type)
+    def log(self, design_window_id: str, message: str, log_type: str) -> None:
+        """Log a message for a specific design_window."""
+        print(
+            f"Logging message: {message} for design_window_id: {design_window_id}")
+        # logger.warning(
+        #     f"Logging message: {message} for design_window_id: {design_window_id}")
+        if design_window_id not in self.logs:
+            self.logs[design_window_id] = []
+        self.logs[design_window_id].append({
+            "message": message,
+            "type": log_type
+        })
+        # if self.result_dock:
+        self.result_dock.add_log(design_window_id, message, log_type)
 
     def get_logs(self):
         return "\n".join([f"[{log['type'].upper()}] {log['message']}" for log in self.logs])
@@ -54,15 +91,19 @@ class Logger:
         if self.result_dock:
             self.result_dock.clear_logs()
 
-    def add_log_levels(self):
-
-        # Define your custom log levels
-        logger.level(LogLevel.SUCCESS, 65, color="<green>", icon="✅")
-        logger.level(LogLevel.ENGINE, 15, color="<magenta>")
-        logger.level(LogLevel.INFO, 25, color="<blue>")
-        logger.level(LogLevel.WARNING, 35, color="<yellow>")
-        logger.level(LogLevel.ERROR, 45, color="<red>")
-        logger.level(LogLevel.CONVERSION, 55, color="<red><bold>")
+    @staticmethod
+    def add_log_levels():
+        """Define custom log levels."""
+        try:
+            logger.level(LogLevel.SUCCESS, 65, color="<green>", icon="✅")
+            logger.level(LogLevel.ENGINE, 15, color="<magenta>")
+            logger.level(LogLevel.INFO, 25, color="<blue>")
+            logger.level(LogLevel.WARNING, 35, color="<yellow>")
+            logger.level(LogLevel.ERROR, 45, color="<red>")
+            logger.level(LogLevel.CONVERSION, 55, color="<red><bold>")
+        except ValueError as e:
+            # Log levels already exist, ignore the error
+            print(f"Log levels already defined: {e}")
 
     def log_viewer_thread(self):
 

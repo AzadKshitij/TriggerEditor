@@ -1,5 +1,5 @@
 import time
-from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent
+from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
@@ -14,12 +14,15 @@ from loguru import logger
 
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
+from trigger_designer.qt.docks.result import ResultDock
 from trigger_designer.qt.helpers.logger import Logger, LogLevel
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 from trigger_designer.qt.widgets.node_group import NodeGroup
 
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from trigger_designer.qt.main_window import TriggerWindow
 DEBUG = False
 DEBUG_CONTEXT = False
 
@@ -27,10 +30,23 @@ DEBUG_CONTEXT = False
 class TriggerSubWindow(NodeEditorWidget):
     itemSelected = Signal(object)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: Union[QWidget, 'TriggerWindow'] = None) -> None:
         super().__init__(parent)
+        print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
-        self.logger: Logger = Logger()
+        self.logger: Logger = Logger(self)
+        self.design_window_id = str(id(self))
+        self.logger.set_context(self.design_window_id)
+        self.resultDock = ResultDock(self)
+
+        # Create and add a dock widget
+        properties_widget = QWidget()
+        self.properties_dock = self.add_dock_widget(
+            "Result",
+            self.resultDock,
+            Qt.DockWidgetArea.BottomDockWidgetArea
+        )
+
         self._last_scale: float = 1.0
 
         self.setTitle()
@@ -71,6 +87,10 @@ class TriggerSubWindow(NodeEditorWidget):
         self.fit_button.setFixedSize(100, 30)
         self.fit_button.move(340, 10)
         self.fit_button.clicked.connect(self.fitView)
+
+    # def activateWindow(self) -> None:
+    #     super().activateWindow()
+    #     self.logger.set_context(self.design_window_id)
 
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
@@ -310,9 +330,10 @@ class TriggerSubWindow(NodeEditorWidget):
     def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)
 
-    def closeEvent(self, event) -> None:
+    def closeEvent(self, event: QCloseEvent) -> None:
         for callback in self._close_event_listeners:
             callback(self, event)
+        self.logger.clear_context()
 
     def onDragEnter(self, event) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
