@@ -274,6 +274,8 @@ class TriggerWindow(NodeEditorWindow):
             dumpException(e)
 
     def updateWindowMenu(self) -> None:
+        if not self.windowMenu:
+            return
         self.windowMenu.clear()
 
         toolbar_nodes = self.windowMenu.addAction("Nodes Toolbar")
@@ -337,25 +339,29 @@ class TriggerWindow(NodeEditorWindow):
     def createMdiChild(self, child_widget=None):
         nodeeditor = child_widget if child_widget is not None else TriggerSubWindow(
             self)
+        # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
         # nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         # nodeeditor.scene.addItemsDeselectedListener(self.updateEditMenu)
+        # Connect signals
         nodeeditor.scene.history.addHistoryModifiedListener(
             self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
         nodeeditor.itemSelected.connect(self.onNodeSelected)
+
         return subwnd
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
-        print("Subwindow activated")
-        if sub_window:
-            widget = sub_window.widget()
-            if isinstance(widget, TriggerSubWindow):
-                SignalHandler.instance().emit_sub_window_activated(widget.design_window_id)
+        # print("Subwindow activated")
+        # if sub_window:
+        # widget = sub_window.widget()
+        # if isinstance(widget, TriggerSubWindow):
+        # SignalHandler.instance().emit_sub_window_activated(widget.design_window_id)
 
-                # widget.logger.set_result_dock(
-                #     self.resultDock, widget.design_window_id)
+        # widget.logger.set_result_dock(
+        #     self.resultDock, widget.design_window_id)
+        pass
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         existing = self.findMdiChild(widget.filename)

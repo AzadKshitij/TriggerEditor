@@ -3,8 +3,9 @@ from typing import Any, Optional
 
 from loguru import logger
 from PIL import Image, ImageQt
-from qtpy.QtCore import QSettings
-from qtpy.QtGui import QPixmap, QImage
+from qtpy.QtCore import QSettings, Qt
+from qtpy.QtGui import QPixmap, QImage, QPainter
+from qtpy.QtSvg import QSvgRenderer
 
 import orjson as json
 
@@ -127,16 +128,34 @@ class ResourceManager:
                 file_path = ResourceManager._res_folder / \
                     "resources" / res.get("path", "")
 
-                if res.get("mode") in ["r", "rb"]:
-                    with open(
-                        (file_path),
-                        res.get("mode", "r"),
-                    ) as f:
-                        data = f.read()
-                        if res.get("mode") == 'rb':
-                            data = bytes(data)
-                        ResourceManager._cache[id] = data
-                        return data
+                # if res.get("mode") in ["r", "rb"]:
+                #     with open(
+                #         (file_path),
+                #         res.get("mode", "r"),
+                #     ) as f:
+                #         data = f.read()
+                #         if res.get("mode") == 'rb':
+                #             data = bytes(data)
+                #             # Convert this svg image into qpixmap
+                #             qim = ImageQt.ImageQt(data)
+                #             data = QPixmap.fromImage(qim)
+                #             # data = QImage(data)
+                #         ResourceManager._cache[id] = data
+                #         return data
+                if res.get("mode") == 'rb':
+                    # Create QPixmap for SVG
+                    renderer = QSvgRenderer(str(file_path))
+                    pixmap = QPixmap(renderer.defaultSize())
+                    # Fill with transparent background
+                    pixmap.fill(Qt.GlobalColor.transparent)
+
+                    # Render SVG to pixmap
+                    painter = QPainter(pixmap)
+                    renderer.render(painter)
+                    painter.end()
+
+                    ResourceManager._cache[id] = pixmap
+                    return pixmap
                 elif res and res.get("mode") == "pil":
                     data = Image.open(file_path)
                     ResourceManager._cache[id] = data

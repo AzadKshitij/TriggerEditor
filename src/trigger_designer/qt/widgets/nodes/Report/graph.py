@@ -279,11 +279,11 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(ReportNodes.GRAPH, NodeTypes.REPORT)
 class TriggerNode_Graph(TriggerNode):
-    icon = "node_file_input"
+    icon = "node_graph"
     node_code = ReportNodes.GRAPH
     node_type = NodeTypes.REPORT
     node_title = "Graph"
-    content_label_objname = "trigger_node_node_title"
+    content_label_objname = "trigger_node_graph"
     style = {}
 
     def __init__(self, scene: 'Scene') -> None:

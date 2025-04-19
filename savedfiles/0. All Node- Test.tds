@@ -6,8 +6,8 @@
     {
       "id": 1859404355984,
       "title": "File Input",
-      "pos_x": -856.9892578124997,
-      "pos_y": 112.84667968749991,
+      "pos_x": -775.7392578124995,
+      "pos_y": 116.59667968749989,
       "inputs": [],
       "outputs": [
         {
@@ -27,8 +27,8 @@
     {
       "id": 1859404365136,
       "title": "Filter",
-      "pos_x": -500.4882812499998,
-      "pos_y": -247.1923828124999,
+      "pos_x": -499.8318757662674,
+      "pos_y": -193.08049691748755,
       "inputs": [
         {
           "id": 1859404360080,
@@ -116,40 +116,7 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "column_name": "Keyword",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Seed",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Source",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Country",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Autocomplete Position",
-            "dtype": "int64"
-          },
-          {
-            "column_name": "Difficulty",
-            "dtype": "int64"
-          },
-          {
-            "column_name": "Hot Keyword",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Relevancy Score",
-            "dtype": "float64"
-          }
-        ],
+        "table_data": [],
         "changes": {
           "selected_columns": [
             "Seed"
@@ -166,8 +133,8 @@
     {
       "id": 1859404365456,
       "title": "Sort",
-      "pos_x": -506.5917968749997,
-      "pos_y": 262.45117187499994,
+      "pos_x": -512.4799109799874,
+      "pos_y": 228.11896570580097,
       "inputs": [
         {
           "id": 1859404212816,
@@ -200,8 +167,8 @@
     {
       "id": 1859404409104,
       "title": "Unique",
-      "pos_x": -503.5400390624997,
-      "pos_y": 424.1943359374997,
+      "pos_x": -513.5400390624998,
+      "pos_y": 362.8769696312075,
       "inputs": [
         {
           "id": 1859404410960,
@@ -231,8 +198,8 @@
     {
       "id": 1691577709904,
       "title": "Join",
-      "pos_x": -505.37109374999983,
-      "pos_y": 576.1718749999998,
+      "pos_x": -516.7661867047296,
+      "pos_y": 500.95670392607644,
       "inputs": [
         {
           "id": 1691576271504,
@@ -348,8 +315,8 @@
     {
       "id": 1691579476112,
       "title": "Graph",
-      "pos_x": 34.179687499999986,
-      "pos_y": 224.60937499999991,
+      "pos_x": -200.33666931756727,
+      "pos_y": 113.94808627591263,
       "inputs": [
         {
           "id": 1691579310992,

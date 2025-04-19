@@ -1,5 +1,5 @@
 import time
-from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent
+from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent, QDragEnterEvent, QKeyEvent
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
@@ -34,18 +34,9 @@ class TriggerSubWindow(NodeEditorWidget):
         super().__init__(parent)
         print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
-        self.logger: Logger = Logger(self)
-        self.design_window_id = str(id(self))
-        self.logger.set_context(self.design_window_id)
-        self.resultDock = ResultDock(self)
-
-        # Create and add a dock widget
-        properties_widget = QWidget()
-        self.properties_dock = self.add_dock_widget(
-            "Result",
-            self.resultDock,
-            Qt.DockWidgetArea.BottomDockWidgetArea
-        )
+        # self.logger: Logger = Logger(self)
+        # self.design_window_id = str(id(self))
+        # self.logger.set_context(self.design_window_id)
 
         self._last_scale: float = 1.0
 
@@ -94,7 +85,6 @@ class TriggerSubWindow(NodeEditorWidget):
 
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
-        logger.log(LogLevel.SUCCESS, f"zoomIn ~ zoom_factor {zoom_factor}")
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 
@@ -130,7 +120,7 @@ class TriggerSubWindow(NodeEditorWidget):
             rect = rect.adjusted(-padding, -padding, padding, padding)
 
             # Fit the view while preserving current scale
-            self.view.fitInView(rect, Qt.KeepAspectRatio)
+            self.view.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
             self._last_scale = self.view.transform().m11()  # Store current scale
             self.view.zoom = self._last_scale*10
             self.view.centerOn(rect.center())
@@ -172,13 +162,13 @@ class TriggerSubWindow(NodeEditorWidget):
     #     self.view.centerOn(rect.center())
     #     print("⌚⌛Fit View Time FitView2: ", time.time() - start_time)
 
-    def keyPressEvent(self, event) -> None:
+    def keyPressEvent(self, event: QKeyEvent) -> None:
         # Check for Shift+A
-        if event.key() == Qt.Key_A and event.modifiers() == Qt.ShiftModifier:
+        if event.key() == Qt.Key.Key_A and event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
             # Get the cursor position and map it to scene coordinates
             cursor_pos = self.mapFromGlobal(self.cursor().pos())
             self.showNodeContextMenu(cursor_pos)
-        if event.key() == Qt.Key_P and event.modifiers() == Qt.ShiftModifier:
+        if event.key() == Qt.Key.Key_P and event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
             print()
             print(
                 "------------------------------------------------------------------------------")
@@ -330,12 +320,12 @@ class TriggerSubWindow(NodeEditorWidget):
     def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)
 
-    def closeEvent(self, event: QCloseEvent) -> None:
-        for callback in self._close_event_listeners:
-            callback(self, event)
-        self.logger.clear_context()
+    # def closeEvent(self, event: QCloseEvent) -> None:
+    #     for callback in self._close_event_listeners:
+    #         callback(self, event)
+    #     self.logger.clear_context()
 
-    def onDragEnter(self, event) -> None:
+    def onDragEnter(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             event.acceptProposedAction()
         else:

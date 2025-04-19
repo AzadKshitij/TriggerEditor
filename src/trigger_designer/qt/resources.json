@@ -18,44 +18,50 @@
     
     
     "node_file_input":{
-        "path":"qt/images/node_icons/Input/File Input.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Input/File Input.svg",
+        "mode": "rb"
     },
     "node_file_output":{
-        "path":"qt/images/node_icons/Input/File Output.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Input/File Output.svg",
+        "mode": "rb"
     },
 
 
 
     "node_filter":{
-        "path":"qt/images/node_icons/Preparation/Filter.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Preparation/Filter.svg",
+        "mode": "rb"
     },
     "node_formula":{
-        "path":"qt/images/node_icons/Preparation/Formula.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Preparation/Formula.svg",
+        "mode": "rb"
     },
     "node_select":{
-        "path":"qt/images/node_icons/Preparation/Select.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Preparation/Select.svg",
+        "mode": "rb"
     },
     "node_sort":{
-        "path":"qt/images/node_icons/Preparation/Sort.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Preparation/Sort.svg",
+        "mode": "rb"
     },
     "node_unique":{
-        "path":"qt/images/node_icons/Preparation/Unique.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Preparation/Unique.svg",
+        "mode": "rb"
     },
     
     
     "node_join":{
-        "path":"qt/images/node_icons/Join/Join.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Join/Join.svg",
+        "mode": "rb"
     },
     "node_append":{
-        "path":"qt/images/node_icons/Join/Append.png",
-        "mode": "qpixmap"
+        "path":"qt/images/node_icons/Join/Append.svg",
+        "mode": "rb"
+    },
+    
+
+    "node_graph":{
+        "path":"qt/images/node_icons/Report/Graph.svg",
+        "mode": "rb"
     }
 }
