@@ -162,7 +162,7 @@ class TriggerSubWindow(NodeEditorWidget):
     #     self.view.centerOn(rect.center())
     #     print("⌚⌛Fit View Time FitView2: ", time.time() - start_time)
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+    def keyPressEvent(self, event: Optional[QKeyEvent]) -> None:
         # Check for Shift+A
         if event.key() == Qt.Key.Key_A and event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
             # Get the cursor position and map it to scene coordinates
@@ -335,7 +335,8 @@ class TriggerSubWindow(NodeEditorWidget):
     def onDrop(self, event: QDropEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             eventData = event.mimeData().data(LISTBOX_MIMETYPE)
-            dataStream = QDataStream(eventData, QIODevice.ReadOnly)
+            dataStream = QDataStream(
+                eventData, QIODevice.OpenModeFlag.ReadOnly)
             pixmap = QPixmap()
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
@@ -366,7 +367,7 @@ class TriggerSubWindow(NodeEditorWidget):
             except Exception as e:
                 dumpException(e)
 
-            event.setDropAction(Qt.MoveAction)
+            event.setDropAction(Qt.DropAction.MoveAction)
             event.accept()
         else:
             # print(" ... drop ignored, not requested format '%s'" % LISTBOX_MIMETYPE)

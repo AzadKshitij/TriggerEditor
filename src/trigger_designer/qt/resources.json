@@ -28,6 +28,10 @@
 
 
 
+    "node_cleanser":{
+        "path":"qt/images/node_icons/Preparation/Cleansing.svg",
+        "mode": "rb"
+    },
     "node_filter":{
         "path":"qt/images/node_icons/Preparation/Filter.svg",
         "mode": "rb"

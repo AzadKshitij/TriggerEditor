@@ -14,8 +14,8 @@ from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, 
 
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
-    import pandas as pd
     from nodeeditor.node_node import Node
+    import pandas as pd
 
 
 class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
@@ -37,16 +37,16 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
-        self.old_data: dict = []
+        # self.old_data: dict = []
         self.table_data: list = []
         self.history = self.node.scene.history
 
         # incoming variables
         self.incoming_variable: str = ''
-        self.incom_data: pd.DataFrame = None
+        self.incom_data: Optional[pd.DataFrame] = None
 
         # pass on variables
-        self.data: pd.DataFrame = None
+        self.data: Optional[pd.DataFrame] = None
         self.variable_name: str = f'var_select_{self.id}'
 
     @property
@@ -61,19 +61,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
-    # def set_table_data(self):
-    #     if self.incom_data:
-    #         self.table_data = [
-    #             {
-    #                 'column_name': col,
-    #                 'dtype': self.incom_data[col].dtype.name
-    #             }
-    #             for col in self.incom_data.columns
-    #         ]
-    #         print(
-    #             "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self.node._is_invalid)
-
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
             if not self.table_data:
                 self.table_data = [

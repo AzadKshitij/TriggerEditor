@@ -57,7 +57,7 @@
       "content": {
         "column": "Keyword",
         "operation": "Equals",
-        "value": ""
+        "value": "Kid"
       },
       "node_code": 2,
       "node_type": "preparation"
@@ -343,6 +343,33 @@
       },
       "node_code": 3,
       "node_type": "report"
+    },
+    {
+      "id": 2405758025360,
+      "title": "Cleansing",
+      "pos_x": -303.0,
+      "pos_y": -237.0,
+      "inputs": [
+        {
+          "id": 2405752443024,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2405762403984,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {},
+      "node_code": 1,
+      "node_type": "preparation"
     }
   ],
   "edges": [
@@ -393,6 +420,12 @@
       "edge_type": 5,
       "start": 1859377780624,
       "end": 1691577704656
+    },
+    {
+      "id": 2405762273232,
+      "edge_type": 5,
+      "start": 1859404357776,
+      "end": 2405752443024
     }
   ]
 }

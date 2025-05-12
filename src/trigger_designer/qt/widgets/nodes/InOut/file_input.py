@@ -44,6 +44,14 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: pd.DataFrame = pd.DataFrame()
         self.variable_name = f'var_file_input_{self.id}'
 
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
     def initUI(self, _icon: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         # icon = QPixmap(
@@ -107,7 +115,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def openFileDialog(self) -> None:
         '''Open CSV File", "", "CSV Files (*.csv);;'''
-        options = QFileDialog.Options()
+        options = QFileDialog.options()
         fileName, _ = QFileDialog.getOpenFileName(self.parent(),
                                                   "Open CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
         if fileName:

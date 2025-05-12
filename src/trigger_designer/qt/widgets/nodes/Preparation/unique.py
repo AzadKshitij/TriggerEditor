@@ -38,7 +38,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
         header_label = QLabel("Unique")
         header_label.setObjectName("header_label")
 
