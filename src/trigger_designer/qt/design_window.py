@@ -34,7 +34,7 @@ class TriggerSubWindow(NodeEditorWidget):
         super().__init__(parent)
         print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
-        # self.logger: Logger = Logger(self)
+        self.logger: Logger = Logger(self)
         # self.design_window_id = str(id(self))
         # self.logger.set_context(self.design_window_id)
 
@@ -603,7 +603,8 @@ class TriggerSubWindow(NodeEditorWidget):
         connections = self.getNodeConnections()
         sorted_nodes = self.topologicalSort(connections)
         node_data = {}
-        executor = NodeExecutor(self.logger)
+        # executor = NodeExecutor()
+        executor = NodeExecutor()
 
         # Reset all node borders
         for node in self.getAllNodes():
@@ -629,9 +630,9 @@ class TriggerSubWindow(NodeEditorWidget):
             stdoutput, local_variables = executor.execute_node(node)
             print(":::::::::::::::::::::::::::::::::")
             print(
-                "🐍 File: qt/design_window.py:572 | executeWorkflow ~ stdoutput", stdoutput)
+                "🐍 File: qt/design_window.py:633 | executeWorkflow ~ stdoutput", stdoutput)
             print(
-                "🐍 File: qt/design_window.py:572 | executeWorkflow ~ local_variables", local_variables)
+                "🐍 File: qt/design_window.py:635 | executeWorkflow ~ local_variables", local_variables)
             print(":::::::::::::::::::::::::::::::::")
             node.grNode.setPenExecuted()
             node.grNode.update()

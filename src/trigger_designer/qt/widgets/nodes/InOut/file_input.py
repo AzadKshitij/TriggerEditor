@@ -115,7 +115,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def openFileDialog(self) -> None:
         '''Open CSV File", "", "CSV Files (*.csv);;'''
-        options = QFileDialog.options()
+        options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(self.parent(),
                                                   "Open CSV File", "", "CSV Files (*.csv);;All Files (*)", options=options)
         if fileName:
@@ -171,6 +171,8 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         code_lines = []
         code_lines.append(f"import pandas as pd")
+        code_lines.append(
+            f"from trigger_designer.core.utils.cleansing_util import DataCleansing, CleansingStats, NullStrategy")
         code_lines.append(
             f"{self.variable_name} = pd.read_csv('{self.filePath}')")
 

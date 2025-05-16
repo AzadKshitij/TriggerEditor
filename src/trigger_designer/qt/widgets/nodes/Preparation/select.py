@@ -227,15 +227,15 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if hasattr(self, 'table_widget'):
             self.table_widget.update_from_changes(self.changes)
 
-    def is_same_column(self) -> bool:
-        if self.old_columns.keys() == self.incoming_columns:
-            return True
-        else:
-            # getting missing columns
-            missing_columns = set(self.old_columns.keys()) - set(
-                self.incoming_columns)
+    # def is_same_column(self) -> bool:
+    #     if self.old_columns.keys() == self.incoming_columns:
+    #         return True
+    #     else:
+    #         # getting missing columns
+    #         missing_columns = set(self.old_columns.keys()) - set(
+    #             self.incoming_columns)
 
-            return False
+    #         return False
 
     def get_code(self) -> str:
         if self.data is None or self.incoming_variable is None:

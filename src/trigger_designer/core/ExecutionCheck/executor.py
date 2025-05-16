@@ -17,7 +17,7 @@ class NodeExecutionError(Exception):
 class NodeExecutor:
     def __init__(self, logger: Optional[Logger] = None) -> None:
         self.execution_context: Dict[str, Any] = {}  # Shared execution context
-        self.logger = logger or Logger()
+        # self.logger = logger or Logger()
         # self.logger = logger
 
     def execute_node(self, node: 'TriggerNode') -> Tuple[str, dict[str, Any]]:
@@ -31,16 +31,16 @@ class NodeExecutor:
 
         local_variables: dict = {}
 
-        if not self.logger:
-            self.logger = Logger()
+        # if not self.logger:
+        # self.logger = Logger()
+        # pass
         try:
             exec(code, self.execution_context, local_variables)
-            self.logger.log(
-                f" Executed Node {node.__class__.__name__}", "debug")
+            # self.logger.ted Node {node.__class__.__name__}", "debug")
 
         except Exception as e:
-            self.logger.log(
-                f"Error in Node {node.__class__.__name__}: {e}", "error")
+            # self.logger.log(0,
+            #     f"Error in Node {node.__class__.__name__}: {e}", "error")
             # raise NodeExecutionError(
             #     f"Error in Node {node.__class__.__name__}: {e}")
             return f"Error in Node {node.__class__.__name__}: {e}", self.execution_context
