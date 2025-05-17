@@ -1,3 +1,4 @@
+import traceback
 from loguru import logger
 from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QLabel, QWidget, QLayout
 from typing import Optional, List, TYPE_CHECKING
@@ -33,7 +34,8 @@ class ConfigDock(QDockWidget):
                     content.create_layout(self.dock_layout)  # type: ignore
                     self.dock_widget.setLayout(self.dock_layout)
                 except Exception as e:
-                    logger.error(e)
+                    traceback.print_exc()
+                    logger.trace(e)
         else:
             self.clear_dock()
 

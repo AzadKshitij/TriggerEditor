@@ -19,7 +19,13 @@ if TYPE_CHECKING:
 
 
 class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-    """_summary_
+    """DataFrame column selection and modification widget.
+
+    Provides comprehensive column management including:
+    - Selection and filtering
+    - Reordering and sorting
+    - Type conversion and renaming
+    - Metadata management
 
     Args:
         QDMNodeContentWidget (_type_): _description_
@@ -120,39 +126,39 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             print(
                 "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self.node._is_invalid)
 
-    def process_data_changes(self, data_):
+    def process_data_changes(self, data_: list[list]) -> Dict[str, Any]:
         # Store the changes in a serializable format
         self.changes = {
             'selected_columns': [],
             'rename_mapping': {},
-            'dtype_mapping': {}
+            'dtype_mapping': {},
+            'column_order': []  # Add column order tracking
         }
 
-        # Extract selected columns, their new names and data types
-        selected_columns = []
-        rename_mapping = {}
-        dtype_mapping = {}
+        # Get column order from table widget
+        if hasattr(self, 'table_widget'):
+            header = self.table_widget.table.horizontalHeader()
+            self.changes['column_order'] = [
+                header.logicalIndex(i)
+                for i in range(header.count())
+            ]
 
+        # Extract selected columns, their new names and data types
         for column_info in data_:
             column_name, data_type, new_name = column_info
-            selected_columns.append(column_name)
-
-            # Store changes for serialization
             self.changes['selected_columns'].append(column_name)
 
-            # Add to rename mapping if new name exists
             if new_name:
-                rename_mapping[column_name] = new_name
                 self.changes['rename_mapping'][column_name] = new_name
 
-            # Add to dtype mapping if data_type exists
             if data_type:
-                dtype_mapping[column_name] = data_type
                 self.changes['dtype_mapping'][column_name] = data_type
 
-        return selected_columns, rename_mapping, dtype_mapping
+        return (self.changes['selected_columns'],
+                self.changes['rename_mapping'],
+                self.changes['dtype_mapping'])
 
-    def update_data_dtype(self, selected_columns, rename_mapping, dtype_mapping) -> None:
+    def update_data_dtype(self, selected_columns: list[str], rename_mapping: dict, dtype_mapping: dict) -> None:
         """Update self.data based on the processed changes"""
         # Select only the specified columns from incom_data
         self.data = self.incom_data[selected_columns].copy()
@@ -171,7 +177,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if rename_mapping:
             self.data.rename(columns=rename_mapping, inplace=True)
 
-    def handleDataChanged(self, data_) -> None:
+    def handleDataChanged(self, data_: list[list]) -> None:
         if self.history.is_restoring_history:
             return
 
@@ -213,7 +219,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.evaluate.emit()
 
-    def history_stamp_callback(self, history_data, is_undo: bool) -> None:
+    def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
         if is_undo:
             # Undo operation
