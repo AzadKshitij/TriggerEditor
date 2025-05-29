@@ -62,13 +62,13 @@ class TriggerSubWindow(NodeEditorWidget):
         self.fixed_button.clicked.connect(self.run_workflow)
 
         # Zoom In button
-        self.zoom_in_button = QPushButton("Zoom In", self)
+        self.zoom_in_button = QPushButton("+", self)
         self.zoom_in_button.setFixedSize(100, 30)
         self.zoom_in_button.move(120, 10)
         self.zoom_in_button.clicked.connect(self.zoomIn)
 
         # Zoom Out button
-        self.zoom_out_button = QPushButton("Zoom Out", self)
+        self.zoom_out_button = QPushButton("-", self)
         self.zoom_out_button.setFixedSize(100, 30)
         self.zoom_out_button.move(230, 10)
         self.zoom_out_button.clicked.connect(self.zoomOut)

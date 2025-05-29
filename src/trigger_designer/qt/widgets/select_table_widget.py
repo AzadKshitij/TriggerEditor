@@ -1,96 +1,257 @@
 from typing import Optional
-from qtpy.QtWidgets import QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QLineEdit, QVBoxLayout, QWidget, QHeaderView, QHBoxLayout, QToolButton, QMenu, QLabel
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtWidgets import (QApplication, QMainWindow, QTableView,
+                            QVBoxLayout, QWidget, QPushButton, QCheckBox, QComboBox,
+                            QStyledItemDelegate, QStyleOptionComboBox, QStyle, QAbstractItemView, QAbstractItemDelegate, QStyleOptionViewItem)
+from qtpy.QtCore import QAbstractTableModel, QVariant, QModelIndex, QEvent
+from qtpy.QtCore import Qt, Signal, QVariant, QModelIndex
 import pandas as pd
 
 
-class SelectTableWidget(QWidget):
-    dataChanged = Signal(list)
+class RowData:
+    def __init__(self, checked, text, option, rename=None):
+        self.checked = checked
+        self.text = text
+        self.option = option  # Store the selected option string
+        self.rename = rename
 
-    def __init__(self, parent: QWidget, data: list, changes: dict) -> None:
+
+class SelectTableWidget(QAbstractTableModel):
+    _dataChanged = Signal(list)
+
+    def __init__(self, data: list, changes: dict, parent=None) -> None:
         super().__init__(parent)
-        self.data = data
+        self._data = data
         self.filtered_rows = []  # For search functionality
         self.changes = changes or {
             'selected_columns': [],
             'rename_mapping': {},
             'dtype_mapping': {}
         }
-        self.initUI()
-        self.populateTable()
-        self.setupConnections()
+        self._header_labels = ["", "Text Data", "Data Type", "Rename"]
+        self._data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
 
-    def initUI(self) -> None:
+        # self.initUI()
+        # self.populateTable()
+        # self.setupConnections()
 
-        # Main layout
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(2)
+    def rowCount(self, parent=QModelIndex()):
+        # Return the number of rows in the model
+        if parent.isValid():
+            return 0
+        return len(self._data)
 
-        # Create toolbar
-        toolbar = QHBoxLayout()
-        toolbar.setContentsMargins(5, 0, 5, 0)
-        toolbar.setSpacing(5)
+    def columnCount(self, parent=QModelIndex()):
+        # Return the number of columns in the model
+        if parent.isValid():
+            return 0
+        return len(self._header_labels)
+
+    # def initUI(self) -> None:
+
+        # # Main layout
+        # main_layout = QVBoxLayout(self)
+        # main_layout.setContentsMargins(0, 0, 0, 0)
+        # main_layout.setSpacing(2)
+
+        # # Create toolbar
+        # toolbar = QHBoxLayout()
+        # toolbar.setContentsMargins(5, 0, 5, 0)
+        # toolbar.setSpacing(5)
 
         # Options dropdown
-        self.options_btn = QToolButton()
-        self.options_btn.setText("Options")
-        self.options_btn.setPopupMode(
-            QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-        self.options_btn.setToolTip("Options")
-        toolbar.addWidget(self.options_btn)
-        self.setupOptionsMenu()
+        # self.options_btn = QToolButton()
+        # self.options_btn.setText("Options")
+        # self.options_btn.setPopupMode(
+        #     QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        # self.options_btn.setToolTip("Options")
+        # toolbar.addWidget(self.options_btn)
+        # self.setupOptionsMenu()
 
-        # Up/Down buttons
-        self.up_btn = QToolButton()
-        self.up_btn.setText("↑")
-        self.up_btn.setToolTip("Move selected row up")
-        self.down_btn = QToolButton()
-        self.down_btn.setText("↓")
-        self.down_btn.setToolTip("Move selected row down")
+        # # Up/Down buttons
+        # self.up_btn = QToolButton()
+        # self.up_btn.setText("↑")
+        # self.up_btn.setToolTip("Move selected row up")
+        # self.down_btn = QToolButton()
+        # self.down_btn.setText("↓")
+        # self.down_btn.setToolTip("Move selected row down")
 
-        toolbar.addWidget(self.up_btn)
-        toolbar.addWidget(self.down_btn)
+        # toolbar.addWidget(self.up_btn)
+        # toolbar.addWidget(self.down_btn)
 
-        # Search field (right-aligned)
-        toolbar.addStretch()
-        search_layout = QHBoxLayout()
-        # search_icon = QLabel("🔍")
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Search columns...")
-        # self.search_input.setMaximumWidth(200)
-        # search_layout.addWidget(search_icon)
-        search_layout.addWidget(self.search_input)
-        toolbar.addLayout(search_layout)
+        # # Search field (right-aligned)
+        # toolbar.addStretch()
+        # search_layout = QHBoxLayout()
+        # # search_icon = QLabel("🔍")
+        # self.search_input = QLineEdit()
+        # self.search_input.setPlaceholderText("Search columns...")
+        # # self.search_input.setMaximumWidth(200)
+        # # search_layout.addWidget(search_icon)
+        # search_layout.addWidget(self.search_input)
+        # toolbar.addLayout(search_layout)
 
-        main_layout.addLayout(toolbar)
+        # main_layout.addLayout(toolbar)
 
         # self.v_layout = QVBoxLayout(self)
         # self.v_layout.setContentsMargins(0, 0, 0, 0)
-        self.table: QTableWidget = QTableWidget(self)
+        # self.table: QTableWidget = QTableWidget(self)
 
-        # Enable drag-drop reordering
-        self.table.setDragEnabled(True)
-        self.table.setAcceptDrops(True)
-        self.table.setDragDropMode(QTableWidget.DragDrop)
-        self.table.setSelectionBehavior(QTableWidget.SelectRows)
+        # # Enable drag-drop reordering
+        # self.table.setDragEnabled(True)
+        # self.table.setAcceptDrops(True)
+        # self.table.setDragDropMode(QTableWidget.DragDrop)
+        # self.table.setSelectionBehavior(QTableWidget.SelectRows)
 
-        # Enable column reordering
-        header = self.table.horizontalHeader()
-        header.setSectionsMovable(True)
-        header.sectionMoved.connect(self.onColumnMoved)
+        # # Enable column reordering
+        # header = self.table.horizontalHeader()
+        # header.setSectionsMovable(True)
+        # header.sectionMoved.connect(self.onColumnMoved)
 
-        # Add select all checkbox in header
-        self.select_all = QCheckBox()
-        self.select_all.stateChanged.connect(self.onSelectAllChanged)
-        header.setCornerWidget(self.select_all)
+        # # Add select all checkbox in header
+        # self.select_all = QCheckBox()
+        # self.select_all.stateChanged.connect(self.onSelectAllChanged)
+        # header.setCornerWidget(self.select_all)
 
-        self.table.horizontalHeader().setSectionsMovable(True)
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(
-            ["Status", "Column Name", "Data Type", "Rename"])
-        main_layout.addWidget(self.table)
-        self.setLayout(main_layout)
+        # self.table.horizontalHeader().setSectionsMovable(True)
+        # self.table.setColumnCount(4)
+        # self.table.setHorizontalHeaderLabels(
+        #     ["Status", "Column Name", "Data Type", "Rename"])
+        # main_layout.addWidget(self.table)
+        # self.setLayout(main_layout)
+
+    def data(self, index, role=Qt.DisplayRole):
+        # Return data based on role
+        if not index.isValid():
+            return QVariant()
+
+        row = index.row()
+        col = index.column()
+        row_data = self._data[row]
+
+        if role == Qt.DisplayRole:
+            # Display role for showing text
+            if col == 1:
+                return row_data.text
+            elif col == 2:
+                # For the combobox column, display the selected option
+                return row_data.option
+            return QVariant()  # Return empty QVariant for other columns in DisplayRole
+        elif role == Qt.CheckStateRole:
+            # Check state role for checkboxes (column 1)
+            if col == 0:
+                return Qt.Checked if row_data.checked else Qt.Unchecked
+            return QVariant()
+        elif role == Qt.EditRole:
+            # Edit role for editing data (e.g., combobox selection)
+            if col == 1:
+                return row_data.text
+            elif col == 2:
+                # For the combobox column, return the currently selected option
+                return row_data.option
+            return QVariant()
+        elif role == Qt.UserRole:
+            # User role to potentially return the raw data object or specific values
+            if col == 2:
+                # Return the list of options for the combobox delegate
+                return self._data_types
+
+        return QVariant()
+
+    def setData(self, index, value, role=Qt.EditRole):
+        # Set data based on role (for editing)
+        if not index.isValid():
+            return False
+
+        row = index.row()
+        col = index.column()
+        row_data = self._data[row]
+
+        if role == Qt.EditRole:
+            # Handle editing for text and combobox
+            if col == 1:
+                row_data.text = str(value)
+                self.dataChanged.emit(
+                    index, index, [Qt.DisplayRole, Qt.EditRole])
+                return True
+            elif col == 2:
+                # Handle combobox selection change
+                if isinstance(value, str):
+                    row_data.option = value
+                    self.dataChanged.emit(
+                        index, index, [Qt.DisplayRole, Qt.EditRole])
+                    return True
+            return False
+        elif role == Qt.CheckStateRole:
+            # Handle checkbox state change (column 1)
+            if col == 0:
+                row_data.checked = (value == Qt.Checked)
+                self.dataChanged.emit(index, index, [Qt.CheckStateRole])
+                return True
+            return False
+
+        return False
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        # Return header data
+        if role == Qt.DisplayRole:
+            if orientation == Qt.Horizontal:
+                return self._header_labels[section]
+            elif orientation == Qt.Vertical:
+                return str(section + 1)  # Row numbers
+        return QVariant()
+
+    def flags(self, index):
+        # Define item flags (e.g., IsEditable, IsSelectable, IsUserCheckable)
+        if not index.isValid():
+            return Qt.NoItemFlags
+
+        default_flags = super().flags(index)
+
+        if index.column() == 0:
+            # Text column is editable
+            return default_flags | Qt.ItemIsEditable
+        elif index.column() == 1:
+            # Checkbox column is checkable
+            return default_flags | Qt.ItemIsUserCheckable
+        elif index.column() == 2:
+            # Combobox column is editable (to allow delegate to work)
+            return default_flags | Qt.ItemIsEditable
+
+        return default_flags
+
+    def swapRows(self, row1, row2):
+        # Method to swap rows in the model
+        if 0 <= row1 < len(self._data) and 0 <= row2 < len(self._data):
+            # Determine source and destination rows for the signal
+            source_row = row1
+            destination_row = row2
+
+            # If moving a row to an earlier position, the destination index needs adjustment
+            if row1 < row2:
+                destination_row = row2 + 1  # Signal moving row1 to the position *after* row2
+
+            # Notify the view that rows are about to move
+            if self.beginMoveRows(QModelIndex(), source_row, source_row, QModelIndex(), destination_row):
+                # Perform the data swap in the model's internal list
+                self._data[row1], self._data[row2] = self._data[row2], self._data[row1]
+                # End the move operation
+                self.endMoveRows()
+
+                # Although begin/endMoveRows should handle the visual update,
+                # sometimes explicitly signaling data changed for the affected rows
+                # can help ensure all delegates refresh correctly.
+                top_left = self.index(min(row1, row2), 0)
+                bottom_right = self.index(
+                    max(row1, row2), self.columnCount() - 1)
+                self.dataChanged.emit(top_left, bottom_right, [
+                    Qt.DisplayRole, Qt.EditRole, Qt.CheckStateRole, Qt.UserRole])
+
+                print(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
+                return True
+            else:
+                print("Failed to begin row move operation.")
+                return False
+        print("Invalid row indices for swapping.")
+        return False
 
     def setupOptionsMenu(self) -> None:
         """Setup the options dropdown menu"""
@@ -145,12 +306,12 @@ class SelectTableWidget(QWidget):
 
     def populateTable(self) -> None:
         data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
-        row_count = len(self.data)
+        row_count = len(self._data)
         # self.table.setRowCount(row_count)
 
         for i in range(row_count):
             self.table.insertRow(i)
-            column_name = self.data[i]['column_name']
+            column_name = self._data[i]['column_name']
 
             # Create container widget for checkbox
             checkbox_container = QWidget()
@@ -180,7 +341,7 @@ class SelectTableWidget(QWidget):
             # Set saved dtype if exists, otherwise use original
             saved_dtype = self.changes['dtype_mapping'].get(column_name)
             current_dtype = saved_dtype if saved_dtype else str(
-                self.data[i]['dtype'])
+                self._data[i]['dtype'])
             combo_box.setCurrentText(current_dtype)
             self.table.setCellWidget(i, 2, combo_box)
 
@@ -194,7 +355,7 @@ class SelectTableWidget(QWidget):
     def onDataChanged(self) -> None:
         # Emit the updated data whenever changes occur
         data = self.getData()
-        self.dataChanged.emit(data)
+        self._dataChanged.emit(data)
 
     def update_from_changes(self, changes: dict) -> None:
         """Update table state from changes dictionary"""
@@ -380,7 +541,7 @@ class SelectTableWidget(QWidget):
     #     #         self.table.setItem(row1, col, self.table.takeItem(row2, col))
     #     #         self.table.setItem(row2, col, temp)
 
-    def swapRows(self, row1, row2):
+    def swap_Rows(self, row1, row2):
         """Swaps the content and widgets of two specified rows."""
         if 0 <= row1 < self.table.rowCount() and 0 <= row2 < self.table.rowCount():
             for col in range(self.table.columnCount()):
@@ -434,3 +595,134 @@ class SelectTableWidget(QWidget):
                 rename = self.table.cellWidget(row, 3).text()
                 data.append((column_name, data_type, rename))
         return data
+
+
+# Custom delegate for the ComboBox column
+class ComboBoxDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        # Create the editor widget (a QComboBox)
+        if index.column() == 2:  # Apply only to the 'Option' column
+            editor = QComboBox(parent)
+            # Get the list of options from the model using Qt.UserRole
+            options = index.model().data(index, Qt.UserRole)
+            if options:
+                editor.addItems(options)
+            editor.setAutoFillBackground(True)  # Helps with painting
+            return editor
+        # Use default editor for other columns
+        return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        # Set the editor's data from the model
+        if index.column() == 2:
+            current_value = index.model().data(index, Qt.EditRole)
+            editor.setCurrentText(current_value)
+        else:
+            super().setEditorData(editor, index)
+
+    def setModelData(self, editor, model, index):
+        # Get data from the editor and set it in the model
+        if index.column() == 2:
+            model.setData(index, editor.currentText(), Qt.EditRole)
+        else:
+            super().setModelData(editor, model, index)
+
+    def updateEditorGeometry(self, editor, option, index):
+        # Set the geometry of the editor
+        if index.column() == 2:
+            editor.setGeometry(option.rect)
+        else:
+            super().updateEditorGeometry(editor, option, index)
+
+    def paint(self, painter, option, index):
+        # Paint the item (including the combobox appearance)
+        # Use the QStyleOptionViewItem to handle the painting
+        # This is important for proper rendering of the item
+        if index.column() == 2:
+            # super().paint(painter, option, index)
+            # Get the current value from the model
+            value = index.model().data(index, Qt.DisplayRole)
+            options = index.model().data(index, Qt.UserRole)  # Get options list
+
+            # --- IMPROVED PAINTING ---``
+            # Draw the item's background and state (e.g., selection highlight)
+            # option.initFrom(option.widget)
+            if option.state & QStyle.StateFlag.State_Selected:
+                painter.fillRect(option.rect, option.palette.highlight())
+                painter.setPen(option.palette.highlightedText().color())
+            else:
+                painter.fillRect(option.rect, option.palette.base())
+                painter.setPen(option.palette.text().color())
+
+            # Create a style option for a combobox
+            opt = QStyleOptionComboBox()
+            opt.rect = option.rect  # Set the rectangle for painting
+            opt.state = option.state  # Inherit state (selected, enabled, etc.)
+            opt.currentText = value  # Set the current text to display
+
+            # Set the list of items in the style option (needed for size hints/painting)
+            if options:
+                opt.currentValue = value
+                try:
+                    opt.currentIndex = options.index(value)
+                except ValueError:
+                    opt.currentIndex = -1  # Value not found in options
+
+            # Draw the combobox using the style
+            QApplication.style().drawComplexControl(
+                QStyle.ComplexControl.CC_ComboBox, opt, painter)
+            # QApplication.style().drawControl(
+            #     QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
+            super().paint(painter, option, index)
+
+        else:
+            # For other columns, use the default painting
+            super().paint(painter, option, index)
+
+    # def paint(self, painter, option, index):
+    #     # Paint the item (including the combobox appearance)
+    #     if index.column() == 2:
+    #         # Get the current value from the model
+    #         value = index.model().data(index, Qt.DisplayRole)
+    #         options = index.model().data(index, Qt.UserRole)  # Get options list
+
+    #         # Create a style option for a combobox
+    #         opt = QStyleOptionComboBox()
+    #         opt.rect = option.rect  # Set the rectangle for painting
+    #         opt.state = option.state  # Inherit state (selected, enabled, etc.)
+    #         opt.currentText = value  # Set the current text to display
+
+    #         # Set the list of items in the style option (needed for size hints/painting)
+    #         if options:
+    #             # Although QStyleOptionComboBox doesn't have addItems,
+    #             # setting the current value and index helps the style draw correctly.
+    #             opt.currentValue = value
+    #             try:
+    #                 opt.currentIndex = options.index(value)
+    #             except ValueError:
+    #                 opt.currentIndex = -1  # Value not found in options
+
+    #         # Draw the combobox using the style
+    #         QApplication.style().drawComplexControl(
+    #             QStyle.ComplexControl.CC_ComboBox, opt, painter)
+    #         QApplication.style().drawControl(
+    #             QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
+
+    #     else:
+    #         # For other columns, use the default painting
+    #         super().paint(painter, option, index)
+
+    def editorEvent(self, event, model, option, index):
+        # Handle events within the cell, even when not in edit mode
+        if index.column() == 2:  # Only for the 'Option' column
+            if event.type() == QEvent.MouseButtonPress:
+                # If it's a left mouse button press
+                if event.button() == Qt.LeftButton:
+                    # Tell the view to start editing this index
+                    view = option.widget  # The view is available as the option's widget
+                    if isinstance(view, QAbstractItemView):
+                        view.edit(index)
+                        return True  # Event handled
+
+        # For other events or columns, let the base class handle it
+        return super().editorEvent(event, model, option, index)

@@ -1619,3 +1619,17 @@ QAbstractView:selected {{
 PlotWidget {{
   /* Fix cut labels in plots #134 */
   padding: 0px; }}
+
+
+
+/* Custom Style -------------------------------------------------------------
+
+--------------------------------------------------------------------------- */
+QDMNodeIconContentWidget {{
+  background: transparent;
+  border: 1px transparent
+}}
+QDMNodeIconContentWidget QFrame {{
+  background: transparent;
+  border: 1px transparent;
+}}

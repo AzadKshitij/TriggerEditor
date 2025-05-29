@@ -1,4 +1,4 @@
-from qtpy.QtGui import QPixmap, QIcon, QDrag, QPainter, QColor, QFont, QCursor, QMouseEvent
+from qtpy.QtGui import QPixmap, QIcon, QDrag, QPainter, QColor, QFont, QCursor, QMouseEvent, QPainterPath
 from qtpy.QtCore import QSize, Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
 from qtpy.QtWidgets import (
     QListWidget, QAbstractItemView, QListWidgetItem, QWidget, QVBoxLayout, QLabel, QSizePolicy, QHBoxLayout, QGridLayout, QFrame)
@@ -138,7 +138,9 @@ class ListWidgetItemWidget(QWidget):
             # pixmap.setDevicePixelRatio(2)  # High-DPI fix
             pixmap = pixmap.scaled(
                 48, 48, Qt.KeepAspectRatio, Qt.FastTransformation)
-            self.icon_label.setPixmap(pixmap)
+            # rounded = self.create_rounded_icon(pixmap, radius=15)
+            rounded = self.create_rounded_pixmap(pixmap, radius=12)
+            self.icon_label.setPixmap(rounded)
             self.icon_label.setFixedSize(QSize(48, 48))
 
         self.text_label = QLabel(name, self)
@@ -160,3 +162,48 @@ class ListWidgetItemWidget(QWidget):
         # self.setMinimumHeight(100)
         # self.setFixedHeight(100)
         self.setCursor(QCursor(Qt.CursorShape.OpenHandCursor))
+
+    def create_rounded_icon(self, pixmap: QPixmap, radius: int) -> QPixmap:
+        """Create a new pixmap with rounded corners by clipping the original image."""
+        # Create transparent pixmap with same size
+        result = QPixmap(pixmap.size())
+        result.fill(Qt.GlobalColor.transparent)
+
+        # Create painter with antialiasing
+        painter = QPainter(result)
+        painter.setRenderHints(
+            QPainter.RenderHint.Antialiasing |
+            QPainter.RenderHint.SmoothPixmapTransform
+        )
+
+        # Create rounded rectangle path
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, pixmap.width(),
+                            pixmap.height(), radius, radius)
+
+        # Set clipping path and draw original pixmap
+        painter.setClipPath(path)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.end()
+
+        return result
+
+    # Add this helper method to your class to create rounded pixmaps
+    def create_rounded_pixmap(self, pixmap: QPixmap, radius: int) -> QPixmap:
+        """Create a pixmap with rounded corners."""
+        rounded = QPixmap(pixmap.size())
+        rounded.fill(Qt.GlobalColor.transparent)
+
+        painter = QPainter(rounded)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+
+        path = QPainterPath()
+        path.addRoundedRect(0, 0, pixmap.width(),
+                            pixmap.height(), radius, radius)
+
+        painter.setClipPath(path)
+        painter.drawPixmap(0, 0, pixmap)
+        painter.end()
+
+        return rounded

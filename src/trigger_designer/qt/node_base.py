@@ -34,7 +34,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
     def __init__(self, node: 'TriggerNode', parent: Optional[QGraphicsItem] = None) -> None:
         super().__init__(node, parent)
 
-        self._default_pen = QPen(QColor("#7F000000"))
+        self._default_pen = QPen(QColor.fromRgb(0, 0, 0, 0))  # Black color
         self._default_pen.setWidth(5)
         self._selected_pen = QPen(QColor("#FFFFA637"))
         self._selected_pen.setWidth(5)

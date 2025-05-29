@@ -1,7 +1,9 @@
 import sys
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableView,
-                             QVBoxLayout, QWidget, QPushButton, QCheckBox, QComboBox)
-from PyQt6.QtCore import Qt, QVariant, QModelIndex
+                             QVBoxLayout, QWidget, QPushButton, QCheckBox, QComboBox,
+                             QStyledItemDelegate, QStyleOptionComboBox, QStyle, QAbstractItemView, QAbstractItemDelegate, QStyleOptionViewItem)
+from PyQt6.QtCore import Qt, QVariant, QModelIndex, QEvent
+from PyQt6.QtGui import QPainter
 
 from qtpy.QtCore import QAbstractTableModel
 # Define a custom data structure for each row
@@ -19,6 +21,8 @@ class CustomTableModel(QAbstractTableModel):
         super().__init__(parent)
         self._data = data
         self._header_labels = ["Text Data", "Is Checked", "Option"]
+        # Available options for the dropdown
+        self._options = ["Option A", "Option B", "Option C"]
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows in the model
@@ -66,7 +70,7 @@ class CustomTableModel(QAbstractTableModel):
             # User role to potentially return the raw data object or specific values
             if col == 2:
                 # Return the list of options for the combobox delegate
-                return ["Option A", "Option B", "Option C"]
+                return self._options
 
         return QVariant()
 
@@ -122,13 +126,14 @@ class CustomTableModel(QAbstractTableModel):
 
         if index.column() == 0:
             # Text column is editable
-            return default_flags | Qt.ItemIsEditable
+            return default_flags | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
         elif index.column() == 1:
-            # Checkbox column is checkable
-            return default_flags | Qt.ItemIsUserCheckable
+            # Checkbox column is checkable, selectable, and enabled
+            return default_flags | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
         elif index.column() == 2:
-            # Combobox column is editable (to allow delegate to work)
-            return default_flags | Qt.ItemIsEditable
+            # Combobox column is editable, selectable, and enabled
+            # | Qt.ItemIsSelectable
+            return default_flags | Qt.ItemIsUserCheckable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
 
         return default_flags
 
@@ -167,6 +172,139 @@ class CustomTableModel(QAbstractTableModel):
         print("Invalid row indices for swapping.")
         return False
 
+# Custom delegate for the ComboBox column
+
+
+# Custom delegate for the ComboBox column
+class ComboBoxDelegate(QStyledItemDelegate):
+    def createEditor(self, parent, option, index):
+        # Create the editor widget (a QComboBox)
+        if index.column() == 2:  # Apply only to the 'Option' column
+            editor = QComboBox(parent)
+            # Get the list of options from the model using Qt.UserRole
+            options = index.model().data(index, Qt.UserRole)
+            if options:
+                editor.addItems(options)
+            editor.setAutoFillBackground(True)  # Helps with painting
+            return editor
+        # Use default editor for other columns
+        return super().createEditor(parent, option, index)
+
+    def setEditorData(self, editor, index):
+        # Set the editor's data from the model
+        if index.column() == 2:
+            current_value = index.model().data(index, Qt.EditRole)
+            editor.setCurrentText(current_value)
+        else:
+            super().setEditorData(editor, index)
+
+    def setModelData(self, editor, model, index):
+        # Get data from the editor and set it in the model
+        if index.column() == 2:
+            model.setData(index, editor.currentText(), Qt.EditRole)
+        else:
+            super().setModelData(editor, model, index)
+
+    def updateEditorGeometry(self, editor, option, index):
+        # Set the geometry of the editor
+        if index.column() == 2:
+            editor.setGeometry(option.rect)
+        else:
+            super().updateEditorGeometry(editor, option, index)
+
+    def paint(self, painter, option, index):
+        # Paint the item (including the combobox appearance)
+        # Use the QStyleOptionViewItem to handle the painting
+        # This is important for proper rendering of the item
+        if index.column() == 2:
+            # super().paint(painter, option, index)
+            # Get the current value from the model
+            value = index.model().data(index, Qt.DisplayRole)
+            options = index.model().data(index, Qt.UserRole)  # Get options list
+
+            # --- IMPROVED PAINTING ---``
+            # Draw the item's background and state (e.g., selection highlight)
+            # option.initFrom(option.widget)
+            if option.state & QStyle.StateFlag.State_Selected:
+                painter.fillRect(option.rect, option.palette.highlight())
+                painter.setPen(option.palette.highlightedText().color())
+            else:
+                painter.fillRect(option.rect, option.palette.base())
+                painter.setPen(option.palette.text().color())
+
+            # Create a style option for a combobox
+            opt = QStyleOptionComboBox()
+            opt.rect = option.rect  # Set the rectangle for painting
+            opt.state = option.state  # Inherit state (selected, enabled, etc.)
+            opt.currentText = value  # Set the current text to display
+
+            # Set the list of items in the style option (needed for size hints/painting)
+            if options:
+                opt.currentValue = value
+                try:
+                    opt.currentIndex = options.index(value)
+                except ValueError:
+                    opt.currentIndex = -1  # Value not found in options
+
+            # Draw the combobox using the style
+            QApplication.style().drawComplexControl(
+                QStyle.ComplexControl.CC_ComboBox, opt, painter)
+            # QApplication.style().drawControl(
+            #     QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
+            super().paint(painter, option, index)
+
+        else:
+            # For other columns, use the default painting
+            super().paint(painter, option, index)
+
+    # def paint(self, painter, option, index):
+    #     # Paint the item (including the combobox appearance)
+    #     if index.column() == 2:
+    #         # Get the current value from the model
+    #         value = index.model().data(index, Qt.DisplayRole)
+    #         options = index.model().data(index, Qt.UserRole)  # Get options list
+
+    #         # Create a style option for a combobox
+    #         opt = QStyleOptionComboBox()
+    #         opt.rect = option.rect  # Set the rectangle for painting
+    #         opt.state = option.state  # Inherit state (selected, enabled, etc.)
+    #         opt.currentText = value  # Set the current text to display
+
+    #         # Set the list of items in the style option (needed for size hints/painting)
+    #         if options:
+    #             # Although QStyleOptionComboBox doesn't have addItems,
+    #             # setting the current value and index helps the style draw correctly.
+    #             opt.currentValue = value
+    #             try:
+    #                 opt.currentIndex = options.index(value)
+    #             except ValueError:
+    #                 opt.currentIndex = -1  # Value not found in options
+
+    #         # Draw the combobox using the style
+    #         QApplication.style().drawComplexControl(
+    #             QStyle.ComplexControl.CC_ComboBox, opt, painter)
+    #         QApplication.style().drawControl(
+    #             QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
+
+    #     else:
+    #         # For other columns, use the default painting
+    #         super().paint(painter, option, index)
+
+    def editorEvent(self, event, model, option, index):
+        # Handle events within the cell, even when not in edit mode
+        if index.column() == 2:  # Only for the 'Option' column
+            if event.type() == QEvent.MouseButtonPress:
+                # If it's a left mouse button press
+                if event.button() == Qt.LeftButton:
+                    # Tell the view to start editing this index
+                    view = option.widget  # The view is available as the option's widget
+                    if isinstance(view, QAbstractItemView):
+                        view.edit(index)
+                        return True  # Event handled
+
+        # For other events or columns, let the base class handle it
+        return super().editorEvent(event, model, option, index)
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -196,12 +334,24 @@ class MainWindow(QMainWindow):
         self.tableView = QTableView()
         self.tableView.setModel(self.model)
 
+        # Set the custom delegate for the 'Option' column (index 2)
+        self.tableView.setItemDelegateForColumn(
+            2, ComboBoxDelegate(self.tableView))
+
+        # Auto-resize columns to fit content
+        self.tableView.resizeColumnsToContents()
+        self.tableView.setEditTriggers(
+            QTableView.EditTrigger.DoubleClicked | QTableView.EditTrigger.EditKeyPressed)
+
         # Set delegates for specific columns if needed (e.g., for combobox editor)
         # The default delegate handles checkboxes and text editing.
         # For a combobox editor, you might need a custom delegate if the default isn't sufficient
         # based on the data role (Qt.EditRole and Qt.UserRole are used here to help a delegate).
         # However, for basic display and interaction, the default delegate often works
         # with the correct data roles implemented in the model.
+
+        # Auto-resize columns to fit content
+        self.tableView.resizeColumnsToContents()
 
         self.swap_button = QPushButton(
             "Swap Row 3 and Row 7 (Model Indices 2 and 6)")
@@ -217,8 +367,44 @@ class MainWindow(QMainWindow):
         container.setLayout(layout)
         self.setCentralWidget(container)
 
+        # You can then call this method, for example, from a button click or another action
+        # For instance, add another button to print the data
+        # In __init__ after creating swap_button:
+        self.get_data_button = QPushButton("Get Table Data")
+        self.get_data_button.clicked.connect(self.print_table_data)
+        layout.addWidget(self.get_data_button)  # Add to layout
+
         # Auto-resize columns to fit content
         self.tableView.resizeColumnsToContents()
+
+    # Add a new slot to print the data
+    def print_table_data(self):
+        data = self.get_table_data()
+        if data:
+            print("Table Data:")
+            for row in data:
+                print(row)
+        else:
+            print("Could not retrieve table data.")
+
+    # Add this method to your MainWindow class
+
+    def get_table_data(self):
+        """Retrieves all data from the table model."""
+        all_data = []
+        # Access the model instance
+        model = self.tableView.model()
+        if isinstance(model, CustomTableModel):
+            # Iterate through the internal data list of the model
+            for row_data in model._data:
+                # Append the data for each row to the list
+                all_data.append({
+                    "text": row_data.text,
+                    "checked": row_data.checked,
+                    "option": row_data.option
+                })
+            return all_data
+        return None
 
 
 if __name__ == "__main__":

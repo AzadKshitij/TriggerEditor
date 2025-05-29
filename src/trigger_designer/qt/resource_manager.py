@@ -70,8 +70,8 @@ class ResourceManager:
             logger.error(e)
 
         # Save this theme to a file
-        # with open(str(ResourceManager._res_folder/"resources/qt/themes/runtime_theme.qss"), 'w') as f:
-        #     f.write(theme_qss)
+        with open(str(ResourceManager._res_folder/"resources/qt/themes/runtime_theme.qss"), 'w') as f:
+            f.write(theme_qss)
 
         return theme_qss
 

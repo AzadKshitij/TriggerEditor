@@ -1,15 +1,15 @@
 import pandas as pd
-from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel,
+from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel, QTableView,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, QSaveFile, Signal
+from qtpy.QtCore import Qt, QSaveFile, Signal, QVariant, QModelIndex
 from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 
-from trigger_designer.qt.widgets.select_table_widget import SelectTableWidget
+from trigger_designer.qt.widgets.select_table_widget import ComboBoxDelegate, SelectTableWidget, RowData
 from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, cast, Union
 
 if TYPE_CHECKING:
@@ -64,33 +64,35 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self._node = value
 
     def initUI(self, icon: Optional[QPixmap] = None) -> None:
-        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon)
+        _icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
+        super().initUI(_icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
             if not self.table_data:
                 self.table_data = [
-                    {
-                        'column_name': col,
-                        'dtype': self.incom_data[col].dtype.name
-                    }
+                    RowData(True, col, self.incom_data[col].dtype.name)
                     for col in self.incom_data.columns
                 ]
             # if self.old_data != {}:
             #     self.old_data = table_data
             # Initialize changes if not already present
             if not hasattr(self, 'changes'):
-                self.changes = {
+                self.changes: dict = {
                     'selected_columns': [],
                     'rename_mapping': {},
                     'dtype_mapping': {}
                 }
-
-            self.table_widget = SelectTableWidget(self,
-                                                  data=self.table_data, changes=self.changes)
+            self.table_view = QTableView()
+            # Create some sample data
+            self.table_widget = SelectTableWidget(
+                data=self.table_data, changes=self.changes, parent=self)
+            # Set the custom delegate for the 'Option' column (index 2)
+            self.table_view.setItemDelegateForColumn(
+                2, ComboBoxDelegate(self.table_view))
+            self.table_view.setModel(self.table_widget)
             self.table_widget.dataChanged.connect(self.handleDataChanged)
-            dock_layout.addWidget(self.table_widget)
+            dock_layout.addWidget(self.table_view)
         else:
             no_data_label = QLabel("No incoming data available")
             no_data_label.setAlignment(Qt.AlignCenter)
@@ -136,12 +138,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         }
 
         # Get column order from table widget
-        if hasattr(self, 'table_widget'):
-            header = self.table_widget.table.horizontalHeader()
-            self.changes['column_order'] = [
-                header.logicalIndex(i)
-                for i in range(header.count())
-            ]
+        # if hasattr(self, 'table_widget'):
+        #     header = self.table_widget..horizontalHeader()
+        #     self.changes['column_order'] = [
+        #         header.logicalIndex(i)
+        #         for i in range(header.count())
+        #     ]
 
         # Extract selected columns, their new names and data types
         for column_info in data_:
@@ -232,16 +234,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.apply_changes()
         if hasattr(self, 'table_widget'):
             self.table_widget.update_from_changes(self.changes)
-
-    # def is_same_column(self) -> bool:
-    #     if self.old_columns.keys() == self.incoming_columns:
-    #         return True
-    #     else:
-    #         # getting missing columns
-    #         missing_columns = set(self.old_columns.keys()) - set(
-    #             self.incoming_columns)
-
-    #         return False
 
     def get_code(self) -> str:
         if self.data is None or self.incoming_variable is None:

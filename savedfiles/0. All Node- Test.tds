@@ -116,40 +116,7 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "column_name": "Keyword",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Seed",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Source",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Country",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Autocomplete Position",
-            "dtype": "int64"
-          },
-          {
-            "column_name": "Difficulty",
-            "dtype": "int64"
-          },
-          {
-            "column_name": "Hot Keyword",
-            "dtype": "object"
-          },
-          {
-            "column_name": "Relevancy Score",
-            "dtype": "float64"
-          }
-        ],
+        "table_data": [],
         "changes": {
           "selected_columns": [
             "Seed"
@@ -403,6 +370,79 @@
       "content": {},
       "node_code": 1,
       "node_type": "preparation"
+    },
+    {
+      "id": 1814102751504,
+      "title": "Join_1",
+      "pos_x": -251.95312499999983,
+      "pos_y": 386.7187499999997,
+      "inputs": [
+        {
+          "id": 1814103007440,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1814101825872,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1814103652496,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1814103950736,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1814103953936,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [],
+        "selected_columns": []
+      },
+      "node_code": 1,
+      "node_type": "join"
+    },
+    {
+      "id": 1814103963280,
+      "title": "File Output",
+      "pos_x": 121.09374999999991,
+      "pos_y": -17.57812499999999,
+      "inputs": [
+        {
+          "id": 1814102567824,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": ""
+      },
+      "node_code": 5,
+      "node_type": "input"
     }
   ],
   "edges": [
