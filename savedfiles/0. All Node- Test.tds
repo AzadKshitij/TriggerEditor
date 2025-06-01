@@ -443,6 +443,33 @@
       },
       "node_code": 5,
       "node_type": "input"
+    },
+    {
+      "id": 2060263523088,
+      "title": "Count Records",
+      "pos_x": -206.24999999999997,
+      "pos_y": -20.312499999999996,
+      "inputs": [
+        {
+          "id": 2060263891920,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2060263634768,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {},
+      "node_code": 2,
+      "node_type": "transform"
     }
   ],
   "edges": [
@@ -499,6 +526,12 @@
       "edge_type": 5,
       "start": 1859404357776,
       "end": 2405752443024
+    },
+    {
+      "id": 2060263623184,
+      "edge_type": 5,
+      "start": 1859377780624,
+      "end": 2060263891920
     }
   ]
 }

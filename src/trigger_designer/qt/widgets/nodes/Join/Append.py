@@ -10,7 +10,7 @@ import pandas as pd
 from typing import Optional
 
 
-class Join1Content(QDMNodeIconContentWidget):
+class AppendContent(QDMNodeIconContentWidget):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
@@ -424,11 +424,11 @@ class Join1Content(QDMNodeIconContentWidget):
 
 
 @register_node(JoinNodes.APPEND, NodeTypes.JOIN)
-class TriggerNode_Join_1(TriggerNode):
+class TriggerNode_Append(TriggerNode):
     icon = "node_append"
     node_code = JoinNodes.APPEND
     node_type = NodeTypes.JOIN
-    node_title = "Join_1"
+    node_title = "Append"
     content_label_objname = "trigger_node_join"
     style = {}
 
@@ -437,8 +437,10 @@ class TriggerNode_Join_1(TriggerNode):
         # self.eval()
 
     def initInnerClasses(self) -> None:
-        self.content = Join1Content(self)
+        self.content: AppendContent = AppendContent(self)
         self.grNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
         # Only one input for simplicity
@@ -467,8 +469,7 @@ class TriggerNode_Join_1(TriggerNode):
             self.content.right_variable = right_input.get('variable_name')
 
             self.evalChildren()
-            # Return three outputs in a list
-            return [
+            self.param = [
                 # Output 0 - Left data pass-through
                 {
                     'data': self.content.left_data,
@@ -485,6 +486,8 @@ class TriggerNode_Join_1(TriggerNode):
                     'variable_name': self.content.right_variable
                 }
             ]
+            # Return three outputs in a list
+            return self.param
 
         # variable = self.content.variable_name
         else:

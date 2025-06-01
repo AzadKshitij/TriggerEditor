@@ -16,6 +16,7 @@ from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 # from ExecutionCheck.exec_node import InputNode, PrintNode
 from trigger_designer.qt.docks.result import ResultDock
 from trigger_designer.qt.helpers.logger import Logger, LogLevel
+from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 from trigger_designer.qt.widgets.node_group import NodeGroup
 
@@ -23,6 +24,9 @@ from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from trigger_designer.qt.main_window import TriggerWindow
+    from nodeeditor.node_node import Node
+    from nodeeditor.node_socket import Socket
+
 DEBUG = False
 DEBUG_CONTEXT = False
 
@@ -39,6 +43,8 @@ class TriggerSubWindow(NodeEditorWidget):
         # self.logger.set_context(self.design_window_id)
 
         self._last_scale: float = 1.0
+        self.execution_results: dict = {}  # Store execution results for each node
+        self.selected_action_data: Optional[list] = None
 
         self.setTitle()
         self.addButtons()
@@ -51,8 +57,21 @@ class TriggerSubWindow(NodeEditorWidget):
         self.scene.addDropListener(self.onDrop)
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
         self.scene.addItemSelectedListener(self.onItemSelected)
+        self.scene.grScene.socketClicked.connect(self.onSocketClicked)
         self._close_event_listeners: list[Callable] = []
         # self.setAttribute(Qt.WA_DeleteOnClose)
+
+    # Add this to where you handle socket clicks
+    def onSocketClicked(self, socket: 'Socket', node: 'Node'):
+        if socket.is_input:
+            return
+        socket_index = node.outputs.index(socket)
+        data = self.getSocketData(node, socket_index)
+        if data is not None:
+            # Create and show the data preview window
+            title = f"Socket {socket_index} Data - {node.__class__.__name__}"
+            preview_window = DataPreviewWindow(data, title, self)
+            preview_window.show()
 
     def addButtons(self) -> None:
         # Run button
@@ -559,12 +578,13 @@ class TriggerSubWindow(NodeEditorWidget):
         code = """"""
         for node in sorted_nodes:
             code += node.get_code()
+            print(code)
 
         with open("check_output.py", "w") as file:
             # Write the string to the file
             file.write(code)
 
-    def getAllNodes(self):
+    def getAllNodes(self) -> list['Node']:
         return self.scene.nodes
 
     def getNodeConnections(self) -> dict:
@@ -615,25 +635,11 @@ class TriggerSubWindow(NodeEditorWidget):
         for node in sorted_nodes:
             node.grNode.setPenExecuting()
             node.grNode.update()
-            # Collect data from all input nodes
-            input_data = []
-            for input_node in connections[node]['inputs']:
-                # print(":::::::::::::::::::::::::::::::::")
-                # print(input_node)
-                # print(":::::::::::::::::::::::::::::::::")
-                if input_node in node_data:
-                    input_data.append(node_data[input_node])
 
-            print(":::::::::::::::::::::::::::::::::")
-            print(f"Code for {self.__class__.__name__}: ", node.get_code())
-            print(":::::::::::::::::::::::::::::::::")
             stdoutput, local_variables = executor.execute_node(node)
-            print(":::::::::::::::::::::::::::::::::")
-            print(
-                "🐍 File: qt/design_window.py:633 | executeWorkflow ~ stdoutput", stdoutput)
-            print(
-                "🐍 File: qt/design_window.py:635 | executeWorkflow ~ local_variables", local_variables)
-            print(":::::::::::::::::::::::::::::::::")
+            # Store execution results for this node
+            self.execution_results[node] = local_variables
+
             node.grNode.setPenExecuted()
             node.grNode.update()
 
@@ -645,6 +651,27 @@ class TriggerSubWindow(NodeEditorWidget):
             node.grNode.resetPen()
 
         self.fixed_button.setEnabled(True)
+
+    def getSocketData(self, node, socket_index: int) -> Any:
+        """Get the data associated with a specific socket after execution"""
+        if self.execution_results is None:
+            print("No execution results available. Run the workflow first.")
+            return None
+
+        if node not in self.execution_results:
+            print(f"No results found for node {node}")
+            return None
+
+        # Get the variable name for this socket from the node
+        if hasattr(node, 'param'):
+            socket_data = node.param[socket_index]
+            if socket_data:
+                var_name = socket_data['variable_name']
+                # Look up the actual data in execution results
+                if var_name in self.execution_results[node]:
+                    return self.execution_results[node][var_name]
+
+        return None
 
     def createGroup(self, nodes=None):
         """Create a new node group containing the selected nodes"""

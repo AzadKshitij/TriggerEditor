@@ -225,10 +225,12 @@ class TriggerNode(Node):
 
     # evaluationRequested = Signal()
 
-    def __init__(self, scene: 'Scene', inputs: List[int] = [2, 2], outputs: List[int] = [1]) -> None:
-        super().__init__(scene, self.__class__.node_title, inputs, outputs)
+    def __init__(self, scene: 'Scene', inputs: List[int] = [2, 2], outputs: List[int] = [1], input_text: List[str] = [], output_text: List[str] = []) -> None:
+        super().__init__(scene, self.__class__.node_title,
+                         inputs, outputs, input_text, output_text)
 
         self.value: Optional[Any] = None
+        self.param: list = []
 
         # it's really important to mark all nodes Dirty by default
         self.markDirty()

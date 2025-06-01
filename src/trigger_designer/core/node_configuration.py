@@ -63,6 +63,8 @@ class JoinNodes(IntEnum):
 class TransformNodes(IntEnum):
     ARRANGE = auto()
     COUNT_RECORDS = auto()
+    RUNNING_TOTAL = auto()
+    TRANSPOSE = auto()
 
 
 class ReportNodes(IntEnum):

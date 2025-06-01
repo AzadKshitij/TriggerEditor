@@ -1,0 +1,218 @@
+{
+  "id": 2139149556432,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2139145985488,
+      "title": "File Input",
+      "pos_x": -383.0,
+      "pos_y": -169.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2139150537040,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/1. out_check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2139150541776,
+      "title": "Running Total",
+      "pos_x": -37.0,
+      "pos_y": -94.0,
+      "inputs": [
+        {
+          "id": 2139225801552,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2139225807248,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "sum_columns": [
+          "Autocomplete Position"
+        ],
+        "group_by_columns": [
+          "Keyword"
+        ],
+        "numeric_columns": [
+          "Unnamed: 0",
+          "Autocomplete Position",
+          "Difficulty",
+          "Relevancy Score"
+        ]
+      },
+      "node_code": 3,
+      "node_type": "transform"
+    },
+    {
+      "id": 1985128083184,
+      "title": "Join",
+      "pos_x": -27.0,
+      "pos_y": -230.0,
+      "inputs": [
+        {
+          "id": 1985128084192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1985128084480,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1985128084768,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1985128085056,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1985128085344,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "Unnamed: 0",
+            "right_column": "Unnamed: 0"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "Autocomplete Position",
+            "source": "L"
+          },
+          {
+            "name": "Country",
+            "source": "L"
+          },
+          {
+            "name": "Difficulty",
+            "source": "L"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "L"
+          },
+          {
+            "name": "Seed",
+            "source": "L"
+          },
+          {
+            "name": "Source",
+            "source": "L"
+          },
+          {
+            "name": "Unnamed: 0",
+            "source": "L"
+          },
+          {
+            "name": "Autocomplete Position",
+            "source": "R"
+          },
+          {
+            "name": "Country",
+            "source": "R"
+          },
+          {
+            "name": "Difficulty",
+            "source": "R"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "Seed",
+            "source": "R"
+          },
+          {
+            "name": "Source",
+            "source": "R"
+          },
+          {
+            "name": "Unnamed: 0",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2139147045328,
+      "edge_type": 5,
+      "start": 2139150537040,
+      "end": 2139225801552
+    },
+    {
+      "id": 1985046637008,
+      "edge_type": 5,
+      "start": 2139150537040,
+      "end": 1985128084480
+    },
+    {
+      "id": 1985128117520,
+      "edge_type": 5,
+      "start": 2139150537040,
+      "end": 1985128084192
+    }
+  ]
+}

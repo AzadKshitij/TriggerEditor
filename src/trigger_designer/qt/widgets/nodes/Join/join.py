@@ -38,9 +38,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: pd.DataFrame = None
         self.l_data: pd.DataFrame = None
         self.r_data: pd.DataFrame = None
-        self.variable_name = f'var_join_{self.id}'
-        self.l_variable_name = f'var_l_join_{self.id}'
-        self.r_variable_name = f'var_r_join_{self.id}'
+        self.l_variable_name = f'var_0_join_{self.id}'
+        self.variable_name = f'var_1_{self.id}'
+        self.r_variable_name = f'var_2_join_{self.id}'
 
     def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
@@ -668,7 +668,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 
 @register_node(JoinNodes.JOIN, NodeTypes.JOIN)
-class TriggerNode_Join_1(TriggerNode):
+class TriggerNode_Join(TriggerNode):
     icon = "node_join"
     node_code = JoinNodes.JOIN
     node_type = NodeTypes.JOIN
@@ -678,13 +678,15 @@ class TriggerNode_Join_1(TriggerNode):
     }
 
     def __init__(self, scene) -> None:
-        super().__init__(scene, inputs=[1, 1], outputs=[3, 3, 3])
+        super().__init__(scene, inputs=[1, 1], outputs=[
+            3, 3, 3], input_text=["L", "R"], output_text=["L", "J", "R"])
         # self.eval()
 
     def initInnerClasses(self) -> None:
-        self.content = JoinContent(self)
+        self.content: JoinContent = JoinContent(self)
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
 
@@ -715,8 +717,7 @@ class TriggerNode_Join_1(TriggerNode):
             self.content.right_variable = right_input.get('variable_name')
 
             self.evalChildren()
-            # Return three outputs in a list
-            return [
+            self.param = [
                 # Output 0 - Left data pass-through
                 {
                     'data': self.content.l_data,
@@ -733,6 +734,8 @@ class TriggerNode_Join_1(TriggerNode):
                     'variable_name': self.content.r_variable_name
                 }
             ]
+            # Return three outputs in a list
+            return self.param
 
         # variable = self.content.variable_name
         else:

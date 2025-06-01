@@ -172,8 +172,6 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         code_lines = []
         code_lines.append(f"import pandas as pd")
         code_lines.append(
-            f"from trigger_designer.core.utils.cleansing_util import DataCleansing, CleansingStats, NullStrategy")
-        code_lines.append(
             f"{self.variable_name} = pd.read_csv('{self.filePath}')")
 
         return '\n'.join(code_lines) + '\n'

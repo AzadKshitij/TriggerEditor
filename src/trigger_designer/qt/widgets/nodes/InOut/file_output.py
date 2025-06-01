@@ -55,8 +55,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def openFileDialog(self) -> None:
         filePath, _ = QFileDialog.getSaveFileName(
-            self.parent(
-            ), "Save CSV File", "", "CSV Files (*.csv);;All Files (*)")
+            self.parent(), "Save CSV File", "", "CSV Files (*.csv);;All Files (*)")
 
         if filePath:
             self.filePath = filePath
@@ -111,9 +110,8 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.filePath = data['filePath']
             return True & res
         except Exception as e:
-
             dumpException(e)
-        return res
+            return res
 
 
 @register_node(IONodes.FILE_OUTPUT, NodeTypes.IO)

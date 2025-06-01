@@ -62,6 +62,20 @@
         "path":"qt/images/node_icons/Join/Append.svg",
         "mode": "rb"
     },
+
+
+    "node_count":{
+        "path":"qt/images/node_icons/Transform/Count.svg",
+        "mode": "rb"
+    },
+    "node_running_total":{
+        "path":"qt/images/node_icons/Transform/Running Total.svg",
+        "mode": "rb"
+    },
+    "node_transpose":{
+        "path":"qt/images/node_icons/Transform/Transpose.svg",
+        "mode": "rb"
+    },
     
 
     "node_graph":{
