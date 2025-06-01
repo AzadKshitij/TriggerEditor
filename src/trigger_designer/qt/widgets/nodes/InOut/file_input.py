@@ -10,7 +10,7 @@ from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, Tri
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 from loguru import logger
 from typing import Any, Optional, OrderedDict, TYPE_CHECKING, Type, TypeVar, Union, cast
 
@@ -36,6 +36,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().__init__(node, parent)
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
         # local Variables
+        self.history = self.node.scene.history
         self.filePath = ""
         self.preview_rows = 10
         self.node = node
@@ -54,17 +55,13 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def initUI(self, _icon: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        # icon = QPixmap(
-        #     "src/trigger_designer/Resource/icons/Input/File Input.png")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
-        # self.filePathEdit.connect(self.check_file_path)
         self.filePathEdit.textChanged.connect(
             self._on_filePathEdit_textChanged)
-        # textChanged.connect(self.onDataChanged)
         self.registerInputWidget(self.filePathEdit)
 
         self.loadButton = QPushButton("Load CSV", self)
@@ -84,7 +81,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _on_filePathEdit_textChanged(self) -> None:
         self.filePath = self.filePathEdit.text()
-        self.check_file_path()
+        self.evaluate.emit()
 
     def check_file_path(self) -> bool:
         if not self.filePath:
@@ -203,14 +200,14 @@ class TriggerNode_FileInput(TriggerNode):
 
     def __init__(self, scene: 'Scene') -> None:
         super().__init__(scene, inputs=[], outputs=[3])
-        # self.eval()
+        self.eval()
         self.markInvalid(True)
 
     def initInnerClasses(self) -> None:
         self.content: FileInputContent = FileInputContent(self)
-        # self.content = cast('QDMNodeContentWidget', FileInputContent(self))
-        self.grNode = TriggerGraphicsNode(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     # def evalImplementation(self):
     #     param = {
@@ -220,7 +217,7 @@ class TriggerNode_FileInput(TriggerNode):
     #     # variable = self.content.variable_name
     #     return param
 
-    def processInputs(self, input_values: list[Any]) -> None:
+    def processInputs(self, input_values: list[Any]) -> Optional[list[dict[str, Any]]]:
         print("⚠️⚠️⚠️ File Input ⚠️⚠️⚠️")
         # Custom processing logic for the File Input node
         if not self.content.filePath:
@@ -230,19 +227,16 @@ class TriggerNode_FileInput(TriggerNode):
 
         self.markDirty(False)
         self.markInvalid(False)
-        # self.markDescendantsInvalid(False)
-        # self.markDescendantsDirty()
-
-        # self.content.loadCSV(self.content.filePath)
         self.content.check_file_path()
-        param = [{
+
+        self.param = [{
             "data": self.content.data,
             "variable_name": self.content.variable_name
         }]
 
         self.evalChildren()
 
-        return param
+        return self.param
 
     def get_code(self):
         return self.content.get_code()

@@ -52,6 +52,8 @@ class PreparationNodes(IntEnum):
     SELECT = auto()
     SORT = auto()
     UNIQUE = auto()
+    SPLIT = auto()
+    DYNAMIC_ROW_BUILDER = auto()
 
 
 class JoinNodes(IntEnum):

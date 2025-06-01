@@ -52,6 +52,14 @@
         "path":"qt/images/node_icons/Preparation/Unique.svg",
         "mode": "rb"
     },
+    "node_split":{
+        "path":"qt/images/node_icons/Preparation/Split.svg",
+        "mode": "rb"
+    },
+    "node_generate_rows":{
+        "path":"qt/images/node_icons/Preparation/Dynamic Row Generate.svg",
+        "mode": "rb"
+    },
     
     
     "node_join":{

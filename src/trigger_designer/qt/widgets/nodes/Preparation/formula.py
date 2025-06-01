@@ -5,7 +5,7 @@ from trigger_designer.core.node_configuration import register_node, PreparationN
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 import pandas as pd
 from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, cast, Union
 
@@ -45,14 +45,14 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def node(self, value: 'TriggerNode') -> None:
         self._node = value
 
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+    def initUI(self, icon_: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is None:
             no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
         # return layout
@@ -278,7 +278,8 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.history.is_restoring_history = False
 
     def get_code(self):
-        if not self.formula_text or not self.target_column:
+        if not self.formula_text or not self.target_column or self.data is None:
+            print("Formula get_code: 0")
             return ""
         print("Formula get_code: 1")
         self.generate_formula()
@@ -345,9 +346,10 @@ class TriggerNode_Formula(TriggerNode):
         self.markInvalid(True)
 
     def initInnerClasses(self) -> None:
-        self.content = FormulaContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.content: FormulaContent = FormulaContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
         # Only one input for simplicity
@@ -363,13 +365,13 @@ class TriggerNode_Formula(TriggerNode):
             self.content.incom_data = input_value.get('data')
             self.content.data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
-            param = [{
+            self.param = [{
                 'data': self.content.data,
                 'variable_name': self.content.variable_name
             }]
             self.evalChildren()
 
-            return param
+            return self.param
         # variable = self.content.variable_name
         else:
             print("👉🚫 Input is not connected", self.__class__.__name__)

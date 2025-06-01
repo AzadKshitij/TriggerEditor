@@ -1,37 +1,16 @@
 {
-  "id": 2680111744336,
+  "id": 2176003829456,
   "scene_width": 64000,
   "scene_height": 64000,
   "nodes": [
     {
-      "id": 1859404355984,
-      "title": "File Input",
-      "pos_x": -775.7392578124995,
-      "pos_y": 116.59667968749989,
-      "inputs": [],
-      "outputs": [
-        {
-          "id": 1859377780624,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 1
-        }
-      ],
-      "content": {
-        "filePath": "C:/Projects/TriggerEditor/savedfiles/6.1. out_check_W_false-filter.csv"
-      },
-      "node_code": 4,
-      "node_type": "input"
-    },
-    {
-      "id": 1859404365136,
-      "title": "Filter",
-      "pos_x": -499.8318757662674,
-      "pos_y": -193.08049691748755,
+      "id": 2176088586800,
+      "title": "Cleansing",
+      "pos_x": -208.17187500000003,
+      "pos_y": -182.22363281250003,
       "inputs": [
         {
-          "id": 1859404360080,
+          "id": 2176088583632,
           "index": 0,
           "multi_edges": false,
           "position": 2,
@@ -40,36 +19,63 @@
       ],
       "outputs": [
         {
-          "id": 1859404357776,
+          "id": 2176088583344,
           "index": 0,
           "multi_edges": true,
           "position": 5,
-          "socket_type": 2
+          "socket_type": 3
+        }
+      ],
+      "content": {},
+      "node_code": 1,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2176088583056,
+      "title": "Filter",
+      "pos_x": -210.0,
+      "pos_y": -57.0,
+      "inputs": [
+        {
+          "id": 2176088582048,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2176088581760,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
         },
         {
-          "id": 1859404359888,
+          "id": 2176088581472,
           "index": 1,
           "multi_edges": true,
           "position": 5,
-          "socket_type": 2
+          "socket_type": 3
         }
       ],
       "content": {
-        "column": "Keyword",
+        "column": "Unnamed: 0",
         "operation": "Equals",
-        "value": "Kid"
+        "value": ""
       },
       "node_code": 2,
       "node_type": "preparation"
     },
     {
-      "id": 1859404365072,
+      "id": 2176088581184,
       "title": "Formula",
-      "pos_x": -503.5400390624998,
-      "pos_y": -61.035156249999986,
+      "pos_x": -210.37890625000003,
+      "pos_y": 81.0517578125,
       "inputs": [
         {
-          "id": 1859375994576,
+          "id": 2176088580176,
           "index": 0,
           "multi_edges": false,
           "position": 2,
@@ -78,7 +84,7 @@
       ],
       "outputs": [
         {
-          "id": 1859399587408,
+          "id": 2176088579888,
           "index": 0,
           "multi_edges": true,
           "position": 5,
@@ -93,13 +99,13 @@
       "node_type": "preparation"
     },
     {
-      "id": 1859404364880,
+      "id": 2176088579600,
       "title": "Select",
-      "pos_x": -509.6435546874997,
-      "pos_y": 94.60449218749997,
+      "pos_x": -208.60449218749997,
+      "pos_y": 212.9482421875,
       "inputs": [
         {
-          "id": 1859404365584,
+          "id": 2176088578592,
           "index": 0,
           "multi_edges": false,
           "position": 2,
@@ -108,36 +114,32 @@
       ],
       "outputs": [
         {
-          "id": 1859404361936,
+          "id": 2176088578304,
           "index": 0,
           "multi_edges": true,
           "position": 5,
-          "socket_type": 1
+          "socket_type": 3
         }
       ],
       "content": {
         "table_data": [],
         "changes": {
-          "selected_columns": [
-            "Seed"
-          ],
+          "selected_columns": [],
           "rename_mapping": {},
-          "dtype_mapping": {
-            "Seed": "object"
-          }
+          "dtype_mapping": {}
         }
       },
       "node_code": 4,
       "node_type": "preparation"
     },
     {
-      "id": 1859404365456,
+      "id": 2176088587088,
       "title": "Sort",
-      "pos_x": -512.4799109799874,
-      "pos_y": 228.11896570580097,
+      "pos_x": -209.22851562499994,
+      "pos_y": 352.14843749999994,
       "inputs": [
         {
-          "id": 1859404212816,
+          "id": 2176088577152,
           "index": 0,
           "multi_edges": false,
           "position": 2,
@@ -146,7 +148,7 @@
       ],
       "outputs": [
         {
-          "id": 1859372357072,
+          "id": 2176088576864,
           "index": 0,
           "multi_edges": true,
           "position": 5,
@@ -156,8 +158,8 @@
       "content": {
         "sort_data": [
           {
-            "column": "Keyword",
-            "order": "Ascending"
+            "column": "Unnamed: 0",
+            "order": "Descending"
           }
         ]
       },
@@ -165,13 +167,13 @@
       "node_type": "preparation"
     },
     {
-      "id": 1859404409104,
+      "id": 2176088576576,
       "title": "Unique",
-      "pos_x": -513.5400390624998,
-      "pos_y": 362.8769696312075,
+      "pos_x": -199.75585937499994,
+      "pos_y": 485.9863281249998,
       "inputs": [
         {
-          "id": 1859404410960,
+          "id": 2176088575568,
           "index": 0,
           "multi_edges": false,
           "position": 2,
@@ -180,7 +182,7 @@
       ],
       "outputs": [
         {
-          "id": 1859404411344,
+          "id": 2176088575280,
           "index": 0,
           "multi_edges": true,
           "position": 5,
@@ -189,27 +191,121 @@
       ],
       "content": {
         "selected_columns": [
-          "Relevancy Score"
+          "Unnamed: 0",
+          "Keyword",
+          "Source",
+          "Autocomplete Position"
         ]
       },
       "node_code": 6,
       "node_type": "preparation"
     },
     {
-      "id": 1691577709904,
-      "title": "Join",
-      "pos_x": -516.7661867047296,
-      "pos_y": 500.95670392607644,
+      "id": 2176088574992,
+      "title": "Split",
+      "pos_x": -200.53710937499994,
+      "pos_y": 616.7724609374999,
       "inputs": [
         {
-          "id": 1691576271504,
+          "id": 2176088573984,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2176088573696,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2176088573408,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "main_percent": 80,
+        "random_seed": 1
+      },
+      "node_code": 7,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2176088573120,
+      "title": "Generate Rows",
+      "pos_x": -202.05078124999994,
+      "pos_y": 748.9257812499999,
+      "inputs": [
+        {
+          "id": 2176088572112,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2176088587232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "field_name": "counter",
+        "field_type": "int",
+        "initial_value": 1,
+        "increment_value": 1,
+        "max_value": 10
+      },
+      "node_code": 8,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2176004824160,
+      "title": "File Input",
+      "pos_x": -489.06249999999994,
+      "pos_y": 95.31249999999999,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2176004925488,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/1. out_check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 1933364878576,
+      "title": "Join",
+      "pos_x": 148.43749999999997,
+      "pos_y": 466.7968749999999,
+      "inputs": [
+        {
+          "id": 1933365313888,
           "index": 0,
           "multi_edges": false,
           "position": 2,
           "socket_type": 1
         },
         {
-          "id": 1691577704656,
+          "id": 1933365322816,
           "index": 1,
           "multi_edges": false,
           "position": 2,
@@ -218,21 +314,21 @@
       ],
       "outputs": [
         {
-          "id": 1691573648592,
+          "id": 1933365323104,
           "index": 0,
           "multi_edges": true,
           "position": 5,
           "socket_type": 3
         },
         {
-          "id": 1691579541008,
+          "id": 1933365323392,
           "index": 1,
           "multi_edges": true,
           "position": 5,
           "socket_type": 3
         },
         {
-          "id": 1691579538832,
+          "id": 1933365323680,
           "index": 2,
           "multi_edges": true,
           "position": 5,
@@ -241,7 +337,12 @@
       ],
       "content": {
         "join_type": "inner",
-        "mapping_data": [],
+        "mapping_data": [
+          {
+            "left_column": "Unnamed: 0",
+            "right_column": "Unnamed: 0"
+          }
+        ],
         "selected_columns": [
           {
             "name": "Autocomplete Position",
@@ -276,19 +377,11 @@
             "source": "L"
           },
           {
+            "name": "Unnamed: 0",
+            "source": "L"
+          },
+          {
             "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Country",
-            "source": "R"
-          },
-          {
-            "name": "Difficulty",
-            "source": "R"
-          },
-          {
-            "name": "Hot Keyword",
             "source": "R"
           },
           {
@@ -296,15 +389,11 @@
             "source": "R"
           },
           {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Seed",
-            "source": "R"
-          },
-          {
             "name": "Source",
+            "source": "R"
+          },
+          {
+            "name": "Unnamed: 0",
             "source": "R"
           }
         ]
@@ -313,145 +402,13 @@
       "node_type": "join"
     },
     {
-      "id": 1691579476112,
-      "title": "Graph",
-      "pos_x": -200.33666931756727,
-      "pos_y": 113.94808627591263,
-      "inputs": [
-        {
-          "id": 1691579310992,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 1691571810832,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "graph_type": "line",
-        "x_column": "Keyword",
-        "y_column": "Keyword",
-        "title": ""
-      },
-      "node_code": 3,
-      "node_type": "report"
-    },
-    {
-      "id": 2405758025360,
-      "title": "Cleansing",
-      "pos_x": -303.0,
-      "pos_y": -237.0,
-      "inputs": [
-        {
-          "id": 2405752443024,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 2405762403984,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {},
-      "node_code": 1,
-      "node_type": "preparation"
-    },
-    {
-      "id": 1814102751504,
-      "title": "Join_1",
-      "pos_x": -251.95312499999983,
-      "pos_y": 386.7187499999997,
-      "inputs": [
-        {
-          "id": 1814103007440,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        },
-        {
-          "id": 1814101825872,
-          "index": 1,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 1814103652496,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        },
-        {
-          "id": 1814103950736,
-          "index": 1,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        },
-        {
-          "id": 1814103953936,
-          "index": 2,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "join_type": "inner",
-        "mapping_data": [],
-        "selected_columns": []
-      },
-      "node_code": 1,
-      "node_type": "join"
-    },
-    {
-      "id": 1814103963280,
-      "title": "File Output",
-      "pos_x": 121.09374999999991,
-      "pos_y": -17.57812499999999,
-      "inputs": [
-        {
-          "id": 1814102567824,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": ""
-      },
-      "node_code": 5,
-      "node_type": "input"
-    },
-    {
-      "id": 2060263523088,
+      "id": 2327088172912,
       "title": "Count Records",
-      "pos_x": -206.24999999999997,
-      "pos_y": -20.312499999999996,
+      "pos_x": 76.56249999999999,
+      "pos_y": -149.99999999999997,
       "inputs": [
         {
-          "id": 2060263891920,
+          "id": 2327088177952,
           "index": 0,
           "multi_edges": false,
           "position": 2,
@@ -460,7 +417,7 @@
       ],
       "outputs": [
         {
-          "id": 2060263634768,
+          "id": 2327088178240,
           "index": 0,
           "multi_edges": true,
           "position": 5,
@@ -470,68 +427,111 @@
       "content": {},
       "node_code": 2,
       "node_type": "transform"
+    },
+    {
+      "id": 2327088068736,
+      "title": "Running Total",
+      "pos_x": 90.33203124999997,
+      "pos_y": 21.97265624999997,
+      "inputs": [
+        {
+          "id": 2327088169600,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2327088178384,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "sum_columns": [],
+        "group_by_columns": [],
+        "numeric_columns": []
+      },
+      "node_code": 3,
+      "node_type": "transform"
     }
   ],
   "edges": [
     {
-      "id": 1859399017424,
-      "edge_type": 2,
-      "start": 1859377780624,
-      "end": 1859404360080
-    },
-    {
-      "id": 1859459338960,
-      "edge_type": 2,
-      "start": 1859377780624,
-      "end": 1859375994576
-    },
-    {
-      "id": 1859459343312,
+      "id": 2176002784848,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 1859404365584
+      "start": 2176004925488,
+      "end": 2176088583632
     },
     {
-      "id": 1859459337872,
+      "id": 2176088516944,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 1859404212816
+      "start": 2176004925488,
+      "end": 2176088582048
     },
     {
-      "id": 1859459343632,
+      "id": 2176088877392,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 1859404410960
+      "start": 2176004925488,
+      "end": 2176088580176
     },
     {
-      "id": 1691578241360,
+      "id": 2176004153360,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 1691579310992
+      "start": 2176004925488,
+      "end": 2176088578592
     },
     {
-      "id": 1691579542416,
+      "id": 2176089004176,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 1691576271504
+      "start": 2176004925488,
+      "end": 2176088577152
     },
     {
-      "id": 1691579544976,
+      "id": 2176089007632,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 1691577704656
+      "start": 2176004925488,
+      "end": 2176088575568
     },
     {
-      "id": 2405762273232,
+      "id": 2176089003920,
       "edge_type": 5,
-      "start": 1859404357776,
-      "end": 2405752443024
+      "start": 2176004925488,
+      "end": 2176088573984
     },
     {
-      "id": 2060263623184,
+      "id": 1933283549136,
       "edge_type": 5,
-      "start": 1859377780624,
-      "end": 2060263891920
+      "start": 2176004925488,
+      "end": 2176088572112
+    },
+    {
+      "id": 1933278772496,
+      "edge_type": 5,
+      "start": 2176088576864,
+      "end": 1933365313888
+    },
+    {
+      "id": 1933365848592,
+      "edge_type": 5,
+      "start": 2176088575280,
+      "end": 1933365322816
+    },
+    {
+      "id": 2327003215888,
+      "edge_type": 5,
+      "start": 2176088583344,
+      "end": 2327088177952
+    },
+    {
+      "id": 2327088785360,
+      "edge_type": 5,
+      "start": 2176088581760,
+      "end": 2327088169600
     }
   ]
 }

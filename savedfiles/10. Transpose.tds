@@ -1,0 +1,98 @@
+{
+  "id": 2284056103184,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2284056756864,
+      "title": "File Input",
+      "pos_x": -360.0,
+      "pos_y": -175.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2283975864624,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/1. out_check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2283975864480,
+      "title": "Transpose",
+      "pos_x": -109.0,
+      "pos_y": -176.0,
+      "inputs": [
+        {
+          "id": 2283975863760,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2283975863616,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "key_columns": [
+          "Seed"
+        ],
+        "data_columns": [
+          "Keyword"
+        ],
+        "missing_action": "warn"
+      },
+      "node_code": 4,
+      "node_type": "transform"
+    },
+    {
+      "id": 2283975863328,
+      "title": "File Output",
+      "pos_x": 204.0,
+      "pos_y": -176.0,
+      "inputs": [
+        {
+          "id": 2283975861888,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/10. Transposed Out.csv"
+      },
+      "node_code": 5,
+      "node_type": "input"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2283975939984,
+      "edge_type": 5,
+      "start": 2283975864624,
+      "end": 2283975863760
+    },
+    {
+      "id": 2283975883472,
+      "edge_type": 5,
+      "start": 2283975863616,
+      "end": 2283975861888
+    }
+  ]
+}

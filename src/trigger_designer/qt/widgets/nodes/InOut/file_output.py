@@ -1,3 +1,4 @@
+import os
 from qtpy.QtWidgets import QWidget, QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QSpacerItem, QSizePolicy
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
@@ -15,23 +16,34 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local Variables
         self.filePath = ""
+        self.node = node
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable = ""
-        self.data: pd.DataFrame = None
+        self.data: Optional[pd.DataFrame] = None
 
-    def initUI(self) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon)
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
 
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
+    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+        icon_: QPixmap = self.node.rsm.get(f"{self.node.icon}")
+        super().initUI(icon_)
+
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
+        self.filePathEdit.textChanged.connect(
+            self._on_filePathEdit_textChanged)
         # self.filePathEdit.setReadOnly(True)
         self.loadButton = QPushButton("Save CSV", self)
         self.loadButton.clicked.connect(self.openFileDialog)
@@ -52,6 +64,28 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         #     20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         # return dock_layout
+
+    def _on_filePathEdit_textChanged(self) -> None:
+        self.filePath = self.filePathEdit.text()
+        # self.check_file_path()
+
+    def check_file_path(self) -> bool:
+        if not self.filePath:
+            return False
+        # self.evaluate.emit()
+
+        # Check if the file exists
+        if not os.path.exists(self.filePath):
+            print(f"Error: File '{self.filePath}' does not exist.")
+            self.node.grNode.setToolTip("File does not exist")
+            self.node.markInvalid(True)
+            return False
+        else:
+            print(f"File '{self.filePath}' exists.")
+            self.node.grNode.setToolTip("")
+            self.node.markInvalid(False)
+
+        return True
 
     def openFileDialog(self) -> None:
         filePath, _ = QFileDialog.getSaveFileName(
@@ -129,15 +163,16 @@ class TriggerNode_FileOutput(TriggerNode):
         # self.eval()
 
     def initInnerClasses(self) -> None:
-        self.content = FileOutputContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.content: FileOutputContent = FileOutputContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
 
     def processInputs(self, input_values):
         # Only one input for simplicity
         this_socket_index = 0
         input_node = self.getInput(this_socket_index)
-        socket_index = self.getSocketValue(input_node.outputs, self)
+        socket_index = self.getSocketValue(
+            input_node.outputs, self)  # type: ignore
         input_value = input_values[this_socket_index][socket_index]
 
         if not input_value:

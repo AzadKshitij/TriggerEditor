@@ -7,7 +7,8 @@ from trigger_designer.core.node_configuration import register_node, PreparationN
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
+from loguru import logger
 import pandas as pd
 
 
@@ -29,11 +30,11 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # incoming variables
         self.incoming_variable: str = ''
-        self.incom_data: pd.DataFrame = None
+        self.incom_data: Optional[pd.DataFrame] = None
 
         # pass on variables
-        self.data: pd.DataFrame = None
-        self.f_data: pd.DataFrame = None
+        self.data: Optional[pd.DataFrame] = None
+        self.f_data: Optional[pd.DataFrame] = None
         self.variable_name = f'var_t_filter_{self.id}'
         self.f_variable_name = f'var_f_filter_{self.id}'
 
@@ -45,7 +46,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def node(self, value: 'TriggerNode') -> None:
         self._node = value
 
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+    def initUI(self, icon_: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -53,7 +54,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         if self.incom_data is None:
             no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
             # return layout
@@ -115,9 +116,10 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # return layout
 
     def update_data(self) -> None:
-        if hasattr(self, 'incom_data') and self.incom_data is not None:
+        if self.incom_data is not None:
             if self.column and self.operation and self.value:
                 try:
+                    print("Updating data with default filter settings:")
                     # Get column data type
                     col_dtype = self.incom_data[self.column].dtype
 
@@ -135,12 +137,13 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         mask = self.incom_data[self.column] == converted_value
                     elif self.operation == "Not Equals":
                         mask = self.incom_data[self.column] != converted_value
-                    elif self.operation == "Contains":
+                    elif self.operation == "Contains" and type(converted_value) is str:
+                        # Ensure the column is a string type for contains operation
                         if not pd.api.types.is_string_dtype(col_dtype):
                             raise ValueError(
                                 "Contains operation only works with text columns")
                         mask = self.incom_data[self.column].str.contains(
-                            self.value, na=False)
+                            converted_value, na=False)
                     elif self.operation == "Less Than":
                         if pd.api.types.is_string_dtype(col_dtype):
                             raise ValueError(
@@ -167,7 +170,12 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.f_data = self.incom_data[~(mask)]
 
                 except Exception as e:
-                    print(f"Filter error: {str(e)}")
+                    logger.error(f"Filter error: {str(e)}")
+            else:
+                print(
+                    "Filter settings are incomplete. Please select a column, operation, and value.")
+                self.data = None
+                self.f_data = None
 
     def update_columns(self) -> None:
         if self.incom_data is not None:
@@ -298,6 +306,10 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.history.is_restoring_history = False
 
     def get_code(self):
+
+        if self.incom_data is None or self.column is None or self.operation is None or self.value is None:
+            return "# No data or filter settings available"
+
         self.column = self.column
         self.operation = self.operation
         self.value = self.value
@@ -370,14 +382,16 @@ class TriggerNode_Filter(TriggerNode):
     style = {}
 
     def __init__(self, scene) -> None:
-        super().__init__(scene, inputs=[1], outputs=[3, 3])
+        super().__init__(scene, inputs=[1], outputs=[
+            3, 3], output_text=["T", "F"])
         # self.eval()
         self.markInvalid(True)
 
     def initInnerClasses(self) -> None:
-        self.content = FilterContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.content: FilterContent = FilterContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.params: list = []
 
     def processInputs(self, input_values):
         # Only one input for simplicity
@@ -395,7 +409,7 @@ class TriggerNode_Filter(TriggerNode):
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
             self.content.update_data()
-            params = [
+            self.params = [
                 {
                     'data': self.content.data,
                     'variable_name': self.content.variable_name
@@ -406,7 +420,7 @@ class TriggerNode_Filter(TriggerNode):
                 }
             ]
             self.evalChildren()
-            return params
+            return self.params
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

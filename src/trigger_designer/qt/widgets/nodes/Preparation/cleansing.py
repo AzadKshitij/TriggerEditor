@@ -6,7 +6,7 @@ from trigger_designer.core.node_configuration import NodeTypes, register_node, P
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 import pandas as pd
 import numpy as np
 from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, cast, Union
@@ -22,6 +22,8 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
+
         # local variables
         self.history = self.node.scene.history
 
@@ -48,7 +50,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Field selection
         self.selected_fields = []
 
-        self.cleansing_stats = None
+        self.cleansing_stats: Optional[CleansingStats] = None
 
     @property
     def node(self) -> 'TriggerNode':
@@ -59,8 +61,8 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self._node = value
 
     def initUI(self, icon: Optional[QPixmap] = None) -> None:
-        icon: QPixmap = self.node.rsm.get(f'{self.node.icon}')
-        super().initUI(icon)
+        icon_: QPixmap = self.node.rsm.get(f'{self.node.icon}')
+        super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
@@ -163,7 +165,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addLayout(main_layout)
         else:
             no_data_label = QLabel('No incoming data available')
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet('color: gray;')
             dock_layout.addWidget(no_data_label)
 
@@ -224,26 +226,6 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.process_data()
         self.evaluate.emit()
 
-    # def process_data(self) -> None:
-    #     if self.incom_data is not None:
-    #         cleaner = DataCleansing(self.incom_data)
-
-    #         # Apply configured transformations
-    #         cleaner.handle_nulls(self.null_strategy)
-
-    #         if self.strip_whitespace:
-    #             cleaner.strip_whitespace(
-    #                 remove_all=self.remove_all_whitespace,
-    #                 normalize_spaces=self.normalize_spaces
-    #             )
-
-    #         if self.case_modification != 'none':
-    #             cleaner.modify_case(self.case_modification)
-
-    #         self.data = cleaner.get_result()
-    #         self.cleansing_stats = cleaner.get_stats()
-    #         self.update_stats_display()
-
     def process_data(self) -> None:
         if self.incom_data is not None:
             cleaner = DataCleansing(self.incom_data)
@@ -269,20 +251,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 cleaner.modify_case(self.case_modification)
 
             self.data = cleaner.get_result()
-            self.cleansing_stats: CleansingStats = cleaner.get_stats()
-            self.update_stats_display()
-
-    def update_stats_display(self) -> None:
-        if self.cleansing_stats:
-            stats = self.cleansing_stats
-            stats_text = f"""
-            Rows removed: {stats.rows_removed}
-            Columns removed: {stats.columns_removed}
-            Nulls replaced: {stats.nulls_replaced}
-            Whitespace changes: {stats.whitespace_changes}
-            Case changes: {stats.case_changes}
-            """
-            self.stats_label.setText(stats_text)
+            self.cleansing_stats = cleaner.get_stats()
 
     def get_code(self) -> str:
         if self.data is None or self.incoming_variable is None:
@@ -335,15 +304,17 @@ class TriggerNode_Cleansing(TriggerNode):
         # self.eval()
 
     def initInnerClasses(self):
-        self.content = CleansingContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.content: CleansingContent = CleansingContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
         # Only one input for simplicity
         this_socket_index = 0
         input_node = self.getInput(this_socket_index)
-        socket_index = self.getSocketValue(input_node.outputs, self)
+        socket_index = self.getSocketValue(
+            input_node.outputs, self)  # type: ignore
         input_value = input_values[this_socket_index][socket_index]
 
         if input_value:
@@ -353,10 +324,11 @@ class TriggerNode_Cleansing(TriggerNode):
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
             self.evalChildren()
-            return [{
+            self.param = [{
                 'data': self.content.data,
                 'variable_name': self.content.variable_name
             }]
+            return self.param
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

@@ -7,11 +7,11 @@ from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, Tri
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.node_node import Node
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, OrderedDict, Type, cast, Union
 
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar  # type: ignore
 from matplotlib.figure import Figure
 
 if TYPE_CHECKING:
@@ -136,7 +136,7 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def node(self, value: 'TriggerNode') -> None:
         self._node = value
 
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+    def initUI(self, icon_: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -250,7 +250,7 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         return "\n".join(code_lines)
 
-    def after_execution(self, context: Dict[str, Any] = None) -> None:
+    def after_execution(self, context: Dict[str, Any]) -> None:
         self.plot_graph()
 
     def serialize(self) -> OrderedDict[Any, Any]:
@@ -295,6 +295,7 @@ class TriggerNode_Graph(TriggerNode):
         self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(
             self)  # type: ignore
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: List = []
 
     def processInputs(self, input_values: list[Any]) -> Optional[List[Dict]]:
         # Only one input for simplicity
@@ -312,10 +313,11 @@ class TriggerNode_Graph(TriggerNode):
             self.content.incoming_variable = input_value.get('variable_name')
             self.content.update_column_options()
             self.evalChildren()
-            return [{
+            self.param = [{
                 'data': self.content.data,
                 'variable_name': self.content.variable_name
             }]
+            return self.param
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

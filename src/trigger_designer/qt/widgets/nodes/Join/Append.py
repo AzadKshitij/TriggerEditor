@@ -438,7 +438,7 @@ class TriggerNode_Append(TriggerNode):
 
     def initInnerClasses(self) -> None:
         self.content: AppendContent = AppendContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
         self.param: list = []
 

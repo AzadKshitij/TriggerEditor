@@ -1,0 +1,127 @@
+{
+  "id": 1654932087696,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 1654932263920,
+      "title": "File Input",
+      "pos_x": -481.0,
+      "pos_y": -54.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 1654932264928,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/1. out_check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 1654932265216,
+      "title": "Split",
+      "pos_x": -215.0,
+      "pos_y": -54.0,
+      "inputs": [
+        {
+          "id": 1654932266224,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1654932266512,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1654932266800,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "main_percent": 80,
+        "random_seed": 1
+      },
+      "node_code": 7,
+      "node_type": "preparation"
+    },
+    {
+      "id": 1654932267664,
+      "title": "File Output",
+      "pos_x": 52.0,
+      "pos_y": -142.0,
+      "inputs": [
+        {
+          "id": 1654932268672,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/11. Split_E.csv"
+      },
+      "node_code": 5,
+      "node_type": "input"
+    },
+    {
+      "id": 1654932268960,
+      "title": "File Output",
+      "pos_x": 55.0,
+      "pos_y": 6.0,
+      "inputs": [
+        {
+          "id": 1654932269968,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/11. Split_H.csv"
+      },
+      "node_code": 5,
+      "node_type": "input"
+    }
+  ],
+  "edges": [
+    {
+      "id": 1654932085584,
+      "edge_type": 5,
+      "start": 1654932264928,
+      "end": 1654932266224
+    },
+    {
+      "id": 1654932322064,
+      "edge_type": 5,
+      "start": 1654932266512,
+      "end": 1654932268672
+    },
+    {
+      "id": 1654932426256,
+      "edge_type": 5,
+      "start": 1654932266800,
+      "end": 1654932269968
+    }
+  ]
+}

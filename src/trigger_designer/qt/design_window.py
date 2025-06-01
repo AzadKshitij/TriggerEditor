@@ -621,6 +621,7 @@ class TriggerSubWindow(NodeEditorWidget):
     def executeWorkflow(self) -> None:
         self.fixed_button.setEnabled(False)
         connections = self.getNodeConnections()
+        import_node = None
         sorted_nodes = self.topologicalSort(connections)
         node_data = {}
         # executor = NodeExecutor()

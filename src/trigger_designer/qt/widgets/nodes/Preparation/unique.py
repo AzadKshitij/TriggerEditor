@@ -7,7 +7,7 @@ from trigger_designer.core.node_configuration import register_node, PreparationN
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 from nodeeditor.node_scene import Scene
 import pandas as pd
@@ -18,7 +18,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         # local variables
         self.selected_columns = []
@@ -28,14 +28,21 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # incoming variables
         self.incoming_variable: str = ''
-        self.incom_data: pd.DataFrame = None
+        self.incom_data: Optional[pd.DataFrame] = None
 
         # pass on variables
-        self.data = []
         self.variable_name = f'var_union_{self.id}'
 
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
     def initUI(self, parent: Optional[QWidget] = None) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
+        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
@@ -48,7 +55,8 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Column list box
         self.column_list = QListWidget()
         self.column_list.setObjectName("column_list")
-        self.column_list.setSelectionMode(QListWidget.MultiSelection)
+        self.column_list.setSelectionMode(
+            QListWidget.SelectionMode.MultiSelection)
         self.column_list.itemChanged.connect(self.on_item_changed)
         # self.column_list.itemSelectionChanged.connect(self.on_item_changed)
         self.update_column_list()
@@ -66,12 +74,12 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is not None:
             for column in self.incom_data.columns:
                 item = QListWidgetItem(column)
-                item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 # Check if column was previously selected
                 if column in self.selected_columns:
-                    item.setCheckState(Qt.Checked)
+                    item.setCheckState(Qt.CheckState.Checked)
                 else:
-                    item.setCheckState(Qt.Unchecked)
+                    item.setCheckState(Qt.CheckState.Unchecked)
 
                 self.column_list.addItem(item)
 
@@ -83,7 +91,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         old_selected_columns = self.selected_columns.copy()
 
-        if item.checkState() == Qt.Checked:
+        if item.checkState() == Qt.CheckState.Checked:
             if item.text() not in self.selected_columns:
                 self.selected_columns.append(item.text())
         else:
@@ -102,7 +110,6 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 data=history_data,
                 setModified=True
             )
-        self.handle_data_changed()
 
     def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
@@ -123,7 +130,6 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 finally:
                     self.column_list.blockSignals(False)
             # Update data
-            self.handle_data_changed()
 
         finally:
             self.history.is_restoring_history = False
@@ -132,14 +138,10 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """Get list of selected column names"""
         selected_columns = []
         for index in range(self.column_list.count()):
-            item = self.column_list.item(index)
-            if item.checkState() == Qt.Checked:
+            item: Optional[QListWidgetItem] = self.column_list.item(index)
+            if item and item.checkState() == Qt.CheckState.Checked:
                 selected_columns.append(item.text())
         return selected_columns
-
-    def handle_data_changed(self) -> None:
-        self.data = self.incom_data.copy()
-        self.data = self.data[self.selected_columns]
 
     def get_code(self):
         if not self.selected_columns:
@@ -189,12 +191,13 @@ class TriggerNode_Unique(TriggerNode):
 
     def __init__(self, scene: 'Scene') -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
-        # self.eval()
+        self.eval()
 
     def initInnerClasses(self) -> None:
         self.content: UniqueContent = UniqueContent(self)
         self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
         this_socket_index = 0
@@ -209,10 +212,11 @@ class TriggerNode_Unique(TriggerNode):
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
             self.evalChildren()
-            return [{
-                'data': self.content.data,
+            self.param = [{
+                'data': self.content.incom_data,
                 'variable_name': self.content.variable_name
             }]
+            return self.param
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

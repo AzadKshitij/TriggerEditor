@@ -22,7 +22,7 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
-
+        self.node = node
         # Data tracking
         self.incoming_variable: str = ''
         self.incom_data: Optional[pd.DataFrame] = None
@@ -38,9 +38,17 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.sum_checkboxes: Dict[str, QCheckBox] = {}
         self.group_checkboxes: Dict[str, QCheckBox] = {}
 
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
     def initUI(self, icon: Optional[QPixmap] = None) -> None:
-        icon: QPixmap = self.node.rsm.get(f'{self.node.icon}')
-        super().initUI(icon)
+        icon_: QPixmap = self.node.rsm.get(f'{self.node.icon}')
+        super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
@@ -106,7 +114,7 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addLayout(main_layout)
         else:
             no_data_label = QLabel('No incoming data available')
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet('color: gray;')
             dock_layout.addWidget(no_data_label)
 
@@ -245,8 +253,9 @@ class TriggerNode_RunningTotal(TriggerNode):
 
     def initInnerClasses(self) -> None:
         self.content: RunningTotalContent = RunningTotalContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: List = []
 
     def processInputs(self, input_values):
         this_socket_index = 0
@@ -263,13 +272,13 @@ class TriggerNode_RunningTotal(TriggerNode):
 
             self.content.process_data()
 
-            param = [{
+            self.param = [{
                 'data': self.content.data,
                 'variable_name': self.content.variable_name
             }]
             self.evalChildren()
 
-            return param
+            return self.param
         else:
             self.markDirty(True)
             self.markInvalid(True)

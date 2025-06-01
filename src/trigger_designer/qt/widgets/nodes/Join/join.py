@@ -1,5 +1,3 @@
-from sys import prefix
-from numpy import r_
 from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QAbstractItemView, QFormLayout, QListWidgetItem, QCheckBox, QWidget
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
@@ -7,7 +5,7 @@ from trigger_designer.core.node_configuration import register_node, JoinNodes, N
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 import pandas as pd
 from typing import Optional
@@ -17,8 +15,11 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
-    def __init__(self, node, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
+        self.node = node
+
         # local variables
         self.join_type = "inner"  # Default join type
         self.mapping_data = []  # Store mapping pairs
@@ -29,98 +30,100 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
-        self.left_data: pd.DataFrame = None
-        self.right_data: pd.DataFrame = None
+        self.left_data: Optional[pd.DataFrame] = None
+        self.right_data: Optional[pd.DataFrame] = None
         self.left_variable: str = ''
         self.right_variable: str = ''
 
         # pass on variables
-        self.data: pd.DataFrame = None
-        self.l_data: pd.DataFrame = None
-        self.r_data: pd.DataFrame = None
-        self.l_variable_name = f'var_0_join_{self.id}'
-        self.variable_name = f'var_1_{self.id}'
-        self.r_variable_name = f'var_2_join_{self.id}'
+        self.data: Optional[pd.DataFrame] = None
+        self.l_data: Optional[pd.DataFrame] = None
+        self.r_data: Optional[pd.DataFrame] = None
+        self.l_variable_name = f'var_l_join_{self.id}'
+        self.variable_name = f'var_join_{self.id}'
+        self.r_variable_name = f'var_r_join_{self.id}'
 
     def initUI(self, parent: Optional[QWidget] = None) -> None:
-        icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon)
+        icon_: QPixmap = self.node.rsm.get(f"{self.node.icon}")
+        super().initUI(icon_)
 
-    def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
-
-        print("🐍 File: Join/join_1.py | Line: 42 | initUI ~ create_layout")
-        # Join type selection with label
-        join_type_layout = QHBoxLayout()
-        join_type_label = QLabel("Join Type:")
-        self.join_type_combo = QComboBox()
-        self.join_type_combo.addItems(["inner", "left", "right", "outer"])
-        self.join_type_combo.currentTextChanged.connect(
-            self.on_join_type_changed)
-        self.join_type_combo.setSizeAdjustPolicy(
-            QComboBox.SizeAdjustPolicy.AdjustToContents)
-        self.join_type_combo.setMinimumWidth(80)
-        self.join_type_combo.setMaximumWidth(120)
-        join_type_layout.addWidget(join_type_label)
-        join_type_layout.addWidget(self.join_type_combo)
-        self.join_type_combo.setCurrentText(self.join_type)
-        join_type_layout.addStretch()
-
-        # Join columns mapping area
-        join_mapping_layout = QVBoxLayout()
-        join_mapping_label = QLabel("Join Column Mapping:")
-        join_mapping_layout.addWidget(join_mapping_label)
-
-        # Container for mapping rows
-        self.mapping_container = QVBoxLayout()
-
-        # Add initial mapping row
-        # self.add_mapping_row()
-
-        # Add button for new mapping
-        add_mapping_button = QPushButton("+")
-        add_mapping_button.setMaximumWidth(30)
-        add_mapping_button.clicked.connect(self.add_mapping_row)
-
-        join_mapping_layout.addLayout(self.mapping_container)
-        join_mapping_layout.addWidget(add_mapping_button)
-
-        # Output columns group
-        output_layout = QVBoxLayout()
-        output_label = QLabel("Output Columns:")
-        self.output_columns_list = QListWidget()
-        self.output_columns_list.setSelectionMode(
-            QAbstractItemView.SelectionMode.MultiSelection)
-        # self.output_columns_list.setMaximumHeight(150)
-        output_layout.addWidget(output_label)
-        output_layout.addWidget(self.output_columns_list)
-
-        # self.update_columns()
-
-        # Main layout assembly
-        # Main layout assembly
-        main_layout = QVBoxLayout()
-        main_layout.addLayout(join_type_layout)
-        main_layout.addLayout(join_mapping_layout)
-        main_layout.addLayout(output_layout)
-
-        # add a button to transform data
-        self.eval_button = QPushButton("Evaluate")
-        self.eval_button.clicked.connect(self.transform_data)
-        main_layout.addWidget(self.eval_button)
-
-        dock_layout.addLayout(main_layout)
-        # Update UI after layout is created
+    def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.left_data is not None and self.right_data is not None:
+            join_type_layout = QHBoxLayout()
+            # join_type_label = QLabel("Join Type:")
+            # self.join_type_combo = QComboBox()
+            # self.join_type_combo.addItems(["inner", "left", "right", "outer"])
+            # self.join_type_combo.currentTextChanged.connect(
+            # self.on_join_type_changed)
+            # self.join_type_combo.setSizeAdjustPolicy(
+            # QComboBox.SizeAdjustPolicy.AdjustToContents)
+            # self.join_type_combo.setMinimumWidth(80)
+            # self.join_type_combo.setMaximumWidth(120)
+            # join_type_layout.addWidget(join_type_label)
+            # join_type_layout.addWidget(self.join_type_combo)
+            # self.join_type_combo.setCurrentText(self.join_type)
+            # join_type_layout.addStretch()
+
+            # Join columns mapping area
+            join_mapping_layout = QVBoxLayout()
+            join_mapping_label = QLabel("Join Column Mapping:")
+            join_mapping_layout.addWidget(join_mapping_label)
+
+            # Container for mapping rows
+            self.mapping_container = QVBoxLayout()
+
+            # Add initial mapping row
+            # self.add_mapping_row()
+
+            # Add button for new mapping
+            add_mapping_button = QPushButton("+")
+            add_mapping_button.setMaximumWidth(30)
+            add_mapping_button.clicked.connect(self.add_mapping_row)
+
+            join_mapping_layout.addLayout(self.mapping_container)
+            join_mapping_layout.addWidget(add_mapping_button)
+
+            # Output columns group
+            output_layout = QVBoxLayout()
+            output_label = QLabel("Output Columns:")
+            self.output_columns_list = QListWidget()
+            self.output_columns_list.setSelectionMode(
+                QAbstractItemView.SelectionMode.MultiSelection)
+            # self.output_columns_list.setMaximumHeight(150)
+            output_layout.addWidget(output_label)
+            output_layout.addWidget(self.output_columns_list)
+
+            # self.update_columns()
+
+            # Main layout assembly
+            # Main layout assembly
+            main_layout = QVBoxLayout()
+            main_layout.addLayout(join_type_layout)
+            main_layout.addLayout(join_mapping_layout)
+            main_layout.addLayout(output_layout)
+
+            # add a button to transform data
+            self.eval_button = QPushButton("Evaluate")
+            self.eval_button.clicked.connect(self.transform_data)
+            main_layout.addWidget(self.eval_button)
+
+            dock_layout.addLayout(main_layout)
+            # Update UI after layout is created
+
             #     self.update_columns()
             self.load_saved_data()
             self.update_output_columns()
 
-        self.recursively_find_widgets(dock_layout)
+            self.recursively_find_widgets(dock_layout)
 
-        return dock_layout
+        else:
+            no_data_label = QLabel('No incoming data available')
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            no_data_label.setStyleSheet('color: gray;')
+            dock_layout.addWidget(no_data_label)
 
     def load_saved_data(self) -> None:
-        if self.mapping_data:
+        if self.mapping_data is not []:
             for mapping in self.mapping_data:
                 self.add_mapping_row(
                     left_col=mapping['left_column'],
@@ -172,6 +175,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             left_column_combo.addItems(self.left_data.columns.tolist())
             if left_col and left_col in self.left_data.columns:
                 left_column_combo.setCurrentText(left_col)
+
+        print(
+            "🐍 File: Join/join.py:180 | add_mapping_row ~ self.right_data", self.right_data)
 
         if hasattr(self, 'right_data') and self.right_data is not None:
             right_column_combo.addItems(self.right_data.columns.tolist())
@@ -473,7 +479,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     'new_selected_columns', []).copy()
 
             # Update UI to reflect changes
-            self.join_type_combo.setCurrentText(self.join_type)
+            # self.join_type_combo.setCurrentText(self.join_type)
 
             # Clear existing mapping rows
             for pair in self.mapping_pairs[:]:
@@ -569,7 +575,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return None
 
     def get_code(self):
-        if not self.mapping_data:
+        if not self.mapping_data or self.left_data is None or self.right_data is None:
+            print("Join Node: No mapping data or input data is missing.")
             return ""
 
         code_lines = []
@@ -684,7 +691,7 @@ class TriggerNode_Join(TriggerNode):
 
     def initInnerClasses(self) -> None:
         self.content: JoinContent = JoinContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
         self.param: list = []
 
@@ -697,9 +704,11 @@ class TriggerNode_Join(TriggerNode):
 
         # Get socket index of incoming data
         input_node = self.getInput(this_left_skt)
-        left_skt = self.getSocketValue(input_node.outputs, self)
+        left_skt = self.getSocketValue(
+            input_node.outputs, self)  # type: ignore
         input_node = self.getInput(this_right_skt)
-        right_skt = self.getSocketValue(input_node.outputs, self)
+        right_skt = self.getSocketValue(
+            input_node.outputs, self)  # type: ignore
 
         left_input = input_values[this_left_skt][left_skt]
         right_input = input_values[this_right_skt][right_skt]

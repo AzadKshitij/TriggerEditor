@@ -19,6 +19,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
+        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
         # local variables
         self.sort_data: list[dict] = []
         # Store references to row widgets with their indices
@@ -44,7 +45,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def node(self, value: 'TriggerNode') -> None:
         self._node = value
 
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+    def initUI(self, icon_: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon)
 
@@ -53,7 +54,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # TODO: Add default text if no incoming data.
         if self.incom_data is None:
             no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
             return dock_layout
@@ -393,9 +394,10 @@ class TriggerNode_Sort(TriggerNode):
         # self.eval()
 
     def initInnerClasses(self) -> None:
-        self.content = SortContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.content: SortContent = SortContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
         # Only one input for simplicity
@@ -411,10 +413,12 @@ class TriggerNode_Sort(TriggerNode):
             self.content.incoming_variable = input_value.get('variable_name')
             self.content.data = self.content.incom_data
             self.evalChildren()
-            return [{
+            self.param = [{
                 'data': self.content.data,
                 'variable_name': self.content.variable_name
             }]
+            return self.param
+
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

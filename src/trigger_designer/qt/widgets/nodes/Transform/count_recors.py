@@ -17,6 +17,7 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
+        self.node = node
 
         # Data tracking
         self.incoming_variable: str = ''
@@ -27,7 +28,15 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Count result
         self.total_records = 0
 
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
+    @property
+    def node(self) -> 'TriggerNode':
+        return self._node
+
+    @node.setter
+    def node(self, value: 'TriggerNode') -> None:
+        self._node = value
+
+    def initUI(self, icon_: Optional[QPixmap] = None) -> None:
         icon: QPixmap = self.node.rsm.get(f'{self.node.icon}')
         super().initUI(icon)
 
@@ -39,13 +48,13 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Display count
             count_label = QLabel(f"Total Records: {self.total_records:,}")
-            count_label.setAlignment(Qt.AlignCenter)
+            count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             main_layout.addWidget(count_label)
 
             dock_layout.addLayout(main_layout)
         else:
             no_data_label = QLabel('No incoming data available')
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet('color: gray;')
             dock_layout.addWidget(no_data_label)
 
@@ -76,7 +85,7 @@ class TriggerNode_CountRecords(TriggerNode):
 
     def initInnerClasses(self) -> None:
         self.content: CountRecordsContent = CountRecordsContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
         self.param: list = []
 

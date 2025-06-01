@@ -7,7 +7,7 @@ from trigger_designer.core.node_configuration import register_node, PreparationN
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.widgets.select_table_widget import ComboBoxDelegate, SelectTableWidget, RowData
 from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, cast, Union
@@ -95,7 +95,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addWidget(self.table_view)
         else:
             no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignCenter)
+            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
 
@@ -128,7 +128,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             print(
                 "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self.node._is_invalid)
 
-    def process_data_changes(self, data_: list[list]) -> Dict[str, Any]:
+    def process_data_changes(self, data_: list[list]) -> tuple[list[str], dict[str, str], dict[str, str]]:
         # Store the changes in a serializable format
         self.changes = {
             'selected_columns': [],
@@ -136,14 +136,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             'dtype_mapping': {},
             'column_order': []  # Add column order tracking
         }
-
-        # Get column order from table widget
-        # if hasattr(self, 'table_widget'):
-        #     header = self.table_widget..horizontalHeader()
-        #     self.changes['column_order'] = [
-        #         header.logicalIndex(i)
-        #         for i in range(header.count())
-        #     ]
 
         # Extract selected columns, their new names and data types
         for column_info in data_:
@@ -302,8 +294,9 @@ class TriggerNode_Select(TriggerNode):
 
     def initInnerClasses(self) -> None:
         self.content: SelectContent = SelectContent(self)
-        self.grNode = TriggerGraphicsNode(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
         print("⚠️⚠️⚠️ Select ⚠️⚠️⚠️")
@@ -330,7 +323,7 @@ class TriggerNode_Select(TriggerNode):
             print("6")
             # self.content.set_table_widget()
 
-            param = [{
+            self.param = [{
                 "data": self.content.data,
                 "variable_name": self.content.variable_name
             }]
@@ -338,7 +331,7 @@ class TriggerNode_Select(TriggerNode):
             print(
                 "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid", self._is_invalid)
 
-            return param
+            return self.param
         else:
             print("We don't have input")
             self.markDirty(True)

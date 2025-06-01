@@ -1,0 +1,69 @@
+{
+  "id": 3237475819728,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 3237556951584,
+      "title": "File Input",
+      "pos_x": -435.0,
+      "pos_y": -107.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 3237556952592,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/1. out_check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 3237556952880,
+      "title": "Generate Rows",
+      "pos_x": -127.0,
+      "pos_y": -90.0,
+      "inputs": [
+        {
+          "id": 3237556953888,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 3237556954176,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "field_name": "counter",
+        "field_type": "int",
+        "initial_value": 1,
+        "increment_value": 2,
+        "max_value": 50
+      },
+      "node_code": 8,
+      "node_type": "preparation"
+    }
+  ],
+  "edges": [
+    {
+      "id": 3237475523792,
+      "edge_type": 5,
+      "start": 3237556952592,
+      "end": 3237556953888
+    }
+  ]
+}
