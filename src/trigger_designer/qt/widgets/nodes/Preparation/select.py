@@ -2,7 +2,7 @@ import pandas as pd
 from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel, QTableView, QHBoxLayout, QStyledItemDelegate,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, QSaveFile, Signal, QVariant, QModelIndex
+from qtpy.QtCore import Qt, QSaveFile, Signal, QVariant, QModelIndex, QSortFilterProxyModel
 from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -107,9 +107,19 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Add toolbar to main layout
             dock_layout.addWidget(toolbar_widget)
 
-            self.table_view = QTableView()
             self.table_widget = SelectTableWidget(
                 data=self.table_data, changes=self.changes, parent=self)
+
+            # Create proxy model for filtering
+            self.proxy_model = QSortFilterProxyModel(self)
+            self.proxy_model.setFilterCaseSensitivity(
+                Qt.CaseSensitivity.CaseInsensitive)  # Make search case-insensitive
+            self.proxy_model.setSourceModel(self.table_widget)
+            self.proxy_model.setFilterKeyColumn(-1)  # Filter on all columns
+
+            self.table_view = QTableView()
+            self.table_view.setModel(self.proxy_model)
+            # self.table_view.setModel(self.table_widget)
 
             # Set the custom delegate for the 'Option' column (index 2)
             self.table_view.setItemDelegateForColumn(
@@ -117,7 +127,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.table_view.setItemDelegateForColumn(
                 3, QStyledItemDelegate())  # For rename column
 
-            self.table_view.setModel(self.table_widget)
+            # self.table_view.setModel(self.table_widget)
 
             # Configure view properties
             self.table_view.setSelectionBehavior(
@@ -146,7 +156,9 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def setup_connections(self) -> None:
         # Search functionality
-        self.search_input.textChanged.connect(self.table_widget.filterRows)
+        self.search_input.textChanged.connect(
+            self.proxy_model.setFilterRegularExpression)
+        # self.search_input.textChanged.connect(self.table_widget.filterRows)
 
         # Move row buttons
         self.up_btn.clicked.connect(
