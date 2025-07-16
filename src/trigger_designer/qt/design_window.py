@@ -1,19 +1,18 @@
+from loguru import logger
+from collections import deque
 import time
+
 from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent, QDragEnterEvent, QKeyEvent
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
-from trigger_designer.core.node_configuration import NODE_REGISTRIES, NodeTypes, get_class_from_opcode, LISTBOX_MIMETYPE
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_edge import EDGE_TYPE_DIRECT, EDGE_TYPE_BEZIER, EDGE_TYPE_SQUARE
 from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
 from nodeeditor.utils import dumpException
 
-from collections import deque
-from loguru import logger
-
+from trigger_designer.core.node_configuration import NODE_REGISTRIES, NodeTypes, get_class_from_opcode, LISTBOX_MIMETYPE
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
-# from ExecutionCheck.exec_node import InputNode, PrintNode
 from trigger_designer.qt.docks.result import ResultDock
 from trigger_designer.qt.helpers.logger import Logger, LogLevel
 from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow

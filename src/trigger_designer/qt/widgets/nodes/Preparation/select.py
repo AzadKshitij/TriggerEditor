@@ -74,8 +74,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     RowData(True, col, self.incom_data[col].dtype.name)
                     for col in self.incom_data.columns
                 ]
-            # if self.old_data != {}:
-            #     self.old_data = table_data
+
             # Initialize changes if not already present
             if not hasattr(self, 'changes'):
                 self.changes: dict = {
@@ -84,14 +83,23 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     'dtype_mapping': {}
                 }
             self.table_view = QTableView()
-            # Create some sample data
             self.table_widget = SelectTableWidget(
                 data=self.table_data, changes=self.changes, parent=self)
+
             # Set the custom delegate for the 'Option' column (index 2)
             self.table_view.setItemDelegateForColumn(
                 2, ComboBoxDelegate(self.table_view))
             self.table_view.setModel(self.table_widget)
-            self.table_widget.dataChanged.connect(self.handleDataChanged)
+
+            # Configure view properties
+            self.table_view.setSelectionBehavior(
+                QTableView.SelectionBehavior.SelectRows)
+            self.table_view.setSelectionMode(
+                QTableView.SelectionMode.SingleSelection)
+
+            # Connect to the new data_processed signal instead
+            self.table_widget.data_processed.connect(self.handleDataChanged)
+
             dock_layout.addWidget(self.table_view)
         else:
             no_data_label = QLabel("No incoming data available")
@@ -171,9 +179,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if rename_mapping:
             self.data.rename(columns=rename_mapping, inplace=True)
 
-    def handleDataChanged(self, data_: list[list]) -> None:
+    def handleDataChanged(self, data_: list) -> None:
         if self.history.is_restoring_history:
             return
+
+        print("🐍 File: Preparation/select.py | Line: 322 | handleDataChanged ~ data_",
+              data_, type(data_))
 
         # Store old state before changes
         old_changes = {

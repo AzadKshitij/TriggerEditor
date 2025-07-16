@@ -524,7 +524,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
 
             # Filter columns based on selected_columns
-            # Filter columns based on selected_columns
             if self.selected_columns:
                 selected_cols = []
                 l_rename_map = {}
@@ -552,21 +551,21 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             print(
                 "🐍 File: Join/join.py | Line: 544 | transform_data ~ self.data", self.data)
 
-            result.to_csv('check_join_data.csv', index=False)
+            # result.to_csv('check_join_data.csv', index=False)
 
             # Left only data - rows that exist only in left table
             left_only = result[result['_merge'] == 'left_only']
             left_only = left_only.rename(columns=l_rename_map)
             self.l_data = left_only[self.left_data.columns]
 
-            self.l_data.to_csv('check_left_data.csv', index=False)
+            # self.l_data.to_csv('check_left_data.csv', index=False)
 
             # Right only data - rows that exist only in right table
             right_only = result[result['_merge']
                                 == 'right_only']
             right_only = right_only.rename(columns=r_rename_map)
             self.r_data = right_only[self.right_data.columns]
-            self.r_data.to_csv('check_right_data.csv', index=False)
+            # self.r_data.to_csv('check_right_data.csv', index=False)
 
             # self.data = result
             return result
