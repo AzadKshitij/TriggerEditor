@@ -8,7 +8,7 @@ import pandas as pd
 
 
 class RowData:
-    def __init__(self, checked, text, option, rename=None):
+    def __init__(self, checked: bool, text: str, option: str, rename: str = ""):
         self.checked = checked
         self.text = text
         self.option = option  # Store the selected option string
@@ -60,6 +60,11 @@ class SelectTableWidget(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
+
+        # Handle filtered rows
+        if self.filtered_rows and row not in self.filtered_rows:
+            return QVariant()
+
         row_data = self._data[row]
 
         if role == Qt.ItemDataRole.DisplayRole:
@@ -69,12 +74,11 @@ class SelectTableWidget(QAbstractTableModel):
             elif col == 2:
                 # For the combobox column, display the selected option
                 return row_data.option
-            return QVariant()  # Return empty QVariant for other columns in DisplayRole
-        elif role == Qt.ItemDataRole.CheckStateRole:
+            elif col == 3:
+                return row_data.rename
+        elif role == Qt.ItemDataRole.CheckStateRole and col == 0:
             # Check state role for checkboxes (column 1)
-            if col == 0:
-                return Qt.CheckState.Checked if row_data.checked else Qt.CheckState.Unchecked
-            return QVariant()
+            return Qt.CheckState.Checked if row_data.checked else Qt.CheckState.Unchecked
         elif role == Qt.ItemDataRole.EditRole:
             # Edit role for editing data (e.g., combobox selection)
             if col == 1:
@@ -82,7 +86,8 @@ class SelectTableWidget(QAbstractTableModel):
             elif col == 2:
                 # For the combobox column, return the currently selected option
                 return row_data.option
-            return QVariant()
+            elif col == 3:
+                return row_data.rename
         elif role == Qt.ItemDataRole.UserRole:
             # User role to potentially return the raw data object or specific values
             if col == 2:
@@ -91,38 +96,69 @@ class SelectTableWidget(QAbstractTableModel):
 
         return QVariant()
 
+    # def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
+    #     # Set data based on role (for editing)
+    #     if not index.isValid():
+    #         return False
+
+    #     success = False
+    #     row = index.row()
+    #     col = index.column()
+    #     row_data = self._data[row]
+
+    #     if role == Qt.ItemDataRole.EditRole:
+    #         # Handle editing for text and combobox
+    #         if col == 1:
+    #             row_data.text = str(value)
+    #             success = True
+    #         elif col == 2:
+    #             # Handle combobox selection change
+    #             if isinstance(value, str):
+    #                 row_data.option = value
+    #                 success = True
+
+    #     elif role == Qt.ItemDataRole.CheckStateRole:
+    #         # Handle checkbox state change (column 1)
+    #         if col == 0:
+    #             row_data.checked = (value == Qt.CheckState.Checked)
+    #             success = True
+
+    #     if success:
+    #         self.dataChanged.emit(index, index, [role])
+    #         # Emit processed data whenever data changes
+    #         processed_data = self.getData()
+    #         self.data_processed.emit(processed_data)
+    #         return True
+
+    #     return False
+
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
-        # Set data based on role (for editing)
         if not index.isValid():
             return False
 
-        success = False
         row = index.row()
         col = index.column()
         row_data = self._data[row]
+        success = False
 
-        if role == Qt.ItemDataRole.EditRole:
-            # Handle editing for text and combobox
-            if col == 1:
-                row_data.text = str(value)
+        if col == 0 and role == Qt.ItemDataRole.CheckStateRole:
+            # Handle checkbox state change
+            check_state = int(value)
+            row_data.checked = (check_state == Qt.CheckState.Checked.value)
+            print(
+                f"Checkbox at row {row} set to {row_data.checked}, value: {check_state}")
+            success = True
+        elif role == Qt.ItemDataRole.EditRole:
+            if col == 3:  # Rename column
+                row_data.rename = str(value)
                 success = True
-            elif col == 2:
-                # Handle combobox selection change
-                if isinstance(value, str):
-                    row_data.option = value
-                    success = True
-
-        elif role == Qt.ItemDataRole.CheckStateRole:
-            # Handle checkbox state change (column 1)
-            if col == 0:
-                row_data.checked = (value == Qt.CheckState.Checked)
+            elif col == 2:  # Combobox column
+                row_data.option = str(value)
                 success = True
 
         if success:
             self.dataChanged.emit(index, index, [role])
-            # Emit processed data whenever data changes
-            processed_data = self.getData()
-            self.data_processed.emit(processed_data)
+            self.data_processed.emit(self.getData())
             return True
 
         return False
@@ -141,16 +177,16 @@ class SelectTableWidget(QAbstractTableModel):
         if not index.isValid():
             return Qt.ItemFlag.NoItemFlags
 
-        default_flags = super().flags(index)
+        default_flags = super().flags(
+            index) | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
 
         if index.column() == 0:
-            # Text column is editable
-            return default_flags | Qt.ItemFlag.ItemIsEditable
-        elif index.column() == 1:
             # Checkbox column is checkable
             return default_flags | Qt.ItemFlag.ItemIsUserCheckable
         elif index.column() == 2:
             # Combobox column is editable (to allow delegate to work)
+            return default_flags | Qt.ItemFlag.ItemIsEditable
+        elif index.column() == 3:  # Rename column
             return default_flags | Qt.ItemFlag.ItemIsEditable
 
         return default_flags
@@ -190,36 +226,39 @@ class SelectTableWidget(QAbstractTableModel):
         print("Invalid row indices for swapping.")
         return False
 
-    def setupOptionsMenu(self) -> None:
-        """Setup the options dropdown menu"""
-        menu = QMenu(self)
+    def setupOptionsMenu(self, button: QPushButton) -> None:
+        """Setup the options dropdown menu.
 
-        # Column operations with connected actions
-        select_all_action = menu.addAction("Select All")
-        select_all_action.triggered.connect(self.selectAll)
+        Args:
+            button (QPushButton): Button that will show the menu
+        """
+        menu = QMenu(button)
 
-        deselect_all_action = menu.addAction("Deselect All")
-        deselect_all_action.triggered.connect(self.deselectAll)
+        # Selection actions
+        select_all = menu.addAction("Select All")
+        select_all.triggered.connect(self.selectAll)
+
+        deselect_all = menu.addAction("Deselect All")
+        deselect_all.triggered.connect(self.deselectAll)
 
         menu.addSeparator()
 
-        # Sort options submenu
-        sort_menu = menu.addMenu("Sort Columns")
+        # Sorting submenu
+        sort_menu = menu.addMenu("Sort")
 
-        original_action = sort_menu.addAction("Original Order")
-        original_action.triggered.connect(lambda: self.sortColumns("original"))
+        sort_original = sort_menu.addAction("Original Order")
+        sort_original.triggered.connect(lambda: self.sortColumns("original"))
 
-        name_asc_action = sort_menu.addAction("Name (A-Z)")
-        name_asc_action.triggered.connect(lambda: self.sortColumns("name_asc"))
+        sort_name_asc = sort_menu.addAction("Name (A-Z)")
+        sort_name_asc.triggered.connect(lambda: self.sortColumns("name_asc"))
 
-        name_desc_action = sort_menu.addAction("Name (Z-A)")
-        name_desc_action.triggered.connect(
-            lambda: self.sortColumns("name_desc"))
+        sort_name_desc = sort_menu.addAction("Name (Z-A)")
+        sort_name_desc.triggered.connect(lambda: self.sortColumns("name_desc"))
 
-        type_action = sort_menu.addAction("Type")
-        type_action.triggered.connect(lambda: self.sortColumns("type"))
+        sort_type = sort_menu.addAction("By Type")
+        sort_type.triggered.connect(lambda: self.sortColumns("type"))
 
-        self.options_btn.setMenu(menu)
+        button.setMenu(menu)
 
     def setupConnections(self) -> None:
         """Setup all signal connections"""
@@ -604,56 +643,58 @@ class ComboBoxDelegate(QStyledItemDelegate):
             super().updateEditorGeometry(editor, option, index)
 
     def paint(self, painter, option, index):
-        # Paint the item (including the combobox appearance)
-        # Use the QStyleOptionViewItem to handle the painting
-        # This is important for proper rendering of the item
-        if index.column() == 2:
-            # super().paint(painter, option, index)
-            # Get the current value from the model
-            value = index.model().data(index, Qt.DisplayRole)
-            options = index.model().data(index, Qt.UserRole)  # Get options list
+        if not index.isValid():
+            return super().paint(painter, option, index)
 
-            # --- IMPROVED PAINTING ---``
-            # Draw the item's background and state (e.g., selection highlight)
-            # option.initFrom(option.widget)
-            if option.state & QStyle.StateFlag.State_Selected:
-                painter.fillRect(option.rect, option.palette.highlight())
-                painter.setPen(option.palette.highlightedText().color())
-            else:
-                painter.fillRect(option.rect, option.palette.base())
-                painter.setPen(option.palette.text().color())
+        # Get the value from the model
+        value = index.data(Qt.ItemDataRole.DisplayRole)
 
-            # Create a style option for a combobox
-            opt = QStyleOptionComboBox()
-            opt.rect = option.rect  # Set the rectangle for painting
-            opt.state = option.state  # Inherit state (selected, enabled, etc.)
-            opt.currentText = value  # Set the current text to display
+        # Create style option for combo box
+        opt = QStyleOptionComboBox()
+        opt.rect = option.rect
+        opt.state = option.state
 
-            # Set the list of items in the style option (needed for size hints/painting)
-            if options:
-                opt.currentValue = value
-                try:
-                    opt.currentIndex = options.index(value)
-                except ValueError:
-                    opt.currentIndex = -1  # Value not found in options
-
-            # Draw the combobox using the style
-            QApplication.style().drawComplexControl(
-                QStyle.ComplexControl.CC_ComboBox, opt, painter)
-            # QApplication.style().drawControl(
-            #     QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
-            super().paint(painter, option, index)
-
+        # Convert QVariant to string if needed
+        if isinstance(value, QVariant):
+            value = value.toString() if value.isValid() else ""
         else:
-            # For other columns, use the default painting
-            super().paint(painter, option, index)
+            value = str(value)
+
+        opt.currentText = value
+
+        # Draw the combo box
+        if option.widget:
+            style = option.widget.style()
+        else:
+            style = QApplication.style()
+
+        style.drawComplexControl(
+            QStyle.ComplexControl.CC_ComboBox, opt, painter)
+        style.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
 
     # def paint(self, painter, option, index):
     #     # Paint the item (including the combobox appearance)
+
+    #     if not index.isValid():
+    #         return super().paint(painter, option, index)
+
+    #     # Use the QStyleOptionViewItem to handle the painting
+    #     # This is important for proper rendering of the item
     #     if index.column() == 2:
+    #         # super().paint(painter, option, index)
     #         # Get the current value from the model
     #         value = index.model().data(index, Qt.DisplayRole)
     #         options = index.model().data(index, Qt.UserRole)  # Get options list
+
+    #         # --- IMPROVED PAINTING ---``
+    #         # Draw the item's background and state (e.g., selection highlight)
+    #         # option.initFrom(option.widget)
+    #         if option.state & QStyle.StateFlag.State_Selected:
+    #             painter.fillRect(option.rect, option.palette.highlight())
+    #             painter.setPen(option.palette.highlightedText().color())
+    #         else:
+    #             painter.fillRect(option.rect, option.palette.base())
+    #             painter.setPen(option.palette.text().color())
 
     #         # Create a style option for a combobox
     #         opt = QStyleOptionComboBox()
@@ -663,8 +704,6 @@ class ComboBoxDelegate(QStyledItemDelegate):
 
     #         # Set the list of items in the style option (needed for size hints/painting)
     #         if options:
-    #             # Although QStyleOptionComboBox doesn't have addItems,
-    #             # setting the current value and index helps the style draw correctly.
     #             opt.currentValue = value
     #             try:
     #                 opt.currentIndex = options.index(value)
@@ -674,12 +713,29 @@ class ComboBoxDelegate(QStyledItemDelegate):
     #         # Draw the combobox using the style
     #         QApplication.style().drawComplexControl(
     #             QStyle.ComplexControl.CC_ComboBox, opt, painter)
-    #         QApplication.style().drawControl(
-    #             QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
+    #         # QApplication.style().drawControl(
+    #         #     QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
+    #         super().paint(painter, option, index)
 
     #     else:
     #         # For other columns, use the default painting
     #         super().paint(painter, option, index)
+
+    def createEditor(self, parent, option, index):
+        editor = QComboBox(parent)
+        editor.addItems(['object', 'int64', 'float64', 'bool', 'datetime64'])
+        return editor
+
+    def setEditorData(self, editor, index):
+        value = index.data(Qt.ItemDataRole.DisplayRole)
+        if isinstance(value, QVariant):
+            value = value.toString() if value.isValid() else ""
+        else:
+            value = str(value)
+        editor.setCurrentText(value)
+
+    def setModelData(self, editor, model, index):
+        model.setData(index, editor.currentText(), Qt.ItemDataRole.EditRole)
 
     def editorEvent(self, event, model, option, index):
         # Handle events within the cell, even when not in edit mode

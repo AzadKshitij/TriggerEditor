@@ -1,5 +1,5 @@
 import pandas as pd
-from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel, QTableView,
+from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel, QTableView, QHBoxLayout, QStyledItemDelegate,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, QSaveFile, Signal, QVariant, QModelIndex
@@ -82,6 +82,31 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     'rename_mapping': {},
                     'dtype_mapping': {}
                 }
+
+             # Create toolbar layout with fixed height
+            toolbar_widget = QWidget()
+            toolbar_layout = QHBoxLayout(toolbar_widget)
+            toolbar_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
+            toolbar_widget.setFixedHeight(40)  # Set fixed height for toolbar
+
+            # Search box
+            self.search_input = QLineEdit()
+            self.search_input.setPlaceholderText("Search columns...")
+            toolbar_layout.addWidget(self.search_input)
+
+            # Move buttons
+            self.up_btn = QPushButton("↑")
+            self.down_btn = QPushButton("↓")
+            toolbar_layout.addWidget(self.up_btn)
+            toolbar_layout.addWidget(self.down_btn)
+
+            # Options menu button
+            self.options_btn = QPushButton("Options")
+            toolbar_layout.addWidget(self.options_btn)
+
+            # Add toolbar to main layout
+            dock_layout.addWidget(toolbar_widget)
+
             self.table_view = QTableView()
             self.table_widget = SelectTableWidget(
                 data=self.table_data, changes=self.changes, parent=self)
@@ -89,6 +114,9 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Set the custom delegate for the 'Option' column (index 2)
             self.table_view.setItemDelegateForColumn(
                 2, ComboBoxDelegate(self.table_view))
+            self.table_view.setItemDelegateForColumn(
+                3, QStyledItemDelegate())  # For rename column
+
             self.table_view.setModel(self.table_widget)
 
             # Configure view properties
@@ -97,10 +125,17 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.table_view.setSelectionMode(
                 QTableView.SelectionMode.SingleSelection)
 
+            # Set stretch factors for columns
+            header = self.table_view.horizontalHeader()
+            header.resizeSection(0, 50)  # Checkbox column
+
+            # Connect signals
+            self.setup_connections()
+
             # Connect to the new data_processed signal instead
             self.table_widget.data_processed.connect(self.handleDataChanged)
 
-            dock_layout.addWidget(self.table_view)
+            dock_layout.addWidget(self.table_view, 1)
         else:
             no_data_label = QLabel("No incoming data available")
             no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -108,6 +143,19 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addWidget(no_data_label)
 
         # return layout
+
+    def setup_connections(self) -> None:
+        # Search functionality
+        self.search_input.textChanged.connect(self.table_widget.filterRows)
+
+        # Move row buttons
+        self.up_btn.clicked.connect(
+            lambda: self.table_widget.moveSelectedRow("up"))
+        self.down_btn.clicked.connect(
+            lambda: self.table_widget.moveSelectedRow("down"))
+
+        # Options menu
+        self.table_widget.setupOptionsMenu(self.options_btn)
 
     def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
