@@ -1,8 +1,9 @@
 from typing import Optional
+from loguru import logger
 from qtpy.QtWidgets import (QApplication, QMainWindow, QTableView,
                             QVBoxLayout, QWidget, QPushButton, QCheckBox, QComboBox,
                             QStyledItemDelegate, QStyleOptionComboBox, QStyle, QAbstractItemView, QAbstractItemDelegate, QStyleOptionViewItem, QMenu)
-from qtpy.QtCore import QAbstractTableModel, QVariant, QModelIndex, QEvent
+from qtpy.QtCore import QAbstractTableModel, QVariant, QModelIndex, QEvent, QSortFilterProxyModel, QItemSelectionModel
 from qtpy.QtCore import Qt, Signal, QVariant, QModelIndex
 import pandas as pd
 
@@ -464,13 +465,21 @@ class SelectTableWidget(QAbstractTableModel):
     #         self.table.setRowHidden(row, not matches)
 
     def moveRow(self, source_row: int, target_row: int) -> bool:
-        """Move a row from source to target position"""
+        """Move a row from source to target position
+
+        Args:
+            source_row (int): Current row index
+            target_row (int): Target row index
+        """
         if not (0 <= source_row < len(self._data) and 0 <= target_row < len(self._data)):
             return False
 
+        # Adjust target position for moving down
+        destination_row = target_row + 1 if source_row < target_row else target_row
+
         # Use beginMoveRows to handle the move
         if self.beginMoveRows(QModelIndex(), source_row, source_row,
-                              QModelIndex(), target_row):
+                              QModelIndex(), destination_row):
             # Actually move the data
             item = self._data.pop(source_row)
             self._data.insert(target_row, item)
@@ -479,106 +488,43 @@ class SelectTableWidget(QAbstractTableModel):
             return True
         return False
 
-    def moveSelectedRow(self, direction: str) -> None:
-        """Move selected row up or down"""
-        # This should be called from the view when user wants to move a row
-        if not self.parent() or not isinstance(self.parent(), QTableView):
+    def moveSelectedRow(self, direction: str, view: QTableView = None) -> None:
+        """Move selected row up or down
+
+        Args:
+            direction (str): "up" or "down"
+            view (QTableView, optional): The table view. Defaults to None.
+        """
+        logger.debug(f"Moving row {direction}")
+
+        if not view:
+            logger.debug("No table view provided")
             return
 
-        view = self.parent()
-        current_row = view.currentIndex().row()
-        if current_row < 0:
+        # Get current row from the view
+        current_index = view.selectionModel().currentIndex()
+        if not current_index.isValid():
+            logger.debug("No row selected")
             return
 
+        # Get the source model index if using proxy model
+        source_index = current_index
+        if isinstance(view.model(), QSortFilterProxyModel):
+            source_index = view.model().mapToSource(current_index)
+
+        current_row = source_index.row()
         target_row = current_row - 1 if direction == "up" else current_row + 1
+
         if 0 <= target_row < len(self._data):
-            self.moveRow(current_row, target_row)
-            # Update selection in view
-            new_index = self.index(target_row, 0)
-            view.setCurrentIndex(new_index)
-
-    # def swapRows(self, row1: int, row2: int) -> None:
-    #     """Swap all widgets and items between two rows"""
-
-    #     if not (0 <= row1 < self.table.rowCount() and 0 <= row2 < self.table.rowCount()):
-    #         return  # Invalid row indices
-
-    #     # Create a temporary list to store items of row1
-    #     row1_items = []
-    #     for col in range(self.table.columnCount()):
-    #         item = self.table.item(row1, col)
-    #         if item:
-    #             row1_items.append(item)
-    #         else:
-    #             row1_items.append(None)
-
-    #     # Clear row1
-    #     for col in range(self.table.columnCount()):
-    #         self.table.setItem(row1, col, None)
-
-    #     # Move row2 to row1
-    #     for col in range(self.table.columnCount()):
-    #         item = self.table.item(row2, col)
-    #         self.table.setItem(row1, col, item)
-
-    #     # Clear row2
-    #     for col in range(self.table.columnCount()):
-    #         self.table.setItem(row2, col, None)
-
-    #     # Move stored row1 items to row2
-    #     for col in range(self.table.columnCount()):
-    #         self.table.setItem(row2, col, row1_items[col])
-
-    #     # for col in range(self.table.columnCount()):
-    #     #     # Swap widgets if they exist
-    #     #     widget1 = self.table.cellWidget(row1, col)
-    #     #     widget2 = self.table.cellWidget(row2, col)
-    #     #     if widget1 and widget2:
-    #     #         self.table.setCellWidget(row1, col, widget2)
-    #     #         self.table.setCellWidget(row2, col, widget1)
-    #     #     # Swap items if they exist
-    #     #     item1 = self.table.item(row1, col)
-    #     #     item2 = self.table.item(row2, col)
-    #     #     if item1 and item2:
-    #     #         temp = self.table.takeItem(row1, col)
-    #     #         self.table.setItem(row1, col, self.table.takeItem(row2, col))
-    #     #         self.table.setItem(row2, col, temp)
-
-    def swap_Rows(self, row1, row2):
-        """Swaps the content and widgets of two specified rows."""
-        if 0 <= row1 < self.table.rowCount() and 0 <= row2 < self.table.rowCount():
-            for col in range(self.table.columnCount()):
-                # --- Handle QTableWidgetItem ---
-                item1 = self.table.takeItem(
-                    row1, col)  # Takes the QTableWidgetItem
-                item2 = self.table.takeItem(
-                    row2, col)  # Takes the QTableWidgetItem
-
-                # Sets the QTableWidgetItem
-                self.table.setItem(row1, col, item2)
-                # Sets the QTableWidgetItem
-                self.table.setItem(row2, col, item1)
-
-                # --- Handle Cell Widget ---
-                # Get the widgets before removing them
-                widget1 = self.table.cellWidget(
-                    row1, col)  # Gets the cell widget
-                widget2 = self.table.cellWidget(
-                    row2, col)  # Gets the cell widget
-
-                # Remove widgets from their original positions
-                self.table.removeCellWidget(
-                    row1, col)  # Removes the cell widget
-                self.table.removeCellWidget(
-                    row2, col)  # Removes the cell widget
-
-                # Set widgets in the swapped positions
-                if widget1:
-                    self.table.setCellWidget(
-                        row2, col, widget1)  # Sets the cell widget
-                if widget2:
-                    self.table.setCellWidget(
-                        row1, col, widget2)  # Sets the cell widget
+            # Move the row
+            if self.moveRow(current_row, target_row):
+                # Update selection to follow the moved row
+                new_index = self.index(target_row, current_index.column())
+                if isinstance(view.model(), QSortFilterProxyModel):
+                    new_index = view.model().mapFromSource(new_index)
+                view.setCurrentIndex(new_index)
+                view.selectionModel().select(
+                    new_index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
 
     def onColumnMoved(self, logicalIndex: int, oldVisualIndex: int, newVisualIndex: int) -> None:
         """Handle column reordering"""

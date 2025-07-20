@@ -779,6 +779,7 @@ QPushButton {{
       background: {menu_separator}; }}
   QPushButton:hover {{
     background-color: {button_hover};
+    border: 1px solid {accent_primary};
     color: {text_primary}; }}
   QPushButton:pressed {{
     background-color: {menu_separator}; }}
@@ -971,6 +972,85 @@ QComboBox {{
     height: 8px;
     width: 8px; }}
     QComboBox::down-arrow:on, QComboBox::down-arrow:hover, QComboBox::down-arrow:focus {{
+      image: url(":/qss_icons/dark/rc/arrow_down.png"); }}
+
+
+/* ------------------------------------------------------------------------ */
+/* INPUTS - NO FIELDS ----------------------------------------------------- */
+/* ------------------------------------------------------------------------ */
+/* ComboBoxDelegate --------------------------------------------------------------
+
+https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-ComboBoxDelegate
+
+--------------------------------------------------------------------------- */
+ComboBoxDelegate {{
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  selection-background-color: {accent_primary};
+  padding-left: 4px;
+  padding-right: 4px;
+  /* padding-right = 36; 4 + 16*2 See scrollbar size */
+  /* changed to 4px to fix #239 */
+  /* Fixes #103, #111 */
+  min-height: 1.5em;
+  /* padding-top: 2px;     removed to fix #132 */
+  /* padding-bottom: 2px;  removed to fix #132 */
+  /* min-width: 75px;      removed to fix #109 */
+  /* Needed to remove indicator - fix #132 */ }}
+  ComboBoxDelegate QAbstractItemView {{
+    border: 1px solid {border_primary};
+    border-radius: 0;
+    background-color: {background_primary};
+    selection-background-color: {accent_primary}; }}
+    ComboBoxDelegate QAbstractItemView:hover {{
+      background-color: {background_primary};
+      color: {text_primary}; }}
+    ComboBoxDelegate QAbstractItemView:selected {{
+      background: {accent_primary};
+      color: {border_primary}; }}
+    ComboBoxDelegate QAbstractItemView:alternate {{
+      background: {background_primary}; }}
+  ComboBoxDelegate:disabled {{
+    background-color: {background_primary};
+    color: {text_disabled}; }}
+  ComboBoxDelegate:hover {{
+    border: 1px solid {accent_primary}; }}
+  ComboBoxDelegate:focus {{
+    border: 1px solid {accent_secondary}; }}
+  ComboBoxDelegate:on {{
+    selection-background-color: {accent_primary}; }}
+  ComboBoxDelegate::indicator {{
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    selection-background-color: transparent;
+    color: transparent;
+    selection-color: transparent;
+    /* Needed to remove indicator - fix #132 */ }}
+    ComboBoxDelegate::indicator:alternate {{
+      background: {background_primary}; }}
+  ComboBoxDelegate::item {{
+    /* Remove to fix #282, #285 and MR #288*/
+    /*&:checked {{
+            font-weight: bold;
+        }}
+
+        &:selected {{
+            border: 0px solid transparent;
+        }}
+        */ }}
+    ComboBoxDelegate::item:alternate {{
+      background: {background_primary}; }}
+  ComboBoxDelegate::drop-down {{
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 12px;
+    border-left: 1px solid {border_primary}; }}
+  ComboBoxDelegate::down-arrow {{
+    image: url(":/qss_icons/dark/rc/arrow_down_disabled.png");
+    height: 8px;
+    width: 8px; }}
+    ComboBoxDelegate::down-arrow:on, ComboBoxDelegate::down-arrow:hover, ComboBoxDelegate::down-arrow:focus {{
       image: url(":/qss_icons/dark/rc/arrow_down.png"); }}
 
 /* QSlider ----------------------------------------------------------------

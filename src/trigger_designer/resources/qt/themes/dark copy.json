@@ -1,20 +1,20 @@
 {
     "name": "dark",
 
-    "background_primary": "#191919",        
-    "background_secondary": "#2b2b2b",      
-    "background_tertiary": "#383838",       
+    "background_primary": "#14171b",        
+    "background_secondary": "#191e21",      
+    "background_tertiary": "#1a1f23",       
     "background_hover": "#232323",          
     "background_pressed": "#4b4b4b",        
-    "background_disabled": "#191919",       
-    "background_alternate": "#191919", 
+    "background_disabled": "#14171b",       
+    "background_alternate": "#14171b", 
 
     "scroll_background": "#666666",
 
     "menu_background": "#232323",
     "menu_separator": "#4b4b4b",
 
-    "statusbar_background": "#383838",
+    "statusbar_background": "#1a1f23",
 
     "separator_background": "#1e1e1e",
 
@@ -23,16 +23,16 @@
     "text_disabled": "#4a4a4a",       
     "text_inactive": "#999999",
 
-    "accent_primary": "#5680c2",        
+    "accent_primary": "#5680c2",
     "accent_secondary": "#6a96d7",      
     "accent_tertiary": "#3a76ba",       
     "accent_disabled": "#3a76ba",
 
     "selection_color": "#ffffff",
 
-    "border_primary": "#2b2b2b",        
+    "border_primary": "#191e21",        
     "border_light": "#4b4b4b",
-    "border_dark": "#191919",
+    "border_dark": "#14171b",
     "border_accent": "#6a96d7",
 
     "border_width": "1px",              
@@ -44,13 +44,13 @@
     "spacing_large": "8px",
     "spacing_xlarge": "12px",
     
-    "control_scrollbar_bg": "#191919",
+    "control_scrollbar_bg": "#14171b",
     "control_scrollbar_handle": "#4b4b4b",
     "control_menu_bg": "#232323",
-    "control_toolbar_bg": "#2b2b2b",
+    "control_toolbar_bg": "#191e21",
     
-    "button_bg": "#2b2b2b",
-    "button_hover": "#383838",
+    "button_bg": "#191e21",
+    "button_hover": "#1a1f23",
     "button_pressed": "#4b4b4b",
     
     "icon_size_small": "8px",

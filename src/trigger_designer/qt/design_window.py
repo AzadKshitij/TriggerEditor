@@ -3,7 +3,7 @@ from collections import deque
 import time
 
 from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent, QDragEnterEvent, QKeyEvent
-from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal
+from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
@@ -78,25 +78,33 @@ class TriggerSubWindow(NodeEditorWidget):
 
     def addButtons(self) -> None:
         # Run button
-        self.fixed_button = QPushButton("Run", self)
-        self.fixed_button.setFixedSize(100, 30)
-        self.fixed_button.move(10, 10)
-        self.fixed_button.clicked.connect(self.run_workflow)
+        self.run_button = QPushButton("", self)
+        self.run_button.setIcon(QIcon.fromTheme("media-playback-start"))
+        self.run_button.setToolTip("Run Workflow")
+        self.run_button.setFixedSize(100, 30)
+        self.run_button.move(10, 10)
+        self.run_button.clicked.connect(self.run_workflow)
 
         # Zoom In button
-        self.zoom_in_button = QPushButton("+", self)
+        self.zoom_in_button = QPushButton("", self)
+        self.zoom_in_button.setIcon(QIcon.fromTheme("zoom-in"))
+        self.zoom_in_button.setToolTip("Zoom In")
         self.zoom_in_button.setFixedSize(100, 30)
         self.zoom_in_button.move(120, 10)
         self.zoom_in_button.clicked.connect(self.zoomIn)
 
         # Zoom Out button
-        self.zoom_out_button = QPushButton("-", self)
+        self.zoom_out_button = QPushButton("", self)
+        self.zoom_out_button.setIcon(QIcon.fromTheme("zoom-out"))
+        self.zoom_out_button.setToolTip("Zoom Out")
         self.zoom_out_button.setFixedSize(100, 30)
         self.zoom_out_button.move(230, 10)
         self.zoom_out_button.clicked.connect(self.zoomOut)
 
         # Fit View button
-        self.fit_button = QPushButton("Fit View", self)
+        self.fit_button = QPushButton("", self)
+        self.fit_button.setIcon(QIcon.fromTheme("zoom-original"))
+        self.fit_button.setToolTip("Fit View")
         self.fit_button.setFixedSize(100, 30)
         self.fit_button.move(340, 10)
         self.fit_button.clicked.connect(self.fitView)
@@ -255,7 +263,7 @@ class TriggerSubWindow(NodeEditorWidget):
     def initNewNodeActions(self) -> None:
         self.node_actions = {}
         self.nodes_by_type = {
-            'Calculation': NODE_REGISTRIES[NodeTypes.CALC],
+            # 'Calculation': NODE_REGISTRIES[NodeTypes.CALC],
             'Input/Output': NODE_REGISTRIES[NodeTypes.IO],
             'Preparation': NODE_REGISTRIES[NodeTypes.PREPARATION],
             'Join': NODE_REGISTRIES[NodeTypes.JOIN],
@@ -616,7 +624,7 @@ class TriggerSubWindow(NodeEditorWidget):
         return sorted_nodes
 
     def executeWorkflow(self) -> None:
-        self.fixed_button.setEnabled(False)
+        self.run_button.setEnabled(False)
         connections = self.getNodeConnections()
         import_node = None
         sorted_nodes = self.topologicalSort(connections)
@@ -648,7 +656,7 @@ class TriggerSubWindow(NodeEditorWidget):
         for node in self.getAllNodes():
             node.grNode.resetPen()
 
-        self.fixed_button.setEnabled(True)
+        self.run_button.setEnabled(True)
 
     def getSocketData(self, node, socket_index: int) -> Any:
         """Get the data associated with a specific socket after execution"""

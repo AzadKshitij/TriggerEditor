@@ -779,6 +779,7 @@ QPushButton {
       background: #4b4b4b; }
   QPushButton:hover {
     background-color: #1a1f23;
+    border: 1px solid #5680c2;
     color: #ffffff; }
   QPushButton:pressed {
     background-color: #4b4b4b; }
@@ -971,6 +972,85 @@ QComboBox {
     height: 8px;
     width: 8px; }
     QComboBox::down-arrow:on, QComboBox::down-arrow:hover, QComboBox::down-arrow:focus {
+      image: url(":/qss_icons/dark/rc/arrow_down.png"); }
+
+
+/* ------------------------------------------------------------------------ */
+/* INPUTS - NO FIELDS ----------------------------------------------------- */
+/* ------------------------------------------------------------------------ */
+/* ComboBoxDelegate --------------------------------------------------------------
+
+https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-ComboBoxDelegate
+
+--------------------------------------------------------------------------- */
+ComboBoxDelegate {
+  border: 1px solid #191e21;
+  border-radius: 4px;
+  selection-background-color: #5680c2;
+  padding-left: 4px;
+  padding-right: 4px;
+  /* padding-right = 36; 4 + 16*2 See scrollbar size */
+  /* changed to 4px to fix #239 */
+  /* Fixes #103, #111 */
+  min-height: 1.5em;
+  /* padding-top: 2px;     removed to fix #132 */
+  /* padding-bottom: 2px;  removed to fix #132 */
+  /* min-width: 75px;      removed to fix #109 */
+  /* Needed to remove indicator - fix #132 */ }
+  ComboBoxDelegate QAbstractItemView {
+    border: 1px solid #191e21;
+    border-radius: 0;
+    background-color: #14171b;
+    selection-background-color: #5680c2; }
+    ComboBoxDelegate QAbstractItemView:hover {
+      background-color: #14171b;
+      color: #ffffff; }
+    ComboBoxDelegate QAbstractItemView:selected {
+      background: #5680c2;
+      color: #191e21; }
+    ComboBoxDelegate QAbstractItemView:alternate {
+      background: #14171b; }
+  ComboBoxDelegate:disabled {
+    background-color: #14171b;
+    color: #4a4a4a; }
+  ComboBoxDelegate:hover {
+    border: 1px solid #5680c2; }
+  ComboBoxDelegate:focus {
+    border: 1px solid #6a96d7; }
+  ComboBoxDelegate:on {
+    selection-background-color: #5680c2; }
+  ComboBoxDelegate::indicator {
+    border: none;
+    border-radius: 0;
+    background-color: transparent;
+    selection-background-color: transparent;
+    color: transparent;
+    selection-color: transparent;
+    /* Needed to remove indicator - fix #132 */ }
+    ComboBoxDelegate::indicator:alternate {
+      background: #14171b; }
+  ComboBoxDelegate::item {
+    /* Remove to fix #282, #285 and MR #288*/
+    /*&:checked {
+            font-weight: bold;
+        }
+
+        &:selected {
+            border: 0px solid transparent;
+        }
+        */ }
+    ComboBoxDelegate::item:alternate {
+      background: #14171b; }
+  ComboBoxDelegate::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 12px;
+    border-left: 1px solid #191e21; }
+  ComboBoxDelegate::down-arrow {
+    image: url(":/qss_icons/dark/rc/arrow_down_disabled.png");
+    height: 8px;
+    width: 8px; }
+    ComboBoxDelegate::down-arrow:on, ComboBoxDelegate::down-arrow:hover, ComboBoxDelegate::down-arrow:focus {
       image: url(":/qss_icons/dark/rc/arrow_down.png"); }
 
 /* QSlider ----------------------------------------------------------------

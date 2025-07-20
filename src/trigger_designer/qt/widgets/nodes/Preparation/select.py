@@ -1,8 +1,8 @@
 import pandas as pd
-from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel, QTableView, QHBoxLayout, QStyledItemDelegate,
+from qtpy.QtWidgets import (QWidget, QLineEdit, QLayout, QVBoxLayout, QListWidget, QLabel, QTableView, QHBoxLayout, QStyledItemDelegate, QSizePolicy, QSpacerItem,
                             QListWidgetItem, QTableWidget, QTableWidgetItem, QCheckBox, QComboBox, QHeaderView, QPushButton)
-from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, QSaveFile, Signal, QVariant, QModelIndex, QSortFilterProxyModel
+from qtpy.QtGui import QPixmap, QIcon
+from qtpy.QtCore import Qt, QSaveFile, Signal, QVariant, QModelIndex, QSortFilterProxyModel, QSize
 from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -92,16 +92,47 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Search box
             self.search_input = QLineEdit()
             self.search_input.setPlaceholderText("Search columns...")
+            self.search_input.setClearButtonEnabled(True)
+            # Set minimum height for search input
+            self.search_input.setMinimumHeight(30)
             toolbar_layout.addWidget(self.search_input)
 
             # Move buttons
-            self.up_btn = QPushButton("↑")
-            self.down_btn = QPushButton("↓")
+            self.up_btn = QPushButton()
+            self.up_btn.setIcon(QIcon.fromTheme("go-up"))
+            self.up_btn.setIconSize(QSize(12, 12))
+            self.up_btn.setMinimumSize(QSize(30, 30))
+
+            self.down_btn = QPushButton()
+            self.down_btn.setIcon(QIcon.fromTheme("go-down"))
+            self.down_btn.setIconSize(QSize(12, 12))
+            self.down_btn.setMinimumSize(QSize(30, 30))
+
             toolbar_layout.addWidget(self.up_btn)
             toolbar_layout.addWidget(self.down_btn)
 
             # Options menu button
-            self.options_btn = QPushButton("Options")
+            self.options_btn = QPushButton()
+            self.options_btn.setText("Options")  # Set text separately
+            self.options_btn.setIcon(
+                QIcon(":/qss_icons/dark/rc/arrow_down.png"))  # Set custom icon
+            self.options_btn.setStyleSheet("""
+                QPushButton {
+                    text-align: center;
+                    padding: 0px 0px 0px 10px;
+                    margin: 0;
+                }
+                QPushButton::menu-indicator {
+                    width: 0;
+                    image: none;
+                }
+            """)
+            # Configure button properties
+            self.options_btn.setMinimumHeight(30)
+            self.options_btn.setMinimumWidth(60)
+            self.options_btn.setIconSize(QSize(12, 12))
+            self.options_btn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+
             toolbar_layout.addWidget(self.options_btn)
 
             # Add toolbar to main layout
@@ -162,9 +193,9 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Move row buttons
         self.up_btn.clicked.connect(
-            lambda: self.table_widget.moveSelectedRow("up"))
+            lambda: self.table_widget.moveSelectedRow("up", self.table_view))
         self.down_btn.clicked.connect(
-            lambda: self.table_widget.moveSelectedRow("down"))
+            lambda: self.table_widget.moveSelectedRow("down", self.table_view))
 
         # Options menu
         self.table_widget.setupOptionsMenu(self.options_btn)
