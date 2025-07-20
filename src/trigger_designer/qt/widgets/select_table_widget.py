@@ -97,42 +97,6 @@ class SelectTableWidget(QAbstractTableModel):
 
         return QVariant()
 
-    # def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
-    #     # Set data based on role (for editing)
-    #     if not index.isValid():
-    #         return False
-
-    #     success = False
-    #     row = index.row()
-    #     col = index.column()
-    #     row_data = self._data[row]
-
-    #     if role == Qt.ItemDataRole.EditRole:
-    #         # Handle editing for text and combobox
-    #         if col == 1:
-    #             row_data.text = str(value)
-    #             success = True
-    #         elif col == 2:
-    #             # Handle combobox selection change
-    #             if isinstance(value, str):
-    #                 row_data.option = value
-    #                 success = True
-
-    #     elif role == Qt.ItemDataRole.CheckStateRole:
-    #         # Handle checkbox state change (column 1)
-    #         if col == 0:
-    #             row_data.checked = (value == Qt.CheckState.Checked)
-    #             success = True
-
-    #     if success:
-    #         self.dataChanged.emit(index, index, [role])
-    #         # Emit processed data whenever data changes
-    #         processed_data = self.getData()
-    #         self.data_processed.emit(processed_data)
-    #         return True
-
-    #     return False
-
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if not index.isValid():
             return False
@@ -227,7 +191,7 @@ class SelectTableWidget(QAbstractTableModel):
         print("Invalid row indices for swapping.")
         return False
 
-    def setupOptionsMenu(self, button: QPushButton) -> None:
+    def setupOptionsMenu(self, button: QPushButton, view: QTableView) -> None:
         """Setup the options dropdown menu.
 
         Args:
@@ -236,11 +200,11 @@ class SelectTableWidget(QAbstractTableModel):
         menu = QMenu(button)
 
         # Selection actions
-        select_all = menu.addAction("Select All")
-        select_all.triggered.connect(self.selectAll)
+        select_all = menu.addAction("Check Selected")
+        select_all.triggered.connect(lambda: self.checkSelected(view))
 
-        deselect_all = menu.addAction("Deselect All")
-        deselect_all.triggered.connect(self.deselectAll)
+        deselect_all = menu.addAction("Uncheck Selected")
+        deselect_all.triggered.connect(lambda: self.uncheckSelected(view))
 
         menu.addSeparator()
 
@@ -350,6 +314,24 @@ class SelectTableWidget(QAbstractTableModel):
         self.layoutChanged.emit()
         self.data_processed.emit(self.getData())
 
+    def toggleRowSelection(self, index: QModelIndex, state: bool) -> None:
+        """Toggle selection state for a row or multiple rows
+
+        Args:
+            index (QModelIndex): The index being toggled
+            state (bool): The new state to set
+        """
+        if not index.isValid():
+            return
+
+        row = index.row()
+        if 0 <= row < len(self._data):
+            self._data[row].checked = state
+            checkbox_index = self.index(row, 0)
+            self.dataChanged.emit(checkbox_index, checkbox_index, [
+                Qt.ItemDataRole.CheckStateRole])
+            self.data_processed.emit(self.getData())
+
     def get_renamed_columns(self) -> dict:
         """Extract renamed columns from the table widget."""
         rename_dict = {}
@@ -366,23 +348,69 @@ class SelectTableWidget(QAbstractTableModel):
 
         return rename_dict
 
-    def selectAll(self) -> None:
-        """Select all rows"""
-        for row in range(len(self._data)):
-            self._data[row].checked = True
-            index = self.index(row, 0)
-            self.dataChanged.emit(
-                index, index, [Qt.ItemDataRole.CheckStateRole])
-        self.data_processed.emit(self.getData())
+    def checkSelected(self, view: QTableView) -> None:
+        """Check only the selected rows in the view
 
-    def deselectAll(self) -> None:
-        """Deselect all rows"""
-        for row in range(len(self._data)):
-            self._data[row].checked = False
-            index = self.index(row, 0)
-            self.dataChanged.emit(
-                index, index, [Qt.ItemDataRole.CheckStateRole])
+        Args:
+            view (QTableView): The table view instance
+        """
+        if not view:
+            logger.debug("No table view provided")
+            return
+
+        # Get selected indexes from the view
+        selected_indexes = view.selectionModel().selectedRows()
+        if not selected_indexes:
+            logger.debug("No rows selected")
+            return
+
+        # Check each selected row
+        for index in selected_indexes:
+            # Map to source model if using proxy
+            if isinstance(view.model(), QSortFilterProxyModel):
+                index = view.model().mapToSource(index)
+
+            row = index.row()
+            if 0 <= row < len(self._data):
+                self._data[row].checked = True
+                checkbox_index = self.index(row, 0)
+                self.dataChanged.emit(checkbox_index, checkbox_index, [
+                                      Qt.ItemDataRole.CheckStateRole])
+
         self.data_processed.emit(self.getData())
+        logger.debug(f"Checked {len(selected_indexes)} selected rows")
+
+    def uncheckSelected(self, view: QTableView) -> None:
+        """Uncheck only the selected rows in the view
+
+        Args:
+            view (QTableView): The table view instance
+        """
+        if not view:
+            logger.debug("No table view provided")
+            return
+
+        # Get selected indexes from the view
+        selected_indexes = view.selectionModel().selectedRows()
+        if not selected_indexes:
+            logger.debug("No rows selected")
+            return
+
+        # Check each selected row
+        for index in selected_indexes:
+            # Map to source model if using proxy
+            if isinstance(view.model(), QSortFilterProxyModel):
+                index = view.model().mapToSource(index)
+
+            row = index.row()
+            if 0 <= row < len(self._data):
+                self._data[row].checked = False
+                checkbox_index = self.index(row, 0)
+                self.dataChanged.emit(checkbox_index, checkbox_index, [
+                                      Qt.ItemDataRole.CheckStateRole])
+
+        self.data_processed.emit(self.getData())
+        logger.debug(f"Checked {len(selected_indexes)} selected rows")
 
     def sortColumns(self, sort_type: str) -> None:
         """Sort columns based on specified criteria"""

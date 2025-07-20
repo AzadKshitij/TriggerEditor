@@ -161,10 +161,10 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # self.table_view.setModel(self.table_widget)
 
             # Configure view properties
+            self.table_view.setSelectionMode(
+                QTableView.SelectionMode.ExtendedSelection)
             self.table_view.setSelectionBehavior(
                 QTableView.SelectionBehavior.SelectRows)
-            self.table_view.setSelectionMode(
-                QTableView.SelectionMode.SingleSelection)
 
             # Set stretch factors for columns
             header = self.table_view.horizontalHeader()
@@ -198,7 +198,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             lambda: self.table_widget.moveSelectedRow("down", self.table_view))
 
         # Options menu
-        self.table_widget.setupOptionsMenu(self.options_btn)
+        self.table_widget.setupOptionsMenu(self.options_btn, self.table_view)
 
     def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
