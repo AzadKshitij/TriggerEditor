@@ -7,7 +7,6 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
 from trigger_designer.qt.docks.node_config import ConfigDock
-from trigger_designer.resources.rc_uicon import *
 
 
 class CalcInputContent(QDMNodeIconContentWidget):
@@ -19,6 +18,8 @@ class CalcInputContent(QDMNodeIconContentWidget):
     def initUI(self) -> None:
         icon = QPixmap(
             "src/trigger_designer/Resource/icons/Input/File Output.png")
+        # icon = QPixmap(
+        #     "src/trigger_designer/Resource/icons/Input/File Output.png")
         super().initUI(icon)
 
     def create_layout(self) -> QLayout:
@@ -43,8 +44,7 @@ class CalcInputContent(QDMNodeIconContentWidget):
 
 @register_node(CalcNodes.INPUT, NodeTypes.CALC)
 class CalcNode_Input(TriggerNode):
-    icon = ":/icons/001-input.png"
-    # icon = "src/trigger_designer/Resource/icons/in.png"
+    icon = ":/IO/qt/images/node_icons/Input/Browse.svg"
     node_code = CalcNodes.INPUT
     node_title = "Input"
     node_type = NodeTypes.CALC

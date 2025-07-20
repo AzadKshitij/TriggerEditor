@@ -36,6 +36,8 @@ class ResourceManager:
             ResourceManager._map = json.loads(content)
             logger.info(
                 f"{self.__class__.__name__} Loaded {len(ResourceManager._map.items())} resources")
+            # logger.info(
+            #     f"{self.__class__.__name__} Resources: {ResourceManager._map.items()}")
 
     def load_theme(self, theme_file: str = 'dark') -> str:
         """To load theme.json file.
@@ -76,7 +78,7 @@ class ResourceManager:
         return theme_qss
 
     @staticmethod
-    def get_path(id: str) -> Optional[Path]:
+    def get_full_path(id: str) -> Optional[Path]:
         """Get a resource's path from the ResourceManager.
 
         Args:
@@ -85,14 +87,6 @@ class ResourceManager:
         Returns:
             Path: The resource path if found, else None.
         """
-
-        # res: dict = ResourceManager._map.get(id, {})
-        # if res:
-        #     path_str = res.get("path")
-        #     if path_str:
-        #         return ResourceManager._res_folder / "resources" / path_str
-        # return None
-
         res: dict = ResourceManager._map.get(id, {})
         if not res:
             return None
@@ -102,6 +96,26 @@ class ResourceManager:
             return None
 
         return ResourceManager._res_folder / "resources" / path_str  # type: ignore
+
+    @staticmethod
+    def get_icon_path(id: str) -> Optional[Path]:
+        """Get a resource's path from the ResourceManager.
+
+        Args:
+            id (str): The name of the resource.
+
+        Returns:
+            Path: The resource path if found, else None.
+        """
+        res: dict = ResourceManager._map.get(id, {})
+        if not res:
+            return None
+
+        path_str = res.get("path")
+        if not path_str:
+            return None
+
+        return path_str  # type: ignore
 
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
@@ -174,7 +188,7 @@ class ResourceManager:
             except FileNotFoundError:
                 logger.error(
                     f"[ResourceManager][ERROR]: Could not find resource: {file_path}")
-                return None
+                return QImage()
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)

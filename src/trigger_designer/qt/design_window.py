@@ -15,6 +15,7 @@ from trigger_designer.core.node_configuration import NODE_REGISTRIES, NodeTypes,
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.docks.result import ResultDock
 from trigger_designer.qt.helpers.logger import Logger, LogLevel
+from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 from trigger_designer.qt.widgets.node_group import NodeGroup
@@ -38,6 +39,9 @@ class TriggerSubWindow(NodeEditorWidget):
         print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
         self.logger: Logger = Logger(self)
+        self.rsm: ResourceManager = ResourceManager()
+        logger.error("🐍 File: qt/design_window.py:m : ",
+                     self.rsm.get_full_path("node_file_input"), " ********* ")
         # self.design_window_id = str(id(self))
         # self.logger.set_context(self.design_window_id)
 
@@ -263,8 +267,11 @@ class TriggerSubWindow(NodeEditorWidget):
         for category, nodes in self.nodes_by_type.items():
             for node_code, node_class in nodes.items():
                 action_key = f"{category}_{node_code}"
+                logger.success(
+                    f"Registering action: '{action_key}' for node '{node_class.node_title}' and icon path '{self.rsm.get_icon_path(node_class.icon)}'")
                 self.node_actions[action_key] = QAction(
-                    QIcon(node_class.icon),
+                    QIcon(
+                        f":{category}/{self.rsm.get_icon_path(node_class.icon)}"),
                     node_class.node_title
                 )
                 # Store both node code and type for later use
@@ -273,15 +280,6 @@ class TriggerSubWindow(NodeEditorWidget):
                     if node_class in registry.values()
                 )
                 self.node_actions[action_key].setData([node_code, node_type])
-
-        # # Create actions for all nodes across all types
-        # for category, nodes in self.nodes_by_type.items():
-        #     for key in nodes.keys():
-        #         node = nodes[key]
-        #         self.node_actions[f"{category}_{node.node_code}"] = QAction(
-        #             QIcon(node.icon), node.node_title)
-        #         self.node_actions[f"{category}_{node.node_code}"].setData(
-        #             [node.node_code, node.node_type])
 
     def initNodesContextMenu(self):
         context_menu = SearchableMenu(self)

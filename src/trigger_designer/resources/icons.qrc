@@ -1,22 +1,31 @@
-<!DOCTYPE RCC>
-<RCC version="1.0">
-  <qresource>
-    <file>icons/002-output-(Custom).png</file>
-    <file>icons/001-input.png</file>
-    <file>icons/002-output.png</file>
-    <file>icons/003-select-(Custom).png</file>
-    <file>icons/003-select.png</file>
-    <file>icons/add.png</file>
-    <file>icons/divide.png</file>
-    <file>icons/dot.png</file>
-    <file>icons/file_input-(Custom).png</file>
-    <file>icons/file_input.png</file>
-    <file>icons/file_input_icon.png</file>
-    <file>icons/in.png</file>
-    <file>icons/mul.png</file>
-    <file>icons/out.png</file>
-    <file>icons/sqrt.png</file>
-    <file>icons/status_icons.png</file>
-    <file>icons/sub.png</file>
+<RCC>
+  <qresource prefix="Input/Output">
+    <file>qt/images/node_icons/Input/Browse.svg</file>
+    <file>qt/images/node_icons/Input/File Input.svg</file>
+    <file>qt/images/node_icons/Input/File Output.svg</file>
+  </qresource>
+  <qresource prefix="Preparation">
+    <file>qt/images/node_icons/Preparation/Cleansing.svg</file>
+    <file>qt/images/node_icons/Preparation/Dynamic Row Generate.svg</file>
+    <file>qt/images/node_icons/Preparation/Filter.svg</file>
+    <file>qt/images/node_icons/Preparation/Formula.svg</file>
+    <file>qt/images/node_icons/Preparation/Select.svg</file>
+    <file>qt/images/node_icons/Preparation/Sort.svg</file>
+    <file>qt/images/node_icons/Preparation/Split.svg</file>
+    <file>qt/images/node_icons/Preparation/Unique.svg</file>
+  </qresource>
+  <qresource prefix="Join">
+    <file>qt/images/node_icons/Join/Append.svg</file>
+    <file>qt/images/node_icons/Join/Join.svg</file>
+    <file>qt/images/node_icons/Join/Union.svg</file>
+  </qresource>
+  <qresource prefix="Transform">
+    <file>qt/images/node_icons/Transform/Count.svg</file>
+    <file>qt/images/node_icons/Transform/Running Total.svg</file>
+    <file>qt/images/node_icons/Transform/Transpose.svg</file>
+  </qresource>
+  <qresource prefix="Report">
+    <file>qt/images/node_icons/Report/Graph.svg</file>
+    <file>qt/images/node_icons/Report/Image.svg</file>
   </qresource>
 </RCC>

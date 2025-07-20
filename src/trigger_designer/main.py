@@ -5,11 +5,10 @@ from qtpy.QtCore import QResource, Qt, QSettings
 from qtpy.QtGui import QIcon, QPalette, QColor, QGuiApplication, QScreen
 from loguru import logger
 
-from trigger_designer.qt import main_window
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.splash import Splash
 import trigger_designer.qt.darkstyle_rc  # noqa
-
+import trigger_designer.resources.icons_rc  # noqa
 from typing import TYPE_CHECKING, Optional, Union
 
 
@@ -43,7 +42,7 @@ def main() -> None:
     name_product = "Trigger Designer"
     app.setApplicationName(name_company)
     app.setApplicationDisplayName(name_product)
-    app.setWindowIcon(QIcon(str(rsm.get_path("app_icon"))))
+    app.setWindowIcon(QIcon(str(rsm.get_full_path("app_icon"))))
 
     settings: QSettings = QSettings(name_company, name_product)
     print("🐍 File: trigger_designer/main.py | Line: 48 | main ~ settings",

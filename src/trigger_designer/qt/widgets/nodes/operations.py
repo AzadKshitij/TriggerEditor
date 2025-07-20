@@ -15,7 +15,7 @@ class OperationContent(QDMNodeContentWidget):
 
 @register_node(CalcNodes.ADD, NodeTypes.CALC)
 class TriggerNode_Add(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/add.png"
+    icon = "node_file_input"
     node_code = CalcNodes.ADD
     node_title = "Add"
     node_type = NodeTypes.CALC
@@ -41,7 +41,7 @@ class TriggerNode_Add(TriggerNode):
 
 @register_node(CalcNodes.SUB, NodeTypes.CALC)
 class CalcNode_Sub(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/sub.png"
+    icon = "node_file_input"
     node_code = CalcNodes.SUB
     node_title = "Substract"
     node_type = NodeTypes.CALC
@@ -67,7 +67,7 @@ class CalcNode_Sub(TriggerNode):
 
 @register_node(CalcNodes.MUL, NodeTypes.CALC)
 class TriggerNode_Mul(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/mul.png"
+    icon = "node_file_input"
     node_code = CalcNodes.MUL
     node_title = "Multiply"
     node_type = NodeTypes.CALC
@@ -91,7 +91,7 @@ class TriggerNode_Mul(TriggerNode):
 
 @register_node(CalcNodes.DIV, NodeTypes.CALC)
 class TriggerNode_Div(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/divide.png"
+    icon = "node_file_input"
     node_code = CalcNodes.DIV
     node_title = "Divide"
     node_type = NodeTypes.CALC
@@ -114,7 +114,7 @@ class TriggerNode_Div(TriggerNode):
 
 @register_node(CalcNodes.SQRT, NodeTypes.CALC)
 class TriggerNode_Sqrt(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/sqrt.png"
+    icon = "node_file_input"
     node_code = CalcNodes.SQRT
     node_title = "Square Root"
     node_type = NodeTypes.CALC

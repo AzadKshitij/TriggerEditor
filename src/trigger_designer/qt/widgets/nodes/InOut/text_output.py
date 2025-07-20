@@ -16,7 +16,7 @@ class CalcTextOutputContent(QDMNodeIconContentWidget):
 
 @register_node(IONodes.TEXT_OUTPUT, NodeTypes.IO)
 class CalcNode_TextOutput(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/out.png"
+    icon = "node_file_output"
     node_code = IONodes.TEXT_OUTPUT
     node_type = NodeTypes.IO
     node_title = "Text Output"

@@ -148,7 +148,7 @@ class FormulaContent(QDMNodeIconContentWidget):
 
 @register_node(OP_NODE_FORMULA, "PREPARATION")
 class TriggerNode_Formula(TriggerNode):
-    icon = "src/trigger_designer/Resource/icons/Preparation/Formula.png"
+    icon = "node_formula"
     node_code = OP_NODE_FORMULA
     node_title = "Formula"
     content_label_objname = "trigger_node_formula"

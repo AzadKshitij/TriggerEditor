@@ -1,6 +1,6 @@
 # Add these imports at the top of the file
 from typing import Optional
-from qtpy.QtWidgets import QLineEdit, QWidget, QVBoxLayout, QMenu, QWidgetAction, QAction
+from qtpy.QtWidgets import QLineEdit, QWidget, QVBoxLayout, QMenu, QWidgetAction
 from qtpy.QtCore import Qt, Signal, QTimer
 from qtpy.QtGui import QCursor, QHideEvent
 
@@ -20,7 +20,7 @@ class SearchableMenu(QMenu):
         self.searchBox = ClickableLineEdit(self.searchWidget)
         self.searchBox.setPlaceholderText("Search nodes...")
         self.searchBox.setEnabled(True)  # Ensure search box is enabled
-        self.searchBox.setFocusPolicy(Qt.StrongFocus)
+        self.searchBox.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         # Add debouncing for search
         self.search_timer = QTimer()
@@ -47,7 +47,7 @@ class SearchableMenu(QMenu):
         self.setAttribute(Qt.WA_NoSystemBackground)
 
         # Ensure the widget and its children can receive focus and mouse events
-        self.searchWidget.setFocusPolicy(Qt.StrongFocus)
+        self.searchWidget.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setFocusProxy(self.searchBox)
 
         self._connected_actions = set()
@@ -168,26 +168,6 @@ class SearchableMenu(QMenu):
         self.visible_range = (0, 10)
         self.updateVisibleActions()
 
-    # def filterNodes(self, text):
-    #     if not self.is_flat_view:
-    #         return
-
-    #     # Convert search text to lowercase for case-insensitive search
-    #     search_text = text.lower()
-
-    #     # Skip first action (search box) when filtering
-    #     visible_actions = []
-    #     for action in self.actions()[1:]:
-    #         if search_text in action.text().lower():
-    #             action.setVisible(True)
-    #             visible_actions.append(action)
-    #         else:
-    #             action.setVisible(False)
-
-    #     # Keep the first visible element in focus
-    #     if visible_actions:
-    #         self.setActiveAction(visible_actions[0])
-
     def hideEvent(self, event: QHideEvent) -> None:
         # Disconnect all actions when hiding
         for action in self._connected_actions:
@@ -204,7 +184,7 @@ class SearchableMenu(QMenu):
         super().hideEvent(event)
 
     def keyPressEvent(self, event) -> None:
-        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+        if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             print("Enter key pressed")
             active_action = self.activeAction()
             if active_action:
@@ -212,7 +192,7 @@ class SearchableMenu(QMenu):
                 active_action.trigger()
                 # self.close()
                 self.hide()
-        if event.key() == Qt.Key_Escape:
+        if event.key() == Qt.Key.Key_Escape:
             self.hide()
         else:
             super().keyPressEvent(event)
@@ -238,6 +218,6 @@ class ClickableLineEdit(QLineEdit):
     clicked = Signal()
 
     def mousePressEvent(self, event) -> None:
-        if event.button() == Qt.LeftButton:
+        if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit()
         super().mousePressEvent(event)

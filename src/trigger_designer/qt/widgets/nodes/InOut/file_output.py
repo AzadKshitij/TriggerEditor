@@ -150,7 +150,6 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
 @register_node(IONodes.FILE_OUTPUT, NodeTypes.IO)
 class TriggerNode_FileOutput(TriggerNode):
-    # icon = ":/output_icon"
     icon = "node_file_output"
     node_code = IONodes.FILE_OUTPUT
     node_title = "File Output"
