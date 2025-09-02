@@ -1,12 +1,13 @@
 from nodeeditor.node_editor_widget import NodeEditorWidget
-from typing import Optional, cast
+from typing import Callable, Optional, cast
 from typing_extensions import override
 import nodeeditor
 from trigger_designer.qt.docks.result import ResultDock
 import os
-from qtpy.QtGui import QIcon, QKeySequence, QCloseEvent, QPalette, QColor, QGuiApplication, QScreen
+from qtpy.QtGui import QIcon, QKeySequence, QCloseEvent, QPalette, QColor, QGuiApplication, QScreen, QShortcut
 from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget, QDialog
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
+
 
 from loguru import logger as glogger
 
@@ -47,6 +48,9 @@ class TriggerWindow(NodeEditorWindow):
         self.name_product = name_product
         self.setObjectName("MainWindow")
         self.readSettings()
+
+        self.shortcut = QShortcut(QKeySequence("F11"), self)
+        self.shortcut.activated.connect(self.toggleFullScreen)
 
         # self.setWindowIcon(QIcon(":/trigger_designer/images/icon.png"))
 
@@ -106,6 +110,12 @@ class TriggerWindow(NodeEditorWindow):
 
         self.setDockNestingEnabled(True)
         # self.tabifyDockWidget(self.configDock, self.resultDock)
+
+    def toggleFullScreen(self):
+        if self.isFullScreen():
+            self.showNormal()
+        else:
+            self.showFullScreen()
 
     def closeEvent(self, event: Optional[QCloseEvent]) -> None:
         self.mdiArea.closeAllSubWindows()
@@ -342,13 +352,17 @@ class TriggerWindow(NodeEditorWindow):
         # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
-        # nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
-        # nodeeditor.scene.addItemsDeselectedListener(self.updateEditMenu)
+        nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
+        nodeeditor.scene.addItemSelectedListener(
+            lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems()))
+        nodeeditor.scene.addItemsDeselectedListener(self.updateEditMenu)
+        nodeeditor.scene.addItemsDeselectedListener(
+            lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems()))
         # Connect signals
         nodeeditor.scene.history.addHistoryModifiedListener(
             self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
-        nodeeditor.itemSelected.connect(self.onNodeSelected)
+        # nodeeditor.itemSelected.connect(self.onNodeSelected)
 
         return subwnd
 
@@ -378,6 +392,6 @@ class TriggerWindow(NodeEditorWindow):
                 return window
         return None
 
-    def onNodeSelected(self, node) -> None:
+    def onNodeSelected(self, node, select_state: bool) -> None:
         # self.nodeeditor.getSelectedItems()
         self.configDock.updateConfig(node)

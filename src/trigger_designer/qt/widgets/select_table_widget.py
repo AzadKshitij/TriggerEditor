@@ -6,14 +6,31 @@ from qtpy.QtWidgets import (QApplication, QMainWindow, QTableView,
 from qtpy.QtCore import QAbstractTableModel, QVariant, QModelIndex, QEvent, QSortFilterProxyModel, QItemSelectionModel
 from qtpy.QtCore import Qt, Signal, QVariant, QModelIndex
 import pandas as pd
+import dataclasses
 
 
-class RowData:
-    def __init__(self, checked: bool, text: str, option: str, rename: str = ""):
-        self.checked = checked
-        self.text = text
-        self.option = option  # Store the selected option string
-        self.rename = rename
+@dataclasses.dataclass
+class RowData():
+    checked: bool = dataclasses.field(default=False)
+    text: str = ""
+    dtype: str = "object"
+    rename: str = ""
+
+    # def __init__(self, checked: bool, text: str, option: str, rename: str = ""):
+    #     # dict.__init__(self, checked=checked, text=text,
+    #     #               option=option, rename=rename)
+    #     self.checked = checked
+    #     self.text = text
+    #     self.option = option  # Store the selected option string
+    #     self.rename = rename
+
+    # def __json__(self):
+    #     return {
+    #         'checked': self.checked,
+    #         'text': self.text,
+    #         'option': self.option,
+    #         'rename': self.rename
+    #     }
 
 
 class SelectTableWidget(QAbstractTableModel):
@@ -66,7 +83,7 @@ class SelectTableWidget(QAbstractTableModel):
         if self.filtered_rows and row not in self.filtered_rows:
             return QVariant()
 
-        row_data = self._data[row]
+        row_data: RowData = self._data[row]
 
         if role == Qt.ItemDataRole.DisplayRole:
             # Display role for showing text
@@ -74,7 +91,7 @@ class SelectTableWidget(QAbstractTableModel):
                 return row_data.text
             elif col == 2:
                 # For the combobox column, display the selected option
-                return row_data.option
+                return row_data.dtype
             elif col == 3:
                 return row_data.rename
         elif role == Qt.ItemDataRole.CheckStateRole and col == 0:
@@ -86,7 +103,7 @@ class SelectTableWidget(QAbstractTableModel):
                 return row_data.text
             elif col == 2:
                 # For the combobox column, return the currently selected option
-                return row_data.option
+                return row_data.dtype
             elif col == 3:
                 return row_data.rename
         elif role == Qt.ItemDataRole.UserRole:
@@ -103,7 +120,7 @@ class SelectTableWidget(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
-        row_data = self._data[row]
+        row_data: RowData = self._data[row]
         success = False
 
         if col == 0 and role == Qt.ItemDataRole.CheckStateRole:
@@ -118,7 +135,7 @@ class SelectTableWidget(QAbstractTableModel):
                 row_data.rename = str(value)
                 success = True
             elif col == 2:  # Combobox column
-                row_data.option = str(value)
+                row_data.dtype = str(value)
                 success = True
 
         if success:
@@ -301,12 +318,12 @@ class SelectTableWidget(QAbstractTableModel):
     def update_from_changes(self, changes: dict) -> None:
         """Update model state from changes dictionary"""
         for row in range(len(self._data)):
-            row_data = self._data[row]
+            row_data: RowData = self._data[row]
             # Update checked state
             row_data.checked = row_data.text in changes['selected_columns']
             # Update data type
             if row_data.text in changes['dtype_mapping']:
-                row_data.option = changes['dtype_mapping'][row_data.text]
+                row_data.dtype = changes['dtype_mapping'][row_data.text]
             # Update rename
             row_data.rename = changes['rename_mapping'].get(row_data.text, '')
 
@@ -386,6 +403,7 @@ class SelectTableWidget(QAbstractTableModel):
         Args:
             view (QTableView): The table view instance
         """
+
         if not view:
             logger.debug("No table view provided")
             return
@@ -454,9 +472,9 @@ class SelectTableWidget(QAbstractTableModel):
         self.filtered_rows = []
 
         for row in range(len(self._data)):
-            row_data = self._data[row]
+            row_data: RowData = self._data[row]
             if (search_text in row_data.text.lower() or
-                search_text in row_data.option.lower() or
+                search_text in row_data.dtype.lower() or
                     (row_data.rename and search_text in row_data.rename.lower())):
                 self.filtered_rows.append(row)
 
@@ -561,9 +579,9 @@ class SelectTableWidget(QAbstractTableModel):
     def getData(self) -> list:
         data = []
         for row in range(self.rowCount()):
-            row_data = self._data[row]
+            row_data: RowData = self._data[row]
             if row_data.checked:
-                data.append((row_data.text, row_data.option, row_data.rename))
+                data.append((row_data.text, row_data.dtype, row_data.rename))
         return data
     # for row in range(self.table.rowCount()):
     #     # Get checkbox from container

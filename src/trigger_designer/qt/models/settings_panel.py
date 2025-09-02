@@ -10,11 +10,12 @@ from typing import Optional
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, parent: Optional[QWidget]=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.parent = parent
         self.setWindowTitle("Settings")
         self.setMinimumWidth(400)
+        self.rsm: ResourceManager = ResourceManager()
         self.settings = QSettings('Blue Octa', 'Trigger Designer')
         self.init_ui()
 
@@ -87,12 +88,14 @@ class SettingsDialog(QDialog):
 
         # settings_file = os.path.join(os.path.dirname(
         #     __file__), "../resources/settings.json")
-        settings_file = ResourceManager._res_folder / "resources/qt/settings.json"
+        settings_file = self.rsm._res_folder / "resources/qt/settings.json"
 
         os.makedirs(os.path.dirname(settings_file), exist_ok=True)
+        settings_json = json.dumps(settings, option=json.OPT_INDENT_2)
 
         with open(settings_file, 'w') as f:
-            json.dump(settings, f, indent=4)
+            f.write(settings_json.decode())
+
         qsettings = QSettings('Blue Octa', 'Trigger Designer')
 
         logger.info(settings)
@@ -100,9 +103,17 @@ class SettingsDialog(QDialog):
             qsettings.allKeys()
         )
 
-        qsettings.setValue('theme', settings.get('theme', 'dark'))
+        theme = settings.get('theme', 'dark')
+        print("🐍 File: models/settings_panel.py:106 | save_settings ~ theme", theme)
+        grid_size = settings.get('grid_size', 20)
+        show_grid = settings.get('show_grid', True)
 
-        style_sheet = ResourceManager.load_theme(settings.get('theme', 'dark'))
+        qsettings.setValue('theme', theme)
+        print("🐍 File: models/settings_panel.py:111 | save_settings ~ theme", theme)
+
+        style_sheet = self.rsm.load_theme(theme)
+        print("🐍 File: models/settings_panel.py:114 | save_settings ~ theme", theme)
+
         QApplication.instance().setStyleSheet(style_sheet)
 
         self.accept()

@@ -51,9 +51,13 @@ class ResourceManager:
         Returns:
             str: will return theme in qss format.
         """
+        print(
+            "🐍 File: qt/resource_manager.py:43 | load_resource_map ~ theme_file", theme_file)
 
         try:
             with open(ResourceManager._res_folder / "resources/qt/themes" / f"{theme_file}.json", encoding="utf-8", mode="r") as f:
+                print(
+                    "🐍 File: qt/resource_manager.py:57 | load_theme ~ theme_file", theme_file)
                 # Read file content as string first
                 content = f.read()
                 theme_variables: dict = json.loads(content)

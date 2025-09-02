@@ -14,6 +14,8 @@ class ConfigDock(QDockWidget):
 
     def initUI(self) -> None:
         self.dock_widget = QWidget()
+        self.dock_widget.setObjectName("ConfigDockWidget")
+        self.dock_widget.setMinimumWidth(300)
         self.dock_layout = QVBoxLayout()
         self.setWidget(self.dock_widget)
         self.setFloating(False)
@@ -21,7 +23,6 @@ class ConfigDock(QDockWidget):
                          QDockWidget.DockWidgetFeature.DockWidgetFloatable)
 
     def updateConfig(self, nodes: List['TriggerNode']) -> None:
-        print("Updating config for node type: ", type(nodes[0]))
         if len(nodes) == 1:
             node: TriggerNode = nodes[0]
             if hasattr(node, 'node') or hasattr(node, 'socket'):

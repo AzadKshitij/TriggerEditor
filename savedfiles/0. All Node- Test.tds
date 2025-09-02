@@ -122,11 +122,85 @@
         }
       ],
       "content": {
-        "table_data": [],
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Unnamed: 0",
+            "dtype": "int64",
+            "rename": ""
+          },
+          {
+            "checked": false,
+            "text": "Keyword",
+            "dtype": "object",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "object",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "object",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "object",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "object",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "int64",
+            "rename": ""
+          }
+        ],
         "changes": {
-          "selected_columns": [],
+          "selected_columns": [
+            "Unnamed: 0",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
           "rename_mapping": {},
-          "dtype_mapping": {}
+          "dtype_mapping": {
+            "Unnamed: 0": "int64",
+            "Seed": "object",
+            "Source": "object",
+            "Country": "object",
+            "Autocomplete Position": "int64",
+            "Difficulty": "int64",
+            "Hot Keyword": "object",
+            "Relevancy Score": "int64"
+          },
+          "column_order": []
         }
       },
       "node_code": 4,

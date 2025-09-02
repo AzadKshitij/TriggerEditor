@@ -26,8 +26,11 @@ a = Analysis(
     binaries=[],
     datas=[("src/trigger_designer", "trigger_designer")],
     hiddenimports=[
-        'pandas'
-    ],
+        'pandas',
+        'numpy',
+        'matplotlib',
+        'matplotlib.backends.backend_qt5agg'
+        ],
     hookspath=[],
     hooksconfig={},
     excludes=[],

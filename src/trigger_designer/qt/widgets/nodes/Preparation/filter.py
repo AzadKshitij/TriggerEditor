@@ -391,7 +391,7 @@ class TriggerNode_Filter(TriggerNode):
         self.content: FilterContent = FilterContent(self)
         self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
-        self.params: list = []
+        self.param: list = []
 
     def processInputs(self, input_values):
         # Only one input for simplicity
@@ -409,7 +409,7 @@ class TriggerNode_Filter(TriggerNode):
             self.content.incom_data = input_value.get('data')
             self.content.incoming_variable = input_value.get('variable_name')
             self.content.update_data()
-            self.params = [
+            self.param = [
                 {
                     'data': self.content.data,
                     'variable_name': self.content.variable_name
@@ -420,7 +420,7 @@ class TriggerNode_Filter(TriggerNode):
                 }
             ]
             self.evalChildren()
-            return self.params
+            return self.param
         # variable = self.content.variable_name
         else:
             self.markDirty(True)

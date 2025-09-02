@@ -65,7 +65,6 @@ def main() -> None:
         splash_name="splash_screen",
         device_ratio=app.devicePixelRatio()
     )
-
     splash.show()
 
     # test_window = StyleTestWindow()

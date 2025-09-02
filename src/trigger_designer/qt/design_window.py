@@ -40,8 +40,7 @@ class TriggerSubWindow(NodeEditorWidget):
         # self.initUI()
         self.logger: Logger = Logger(self)
         self.rsm: ResourceManager = ResourceManager()
-        logger.error("🐍 File: qt/design_window.py:m : ",
-                     self.rsm.get_full_path("node_file_input"), " ********* ")
+
         # self.design_window_id = str(id(self))
         # self.logger.set_context(self.design_window_id)
 
@@ -670,6 +669,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # Get the variable name for this socket from the node
         if hasattr(node, 'param'):
+            print("node.param: ", node.param)
             socket_data = node.param[socket_index]
             if socket_data:
                 var_name = socket_data['variable_name']
