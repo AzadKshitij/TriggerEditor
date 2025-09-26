@@ -1,11 +1,35 @@
 from typing import Optional
 from loguru import logger
-from qtpy.QtWidgets import (QApplication, QMainWindow, QTableView,
-                            QVBoxLayout, QWidget, QPushButton, QCheckBox, QComboBox,
-                            QStyledItemDelegate, QStyleOptionComboBox, QStyle, QAbstractItemView, QAbstractItemDelegate, QStyleOptionViewItem, QMenu)
-from qtpy.QtCore import QAbstractTableModel, QVariant, QModelIndex, QEvent, QSortFilterProxyModel, QItemSelectionModel
+from qtpy.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QTableView,
+    QVBoxLayout,
+    QWidget,
+    QPushButton,
+    QCheckBox,
+    QComboBox,
+    QStyledItemDelegate,
+    QStyleOptionComboBox,
+    QStyle,
+    QAbstractItemView,
+    QAbstractItemDelegate,
+    QStyleOptionViewItem,
+    QMenu,
+    QLineEdit,
+    QHBoxLayout,
+    QTableWidgetItem,
+)
+from qtpy.QtCore import (
+    QAbstractTableModel,
+    QVariant,
+    QModelIndex,
+    QEvent,
+    QSortFilterProxyModel,
+    QItemSelectionModel,
+)
 from qtpy.QtCore import Qt, Signal, QVariant, QModelIndex
-import pandas as pd
+import polars as pl
 
 
 class RowData:
@@ -30,12 +54,25 @@ class SelectTableWidget(QAbstractTableModel):
         self._data = data
         self.filtered_rows = []  # For search functionality
         self.changes = changes or {
-            'selected_columns': [],
-            'rename_mapping': {},
-            'dtype_mapping': {}
+            "selected_columns": [],
+            "rename_mapping": {},
+            "dtype_mapping": {},
         }
         self._header_labels = ["", "Text Data", "Data Type", "Rename"]
-        self._data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
+        self._data_types = [
+            "String",
+            "Int64",
+            "Float64",
+            "Boolean",
+            "Date",
+            "Datetime",
+            "List",
+            "Struct",
+            "Categorical",
+            "Binary",
+            "Decimal",
+            "Duration",
+        ]
 
         # self.initUI()
         # self.populateTable()
@@ -79,7 +116,9 @@ class SelectTableWidget(QAbstractTableModel):
                 return row_data.rename
         elif role == Qt.ItemDataRole.CheckStateRole and col == 0:
             # Check state role for checkboxes (column 1)
-            return Qt.CheckState.Checked if row_data.checked else Qt.CheckState.Unchecked
+            return (
+                Qt.CheckState.Checked if row_data.checked else Qt.CheckState.Unchecked
+            )
         elif role == Qt.ItemDataRole.EditRole:
             # Edit role for editing data (e.g., combobox selection)
             if col == 1:
@@ -109,9 +148,10 @@ class SelectTableWidget(QAbstractTableModel):
         if col == 0 and role == Qt.ItemDataRole.CheckStateRole:
             # Handle checkbox state change
             check_state = int(value)
-            row_data.checked = (check_state == Qt.CheckState.Checked.value)
+            row_data.checked = check_state == Qt.CheckState.Checked.value
             print(
-                f"Checkbox at row {row} set to {row_data.checked}, value: {check_state}")
+                f"Checkbox at row {row} set to {row_data.checked}, value: {check_state}"
+            )
             success = True
         elif role == Qt.ItemDataRole.EditRole:
             if col == 3:  # Rename column
@@ -142,8 +182,11 @@ class SelectTableWidget(QAbstractTableModel):
         if not index.isValid():
             return Qt.ItemFlag.NoItemFlags
 
-        default_flags = super().flags(
-            index) | Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        default_flags = (
+            super().flags(index)
+            | Qt.ItemFlag.ItemIsEnabled
+            | Qt.ItemFlag.ItemIsSelectable
+        )
 
         if index.column() == 0:
             # Checkbox column is checkable
@@ -165,10 +208,14 @@ class SelectTableWidget(QAbstractTableModel):
 
             # If moving a row to an earlier position, the destination index needs adjustment
             if row1 < row2:
-                destination_row = row2 + 1  # Signal moving row1 to the position *after* row2
+                destination_row = (
+                    row2 + 1
+                )  # Signal moving row1 to the position *after* row2
 
             # Notify the view that rows are about to move
-            if self.beginMoveRows(QModelIndex(), source_row, source_row, QModelIndex(), destination_row):
+            if self.beginMoveRows(
+                QModelIndex(), source_row, source_row, QModelIndex(), destination_row
+            ):
                 # Perform the data swap in the model's internal list
                 self._data[row1], self._data[row2] = self._data[row2], self._data[row1]
                 # End the move operation
@@ -178,10 +225,17 @@ class SelectTableWidget(QAbstractTableModel):
                 # sometimes explicitly signaling data changed for the affected rows
                 # can help ensure all delegates refresh correctly.
                 top_left = self.index(min(row1, row2), 0)
-                bottom_right = self.index(
-                    max(row1, row2), self.columnCount() - 1)
-                self.dataChanged.emit(top_left, bottom_right, [
-                    Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole, Qt.ItemDataRole.CheckStateRole, Qt.ItemDataRole.UserRole])
+                bottom_right = self.index(max(row1, row2), self.columnCount() - 1)
+                self.dataChanged.emit(
+                    top_left,
+                    bottom_right,
+                    [
+                        Qt.ItemDataRole.DisplayRole,
+                        Qt.ItemDataRole.EditRole,
+                        Qt.ItemDataRole.CheckStateRole,
+                        Qt.ItemDataRole.UserRole,
+                    ],
+                )
 
                 print(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
                 return True
@@ -246,13 +300,26 @@ class SelectTableWidget(QAbstractTableModel):
             rename_item.textChanged.connect(self.onDataChanged)
 
     def populateTable(self) -> None:
-        data_types = ['object', 'int64', 'float64', 'bool', 'datetime64']
+        data_types = [
+            "String",
+            "Int64",
+            "Float64",
+            "Boolean",
+            "Date",
+            "Datetime",
+            "List",
+            "Struct",
+            "Categorical",
+            "Binary",
+            "Decimal",
+            "Duration",
+        ]
         row_count = len(self._data)
         # self.table.setRowCount(row_count)
 
         for i in range(row_count):
             self.table.insertRow(i)
-            column_name = self._data[i]['column_name']
+            column_name = self._data[i]["column_name"]
 
             # Create container widget for checkbox
             checkbox_container = QWidget()
@@ -262,16 +329,14 @@ class SelectTableWidget(QAbstractTableModel):
 
             # Checkbox for isSelected
             checkbox = QCheckBox()
-            checkbox.setChecked(
-                column_name in self.changes['selected_columns'])
+            checkbox.setChecked(column_name in self.changes["selected_columns"])
             checkbox_layout.addWidget(checkbox)
 
             self.table.setCellWidget(i, 0, checkbox_container)
 
             # Column name (non-editable)
             column_name_item = QTableWidgetItem(column_name)
-            column_name_item.setFlags(
-                column_name_item.flags() ^ ~Qt.ItemIsEditable)
+            column_name_item.setFlags(column_name_item.flags() ^ ~Qt.ItemIsEditable)
             print(f"Column name: {column_name} -----")
             print(column_name_item.text())
             self.table.setItem(i, 1, column_name_item)
@@ -280,16 +345,15 @@ class SelectTableWidget(QAbstractTableModel):
             combo_box = QComboBox()
             combo_box.addItems(data_types)
             # Set saved dtype if exists, otherwise use original
-            saved_dtype = self.changes['dtype_mapping'].get(column_name)
-            current_dtype = saved_dtype if saved_dtype else str(
-                self._data[i]['dtype'])
+            saved_dtype = self.changes["dtype_mapping"].get(column_name)
+            current_dtype = saved_dtype if saved_dtype else str(self._data[i]["dtype"])
             combo_box.setCurrentText(current_dtype)
             self.table.setCellWidget(i, 2, combo_box)
 
             # Line edit for rename
             rename_item = QLineEdit()
             # Set saved rename if exists
-            saved_rename = self.changes['rename_mapping'].get(column_name, "")
+            saved_rename = self.changes["rename_mapping"].get(column_name, "")
             rename_item.setText(saved_rename)
             self.table.setCellWidget(i, 3, rename_item)
 
@@ -303,12 +367,12 @@ class SelectTableWidget(QAbstractTableModel):
         for row in range(len(self._data)):
             row_data = self._data[row]
             # Update checked state
-            row_data.checked = row_data.text in changes['selected_columns']
+            row_data.checked = row_data.text in changes["selected_columns"]
             # Update data type
-            if row_data.text in changes['dtype_mapping']:
-                row_data.option = changes['dtype_mapping'][row_data.text]
+            if row_data.text in changes["dtype_mapping"]:
+                row_data.option = changes["dtype_mapping"][row_data.text]
             # Update rename
-            row_data.rename = changes['rename_mapping'].get(row_data.text, '')
+            row_data.rename = changes["rename_mapping"].get(row_data.text, "")
 
         # Notify view that data has changed
         self.layoutChanged.emit()
@@ -328,8 +392,9 @@ class SelectTableWidget(QAbstractTableModel):
         if 0 <= row < len(self._data):
             self._data[row].checked = state
             checkbox_index = self.index(row, 0)
-            self.dataChanged.emit(checkbox_index, checkbox_index, [
-                Qt.ItemDataRole.CheckStateRole])
+            self.dataChanged.emit(
+                checkbox_index, checkbox_index, [Qt.ItemDataRole.CheckStateRole]
+            )
             self.data_processed.emit(self.getData())
 
     def get_renamed_columns(self) -> dict:
@@ -374,8 +439,9 @@ class SelectTableWidget(QAbstractTableModel):
             if 0 <= row < len(self._data):
                 self._data[row].checked = True
                 checkbox_index = self.index(row, 0)
-                self.dataChanged.emit(checkbox_index, checkbox_index, [
-                                      Qt.ItemDataRole.CheckStateRole])
+                self.dataChanged.emit(
+                    checkbox_index, checkbox_index, [Qt.ItemDataRole.CheckStateRole]
+                )
 
         self.data_processed.emit(self.getData())
         logger.debug(f"Checked {len(selected_indexes)} selected rows")
@@ -406,8 +472,9 @@ class SelectTableWidget(QAbstractTableModel):
             if 0 <= row < len(self._data):
                 self._data[row].checked = False
                 checkbox_index = self.index(row, 0)
-                self.dataChanged.emit(checkbox_index, checkbox_index, [
-                                      Qt.ItemDataRole.CheckStateRole])
+                self.dataChanged.emit(
+                    checkbox_index, checkbox_index, [Qt.ItemDataRole.CheckStateRole]
+                )
 
         self.data_processed.emit(self.getData())
         logger.debug(f"Checked {len(selected_indexes)} selected rows")
@@ -440,10 +507,10 @@ class SelectTableWidget(QAbstractTableModel):
     def onSelectAllChanged(self, state: int) -> None:
         """Handle select all checkbox changes"""
         for row in range(self.table.rowCount()):
-            checkbox_container: Optional[QWidget] = self.table.cellWidget(
-                row, 0)
-            checkbox: Optional[QCheckBox] = checkbox_container.layout().itemAt(
-                0).widget()
+            checkbox_container: Optional[QWidget] = self.table.cellWidget(row, 0)
+            checkbox: Optional[QCheckBox] = (
+                checkbox_container.layout().itemAt(0).widget()
+            )
             checkbox.setChecked(bool(state))
 
         self.onDataChanged()
@@ -455,9 +522,11 @@ class SelectTableWidget(QAbstractTableModel):
 
         for row in range(len(self._data)):
             row_data = self._data[row]
-            if (search_text in row_data.text.lower() or
-                search_text in row_data.option.lower() or
-                    (row_data.rename and search_text in row_data.rename.lower())):
+            if (
+                search_text in row_data.text.lower()
+                or search_text in row_data.option.lower()
+                or (row_data.rename and search_text in row_data.rename.lower())
+            ):
                 self.filtered_rows.append(row)
 
         # Notify view that data has changed
@@ -499,15 +568,18 @@ class SelectTableWidget(QAbstractTableModel):
             source_row (int): Current row index
             target_row (int): Target row index
         """
-        if not (0 <= source_row < len(self._data) and 0 <= target_row < len(self._data)):
+        if not (
+            0 <= source_row < len(self._data) and 0 <= target_row < len(self._data)
+        ):
             return False
 
         # Adjust target position for moving down
         destination_row = target_row + 1 if source_row < target_row else target_row
 
         # Use beginMoveRows to handle the move
-        if self.beginMoveRows(QModelIndex(), source_row, source_row,
-                              QModelIndex(), destination_row):
+        if self.beginMoveRows(
+            QModelIndex(), source_row, source_row, QModelIndex(), destination_row
+        ):
             # Actually move the data
             item = self._data.pop(source_row)
             self._data.insert(target_row, item)
@@ -552,9 +624,12 @@ class SelectTableWidget(QAbstractTableModel):
                     new_index = view.model().mapFromSource(new_index)
                 view.setCurrentIndex(new_index)
                 view.selectionModel().select(
-                    new_index, QItemSelectionModel.Select | QItemSelectionModel.Rows)
+                    new_index, QItemSelectionModel.Select | QItemSelectionModel.Rows
+                )
 
-    def onColumnMoved(self, logicalIndex: int, oldVisualIndex: int, newVisualIndex: int) -> None:
+    def onColumnMoved(
+        self, logicalIndex: int, oldVisualIndex: int, newVisualIndex: int
+    ) -> None:
         """Handle column reordering"""
         self.onDataChanged()
 
@@ -565,6 +640,7 @@ class SelectTableWidget(QAbstractTableModel):
             if row_data.checked:
                 data.append((row_data.text, row_data.option, row_data.rename))
         return data
+
     # for row in range(self.table.rowCount()):
     #     # Get checkbox from container
     #     checkbox_container = self.table.cellWidget(row, 0)
@@ -642,62 +718,27 @@ class ComboBoxDelegate(QStyledItemDelegate):
         else:
             style = QApplication.style()
 
-        style.drawComplexControl(
-            QStyle.ComplexControl.CC_ComboBox, opt, painter)
+        style.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, opt, painter)
         style.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
-
-    # def paint(self, painter, option, index):
-    #     # Paint the item (including the combobox appearance)
-
-    #     if not index.isValid():
-    #         return super().paint(painter, option, index)
-
-    #     # Use the QStyleOptionViewItem to handle the painting
-    #     # This is important for proper rendering of the item
-    #     if index.column() == 2:
-    #         # super().paint(painter, option, index)
-    #         # Get the current value from the model
-    #         value = index.model().data(index, Qt.DisplayRole)
-    #         options = index.model().data(index, Qt.UserRole)  # Get options list
-
-    #         # --- IMPROVED PAINTING ---``
-    #         # Draw the item's background and state (e.g., selection highlight)
-    #         # option.initFrom(option.widget)
-    #         if option.state & QStyle.StateFlag.State_Selected:
-    #             painter.fillRect(option.rect, option.palette.highlight())
-    #             painter.setPen(option.palette.highlightedText().color())
-    #         else:
-    #             painter.fillRect(option.rect, option.palette.base())
-    #             painter.setPen(option.palette.text().color())
-
-    #         # Create a style option for a combobox
-    #         opt = QStyleOptionComboBox()
-    #         opt.rect = option.rect  # Set the rectangle for painting
-    #         opt.state = option.state  # Inherit state (selected, enabled, etc.)
-    #         opt.currentText = value  # Set the current text to display
-
-    #         # Set the list of items in the style option (needed for size hints/painting)
-    #         if options:
-    #             opt.currentValue = value
-    #             try:
-    #                 opt.currentIndex = options.index(value)
-    #             except ValueError:
-    #                 opt.currentIndex = -1  # Value not found in options
-
-    #         # Draw the combobox using the style
-    #         QApplication.style().drawComplexControl(
-    #             QStyle.ComplexControl.CC_ComboBox, opt, painter)
-    #         # QApplication.style().drawControl(
-    #         #     QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
-    #         super().paint(painter, option, index)
-
-    #     else:
-    #         # For other columns, use the default painting
-    #         super().paint(painter, option, index)
 
     def createEditor(self, parent, option, index):
         editor = QComboBox(parent)
-        editor.addItems(['object', 'int64', 'float64', 'bool', 'datetime64'])
+        editor.addItems(
+            [
+                "String",
+                "Int64",
+                "Float64",
+                "Boolean",
+                "Date",
+                "Datetime",
+                "List",
+                "Struct",
+                "Categorical",
+                "Binary",
+                "Decimal",
+                "Duration",
+            ]
+        )
         return editor
 
     def setEditorData(self, editor, index):

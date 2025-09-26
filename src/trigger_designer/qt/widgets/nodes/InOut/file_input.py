@@ -74,7 +74,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.start_row = 1  # Row to start reading from (1-based)
 
         # pass on variables
-        self.data: pl.DataFrame = pl.DataFrame()
+        self.data: Union[pl.DataFrame, pl.LazyFrame] = pl.DataFrame()
         self.variable_name = f"var_file_input_{self.id}"
 
     @property
@@ -196,7 +196,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.filePathEdit.setText(self.filePath)
             file_type = self._auto_detect_file_type(self.filePath)
             self._update_ui_visibility(file_type)
-            if self.data.is_empty() or self.data.is_null() or self.data is None:
+            if self.data is None or self.data.height == 0:
                 self.loadFile(self.filePath)
 
     def _on_filePathEdit_textChanged(self) -> None:
@@ -571,9 +571,11 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         code_lines = []
         code_lines.append("import polars as pl")
         code_lines.append("import os")
+        code_lines.append("")
+        code_lines.append("# Always use LazyFrame for memory efficiency")
 
         if self.file_type == "excel":
-            # Excel file code generation using fastexcel with direct polars conversion
+            # Excel file code generation using fastexcel with LazyFrame conversion
             code_lines.append("import fastexcel")
             code_lines.append(
                 f"reader_{self.id} = fastexcel.read_excel('{self.filePath}')"
@@ -587,7 +589,6 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             skip_rows = self.start_row - 1
             if self.first_row_contains_field_names:
                 load_params.append(f"header_row={skip_rows}")
-                # Don't add skip_rows when header_row is specified
             else:
                 load_params.append("header_row=None")
                 if skip_rows > 0:
@@ -599,66 +600,69 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             load_call = f"reader_{self.id}.load_sheet({', '.join(load_params)})"
 
-            # Generate code for direct conversion to polars
+            # Generate code for conversion to LazyFrame
             code_lines.append(f"excel_df_{self.id} = {load_call}")
-            code_lines.append(f"# Convert to polars efficiently")
+            code_lines.append(f"# Convert to polars LazyFrame for memory efficiency")
             code_lines.append(f"try:")
             code_lines.append(
-                f"    {self.variable_name} = excel_df_{self.id}.to_polars()"
+                f"    eager_df_{self.id} = excel_df_{self.id}.to_polars()"
             )
             code_lines.append(f"except AttributeError:")
             code_lines.append(
-                f"    {self.variable_name} = pl.from_arrow(excel_df_{self.id}.to_arrow())"
+                f"    eager_df_{self.id} = pl.from_arrow(excel_df_{self.id}.to_arrow())"
             )
+            code_lines.append(f"# Convert to LazyFrame immediately")
+            code_lines.append(f"{self.variable_name} = eager_df_{self.id}.lazy()")
 
         elif self.file_type in ["csv", "txt"]:
-            # CSV/TXT file code generation with memory optimization
+            # CSV/TXT file code generation with LazyFrame
             read_params = ["infer_schema=False"]
             if self.delimiter != ",":
                 read_params.append(f"separator='{self.delimiter}'")
             if not self.first_row_contains_field_names:
                 read_params.append("has_header=False")
 
-            # Use lazy evaluation for memory efficiency when no record limit
+            # Always use lazy evaluation for maximum memory efficiency
+            code_lines.append("# Using LazyFrame for optimal memory usage")
+
+            # Build the scan_csv call
+            lazy_call = f"pl.scan_csv('{self.filePath}'"
+            if read_params:
+                lazy_call += f", {', '.join(read_params)}"
+            lazy_call += ")"
+
+            code_lines.append(f"{self.variable_name} = {lazy_call}")
+
+            # Apply record limit using lazy operations if specified
             if self.record_limit > 0:
-                read_params.append(f"n_rows={self.record_limit}")
-                read_call = f"pl.read_csv('{self.filePath}'"
-                if read_params:
-                    read_call += f", {', '.join(read_params)}"
-                read_call += ")"
-                code_lines.append(f"{self.variable_name} = {read_call}")
-            else:
-                # Use lazy reading for large files
-                code_lines.append("# Using lazy evaluation for memory efficiency")
-                lazy_call = f"pl.scan_csv('{self.filePath}'"
-                if read_params:
-                    lazy_call += f", {', '.join(read_params)}"
-                lazy_call += ")"
-                code_lines.append(f"lazy_{self.variable_name} = {lazy_call}")
-                code_lines.append(f"try:")
+                code_lines.append(f"# Apply record limit using lazy operations")
                 code_lines.append(
-                    f"    {self.variable_name} = lazy_{self.variable_name}.collect()"
+                    f"{self.variable_name} = {self.variable_name}.head({self.record_limit})"
                 )
-                code_lines.append(f"except Exception as e:")
-                code_lines.append(f"    # Fallback to direct reading if lazy fails")
-                fallback_call = f"pl.read_csv('{self.filePath}'"
-                if read_params:
-                    fallback_call += f", {', '.join(read_params)}"
-                fallback_call += ")"
-                code_lines.append(f"    {self.variable_name} = {fallback_call}")
         else:
-            # Default to CSV
+            # Default to CSV with LazyFrame
+            code_lines.append("# Default to CSV with LazyFrame")
             code_lines.append(
-                f"{self.variable_name} = pl.read_csv('{self.filePath}', infer_schema=False)"
+                f"{self.variable_name} = pl.scan_csv('{self.filePath}', infer_schema=False)"
             )
 
-        # Add filename as field if requested
+        # Add filename as field if requested - using lazy operations
         if self.output_filename_as_field:
             filename_var = f"filename_{self.id}"
+            code_lines.append(f"# Add filename field using lazy operations")
             code_lines.append(f"{filename_var} = os.path.basename('{self.filePath}')")
             code_lines.append(
                 f"{self.variable_name} = {self.variable_name}.with_columns(pl.lit({filename_var}).alias('FileName'))"
             )
+
+        # Add a comment about LazyFrame usage
+        code_lines.append("")
+        code_lines.append(
+            f"# {self.variable_name} is now a LazyFrame for memory-efficient processing"
+        )
+        code_lines.append(
+            f"# Use .collect() only when you need to materialize the data"
+        )
 
         return "\n".join(code_lines) + "\n"
 
@@ -754,7 +758,7 @@ class TriggerNode_FileInput(TriggerNode):
     #     return param
 
     def processInputs(self, input_values: list[Any]) -> Optional[list[dict[str, Any]]]:
-        print("⚠️⚠️⚠️ File Input ⚠️⚠️⚠️")
+        print("[WARNING] File Input [WARNING]")
         # Custom processing logic for the File Input node
         if not self.content.filePath:
             self.grNode.setToolTip("No file selected")

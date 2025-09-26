@@ -2,16 +2,37 @@ from loguru import logger
 from collections import deque
 import time
 
-from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent, QDragEnterEvent, QKeyEvent
+from qtpy.QtGui import (
+    QIcon,
+    QPixmap,
+    QCursor,
+    QDropEvent,
+    QContextMenuEvent,
+    QCloseEvent,
+    QDragEnterEvent,
+    QKeyEvent,
+)
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize
-from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
+from qtpy.QtWidgets import (
+    QAction,
+    QGraphicsProxyWidget,
+    QMenu,
+    QWidget,
+    QVBoxLayout,
+    QPushButton,
+)
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_edge import EDGE_TYPE_DIRECT, EDGE_TYPE_BEZIER, EDGE_TYPE_SQUARE
 from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
 from nodeeditor.utils import dumpException
 
-from trigger_designer.core.node_configuration import NODE_REGISTRIES, NodeTypes, get_class_from_opcode, LISTBOX_MIMETYPE
+from trigger_designer.core.node_configuration import (
+    NODE_REGISTRIES,
+    NodeTypes,
+    get_class_from_opcode,
+    LISTBOX_MIMETYPE,
+)
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.docks.result import ResultDock
 from trigger_designer.qt.helpers.logger import Logger, LogLevel
@@ -34,14 +55,17 @@ DEBUG_CONTEXT = False
 class TriggerSubWindow(NodeEditorWidget):
     itemSelected = Signal(object)
 
-    def __init__(self, parent: Union[QWidget, 'TriggerWindow'] = None) -> None:
+    def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)
         print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
         self.logger: Logger = Logger(self)
         self.rsm: ResourceManager = ResourceManager()
-        logger.error("🐍 File: qt/design_window.py:m : ",
-                     self.rsm.get_full_path("node_file_input"), " ********* ")
+        logger.error(
+            "🐍 File: qt/design_window.py:m : ",
+            self.rsm.get_full_path("node_file_input"),
+            " ********* ",
+        )
         # self.design_window_id = str(id(self))
         # self.logger.set_context(self.design_window_id)
 
@@ -65,7 +89,7 @@ class TriggerSubWindow(NodeEditorWidget):
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
     # Add this to where you handle socket clicks
-    def onSocketClicked(self, socket: 'Socket', node: 'Node'):
+    def onSocketClicked(self, socket: "Socket", node: "Node"):
         if socket.is_input:
             return
         socket_index = node.outputs.index(socket)
@@ -120,7 +144,10 @@ class TriggerSubWindow(NodeEditorWidget):
 
     def zoomOut(self) -> None:
         zoom_factor = self.view.zoomOut()
-        print("🐍 File: TriggerEditor/trigger_sub_window.py | Line: 80 | zoomOut ~ zoom_factor", zoom_factor)
+        print(
+            "🐍 File: TriggerEditor/trigger_sub_window.py | Line: 80 | zoomOut ~ zoom_factor",
+            zoom_factor,
+        )
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 
@@ -152,7 +179,7 @@ class TriggerSubWindow(NodeEditorWidget):
             # Fit the view while preserving current scale
             self.view.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
             self._last_scale = self.view.transform().m11()  # Store current scale
-            self.view.zoom = self._last_scale*10
+            self.view.zoom = self._last_scale * 10
             self.view.centerOn(rect.center())
 
             print(f"⌚ Fit View Time: {time.time() - start_time:.4f}s")
@@ -194,14 +221,21 @@ class TriggerSubWindow(NodeEditorWidget):
 
     def keyPressEvent(self, event: Optional[QKeyEvent]) -> None:
         # Check for Shift+A
-        if event.key() == Qt.Key.Key_A and event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
+        if (
+            event.key() == Qt.Key.Key_A
+            and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+        ):
             # Get the cursor position and map it to scene coordinates
             cursor_pos = self.mapFromGlobal(self.cursor().pos())
             self.showNodeContextMenu(cursor_pos)
-        if event.key() == Qt.Key.Key_P and event.modifiers() == Qt.KeyboardModifier.ShiftModifier:
+        if (
+            event.key() == Qt.Key.Key_P
+            and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+        ):
             print()
             print(
-                "------------------------------------------------------------------------------")
+                "------------------------------------------------------------------------------"
+            )
             print()
         else:
             super().keyPressEvent(event)
@@ -211,10 +245,10 @@ class TriggerSubWindow(NodeEditorWidget):
         self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
-        print(f'getNodeClassFromData: {data}')
-        if 'node_code' not in data:
+        print(f"getNodeClassFromData: {data}")
+        if "node_code" not in data:
             return Node
-        return get_class_from_opcode(data['node_code'], data['node_type'])
+        return get_class_from_opcode(data["node_code"], data["node_type"])
 
     def doEvalOutputs(self) -> None:
         # eval all output nodes
@@ -239,10 +273,12 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # Check all edges in the scene
         for edge in self.scene.edges:
-            if (edge.start_socket is None or
-                edge.end_socket is None or
-                edge.start_socket.node is None or
-                    edge.end_socket.node is None):
+            if (
+                edge.start_socket is None
+                or edge.end_socket is None
+                or edge.start_socket.node is None
+                or edge.end_socket.node is None
+            ):
                 invalid_edges.append(edge)
                 continue
 
@@ -250,8 +286,10 @@ class TriggerSubWindow(NodeEditorWidget):
             start_node = edge.start_socket.node
             end_node = edge.end_socket.node
 
-            if (edge.start_socket not in start_node.outputs or
-                    edge.end_socket not in end_node.inputs):
+            if (
+                edge.start_socket not in start_node.outputs
+                or edge.end_socket not in end_node.inputs
+            ):
                 invalid_edges.append(edge)
 
         # Remove invalid edges
@@ -264,11 +302,11 @@ class TriggerSubWindow(NodeEditorWidget):
         self.node_actions = {}
         self.nodes_by_type = {
             # 'Calculation': NODE_REGISTRIES[NodeTypes.CALC],
-            'Input/Output': NODE_REGISTRIES[NodeTypes.IO],
-            'Preparation': NODE_REGISTRIES[NodeTypes.PREPARATION],
-            'Join': NODE_REGISTRIES[NodeTypes.JOIN],
-            'Transform': NODE_REGISTRIES[NodeTypes.TRANSFORM],
-            'Report': NODE_REGISTRIES[NodeTypes.REPORT]
+            "Input/Output": NODE_REGISTRIES[NodeTypes.IO],
+            "Preparation": NODE_REGISTRIES[NodeTypes.PREPARATION],
+            "Join": NODE_REGISTRIES[NodeTypes.JOIN],
+            "Transform": NODE_REGISTRIES[NodeTypes.TRANSFORM],
+            "Report": NODE_REGISTRIES[NodeTypes.REPORT],
         }
 
         # Create actions for all nodes across all types
@@ -276,15 +314,16 @@ class TriggerSubWindow(NodeEditorWidget):
             for node_code, node_class in nodes.items():
                 action_key = f"{category}_{node_code}"
                 logger.success(
-                    f"Registering action: '{action_key}' for node '{node_class.node_title}' and icon path '{self.rsm.get_icon_path(node_class.icon)}'")
+                    f"Registering action: '{action_key}' for node '{node_class.node_title}' and icon path '{self.rsm.get_icon_path(node_class.icon)}'"
+                )
                 self.node_actions[action_key] = QAction(
-                    QIcon(
-                        f":{category}/{self.rsm.get_icon_path(node_class.icon)}"),
-                    node_class.node_title
+                    QIcon(f":{category}/{self.rsm.get_icon_path(node_class.icon)}"),
+                    node_class.node_title,
                 )
                 # Store both node code and type for later use
                 node_type = next(
-                    type_name for type_name, registry in NODE_REGISTRIES.items()
+                    type_name
+                    for type_name, registry in NODE_REGISTRIES.items()
                     if node_class in registry.values()
                 )
                 self.node_actions[action_key].setData([node_code, node_type])
@@ -359,8 +398,7 @@ class TriggerSubWindow(NodeEditorWidget):
     def onDrop(self, event: QDropEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             eventData = event.mimeData().data(LISTBOX_MIMETYPE)
-            dataStream = QDataStream(
-                eventData, QIODevice.OpenModeFlag.ReadOnly)
+            dataStream = QDataStream(eventData, QIODevice.OpenModeFlag.ReadOnly)
             pixmap = QPixmap()
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
@@ -369,24 +407,30 @@ class TriggerSubWindow(NodeEditorWidget):
             node_type = dataStream.readQString()
 
             mouse_position = event.pos()
-            scene_position = self.scene.grScene.views()[
-                0].mapToScene(mouse_position)
+            scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
 
             if DEBUG:
-                print("GOT DROP: [%d] '%s'" % (node_code, node_type),
-                      "mouse:", mouse_position, "scene:", scene_position)
+                print(
+                    "GOT DROP: [%d] '%s'" % (node_code, node_type),
+                    "mouse:",
+                    mouse_position,
+                    "scene:",
+                    scene_position,
+                )
 
             try:
                 print("1...")
                 node_type_enum = NodeTypes(node_type)
                 print("2...")
                 node = get_class_from_opcode(node_code, node_type_enum)(
-                    self.scene)  # type: ignore
+                    self.scene
+                )  # type: ignore
                 print("3...")
                 node.setPos(scene_position.x(), scene_position.y())
                 print("4...")
                 self.scene.history.storeHistory(
-                    "Created node %s" % node.__class__.__name__)
+                    "Created node %s" % node.__class__.__name__
+                )
                 print("5...")
             except Exception as e:
                 dumpException(e)
@@ -409,9 +453,9 @@ class TriggerSubWindow(NodeEditorWidget):
             # Check for groups first
             if isinstance(item, NodeGroup):
                 self.handleGroupContextMenu(event)
-            elif hasattr(item, 'node') or hasattr(item, 'socket'):
+            elif hasattr(item, "node") or hasattr(item, "socket"):
                 self.handleNodeContextMenu(event)
-            elif hasattr(item, 'edge'):
+            elif hasattr(item, "edge"):
                 self.handleEdgeContextMenu(event)
             # elif item is None:
             else:
@@ -449,8 +493,7 @@ class TriggerSubWindow(NodeEditorWidget):
             print("CONTEXT: NODE")
         context_menu = QMenu(self)
         markDirtyAct = context_menu.addAction("Mark Dirty")
-        markDirtyDescendantsAct = context_menu.addAction(
-            "Mark Descendant Dirty")
+        markDirtyDescendantsAct = context_menu.addAction("Mark Descendant Dirty")
         markInvalidAct = context_menu.addAction("Mark Invalid")
         unmarkInvalidAct = context_menu.addAction("Unmark Invalid")
         evalAct = context_menu.addAction("Eval")
@@ -461,8 +504,12 @@ class TriggerSubWindow(NodeEditorWidget):
             item = item.widget()
 
         selected_nodes = [
-            item.node for item in self.scene.getSelectedItems() if hasattr(item, 'node')]
-        print("🐍 File: qt/design_window.py:375 | handleNodeContextMenu ~ selected_nodes", selected_nodes)
+            item.node for item in self.scene.getSelectedItems() if hasattr(item, "node")
+        ]
+        print(
+            "🐍 File: qt/design_window.py:375 | handleNodeContextMenu ~ selected_nodes",
+            selected_nodes,
+        )
 
         if len(selected_nodes) > 1:
             groupAct = context_menu.addAction("Group Nodes")
@@ -470,9 +517,9 @@ class TriggerSubWindow(NodeEditorWidget):
 
         action = context_menu.exec(self.mapToGlobal(event.pos()))
 
-        if hasattr(item, 'node'):
+        if hasattr(item, "node"):
             selected = item.node
-        if hasattr(item, 'socket'):
+        if hasattr(item, "socket"):
             selected = item.socket.node
 
         if DEBUG_CONTEXT:
@@ -504,7 +551,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
         selected = None
         item = self.scene.getItemAt(event.pos())
-        if hasattr(item, 'edge'):
+        if hasattr(item, "edge"):
             selected = item.edge
 
         if selected and action == bezierAct:
@@ -543,8 +590,7 @@ class TriggerSubWindow(NodeEditorWidget):
         cursor_pos = self.mapFromGlobal(QCursor.pos())
         scene_pos = self.scene.getView().mapToScene(cursor_pos)
         new_calc_node.setPos(scene_pos.x(), scene_pos.y())
-        self.scene.history.storeHistory(
-            "Created %s" % new_calc_node.__class__.__name__)
+        self.scene.history.storeHistory("Created %s" % new_calc_node.__class__.__name__)
 
     def showNodeContextMenu(self, position) -> None:
         if DEBUG_CONTEXT:
@@ -589,22 +635,38 @@ class TriggerSubWindow(NodeEditorWidget):
             # Write the string to the file
             file.write(code)
 
-    def getAllNodes(self) -> list['Node']:
+    def getAllNodes(self) -> list["Node"]:
         return self.scene.nodes
 
     def getNodeConnections(self) -> dict:
         connections = {}
         for node in self.getAllNodes():
             connections[node] = {
-                'inputs': [edge.start_socket.node for socket in node.inputs for edge in socket.edges] if node.inputs else [],
-                'outputs': [edge.end_socket.node for socket in node.outputs for edge in socket.edges] if node.outputs else []
+                "inputs": (
+                    [
+                        edge.start_socket.node
+                        for socket in node.inputs
+                        for edge in socket.edges
+                    ]
+                    if node.inputs
+                    else []
+                ),
+                "outputs": (
+                    [
+                        edge.end_socket.node
+                        for socket in node.outputs
+                        for edge in socket.edges
+                    ]
+                    if node.outputs
+                    else []
+                ),
             }
         return connections
 
     def topologicalSort(self, connections):
         in_degree = {node: 0 for node in connections}
         for node in connections:
-            for output_node in connections[node]['outputs']:
+            for output_node in connections[node]["outputs"]:
                 in_degree[output_node] += 1
 
         queue = deque([node for node in connections if in_degree[node] == 0])
@@ -613,7 +675,7 @@ class TriggerSubWindow(NodeEditorWidget):
         while queue:
             node = queue.popleft()
             sorted_nodes.append(node)
-            for output_node in connections[node]['outputs']:
+            for output_node in connections[node]["outputs"]:
                 in_degree[output_node] -= 1
                 if in_degree[output_node] == 0:
                     queue.append(output_node)
@@ -638,6 +700,10 @@ class TriggerSubWindow(NodeEditorWidget):
 
         start_time = time.time()
 
+        print(
+            "🐍 File: qt/design_window.py | Line: 642 | executeWorkflow ~ sorted_nodes",
+            len(sorted_nodes),
+        )
         for node in sorted_nodes:
             node.grNode.setPenExecuting()
             node.grNode.update()
@@ -669,10 +735,10 @@ class TriggerSubWindow(NodeEditorWidget):
             return None
 
         # Get the variable name for this socket from the node
-        if hasattr(node, 'param'):
+        if hasattr(node, "param"):
             socket_data = node.param[socket_index]
             if socket_data:
-                var_name = socket_data['variable_name']
+                var_name = socket_data["variable_name"]
                 # Look up the actual data in execution results
                 if var_name in self.execution_results[node]:
                     return self.execution_results[node][var_name]
@@ -682,8 +748,11 @@ class TriggerSubWindow(NodeEditorWidget):
     def createGroup(self, nodes=None):
         """Create a new node group containing the selected nodes"""
         if nodes is None:
-            nodes = [item.node for item in self.scene.selectedItems()
-                     if hasattr(item, 'node')]
+            nodes = [
+                item.node
+                for item in self.scene.selectedItems()
+                if hasattr(item, "node")
+            ]
 
         if len(nodes) < 2:
             return

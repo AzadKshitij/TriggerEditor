@@ -76,7 +76,7 @@ class PolarsTableModel(QAbstractTableModel):
         """
         super().__init__()
 
-        self._dataframe = dataframe or pl.DataFrame()
+        self._dataframe = dataframe if dataframe is not None else pl.DataFrame()
         self.chunk_size = chunk_size
         self.cache_size = cache_size
 
