@@ -29,6 +29,7 @@ dependencies = [
     "typing-extensions>=4.13.0",
     "tzdata==2025.1",
     "psutil>=7.1.0",
+    
 ]
 
 [tool.uv]
@@ -58,6 +59,7 @@ target-version = "py311"
 
 [dependency-groups]
 dev = [
+    "black>=25.9.0",
     "autotyping>=24.9.0",
     "faker>=37.1.0",
     "pandas-stubs>=2.2.3.250308",
