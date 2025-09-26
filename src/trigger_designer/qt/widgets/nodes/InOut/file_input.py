@@ -8,8 +8,6 @@ from qtpy.QtWidgets import (
     QFileDialog,
     QVBoxLayout,
     QTextEdit,
-    QTableWidget,
-    QTableWidgetItem,
     QHeaderView,
     QLayout,
     QComboBox,
@@ -30,6 +28,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -176,9 +175,20 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Add the settings widget to the main layout
         dock_layout.addWidget(self.settings_widget)
 
-        # Table widget for preview
-        self.tableWidget = QTableWidget(self)
-        dock_layout.addWidget(self.tableWidget)
+        # Polars table viewer for preview (data-only mode for clean interface)
+        self.table_viewer = PolarsTableViewer(
+            parent=self,
+            show_controls=False,  # No controls needed in file input node
+            show_info=False,  # No info panel to keep it compact
+            show_search=False,  # Search not needed for preview
+            show_export=False,  # Export not needed in node context
+            show_performance_settings=False,  # Performance settings not needed
+        )
+        dock_layout.addWidget(self.table_viewer)
+
+        # Keep reference to tableWidget for backward compatibility
+        # Some methods might still reference self.tableWidget
+        self.tableWidget = self.table_viewer.table_view
 
         # Initially hide all options until a file is selected
         self._hide_all_options()
@@ -520,65 +530,39 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return pl.DataFrame()
 
     def loadFile(self, fileName: str) -> None:
-        """Ultra-lightweight file loading for preview - minimal memory footprint"""
+        """Load file using Polars table viewer for enhanced performance and memory efficiency"""
         # Clear any existing data to free memory first
         if hasattr(self, "data"):
             del self.data
-
-        # Create table widget only if it doesn't exist
-        if not hasattr(self, "tableWidget") or self.tableWidget is None:
-            self.tableWidget = QTableWidget(self)
 
         try:
             # Load preview data using the new simplified functions
             preview_df = self._read_file_based_on_type(fileName)
 
             if preview_df.height == 0:
-                self.tableWidget.setRowCount(0)
-                self.tableWidget.setColumnCount(0)
+                # Create empty DataFrame for display
+                self.data = pl.DataFrame()
+                self.table_viewer.set_dataframe(self.data)
                 return
-
-            columns = list(preview_df.columns)
-            rows = preview_df.rows()
-            row_count = len(rows)
-            col_count = len(columns)
-
-            # Set table dimensions
-            self.tableWidget.setRowCount(row_count)
-            self.tableWidget.setColumnCount(col_count)
-            self.tableWidget.setHorizontalHeaderLabels(columns)
-
-            # Fill table directly from DataFrame rows
-            for row_idx, row_data in enumerate(rows):
-                for col_idx, value in enumerate(row_data):
-                    if col_idx < len(columns):
-                        item = QTableWidgetItem(str(value) if value is not None else "")
-                        self.tableWidget.setItem(row_idx, col_idx, item)
 
             # Store the preview DataFrame as data for later use
             self.data = preview_df
 
-            # Configure table with minimal memory settings
-            header = self.tableWidget.horizontalHeader()
-            header.setStretchLastSection(False)
-            for i in range(min(10, col_count)):  # Limit to first 10 columns
-                header.setSectionResizeMode(i, QHeaderView.ResizeToContents)
-                if header.sectionSize(i) > 150:  # Even smaller column limit
-                    header.resizeSection(i, 150)
+            # Set the dataframe in the Polars table viewer
+            self.table_viewer.set_dataframe(preview_df)
 
-            logger.info(f"Loaded preview: {row_count} rows, {col_count} columns")
+            logger.info(
+                f"Loaded preview: {preview_df.height} rows, {len(preview_df.columns)} columns"
+            )
 
         except Exception as e:
             logger.error(f"Error loading file {fileName}: {e}")
             # Set data to empty DataFrame on error
             self.data = pl.DataFrame()
-            # Create empty table
-            if hasattr(self, "tableWidget"):
-                self.tableWidget.setRowCount(1)
-                self.tableWidget.setColumnCount(1)
-                self.tableWidget.setHorizontalHeaderLabels(["Error"])
-                error_item = QTableWidgetItem(f"Error loading file: {str(e)}")
-                self.tableWidget.setItem(0, 0, error_item)
+
+            # Create error DataFrame for display
+            error_df = pl.DataFrame({"Error": [f"Error loading file: {str(e)}"]})
+            self.table_viewer.set_dataframe(error_df)
 
     def get_code(self) -> str:
         if not self.filePath:
