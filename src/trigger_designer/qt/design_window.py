@@ -3,7 +3,7 @@ from collections import deque
 import time
 
 from qtpy.QtGui import QIcon, QPixmap, QCursor, QDropEvent, QContextMenuEvent, QCloseEvent, QDragEnterEvent, QKeyEvent
-from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize
+from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu, QWidget, QVBoxLayout, QPushButton
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
@@ -24,6 +24,7 @@ from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from trigger_designer.qt.main_window import TriggerWindow
+    from trigger_designer.qt.node_base import TriggerNode
     from nodeeditor.node_node import Node
     from nodeeditor.node_socket import Socket
 
@@ -159,37 +160,6 @@ class TriggerSubWindow(NodeEditorWidget):
 
         except Exception as e:
             dumpException(e)
-
-    # def fitView(self):
-    #     # Get all nodes in the scene
-    #     nodes = self.scene.nodes
-    #     if not nodes:
-    #         return
-    #     start_time = time.time()
-    #     # Calculate the bounding rectangle of all nodes
-    #     rect = None
-    #     for node in nodes:
-    #         if rect is None:
-    #             rect = node.grNode.boundingRect()
-    #             # Use pos() values directly
-    #             rect.moveTopLeft(node.pos)
-    #         else:
-    #             node_rect = node.grNode.boundingRect()
-    #             # Use pos() values directly
-    #             node_rect.moveTopLeft(node.pos)
-    #             rect = rect.united(node_rect)
-
-    #     if rect is None:
-    #         return
-
-    #     # Add some padding around the nodes
-    #     padding = 50
-    #     rect = rect.adjusted(-padding, -padding, padding, padding)
-
-    #     # Fit the view to show all nodes
-    #     self.view.fitInView(rect, Qt.KeepAspectRatio)
-    #     self.view.centerOn(rect.center())
-    #     print("⌚⌛Fit View Time FitView2: ", time.time() - start_time)
 
     def keyPressEvent(self, event: Optional[QKeyEvent]) -> None:
         # Check for Shift+A
@@ -588,7 +558,7 @@ class TriggerSubWindow(NodeEditorWidget):
             # Write the string to the file
             file.write(code)
 
-    def getAllNodes(self) -> list['Node']:
+    def getAllNodes(self) -> list['TriggerNode']:
         return self.scene.nodes
 
     def getNodeConnections(self) -> dict:
@@ -622,7 +592,62 @@ class TriggerSubWindow(NodeEditorWidget):
 
         return sorted_nodes
 
+    def test_execution_visuals(self) -> None:
+        """Test function to verify execution visual effects"""
+        self.run_button.setEnabled(False)
+        connections = self.getNodeConnections()
+        sorted_nodes = self.topologicalSort(connections)
+
+        # Get all nodes
+        nodes = self.getAllNodes()
+
+        # Reset all node borders to default
+        for node in sorted_nodes:
+            node.grNode.resetPen()
+            node.grNode.update()
+
+        # Process nodes one by one with delays
+        self._process_next_node(nodes, 0)
+
+    def _process_next_node(self, nodes: list, current_index: int) -> None:
+        """Process nodes sequentially with visual transitions"""
+        if current_index >= len(nodes):
+            # All nodes processed, cleanup
+            QTimer.singleShot(1000, self._test_cleanup)
+            return
+
+        node = nodes[current_index]
+
+        # Show executing state (purple)
+        node.grNode.setPenExecuting()
+        node.grNode.update()
+
+        # Schedule transition to executed state (green)
+        QTimer.singleShot(1000, lambda: self._transition_to_executed(node))
+
+        # Schedule processing of next node
+        QTimer.singleShot(1500, lambda: self._process_next_node(
+            nodes, current_index + 1))
+
+    def _test_executed_state(self, node):
+        """Helper to show executed state"""
+        node.grNode.setPenExecuted()
+        node.grNode.update()
+
+    def _transition_to_executed(self, node) -> None:
+        """Transition a single node to executed state"""
+        node.grNode.setPenExecuted()
+        node.grNode.update()
+
+    def _test_cleanup(self) -> None:
+        """Reset all nodes and re-enable run button"""
+        for node in self.getAllNodes():
+            node.grNode.resetPen()
+            node.grNode.update()
+        self.run_button.setEnabled(True)
+
     def executeWorkflow(self) -> None:
+        # self.test_execution_visuals()
         self.run_button.setEnabled(False)
         connections = self.getNodeConnections()
         import_node = None
@@ -634,26 +659,70 @@ class TriggerSubWindow(NodeEditorWidget):
         # Reset all node borders
         for node in self.getAllNodes():
             node.grNode.resetPen()
+            node.grNode.update()
 
         start_time = time.time()
 
-        for node in sorted_nodes:
-            node.grNode.setPenExecuting()
-            node.grNode.update()
+        self._execute_next_node(sorted_nodes, 0, executor)
 
+        # for node in sorted_nodes:
+        #     node.grNode.setPenExecuting()
+        #     node.grNode.update()
+
+        #     stdoutput, local_variables = executor.execute_node(node)
+        #     # Store execution results for this node
+        #     self.execution_results[node] = local_variables
+
+        #     node.grNode.setPenExecuted()
+        #     node.grNode.update()
+
+        # end_time = time.time()
+        # print("Execution Time: ", end_time - start_time, " seconds")
+        # self.getPyFile()
+
+        # for node in self.getAllNodes():
+        #     node.grNode.resetPen()
+
+        # self.run_button.setEnabled(True)
+
+    def _execute_next_node(self, nodes: list, current_index: int, executor: NodeExecutor) -> None:
+        """Execute nodes sequentially with visual transitions"""
+        if current_index >= len(nodes):
+            # All nodes processed, cleanup
+            QTimer.singleShot(1000, self._execution_cleanup)
+            return
+
+        node = nodes[current_index]
+
+        # Show executing state (purple)
+        node.grNode.setPenExecuting()
+        node.grNode.update()
+
+        # Execute the node
+        try:
             stdoutput, local_variables = executor.execute_node(node)
-            # Store execution results for this node
             self.execution_results[node] = local_variables
 
+            # Show success state (green)
             node.grNode.setPenExecuted()
             node.grNode.update()
+        except Exception as e:
+            # Could add error state visual here
+            logger.error(f"Error executing node {node}: {str(e)}")
+            node.grNode.resetPen()
+            node.grNode.update()
+            self._execution_cleanup()
+            return
 
-        end_time = time.time()
-        print("Execution Time: ", end_time - start_time, " seconds")
-        self.getPyFile()
+        # Schedule next node execution
+        QTimer.singleShot(500, lambda: self._execute_next_node(
+            nodes, current_index + 1, executor))
+
+    def _execution_cleanup(self) -> None:
 
         for node in self.getAllNodes():
             node.grNode.resetPen()
+            node.grNode.update()
 
         self.run_button.setEnabled(True)
 

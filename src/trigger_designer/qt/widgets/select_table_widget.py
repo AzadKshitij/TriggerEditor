@@ -16,22 +16,6 @@ class RowData():
     dtype: str = "object"
     rename: str = ""
 
-    # def __init__(self, checked: bool, text: str, option: str, rename: str = ""):
-    #     # dict.__init__(self, checked=checked, text=text,
-    #     #               option=option, rename=rename)
-    #     self.checked = checked
-    #     self.text = text
-    #     self.option = option  # Store the selected option string
-    #     self.rename = rename
-
-    # def __json__(self):
-    #     return {
-    #         'checked': self.checked,
-    #         'text': self.text,
-    #         'option': self.option,
-    #         'rename': self.rename
-    #     }
-
 
 class SelectTableWidget(QAbstractTableModel):
     # Keep the default Qt signal

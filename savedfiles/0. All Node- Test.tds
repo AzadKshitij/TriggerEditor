@@ -61,9 +61,9 @@
         }
       ],
       "content": {
-        "column": "Unnamed: 0",
-        "operation": "Equals",
-        "value": ""
+        "column": "Keyword",
+        "operation": "Contains",
+        "value": "x"
       },
       "node_code": 2,
       "node_type": "preparation"
@@ -92,7 +92,7 @@
         }
       ],
       "content": {
-        "formula": null,
+        "formula": "CASE when [RelevancyScore] > 95 then \"pass\" else \"fail\"",
         "target_column": null
       },
       "node_code": 3,
@@ -122,62 +122,7 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "Unnamed: 0",
-            "dtype": "int64",
-            "rename": ""
-          },
-          {
-            "checked": false,
-            "text": "Keyword",
-            "dtype": "object",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Seed",
-            "dtype": "object",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Source",
-            "dtype": "object",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Country",
-            "dtype": "object",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Autocomplete Position",
-            "dtype": "int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Difficulty",
-            "dtype": "int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Hot Keyword",
-            "dtype": "object",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Relevancy Score",
-            "dtype": "int64",
-            "rename": ""
-          }
-        ],
+        "table_data": [],
         "changes": {
           "selected_columns": [
             "Unnamed: 0",
@@ -244,7 +189,7 @@
       "id": 2176088576576,
       "title": "Unique",
       "pos_x": -199.75585937499994,
-      "pos_y": 485.9863281249998,
+      "pos_y": 484.9863281249998,
       "inputs": [
         {
           "id": 2176088575568,
@@ -278,7 +223,7 @@
       "id": 2176088574992,
       "title": "Split",
       "pos_x": -200.53710937499994,
-      "pos_y": 616.7724609374999,
+      "pos_y": 617.7724609375,
       "inputs": [
         {
           "id": 2176088573984,
@@ -368,8 +313,8 @@
     {
       "id": 1933364878576,
       "title": "Join",
-      "pos_x": 148.43749999999997,
-      "pos_y": 466.7968749999999,
+      "pos_x": 141.4375,
+      "pos_y": 422.7968749999999,
       "inputs": [
         {
           "id": 1933365313888,
@@ -584,12 +529,6 @@
       "end": 2176088572112
     },
     {
-      "id": 1933278772496,
-      "edge_type": 5,
-      "start": 2176088576864,
-      "end": 1933365313888
-    },
-    {
       "id": 1933365848592,
       "edge_type": 5,
       "start": 2176088575280,
@@ -606,6 +545,12 @@
       "edge_type": 5,
       "start": 2176088581760,
       "end": 2327088169600
+    },
+    {
+      "id": 2652257635920,
+      "edge_type": 5,
+      "start": 2176088576864,
+      "end": 1933365313888
     }
   ]
 }

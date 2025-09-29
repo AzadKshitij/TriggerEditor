@@ -39,7 +39,7 @@ pd.DataFrame(regions).to_csv("data/regions.csv", index=False)
 
 # 4. Sales
 sales = []
-for _ in range(2000):
+for _ in range(5000000):
     sale = {
         "order_id": fake.uuid4(),
         "customer_id": random.choice(customer_ids),
@@ -48,4 +48,5 @@ for _ in range(2000):
         "order_value": round(random.uniform(20, 2000), 2),
     }
     sales.append(sale)
-pd.DataFrame(sales).to_csv("data/monthly_sales_2023.csv", index=False)
+pd.DataFrame(sales).to_csv(
+    "./data/monthly_sales_2023_5000000.csv", index=False)

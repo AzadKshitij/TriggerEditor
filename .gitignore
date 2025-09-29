@@ -272,3 +272,10 @@ TagStudio.ini
 
 result
 result-*
+savedfiles/Example_1/data/monthly_sales_2023_200000.csv
+savedfiles/Example_1/data/monthly_sales_2023_900000.csv
+savedfiles/Example_1/data/monthly_sales_2023_2000000_polars.csv
+.gitignore
+.gitignore
+savedfiles/Example_1/data/monthly_sales_2023_5000000.csv
+savedfiles/Example_1/data/monthly_sales_2023_5000000_new.csv
