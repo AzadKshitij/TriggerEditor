@@ -1,11 +1,25 @@
 import sys
-from PyQt6.QtWidgets import (QApplication, QMainWindow, QTableView,
-                             QVBoxLayout, QWidget, QPushButton, QCheckBox, QComboBox,
-                             QStyledItemDelegate, QStyleOptionComboBox, QStyle, QAbstractItemView, QAbstractItemDelegate, QStyleOptionViewItem)
+from PyQt6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QTableView,
+    QVBoxLayout,
+    QWidget,
+    QPushButton,
+    QCheckBox,
+    QComboBox,
+    QStyledItemDelegate,
+    QStyleOptionComboBox,
+    QStyle,
+    QAbstractItemView,
+    QAbstractItemDelegate,
+    QStyleOptionViewItem,
+)
 from PyQt6.QtCore import Qt, QVariant, QModelIndex, QEvent
 from PyQt6.QtGui import QPainter
 
 from qtpy.QtCore import QAbstractTableModel
+
 # Define a custom data structure for each row
 
 
@@ -87,21 +101,19 @@ class CustomTableModel(QAbstractTableModel):
             # Handle editing for text and combobox
             if col == 0:
                 row_data.text = str(value)
-                self.dataChanged.emit(
-                    index, index, [Qt.DisplayRole, Qt.EditRole])
+                self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
                 return True
             elif col == 2:
                 # Handle combobox selection change
                 if isinstance(value, str):
                     row_data.option = value
-                    self.dataChanged.emit(
-                        index, index, [Qt.DisplayRole, Qt.EditRole])
+                    self.dataChanged.emit(index, index, [Qt.DisplayRole, Qt.EditRole])
                     return True
             return False
         elif role == Qt.CheckStateRole:
             # Handle checkbox state change (column 1)
             if col == 1:
-                row_data.checked = (value == Qt.Checked)
+                row_data.checked = value == Qt.Checked
                 self.dataChanged.emit(index, index, [Qt.CheckStateRole])
                 return True
             return False
@@ -126,14 +138,30 @@ class CustomTableModel(QAbstractTableModel):
 
         if index.column() == 0:
             # Text column is editable
-            return default_flags | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return (
+                default_flags
+                | Qt.ItemIsEditable
+                | Qt.ItemIsSelectable
+                | Qt.ItemIsEnabled
+            )
         elif index.column() == 1:
             # Checkbox column is checkable, selectable, and enabled
-            return default_flags | Qt.ItemIsUserCheckable | Qt.ItemIsSelectable | Qt.ItemIsEnabled
+            return (
+                default_flags
+                | Qt.ItemIsUserCheckable
+                | Qt.ItemIsSelectable
+                | Qt.ItemIsEnabled
+            )
         elif index.column() == 2:
             # Combobox column is editable, selectable, and enabled
             # | Qt.ItemIsSelectable
-            return default_flags | Qt.ItemIsUserCheckable | Qt.ItemIsEditable | Qt.ItemIsEnabled | Qt.ItemIsSelectable
+            return (
+                default_flags
+                | Qt.ItemIsUserCheckable
+                | Qt.ItemIsEditable
+                | Qt.ItemIsEnabled
+                | Qt.ItemIsSelectable
+            )
 
         return default_flags
 
@@ -146,10 +174,14 @@ class CustomTableModel(QAbstractTableModel):
 
             # If moving a row to an earlier position, the destination index needs adjustment
             if row1 < row2:
-                destination_row = row2 + 1  # Signal moving row1 to the position *after* row2
+                destination_row = (
+                    row2 + 1
+                )  # Signal moving row1 to the position *after* row2
 
             # Notify the view that rows are about to move
-            if self.beginMoveRows(QModelIndex(), source_row, source_row, QModelIndex(), destination_row):
+            if self.beginMoveRows(
+                QModelIndex(), source_row, source_row, QModelIndex(), destination_row
+            ):
                 # Perform the data swap in the model's internal list
                 self._data[row1], self._data[row2] = self._data[row2], self._data[row1]
                 # End the move operation
@@ -159,10 +191,12 @@ class CustomTableModel(QAbstractTableModel):
                 # sometimes explicitly signaling data changed for the affected rows
                 # can help ensure all delegates refresh correctly.
                 top_left = self.index(min(row1, row2), 0)
-                bottom_right = self.index(
-                    max(row1, row2), self.columnCount() - 1)
-                self.dataChanged.emit(top_left, bottom_right, [
-                    Qt.DisplayRole, Qt.EditRole, Qt.CheckStateRole, Qt.UserRole])
+                bottom_right = self.index(max(row1, row2), self.columnCount() - 1)
+                self.dataChanged.emit(
+                    top_left,
+                    bottom_right,
+                    [Qt.DisplayRole, Qt.EditRole, Qt.CheckStateRole, Qt.UserRole],
+                )
 
                 print(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
                 return True
@@ -171,6 +205,7 @@ class CustomTableModel(QAbstractTableModel):
                 return False
         print("Invalid row indices for swapping.")
         return False
+
 
 # Custom delegate for the ComboBox column
 
@@ -248,7 +283,8 @@ class ComboBoxDelegate(QStyledItemDelegate):
 
             # Draw the combobox using the style
             QApplication.style().drawComplexControl(
-                QStyle.ComplexControl.CC_ComboBox, opt, painter)
+                QStyle.ComplexControl.CC_ComboBox, opt, painter
+            )
             # QApplication.style().drawControl(
             #     QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
             super().paint(painter, option, index)
@@ -335,13 +371,13 @@ class MainWindow(QMainWindow):
         self.tableView.setModel(self.model)
 
         # Set the custom delegate for the 'Option' column (index 2)
-        self.tableView.setItemDelegateForColumn(
-            2, ComboBoxDelegate(self.tableView))
+        self.tableView.setItemDelegateForColumn(2, ComboBoxDelegate(self.tableView))
 
         # Auto-resize columns to fit content
         self.tableView.resizeColumnsToContents()
         self.tableView.setEditTriggers(
-            QTableView.EditTrigger.DoubleClicked | QTableView.EditTrigger.EditKeyPressed)
+            QTableView.EditTrigger.DoubleClicked | QTableView.EditTrigger.EditKeyPressed
+        )
 
         # Set delegates for specific columns if needed (e.g., for combobox editor)
         # The default delegate handles checkboxes and text editing.
@@ -353,11 +389,11 @@ class MainWindow(QMainWindow):
         # Auto-resize columns to fit content
         self.tableView.resizeColumnsToContents()
 
-        self.swap_button = QPushButton(
-            "Swap Row 3 and Row 7 (Model Indices 2 and 6)")
+        self.swap_button = QPushButton("Swap Row 3 and Row 7 (Model Indices 2 and 6)")
         # Connect the button to the model's swap method
         self.swap_button.clicked.connect(
-            lambda: self.model.swapRows(2, 6))  # Swap row indices 2 and 6
+            lambda: self.model.swapRows(2, 6)
+        )  # Swap row indices 2 and 6
 
         layout = QVBoxLayout()
         layout.addWidget(self.tableView)
@@ -398,11 +434,13 @@ class MainWindow(QMainWindow):
             # Iterate through the internal data list of the model
             for row_data in model._data:
                 # Append the data for each row to the list
-                all_data.append({
-                    "text": row_data.text,
-                    "checked": row_data.checked,
-                    "option": row_data.option
-                })
+                all_data.append(
+                    {
+                        "text": row_data.text,
+                        "checked": row_data.checked,
+                        "option": row_data.option,
+                    }
+                )
             return all_data
         return None
 
