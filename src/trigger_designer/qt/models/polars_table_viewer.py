@@ -32,6 +32,7 @@ from qtpy.QtWidgets import (
     QFrame,
     QSplitter,
     QTextEdit,
+    QScrollArea,
 )
 from qtpy.QtCore import (
     QAbstractTableModel,
@@ -491,6 +492,12 @@ class PolarsTableViewer(QWidget):
         # Initialize all widget attributes to None first
         self.control_panel = None
         self.info_panel = None
+        self.stats_panel = None
+        self.search_panel = None
+        self.export_panel = None
+        self.performance_panel = None
+        self.combined_panel = None
+        self.performance_log_panel = None
         self.splitter = None
         self.search_input = None
         self.column_filter = None
@@ -523,71 +530,78 @@ class PolarsTableViewer(QWidget):
 
     def _init_ui(self):
         """Initialize the user interface."""
-        layout = QVBoxLayout(self)
+        # Create main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins to maximize space
 
-        # Control panel (optional)
-        if self.show_controls:
-            control_panel = self._create_control_panel()
-            layout.addWidget(control_panel)
-            self.control_panel = control_panel
-        else:
-            # Control panel is not created, but widget attributes
-            # are already initialized to None in __init__
-            self.control_panel = None
+        # Create scroll area to contain all content
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        # Main content area
+        # Create content widget
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
+
+        # 1. Statistics section at the very top (if enabled)
         if self.show_info:
-            # Use splitter when info panel is shown
-            splitter = QSplitter(Qt.Vertical)
-            layout.addWidget(splitter)
-
-            # Table view
-            self.table_view = QTableView()
-            self._apply_table_theme()
-            self.table_view.setAlternatingRowColors(False)  # We'll handle this in model
-            self.table_view.setSelectionBehavior(QTableView.SelectRows)
-            self.table_view.setSortingEnabled(False)  # Disable for performance
-            self.table_view.verticalHeader().setDefaultSectionSize(
-                28
-            )  # Slightly taller rows
-            self.table_view.setShowGrid(True)
-
-            # Enable virtual scrolling for performance
-            self.table_view.setVerticalScrollMode(QTableView.ScrollPerPixel)
-            self.table_view.setHorizontalScrollMode(QTableView.ScrollPerPixel)
-
-            splitter.addWidget(self.table_view)
-
-            # Statistics and info panel
-            info_panel = self._create_info_panel()
-            splitter.addWidget(info_panel)
-            self.info_panel = info_panel
-
-            # Set splitter proportions
-            splitter.setStretchFactor(0, 3)  # Table gets most space
-            splitter.setStretchFactor(1, 1)  # Info panel gets less space
-
-            self.splitter = splitter
+            stats_panel = self._create_stats_panel()
+            layout.addWidget(stats_panel)
+            self.stats_panel = stats_panel
         else:
-            # Just show table directly when no info panel
-            self.table_view = QTableView()
-            self._apply_table_theme()
-            self.table_view.setAlternatingRowColors(False)  # We'll handle this in model
-            self.table_view.setSelectionBehavior(QTableView.SelectRows)
-            self.table_view.setSortingEnabled(False)  # Disable for performance
-            self.table_view.verticalHeader().setDefaultSectionSize(
-                28
-            )  # Slightly taller rows
-            self.table_view.setShowGrid(True)
+            self.stats_panel = None
 
-            # Enable virtual scrolling for performance
-            self.table_view.setVerticalScrollMode(QTableView.ScrollPerPixel)
-            self.table_view.setHorizontalScrollMode(QTableView.ScrollPerPixel)
+        # 2. Combined search and export controls in same row (if enabled)
+        if self.show_controls and (self.show_search or self.show_export):
+            combined_panel = self._create_combined_controls_panel()
+            layout.addWidget(combined_panel)
+            self.combined_panel = combined_panel
+        else:
+            self.combined_panel = None
+            # Initialize widgets as None when not shown
+            self.search_input = None
+            self.column_filter = None
+            self.apply_filter_btn = None
+            self.clear_filter_btn = None
+            self.export_csv_btn = None
+            self.export_excel_btn = None
 
-            layout.addWidget(self.table_view)
+        # 3. Table view (main content) - takes all available space
+        self.table_view = QTableView()
+        self._apply_table_theme()
+        self.table_view.setAlternatingRowColors(False)  # We'll handle this in model
+        self.table_view.setSelectionBehavior(QTableView.SelectRows)
+        self.table_view.setSortingEnabled(False)  # Disable for performance
+        self.table_view.verticalHeader().setDefaultSectionSize(
+            28
+        )  # Slightly taller rows
+        self.table_view.setShowGrid(True)
 
-            self.info_panel = None
-            self.splitter = None
+        # Enable virtual scrolling for performance
+        self.table_view.setVerticalScrollMode(QTableView.ScrollPerPixel)
+        self.table_view.setHorizontalScrollMode(QTableView.ScrollPerPixel)
+
+        # Add table with stretch factor to take most of the space
+        layout.addWidget(self.table_view, 9)  # 90% of space for table
+
+        # 4. Performance log only at bottom (no settings) - if info is enabled
+        if self.show_info:
+            performance_log_panel = self._create_performance_log_panel()
+            layout.addWidget(performance_log_panel, 1)  # 10% of space for log
+            self.performance_log_panel = performance_log_panel
+        else:
+            self.performance_log_panel = None
+
+        # Initialize performance settings widgets as None (not shown anymore)
+        self.chunk_size_spin = None
+        self.cache_size_spin = None
+        self.auto_optimize_cb = None
+        self.performance_panel = None
+
+        # Set content widget in scroll area
+        scroll_area.setWidget(content_widget)
+        main_layout.addWidget(scroll_area)
 
     def _apply_table_theme(self):
         """Apply consistent theme styling to the table view."""
@@ -747,28 +761,11 @@ class PolarsTableViewer(QWidget):
         panel = QGroupBox("Information & Statistics")
         layout = QVBoxLayout(panel)
 
-        # Data info
-        data_info = QGroupBox("Dataset Info")
-        data_layout = QVBoxLayout(data_info)
-
+        # Data info - compact display
         self.info_label = QLabel("No data loaded")
         self.info_label.setWordWrap(True)
-        data_layout.addWidget(self.info_label)
-
-        layout.addWidget(data_info)
-
-        # Memory usage
-        memory_group = QGroupBox("Memory Usage")
-        memory_layout = QVBoxLayout(memory_group)
-
-        self.memory_label = QLabel("Memory: 0 MB")
-        memory_layout.addWidget(self.memory_label)
-
-        self.memory_progress = QProgressBar()
-        self.memory_progress.setMaximum(self.memory_warning_threshold)
-        memory_layout.addWidget(self.memory_progress)
-
-        layout.addWidget(memory_group)
+        self.info_label.setStyleSheet("padding: 8px; font-size: 12px;")
+        layout.addWidget(self.info_label)
 
         # Performance log
         log_group = QGroupBox("Performance Log")
@@ -780,6 +777,172 @@ class PolarsTableViewer(QWidget):
         log_layout.addWidget(self.performance_log)
 
         layout.addWidget(log_group)
+
+        return panel
+
+    def _create_stats_panel(self) -> QWidget:
+        """Create a compact statistics panel."""
+        panel = QGroupBox("Dataset Statistics")
+        layout = QVBoxLayout(panel)
+
+        # Data info - compact display
+        self.info_label = QLabel("No data loaded")
+        self.info_label.setWordWrap(True)
+        self.info_label.setStyleSheet(
+            "padding: 8px; font-size: 14px; font-weight: bold;"
+        )
+        layout.addWidget(self.info_label)
+
+        return panel
+
+    def _create_search_panel(self) -> QWidget:
+        """Create the search and filter panel."""
+        panel = QGroupBox("Search & Filter")
+        layout = QHBoxLayout(panel)
+
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search in data...")
+        layout.addWidget(QLabel("Search:"))
+        layout.addWidget(self.search_input)
+
+        # Column filter
+        self.column_filter = QComboBox()
+        self.column_filter.addItem("All Columns")
+        layout.addWidget(QLabel("In:"))
+        layout.addWidget(self.column_filter)
+
+        # Apply filter button
+        self.apply_filter_btn = QPushButton("Apply Filter")
+        self.clear_filter_btn = QPushButton("Clear")
+        layout.addWidget(self.apply_filter_btn)
+        layout.addWidget(self.clear_filter_btn)
+
+        return panel
+
+    def _create_export_panel(self) -> QWidget:
+        """Create the export functionality panel."""
+        panel = QGroupBox("Export")
+        layout = QHBoxLayout(panel)
+
+        self.export_csv_btn = QPushButton("Export CSV")
+        self.export_excel_btn = QPushButton("Export Excel")
+        layout.addWidget(self.export_csv_btn)
+        layout.addWidget(self.export_excel_btn)
+
+        # Add stretch to keep buttons on the left
+        layout.addStretch()
+
+        return panel
+
+    def _create_performance_panel(self) -> QWidget:
+        """Create the performance settings and log panel."""
+        panel = QGroupBox("Performance Settings & Log")
+        layout = QVBoxLayout(panel)
+
+        # Performance settings
+        settings_layout = QHBoxLayout()
+
+        settings_layout.addWidget(QLabel("Chunk Size:"))
+        self.chunk_size_spin = QSpinBox()
+        self.chunk_size_spin.setRange(100, 10000)
+        self.chunk_size_spin.setValue(self.chunk_size)
+        self.chunk_size_spin.setSuffix(" rows")
+        settings_layout.addWidget(self.chunk_size_spin)
+
+        settings_layout.addWidget(QLabel("Cache:"))
+        self.cache_size_spin = QSpinBox()
+        self.cache_size_spin.setRange(1000, 100000)
+        self.cache_size_spin.setValue(self.cache_size)
+        self.cache_size_spin.setSuffix(" rows")
+        settings_layout.addWidget(self.cache_size_spin)
+
+        # Memory optimization
+        self.auto_optimize_cb = QCheckBox("Auto Optimize")
+        self.auto_optimize_cb.setChecked(True)
+        settings_layout.addWidget(self.auto_optimize_cb)
+
+        settings_layout.addStretch()
+        layout.addLayout(settings_layout)
+
+        # Performance log
+        log_label = QLabel("Performance Log:")
+        log_label.setStyleSheet("font-weight: bold; margin-top: 8px;")
+        layout.addWidget(log_label)
+
+        self.performance_log = QTextEdit()
+        self.performance_log.setMaximumHeight(120)
+        self.performance_log.setReadOnly(True)
+        layout.addWidget(self.performance_log)
+
+        return panel
+
+    def _create_combined_controls_panel(self) -> QWidget:
+        """Create a combined panel with search and export controls in the same row."""
+        panel = QGroupBox("Search & Export Controls")
+        main_layout = QHBoxLayout(panel)
+
+        # Search section (if enabled)
+        if self.show_search:
+            search_group = QGroupBox("Search & Filter")
+            search_layout = QHBoxLayout(search_group)
+
+            self.search_input = QLineEdit()
+            self.search_input.setPlaceholderText("Search in data...")
+            search_layout.addWidget(QLabel("Search:"))
+            search_layout.addWidget(self.search_input)
+
+            # Column filter
+            self.column_filter = QComboBox()
+            self.column_filter.addItem("All Columns")
+            search_layout.addWidget(QLabel("In:"))
+            search_layout.addWidget(self.column_filter)
+
+            # Apply filter buttons
+            self.apply_filter_btn = QPushButton("Apply")
+            self.clear_filter_btn = QPushButton("Clear")
+            search_layout.addWidget(self.apply_filter_btn)
+            search_layout.addWidget(self.clear_filter_btn)
+
+            main_layout.addWidget(search_group)
+        else:
+            # Initialize as None when not shown
+            self.search_input = None
+            self.column_filter = None
+            self.apply_filter_btn = None
+            self.clear_filter_btn = None
+
+        # Export section (if enabled)
+        if self.show_export:
+            export_group = QGroupBox("Export")
+            export_layout = QHBoxLayout(export_group)
+
+            self.export_csv_btn = QPushButton("CSV")
+            self.export_excel_btn = QPushButton("Excel")
+            export_layout.addWidget(self.export_csv_btn)
+            export_layout.addWidget(self.export_excel_btn)
+
+            main_layout.addWidget(export_group)
+        else:
+            # Initialize as None when not shown
+            self.export_csv_btn = None
+            self.export_excel_btn = None
+
+        return panel
+
+    def _create_performance_log_panel(self) -> QWidget:
+        """Create a simple performance log panel without settings."""
+        panel = QGroupBox("Performance Log")
+        layout = QVBoxLayout(panel)
+
+        self.performance_log = QTextEdit()
+        self.performance_log.setMaximumHeight(120)  # Fixed maximum height
+        self.performance_log.setMinimumHeight(120)  # Fixed minimum height
+        self.performance_log.setReadOnly(True)
+        layout.addWidget(self.performance_log)
+
+        # Set fixed size policy for the panel
+        panel.setMaximumHeight(150)  # Fixed panel height including borders/padding
+        panel.setMinimumHeight(150)
 
         return panel
 
@@ -874,7 +1037,7 @@ class PolarsTableViewer(QWidget):
                         conditions.append(
                             pl.col(col)
                             .cast(pl.Utf8)
-                            .str.contains(search_text, case_sensitive=False)
+                            .str.contains(search_text, literal=False, strict=False)
                             .fill_null(False)
                         )
 
@@ -893,7 +1056,7 @@ class PolarsTableViewer(QWidget):
                     condition = (
                         pl.col(column_name)
                         .cast(pl.Utf8)
-                        .str.contains(search_text, case_sensitive=False)
+                        .str.contains(search_text, literal=False, strict=False)
                         .fill_null(False)
                     )
                     self.filtered_dataframe = self.dataframe.filter(condition)
@@ -940,21 +1103,7 @@ class PolarsTableViewer(QWidget):
         """Update performance statistics display."""
         try:
             memory_stats = self.model.get_memory_usage()
-
-            # Update memory display (only if widgets exist)
-            cache_mb = memory_stats.get("cache_size_mb", 0)
             total_mb = memory_stats.get("total_process_memory_mb", 0)
-
-            if hasattr(self, "memory_label") and self.memory_label is not None:
-                self.memory_label.setText(
-                    f"Cache: {cache_mb:.1f} MB | Process: {total_mb:.1f} MB"
-                )
-
-            # Update progress bar (only if it exists)
-            if hasattr(self, "memory_progress") and self.memory_progress is not None:
-                self.memory_progress.setValue(
-                    min(int(total_mb), self.memory_warning_threshold)
-                )
 
             # Check for memory warnings
             if total_mb > self.memory_warning_threshold:
@@ -998,23 +1147,8 @@ class PolarsTableViewer(QWidget):
         # Memory estimation
         estimated_mb = (rows * cols * 8) / (1024 * 1024)  # Rough estimate
 
-        info_text = f"""
-        <b>Dataset Overview:</b><br>
-        Rows: {rows:,}<br>
-        Columns: {cols}<br>
-        Estimated Size: {estimated_mb:.1f} MB<br>
-        
-        <b>Columns:</b><br>
-        """
-
-        # Add column information
-        # Show first 10 columns
-        for i, col in enumerate(current_df.columns[:10]):
-            col_type = current_df[col].dtype
-            info_text += f"• {col} ({col_type})<br>"
-
-        if len(current_df.columns) > 10:
-            info_text += f"... and {len(current_df.columns) - 10} more columns<br>"
+        # Compact single-line format
+        info_text = f"Rows: {rows:,} | Columns: {cols} | Size: {estimated_mb:.1f} MB"
 
         self.info_label.setText(info_text)
 

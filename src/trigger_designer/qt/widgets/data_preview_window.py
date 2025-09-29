@@ -55,26 +55,16 @@ class DataPreviewWindow(QMainWindow):
         info_layout = QHBoxLayout(info_widget)
 
         self.info_label = QLabel()
-        self.info_label.setStyleSheet(
-            """
-            QLabel {
-                background-color: #e3f2fd;
-                padding: 8px;
-                border: 1px solid #90caf9;
-                border-radius: 4px;
-                font-weight: bold;
-            }
-        """
-        )
 
         # Refresh button for lazy data
-        self.refresh_btn = QPushButton("Refresh Preview")
+        self.refresh_btn = QPushButton("Refresh")
         self.refresh_btn.clicked.connect(self.refresh_preview)
         self.refresh_btn.setVisible(False)  # Initially hidden
+        self.refresh_btn.setToolTip("Refresh preview data from source")
 
         info_layout.addWidget(self.info_label)
+        info_layout.addStretch()  # Push refresh button to the right
         info_layout.addWidget(self.refresh_btn)
-        info_layout.addStretch()
 
         layout.addWidget(info_widget)
 
@@ -88,17 +78,13 @@ class DataPreviewWindow(QMainWindow):
         if total_rows is not None:
             if is_limited:
                 self.info_label.setText(
-                    f"[PREVIEW] Showing {preview_rows:,} of {total_rows:,} rows "
-                    f"(limited to {self.max_rows:,} rows or {self.max_size_mb}MB for performance)"
+                    f"Showing {preview_rows:,} of {total_rows:,} rows"
                 )
             else:
                 self.info_label.setText(f"Showing all {preview_rows:,} rows")
         else:
             if is_limited:
-                self.info_label.setText(
-                    f"[PREVIEW] Showing first {preview_rows:,} rows "
-                    f"(limited to {self.max_rows:,} rows or {self.max_size_mb}MB for performance)"
-                )
+                self.info_label.setText(f"Showing first {preview_rows:,} rows")
             else:
                 self.info_label.setText(f"Showing {preview_rows:,} rows")
 
@@ -240,14 +226,23 @@ class DataPreviewWindow(QMainWindow):
             self.update_info_label(preview_df.height, total_rows, is_limited)
 
             # Use PolarsTableViewer for DataFrame display
+            # Configure to show info statistics prominently
             self.viewer = PolarsTableViewer(
                 dataframe=preview_df,
                 show_controls=True,
-                show_info=True,
+                show_info=True,  # Show information panel
                 show_search=True,
                 show_export=True,
                 show_performance_settings=self.is_lazy_data,
             )
+
+            # Ensure the info panel is visible and on top
+            if hasattr(self.viewer, "splitter") and self.viewer.splitter is not None:
+                # Move info panel to top by switching the order
+                self.viewer.splitter.insertWidget(0, self.viewer.info_panel)
+                # Adjust sizes to give more space to table but keep info visible
+                self.viewer.splitter.setSizes([100, 700])  # Info: 100px, Table: 700px
+
             layout.addWidget(self.viewer)
 
     def estimate_dataframe_memory(self, df: pl.DataFrame) -> int:
@@ -255,7 +250,7 @@ class DataPreviewWindow(QMainWindow):
         try:
             # Try to get actual memory usage if available
             if hasattr(df, "estimated_size"):
-                return df.estimated_size()
+                return df.estimated_size("mb")
 
             # Fallback: estimate based on data types and row count
             estimated_bytes = 0
