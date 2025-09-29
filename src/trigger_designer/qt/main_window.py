@@ -4,8 +4,27 @@ from typing_extensions import override
 import nodeeditor
 from trigger_designer.qt.docks.result import ResultDock
 import os
-from qtpy.QtGui import QIcon, QKeySequence, QCloseEvent, QPalette, QColor, QGuiApplication, QScreen, QShortcut
-from qtpy.QtWidgets import QMdiArea, QWidget, QDockWidget, QAction, QMessageBox, QFileDialog, QSizePolicy, QMdiSubWindow, QTabWidget, QDialog
+from qtpy.QtGui import (
+    QIcon,
+    QKeySequence,
+    QCloseEvent,
+    QPalette,
+    QColor,
+    QGuiApplication,
+    QScreen,
+)
+from qtpy.QtWidgets import (
+    QMdiArea,
+    QWidget,
+    QDockWidget,
+    QAction,
+    QMessageBox,
+    QFileDialog,
+    QSizePolicy,
+    QMdiSubWindow,
+    QTabWidget,
+    QDialog,
+)
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
 
@@ -27,8 +46,11 @@ from nodeeditor.node_edge import Edge
 from nodeeditor.node_edge_validators import (
     edge_validator_debug,
     edge_cannot_connect_two_outputs_or_two_inputs,
-    edge_cannot_connect_input_and_output_of_same_node
+    edge_cannot_connect_input_and_output_of_same_node,
 )
+
+from trigger_designer.qt.resource_manager import ResourceManager
+
 Edge.registerEdgeValidator(edge_validator_debug)
 Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
 Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
@@ -41,11 +63,17 @@ DEBUG = False
 
 class TriggerWindow(NodeEditorWindow):
 
-    def __init__(self, file_path: Optional[str] = None, name_company: str = 'Trigger', name_product: str = 'Trigger Editor') -> None:
+    def __init__(
+        self,
+        file_path: Optional[str] = None,
+        name_company: str = "Trigger",
+        name_product: str = "Trigger Editor",
+    ) -> None:
         super().__init__()
         self.openFile(file_path)
         self.name_company = name_company
         self.name_product = name_product
+
         self.setObjectName("MainWindow")
         self.readSettings()
 
@@ -71,6 +99,7 @@ class TriggerWindow(NodeEditorWindow):
         # )
 
         self.empty_icon = QIcon(".")
+        self.rsm = ResourceManager()
 
         if DEBUG:
             print("Registered nodes:")
@@ -88,7 +117,8 @@ class TriggerWindow(NodeEditorWindow):
         # Enable window tiling and docking behavior
         self.setDockNestingEnabled(True)
         self.setTabPosition(
-            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North)
+            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North
+        )
         self.setCentralWidget(self.mdiArea)
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)
@@ -107,6 +137,7 @@ class TriggerWindow(NodeEditorWindow):
         self.readSettings()
 
         self.setWindowTitle("Trigger Designer")
+        self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
 
         self.setDockNestingEnabled(True)
         # self.tabifyDockWidget(self.configDock, self.resultDock)
@@ -127,33 +158,67 @@ class TriggerWindow(NodeEditorWindow):
                 event.accept()
             # hacky fix for PyQt 5.14.x
             import sys
+
             sys.exit(0)
 
     def createActions(self) -> None:
         super().createActions()
 
-        self.actSettings = QAction("Settings", self,
-                                   statusTip="Open settings dialog",
-                                   triggered=self.showSettings)
+        self.actSettings = QAction(
+            "Settings",
+            self,
+            statusTip="Open settings dialog",
+            triggered=self.showSettings,
+        )
 
-        self.actClose = QAction("Cl&ose", self, statusTip="Close the active window",
-                                triggered=self.mdiArea.closeActiveSubWindow)
+        self.actClose = QAction(
+            "Cl&ose",
+            self,
+            statusTip="Close the active window",
+            triggered=self.mdiArea.closeActiveSubWindow,
+        )
         self.actCloseAll = QAction(
-            "Close &All", self, statusTip="Close all the windows", triggered=self.mdiArea.closeAllSubWindows)
+            "Close &All",
+            self,
+            statusTip="Close all the windows",
+            triggered=self.mdiArea.closeAllSubWindows,
+        )
         self.actTile = QAction(
-            "&Tile", self, statusTip="Tile the windows", triggered=self.mdiArea.tileSubWindows)
+            "&Tile",
+            self,
+            statusTip="Tile the windows",
+            triggered=self.mdiArea.tileSubWindows,
+        )
         self.actCascade = QAction(
-            "&Cascade", self, statusTip="Cascade the windows", triggered=self.mdiArea.cascadeSubWindows)
-        self.actNext = QAction("Ne&xt", self, shortcut=QKeySequence.StandardKey.NextChild,
-                               statusTip="Move the focus to the next window", triggered=self.mdiArea.activateNextSubWindow)
-        self.actPrevious = QAction("Pre&vious", self, shortcut=QKeySequence.StandardKey.PreviousChild,
-                                   statusTip="Move the focus to the previous window", triggered=self.mdiArea.activatePreviousSubWindow)
+            "&Cascade",
+            self,
+            statusTip="Cascade the windows",
+            triggered=self.mdiArea.cascadeSubWindows,
+        )
+        self.actNext = QAction(
+            "Ne&xt",
+            self,
+            shortcut=QKeySequence.StandardKey.NextChild,
+            statusTip="Move the focus to the next window",
+            triggered=self.mdiArea.activateNextSubWindow,
+        )
+        self.actPrevious = QAction(
+            "Pre&vious",
+            self,
+            shortcut=QKeySequence.StandardKey.PreviousChild,
+            statusTip="Move the focus to the previous window",
+            triggered=self.mdiArea.activatePreviousSubWindow,
+        )
 
         self.actSeparator = QAction(self)
         self.actSeparator.setSeparator(True)
 
         self.actAbout = QAction(
-            "&About", self, statusTip="Show the application's About box", triggered=self.about)
+            "&About",
+            self,
+            statusTip="Show the application's About box",
+            triggered=self.about,
+        )
 
     def showSettings(self) -> None:
         dialog = SettingsDialog(self)
@@ -165,8 +230,8 @@ class TriggerWindow(NodeEditorWindow):
         glogger.debug("Loading settings...")
 
     @override
-    def getCurrentNodeEditorWidget(self) -> 'NodeEditorWidget':
-        """ we're returning NodeEditorWidget here... """
+    def getCurrentNodeEditorWidget(self) -> "NodeEditorWidget":
+        """we're returning NodeEditorWidget here..."""
         activeSubWindow = self.mdiArea.activeSubWindow()
         if activeSubWindow:
             return cast(NodeEditorWidget, activeSubWindow.widget())
@@ -202,7 +267,11 @@ class TriggerWindow(NodeEditorWindow):
 
     def onFileOpen(self) -> None:
         fnames, filter = QFileDialog.getOpenFileNames(
-            self, 'Open design from file', self.getFileDialogDirectory(), self.getFileDialogFilter())
+            self,
+            "Open design from file",
+            self.getFileDialogDirectory(),
+            self.getFileDialogFilter(),
+        )
 
         try:
             for fname in fnames:
@@ -215,7 +284,9 @@ class TriggerWindow(NodeEditorWindow):
                         nodeeditor = TriggerSubWindow()
                         if nodeeditor.fileLoad(fname):
                             if self.statusBar() is not None:
-                                self.statusBar().showMessage("File %s loaded" % fname, 5000)
+                                self.statusBar().showMessage(
+                                    "File %s loaded" % fname, 5000
+                                )
                             nodeeditor.setTitle()
                             subwnd = self.createMdiChild(nodeeditor)
                             subwnd.show()
@@ -225,10 +296,13 @@ class TriggerWindow(NodeEditorWindow):
             dumpException(e)
 
     def about(self) -> None:
-        QMessageBox.about(self, "About Calculator NodeEditor Example",
-                          "The <b>Calculator NodeEditor</b> example demonstrates how to write multiple "
-                          "document interface applications using PyQt5 and NodeEditor. For more information visit: "
-                          "<a href='https://www.blenderfreak.com/'>www.BlenderFreak.com</a>")
+        QMessageBox.about(
+            self,
+            "About Calculator NodeEditor Example",
+            "The <b>Calculator NodeEditor</b> example demonstrates how to write multiple "
+            "document interface applications using PyQt5 and NodeEditor. For more information visit: "
+            "<a href='https://www.blenderfreak.com/'>www.BlenderFreak.com</a>",
+        )
 
     def createMenus(self) -> None:
         super().createMenus()
@@ -250,7 +324,7 @@ class TriggerWindow(NodeEditorWindow):
     def updateMenus(self) -> None:
         # print("update Menus")
         active = self.getCurrentNodeEditorWidget()
-        hasMdiChild = (active is not None)
+        hasMdiChild = active is not None
 
         self.actSave.setEnabled(hasMdiChild)
         self.actSaveAs.setEnabled(hasMdiChild)
@@ -269,7 +343,7 @@ class TriggerWindow(NodeEditorWindow):
         try:
             # print("update Edit Menu")
             active = self.getCurrentNodeEditorWidget()
-            hasMdiChild = (active is not None)
+            hasMdiChild = active is not None
 
             self.actPaste.setEnabled(hasMdiChild)
 
@@ -313,7 +387,7 @@ class TriggerWindow(NodeEditorWindow):
 
             text = "%d %s" % (i + 1, child.getUserFriendlyFilename())
             if i < 9:
-                text = '&' + text
+                text = "&" + text
 
             action = self.windowMenu.addAction(text)
             action.setCheckable(True)
@@ -347,8 +421,10 @@ class TriggerWindow(NodeEditorWindow):
         self.statusBar().showMessage("Ready")
 
     def createMdiChild(self, child_widget=None):
-        nodeeditor = child_widget if child_widget is not None else TriggerSubWindow(
-            self)
+        nodeeditor = (
+            child_widget if child_widget is not None else TriggerSubWindow(
+                self)
+        )
         # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)

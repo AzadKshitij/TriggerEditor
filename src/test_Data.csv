@@ -1,0 +1,13 @@
+customer_id,first_name,last_name,email,phone,age,salary,department,notes,join_date,empty_column
+1,"  John  ","Doe","john@company.com","(555) 123-4567",25,50000.0,"Sales","Good employee!","2023-01-15",
+2,"JANE","SMITH","JANE.SMITH@COMPANY.COM","555.234.5678",30,75000.0,"Marketing","  Excellent work.  ","2022-05-20",
+3,"  mary johnson  ","","mary@test.com","555-345-6789",,60000.0,"IT","Needs	improvement","2021-03-10",
+4,"Bob","Wilson!@#","bob.wilson@email.com","123 456 7890",35,,"HR","Special#$%chars","2020-12-05",
+5,"","Brown","sarah.brown@company.com","+1-555-456-7890",28,65000.0,"Finance","	Multiple	spaces	here","2023-08-14",
+6,"Mike","O'Connor","mike@test.co.uk","(44) 20-1234-5678",42,85000.0,"","Line
+Break
+Here","2019-11-30",
+7,"Lisa","García-Martinez","lisa@company.com","","45,000.50","R&D","UPPERCASE TEXT","2022-02-28",
+,"","","","",,,,"","",
+9,"Alex","Thompson123","alex@company.com","555.789.0123",31,70000.0,"Sales","lowercase text","2023-06-01",
+10,"Emma","Davis","emma@company.com","555 987 6543",29,55000.0,"Marketing","MiXeD cAsE tExT","2021-07-15",

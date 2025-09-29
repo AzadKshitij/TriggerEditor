@@ -1,18 +1,21 @@
-import pandas as pd
-var_file_input_1534775814480 = pd.read_csv('C:/Projects/TriggerEditor/check.csv')
-# Filter data into true and false results
-var_t_filter_1534775816208 = var_file_input_1534775814480[var_file_input_1534775814480['Relevancy Score'] <= 95]
-var_f_filter_1534775816208 = var_file_input_1534775814480[~(var_file_input_1534775814480['Relevancy Score'] <= 95)]
-var_select_1533353663152 = var_file_input_1534775814480[['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score']].copy()
-var_select_1533353663152['Keyword'] = var_select_1533353663152['Keyword'].astype('object', errors='ignore')
-var_select_1533353663152['Seed'] = var_select_1533353663152['Seed'].astype('object', errors='ignore')
-var_select_1533353663152['Source'] = var_select_1533353663152['Source'].astype('object', errors='ignore')
-var_select_1533353663152['Country'] = var_select_1533353663152['Country'].astype('object', errors='ignore')
-var_select_1533353663152['Autocomplete Position'] = pd.to_numeric(var_select_1533353663152['Autocomplete Position'], errors='coerce')
-var_select_1533353663152['Autocomplete Position'] = var_select_1533353663152['Autocomplete Position'].astype('float64', errors='ignore')
-var_select_1533353663152['Difficulty'] = pd.to_numeric(var_select_1533353663152['Difficulty'], errors='coerce')
-var_select_1533353663152['Difficulty'] = var_select_1533353663152['Difficulty'].astype('int64', errors='ignore')
-var_select_1533353663152['Hot Keyword'] = var_select_1533353663152['Hot Keyword'].astype('object', errors='ignore')
-var_select_1533353663152['Relevancy Score'] = pd.to_numeric(var_select_1533353663152['Relevancy Score'], errors='coerce')
-var_select_1533353663152['Relevancy Score'] = var_select_1533353663152['Relevancy Score'].astype('float64', errors='ignore')
-var_select_1533353663152.rename(columns={'Autocomplete Position': 'Aut'}, inplace=True)
+from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy
+import polars as pl
+import os
+
+# Always use LazyFrame for memory efficiency
+# Using LazyFrame for optimal memory usage
+var_file_input_3106250034864 = pl.scan_csv(
+    'C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data.csv', infer_schema=False)
+
+# var_file_input_3106250034864 is now a LazyFrame for memory-efficient processing
+# Use .collect() only when you need to materialize the data
+# Convert LazyFrame to DataFrame if needed
+_cleansing_input = var_file_input_3106250034864.collect() if hasattr(
+    var_file_input_3106250034864, 'collect') else var_file_input_3106250034864
+cleaner = DataCleansing(_cleansing_input)
+cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_ROWS)
+cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_COLS)
+cleaner.handle_nulls(NullStrategy.REPLACE_WITH_DEFAULT)
+cleaner.strip_whitespace(remove_all=False, normalize_spaces=True, fields=[
+                         'customer_id', 'first_name', 'last_name', 'email', 'phone', 'age', 'salary', 'department', 'notes', 'join_date', 'empty_column'])
+var_cleansing_3106250036464 = cleaner.get_result()

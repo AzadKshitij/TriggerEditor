@@ -1,0 +1,69 @@
+{
+  "id": 2367227764784,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2367228669104,
+      "title": "File Input",
+      "pos_x": -387.0,
+      "pos_y": -177.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2367228670384,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/check.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2367228670704,
+      "title": "File Output (Polars)",
+      "pos_x": -135.0,
+      "pos_y": -188.0,
+      "inputs": [
+        {
+          "id": 2367228671824,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/check_Lazy.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "node_code": 5,
+      "node_type": "input"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2367228211328,
+      "edge_type": 5,
+      "start": 2367228670384,
+      "end": 2367228671824
+    }
+  ]
+}
