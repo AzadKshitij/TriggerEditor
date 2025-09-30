@@ -207,7 +207,7 @@
         }
       ],
       "content": {
-        "formula": "Case when [customer_id] = 5 then \"Yes\" else \"No\"",
+        "formula": "Case \nwhen [customer_id] = 5 \nthen 'Yes'\nelse 'No'\nEND",
         "target_column": "Final"
       },
       "node_code": 3,

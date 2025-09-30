@@ -3,6 +3,7 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
 from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
@@ -11,7 +12,6 @@ from typing import Optional, TYPE_CHECKING, Any, Dict, List, OrderedDict, Type, 
 
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
-    import polars as pl
     from nodeeditor.node_node import Node
 
 
@@ -55,7 +55,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name = f'var_formula_{self.id}'
         
         # Initialize UI widget references
-        self.formula_input: Optional[QTextEdit] = None
+        self.formula_input: Optional[SQLFormulaWidget] = None
         self.column_name: Optional[QComboBox] = None
 
     @property
@@ -114,14 +114,18 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             column_layout.addWidget(QLabel("Target:"))
             column_layout.addWidget(self.column_name)
 
-            # Formula input with multiline support
+            # Formula input with SQL syntax highlighting and error detection
             formula_layout = QVBoxLayout()
-            self.formula_input = QTextEdit()
-            self.formula_input.setPlaceholderText(
+            self.formula_input = SQLFormulaWidget()
+            self.formula_input.set_placeholder_text(
                 "Enter formula e.g.:\nCASE WHEN [Age] > 30 then 'Adult' else 'Young'")
-            self.formula_input.setMinimumHeight(100)
+            self.formula_input.setMinimumHeight(120)
             if self.formula_text:
-                self.formula_input.setPlainText(self.formula_text)
+                self.formula_input.set_text(self.formula_text)
+            
+            # Set available columns for syntax highlighting and validation
+            if self.incom_data is not None:
+                self.formula_input.set_available_columns(list(self.incom_data.columns))
 
             formula_layout.addWidget(QLabel("Formula:"))
             formula_layout.addWidget(self.formula_input)
@@ -209,34 +213,41 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data = self.incom_data.clone()
         if self.target_column and self.target_column not in self.data.columns:
             self.data = self.data.with_columns(pl.lit(None).alias(self.target_column))
+        
+        # Update available columns in SQL editor for syntax highlighting
+        if hasattr(self, 'formula_input') and self.formula_input and self.incom_data is not None:
+            try:
+                self.formula_input.set_available_columns(list(self.incom_data.columns))
+            except (RuntimeError, AttributeError):
+                # Widget has been deleted or not properly initialized
+                pass
 
     def generate_formula(self) -> None:
         """Generate and process the formula when user modifies the formula text."""
         if self.history.is_restoring_history:
             return
-        if hasattr(self, 'formula_input'):
-            # new_formula = self.formula_input.toPlainText()
+    
 
-            if self.formula_text:
-                old_state = {
-                    'target_column': self.target_column,
-                    'formula_text': self.formula_text
-                }
+        if self.formula_text:
+            old_state = {
+                'target_column': self.target_column,
+                'formula_text': self.formula_text
+            }
 
-                # self.formula_text = new_formula
-                self.store_history(old_state)
+            # self.formula_text = new_formula
+            self.store_history(old_state)
 
-                # Update formula and data using polars
-                self.data = self.incom_data.clone()
-                self.formula = self.formula_text
+            # Update formula and data using polars
+            self.data = self.incom_data.clone()
+            self.formula = self.formula_text
 
-                # Replace column names in formula while preserving string literals
-                if self.data is not None:
-                    for col in self.data.columns:
-                        self.formula = self.formula.replace(f'[{col}]', f'"{col}"')
+            # Replace column names in formula while preserving string literals
+            if self.data is not None:
+                for col in self.data.columns:
+                    self.formula = self.formula.replace(f'[{col}]', f'"{col}"')
 
-                if self.target_column and self.target_column not in self.data.columns:
-                    self.data = self.data.with_columns(pl.lit(None).alias(self.target_column))
+            if self.target_column and self.target_column not in self.data.columns:
+                self.data = self.data.with_columns(pl.lit(None).alias(self.target_column))
 
     def _replace_column_names(self, formula: str, column_name: str) -> str:
         """
@@ -284,11 +295,17 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             Formula ready for SQL execution
         """
-        if not self.formula_text or self.data is None:
+        # Get the current formula text from the editor
+        if hasattr(self, 'formula_input') and self.formula_input:
+            current_formula = self.formula_input.get_text()
+        else:
+            current_formula = self.formula_text
+            
+        if not current_formula or self.data is None:
             return ""
         
-        # Start with the original formula text to preserve quotes
-        sql_formula = self.formula_text
+        # Start with the current formula text to preserve quotes
+        sql_formula = current_formula
         
         # Replace column names in square brackets with proper SQL identifiers
         if self.data is not None:
@@ -392,7 +409,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 try:
                     self.formula_input.blockSignals(True)
                     if self.formula_text is not None:
-                        self.formula_input.setPlainText(self.formula_text)
+                        self.formula_input.set_text(self.formula_text)
                 except RuntimeError:
                     # Widget has been deleted
                     pass
@@ -419,7 +436,14 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             String containing the generated Python code
         """
-        if not self.formula_text or not self.target_column or self.data is None:
+        # Get current formula text from editor
+        # current_formula = ""
+        # if hasattr(self, 'formula_input') and self.formula_input:
+        #     current_formula = self.formula_input.get_text()
+        # elif self.formula_text:
+        current_formula = self.formula_text
+            
+        if not current_formula or not self.target_column or self.data is None:
             return ""
             
         self.generate_formula()
@@ -450,7 +474,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Creating new column
             code_lines.extend([
                 "# Apply formula to create new column",
-                f"{self.variable_name}_df = duck.execute('''SELECT *, {self.formula} as \"{self.target_column}\" FROM df''').pl()",
+                f"{self.variable_name}_df = duck.execute('''SELECT *, {sql_formula} as \"{self.target_column}\" FROM df''').pl()",
                 f"# Create LazyFrame from polars DataFrame",
                 f"{self.variable_name} = {self.variable_name}_df.lazy()",
             ])
@@ -458,7 +482,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Updating existing column
             code_lines.extend([
                 "# Apply formula to update existing column",
-                f"{self.variable_name}_df = duck.execute('''SELECT * EXCLUDE \"{self.target_column}\", {self.formula} as \"{self.target_column}\" FROM df''').pl()",
+                f"{self.variable_name}_df = duck.execute('''SELECT * EXCLUDE \"{self.target_column}\", {sql_formula} as \"{self.target_column}\" FROM df''').pl()",
                 f"# Create LazyFrame from polars DataFrame", 
                 f"{self.variable_name} = {self.variable_name}_df.lazy()",
             ])
@@ -476,7 +500,11 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             Dictionary containing serialized formula settings
         """
         res = super().serialize()
-        res['formula'] = self.formula_text
+        
+        # Get current formula text from editor if available
+        current_formula = self.formula_text
+        
+        res['formula'] = current_formula
         res['target_column'] = self.target_column
         return res
 
