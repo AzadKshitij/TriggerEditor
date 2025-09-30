@@ -12,7 +12,7 @@ from qtpy.QtGui import (
     QDragEnterEvent,
     QKeyEvent,
 )
-from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize
+from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
 from qtpy.QtWidgets import (
     QAction,
     QGraphicsProxyWidget,
@@ -63,16 +63,6 @@ class TriggerSubWindow(NodeEditorWidget):
         self.logger: Logger = Logger(self)
         self.rsm: ResourceManager = ResourceManager()
 
-
-<< << << < HEAD
-
-== == == =
-        logger.error(
-            "🐍 File: qt/design_window.py:m : ",
-            self.rsm.get_full_path("node_file_input"),
-            " ********* ",
-        )
->>>>>> > c63aae470736a77aeacf23a62671d42cc2099cf3
         # self.design_window_id = str(id(self))
         # self.logger.set_context(self.design_window_id)
 
@@ -611,7 +601,7 @@ class TriggerSubWindow(NodeEditorWidget):
             # Write the string to the file
             file.write(code)
 
-    def getAllNodes(self) -> list['TriggerNode']:
+    def getAllNodes(self) -> list["TriggerNode"]:
         return self.scene.nodes
 
     def getNodeConnections(self) -> dict:
@@ -695,8 +685,9 @@ class TriggerSubWindow(NodeEditorWidget):
         QTimer.singleShot(1000, lambda: self._transition_to_executed(node))
 
         # Schedule processing of next node
-        QTimer.singleShot(1500, lambda: self._process_next_node(
-            nodes, current_index + 1))
+        QTimer.singleShot(
+            1500, lambda: self._process_next_node(nodes, current_index + 1)
+        )
 
     def _test_executed_state(self, node):
         """Helper to show executed state"""
@@ -754,7 +745,9 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # self.run_button.setEnabled(True)
 
-    def _execute_next_node(self, nodes: list, current_index: int, executor: NodeExecutor) -> None:
+    def _execute_next_node(
+        self, nodes: list, current_index: int, executor: NodeExecutor
+    ) -> None:
         """Execute nodes sequentially with visual transitions"""
         if current_index >= len(nodes):
             # All nodes processed, cleanup
@@ -784,8 +777,9 @@ class TriggerSubWindow(NodeEditorWidget):
             return
 
         # Schedule next node execution
-        QTimer.singleShot(500, lambda: self._execute_next_node(
-            nodes, current_index + 1, executor))
+        QTimer.singleShot(
+            500, lambda: self._execute_next_node(nodes, current_index + 1, executor)
+        )
 
     def _execution_cleanup(self) -> None:
 
@@ -806,7 +800,7 @@ class TriggerSubWindow(NodeEditorWidget):
             return None
 
         # Get the variable name for this socket from the node
-        if hasattr(node, 'param'):
+        if hasattr(node, "param"):
             print("node.param: ", node.param)
             socket_data = node.param[socket_index]
             if socket_data:

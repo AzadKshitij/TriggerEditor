@@ -34,7 +34,7 @@ import polars as pl
 
 
 @dataclasses.dataclass
-class RowData():
+class RowData:
     checked: bool = dataclasses.field(default=False)
     text: str = ""
     dtype: str = "object"
@@ -226,8 +226,7 @@ class SelectTableWidget(QAbstractTableModel):
                 # sometimes explicitly signaling data changed for the affected rows
                 # can help ensure all delegates refresh correctly.
                 top_left = self.index(min(row1, row2), 0)
-                bottom_right = self.index(
-                    max(row1, row2), self.columnCount() - 1)
+                bottom_right = self.index(max(row1, row2), self.columnCount() - 1)
                 self.dataChanged.emit(
                     top_left,
                     bottom_right,
@@ -331,16 +330,14 @@ class SelectTableWidget(QAbstractTableModel):
 
             # Checkbox for isSelected
             checkbox = QCheckBox()
-            checkbox.setChecked(
-                column_name in self.changes["selected_columns"])
+            checkbox.setChecked(column_name in self.changes["selected_columns"])
             checkbox_layout.addWidget(checkbox)
 
             self.table.setCellWidget(i, 0, checkbox_container)
 
             # Column name (non-editable)
             column_name_item = QTableWidgetItem(column_name)
-            column_name_item.setFlags(
-                column_name_item.flags() ^ ~Qt.ItemIsEditable)
+            column_name_item.setFlags(column_name_item.flags() ^ ~Qt.ItemIsEditable)
             print(f"Column name: {column_name} -----")
             print(column_name_item.text())
             self.table.setItem(i, 1, column_name_item)
@@ -350,8 +347,7 @@ class SelectTableWidget(QAbstractTableModel):
             combo_box.addItems(data_types)
             # Set saved dtype if exists, otherwise use original
             saved_dtype = self.changes["dtype_mapping"].get(column_name)
-            current_dtype = saved_dtype if saved_dtype else str(
-                self._data[i]["dtype"])
+            current_dtype = saved_dtype if saved_dtype else str(self._data[i]["dtype"])
             combo_box.setCurrentText(current_dtype)
             self.table.setCellWidget(i, 2, combo_box)
 
@@ -375,13 +371,8 @@ class SelectTableWidget(QAbstractTableModel):
             row_data.checked = row_data.text in changes["selected_columns"]
 
             # Update data type
-<< << << < HEAD
-            if row_data.text in changes['dtype_mapping']:
-                row_data.dtype = changes['dtype_mapping'][row_data.text]
-== == == =
             if row_data.text in changes["dtype_mapping"]:
-                row_data.option = changes["dtype_mapping"][row_data.text]
->>>>>> > c63aae470736a77aeacf23a62671d42cc2099cf3
+                row_data.dtype = changes["dtype_mapping"][row_data.text]
             # Update rename
             row_data.rename = changes["rename_mapping"].get(row_data.text, "")
 

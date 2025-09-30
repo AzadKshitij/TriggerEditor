@@ -1,0 +1,5 @@
+customer_id,first_name,last_name,email,phone,age,salary,department,notes,join_date,empty_column
+1,  John  ,Doe,john@company.com,(555) 123-4567,25,50000.0,Sales,Good employee!,2023-01-15,
+2,JANE,SMITH,JANE.SMITH@COMPANY.COM,555.234.5678,30,75000.0,Marketing,  Excellent work.  ,2022-05-20,
+3,  mary johnson  ,"",mary@test.com,555-345-6789,,60000.0,IT,Needs	improvement,2021-03-10,
+4,Bob,Wilson!@#,bob.wilson@email.com,123 456 7890,35,,HR,Special#$%chars,2020-12-05,

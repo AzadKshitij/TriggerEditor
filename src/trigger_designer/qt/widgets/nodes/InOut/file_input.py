@@ -542,14 +542,16 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if preview_df.height == 0:
                 # Create empty DataFrame for display
                 self.data = pl.DataFrame()
-                self.table_viewer.set_dataframe(self.data)
+                if getattr(self, "table_viewer", None):
+                    self.table_viewer.set_dataframe(self.data)
                 return
 
             # Store the preview DataFrame as data for later use
             self.data = preview_df
 
             # Set the dataframe in the Polars table viewer
-            self.table_viewer.set_dataframe(preview_df)
+            if getattr(self, "table_viewer", None):
+                self.table_viewer.set_dataframe(preview_df)
 
             logger.info(
                 f"Loaded preview: {preview_df.height} rows, {len(preview_df.columns)} columns"
@@ -562,7 +564,10 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Create error DataFrame for display
             error_df = pl.DataFrame({"Error": [f"Error loading file: {str(e)}"]})
-            self.table_viewer.set_dataframe(error_df)
+
+            # Only update table viewer if it exists
+            if getattr(self, "table_viewer", None):
+                self.table_viewer.set_dataframe(error_df)
 
     def get_code(self) -> str:
         if not self.filePath:

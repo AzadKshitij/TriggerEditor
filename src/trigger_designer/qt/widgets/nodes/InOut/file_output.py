@@ -164,6 +164,10 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _update_ui_visibility(self) -> None:
         """Update UI element visibility based on selected format"""
+        # Only update UI if elements have been created
+        if not hasattr(self, "delimiterEdit") or not self.delimiterEdit:
+            return
+            
         show_delimiter = self.file_format in ["csv", "custom_delimited"]
         self.delimiterEdit.setVisible(show_delimiter)
         self.delimiterEdit.parent().layout().itemAt(0).widget().setVisible(
@@ -171,7 +175,8 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )  # Label
 
         show_bom = self.file_format in ["csv", "custom_delimited", "json", "ndjson"]
-        self.bomCheckbox.setVisible(show_bom)
+        if hasattr(self, "bomCheckbox") and self.bomCheckbox:
+            self.bomCheckbox.setVisible(show_bom)
 
     def check_file_path(self) -> bool:
         if not self.filePath:

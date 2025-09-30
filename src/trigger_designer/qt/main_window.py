@@ -11,7 +11,7 @@ from qtpy.QtGui import (
     QPalette,
     QColor,
     QGuiApplication,
-    QScreen,
+    QScreen
 )
 from qtpy.QtWidgets import (
     QMdiArea,
@@ -24,6 +24,7 @@ from qtpy.QtWidgets import (
     QMdiSubWindow,
     QTabWidget,
     QDialog,
+    QShortcut
 )
 from qtpy.QtCore import Qt, QResource, QUrl, QSignalMapper
 
