@@ -17,9 +17,6 @@ Ensure these classes are JSON serializable. Do not add this to the Content class
 4. Type Hints:
 Add explicit type hints to all functions and methods for parameters and return values.
 
-5. Documentation:
-Include simple docstring in newly created functions only no need up update already existing functions.
-
 6. Events & Communication:
 Use Qt’s signal and slot mechanism (pyqtSignal, connect(), etc.) for event handling and inter-component communication.
 
