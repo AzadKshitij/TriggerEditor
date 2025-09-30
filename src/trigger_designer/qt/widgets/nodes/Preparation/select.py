@@ -117,19 +117,24 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
+            # Initialize table_data if not already present (e.g., from deserialization)
             if not self.table_data:
                 self.table_data = [
                     RowData(True, col, str(self.incom_data[col].dtype))
                     for col in self.incom_data.columns
                 ]
 
-            # Initialize changes if not already present
-            if not hasattr(self, "changes"):
+            # Initialize changes if not already present (e.g., from deserialization)
+            if not hasattr(self, "changes") or not self.changes:
                 self.changes: dict = {
-                    "selected_columns": [],
+                    "selected_columns": list(self.incom_data.columns),  # Select all by default
                     "rename_mapping": {},
                     "dtype_mapping": {},
                 }
+            
+            # Ensure selected_columns has default values if empty
+            if not self.changes.get("selected_columns"):
+                self.changes["selected_columns"] = list(self.incom_data.columns)
 
             # Create toolbar layout with fixed height
             toolbar_widget = QWidget()
@@ -308,9 +313,21 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
-        # Select only the specified columns from incom_data
-        if getattr(self, "changes", None) is not None:
+        # Ensure we have both incoming data and changes to apply
+        if (getattr(self, "changes", None) is not None and 
+            getattr(self, "incom_data", None) is not None):
+            
             selected_columns = self.changes["selected_columns"]
+            
+            # If no columns selected, select all columns by default
+            if not selected_columns:
+                selected_columns = list(self.incom_data.columns)
+                self.changes["selected_columns"] = selected_columns
+            
+            print(f"🐍 Applying changes: selected_columns={selected_columns}")
+            print(f"🐍 dtype_mapping={self.changes.get('dtype_mapping', {})}")
+            print(f"🐍 rename_mapping={self.changes.get('rename_mapping', {})}")
+            
             self.data = self.incom_data.select(selected_columns)
 
             # Apply data type changes if any
@@ -531,8 +548,33 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
         try:
             print("deserialize Select node")
-            self.old_columns = data["table_data"]
-            self.changes = data["changes"]
+            # Load the table data and convert dictionaries back to RowData objects
+            raw_table_data = data.get("table_data", [])
+            self.table_data = []
+            
+            for item in raw_table_data:
+                if isinstance(item, dict):
+                    # Convert dictionary back to RowData object
+                    self.table_data.append(RowData(
+                        checked=item.get("checked", False),
+                        text=item.get("text", ""),
+                        dtype=item.get("dtype", "object"),
+                        rename=item.get("rename", "")
+                    ))
+                else:
+                    # Already a RowData object (shouldn't happen but handle it)
+                    self.table_data.append(item)
+            
+            self.changes = data.get("changes", {
+                "selected_columns": [], 
+                "rename_mapping": {}, 
+                "dtype_mapping": {}
+            })
+            
+            # Apply the changes if we have incoming data
+            if hasattr(self, 'incom_data') and self.incom_data is not None:
+                self.apply_changes()
+            
             return True & res
         except Exception as e:
             dumpException(e)
