@@ -117,7 +117,7 @@ class DataPreviewWindow(QMainWindow):
 
             try:
                 # Try to get schema and estimate size first
-                schema = data.schema
+                schema = data.collect_schema()
                 logger.info(f"LazyFrame schema: {list(schema.keys())}")
 
                 # Collect a small sample to estimate memory usage

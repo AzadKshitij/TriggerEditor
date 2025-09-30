@@ -738,7 +738,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # end_time = time.time()
         # print("Execution Time: ", end_time - start_time, " seconds")
-        # self.getPyFile()
+        self.getPyFile()
 
         # for node in self.getAllNodes():
         #     node.grNode.resetPen()

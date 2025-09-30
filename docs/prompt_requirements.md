@@ -4,6 +4,7 @@ Use the following instructions for all code generation tasks in this project:
 
 1. Data Processing:
 Use the Polars library for all data manipulation, analysis, or processing.
+Make sure to use Lazyframe always unless it is no possible.
 Do not use pandas or alternative libraries unless explicitly instructed.
 
 2. User Interface:
