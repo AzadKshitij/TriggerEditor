@@ -228,8 +228,11 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.formatCombo.setCurrentText("excel")
 
     def get_code(self):
-        if self.incoming_variable is None:
-            return "'''No Incomming Variable'''"
+        if self.incoming_variable is None or self.incoming_variable == "":
+            return "print('''No Incoming Variable''')\n"
+        
+        print("🐍 File: InOut/file_output.py | Line: 238 | get_code ~ self.incoming_variable",self.incoming_variable, "may be no incomming variable")
+
 
         code_lines = []
         var_name = self.incoming_variable

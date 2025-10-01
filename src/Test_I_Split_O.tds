@@ -1,0 +1,239 @@
+{
+  "id": 2455039182848,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2455039721872,
+      "title": "File Input",
+      "pos_x": -530.0,
+      "pos_y": -201.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2455039723152,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2455039727152,
+      "title": "File Output",
+      "pos_x": 226.0,
+      "pos_y": -239.0,
+      "inputs": [
+        {
+          "id": 2455039721712,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data_Sort.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "node_code": 5,
+      "node_type": "input"
+    },
+    {
+      "id": 1865141758512,
+      "title": "Select",
+      "pos_x": -352.0,
+      "pos_y": -201.0,
+      "inputs": [
+        {
+          "id": 1865141761232,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1865141761552,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "customer_id",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "first_name",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "last_name",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "email",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "phone",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "age",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "salary",
+            "dtype": "Float64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "department",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "notes",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "join_date",
+            "dtype": "Date",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "empty_column",
+            "dtype": "String",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "customer_id",
+            "first_name",
+            "last_name",
+            "email",
+            "phone",
+            "age",
+            "salary",
+            "department",
+            "notes",
+            "join_date",
+            "empty_column"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "customer_id": "Int64",
+            "first_name": "String",
+            "last_name": "String",
+            "email": "String",
+            "phone": "String",
+            "age": "Int64",
+            "salary": "Float64",
+            "department": "String",
+            "notes": "String",
+            "join_date": "Date",
+            "empty_column": "String"
+          },
+          "column_order": []
+        }
+      },
+      "node_code": 4,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2793640950544,
+      "title": "Split",
+      "pos_x": -165.0,
+      "pos_y": -201.0,
+      "inputs": [
+        {
+          "id": 2793798385744,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2793798386064,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2793798386384,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "estimation_percent": 70,
+        "random_seed": 42,
+        "is_random": false
+      },
+      "node_code": 7,
+      "node_type": "preparation"
+    }
+  ],
+  "edges": [
+    {
+      "id": 1865141517008,
+      "edge_type": 5,
+      "start": 2455039723152,
+      "end": 1865141761232
+    },
+    {
+      "id": 2793634439504,
+      "edge_type": 5,
+      "start": 1865141761552,
+      "end": 2793798385744
+    }
+  ]
+}
