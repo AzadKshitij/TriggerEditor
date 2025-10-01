@@ -69,6 +69,11 @@ class TriggerSubWindow(NodeEditorWidget):
         self._last_scale: float = 1.0
         self.execution_results: dict = {}  # Store execution results for each node
         self.selected_action_data: Optional[list] = None
+        
+        # Workflow execution tracking
+        self.workflow_execution_count: int = 0
+        self.workflow_start_time: float = 0.0
+        self.total_workflow_time: float = 0.0
 
         self.setTitle()
         self.addButtons()
@@ -186,6 +191,14 @@ class TriggerSubWindow(NodeEditorWidget):
             dumpException(e)
 
     def keyPressEvent(self, event: Optional[QKeyEvent]) -> None:
+        """Handle keyboard events.
+        
+        Shortcuts:
+        - Shift+A: Show node context menu
+        - Shift+P: Print separator
+        - Ctrl+Shift+R: Reset workflow statistics
+        - Ctrl+Shift+S: Show workflow statistics
+        """
         # Check for Shift+A
         if (
             event.key() == Qt.Key.Key_A
@@ -194,7 +207,7 @@ class TriggerSubWindow(NodeEditorWidget):
             # Get the cursor position and map it to scene coordinates
             cursor_pos = self.mapFromGlobal(self.cursor().pos())
             self.showNodeContextMenu(cursor_pos)
-        if (
+        elif (
             event.key() == Qt.Key.Key_P
             and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
         ):
@@ -203,6 +216,28 @@ class TriggerSubWindow(NodeEditorWidget):
                 "------------------------------------------------------------------------------"
             )
             print()
+        elif (
+            event.key() == Qt.Key.Key_R
+            and event.modifiers() == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
+        ):
+            # Ctrl+Shift+R to reset workflow statistics
+            self.reset_workflow_statistics()
+        elif (
+            event.key() == Qt.Key.Key_S
+            and event.modifiers() == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
+        ):
+            # Ctrl+Shift+S to show workflow statistics
+            stats = self.get_workflow_statistics()
+            print(f"\n{'='*50}")
+            print(f"📊 WORKFLOW STATISTICS")
+            print(f"{'='*50}")
+            print(f"Total executions: {stats['total_executions']}")
+            print(f"Total time: {stats['total_time']:.3f} seconds")
+            print(f"Average time: {stats['average_execution_time']:.3f} seconds")
+            print(f"{'='*50}\n")
+            logger.info(f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
+                       f"Total time: {stats['total_time']:.3f}s, "
+                       f"Average: {stats['average_execution_time']:.3f}s")
         else:
             super().keyPressEvent(event)
 
@@ -589,13 +624,11 @@ class TriggerSubWindow(NodeEditorWidget):
     def run_workflow(self) -> None:
         self.executeWorkflow()
 
-    def getPyFile(self) -> None:
-        connections = self.getNodeConnections()
-        sorted_nodes = self.topologicalSort(connections)
+    def getPyFile(self, sorted_nodes) -> None:
         code = """"""
         for node in sorted_nodes:
             code += node.get_code()
-            print(code)
+            # print(code)
 
         with open("check_output.py", "w") as file:
             # Write the string to the file
@@ -721,7 +754,12 @@ class TriggerSubWindow(NodeEditorWidget):
             node.grNode.resetPen()
             node.grNode.update()
 
-        start_time = time.time()
+        # Start workflow timing and increment execution count
+        self.workflow_start_time = time.time()
+        self.workflow_execution_count += 1
+        
+        logger.info(f"🚀 Starting workflow execution #{self.workflow_execution_count}")
+        print(f"🚀 Starting workflow execution #{self.workflow_execution_count}...")
 
         self._execute_next_node(sorted_nodes, 0, executor)
 
@@ -738,7 +776,7 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # end_time = time.time()
         # print("Execution Time: ", end_time - start_time, " seconds")
-        self.getPyFile()
+        self.getPyFile(sorted_nodes)
 
         # for node in self.getAllNodes():
         #     node.grNode.resetPen()
@@ -751,7 +789,7 @@ class TriggerSubWindow(NodeEditorWidget):
         """Execute nodes sequentially with visual transitions"""
         if current_index >= len(nodes):
             # All nodes processed, cleanup
-            QTimer.singleShot(1000, self._execution_cleanup)
+            QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
             return
 
         node = nodes[current_index]
@@ -762,32 +800,94 @@ class TriggerSubWindow(NodeEditorWidget):
 
         # Execute the node
         try:
-            stdoutput, local_variables = executor.execute_node(node)
-            self.execution_results[node] = local_variables
-
-            # Show success state (green)
-            node.grNode.setPenExecuted()
-            node.grNode.update()
+            result = executor.execute_node(node)
+            
+            if result.success:
+                self.execution_results[node] = result.variables
+                # Show success state (green)
+                node.grNode.setPenExecuted()
+                node.grNode.update()
+            else:
+                # Show error state and log the error
+                logger.error(f"Node execution failed: {result.error}")
+                node.grNode.resetPen()
+                node.grNode.update()
+                self._execution_cleanup(success=False)
+                return
+                
         except Exception as e:
             # Could add error state visual here
             logger.error(f"Error executing node {node}: {str(e)}")
             node.grNode.resetPen()
             node.grNode.update()
-            self._execution_cleanup()
+            self._execution_cleanup(success=False)
             return
 
         # Schedule next node execution
         QTimer.singleShot(
-            500, lambda: self._execute_next_node(nodes, current_index + 1, executor)
+            100, lambda: self._execute_next_node(nodes, current_index + 1, executor)
         )
 
-    def _execution_cleanup(self) -> None:
+    def _execution_cleanup(self, success: bool = True) -> None:
+        # Calculate workflow execution time
+        workflow_end_time = time.time()
+        current_execution_time = workflow_end_time - self.workflow_start_time
+        self.total_workflow_time += current_execution_time
+        
+        # Calculate average execution time
+        avg_execution_time = self.total_workflow_time / self.workflow_execution_count if self.workflow_execution_count > 0 else 0.0
+        
+        # Set status icon and message based on success
+        status_icon = "✅" if success else "❌"
+        status_text = "COMPLETED" if success else "FAILED"
+        
+        # Log execution statistics
+        logger.info(f"{status_icon} Workflow execution #{self.workflow_execution_count} {status_text.lower()}!")
+        logger.info(f"⏱️  Execution time: {current_execution_time:.3f} seconds")
+        logger.info(f"📊 Total executions: {self.workflow_execution_count}")
+        logger.info(f"📈 Average execution time: {avg_execution_time:.3f} seconds")
+        logger.info(f"🕒 Total workflow time: {self.total_workflow_time:.3f} seconds")
+        
+        # Print to console as well for immediate visibility
+        print(f"\n{'='*60}")
+        print(f"🎯 WORKFLOW EXECUTION SUMMARY")
+        print(f"{'='*60}")
+        print(f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}")
+        print(f"⏱️  This execution: {current_execution_time:.3f} seconds")
+        print(f"📊 Total runs: {self.workflow_execution_count}")
+        print(f"📈 Average time: {avg_execution_time:.3f} seconds")
+        print(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
+        if not success:
+            print(f"⚠️  Execution failed - check logs for details")
+        print(f"{'='*60}\n")
 
         for node in self.getAllNodes():
             node.grNode.resetPen()
             node.grNode.update()
 
         self.run_button.setEnabled(True)
+
+    def get_workflow_statistics(self) -> dict:
+        """Get workflow execution statistics.
+        
+        Returns:
+            Dictionary containing execution statistics
+        """
+        avg_time = self.total_workflow_time / self.workflow_execution_count if self.workflow_execution_count > 0 else 0.0
+        
+        return {
+            'total_executions': self.workflow_execution_count,
+            'total_time': self.total_workflow_time,
+            'average_execution_time': avg_time,
+            'last_execution_time': time.time() - self.workflow_start_time if hasattr(self, 'workflow_start_time') else 0.0
+        }
+
+    def reset_workflow_statistics(self) -> None:
+        """Reset workflow execution statistics."""
+        self.workflow_execution_count = 0
+        self.total_workflow_time = 0.0
+        logger.info("📊 Workflow statistics reset")
+        print("📊 Workflow execution statistics have been reset")
 
     def getSocketData(self, node, socket_index: int) -> Any:
         """Get the data associated with a specific socket after execution"""

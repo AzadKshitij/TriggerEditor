@@ -1,39 +1,55 @@
 [project]
-name = 'TriggerDesigner'
+name = "TriggerDesigner"
 version = "0.0.1"
+description = "A visual data processing tool with node-based workflow editor"
+readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail"}]
+
+# Core dependencies organized by category
 dependencies = [
-    "click==8.1.8",
-    "colorama==0.4.6",
-    "duckdb>=1.2.1",
-    "fastexcel>=0.15.1",
-    "llvmlite==0.44.0",
-    "loguru==0.7.3",
-    "matplotlib==3.10.3",
-    "nodeeditor @ git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@main",
-    "numba==0.61.0",
-    "numexpr==2.10.2",
-    "numpy==2.1.3",
-    "orjson == 3.10.15",
-    "packaging==24.2",
-    "pandas==2.2.3",
-    "pillow>=11.1.0",
+    # Core data processing
     "polars[pyarrow]==1.33.1",
+    "pandas==2.2.3",
+    "numpy==2.1.3",
+    "duckdb>=1.2.1",
+    
+    # File handling
+    "fastexcel>=0.15.1",
     "openpyxl>=3.1.0",
-    "pillow==11.2.1",
+    "orjson==3.10.15",
+    
+    # GUI framework
     "pyqt6==6.8.0",
     "pyqt6-qt6==6.8.1",
     "pyqt6-sip==13.9.1",
+    "qtpy==2.4.2",
+    "nodeeditor @ git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@main",
+    
+    # Visualization
+    "matplotlib==3.10.3",
+    "seaborn==0.13.2",
+    "pillow==11.2.1",
+    
+    # Performance and utilities
+    "numba==0.61.0",
+    "numexpr==2.10.2",
+    "llvmlite==0.44.0",
+    "psutil>=7.1.0",
+    
+    # Logging and CLI
+    "loguru==0.7.3",
+    "click==8.1.8",
+    "colorama==0.4.6",
+    
+    # Standard utilities
+    "packaging==24.2",
     "python-dateutil==2.9.0.post0",
     "pytz==2024.2",
-    "qtpy==2.4.2",
-    "seaborn==0.13.2",
     "six==1.17.0",
     "typing-extensions>=4.13.0",
     "tzdata==2025.1",
-    "psutil>=7.1.0",
 ]
 
 [tool.uv]
