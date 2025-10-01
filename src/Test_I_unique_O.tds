@@ -1,0 +1,932 @@
+{
+  "id": 2455039182848,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2455039721872,
+      "title": "File Input",
+      "pos_x": -530.0,
+      "pos_y": -201.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2455039723152,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Amer/Product Engine/Inputs/20250924_BOM_Placement.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2455039727152,
+      "title": "File Output",
+      "pos_x": 226.0,
+      "pos_y": -239.0,
+      "inputs": [
+        {
+          "id": 2455039721712,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data_unique.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "node_code": 5,
+      "node_type": "input"
+    },
+    {
+      "id": 2127619308784,
+      "title": "Unique",
+      "pos_x": -40.0,
+      "pos_y": -214.0,
+      "inputs": [
+        {
+          "id": 2127772303920,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2127772304240,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "selected_columns": [
+          "Season"
+        ]
+      },
+      "node_code": 6,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2126081438928,
+      "title": "Select",
+      "pos_x": -280.0,
+      "pos_y": -142.0,
+      "inputs": [
+        {
+          "id": 2126081439888,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2126081439248,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "_id_",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Collection",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Season",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "LOM Assignment",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_SecondaryLOMAssignment_Ref",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Current FG Supplier",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Model #",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "arcModelGenericCodeSAP",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Description",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Sku Id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Line",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Group",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Type",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "ProductLineNew",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "ProductGroupNew",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "ProductAttribute",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "RM#",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Code",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Description",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Amer Material Type",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Material Sub Type",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "amsConstruction",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Status",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Price (src curr)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Total Price (src curr)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Amer Currency",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote UOM (Sourcing)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote USD/M2",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Placement Product Cut Width",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Supplier",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Placement",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Is Current",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "BOM Revision Parent",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "BOMLineBOM",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Placement Product Material Character",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Tool Type",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "SysID",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Seasonal BOM Quote",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Seasonal Standard Cost",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Model Forecast (Current)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_TargetNoArticlesNew_Int",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_TargetNoArticles_Integer",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Order MOQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote MCQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Factory MOQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Re-order MCQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Re-order MOQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Model Product Status",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "GenderNew",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Model Gender",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "UOM (Inventory)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "UOM Conversion",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Supplier Quote Country of Origin",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "QuoteShippingPort",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__StyleColor",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__StyleSize",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialHidden",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialColor",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialSize",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialQuantity",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialQuote",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialUnitPrice",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialColorStatus",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialSizeSpec",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialStart",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "__MaterialEnd",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Global Purchaser",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "SAP Supplier Code",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Greige Lead Time (days)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Dye & Finish Lead Time (days)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Greige MOQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Manufacturing Lead Time (days)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Primary Activity",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "PrimaryActivityNew",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Cut Qty",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "TAS Sized RM #",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Size (Common)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "IsCurrent",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Product Authority BOM",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Yield (Common)",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Waste %",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "arcOnlyForProductAlternativesString",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Default Colour",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Sample MCQ",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Color Card/DTM",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Colour Notes",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Material Season",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Primary Season",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "CarryOver",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "amsGlobalPurchaser",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_ProductDeveloper",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_Colourist",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Active",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_BOMStatus_enum",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Ams_CopyCreated_Boolean",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "IsSampleBOM",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "ModelBaseSize",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "SupplierQuoteSeason",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "MajorRMCountryOrigin",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "FiberCountryOrigin",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "MaterialComposition",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Composition",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "_ExportedDate_",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "RM#Cleaned",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "AltProducts#Cleaned",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "StyleSize#Cleaned",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "StyleSize#BaseDefault",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "StyleColor#Cleaned",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "IsActiveNonSampleNonCopy",
+            "dtype": "String",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "_id_",
+            "Collection",
+            "Season",
+            "LOM Assignment",
+            "Ams_SecondaryLOMAssignment_Ref",
+            "Current FG Supplier",
+            "Model #",
+            "arcModelGenericCodeSAP",
+            "Description",
+            "Sku Id",
+            "Product Line",
+            "Product Group",
+            "Product Type",
+            "ProductLineNew",
+            "ProductGroupNew",
+            "ProductAttribute",
+            "RM#",
+            "Product",
+            "Product Code",
+            "Product Description",
+            "Product Amer Material Type",
+            "Product Material Sub Type",
+            "amsConstruction",
+            "Product Status",
+            "Supplier Quote Price (src curr)",
+            "Supplier Quote Total Price (src curr)",
+            "Supplier Quote Amer Currency",
+            "Supplier Quote UOM (Sourcing)",
+            "Supplier Quote USD/M2",
+            "Placement Product Cut Width",
+            "Supplier Quote Supplier",
+            "Supplier Quote",
+            "Placement",
+            "Supplier Quote Is Current",
+            "BOM Revision Parent",
+            "BOMLineBOM",
+            "Placement Product Material Character",
+            "Tool Type",
+            "SysID",
+            "Supplier Quote Seasonal BOM Quote",
+            "Supplier Quote Seasonal Standard Cost",
+            "Model Forecast (Current)",
+            "Ams_TargetNoArticlesNew_Int",
+            "Ams_TargetNoArticles_Integer",
+            "Supplier Quote Order MOQ",
+            "Supplier Quote MCQ",
+            "Factory MOQ",
+            "Re-order MCQ",
+            "Re-order MOQ",
+            "Model Product Status",
+            "GenderNew",
+            "Model Gender",
+            "UOM (Inventory)",
+            "UOM Conversion",
+            "Supplier Quote Country of Origin",
+            "QuoteShippingPort",
+            "__StyleColor",
+            "__StyleSize",
+            "__MaterialHidden",
+            "__MaterialColor",
+            "__MaterialSize",
+            "__MaterialQuantity",
+            "__MaterialQuote",
+            "__MaterialUnitPrice",
+            "__MaterialColorStatus",
+            "__MaterialSizeSpec",
+            "__MaterialStart",
+            "__MaterialEnd",
+            "Global Purchaser",
+            "SAP Supplier Code",
+            "Greige Lead Time (days)",
+            "Dye & Finish Lead Time (days)",
+            "Greige MOQ",
+            "Manufacturing Lead Time (days)",
+            "Primary Activity",
+            "PrimaryActivityNew",
+            "Cut Qty",
+            "TAS Sized RM #",
+            "Size (Common)",
+            "IsCurrent",
+            "Product Authority BOM",
+            "Yield (Common)",
+            "Waste %",
+            "arcOnlyForProductAlternativesString",
+            "Default Colour",
+            "Sample MCQ",
+            "Color Card/DTM",
+            "Colour Notes",
+            "Material Season",
+            "Primary Season",
+            "CarryOver",
+            "amsGlobalPurchaser",
+            "Ams_ProductDeveloper",
+            "Ams_Colourist",
+            "Active",
+            "Ams_BOMStatus_enum",
+            "Ams_CopyCreated_Boolean",
+            "IsSampleBOM",
+            "ModelBaseSize",
+            "SupplierQuoteSeason",
+            "MajorRMCountryOrigin",
+            "FiberCountryOrigin",
+            "MaterialComposition",
+            "Composition",
+            "_ExportedDate_",
+            "Id",
+            "RM#Cleaned",
+            "AltProducts#Cleaned",
+            "StyleSize#Cleaned",
+            "StyleSize#BaseDefault",
+            "StyleColor#Cleaned",
+            "IsActiveNonSampleNonCopy"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 4,
+      "node_type": "preparation"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2127619410160,
+      "edge_type": 5,
+      "start": 2127772304240,
+      "end": 2455039721712
+    },
+    {
+      "id": 2127619423792,
+      "edge_type": 5,
+      "start": 2455039723152,
+      "end": 2126081439888
+    },
+    {
+      "id": 2127619413184,
+      "edge_type": 5,
+      "start": 2126081439248,
+      "end": 2127772303920
+    }
+  ]
+}

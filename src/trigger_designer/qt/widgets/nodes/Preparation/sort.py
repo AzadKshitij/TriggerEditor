@@ -390,6 +390,10 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             String containing the generated Python code for sorting
         """
+
+        if self.incoming_variable is None or self.incoming_variable == "":
+            return "print('''No Incoming Variable for sort''')\n"
+
         if not self.sort_data:
             return f"{self.variable_name} = {self.incoming_variable}\n"
 
