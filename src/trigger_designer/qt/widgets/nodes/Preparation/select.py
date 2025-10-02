@@ -48,6 +48,7 @@ from trigger_designer.qt.widgets.select_table_widget import (
     SelectTableWidget,
     RowData,
 )
+from trigger_designer.qt.helpers import global_logger
 from typing import (
     Optional,
     TYPE_CHECKING,
@@ -90,6 +91,8 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
+        global_logger.debug("📋 SelectContent: Initializing Select node content widget")
+        
         # local variables
         # self.old_data: dict = []
         self.table_data: list = []
@@ -98,6 +101,8 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # incoming variables
         self.incoming_variable: str = ""
         self.incom_data: Optional[pl.DataFrame] = None
+        
+        global_logger.trace("📋 SelectContent: Initialization completed")
 
         # pass on variables
         self.data: Optional[pl.DataFrame] = None
@@ -313,6 +318,8 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
+        global_logger.debug("📋 SelectContent: Applying column selection and transformation changes")
+        
         # Ensure we have both incoming data and changes to apply
         if (getattr(self, "changes", None) is not None and 
             getattr(self, "incom_data", None) is not None):
@@ -323,38 +330,60 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if not selected_columns:
                 selected_columns = list(self.incom_data.columns)
                 self.changes["selected_columns"] = selected_columns
+                global_logger.info(f"📊 SelectContent: No columns selected, using all {len(selected_columns)} columns")
+            else:
+                global_logger.info(f"📊 SelectContent: Applying changes to {len(selected_columns)} selected columns")
             
             print(f"🐍 Applying changes: selected_columns={selected_columns}")
             print(f"🐍 dtype_mapping={self.changes.get('dtype_mapping', {})}")
             print(f"🐍 rename_mapping={self.changes.get('rename_mapping', {})}")
             
+            global_logger.debug(f"📋 SelectContent: Selecting columns: {selected_columns}")
             self.data = self.incom_data.select(selected_columns)
+        else:
+            global_logger.warning("⚠️ SelectContent: Cannot apply changes - missing incoming data or changes configuration")
 
-            # Apply data type changes if any
-            for col, dtype in self.changes["dtype_mapping"].items():
-                try:
-                    # Map common data type names to Polars types
-                    polars_dtype = self._map_dtype_to_polars(dtype)
-                    if polars_dtype:
-                        self.data = self.data.with_columns(
-                            pl.col(col).cast(polars_dtype, strict=False).alias(col)
-                        )
-                except Exception as e:
-                    print(f"Failed to convert column {col} to {dtype}: {str(e)}")
+        # Apply data type changes if any
+        for col, dtype in self.changes["dtype_mapping"].items():
+            try:
+                global_logger.debug(f"📋 SelectContent: Converting column '{col}' to type '{dtype}'")
+                # Map common data type names to Polars types
+                polars_dtype = self._map_dtype_to_polars(dtype)
+                if polars_dtype:
+                    self.data = self.data.with_columns(
+                        pl.col(col).cast(polars_dtype, strict=False).alias(col)
+                    )
+                    global_logger.info(f"✅ SelectContent: Successfully converted column '{col}' to {dtype}")
+                else:
+                    global_logger.warning(f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}', skipping conversion")
+            except Exception as e:
+                global_logger.error(f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}")
+                print(f"Failed to convert column {col} to {dtype}: {str(e)}")
+        
+        # Apply renaming if any
+        if self.changes["rename_mapping"]:
+            rename_dict = self.changes["rename_mapping"]
+            global_logger.debug(f"📋 SelectContent: Renaming columns: {rename_dict}")
+            self.data = self.data.rename(rename_dict)
+            global_logger.info(f"✅ SelectContent: Successfully renamed {len(rename_dict)} columns")
 
-            # Apply renaming if any
-            if self.changes["rename_mapping"]:
-                rename_dict = self.changes["rename_mapping"]
-                self.data = self.data.rename(rename_dict)
+        # Summary log
+        if hasattr(self, 'data') and self.data is not None:
+            final_shape = self.data.shape
+            global_logger.info(f"🎯 SelectContent: Column selection completed - Final DataFrame shape: {final_shape}")
+        else:
+            global_logger.warning("⚠️ SelectContent: No output data generated after applying changes")
 
-            print(
-                "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid",
-                self.node._is_invalid,
-            )
+        print(
+            "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid",
+            self.node._is_invalid,
+        )
 
     def process_data_changes(
         self, data_: list[list]
     ) -> tuple[list[str], dict[str, str], dict[str, str]]:
+        global_logger.debug(f"📋 SelectContent: Processing data changes for {len(data_)} columns")
+        
         # Store the changes in a serializable format
         self.changes = {
             "selected_columns": [],
@@ -367,6 +396,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         for column_info in data_:
             column_name, data_type, new_name = column_info
             self.changes["selected_columns"].append(column_name)
+            global_logger.trace(f"📋 SelectContent: Processing column '{column_name}' -> type: {data_type}, name: {new_name}")
 
             if new_name:
                 self.changes["rename_mapping"][column_name] = new_name
@@ -384,28 +414,40 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self, selected_columns: list[str], rename_mapping: dict, dtype_mapping: dict
     ) -> None:
         """Update self.data based on the processed changes"""
+        global_logger.debug(f"📋 SelectContent: Updating data types for {len(selected_columns)} columns")
+        
         # Select only the specified columns from incom_data
         self.data = self.incom_data.select(selected_columns)
+        global_logger.info(f"📊 SelectContent: Selected {len(selected_columns)} columns from input data")
 
         # Apply data type changes if any
         for col, dtype in dtype_mapping.items():
             try:
+                global_logger.debug(f"🔄 SelectContent: Converting column '{col}' to type '{dtype}'")
                 polars_dtype = self._map_dtype_to_polars(dtype)
                 if polars_dtype:
                     self.data = self.data.with_columns(
                         pl.col(col).cast(polars_dtype, strict=False).alias(col)
                     )
+                    global_logger.trace(f"✅ SelectContent: Column '{col}' converted to {dtype}")
+                else:
+                    global_logger.warning(f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}'")
             except Exception as e:
+                global_logger.error(f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}")
                 print(f"Failed to convert column {col} to {dtype}: {str(e)}")
 
         # Apply renaming if any
         if rename_mapping:
+            global_logger.debug(f"🏷️ SelectContent: Renaming {len(rename_mapping)} columns")
             self.data = self.data.rename(rename_mapping)
+            global_logger.info("✅ SelectContent: Column renaming completed successfully")
 
     def handleDataChanged(self, data_: list) -> None:
         if self.history.is_restoring_history:
+            global_logger.trace("📋 SelectContent: Skipping data change handling - restoring history")
             return
 
+        global_logger.debug(f"📋 SelectContent: Handling data changes for {len(data_)} items")
         print(
             "🐍 File: Preparation/select.py | Line: 322 | handleDataChanged ~ data_",
             data_,
@@ -591,54 +633,99 @@ class TriggerNode_Select(TriggerNode):
     style = {}
 
     def __init__(self, scene) -> None:
+        global_logger.info("🔧 SelectNode: Initializing Select node")
         super().__init__(scene, inputs=[1], outputs=[3])
+        global_logger.debug("📋 SelectNode: Node created with 1 input and 3 outputs")
         self.eval()
+        global_logger.trace("✅ SelectNode: Initialization completed")
 
     def initInnerClasses(self) -> None:
+        global_logger.debug("🔧 SelectNode: Initializing inner classes")
         self.content: SelectContent = SelectContent(self)
         self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
         self.param: list = []
+        global_logger.trace("✅ SelectNode: Inner classes initialized")
 
     def processInputs(self, input_values):
+        global_logger.info("🔄 SelectNode: Starting input processing")
         print("⚠️⚠️⚠️ Select ⚠️⚠️⚠️")
-        input_node = self.getInput(0)
-        socket_index = self.getSocketValue(input_node.outputs, self)
-        input_value = input_values[0][socket_index]
-        # print("🐍 File: Preparation/select.py | Line: 322 | processInputs ~ input_value.get('data')",
-        #       input_value.get('data'))
+        
+        try:
+            input_node = self.getInput(0)
+            socket_index = self.getSocketValue(input_node.outputs, self)
+            input_value = input_values[0][socket_index]
+            
+            global_logger.debug(f"� SelectNode: Retrieved input data, socket index: {socket_index}")
 
-        if input_value:
-            print("We have input")
-            self.markDirty(False)
-            self.markInvalid(False)
-            # Custom processing logic for the Select node
-            self.content.incom_data = input_value.get("data")
-            self.content.incoming_variable = input_value.get("variable_name")
-            # self.content.set_table_data()
-            self.content.apply_changes()
-            # self.content.set_table_widget()
-
-            self.param = [
-                {"data": self.content.data, "variable_name": self.content.variable_name}
-            ]
-            self.evalChildren()
-            print(
-                "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid",
-                self._is_invalid,
-            )
-
-            return self.param
-        else:
-            print("We don't have input")
+            if input_value:
+                global_logger.info("✅ SelectNode: Input data received, processing...")
+                print("We have input")
+                
+                # Validate input data
+                input_data = input_value.get("data")
+                variable_name = input_value.get("variable_name", "unknown")
+                
+                if input_data is not None:
+                    global_logger.info(f"📊 SelectNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'")
+                    
+                    self.markDirty(False)
+                    self.markInvalid(False)
+                    
+                    # Custom processing logic for the Select node
+                    self.content.incom_data = input_data
+                    self.content.incoming_variable = variable_name
+                    
+                    # Apply column selection and transformations
+                    self.content.apply_changes()
+                    
+                    # Validate output data
+                    if hasattr(self.content, 'data') and self.content.data is not None:
+                        output_shape = self.content.data.shape
+                        global_logger.info(f"📊 SelectNode: Output DataFrame shape: {output_shape}")
+                        
+                        self.param = [
+                            {"data": self.content.data, "variable_name": self.content.variable_name}
+                        ]
+                        
+                        self.evalChildren()
+                        global_logger.info("✅ SelectNode: Processing completed successfully")
+                        
+                        print(
+                            "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid",
+                            self._is_invalid,
+                        )
+                        
+                        return self.param
+                    else:
+                        global_logger.error("❌ SelectNode: No output data generated after processing")
+                        self.markDirty(True)
+                        self.markInvalid(True)
+                        return None
+                else:
+                    global_logger.warning("⚠️ SelectNode: Input value contains no data")
+                    self.markDirty(True)
+                    self.markInvalid(True)
+                    return None
+                    
+            else:
+                global_logger.warning("⚠️ SelectNode: No input data available")
+                print("We don't have input")
+                self.markDirty(True)
+                self.markInvalid(True)
+                self.grNode.setToolTip("Input is not connected")
+                print(
+                    "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid",
+                    self._is_invalid,
+                )
+                return None
+                
+        except Exception as e:
+            global_logger.error(f"❌ SelectNode: Error during input processing: {str(e)}")
+            global_logger.critical(f"🚨 SelectNode: Exception details: {type(e).__name__}: {str(e)}")
             self.markDirty(True)
             self.markInvalid(True)
-            self.grNode.setToolTip("Input is not connected")
-            print(
-                "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid",
-                self._is_invalid,
-            )
-
+            self.grNode.setToolTip(f"Processing error: {str(e)}")
             return None
 
     def get_code(self):

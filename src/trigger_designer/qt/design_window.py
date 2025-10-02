@@ -30,6 +30,7 @@ from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
+from trigger_designer.qt.helpers import global_logger
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
@@ -186,6 +187,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         - Shift+P: Print separator
         - Ctrl+Shift+R: Reset workflow statistics
         - Ctrl+Shift+S: Show workflow statistics
+        - Shift+G: Test global logging functionality
         """
         # Check for Shift+A
         if (
@@ -226,6 +228,19 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             logger.info(f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
                        f"Total time: {stats['total_time']:.3f}s, "
                        f"Average: {stats['average_execution_time']:.3f}s")
+            
+            # Example of global logging usage
+            global_logger.info(f"📊 Workflow statistics requested - {stats['total_executions']} executions")
+        elif (
+            event.key() == Qt.Key.Key_G
+            and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+        ):
+            # Shift+G to test global logging
+            global_logger.info("🌍 Global logging test - this message was sent using global_logger!")
+            global_logger.debug("🔧 Global debug message")
+            global_logger.warning("⚠️ Global warning message")
+            global_logger.error("❌ Global error message (test)")
+            self.logInfo("📝 Local logging for comparison")
         else:
             super().keyPressEvent(event)
 

@@ -26,6 +26,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowDockMixin,
     MainWindowMenuMixin,
 )
+from trigger_designer.qt.helpers import global_logger
 
 
 # Enabling edge validators
@@ -123,6 +124,9 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
 
         self.setDockNestingEnabled(True)
+        
+        # Initialize global logger with this main window
+        global_logger.set_main_window(self)
         # self.tabifyDockWidget(self.configDock, self.resultDock)
 
     def toggleFullScreen(self):
