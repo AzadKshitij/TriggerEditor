@@ -253,6 +253,9 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         # Switch logging dock to this window if it's the active one
         if self.mdiArea.activeSubWindow() == subwnd:
             self.switchLoggingDock(nodeeditor)
+            
+        # Add a welcome log message for new design window
+        nodeeditor.logInfo(f"Design window '{nodeeditor.windowTitle()}' created and ready")
 
         return subwnd
 

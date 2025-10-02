@@ -190,8 +190,9 @@ class LoggingDock(QDockWidget):
         if not hasattr(self, 'last_log_count'):
             self.last_log_count = 0
             
-        # Only update if there are new logs
-        if len(self.filtered_logs) == self.last_log_count:
+        # Check if we need to update (new logs or count changed)
+        current_log_count = len(self.filtered_logs)
+        if current_log_count == self.last_log_count:
             return
             
         # Store current scroll position
@@ -199,17 +200,21 @@ class LoggingDock(QDockWidget):
         was_at_bottom = scrollbar.value() == scrollbar.maximum()
         
         # Generate HTML for all filtered logs
-        html_content = ""
-        for log_entry in self.filtered_logs:
-            html_content += log_entry.to_html()
+        if current_log_count == 0:
+            # Clear display if no logs
+            self.log_display.clear()
+        else:
+            html_content = ""
+            for log_entry in self.filtered_logs:
+                html_content += log_entry.to_html()
+                
+            self.log_display.setHtml(html_content)
             
-        self.log_display.setHtml(html_content)
-        
-        # Restore scroll position or auto-scroll
-        if self.auto_scroll and (was_at_bottom or self.last_log_count == 0):
-            scrollbar.setValue(scrollbar.maximum())
+            # Restore scroll position or auto-scroll
+            if self.auto_scroll and (was_at_bottom or self.last_log_count == 0):
+                scrollbar.setValue(scrollbar.maximum())
             
-        self.last_log_count = len(self.filtered_logs)
+        self.last_log_count = current_log_count
         
     def on_level_filter_changed(self, level: str) -> None:
         """Handle log level filter change"""
@@ -249,6 +254,10 @@ class LoggingDock(QDockWidget):
         # Apply filters to show logs for this window
         self.apply_filters()
         self.last_log_count = 0  # Force refresh
+        
+        # If this window has no logs, clear the display immediately
+        if not self.logs_per_window[design_window_id]:
+            self.log_display.clear()
         
     def remove_design_window(self, design_window_id: str) -> None:
         """Remove logs for a design window that has been closed"""

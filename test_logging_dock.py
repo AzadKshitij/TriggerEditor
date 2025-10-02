@@ -41,35 +41,41 @@ def test_logging_functionality():
             second_window.logDebug("Second window: Debug message")
             second_window.logWarning("Second window: Warning message")
             
-            def switch_and_log():
-                # Switch to first window and log
-                print("Switching to first window...")
+            def switch_to_empty_window():
+                # Switch to first window (which has no logs yet)
+                print("Switching to first window (empty logs)...")
                 windows = window.mdiArea.subWindowList()
                 if len(windows) >= 2:
                     window.mdiArea.setActiveSubWindow(windows[0])  # Switch to first window
+                    print("Notice: Logging dock should now be empty!")
                     
-                    # Log to first window
-                    first_window.logInfo("First window: Now active!")
-                    first_window.logError("First window: Test error message")
-                    first_window.logCritical("First window: Critical message")
+                    def add_logs_to_first():
+                        # Add logs to first window after a delay
+                        print("Adding logs to first window...")
+                        first_window.logInfo("First window: Now active!")
+                        first_window.logError("First window: Test error message")
+                        first_window.logCritical("First window: Critical message")
+                        
+                        def switch_back():
+                            # Switch back to second window
+                            print("Switching back to second window...")
+                            windows = window.mdiArea.subWindowList()
+                            if len(windows) >= 2:
+                                window.mdiArea.setActiveSubWindow(windows[1])  # Switch to second window
+                                print("Back to second window - should see original logs again!")
+                                second_window.logInfo("Second window: Back to second window!")
+                        
+                        # Switch back after 3 seconds
+                        QTimer.singleShot(3000, switch_back)
                     
-                def switch_back():
-                    # Switch back to second window
-                    print("Switching back to second window...")
-                    windows = window.mdiArea.subWindowList()
-                    if len(windows) >= 2:
-                        window.mdiArea.setActiveSubWindow(windows[1])  # Switch to second window
-                        second_window.logInfo("Second window: Back to second window!")
-                        second_window.logTrace("Second window: Trace message")
-                
-                # Switch back after 3 seconds
-                QTimer.singleShot(3000, switch_back)
+                    # Add logs to first window after 2 seconds
+                    QTimer.singleShot(2000, add_logs_to_first)
             
             # Switch windows after 3 seconds
-            QTimer.singleShot(3000, switch_and_log)
+            QTimer.singleShot(3000, switch_to_empty_window)
             
             print("Log messages sent to shared logging dock!")
-            print("Notice how the dock content changes when you switch between windows.")
+            print("Watch how the dock clears when switching to windows with no logs.")
             print("The dock shows logs only for the currently active design window.")
         
         # Delay the test to give the UI time to initialize

@@ -12,6 +12,7 @@ The logging dock provides a single, shared logging panel that displays logs for 
 - Single logging dock that shows logs for the currently active design window
 - Logs are isolated per design window but displayed in a shared interface
 - Automatic context switching when you change between design windows
+- Clean display when switching to windows with no logs (empty state)
 
 ### Docking Capabilities
 - The logging dock can be docked to any edge of the main window
@@ -55,6 +56,7 @@ self.log("INFO", "Custom message")
 
 ### Built-in Logging
 The application automatically logs various activities:
+- Design window creation with welcome messages
 - File loading operations
 - Workflow execution status
 - Node creation events
