@@ -5,26 +5,18 @@ import time
 from qtpy.QtGui import (
     QIcon,
     QPixmap,
-    QCursor,
     QDropEvent,
-    QContextMenuEvent,
     QCloseEvent,
     QDragEnterEvent,
     QKeyEvent,
 )
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
 from qtpy.QtWidgets import (
-    QAction,
-    QGraphicsProxyWidget,
-    QMenu,
     QWidget,
-    QVBoxLayout,
     QPushButton,
 )
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
-from nodeeditor.node_edge import EDGE_TYPE_DIRECT, EDGE_TYPE_BEZIER, EDGE_TYPE_SQUARE
-from nodeeditor.node_graphics_view import MODE_EDGE_DRAG
 from nodeeditor.utils import dumpException
 
 from trigger_designer.core.node_configuration import (
@@ -33,13 +25,11 @@ from trigger_designer.core.node_configuration import (
     get_class_from_opcode,
     LISTBOX_MIMETYPE,
 )
-from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
-from trigger_designer.qt.docks.result import ResultDock
-from trigger_designer.qt.helpers.logger import Logger, LogLevel
+from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
+from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
-from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
-from trigger_designer.qt.widgets.node_group import NodeGroup
+from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
@@ -53,7 +43,7 @@ DEBUG = False
 DEBUG_CONTEXT = False
 
 
-class TriggerSubWindow(NodeEditorWidget):
+class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
     itemSelected = Signal(object)
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
@@ -67,13 +57,9 @@ class TriggerSubWindow(NodeEditorWidget):
         # self.logger.set_context(self.design_window_id)
 
         self._last_scale: float = 1.0
-        self.execution_results: dict = {}  # Store execution results for each node
-        self.selected_action_data: Optional[list] = None
-        
-        # Workflow execution tracking
-        self.workflow_execution_count: int = 0
-        self.workflow_start_time: float = 0.0
-        self.total_workflow_time: float = 0.0
+
+        self.init_workflow_execution()
+        self.init_context_menu_support()
 
         self.setTitle()
         self.addButtons()
@@ -299,85 +285,6 @@ class TriggerSubWindow(NodeEditorWidget):
                 self.scene.removeEdge(edge)
                 print(f"Removed invalid edge: {edge}")
 
-    def initNewNodeActions(self) -> None:
-        self.node_actions = {}
-        self.nodes_by_type = {
-            # 'Calculation': NODE_REGISTRIES[NodeTypes.CALC],
-            "Input/Output": NODE_REGISTRIES[NodeTypes.IO],
-            "Preparation": NODE_REGISTRIES[NodeTypes.PREPARATION],
-            "Join": NODE_REGISTRIES[NodeTypes.JOIN],
-            "Transform": NODE_REGISTRIES[NodeTypes.TRANSFORM],
-            "Report": NODE_REGISTRIES[NodeTypes.REPORT],
-        }
-
-        # Create actions for all nodes across all types
-        for category, nodes in self.nodes_by_type.items():
-            for node_code, node_class in nodes.items():
-                action_key = f"{category}_{node_code}"
-                logger.success(
-                    f"Registering action: '{action_key}' for node '{node_class.node_title}' and icon path '{self.rsm.get_icon_path(node_class.icon)}'"
-                )
-                self.node_actions[action_key] = QAction(
-                    QIcon(f":{category}/{self.rsm.get_icon_path(node_class.icon)}"),
-                    node_class.node_title,
-                )
-                # Store both node code and type for later use
-                node_type = next(
-                    type_name
-                    for type_name, registry in NODE_REGISTRIES.items()
-                    if node_class in registry.values()
-                )
-                self.node_actions[action_key].setData([node_code, node_type])
-
-    def initNodesContextMenu(self):
-        context_menu = SearchableMenu(self)
-
-        # Create submenus for each category
-        for category, nodes in self.nodes_by_type.items():
-            if not nodes:  # Skip empty categories
-                continue
-
-            # Create submenu for category
-            submenu = QMenu(category, context_menu)
-            context_menu.addMenu(submenu)
-
-            # Store submenu reference
-            context_menu.all_submenus[category] = submenu
-            context_menu.all_actions[category] = []
-
-            # Add sorted nodes to submenu
-            node_list = list(nodes.values())
-            node_list.sort(key=lambda x: x.node_title)
-
-            for node in node_list:
-                action = self.node_actions[f"{category}_{node.node_code}"]
-                submenu.addAction(action)
-                context_menu.all_actions[category].append(action)
-
-        return context_menu
-
-    # def initNodesContextMenu(self):
-    #     context_menu = QMenu(self)
-
-    #     # Create submenus for each category
-    #     for category, nodes in self.nodes_by_type.items():
-    #         if not nodes:  # Skip empty categories
-    #             continue
-
-    #         # Create submenu for category
-    #         submenu = QMenu(category, context_menu)
-    #         context_menu.addMenu(submenu)
-
-    #         # Add sorted nodes to submenu
-    #         node_list = list(nodes.values())
-    #         node_list.sort(key=lambda x: x.node_title)
-
-    #         for node in node_list:
-    #             submenu.addAction(
-    #                 self.node_actions[f"{category}_{node.node_code}"])
-
-    #     return context_menu
-
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
 
@@ -441,185 +348,6 @@ class TriggerSubWindow(NodeEditorWidget):
         else:
             # print(" ... drop ignored, not requested format '%s'" % LISTBOX_MIMETYPE)
             event.ignore()
-
-    def contextMenuEvent(self, event):
-        try:
-            item = self.scene.getItemAt(event.pos())
-            if DEBUG_CONTEXT:
-                print(item)
-
-            if type(item) == QGraphicsProxyWidget:
-                item = item.widget()
-
-            # Check for groups first
-            if isinstance(item, NodeGroup):
-                self.handleGroupContextMenu(event)
-            elif hasattr(item, "node") or hasattr(item, "socket"):
-                self.handleNodeContextMenu(event)
-            elif hasattr(item, "edge"):
-                self.handleEdgeContextMenu(event)
-            # elif item is None:
-            else:
-                self.handleNewNodeContextMenu(event)
-
-            return super().contextMenuEvent(event)
-        except Exception as e:
-            dumpException(e)
-
-    def handleGroupContextMenu(self, event):
-        """Handle context menu for node groups"""
-        context_menu = QMenu(self)
-
-        # Add group-specific actions
-        ungroupAct = context_menu.addAction("Ungroup")
-        deleteGroupAct = context_menu.addAction("Delete Group")
-        context_menu.addSeparator()
-
-        action = context_menu.exec_(self.mapToGlobal(event.pos()))
-
-        item = self.scene.getItemAt(event.pos())
-        if isinstance(item, NodeGroup):
-            if action == ungroupAct:
-                # Keep nodes but remove group
-                self.ungroupSelected()
-            elif action == deleteGroupAct:
-                # Remove both group and contained nodes
-                for node in item.nodes:
-                    self.scene.removeNode(node)
-                self.scene.removeItem(item)
-                self.scene.history.storeHistory("Deleted Group and Nodes")
-
-    def handleNodeContextMenu(self, event: QContextMenuEvent) -> None:
-        if DEBUG_CONTEXT:
-            print("CONTEXT: NODE")
-        context_menu = QMenu(self)
-        markDirtyAct = context_menu.addAction("Mark Dirty")
-        markDirtyDescendantsAct = context_menu.addAction("Mark Descendant Dirty")
-        markInvalidAct = context_menu.addAction("Mark Invalid")
-        unmarkInvalidAct = context_menu.addAction("Unmark Invalid")
-        evalAct = context_menu.addAction("Eval")
-
-        selected = None
-        item = self.scene.getItemAt(event.pos())
-        if type(item) == QGraphicsProxyWidget:
-            item = item.widget()
-
-        selected_nodes = [
-            item.node for item in self.scene.getSelectedItems() if hasattr(item, "node")
-        ]
-        print(
-            "🐍 File: qt/design_window.py:375 | handleNodeContextMenu ~ selected_nodes",
-            selected_nodes,
-        )
-
-        if len(selected_nodes) > 1:
-            groupAct = context_menu.addAction("Group Nodes")
-            context_menu.addSeparator()
-
-        action = context_menu.exec(self.mapToGlobal(event.pos()))
-
-        if hasattr(item, "node"):
-            selected = item.node
-        if hasattr(item, "socket"):
-            selected = item.socket.node
-
-        if DEBUG_CONTEXT:
-            print("got item:", selected)
-        if selected and action == markDirtyAct:
-            selected.markDirty()
-        if selected and action == markDirtyDescendantsAct:
-            selected.markDescendantsDirty()
-        if selected and action == markInvalidAct:
-            selected.markInvalid()
-        if selected and action == unmarkInvalidAct:
-            selected.markInvalid(False)
-        if selected and action == evalAct:
-            val = selected.eval()
-            if DEBUG_CONTEXT:
-                print("EVALUATED:", val)
-        # Handle group action
-        if selected_nodes and action == groupAct:
-            self.createGroup(selected_nodes)
-
-    def handleEdgeContextMenu(self, event: QContextMenuEvent) -> None:
-        if DEBUG_CONTEXT:
-            print("CONTEXT: EDGE")
-        context_menu = QMenu(self)
-        bezierAct = context_menu.addAction("Bezier Edge")
-        directAct = context_menu.addAction("Direct Edge")
-        squareAct = context_menu.addAction("Square Edge")
-        action = context_menu.exec_(self.mapToGlobal(event.pos()))
-
-        selected = None
-        item = self.scene.getItemAt(event.pos())
-        if hasattr(item, "edge"):
-            selected = item.edge
-
-        if selected and action == bezierAct:
-            selected.edge_type = EDGE_TYPE_BEZIER
-        if selected and action == directAct:
-            selected.edge_type = EDGE_TYPE_DIRECT
-        if selected and action == squareAct:
-            selected.edge_type = EDGE_TYPE_SQUARE
-
-    # helper functions
-    def determine_target_socket_of_node(self, was_dragged_flag, new_calc_node):
-        target_socket = None
-        if was_dragged_flag:
-            if len(new_calc_node.inputs) > 0:
-                target_socket = new_calc_node.inputs[0]
-        else:
-            if len(new_calc_node.outputs) > 0:
-                target_socket = new_calc_node.outputs[0]
-        return target_socket
-
-    def finish_new_node_state(self, new_calc_node: Any) -> None:
-        self.scene.doDeselectItems()
-        new_calc_node.grNode.doSelect(True)
-        new_calc_node.grNode.onSelected()
-
-    def set_selected_action_data(self, data) -> None:
-        self.selected_action_data = data
-
-    def add_node_to_scene(self) -> None:
-        # This method should add the node to the scene
-        # You can customize this method based on your requirements
-        print("🍒 Adding node to the scene")
-        # Example implementation:
-        node_code, node_type = self.selected_action_data
-        new_calc_node = get_class_from_opcode(node_code, node_type)(self.scene)
-        cursor_pos = self.mapFromGlobal(QCursor.pos())
-        scene_pos = self.scene.getView().mapToScene(cursor_pos)
-        new_calc_node.setPos(scene_pos.x(), scene_pos.y())
-        self.scene.history.storeHistory("Created %s" % new_calc_node.__class__.__name__)
-
-    def showNodeContextMenu(self, position) -> None:
-        if DEBUG_CONTEXT:
-            print("CONTEXT: EMPTY SPACE")
-        context_menu = self.initNodesContextMenu()
-        action = context_menu.exec_(self.mapToGlobal(position))
-
-        if action is not None and action.data():
-            try:
-                print("Action was triggered!")
-                self.selected_action_data = action.data()
-                self.add_node_to_scene()
-                # Create node directly without storing action data
-                # node_code, node_type = action.data()
-                # new_calc_node = get_class_from_opcode(
-                #     node_code, node_type)(self.scene)
-                # cursor_pos = self.mapFromGlobal(QCursor.pos())
-                # scene_pos = self.scene.getView().mapToScene(cursor_pos)
-                # new_calc_node.setPos(scene_pos.x(), scene_pos.y())
-                # self.scene.history.storeHistory(
-                #     "Created %s" % new_calc_node.__class__.__name__)
-            except Exception as e:
-                dumpException(e)
-
-    def handleNewNodeContextMenu(self, event) -> None:
-        if DEBUG_CONTEXT:
-            print("CONTEXT: EMPTY SPACE")
-        self.showNodeContextMenu(event.pos())
 
     def run_workflow(self) -> None:
         self.executeWorkflow()
@@ -739,200 +467,4 @@ class TriggerSubWindow(NodeEditorWidget):
             node.grNode.update()
         self.run_button.setEnabled(True)
 
-    def executeWorkflow(self) -> None:
-        # self.test_execution_visuals()
-        self.run_button.setEnabled(False)
-        connections = self.getNodeConnections()
-        import_node = None
-        sorted_nodes = self.topologicalSort(connections)
-        node_data = {}
-        # executor = NodeExecutor()
-        executor = NodeExecutor()
 
-        # Reset all node borders
-        for node in self.getAllNodes():
-            node.grNode.resetPen()
-            node.grNode.update()
-
-        # Start workflow timing and increment execution count
-        self.workflow_start_time = time.time()
-        self.workflow_execution_count += 1
-        
-        logger.info(f"🚀 Starting workflow execution #{self.workflow_execution_count}")
-        print(f"🚀 Starting workflow execution #{self.workflow_execution_count}...")
-
-        self._execute_next_node(sorted_nodes, 0, executor)
-
-        # for node in sorted_nodes:
-        #     node.grNode.setPenExecuting()
-        #     node.grNode.update()
-
-        #     stdoutput, local_variables = executor.execute_node(node)
-        #     # Store execution results for this node
-        #     self.execution_results[node] = local_variables
-
-        #     node.grNode.setPenExecuted()
-        #     node.grNode.update()
-
-        # end_time = time.time()
-        # print("Execution Time: ", end_time - start_time, " seconds")
-        self.getPyFile(sorted_nodes)
-
-        # for node in self.getAllNodes():
-        #     node.grNode.resetPen()
-
-        # self.run_button.setEnabled(True)
-
-    def _execute_next_node(
-        self, nodes: list, current_index: int, executor: NodeExecutor
-    ) -> None:
-        """Execute nodes sequentially with visual transitions"""
-        if current_index >= len(nodes):
-            # All nodes processed, cleanup
-            QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
-            return
-
-        node = nodes[current_index]
-
-        # Show executing state (purple)
-        node.grNode.setPenExecuting()
-        node.grNode.update()
-
-        # Execute the node
-        try:
-            result = executor.execute_node(node)
-            
-            if result.success:
-                self.execution_results[node] = result.variables
-                # Show success state (green)
-                node.grNode.setPenExecuted()
-                node.grNode.update()
-            else:
-                # Show error state and log the error
-                logger.error(f"Node execution failed: {result.error}")
-                node.grNode.resetPen()
-                node.grNode.update()
-                self._execution_cleanup(success=False)
-                return
-                
-        except Exception as e:
-            # Could add error state visual here
-            logger.error(f"Error executing node {node}: {str(e)}")
-            node.grNode.resetPen()
-            node.grNode.update()
-            self._execution_cleanup(success=False)
-            return
-
-        # Schedule next node execution
-        QTimer.singleShot(
-            100, lambda: self._execute_next_node(nodes, current_index + 1, executor)
-        )
-
-    def _execution_cleanup(self, success: bool = True) -> None:
-        # Calculate workflow execution time
-        workflow_end_time = time.time()
-        current_execution_time = workflow_end_time - self.workflow_start_time
-        self.total_workflow_time += current_execution_time
-        
-        # Calculate average execution time
-        avg_execution_time = self.total_workflow_time / self.workflow_execution_count if self.workflow_execution_count > 0 else 0.0
-        
-        # Set status icon and message based on success
-        status_icon = "✅" if success else "❌"
-        status_text = "COMPLETED" if success else "FAILED"
-        
-        # Log execution statistics
-        logger.info(f"{status_icon} Workflow execution #{self.workflow_execution_count} {status_text.lower()}!")
-        logger.info(f"⏱️  Execution time: {current_execution_time:.3f} seconds")
-        logger.info(f"📊 Total executions: {self.workflow_execution_count}")
-        logger.info(f"📈 Average execution time: {avg_execution_time:.3f} seconds")
-        logger.info(f"🕒 Total workflow time: {self.total_workflow_time:.3f} seconds")
-        
-        # Print to console as well for immediate visibility
-        print(f"\n{'='*60}")
-        print(f"🎯 WORKFLOW EXECUTION SUMMARY")
-        print(f"{'='*60}")
-        print(f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}")
-        print(f"⏱️  This execution: {current_execution_time:.3f} seconds")
-        print(f"📊 Total runs: {self.workflow_execution_count}")
-        print(f"📈 Average time: {avg_execution_time:.3f} seconds")
-        print(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
-        if not success:
-            print(f"⚠️  Execution failed - check logs for details")
-        print(f"{'='*60}\n")
-
-        for node in self.getAllNodes():
-            node.grNode.resetPen()
-            node.grNode.update()
-
-        self.run_button.setEnabled(True)
-
-    def get_workflow_statistics(self) -> dict:
-        """Get workflow execution statistics.
-        
-        Returns:
-            Dictionary containing execution statistics
-        """
-        avg_time = self.total_workflow_time / self.workflow_execution_count if self.workflow_execution_count > 0 else 0.0
-        
-        return {
-            'total_executions': self.workflow_execution_count,
-            'total_time': self.total_workflow_time,
-            'average_execution_time': avg_time,
-            'last_execution_time': time.time() - self.workflow_start_time if hasattr(self, 'workflow_start_time') else 0.0
-        }
-
-    def reset_workflow_statistics(self) -> None:
-        """Reset workflow execution statistics."""
-        self.workflow_execution_count = 0
-        self.total_workflow_time = 0.0
-        logger.info("📊 Workflow statistics reset")
-        print("📊 Workflow execution statistics have been reset")
-
-    def getSocketData(self, node, socket_index: int) -> Any:
-        """Get the data associated with a specific socket after execution"""
-        if self.execution_results is None:
-            print("No execution results available. Run the workflow first.")
-            return None
-
-        if node not in self.execution_results:
-            print(f"No results found for node {node}")
-            return None
-
-        # Get the variable name for this socket from the node
-        if hasattr(node, "param"):
-            print("node.param: ", node.param)
-            socket_data = node.param[socket_index]
-            if socket_data:
-                var_name = socket_data["variable_name"]
-                # Look up the actual data in execution results
-                if var_name in self.execution_results[node]:
-                    return self.execution_results[node][var_name]
-
-        return None
-
-    def createGroup(self, nodes=None):
-        """Create a new node group containing the selected nodes"""
-        if nodes is None:
-            nodes = [
-                item.node
-                for item in self.scene.selectedItems()
-                if hasattr(item, "node")
-            ]
-
-        if len(nodes) < 2:
-            return
-
-        group = NodeGroup(self.scene)
-        for node in nodes:
-            group.add_node(node)
-
-        self.scene.history.storeHistory("Created Node Group")
-        return group
-
-    def ungroupSelected(self):
-        """Ungroup the selected group"""
-        for item in self.scene.getSelectedItems():
-            if isinstance(item, NodeGroup):
-                self.scene.grScene.removeItem(item)
-                self.scene.history.storeHistory("Ungroup Nodes")
