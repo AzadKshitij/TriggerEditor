@@ -57,6 +57,9 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         name_product: str = "Trigger Editor",
     ) -> None:
         super().__init__()
+        
+        # We'll create a single logging dock in initUI
+        
         self.openFile(file_path)
         self.name_company = name_company
         self.name_product = name_product
@@ -99,12 +102,14 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         self.setCentralWidget(self.mdiArea)
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)
+        self.mdiArea.subWindowActivated.connect(self.onSubWindowActivated)
 
         self.createActions()
 
         # Docks
         self.createNodesDock()
         self.createConfigDock()
+        self.createLoggingDock()
         # self.createResultDock()
 
         self.createMenus()
@@ -241,19 +246,23 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
             self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
         # nodeeditor.itemSelected.connect(self.onNodeSelected)
+        
+        # Connect the design window to the shared logging dock
+        nodeeditor.setLoggingDock(self.getLoggingDock())
+        
+        # Switch logging dock to this window if it's the active one
+        if self.mdiArea.activeSubWindow() == subwnd:
+            self.switchLoggingDock(nodeeditor)
 
         return subwnd
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
-        # print("Subwindow activated")
-        # if sub_window:
-        # widget = sub_window.widget()
-        # if isinstance(widget, TriggerSubWindow):
-        # SignalHandler.instance().emit_sub_window_activated(widget.design_window_id)
-
-        # widget.logger.set_result_dock(
-        #     self.resultDock, widget.design_window_id)
-        pass
+        """Handle sub window activation to switch logging dock context"""
+        if sub_window:
+            widget = sub_window.widget()
+            if hasattr(widget, 'setLoggingDock'):  # Check if it's a design window
+                # Switch the logging dock to show logs for this window
+                self.switchLoggingDock(widget)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         existing = self.findMdiChild(widget.filename)

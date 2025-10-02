@@ -6,6 +6,7 @@ from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
+from trigger_designer.qt.docks.logging_dock import LoggingDock
 
 
 class MainWindowMenuMixin:
@@ -122,6 +123,26 @@ class MainWindowDockMixin:
     def createConfigDock(self) -> None:
         self.configDock = ConfigDock(self)
         self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
+
+    def createLoggingDock(self) -> None:
+        """Create a single logging dock that shows logs for the active design window"""
+        self.loggingDock = LoggingDock(self)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.loggingDock)
+
+    def getLoggingDock(self) -> LoggingDock:
+        """Get the shared logging dock"""
+        return getattr(self, 'loggingDock', None)
+
+    def switchLoggingDock(self, design_window) -> None:
+        """Switch the logging dock to show logs for a specific design window"""
+        if hasattr(self, 'loggingDock') and self.loggingDock:
+            self.loggingDock.switch_to_design_window(design_window)
+
+    def onDesignWindowClose(self, design_window, event) -> None:
+        """Handle design window close event to clean up logs"""
+        if hasattr(self, 'loggingDock') and self.loggingDock:
+            design_window_id = str(id(design_window))
+            self.loggingDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
         self.statusBar().showMessage("Ready")

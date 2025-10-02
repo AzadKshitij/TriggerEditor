@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from trigger_designer.qt.node_base import TriggerNode
     from nodeeditor.node_node import Node
     from nodeeditor.node_socket import Socket
+    from trigger_designer.qt.docks.logging_dock import LoggingDock
 
 DEBUG = False
 DEBUG_CONTEXT = False
@@ -52,6 +53,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         # self.initUI()
         self.logger: Logger = Logger(self)
         self.rsm: ResourceManager = ResourceManager()
+        self._logging_dock: Optional["LoggingDock"] = None
 
         # self.design_window_id = str(id(self))
         # self.logger.set_context(self.design_window_id)
@@ -247,11 +249,15 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.doEvalOutputs()
 
     def fileLoad(self, filename: str) -> bool:
+        self.logInfo(f"Loading file: {filename}")
         if super().fileLoad(filename):
+            self.logDebug("File loaded successfully, evaluating outputs...")
             # self.validateConnections()
             self.doEvalOutputs()
+            self.logInfo(f"File '{filename}' loaded and initialized successfully")
             return True
 
+        self.logError(f"Failed to load file: {filename}")
         return False
 
     def validateConnections(self) -> None:
@@ -287,6 +293,47 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
+
+    def setLoggingDock(self, logging_dock: "LoggingDock") -> None:
+        """Set the logging dock for this design window"""
+        self._logging_dock = logging_dock
+        
+    def getLoggingDock(self) -> Optional["LoggingDock"]:
+        """Get the logging dock for this design window"""
+        return self._logging_dock
+        
+    def log(self, level: str, message: str) -> None:
+        """Log a message to the shared logging dock"""
+        if self._logging_dock:
+            design_window_id = str(id(self))
+            self._logging_dock.log(level, message, design_window_id)
+        else:
+            # Fallback to print if no logging dock is available
+            print(f"[{level}] {message}")
+            
+    def logTrace(self, message: str) -> None:
+        """Log a TRACE message"""
+        self.log("TRACE", message)
+        
+    def logDebug(self, message: str) -> None:
+        """Log a DEBUG message"""
+        self.log("DEBUG", message)
+        
+    def logInfo(self, message: str) -> None:
+        """Log an INFO message"""
+        self.log("INFO", message)
+        
+    def logWarning(self, message: str) -> None:
+        """Log a WARNING message"""
+        self.log("WARNING", message)
+        
+    def logError(self, message: str) -> None:
+        """Log an ERROR message"""
+        self.log("ERROR", message)
+        
+    def logCritical(self, message: str) -> None:
+        """Log a CRITICAL message"""
+        self.log("CRITICAL", message)
 
     def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)
@@ -327,20 +374,18 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 )
 
             try:
-                print("1...")
+                self.logDebug(f"Creating node: {node_type} (code: {node_code})")
                 node_type_enum = NodeTypes(node_type)
-                print("2...")
                 node = get_class_from_opcode(node_code, node_type_enum)(
                     self.scene
                 )  # type: ignore
-                print("3...")
                 node.setPos(scene_position.x(), scene_position.y())
-                print("4...")
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__
                 )
-                print("5...")
+                self.logInfo(f"Successfully created {node.__class__.__name__} node at ({scene_position.x():.1f}, {scene_position.y():.1f})")
             except Exception as e:
+                self.logError(f"Failed to create node {node_type}: {str(e)}")
                 dumpException(e)
 
             event.setDropAction(Qt.DropAction.MoveAction)
@@ -350,7 +395,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             event.ignore()
 
     def run_workflow(self) -> None:
-        self.executeWorkflow()
+        self.logInfo("Starting workflow execution...")
+        try:
+            self.executeWorkflow()
+            self.logInfo("Workflow execution completed successfully")
+        except Exception as e:
+            self.logError(f"Workflow execution failed: {str(e)}")
+            raise
 
     def getPyFile(self, sorted_nodes) -> None:
         code = """"""
