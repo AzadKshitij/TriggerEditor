@@ -7,7 +7,7 @@
       "id": 2455039721872,
       "title": "File Input",
       "pos_x": -545.0,
-      "pos_y": -155.0,
+      "pos_y": -147.0,
       "inputs": [],
       "outputs": [
         {
@@ -81,74 +81,7 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "customer_id",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "first_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "last_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "email",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "phone",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "age",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "salary",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "department",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "notes",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "join_date",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "empty_column",
-            "dtype": "String",
-            "rename": ""
-          }
-        ],
+        "actions_data": [],
         "changes": {
           "selected_columns": [
             "customer_id",
@@ -177,7 +110,9 @@
             "join_date": "String",
             "empty_column": "String"
           },
-          "column_order": []
+          "column_order": [],
+          "group_by_columns": [],
+          "aggregations": {}
         }
       },
       "node_code": 4,

@@ -1,0 +1,177 @@
+{
+  "id": 1399479868720,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 1399495659024,
+      "title": "File Input",
+      "pos_x": -695.0,
+      "pos_y": -164.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 1399495660304,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_customers.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 1399495660624,
+      "title": "File Input",
+      "pos_x": -693.0,
+      "pos_y": -14.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 1399495661744,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_orders.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 1399495662064,
+      "title": "Join",
+      "pos_x": -276.0,
+      "pos_y": -141.0,
+      "inputs": [
+        {
+          "id": 1399495663024,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1399495663504,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1399495663824,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1399495664144,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1399495664464,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "customer_id",
+            "right_column": "customer_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "city",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "customer_status",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "R"
+          },
+          {
+            "name": "order_amount",
+            "source": "R"
+          },
+          {
+            "name": "order_date",
+            "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "R"
+          },
+          {
+            "name": "product_category",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join"
+    }
+  ],
+  "edges": [
+    {
+      "id": 1399479873088,
+      "edge_type": 5,
+      "start": 1399495660304,
+      "end": 1399495663024
+    },
+    {
+      "id": 1399495655248,
+      "edge_type": 5,
+      "start": 1399495661744,
+      "end": 1399495663504
+    }
+  ]
+}

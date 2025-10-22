@@ -7,6 +7,7 @@ from loguru import logger
 from qtpy.QtCore import QTimer
 
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
+from trigger_designer.qt.helpers import global_logger
 
 
 class WorkflowExecutionMixin:
@@ -118,7 +119,9 @@ class WorkflowExecutionMixin:
         print("🎯 WORKFLOW EXECUTION SUMMARY")
         print(f"{'=' * 60}")
         print(f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}")
+
         print(f"⏱️  This execution: {current_execution_time:.3f} seconds")
+        global_logger.info(f"⏱️  This execution: {current_execution_time:.3f} seconds")
         print(f"📊 Total runs: {self.workflow_execution_count}")
         print(f"📈 Average time: {average_execution:.3f} seconds")
         print(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")

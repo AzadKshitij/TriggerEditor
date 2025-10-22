@@ -1,0 +1,88 @@
+{
+  "id": 3160093878816,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 3160093952272,
+      "title": "File Input",
+      "pos_x": -794.0,
+      "pos_y": -138.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 3160093953552,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/check.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 3160093953872,
+      "title": "GroupBy",
+      "pos_x": -505.0,
+      "pos_y": -177.0,
+      "inputs": [
+        {
+          "id": 3160093954992,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 3160093955312,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "Seed",
+            "action": "Count",
+            "output_name": "Count_Seed"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [],
+          "aggregations": {
+            "Seed": {
+              "function": "count",
+              "alias": "Count_Seed"
+            }
+          }
+        }
+      },
+      "node_code": 4,
+      "node_type": "preparation"
+    }
+  ],
+  "edges": [
+    {
+      "id": 3160076883040,
+      "edge_type": 5,
+      "start": 3160093953552,
+      "end": 3160093954992
+    }
+  ]
+}

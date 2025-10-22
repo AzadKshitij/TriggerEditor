@@ -1,0 +1,75 @@
+{
+  "id": 1624976500752,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 1624976574416,
+      "title": "File Input",
+      "pos_x": -578.0,
+      "pos_y": -117.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 1624976575696,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/check.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 1624976576016,
+      "title": "Transpose",
+      "pos_x": -231.0,
+      "pos_y": -145.0,
+      "inputs": [
+        {
+          "id": 1624976577136,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1624976577456,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "key_columns": [],
+        "data_columns": [],
+        "missing_action": "warn"
+      },
+      "node_code": 4,
+      "node_type": "transform"
+    }
+  ],
+  "edges": [
+    {
+      "id": 1624959060784,
+      "edge_type": 5,
+      "start": 1624976575696,
+      "end": 1624976577136
+    }
+  ]
+}

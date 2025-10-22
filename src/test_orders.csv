@@ -1,0 +1,12 @@
+customer_id,order_id,order_amount,order_date,product_category
+1,ORD001,150.00,2023-11-01,Electronics
+1,ORD002,75.50,2023-11-05,Books
+2,ORD003,200.25,2023-11-02,Clothing
+3,ORD004,89.99,2023-11-03,Home
+5,ORD005,300.00,2023-11-04,Electronics
+5,ORD006,120.75,2023-11-06,Sports
+6,ORD007,450.00,2023-11-07,Electronics
+8,ORD008,95.50,2023-11-08,Books
+11,ORD009,180.00,2023-11-09,Clothing
+12,ORD010,220.50,2023-11-10,Home
+13,ORD011,175.25,2023-11-11,Sports

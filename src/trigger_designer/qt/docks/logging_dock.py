@@ -31,7 +31,7 @@ class LogLevel:
     CRITICAL = {"name": "CRITICAL", "color": "#800080"}  # Purple
     
     ALL_LEVELS = [TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL]
-    
+
 
 class LogEntry:
     """Represents a single log entry"""
@@ -39,18 +39,18 @@ class LogEntry:
         self.level = level
         self.message = message
         self.timestamp = timestamp or datetime.datetime.now()
-        
+
     def to_html(self) -> str:
         """Convert log entry to HTML format"""
         level_info = next((l for l in LogLevel.ALL_LEVELS if l["name"] == self.level), LogLevel.INFO)
         timestamp_str = self.timestamp.strftime("%H:%M:%S.%f")[:-3]  # Remove microseconds, keep milliseconds
-        
+
         return (
             f'<div style="margin: 2px 0;">'
             f'<span style="color: #666; font-family: monospace;">[{timestamp_str}]</span> '
             f'<span style="color: {level_info["color"]}; font-weight: bold;">{self.level}</span>: '
-            f'<span style="color: #333;">{self.message}</span>'
-            f'</div>'
+            f'<span style="color: #88929f;">{self.message}</span>'
+            f"</div>"
         )
 
 

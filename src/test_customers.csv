@@ -1,0 +1,11 @@
+customer_id,customer_name,city,signup_date,customer_status
+1,Alice Johnson,New York,2023-01-15,Active
+2,Bob Smith,Los Angeles,2023-02-20,Active
+3,Carol Davis,Chicago,2023-03-10,Inactive
+4,David Wilson,Houston,2023-04-05,Active
+5,Emma Brown,Phoenix,2023-05-12,Active
+6,Frank Miller,Philadelphia,2023-06-08,Premium
+7,Grace Lee,San Antonio,2023-07-22,Active
+8,Henry Taylor,San Diego,2023-08-14,Inactive
+9,Iris Clark,Dallas,2023-09-03,Premium
+10,Jack Anderson,San Jose,2023-10-18,Active

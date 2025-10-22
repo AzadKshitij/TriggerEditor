@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
     QComboBox,
     QHeaderView,
     QPushButton,
+    QSplitter,
 )
 from qtpy.QtGui import QPixmap, QIcon
 from qtpy.QtCore import (
@@ -103,6 +104,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "group_by_columns": [],
             "aggregations": {},  # {column: {function: alias}}
         }
+        
+        # Cache for serialization safety
+        self.cached_actions_data: list = []
 
     @property
     def node(self) -> "TriggerNode":
@@ -132,33 +136,79 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             main_layout = QVBoxLayout(main_widget)
             main_layout.setContentsMargins(5, 5, 5, 5)
 
-            # Fields Section (Top)
+            
+            
+            # Fields Section (Top Widget)
+            fields_widget = QWidget()
+            fields_layout = QVBoxLayout(fields_widget)
+            fields_layout.setContentsMargins(2, 2, 2, 2)
+            
             fields_label = QLabel("Fields:")
             fields_label.setStyleSheet("font-weight: bold; font-size: 12px; padding: 2px;")
-            main_layout.addWidget(fields_label)
+            fields_layout.addWidget(fields_label)
 
             # Create fields table (shows available columns)
             self.create_fields_table()
-            main_layout.addWidget(self.fields_table)
 
-            # Add button
-            add_button_layout = QHBoxLayout()
+            # Create vertical splitter for resizable sections
+            self.splitter = QSplitter(Qt.Orientation.Vertical)
+            self.splitter.setChildrenCollapsible(False)  # Prevent sections from collapsing completely
+
+            fields_layout.addWidget(self.fields_table)
+            
+            self.splitter.addWidget(self.fields_table)
+
+            # Add button container (not resizable, fixed between sections)
+            add_button_widget = QWidget()
+            add_button_layout = QHBoxLayout(add_button_widget)
+            add_button_layout.setContentsMargins(2, 5, 2, 5)
+            add_button_layout.addStretch()
+            
             self.add_btn = QPushButton("Add")
-            self.add_btn.setMinimumHeight(25)
-            self.add_btn.setMaximumWidth(80)
+            self.add_btn.setMinimumHeight(30)
+            self.add_btn.setMinimumWidth(100)
+            self.add_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    border-radius: 15px;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #0D47A1;
+                }
+            """)
             self.add_btn.clicked.connect(self.add_selected_field)
             add_button_layout.addWidget(self.add_btn)
             add_button_layout.addStretch()
-            main_layout.addLayout(add_button_layout)
 
-            # Actions Section (Bottom)
+            # Actions Section (Bottom Widget)
+            actions_widget = QWidget()
+            actions_layout = QVBoxLayout(actions_widget)
+            actions_layout.setContentsMargins(2, 2, 2, 2)
+            
             actions_label = QLabel("Actions:")
-            actions_label.setStyleSheet("font-weight: bold; font-size: 12px; padding: 2px; margin-top: 10px;")
-            main_layout.addWidget(actions_label)
+            actions_label.setStyleSheet("font-weight: bold; font-size: 12px; padding: 2px;")
+            actions_layout.addWidget(actions_label)
 
             # Create actions table
             self.create_actions_table()
-            main_layout.addWidget(self.actions_table)
+            actions_layout.addWidget(self.actions_table)
+            
+            self.splitter.addWidget(actions_widget)
+            
+            # Set initial splitter proportions (50:50)
+            self.splitter.setStretchFactor(0, 1)
+            self.splitter.setStretchFactor(1, 1)
+            
+            # Add splitter and button to main layout
+            main_layout.addWidget(self.splitter, 1)  # Splitter gets all the space
+            main_layout.addWidget(add_button_widget)  # Button stays fixed at bottom
 
             # Restore previously saved actions if any
             if hasattr(self, 'actions_data'):
@@ -215,7 +265,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.fields_table.setItem(row, 1, type_item)
 
         # Configure table properties
-        self.fields_table.setMaximumHeight(120)
+        # self.fields_table.setMaximumHeight(120)
         self.fields_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         header = self.fields_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
@@ -437,6 +487,25 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     "alias": alias
                 }
         
+        # Cache actions data for serialization safety
+        try:
+            actions_data = []
+            for row in range(self.actions_table.rowCount()):
+                field_item = self.actions_table.item(row, 0)
+                output_item = self.actions_table.item(row, 2)
+                action_combo = self.actions_table.cellWidget(row, 1)
+                
+                if field_item and output_item and action_combo:
+                    actions_data.append({
+                        "field": field_item.text(),
+                        "action": action_combo.currentText(),
+                        "output_name": output_item.text()
+                    })
+            
+            self.cached_actions_data = actions_data
+        except Exception as e:
+            global_logger.error(f"❌ GroupByContent: Error caching actions data: {str(e)}")
+            
         # Debug logging to verify changes are being stored
         try:
             global_logger.debug(f"🔧 GroupByContent: Updated changes - GroupBy columns: {self.changes['group_by_columns']}")
@@ -632,18 +701,37 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Serialize the actions table configuration
         actions_data = []
-        if hasattr(self, 'actions_table'):
-            for row in range(self.actions_table.rowCount()):
-                field_name = self.actions_table.item(row, 0).text()
-                action_combo = self.actions_table.cellWidget(row, 1)
-                action = action_combo.currentText()
-                output_name = self.actions_table.item(row, 2).text()
+        try:
+            # Check if actions_table exists and is not deleted
+            if hasattr(self, 'actions_table') and self.actions_table is not None:
+                # Additional check to ensure the widget hasn't been deleted
+                try:
+                    row_count = self.actions_table.rowCount()
+                    for row in range(row_count):
+                        # Check if items exist before accessing them
+                        field_item = self.actions_table.item(row, 0)
+                        output_item = self.actions_table.item(row, 2)
+                        action_combo = self.actions_table.cellWidget(row, 1)
+                        
+                        if field_item and output_item and action_combo:
+                            field_name = field_item.text()
+                            action = action_combo.currentText()
+                            output_name = output_item.text()
 
-                actions_data.append({
-                    "field": field_name,
-                    "action": action,
-                    "output_name": output_name
-                })
+                            actions_data.append({
+                                "field": field_name,
+                                "action": action,
+                                "output_name": output_name
+                            })
+                except RuntimeError:
+                    # Widget has been deleted, use cached data if available
+                    global_logger.warning("⚠️ GroupBy actions_table has been deleted, using cached data")
+                    actions_data = getattr(self, 'cached_actions_data', [])
+                    
+        except Exception as e:
+            global_logger.error(f"❌ GroupBy serialize actions error: {str(e)}")
+            # Fallback to cached data
+            actions_data = getattr(self, 'cached_actions_data', [])
 
         res["actions_data"] = actions_data
         res["changes"] = getattr(
@@ -651,6 +739,10 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "changes", 
             {"group_by_columns": [], "aggregations": {}}
         )
+        
+        # Cache the actions data for future use
+        self.cached_actions_data = actions_data
+        
         return res
 
     def deserialize(self, data, hashmap={}):

@@ -41,7 +41,7 @@
         "mode": "rb"
     },
     "node_groupby":{
-        "path":"qt/images/node_icons/Preparation/Formula.svg",
+        "path":"qt/images/node_icons/Preparation/Groupby.svg",
         "mode": "rb"
     },
     "node_select":{
