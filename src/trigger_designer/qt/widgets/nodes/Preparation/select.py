@@ -325,40 +325,83 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             getattr(self, "incom_data", None) is not None):
             
             selected_columns = self.changes["selected_columns"]
+            available_columns = list(self.incom_data.columns)
             
-            # If no columns selected, select all columns by default
-            if not selected_columns:
-                selected_columns = list(self.incom_data.columns)
-                self.changes["selected_columns"] = selected_columns
-                global_logger.info(f"📊 SelectContent: No columns selected, using all {len(selected_columns)} columns")
+            global_logger.debug(f"📊 SelectContent: Available columns: {available_columns}")
+            global_logger.debug(f"📊 SelectContent: Requested columns: {selected_columns}")
+            
+            # Validate that selected columns exist in the incoming data
+            valid_columns = []
+            invalid_columns = []
+            
+            for col in selected_columns:
+                if col in available_columns:
+                    valid_columns.append(col)
+                else:
+                    invalid_columns.append(col)
+            
+            if invalid_columns:
+                global_logger.warning(f"⚠️ SelectContent: Invalid columns found and will be skipped: {invalid_columns}")
+                global_logger.info(f"📊 SelectContent: Available columns are: {available_columns}")
+            
+            # If no valid columns, use all available columns
+            if not valid_columns:
+                valid_columns = available_columns
+                global_logger.warning("⚠️ SelectContent: No valid columns selected, using all available columns")
+                self.changes["selected_columns"] = valid_columns
             else:
-                global_logger.info(f"📊 SelectContent: Applying changes to {len(selected_columns)} selected columns")
+                # Update changes to only include valid columns
+                if len(valid_columns) != len(selected_columns):
+                    self.changes["selected_columns"] = valid_columns
+                    global_logger.info(f"📊 SelectContent: Updated selection to {len(valid_columns)} valid columns")
             
-            print(f"🐍 Applying changes: selected_columns={selected_columns}")
+            global_logger.info(f"📊 SelectContent: Applying changes to {len(valid_columns)} valid columns")
+            
+            print(f"🐍 Applying changes: selected_columns={valid_columns}")
             print(f"🐍 dtype_mapping={self.changes.get('dtype_mapping', {})}")
             print(f"🐍 rename_mapping={self.changes.get('rename_mapping', {})}")
             
-            global_logger.debug(f"📋 SelectContent: Selecting columns: {selected_columns}")
-            self.data = self.incom_data.select(selected_columns)
+            try:
+                global_logger.debug(f"📋 SelectContent: Selecting columns: {valid_columns}")
+                self.data = self.incom_data.select(valid_columns)
+                global_logger.info(f"✅ SelectContent: Successfully selected {len(valid_columns)} columns")
+            except Exception as e:
+                global_logger.error(f"❌ SelectContent: Failed to select columns: {str(e)}")
+                # Fallback: try to select all available columns
+                try:
+                    global_logger.warning("🔄 SelectContent: Attempting fallback to all available columns")
+                    self.data = self.incom_data.select(available_columns)
+                    self.changes["selected_columns"] = available_columns
+                    global_logger.info(f"✅ SelectContent: Fallback successful - selected all {len(available_columns)} columns")
+                except Exception as fallback_error:
+                    global_logger.error(f"❌ SelectContent: Fallback also failed: {str(fallback_error)}")
+                    self.data = None
+                    return
         else:
             global_logger.warning("⚠️ SelectContent: Cannot apply changes - missing incoming data or changes configuration")
 
-        # Apply data type changes if any
-        for col, dtype in self.changes["dtype_mapping"].items():
-            try:
-                global_logger.debug(f"📋 SelectContent: Converting column '{col}' to type '{dtype}'")
-                # Map common data type names to Polars types
-                polars_dtype = self._map_dtype_to_polars(dtype)
-                if polars_dtype:
-                    self.data = self.data.with_columns(
-                        pl.col(col).cast(polars_dtype, strict=False).alias(col)
-                    )
-                    global_logger.info(f"✅ SelectContent: Successfully converted column '{col}' to {dtype}")
-                else:
-                    global_logger.warning(f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}', skipping conversion")
-            except Exception as e:
-                global_logger.error(f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}")
-                print(f"Failed to convert column {col} to {dtype}: {str(e)}")
+        # Apply data type changes if any (only for columns that exist in the data)
+        if self.data is not None:
+            current_columns = self.data.columns
+            for col, dtype in self.changes["dtype_mapping"].items():
+                if col not in current_columns:
+                    global_logger.warning(f"⚠️ SelectContent: Skipping type conversion for missing column '{col}'")
+                    continue
+                    
+                try:
+                    global_logger.debug(f"📋 SelectContent: Converting column '{col}' to type '{dtype}'")
+                    # Map common data type names to Polars types
+                    polars_dtype = self._map_dtype_to_polars(dtype)
+                    if polars_dtype:
+                        self.data = self.data.with_columns(
+                            pl.col(col).cast(polars_dtype, strict=False).alias(col)
+                        )
+                        global_logger.info(f"✅ SelectContent: Successfully converted column '{col}' to {dtype}")
+                    else:
+                        global_logger.warning(f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}', skipping conversion")
+                except Exception as e:
+                    global_logger.error(f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}")
+                    print(f"Failed to convert column {col} to {dtype}: {str(e)}")
         
         # Apply renaming if any
         if self.changes["rename_mapping"]:
@@ -436,11 +479,25 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 global_logger.error(f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}")
                 print(f"Failed to convert column {col} to {dtype}: {str(e)}")
 
-        # Apply renaming if any
-        if rename_mapping:
-            global_logger.debug(f"🏷️ SelectContent: Renaming {len(rename_mapping)} columns")
-            self.data = self.data.rename(rename_mapping)
-            global_logger.info("✅ SelectContent: Column renaming completed successfully")
+        # Apply renaming if any (only for columns that exist in the data)
+        if rename_mapping and self.data is not None:
+            current_columns = self.data.columns
+            # Filter rename mapping to only include existing columns
+            valid_rename_mapping = {old_name: new_name for old_name, new_name in rename_mapping.items() 
+                                  if old_name in current_columns}
+            invalid_columns = set(rename_mapping.keys()) - set(current_columns)
+            
+            if invalid_columns:
+                global_logger.warning(f"⚠️ SelectContent: Skipping rename for missing columns: {invalid_columns}")
+                
+            if valid_rename_mapping:
+                try:
+                    global_logger.debug(f"🏷️ SelectContent: Renaming {len(valid_rename_mapping)} columns")
+                    self.data = self.data.rename(valid_rename_mapping)
+                    global_logger.info("✅ SelectContent: Column renaming completed successfully")
+                except Exception as e:
+                    global_logger.error(f"❌ SelectContent: Failed to rename columns: {str(e)}")
+                    print(f"Failed to rename columns: {str(e)}")
 
     def handleDataChanged(self, data_: list) -> None:
         if self.history.is_restoring_history:

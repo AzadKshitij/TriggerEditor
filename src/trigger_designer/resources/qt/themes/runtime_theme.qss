@@ -30,7 +30,7 @@ QToolBar * {
 
 --------------------------------------------------------------------------- */
 QWidget {
-  background-color: #14171b;  
+  background-color: #14171b;
   border: 0px solid #191e21;
   padding: 0px;
   color: #ffffff;
@@ -64,7 +64,7 @@ QMainWindow::separator {
     width: 2px;
     margin-top: 1px;
     margin-bottom: 1px;
-    image: url(":/qss_icons/dark/rc/toolbar_separator_vertical.png"); 
+    image: url(":/qss_icons/dark/rc/toolbar_separator_vertical.png");
     }
   QMainWindow::separator:vertical {
     height: 2px;
@@ -1712,4 +1712,8 @@ QDMNodeIconContentWidget {
 QDMNodeIconContentWidget QFrame {
   background: transparent;
   border: 1px transparent;
+}
+UniqueContentList::item{
+    padding: 4px;
+    margin: 1px 0px;
 }

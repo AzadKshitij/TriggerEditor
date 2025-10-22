@@ -49,6 +49,7 @@ class PreparationNodes(IntEnum):
     CLEANSING = auto()
     FILTER = auto()
     FORMULA = auto()
+    GROUPBY = auto()
     SELECT = auto()
     SORT = auto()
     UNIQUE = auto()

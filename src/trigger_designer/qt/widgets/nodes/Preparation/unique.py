@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
     QPushButton,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Qt, Signal, QSize, Slot
 from trigger_designer.core.node_configuration import (
     register_node,
     PreparationNodes,
@@ -29,15 +29,14 @@ from nodeeditor.node_scene_history import SceneHistory
 from nodeeditor.node_scene import Scene
 
 
-
 class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     """
     Content widget for unique node that removes duplicate rows based on selected columns.
-    
+
     This class provides a user interface for selecting columns to use for uniqueness
     determination and removes duplicate rows while preserving the first occurrence.
     Uses Polars for efficient data processing with LazyFrame operations.
-    
+
     Attributes:
         evaluate: Qt signal emitted when unique configuration changes
         selected_columns: List of column names selected for uniqueness check
@@ -51,22 +50,22 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
-        
+
         # Configuration variables
-        self.selected_columns: List[str] = []
+        self.selected_columns: list[str] = []
         self.history: SceneHistory = self.node.scene.history
 
         # Incoming data variables
         self.incoming_variable: str = ""
-        self.incom_data: Optional[pl.LazyFrame] = None
+        self.incom_data: pl.LazyFrame | None = None
 
         # Output variables
         self.variable_name: str = f"var_unique_{self.id}"
-        
+
         # UI components
-        self.search_bar: Optional[QLineEdit] = None
-        self.column_list: Optional[QListWidget] = None
-        self.all_columns: List[str] = []  # Store all available columns for filtering
+        self.search_bar: QLineEdit | None = None
+        self.column_list: QListWidget | None = None
+        self.all_columns: list[str] = []  # Store all available columns for filtering
 
     @property
     def node(self) -> "TriggerNode":
@@ -84,10 +83,10 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         """
         Create the layout for the unique content widget.
-        
+
         Sets up UI components for selecting columns to use for uniqueness determination.
         Shows appropriate message if no data is available.
-        
+
         Args:
             dock_layout: The layout to add components to
         """
@@ -118,10 +117,10 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             button_layout = QHBoxLayout()
             select_all_btn = QPushButton("Select All")
             deselect_all_btn = QPushButton("Deselect All")
-            
+
             select_all_btn.clicked.connect(self._select_all_columns)
             deselect_all_btn.clicked.connect(self._deselect_all_columns)
-            
+
             # # Style buttons
             # button_style = """
             #     QPushButton {
@@ -140,7 +139,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # """
             # select_all_btn.setStyleSheet(button_style)
             # deselect_all_btn.setStyleSheet(button_style)
-            
+
             button_layout.addWidget(select_all_btn)
             button_layout.addWidget(deselect_all_btn)
             button_layout.addStretch()
@@ -148,36 +147,25 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Column selection list - takes all remaining vertical space
             self.column_list = QListWidget()
-            self.column_list.setSelectionMode(QListWidget.SelectionMode.NoSelection)  # Disable multi-selection highlighting
+            self.column_list.setSelectionMode(
+                QListWidget.SelectionMode.NoSelection
+            )  # Disable multi-selection highlighting
             self.column_list.itemChanged.connect(self._on_item_changed)
-            self.column_list.itemClicked.connect(self._on_item_clicked)  # Handle click to toggle
-            
-            # Style the list widget for better spacing and larger checkboxes
-            # list_style = """
-            #     QListWidget {
-            #         border: 1px solid #ccc;
-            #         border-radius: 4px;
-            #         background-color: white;
-            #         alternate-background-color: #f8f9fa;
-            #     }
-            #     QListWidget::item {
-            #         padding: 8px;
-            #         margin: 2px 0px;
-            #         border-bottom: 1px solid #eee;
-            #     }
-            #     QListWidget::item:hover {
-            #         background-color: #e3f2fd;
-            #     }
-            # """
-            # self.column_list.setStyleSheet(list_style)
+            self.column_list.itemClicked.connect(
+                self._on_item_clicked
+            )  # Handle click to toggle
+
+            self.column_list.setObjectName("UniqueContentList")
             self.column_list.setAlternatingRowColors(True)
-            
+
             self._update_column_list()
-            config_layout.addWidget(self.column_list, 1)  # Give it stretch factor 1 to take available space
+            config_layout.addWidget(
+                self.column_list, 1
+            )  # Give it stretch factor 1 to take available space
 
             config_group.setLayout(config_layout)
             dock_layout.addWidget(config_group, 1)  # Take all available vertical space
-            
+
             self.recursively_find_widgets(dock_layout)
         else:
             no_data_label = QLabel("No incoming data available")
@@ -188,13 +176,13 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def _update_column_list(self) -> None:
         """
         Update the column list when input data changes.
-        
+
         Populates the column list widget with checkboxes for each available column.
         Preserves previously selected columns when data is refreshed.
         """
-        if not hasattr(self, 'column_list') or self.column_list is None:
+        if not hasattr(self, "column_list") or self.column_list is None:
             return
-            
+
         self.column_list.clear()
         if self.incom_data is not None:
             try:
@@ -208,20 +196,24 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def _populate_column_list(self, columns: List[str]) -> None:
         """
         Populate the column list widget with the given columns.
-        
+
         Args:
             columns: List of column names to display
         """
-        if not hasattr(self, 'column_list') or self.column_list is None:
+        if not hasattr(self, "column_list") or self.column_list is None:
             return
-            
+
         for column in columns:
             item = QListWidgetItem(column)
-            item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
-            
-            # Make checkboxes larger and add spacing
-            item.setSizeHint(item.sizeHint() + item.sizeHint() * 0.3)
-            
+            item.setFlags(
+                item.flags()
+                | Qt.ItemFlag.ItemIsUserCheckable
+                | Qt.ItemFlag.ItemIsEnabled
+            )
+
+            # Set a larger size hint for better spacing and checkbox size
+            item.setSizeHint(QSize(-1, 40))  # Fixed height of 40px for better spacing
+
             # Check if column was previously selected
             if column in self.selected_columns:
                 item.setCheckState(Qt.CheckState.Checked)
@@ -229,51 +221,54 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 item.setCheckState(Qt.CheckState.Unchecked)
             self.column_list.addItem(item)
 
+    @Slot(str)
     def _filter_columns(self, search_text: str) -> None:
         """
         Filter the column list based on search text.
-        
+
         Args:
             search_text: Text to filter columns by
         """
-        if not hasattr(self, 'column_list') or self.column_list is None:
+        if not hasattr(self, "column_list") or self.column_list is None:
             return
-            
+
         search_text = search_text.lower()
         if search_text:
-            filtered_columns = [col for col in self.all_columns if search_text in col.lower()]
+            filtered_columns = [
+                col for col in self.all_columns if search_text in col.lower()
+            ]
         else:
             filtered_columns = self.all_columns.copy()
-        
+
         self.column_list.clear()
         self._populate_column_list(filtered_columns)
 
     def _select_all_columns(self) -> None:
         """Select all currently visible columns."""
-        if not hasattr(self, 'column_list') or self.column_list is None:
+        if not hasattr(self, "column_list") or self.column_list is None:
             return
-            
+
         # Get currently visible columns
         visible_columns = []
         for index in range(self.column_list.count()):
             item = self.column_list.item(index)
             if item:
                 visible_columns.append(item.text())
-        
+
         if visible_columns:
             old_selected = self.selected_columns.copy()
-            
+
             # Add all visible columns to selection
             for column in visible_columns:
                 if column not in self.selected_columns:
                     self.selected_columns.append(column)
-            
+
             # Update UI
             for index in range(self.column_list.count()):
                 item = self.column_list.item(index)
                 if item:
                     item.setCheckState(Qt.CheckState.Checked)
-            
+
             # Store history if there was a change
             if old_selected != self.selected_columns:
                 self._store_selection_history(old_selected, "Select All Visible")
@@ -281,53 +276,56 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _deselect_all_columns(self) -> None:
         """Deselect all currently visible columns."""
-        if not hasattr(self, 'column_list') or self.column_list is None:
+        if not hasattr(self, "column_list") or self.column_list is None:
             return
-            
+
         # Get currently visible columns
         visible_columns = []
         for index in range(self.column_list.count()):
             item = self.column_list.item(index)
             if item:
                 visible_columns.append(item.text())
-        
+
         if visible_columns:
             old_selected = self.selected_columns.copy()
-            
+
             # Remove all visible columns from selection
             for column in visible_columns:
                 if column in self.selected_columns:
                     self.selected_columns.remove(column)
-            
+
             # Update UI
             for index in range(self.column_list.count()):
                 item = self.column_list.item(index)
                 if item:
                     item.setCheckState(Qt.CheckState.Unchecked)
-            
+
             # Store history if there was a change
             if old_selected != self.selected_columns:
                 self._store_selection_history(old_selected, "Deselect All Visible")
                 self.evaluate.emit()
 
+    @Slot(QListWidgetItem)
     def _on_item_clicked(self, item: QListWidgetItem) -> None:
         """
         Handle item clicks to toggle checkbox state.
-        
+        Makes the entire item clickable, not just the checkbox.
+
         Args:
             item: The clicked list widget item
         """
-        if item:
-            # Toggle the checkbox state
+        if item and item.flags() & Qt.ItemFlag.ItemIsEnabled:
+            # Toggle the checkbox state when clicking anywhere on the item
             if item.checkState() == Qt.CheckState.Checked:
                 item.setCheckState(Qt.CheckState.Unchecked)
             else:
                 item.setCheckState(Qt.CheckState.Checked)
 
+    @Slot(QListWidgetItem)
     def _on_item_changed(self, item: QListWidgetItem) -> None:
         """
         Handle checkbox state changes with history tracking.
-        
+
         Args:
             item: The list widget item that was changed
         """
@@ -346,13 +344,17 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Only store history if there was an actual change
         if old_selected_columns != self.selected_columns:
-            self._store_selection_history(old_selected_columns, f"Column '{item.text()}' Selection Changed")
+            self._store_selection_history(
+                old_selected_columns, f"Column '{item.text()}' Selection Changed"
+            )
             self.evaluate.emit()
 
-    def _store_selection_history(self, old_selected: List[str], description: str) -> None:
+    def _store_selection_history(
+        self, old_selected: List[str], description: str
+    ) -> None:
         """
         Store selection change in history.
-        
+
         Args:
             old_selected: Previous selection state
             description: Description of the change
@@ -369,17 +371,19 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             setModified=True,
         )
 
-    def history_stamp_callback(self, history_data: Dict[str, Any], is_undo: bool) -> None:
+    def history_stamp_callback(
+        self, history_data: Dict[str, Any], is_undo: bool
+    ) -> None:
         """
         Callback for undo/redo operations to restore column selection.
-        
+
         Args:
             history_data: Dictionary containing old and new states
             is_undo: True if this is an undo operation, False for redo
         """
         try:
             self.history.is_restoring_history = True
-            
+
             if is_undo:
                 self.selected_columns = history_data["old_selected_columns"]
             else:
@@ -398,7 +402,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         self.column_list.blockSignals(False)
                     except RuntimeError:
                         pass
-            
+
             self.evaluate.emit()
 
         finally:
@@ -407,12 +411,12 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def _get_selected_columns(self) -> List[str]:
         """
         Get list of currently selected column names from the UI.
-        
+
         Returns:
             List of column names that are checked in the column list
         """
         selected_columns = []
-        if hasattr(self, 'column_list') and self.column_list is not None:
+        if hasattr(self, "column_list") and self.column_list is not None:
             try:
                 for index in range(self.column_list.count()):
                     item = self.column_list.item(index)
@@ -426,7 +430,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def get_code(self) -> str:
         """
         Generate Python code for the unique operation using Polars.
-        
+
         Returns:
             String containing the generated Python code for removing duplicates
         """
@@ -435,24 +439,28 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return f"{self.variable_name} = {self.incoming_variable}\n"
 
         code_lines = []
-        
+
         if len(self.selected_columns) == 1:
             # Single column unique
             column_name = self.selected_columns[0]
-            code_lines.extend([
-                "import polars as pl",
-                f"# Remove duplicates based on column: {column_name}",
-                f"{self.variable_name} = {self.incoming_variable}.unique(subset=[\"{column_name}\"])"
-            ])
+            code_lines.extend(
+                [
+                    "import polars as pl",
+                    f"# Remove duplicates based on column: {column_name}",
+                    f'{self.variable_name} = {self.incoming_variable}.unique(subset=["{column_name}"])',
+                ]
+            )
         else:
             # Multiple columns unique
             columns_list = [f'"{col}"' for col in self.selected_columns]
             columns_str = "[" + ", ".join(columns_list) + "]"
-            code_lines.extend([
-                "import polars as pl", 
-                f"# Remove duplicates based on columns: {', '.join(self.selected_columns)}",
-                f"{self.variable_name} = {self.incoming_variable}.unique(subset={columns_str})"
-            ])
+            code_lines.extend(
+                [
+                    "import polars as pl",
+                    f"# Remove duplicates based on columns: {', '.join(self.selected_columns)}",
+                    f"{self.variable_name} = {self.incoming_variable}.unique(subset={columns_str})",
+                ]
+            )
 
         return "\n".join(code_lines) + "\n"
 
@@ -476,12 +484,12 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 class TriggerNode_Unique(TriggerNode):
     """
     Node for removing duplicate rows based on selected columns using Polars.
-    
-    Provides functionality to remove duplicate rows from a LazyFrame based on 
-    one or more selected columns. Uses Polars unique() operation for efficient 
+
+    Provides functionality to remove duplicate rows from a LazyFrame based on
+    one or more selected columns. Uses Polars unique() operation for efficient
     deduplication while maintaining lazy evaluation.
     """
-    
+
     icon = "node_unique"
     node_code = PreparationNodes.UNIQUE
     node_type = NodeTypes.PREPARATION
@@ -501,13 +509,15 @@ class TriggerNode_Unique(TriggerNode):
         self.content.evaluate.connect(self.onInputChanged)
         self.param: List[Dict[str, Any]] = []
 
-    def processInputs(self, input_values: List[List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    def processInputs(
+        self, input_values: List[List[Dict[str, Any]]]
+    ) -> List[Dict[str, Any]]:
         """
         Process incoming data and prepare for unique operation.
-        
+
         Args:
             input_values: List of input data from connected nodes
-            
+
         Returns:
             List containing processed data with unique operation applied
         """
@@ -519,11 +529,11 @@ class TriggerNode_Unique(TriggerNode):
         if input_value:
             self.markDirty(False)
             self.markInvalid(False)
-            
+
             # Set input data for unique processing
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
-            
+
             self.evalChildren()
             self.param = [
                 {
@@ -535,7 +545,7 @@ class TriggerNode_Unique(TriggerNode):
         else:
             self.markDirty(True)
             self.markInvalid(True)
-            if hasattr(self, 'grNode') and self.grNode is not None:
+            if hasattr(self, "grNode") and self.grNode is not None:
                 try:
                     self.grNode.setToolTip("Input is not connected")
                 except RuntimeError:
@@ -545,7 +555,7 @@ class TriggerNode_Unique(TriggerNode):
     def get_code(self) -> str:
         """
         Get the generated Python code for the unique operation.
-        
+
         Returns:
             String containing Polars code for removing duplicates
         """
