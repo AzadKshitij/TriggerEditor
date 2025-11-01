@@ -30,6 +30,7 @@ from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
+from trigger_designer.qt.helpers.group_actions_mixin import GroupActionsMixin
 from trigger_designer.qt.helpers import global_logger
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
@@ -45,7 +46,7 @@ DEBUG = False
 DEBUG_CONTEXT = False
 
 
-class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
+class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, GroupActionsMixin, NodeEditorWidget):
     itemSelected = Signal(object)
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
@@ -66,7 +67,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
         self.setTitle()
         self.addButtons()
-
+        
+        self.createGroupActions()  # Initialize group-related actions
         self.initNewNodeActions()
 
         self.scene.addHasBeenModifiedListener(self.setTitle)

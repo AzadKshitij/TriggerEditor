@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import Qt, QSignalMapper
 
 from nodeeditor.node_editor_window import NodeEditorWindow
-from nodeeditor.utils import dumpException
+from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.helpers.main_window_actions_mixin import MainWindowActionsMixin
@@ -26,6 +26,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowDockMixin,
     MainWindowMenuMixin,
 )
+from trigger_designer.qt.helpers.group_actions_mixin import GroupActionsMixin
 from trigger_designer.qt.helpers import global_logger
 
 
@@ -39,9 +40,10 @@ from nodeeditor.node_edge_validators import (
 
 from trigger_designer.qt.resource_manager import ResourceManager
 
-Edge.registerEdgeValidator(edge_validator_debug)
-Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
-Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
+# Ignore typing for edge validators since it's a framework limitation
+Edge.registerEdgeValidator(edge_validator_debug)  # type: ignore
+Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)  # type: ignore
+Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)  # type: ignore
 
 # images for the dark skin
 
@@ -58,6 +60,8 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         name_product: str = "Trigger Editor",
     ) -> None:
         super().__init__()
+        
+        # Create group-related actions and menu
         
         # We'll create a single logging dock in initUI
         
@@ -149,33 +153,38 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
             sys.exit(0)
 
     @override
-    def getCurrentNodeEditorWidget(self) -> "NodeEditorWidget":
-        """we're returning NodeEditorWidget here..."""
+    def getCurrentNodeEditorWidget(self) -> Optional[TriggerSubWindow]:
+        """Get the currently active node editor widget"""
         activeSubWindow = self.mdiArea.activeSubWindow()
         if activeSubWindow:
-            return cast(NodeEditorWidget, activeSubWindow.widget())
-        return cast(NodeEditorWidget, None)
+            return cast(TriggerSubWindow, activeSubWindow.widget())
+        return None
 
     def onFileNew(self) -> None:
+        """Create a new empty file"""
         try:
             subwnd = self.createMdiChild()
-            subwnd.widget().fileNew()
-            subwnd.show()
+            widget = cast(TriggerSubWindow, subwnd.widget())
+            if widget:
+                widget.fileNew()
+                subwnd.show()
         except Exception as e:
             dumpException(e)
 
     def openFile(self, fname: Optional[str]) -> None:
+        """Open a file from disk"""
         try:
             if fname:
                 existing = self.findMdiChild(fname)
                 if existing:
                     self.mdiArea.setActiveSubWindow(existing)
                 else:
-                    # we need to create new subWindow and open the file
+                    # Create new subWindow and open the file
                     nodeeditor = TriggerSubWindow()
                     if nodeeditor.fileLoad(fname):
-                        if self.statusBar() is not None:
-                            self.statusBar().showMessage("File %s loaded" % fname, 5000)
+                        status_bar = self.statusBar()
+                        if status_bar:
+                            status_bar.showMessage(f"File {fname} loaded", 5000)
                         nodeeditor.setTitle()
                         subwnd = self.createMdiChild(nodeeditor)
                         subwnd.show()
@@ -185,6 +194,7 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
             dumpException(e)
 
     def onFileOpen(self) -> None:
+        """Open file(s) from disk via file dialog"""
         fnames, filter = QFileDialog.getOpenFileNames(
             self,
             "Open design from file",
@@ -199,13 +209,12 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
                     if existing:
                         self.mdiArea.setActiveSubWindow(existing)
                     else:
-                        # we need to create new subWindow and open the file
+                        # Create new subWindow and open the file
                         nodeeditor = TriggerSubWindow()
                         if nodeeditor.fileLoad(fname):
-                            if self.statusBar() is not None:
-                                self.statusBar().showMessage(
-                                    "File %s loaded" % fname, 5000
-                                )
+                            status_bar = self.statusBar()
+                            if status_bar:
+                                status_bar.showMessage(f"File {fname} loaded", 5000)
                             nodeeditor.setTitle()
                             subwnd = self.createMdiChild(nodeeditor)
                             subwnd.show()
@@ -231,25 +240,32 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
     #     self.resultDock = ResultDock(self)
     #     self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
 
-    def createMdiChild(self, child_widget=None):
-        nodeeditor = (
-            child_widget if child_widget is not None else TriggerSubWindow(
-                self)
-        )
-        # Add the MDI window (which contains both the node editor and its dock) to the MDI area
+    def createMdiChild(self, child_widget: Optional[TriggerSubWindow] = None) -> QMdiSubWindow:
+        """Create a new MDI child window with a node editor widget"""
+        nodeeditor = child_widget if child_widget is not None else TriggerSubWindow(self)
+        
+        # Add the MDI window to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
-        subwnd.setWindowIcon(self.empty_icon)
+        if subwnd and self.empty_icon:  # Ensure subwnd and icon exist
+            subwnd.setWindowIcon(self.empty_icon)
+            
+        # Connect all the signals for the node editor
         nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemSelectedListener(
             lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems()))
         nodeeditor.scene.addItemsDeselectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemsDeselectedListener(
             lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems()))
-        # Connect signals
-        nodeeditor.scene.history.addHistoryModifiedListener(
-            self.updateEditMenu)
+            
+        # Connect signals for history and close events
+        nodeeditor.scene.history.addHistoryModifiedListener(self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
         # nodeeditor.itemSelected.connect(self.onNodeSelected)
+        
+        if not subwnd:
+            raise RuntimeError("Failed to create MDI sub window")
+            
+        return subwnd
         
         # Connect the design window to the shared logging dock
         nodeeditor.setLoggingDock(self.getLoggingDock())
@@ -271,18 +287,22 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
                 # Switch the logging dock to show logs for this window
                 self.switchLoggingDock(widget)
 
-    def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
-        existing = self.findMdiChild(widget.filename)
-        self.mdiArea.setActiveSubWindow(existing)
-
-        if self.maybeSave():
+    def onSubWndClose(self, widget: TriggerSubWindow, event: Optional[QCloseEvent]) -> None:
+        # Handle the filename properly
+        if widget.filename:
+            existing = self.findMdiChild(widget.filename)
+            self.mdiArea.setActiveSubWindow(existing)
+            
+        if self.maybeSave() and event:
             event.accept()
-        else:
+        elif event:
             event.ignore()
 
-    def findMdiChild(self, filename):
+    def findMdiChild(self, filename: str) -> Optional[QMdiSubWindow]:
         for window in self.mdiArea.subWindowList():
-            if window.widget().filename == filename:
+            # Cast to TriggerSubWindow since we know that's what we're using
+            widget = cast(TriggerSubWindow, window.widget())
+            if widget and widget.filename == filename:
                 return window
         return None
 
