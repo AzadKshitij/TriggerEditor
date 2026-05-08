@@ -161,85 +161,89 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Connect signals
         self.column_selector.currentTextChanged.connect(self.on_column_changed)
         self.operation_selector.currentTextChanged.connect(self.on_filter_changed)
-        self.value_input.textChanged.connect(self.on_filter_changed)        # return layout
+        self.value_input.textChanged.connect(self.on_filter_changed)  # return layout
 
     def _get_column_type_category(self, column_name: str) -> str:
         """
         Determine the category of a column based on its data type.
-        
+
         Args:
             column_name: Name of the column to check
-            
+
         Returns:
             Category string: 'numeric', 'string', 'date', or 'other'
         """
         if self.incom_data is None or column_name not in self.incom_data.columns:
-            return 'other'
-            
+            return "other"
+
         col_dtype = self.incom_data[column_name].dtype
-        
+
         # Numeric types
-        if col_dtype in [pl.Float32, pl.Float64, pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64]:
-            return 'numeric'
+        if col_dtype in [
+            pl.Float32,
+            pl.Float64,
+            pl.Int8,
+            pl.Int16,
+            pl.Int32,
+            pl.Int64,
+            pl.UInt8,
+            pl.UInt16,
+            pl.UInt32,
+            pl.UInt64,
+        ]:
+            return "numeric"
         # String types
         elif col_dtype in [pl.Utf8, pl.String]:
-            return 'string'
+            return "string"
         # Date/time types
         elif col_dtype in [pl.Date, pl.Datetime, pl.Time, pl.Duration]:
-            return 'date'
+            return "date"
         # Other types (Boolean, List, Struct, etc.)
         else:
-            return 'other'
+            return "other"
 
     def _update_operations_for_column_type(self, column_type: str) -> None:
         """
         Update the operation selector based on the column data type.
-        
+
         Args:
             column_type: The category of the column ('numeric', 'string', 'date', 'other')
         """
         # Block signals to prevent triggering changes during update
         self.operation_selector.blockSignals(True)
-        
+
         # Clear existing operations
         self.operation_selector.clear()
-        
+
         # Add operations based on column type
-        if column_type == 'numeric':
+        if column_type == "numeric":
             operations = [
                 "Equals",
-                "Not Equals", 
+                "Not Equals",
                 "Less Than",
                 "Greater Than",
                 "Less Than or Equal",
-                "Greater Than or Equal"
+                "Greater Than or Equal",
             ]
-        elif column_type == 'string':
-            operations = [
-                "Equals",
-                "Not Equals",
-                "Contains"
-            ]
-        elif column_type == 'date':
+        elif column_type == "string":
+            operations = ["Equals", "Not Equals", "Contains"]
+        elif column_type == "date":
             operations = [
                 "Equals",
                 "Not Equals",
                 "Less Than",
-                "Greater Than", 
+                "Greater Than",
                 "Less Than or Equal",
-                "Greater Than or Equal"
+                "Greater Than or Equal",
             ]
         else:  # other types (Boolean, List, Struct, etc.)
-            operations = [
-                "Equals",
-                "Not Equals"
-            ]
-        
+            operations = ["Equals", "Not Equals"]
+
         # Add the operations to the selector
         self.operation_selector.addItems(operations)
-        
+
         # Restore the previously selected operation if it's still available
-        if hasattr(self, 'operation') and self.operation:
+        if hasattr(self, "operation") and self.operation:
             index = self.operation_selector.findText(self.operation)
             if index >= 0:
                 self.operation_selector.setCurrentIndex(index)
@@ -247,24 +251,24 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # If previous operation is not available, select the first one
                 self.operation_selector.setCurrentIndex(0)
                 self.operation = self.operation_selector.currentText()
-        
+
         # Unblock signals
         self.operation_selector.blockSignals(False)
 
     def on_column_changed(self) -> None:
         """
         Handle column selection changes.
-        
+
         Updates available operations based on the selected column's data type,
         then triggers the general filter change handling.
         """
-        if hasattr(self, 'column_selector') and self.incom_data is not None:
+        if hasattr(self, "column_selector") and self.incom_data is not None:
             selected_column = self.column_selector.currentText()
             if selected_column:
                 # Get the column type category and update operations
                 column_type = self._get_column_type_category(selected_column)
                 self._update_operations_for_column_type(column_type)
-        
+
         # Now handle the filter change as usual
         self.on_filter_changed()
 
@@ -281,9 +285,20 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     print("Updating data with filter settings:")
                     # Get column data type for value conversion
                     col_dtype = self.incom_data[self.column].dtype
-                    
+
                     # Convert value based on column type
-                    if col_dtype in [pl.Float32, pl.Float64, pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64]:
+                    if col_dtype in [
+                        pl.Float32,
+                        pl.Float64,
+                        pl.Int8,
+                        pl.Int16,
+                        pl.Int32,
+                        pl.Int64,
+                        pl.UInt8,
+                        pl.UInt16,
+                        pl.UInt32,
+                        pl.UInt64,
+                    ]:
                         converted_value = float(self.value)
                     else:
                         # For string, date, and other types - let polars handle the conversion
@@ -510,7 +525,18 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         col_dtype = self.incom_data[self.column].dtype
 
         # Format value based on data type
-        if col_dtype in [pl.Float32, pl.Float64, pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64]:
+        if col_dtype in [
+            pl.Float32,
+            pl.Float64,
+            pl.Int8,
+            pl.Int16,
+            pl.Int32,
+            pl.Int64,
+            pl.UInt8,
+            pl.UInt16,
+            pl.UInt32,
+            pl.UInt64,
+        ]:
             formatted_value = self.value  # Numeric value doesn't need quotes
         elif col_dtype in [pl.Date, pl.Datetime, pl.Time, pl.Duration]:
             formatted_value = f"'{self.value}'"  # Date/time values as strings

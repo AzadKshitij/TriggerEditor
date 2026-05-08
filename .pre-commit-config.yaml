@@ -1,0 +1,18 @@
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-format
+        name: ruff format
+        entry: uv run ruff format
+        language: system
+        files: ^.*\.pyi?$
+      - id: ruff-check
+        name: ruff check
+        entry: uv run ruff check
+        language: system
+        files: ^.*\.pyi?$
+      - id: ty-check
+        name: ty check
+        entry: uv run ty check --no-progress
+        language: system
+        files: ^(src|scripts)/.*\.pyi?$

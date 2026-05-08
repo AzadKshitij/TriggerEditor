@@ -56,7 +56,6 @@ from trigger_designer.core.utils.cleansing_util import (
 
 
 class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-
     evaluate = Signal()  # Emit when evaluate button is clicked
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:

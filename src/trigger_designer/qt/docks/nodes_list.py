@@ -13,17 +13,17 @@ class NodesDock(QDockWidget):
         self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
         self.setTitleBarWidget(QWidget())
         self.setFloating(False)
-        self.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable |
-                         QDockWidget.DockWidgetFeature.DockWidgetFloatable)
+        self.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+        )
         # self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.setSizePolicy(QSizePolicy.Policy.Preferred,
-                           QSizePolicy.Policy.Fixed)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
     def initUI(self) -> None:
         # Create the tab widget
         tab_widget = QTabWidget()
-        tab_widget.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        tab_widget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         # Create the tabs and drag list boxes dynamically
         tabs = {}
@@ -34,7 +34,8 @@ class NodesDock(QDockWidget):
             tab = QWidget()
             list_widget = QTRDragListbox(node_type=node_type)
             list_widget.setSizePolicy(
-                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+                QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed
+            )
             tab_layout = QVBoxLayout()
             tab_layout.addWidget(list_widget)
             tab.setLayout(tab_layout)

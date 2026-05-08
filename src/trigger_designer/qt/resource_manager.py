@@ -19,27 +19,26 @@ class ResourceManager:
     _res_folder: Path = Path(__file__).parents[1]
 
     def __init__(self) -> None:
-        """Load JSON resource map
-        """
+        """Load JSON resource map"""
 
         if not ResourceManager._initialized:
             self.load_resource_map()
             ResourceManager._initialized = True
 
     def load_resource_map(self) -> None:
-        """Load JSON resource map
-        """
+        """Load JSON resource map"""
         logger.debug("Loading resource map")
         with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
             # Read file content as string first
             content = f.read()
             ResourceManager._map = json.loads(content)
             logger.info(
-                f"{self.__class__.__name__} Loaded {len(ResourceManager._map.items())} resources")
+                f"{self.__class__.__name__} Loaded {len(ResourceManager._map.items())} resources"
+            )
             # logger.info(
             #     f"{self.__class__.__name__} Resources: {ResourceManager._map.items()}")
 
-    def load_theme(self, theme_file: str = 'dark') -> str:
+    def load_theme(self, theme_file: str = "dark") -> str:
         """To load theme.json file.
 
         Args:
@@ -52,17 +51,31 @@ class ResourceManager:
             str: will return theme in qss format.
         """
         print(
-            "🐍 File: qt/resource_manager.py:43 | load_resource_map ~ theme_file", theme_file)
+            "🐍 File: qt/resource_manager.py:43 | load_resource_map ~ theme_file",
+            theme_file,
+        )
 
         try:
-            with open(ResourceManager._res_folder / "resources/qt/themes" / f"{theme_file}.json", encoding="utf-8", mode="r") as f:
+            with open(
+                ResourceManager._res_folder
+                / "resources/qt/themes"
+                / f"{theme_file}.json",
+                encoding="utf-8",
+                mode="r",
+            ) as f:
                 print(
-                    "🐍 File: qt/resource_manager.py:57 | load_theme ~ theme_file", theme_file)
+                    "🐍 File: qt/resource_manager.py:57 | load_theme ~ theme_file",
+                    theme_file,
+                )
                 # Read file content as string first
                 content = f.read()
                 theme_variables: dict = json.loads(content)
 
-            with open(ResourceManager._res_folder / "resources/qt/themes" / f"base.qss", encoding="utf-8", mode="r") as f:
+            with open(
+                ResourceManager._res_folder / "resources/qt/themes" / f"base.qss",
+                encoding="utf-8",
+                mode="r",
+            ) as f:
                 theme_qss = f.read()
 
             if theme_qss and theme_variables:
@@ -76,7 +89,10 @@ class ResourceManager:
             logger.error(e)
 
         # Save this theme to a file
-        with open(str(ResourceManager._res_folder/"resources/qt/themes/runtime_theme.qss"), 'w') as f:
+        with open(
+            str(ResourceManager._res_folder / "resources/qt/themes/runtime_theme.qss"),
+            "w",
+        ) as f:
             f.write(theme_qss)
 
         return theme_qss
@@ -143,8 +159,9 @@ class ResourceManager:
                 return None
 
             try:
-                file_path = ResourceManager._res_folder / \
-                    "resources" / res.get("path", "")
+                file_path = (
+                    ResourceManager._res_folder / "resources" / res.get("path", "")
+                )
 
                 # if res.get("mode") in ["r", "rb"]:
                 #     with open(
@@ -160,7 +177,7 @@ class ResourceManager:
                 #             # data = QImage(data)
                 #         ResourceManager._cache[id] = data
                 #         return data
-                if res.get("mode") == 'rb':
+                if res.get("mode") == "rb":
                     # Create QPixmap for SVG
                     renderer = QSvgRenderer(str(file_path))
                     pixmap = QPixmap(renderer.defaultSize())
@@ -191,12 +208,12 @@ class ResourceManager:
                     return pixmap
             except FileNotFoundError:
                 logger.error(
-                    f"[ResourceManager][ERROR]: Could not find resource: {file_path}")
+                    f"[ResourceManager][ERROR]: Could not find resource: {file_path}"
+                )
                 return QImage()
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)
         if attr:
             return attr
-        raise AttributeError(
-            f"{self.__class__.__name__} has no attribute {__name}")
+        raise AttributeError(f"{self.__class__.__name__} has no attribute {__name}")

@@ -1,4 +1,24 @@
-from qtpy.QtWidgets import QLineEdit, QPushButton, QFileDialog, QVBoxLayout, QTextEdit, QTableWidget, QTableWidgetItem, QHeaderView, QLayout, QComboBox, QLineEdit, QLabel, QHBoxLayout, QListWidget, QAbstractItemView, QFormLayout, QListWidgetItem, QCheckBox, QWidget
+from qtpy.QtWidgets import (
+    QLineEdit,
+    QPushButton,
+    QFileDialog,
+    QVBoxLayout,
+    QTextEdit,
+    QTableWidget,
+    QTableWidgetItem,
+    QHeaderView,
+    QLayout,
+    QComboBox,
+    QLineEdit,
+    QLabel,
+    QHBoxLayout,
+    QListWidget,
+    QAbstractItemView,
+    QFormLayout,
+    QListWidgetItem,
+    QCheckBox,
+    QWidget,
+)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.core.node_configuration import register_node, JoinNodes, NodeTypes
@@ -11,7 +31,6 @@ from typing import Optional
 
 
 class AppendContent(QDMNodeIconContentWidget):
-
     evaluate = Signal()  # Emit when evaluate button is clicked
 
     def __init__(self, node, parent: Optional[QWidget] = None) -> None:
@@ -25,12 +44,12 @@ class AppendContent(QDMNodeIconContentWidget):
         # incoming variables
         self.left_data: pd.DataFrame = None
         self.right_data: pd.DataFrame = None
-        self.left_variable: str = ''
-        self.right_variable: str = ''
+        self.left_variable: str = ""
+        self.right_variable: str = ""
 
         # pass on variables
         self.data = []
-        self.variable_name = f'var_join_{self.id}'
+        self.variable_name = f"var_join_{self.id}"
 
     def initUI(self, parent: Optional[QWidget] = None) -> None:
         icon: QPixmap | None = self.node.rsm.get(f"{self.node.icon}")
@@ -44,8 +63,7 @@ class AppendContent(QDMNodeIconContentWidget):
         join_type_label = QLabel("Join Type:")
         self.join_type_combo = QComboBox()
         self.join_type_combo.addItems(["inner", "left", "right", "outer"])
-        self.join_type_combo.currentTextChanged.connect(
-            self.on_join_type_changed)
+        self.join_type_combo.currentTextChanged.connect(self.on_join_type_changed)
         join_type_layout.addWidget(join_type_label)
         join_type_layout.addWidget(self.join_type_combo)
         self.join_type_combo.setCurrentText(self.join_type)
@@ -75,7 +93,8 @@ class AppendContent(QDMNodeIconContentWidget):
         output_label = QLabel("Output Columns:")
         self.output_columns_list = QListWidget()
         self.output_columns_list.setSelectionMode(
-            QAbstractItemView.SelectionMode.MultiSelection)
+            QAbstractItemView.SelectionMode.MultiSelection
+        )
         self.output_columns_list.setMaximumHeight(150)
         output_layout.addWidget(output_label)
         output_layout.addWidget(self.output_columns_list)
@@ -107,8 +126,7 @@ class AppendContent(QDMNodeIconContentWidget):
         if self.mapping_data:
             for mapping in self.mapping_data:
                 self.add_mapping_row(
-                    left_col=mapping['left_column'],
-                    right_col=mapping['right_column']
+                    left_col=mapping["left_column"], right_col=mapping["right_column"]
                 )
         # check if col exist in output_column it it does check the checkbox or uncheck it
 
@@ -123,12 +141,12 @@ class AppendContent(QDMNodeIconContentWidget):
         left_column_combo = QComboBox()
         right_column_combo = QComboBox()
 
-        if hasattr(self, 'left_data') and self.left_data is not None:
+        if hasattr(self, "left_data") and self.left_data is not None:
             left_column_combo.addItems(self.left_data.columns.tolist())
             if left_col and left_col in self.left_data.columns:
                 left_column_combo.setCurrentText(left_col)
 
-        if hasattr(self, 'right_data') and self.right_data is not None:
+        if hasattr(self, "right_data") and self.right_data is not None:
             right_column_combo.addItems(self.right_data.columns.tolist())
             if right_col and right_col in self.right_data.columns:
                 right_column_combo.setCurrentText(right_col)
@@ -141,25 +159,24 @@ class AppendContent(QDMNodeIconContentWidget):
         row_layout.addWidget(remove_button)
 
         temp_map = {
-            'left_column': left_column_combo.currentText(),
-            'right_column': right_column_combo.currentText()
+            "left_column": left_column_combo.currentText(),
+            "right_column": right_column_combo.currentText(),
         }
         if temp_map not in self.mapping_data:
             self.mapping_data.append(temp_map)
 
         mapping_pair = {
-            'left_combo': left_column_combo,
-            'right_combo': right_column_combo,
-            'layout': row_layout,
-            'remove_btn': remove_button
+            "left_combo": left_column_combo,
+            "right_combo": right_column_combo,
+            "layout": row_layout,
+            "remove_btn": remove_button,
         }
         self.mapping_pairs.append(mapping_pair)
 
         # connect signal
         left_column_combo.currentTextChanged.connect(self.update_mapping_data)
         right_column_combo.currentTextChanged.connect(self.update_mapping_data)
-        remove_button.clicked.connect(
-            lambda: self.remove_mapping_row(mapping_pair))
+        remove_button.clicked.connect(lambda: self.remove_mapping_row(mapping_pair))
 
         # Add to container
         self.mapping_container.addLayout(row_layout)
@@ -178,7 +195,7 @@ class AppendContent(QDMNodeIconContentWidget):
     def remove_mapping_row(self, mapping_pair) -> None:
         if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
             # Remove from layout
-            self.delete_layout(mapping_pair['layout'])
+            self.delete_layout(mapping_pair["layout"])
 
             # Find and remove corresponding mapping data
             idx = self.mapping_pairs.index(mapping_pair)
@@ -193,16 +210,18 @@ class AppendContent(QDMNodeIconContentWidget):
         for i, pair in enumerate(self.mapping_pairs):
             if i < len(self.mapping_data):
                 self.mapping_data[i] = {
-                    'left_column': pair['left_combo'].currentText(),
-                    'right_column': pair['right_combo'].currentText()
+                    "left_column": pair["left_combo"].currentText(),
+                    "right_column": pair["right_combo"].currentText(),
                 }
             else:
-                self.mapping_data.append({
-                    'left_column': pair['left_combo'].currentText(),
-                    'right_column': pair['right_combo'].currentText()
-                })
+                self.mapping_data.append(
+                    {
+                        "left_column": pair["left_combo"].currentText(),
+                        "right_column": pair["right_combo"].currentText(),
+                    }
+                )
         # Trim extra mapping data if UI has fewer rows
-        self.mapping_data = self.mapping_data[:len(self.mapping_pairs)]
+        self.mapping_data = self.mapping_data[: len(self.mapping_pairs)]
 
     def update_output_columns(self) -> None:
         self.output_columns_list.clear()
@@ -210,9 +229,9 @@ class AppendContent(QDMNodeIconContentWidget):
             if not self.selected_columns:
                 # Pre-select all columns by default
                 for col in sorted(self.left_data.columns):
-                    self.selected_columns.append({'name': col, 'source': 'L'})
+                    self.selected_columns.append({"name": col, "source": "L"})
                 for col in sorted(self.right_data.columns):
-                    self.selected_columns.append({'name': col, 'source': 'R'})
+                    self.selected_columns.append({"name": col, "source": "R"})
 
             # Create widget for left columns
             left_label = QLabel("Left Table Columns:")
@@ -225,8 +244,7 @@ class AppendContent(QDMNodeIconContentWidget):
 
             # Add left columns with L prefix and checkboxes
             for col in sorted(self.left_data.columns):
-                self._add_output_column_item(
-                    col, "L", "#2a5d9c", self.selected_columns)
+                self._add_output_column_item(col, "L", "#2a5d9c", self.selected_columns)
 
             # Create widget for right columns
             right_label = QLabel("Right Table Columns:")
@@ -239,10 +257,11 @@ class AppendContent(QDMNodeIconContentWidget):
 
             # Add right columns with R prefix and checkboxes
             for col in sorted(self.right_data.columns):
-                self._add_output_column_item(
-                    col, "R", "#9c2a2a", self.selected_columns)
+                self._add_output_column_item(col, "R", "#9c2a2a", self.selected_columns)
 
-    def _add_output_column_item(self, col, prefix: str, color, existing_selections) -> None:
+    def _add_output_column_item(
+        self, col, prefix: str, color, existing_selections
+    ) -> None:
         """Helper method to add a column item to the output columns list"""
         item = QListWidgetItem()
         widget = QWidget()
@@ -262,16 +281,18 @@ class AppendContent(QDMNodeIconContentWidget):
         # Checkbox
         checkbox = QCheckBox(col)
         # Set checked state based on existing selections
-        is_checked = any(
-            x['name'] == col and x['source'] == prefix
-            for x in existing_selections
-        ) if existing_selections else True
+        is_checked = (
+            any(x["name"] == col and x["source"] == prefix for x in existing_selections)
+            if existing_selections
+            else True
+        )
         checkbox.setChecked(is_checked)
 
         # Store source information in checkbox property
-        checkbox.setProperty('source', prefix)
+        checkbox.setProperty("source", prefix)
         checkbox.stateChanged.connect(
-            lambda: self._on_output_checkbox_changed(checkbox))
+            lambda: self._on_output_checkbox_changed(checkbox)
+        )
 
         # Add to selected_columns if checked by default
         # if is_checked:
@@ -290,36 +311,44 @@ class AppendContent(QDMNodeIconContentWidget):
     def _on_output_checkbox_changed(self, checkbox) -> None:
         """Handle checkbox state changes"""
         col_name = checkbox.text()
-        source = checkbox.property('source')
-        col_data = {'name': col_name, 'source': source}
+        source = checkbox.property("source")
+        col_data = {"name": col_name, "source": source}
 
         if checkbox.isChecked():
             # Check if column already exists
             exists = False
             for existing in self.selected_columns:
-                if existing['name'] == col_name and existing['source'] == source:
+                if existing["name"] == col_name and existing["source"] == source:
                     exists = True
                     break
             if not exists:
                 self.selected_columns.append(col_data)
         else:
             # Remove the column if it exists
-            self.selected_columns = [col for col in self.selected_columns
-                                     if not (col['name'] == col_name and col['source'] == source)]
-        print("🐍 File: Join/Append.py | Line: 283 | _on_output_checkbox_changed ~ self.selected_columns",
-              self.selected_columns)
+            self.selected_columns = [
+                col
+                for col in self.selected_columns
+                if not (col["name"] == col_name and col["source"] == source)
+            ]
+        print(
+            "🐍 File: Join/Append.py | Line: 283 | _on_output_checkbox_changed ~ self.selected_columns",
+            self.selected_columns,
+        )
 
     def transform_data(self):
         """Transform input data based on join settings"""
         if self.left_data is None or self.right_data is None:
             return None
-        print("🐍 File: Join/Append.py | Line: 309 | transform_data ~ self.mapping_data", self.mapping_data)
+        print(
+            "🐍 File: Join/Append.py | Line: 309 | transform_data ~ self.mapping_data",
+            self.mapping_data,
+        )
 
         if not self.mapping_data:
             return None
 
-        left_cols = [m['left_column'] for m in self.mapping_data]
-        right_cols = [m['right_column'] for m in self.mapping_data]
+        left_cols = [m["left_column"] for m in self.mapping_data]
+        right_cols = [m["right_column"] for m in self.mapping_data]
 
         try:
             # Perform the merge operation
@@ -329,15 +358,15 @@ class AppendContent(QDMNodeIconContentWidget):
                 left_on=left_cols,
                 right_on=right_cols,
                 how=self.join_type,
-                suffixes=('_left', '_right')
+                suffixes=("_left", "_right"),
             )
 
             # Filter columns based on selected_columns
             if self.selected_columns:
                 selected_cols = []
                 for col in self.selected_columns:
-                    col_name = col['name']
-                    if col['source'] == 'L':
+                    col_name = col["name"]
+                    if col["source"] == "L":
                         # Add suffix if it's not a key column
                         if col_name not in left_cols:
                             col_name = f"{col_name}_left"
@@ -350,7 +379,9 @@ class AppendContent(QDMNodeIconContentWidget):
                 result = result[selected_cols]
 
             # self.data = result
-            print("🐍 File: Join/Append.py | Line: 318 | transform_data ~ result", result)
+            print(
+                "🐍 File: Join/Append.py | Line: 318 | transform_data ~ result", result
+            )
             self.data = result
             return result
         except Exception as e:
@@ -361,8 +392,8 @@ class AppendContent(QDMNodeIconContentWidget):
         if not self.mapping_data:
             return None
         code_lines = []
-        left_cols = [m['left_column'] for m in self.mapping_data]
-        right_cols = [m['right_column'] for m in self.mapping_data]
+        left_cols = [m["left_column"] for m in self.mapping_data]
+        right_cols = [m["right_column"] for m in self.mapping_data]
         code_lines.append(
             f"{self.variable_name} = pd.merge(\n"
             f"    {self.left_variable},\n"
@@ -377,8 +408,8 @@ class AppendContent(QDMNodeIconContentWidget):
         if self.selected_columns:
             selected_cols = []
             for col in self.selected_columns:
-                col_name = col['name']
-                if col['source'] == 'L':
+                col_name = col["name"]
+                if col["source"] == "L":
                     # Add suffix if it's not a key column
                     if col_name not in left_cols:
                         col_name = f"{col_name}_left"
@@ -399,23 +430,23 @@ class AppendContent(QDMNodeIconContentWidget):
 
     def serialize(self):
         res = super().serialize()
-        res['join_type'] = self.join_type
-        res['mapping_data'] = self.mapping_data
+        res["join_type"] = self.join_type
+        res["mapping_data"] = self.mapping_data
         # Serialize output columns
-        res['selected_columns'] = self.selected_columns
+        res["selected_columns"] = self.selected_columns
         return res
 
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
         try:
             # Store join type
-            self.join_type = data['join_type']
+            self.join_type = data["join_type"]
 
             # Store mapping data
-            self.mapping_data = data.get('mapping_data', [])
+            self.mapping_data = data.get("mapping_data", [])
 
             # Store output columns
-            self.selected_columns = data.get('selected_columns', [])
+            self.selected_columns = data.get("selected_columns", [])
 
             return True & res
         except Exception as e:
@@ -461,30 +492,30 @@ class TriggerNode_Append(TriggerNode):
             self.markInvalid(False)
 
             # Process left input
-            self.content.left_data = left_input.get('data')
-            self.content.left_variable = left_input.get('variable_name')
+            self.content.left_data = left_input.get("data")
+            self.content.left_variable = left_input.get("variable_name")
 
             # Process right input
-            self.content.right_data = right_input.get('data')
-            self.content.right_variable = right_input.get('variable_name')
+            self.content.right_data = right_input.get("data")
+            self.content.right_variable = right_input.get("variable_name")
 
             self.evalChildren()
             self.param = [
                 # Output 0 - Left data pass-through
                 {
-                    'data': self.content.left_data,
-                    'variable_name': self.content.left_variable
+                    "data": self.content.left_data,
+                    "variable_name": self.content.left_variable,
                 },
                 # Output 1 - Joined data
                 {
-                    'data': self.content.data,
-                    'variable_name': self.content.variable_name
+                    "data": self.content.data,
+                    "variable_name": self.content.variable_name,
                 },
                 # Output 2 - Right data pass-through
                 {
-                    'data': self.content.right_data,
-                    'variable_name': self.content.right_variable
-                }
+                    "data": self.content.right_data,
+                    "variable_name": self.content.right_variable,
+                },
             ]
             # Return three outputs in a list
             return self.param
@@ -493,7 +524,7 @@ class TriggerNode_Append(TriggerNode):
         else:
             self.markDirty(True)
             self.markInvalid(True)
-            self.grNode.setToolTip('Both inputs must be connected')
+            self.grNode.setToolTip("Both inputs must be connected")
 
     def get_code(self):
         return self.content.get_code()

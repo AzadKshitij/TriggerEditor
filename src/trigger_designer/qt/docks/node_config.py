@@ -19,16 +19,17 @@ class ConfigDock(QDockWidget):
         self.dock_layout = QVBoxLayout()
         self.setWidget(self.dock_widget)
         self.setFloating(False)
-        self.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable |
-                         QDockWidget.DockWidgetFeature.DockWidgetFloatable)
+        self.setFeatures(
+            QDockWidget.DockWidgetFeature.DockWidgetMovable
+            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
+        )
 
-    def updateConfig(self, nodes: List['TriggerNode']) -> None:
+    def updateConfig(self, nodes: List["TriggerNode"]) -> None:
         if len(nodes) == 1:
             node: TriggerNode = nodes[0]
-            if hasattr(node, 'node') or hasattr(node, 'socket'):
+            if hasattr(node, "node") or hasattr(node, "socket"):
                 try:
-                    logger.debug(
-                        f"Updating config for node type: {type(node)}")
+                    logger.debug(f"Updating config for node type: {type(node)}")
                     self.clear_dock()
                     logger.debug("Cleared the dock!!!")
                     content = node.content

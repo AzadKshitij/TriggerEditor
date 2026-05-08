@@ -13,22 +13,28 @@ os.makedirs("data", exist_ok=True)
 
 # 1. Customers
 customer_ids = range(1001, 1101)
-customers = [{
-    "customer_id": cid,
-    "name": fake.name(),
-    "age": random.randint(18, 70),
-    "email": fake.email(),
-    "region_id": random.randint(1, 5)
-} for cid in customer_ids]
+customers = [
+    {
+        "customer_id": cid,
+        "name": fake.name(),
+        "age": random.randint(18, 70),
+        "email": fake.email(),
+        "region_id": random.randint(1, 5),
+    }
+    for cid in customer_ids
+]
 pl.DataFrame(customers).write_csv("data/customers.csv")
 
 # 2. Products
-products = [{
-    "product_id": pid,
-    "name": fake.word().capitalize(),
-    "category": random.choice(["Electronics", "Books", "Home", "Fashion"]),
-    "price": round(random.uniform(10, 500), 2)
-} for pid in range(501, 551)]
+products = [
+    {
+        "product_id": pid,
+        "name": fake.word().capitalize(),
+        "category": random.choice(["Electronics", "Books", "Home", "Fashion"]),
+        "price": round(random.uniform(10, 500), 2),
+    }
+    for pid in range(501, 551)
+]
 pl.DataFrame(products).write_csv("data/products.csv")
 
 # 3. Regions
@@ -67,19 +73,21 @@ order_values = np.round(np.random.uniform(20, 2000, num_rows), 2)
 order_ids = [fake.uuid4() for _ in range(num_rows)]
 
 # Vectorized dates: Faker doesn't natively support, but you can randomize integers and convert.
-start_date = np.datetime64('2023-01-01')
-end_date = np.datetime64('2025-09-04')
+start_date = np.datetime64("2023-01-01")
+end_date = np.datetime64("2025-09-04")
 order_dates = start_date + np.random.randint(
     0, (end_date - start_date).astype(int), num_rows
 )
 order_dates = order_dates.astype(str)  # Convert to string for CSV
 
-sales_df = pl.DataFrame({
-    "order_id": order_ids,
-    "customer_id": customer_ids,
-    "product_id": product_ids,
-    "order_date": order_dates,
-    "order_value": order_values
-})
+sales_df = pl.DataFrame(
+    {
+        "order_id": order_ids,
+        "customer_id": customer_ids,
+        "product_id": product_ids,
+        "order_date": order_dates,
+        "order_value": order_values,
+    }
+)
 
 sales_df.write_csv("data/monthly_sales_2023_5000000_new.csv")

@@ -101,9 +101,7 @@ class ContextMenuMixin:
         cursor_pos = self.mapFromGlobal(QCursor.pos())
         scene_pos = self.scene.getView().mapToScene(cursor_pos)
         new_calc_node.setPos(scene_pos.x(), scene_pos.y())
-        self.scene.history.storeHistory(
-            "Created %s" % new_calc_node.__class__.__name__
-        )
+        self.scene.history.storeHistory("Created %s" % new_calc_node.__class__.__name__)
 
     # --- Context menu handlers -----------------------------------------------------
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:

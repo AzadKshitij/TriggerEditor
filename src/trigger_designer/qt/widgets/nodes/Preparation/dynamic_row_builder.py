@@ -2,12 +2,29 @@ from typing import Optional, Any, Callable
 import pandas as pd
 from datetime import datetime, timedelta
 import numpy as np
-from qtpy.QtWidgets import (QWidget, QVBoxLayout, QLabel, QGroupBox,
-                            QLineEdit, QComboBox, QSpinBox, QDateTimeEdit, QDoubleSpinBox)
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QGroupBox,
+    QLineEdit,
+    QComboBox,
+    QSpinBox,
+    QDateTimeEdit,
+    QDoubleSpinBox,
+)
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Signal, Qt, QDateTime
-from trigger_designer.core.node_configuration import register_node, PreparationNodes, NodeTypes
-from trigger_designer.qt.node_base import TriggerChangeHandler, TriggerNode, TriggerGraphicsNode
+from trigger_designer.core.node_configuration import (
+    register_node,
+    PreparationNodes,
+    NodeTypes,
+)
+from trigger_designer.qt.node_base import (
+    TriggerChangeHandler,
+    TriggerNode,
+    TriggerGraphicsNode,
+)
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
 
@@ -25,38 +42,38 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     evaluate = Signal()
     MAX_ITERATIONS = 10000  # Safety limit
 
-    def __init__(self, node: 'TriggerNode', parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         self.node = node
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # Data tracking
-        self.incoming_variable: str = ''
+        self.incoming_variable: str = ""
         self.incom_data: Optional[pd.DataFrame] = None
         self.data: Optional[pd.DataFrame] = None
-        self.variable_name = f'var_genrows_{self.id}'
+        self.variable_name = f"var_genrows_{self.id}"
 
         # Configuration
-        self.field_name: str = 'counter'
-        self.field_type: str = 'int'
+        self.field_name: str = "counter"
+        self.field_type: str = "int"
         self.initial_value: Any = 1
         self.increment_value: Any = 1
         self.max_value: Any = 10
 
         # Type mapping
         self.type_mapping = {
-            'int': int,
-            'float': float,
-            'string': str,
-            'datetime': datetime
+            "int": int,
+            "float": float,
+            "string": str,
+            "datetime": datetime,
         }
 
     @property
-    def node(self) -> 'TriggerNode':
+    def node(self) -> "TriggerNode":
         return self._node
 
     @node.setter
-    def node(self, value: 'TriggerNode') -> None:
+    def node(self, value: "TriggerNode") -> None:
         self._node = value
 
     def initUI(self, _icon: Optional[QPixmap] = None) -> None:
@@ -83,7 +100,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Field type
         type_label = QLabel("Field Type:")
         self.type_combo = QComboBox()
-        self.type_combo.addItems(['int', 'float', 'string', 'datetime'])
+        self.type_combo.addItems(["int", "float", "string", "datetime"])
         self.type_combo.setCurrentText(self.field_type)
         self.type_combo.currentTextChanged.connect(self.on_field_type_changed)
         field_layout.addWidget(type_label)
@@ -130,16 +147,16 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_value_widget(self, field_type: str) -> QWidget:
         """Create appropriate widget based on field type"""
-        if field_type == 'int':
+        if field_type == "int":
             widget = QSpinBox()
             widget.setRange(-1000000, 1000000)
             widget.valueChanged.connect(self.on_value_changed)
-        elif field_type == 'float':
+        elif field_type == "float":
             widget = QDoubleSpinBox()
             widget.setRange(-1000000, 1000000)
             widget.setDecimals(4)
             widget.valueChanged.connect(self.on_value_changed)
-        elif field_type == 'datetime':
+        elif field_type == "datetime":
             widget = QDateTimeEdit()
             widget.setCalendarPopup(True)
             widget.setDateTime(QDateTime.currentDateTime())
@@ -172,7 +189,8 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
                 if iteration == self.MAX_ITERATIONS:
                     print(
-                        f"Warning: Reached maximum iterations ({self.MAX_ITERATIONS})")
+                        f"Warning: Reached maximum iterations ({self.MAX_ITERATIONS})"
+                    )
 
             # Create DataFrame
             if self.incom_data is not None:
@@ -202,18 +220,18 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def should_stop(self, current: Any, end: Any) -> bool:
         """Determine if row generation should stop"""
-        if self.field_type in ['int', 'float']:
+        if self.field_type in ["int", "float"]:
             return current > end
-        elif self.field_type == 'datetime':
+        elif self.field_type == "datetime":
             return current > end
         else:  # string
             return False
 
     def _increment_value(self, current: Any, increment: Any) -> Any:
         """Calculate next value based on field type"""
-        if self.field_type in ['int', 'float']:
+        if self.field_type in ["int", "float"]:
             return current + increment
-        elif self.field_type == 'datetime':
+        elif self.field_type == "datetime":
             return current + timedelta(seconds=increment)
         else:  # string
             return f"{current}{increment}"
@@ -260,23 +278,23 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.max_widget = new_max
 
         # Reset to default values based on type
-        if value == 'int':
+        if value == "int":
             self.initial_value = 1
             self.increment_value = 1
             self.max_value = 10
-        elif value == 'float':
+        elif value == "float":
             self.initial_value = 1.0
             self.increment_value = 1.0
             self.max_value = 10.0
-        elif value == 'datetime':
+        elif value == "datetime":
             now = QDateTime.currentDateTime()
             self.initial_value = now
             self.increment_value = 3600  # 1 hour in seconds
             self.max_value = now.addDays(1)
         else:  # string
-            self.initial_value = 'A'
-            self.increment_value = '1'
-            self.max_value = 'Z'
+            self.initial_value = "A"
+            self.increment_value = "1"
+            self.max_value = "Z"
 
         self.process_data()
         self.evaluate.emit()
@@ -309,7 +327,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"    values.append(current)",
             f"    current = {self.get_increment_code()}",
             f"",
-            f"{self.variable_name} = pd.DataFrame({{'{self.field_name}': values}})"
+            f"{self.variable_name} = pd.DataFrame({{'{self.field_name}': values}})",
         ]
 
         if self.incom_data is not None:
@@ -321,9 +339,9 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_increment_code(self) -> str:
         """Get code for increment operation"""
-        if self.field_type in ['int', 'float']:
+        if self.field_type in ["int", "float"]:
             return f"current + {self.increment_value}"
-        elif self.field_type == 'datetime':
+        elif self.field_type == "datetime":
             return f"current + timedelta(seconds={self.increment_value})"
         else:
             return 'f"{current}{self.increment_value}"'
@@ -331,24 +349,26 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def serialize(self) -> dict:
         """Serialize node content"""
         res = super().serialize()
-        res.update({
-            'field_name': self.field_name,
-            'field_type': self.field_type,
-            'initial_value': self.initial_value,
-            'increment_value': self.increment_value,
-            'max_value': self.max_value
-        })
+        res.update(
+            {
+                "field_name": self.field_name,
+                "field_type": self.field_type,
+                "initial_value": self.initial_value,
+                "increment_value": self.increment_value,
+                "max_value": self.max_value,
+            }
+        )
         return res
 
     def deserialize(self, data: dict, hashmap={}) -> bool:
         """Deserialize node content"""
         res = super().deserialize(data, hashmap)
         try:
-            self.field_name = data.get('field_name', 'counter')
-            self.field_type = data.get('field_type', 'int')
-            self.initial_value = data.get('initial_value', 1)
-            self.increment_value = data.get('increment_value', 1)
-            self.max_value = data.get('max_value', 10)
+            self.field_name = data.get("field_name", "counter")
+            self.field_type = data.get("field_type", "int")
+            self.initial_value = data.get("initial_value", 1)
+            self.increment_value = data.get("increment_value", 1)
+            self.max_value = data.get("max_value", 10)
             return True & res
         except Exception as e:
             dumpException(e)
@@ -384,22 +404,21 @@ class TriggerNode_DynamicRowBuilder(TriggerNode):
             self.markDirty(False)
             self.markInvalid(False)
 
-            self.content.incom_data = input_value.get('data')
-            self.content.incoming_variable = input_value.get('variable_name')
+            self.content.incom_data = input_value.get("data")
+            self.content.incoming_variable = input_value.get("variable_name")
 
             self.content.process_data()
             self.evalChildren()
 
-            self.param = [{
-                'data': self.content.data,
-                'variable_name': self.content.variable_name
-            }]
+            self.param = [
+                {"data": self.content.data, "variable_name": self.content.variable_name}
+            ]
 
             return self.param
         else:
             self.markDirty(True)
             self.markInvalid(True)
-            self.grNode.setToolTip('Input is not connected')
+            self.grNode.setToolTip("Input is not connected")
             return None
 
     def get_code(self) -> str:

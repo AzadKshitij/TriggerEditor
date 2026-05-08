@@ -10,51 +10,56 @@ from trigger_designer.qt.helpers import global_logger
 
 # Alternative import for shorter function names
 from trigger_designer.qt.helpers.global_logger import (
-    info, debug, warning, error, critical, trace
+    info,
+    debug,
+    warning,
+    error,
+    critical,
+    trace,
 )
 
 
 def example_function():
     """Example function showing different ways to use global logging"""
-    
+
     # Method 1: Using the global_logger module
     global_logger.info("Function started")
     global_logger.debug("Processing data...")
-    
+
     try:
         # Simulate some work
         result = "success"
         global_logger.info(f"Operation completed with result: {result}")
-        
+
     except Exception as e:
         global_logger.error(f"Operation failed: {e}")
         raise
-    
+
     # Method 2: Using direct function imports (shorter)
     info("Using shorter function names")
     debug("This is more concise")
     warning("Warning message example")
-    
+
     global_logger.info("Function completed successfully")
 
 
 def error_handling_example():
     """Example of comprehensive error handling with logging"""
-    
+
     info("Starting error handling example")
-    
+
     try:
         # Simulate risky operation
         risky_operation()
         info("Risky operation completed successfully")
-        
+
     except ValueError as ve:
         warning(f"Expected error occurred: {ve}")
-        
+
     except Exception as e:
         error(f"Unexpected error: {e}")
         critical("System may be in an unstable state")
-        
+
     finally:
         debug("Cleanup completed")
 
@@ -62,15 +67,15 @@ def error_handling_example():
 def risky_operation():
     """Simulate an operation that might fail"""
     import random
-    
+
     debug("Performing risky operation")
-    
+
     if random.random() < 0.3:  # 30% chance of failure
         raise ValueError("Random failure occurred")
-        
+
     if random.random() < 0.1:  # 10% chance of unexpected error
         raise RuntimeError("Unexpected system error")
-        
+
     debug("Risky operation succeeded")
     return "success"
 

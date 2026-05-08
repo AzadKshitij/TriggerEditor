@@ -8,5 +8,6 @@ class FileDialogLogic:
     def open_file_dialog(self, file_types: str):
         options = QFileDialog.Options()
         fileName, _ = QFileDialog.getOpenFileName(
-            self.parent, "Open File", "", file_types, options=options)
+            self.parent, "Open File", "", file_types, options=options
+        )
         return fileName

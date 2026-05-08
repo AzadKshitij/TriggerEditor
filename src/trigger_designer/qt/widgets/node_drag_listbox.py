@@ -1,7 +1,27 @@
-from qtpy.QtGui import QPixmap, QIcon, QDrag, QPainter, QColor, QFont, QCursor, QMouseEvent, QPainterPath
+from qtpy.QtGui import (
+    QPixmap,
+    QIcon,
+    QDrag,
+    QPainter,
+    QColor,
+    QFont,
+    QCursor,
+    QMouseEvent,
+    QPainterPath,
+)
 from qtpy.QtCore import QSize, Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
 from qtpy.QtWidgets import (
-    QListWidget, QAbstractItemView, QListWidgetItem, QWidget, QVBoxLayout, QLabel, QSizePolicy, QHBoxLayout, QGridLayout, QFrame)
+    QListWidget,
+    QAbstractItemView,
+    QListWidgetItem,
+    QWidget,
+    QVBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QHBoxLayout,
+    QGridLayout,
+    QFrame,
+)
 
 from nodeeditor.utils import dumpException
 
@@ -9,11 +29,18 @@ from typing import Any, Optional
 
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.node_base import TriggerNode
-from trigger_designer.core.node_configuration import NodeTypes, get_class_from_opcode, LISTBOX_MIMETYPE, NODE_REGISTRIES
+from trigger_designer.core.node_configuration import (
+    NodeTypes,
+    get_class_from_opcode,
+    LISTBOX_MIMETYPE,
+    NODE_REGISTRIES,
+)
 
 
 class QTRDragListbox(QListWidget):
-    def __init__(self, parent: Optional[QWidget] = None, node_type: Optional[NodeTypes] = None) -> None:
+    def __init__(
+        self, parent: Optional[QWidget] = None, node_type: Optional[NodeTypes] = None
+    ) -> None:
         super().__init__(parent)
         self.node_type = node_type
         self.horizontal_spacing = 15
@@ -23,8 +50,7 @@ class QTRDragListbox(QListWidget):
         self.setFlow(QListWidget.LeftToRight)
         self.setWrapping(False)
         self.setResizeMode(QListWidget.ResizeMode.Fixed)
-        self.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
     def initUI(self) -> None:
@@ -59,9 +85,7 @@ class QTRDragListbox(QListWidget):
         for key in keys:
             node_class = node_registry[key]
             self.addMyItem(
-                name=node_class.node_title,
-                icon=node_class.icon,
-                node_code=key
+                name=node_class.node_title, icon=node_class.icon, node_code=key
             )
 
     def addMyItem(self, name: str = "", icon: str = "", node_code: int = 0) -> None:
@@ -71,8 +95,7 @@ class QTRDragListbox(QListWidget):
         self.addItem(item)
         self.setItemWidget(item, item_widget)
 
-        item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable |
-                      Qt.ItemIsDragEnabled)
+        item.setFlags(Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsDragEnabled)
 
         # spacer = QListWidgetItem(self)
         # spacer.setSizeHint(QSize(self.horizontal_spacing, 0))
@@ -119,7 +142,13 @@ class QTRDragListbox(QListWidget):
 
 
 class ListWidgetItemWidget(QWidget):
-    def __init__(self, name: str, icon: str = "", node_type: Optional[str] = "DEFAULT", parent: Optional[QWidget] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        icon: str = "",
+        node_type: Optional[str] = "DEFAULT",
+        parent: Optional[QWidget] = None,
+    ) -> None:
         super().__init__(parent)
 
         layout = QGridLayout(self)
@@ -136,8 +165,7 @@ class ListWidgetItemWidget(QWidget):
 
         if pixmap:
             # pixmap.setDevicePixelRatio(2)  # High-DPI fix
-            pixmap = pixmap.scaled(
-                48, 48, Qt.KeepAspectRatio, Qt.FastTransformation)
+            pixmap = pixmap.scaled(48, 48, Qt.KeepAspectRatio, Qt.FastTransformation)
             # rounded = self.create_rounded_icon(pixmap, radius=15)
             rounded = self.create_rounded_pixmap(pixmap, radius=12)
             self.icon_label.setPixmap(rounded)
@@ -146,8 +174,7 @@ class ListWidgetItemWidget(QWidget):
         self.text_label = QLabel(name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.text_label.setFont(QFont("Arial", 8))
-        self.text_label.setSizePolicy(
-            QSizePolicy.Preferred, QSizePolicy.Fixed)
+        self.text_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.text_label.setMinimumWidth(self.icon_label.width())
 
         # self.text_label.setFixedHeight(20)
@@ -172,14 +199,12 @@ class ListWidgetItemWidget(QWidget):
         # Create painter with antialiasing
         painter = QPainter(result)
         painter.setRenderHints(
-            QPainter.RenderHint.Antialiasing |
-            QPainter.RenderHint.SmoothPixmapTransform
+            QPainter.RenderHint.Antialiasing | QPainter.RenderHint.SmoothPixmapTransform
         )
 
         # Create rounded rectangle path
         path = QPainterPath()
-        path.addRoundedRect(0, 0, pixmap.width(),
-                            pixmap.height(), radius, radius)
+        path.addRoundedRect(0, 0, pixmap.width(), pixmap.height(), radius, radius)
 
         # Set clipping path and draw original pixmap
         painter.setClipPath(path)
@@ -199,8 +224,7 @@ class ListWidgetItemWidget(QWidget):
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
 
         path = QPainterPath()
-        path.addRoundedRect(0, 0, pixmap.width(),
-                            pixmap.height(), radius, radius)
+        path.addRoundedRect(0, 0, pixmap.width(), pixmap.height(), radius, radius)
 
         painter.setClipPath(path)
         painter.drawPixmap(0, 0, pixmap)

@@ -62,8 +62,7 @@ class SearchableMenu(QMenu):
 
         search_text = self.searchBox.text().lower()
         self.filtered_actions = [
-            a for a in self.actions()[1:]
-            if search_text in a.text().lower()
+            a for a in self.actions()[1:] if search_text in a.text().lower()
         ]
         self.visible_range = (0, 10)
         self.updateVisibleActions()
@@ -79,14 +78,24 @@ class SearchableMenu(QMenu):
 
     def scrollDown(self) -> None:
         print("Scroll down")
-        print("🐍 File: widgets/node_searchable_menu.py | Line: 70 | scrollDown ~ self.is_flat_view", self.is_flat_view)
+        print(
+            "🐍 File: widgets/node_searchable_menu.py | Line: 70 | scrollDown ~ self.is_flat_view",
+            self.is_flat_view,
+        )
         if not self.is_flat_view:
             return
 
-        filtered_actions = [a for a in self.actions()[1:]
-                            if self.searchBox.text().lower() in a.text().lower()]
+        filtered_actions = [
+            a
+            for a in self.actions()[1:]
+            if self.searchBox.text().lower() in a.text().lower()
+        ]
         start, end = self.visible_range
-        print("🐍 File: widgets/node_searchable_menu.py | Line: 74 | scrollDown ~ start, end", start, end)
+        print(
+            "🐍 File: widgets/node_searchable_menu.py | Line: 74 | scrollDown ~ start, end",
+            start,
+            end,
+        )
         if end < len(filtered_actions):
             self.visible_range = (start + 1, end + 1)
             self.updateVisibleActions()
@@ -97,8 +106,7 @@ class SearchableMenu(QMenu):
         visible_set = set(visible_range)
 
         # Batch visibility updates
-        updates = [(action, action in visible_set)
-                   for action in self.actions()[1:]]
+        updates = [(action, action in visible_set) for action in self.actions()[1:]]
 
         # Apply updates only where needed
         for action, should_be_visible in updates:
@@ -106,8 +114,9 @@ class SearchableMenu(QMenu):
                 action.setVisible(should_be_visible)
 
         # Update focus if needed
-        if visible_range and (not self.activeAction() or
-                              self.activeAction() not in visible_set):
+        if visible_range and (
+            not self.activeAction() or self.activeAction() not in visible_set
+        ):
             self.setActiveAction(visible_range[0])
 
     def showFlatList(self) -> None:

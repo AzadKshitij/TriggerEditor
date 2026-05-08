@@ -84,7 +84,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
-        global_logger.debug("📊 GroupByContent: Initializing GroupBy node content widget")
+        global_logger.debug(
+            "📊 GroupByContent: Initializing GroupBy node content widget"
+        )
 
         # Local variables
         self.history = self.node.scene.history
@@ -104,7 +106,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "group_by_columns": [],
             "aggregations": {},  # {column: {function: alias}}
         }
-        
+
         # Cache for serialization safety
         self.cached_actions_data: list = []
 
@@ -122,7 +124,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
-            global_logger.debug(f"📊 GroupByContent: Creating layout for {len(self.incom_data.columns)} columns")
+            global_logger.debug(
+                f"📊 GroupByContent: Creating layout for {len(self.incom_data.columns)} columns"
+            )
 
             # Initialize changes if not already present
             if not hasattr(self, "changes") or not self.changes:
@@ -136,15 +140,15 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             main_layout = QVBoxLayout(main_widget)
             main_layout.setContentsMargins(5, 5, 5, 5)
 
-            
-            
             # Fields Section (Top Widget)
             fields_widget = QWidget()
             fields_layout = QVBoxLayout(fields_widget)
             fields_layout.setContentsMargins(2, 2, 2, 2)
-            
+
             fields_label = QLabel("Fields:")
-            fields_label.setStyleSheet("font-weight: bold; font-size: 12px; padding: 2px;")
+            fields_label.setStyleSheet(
+                "font-weight: bold; font-size: 12px; padding: 2px;"
+            )
             fields_layout.addWidget(fields_label)
 
             # Create fields table (shows available columns)
@@ -152,10 +156,12 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Create vertical splitter for resizable sections
             self.splitter = QSplitter(Qt.Orientation.Vertical)
-            self.splitter.setChildrenCollapsible(False)  # Prevent sections from collapsing completely
+            self.splitter.setChildrenCollapsible(
+                False
+            )  # Prevent sections from collapsing completely
 
             fields_layout.addWidget(self.fields_table)
-            
+
             self.splitter.addWidget(self.fields_table)
 
             # Add button container (not resizable, fixed between sections)
@@ -163,7 +169,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             add_button_layout = QHBoxLayout(add_button_widget)
             add_button_layout.setContentsMargins(2, 5, 2, 5)
             add_button_layout.addStretch()
-            
+
             self.add_btn = QPushButton("Add")
             self.add_btn.setMinimumHeight(30)
             self.add_btn.setMinimumWidth(100)
@@ -191,27 +197,29 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             actions_widget = QWidget()
             actions_layout = QVBoxLayout(actions_widget)
             actions_layout.setContentsMargins(2, 2, 2, 2)
-            
+
             actions_label = QLabel("Actions:")
-            actions_label.setStyleSheet("font-weight: bold; font-size: 12px; padding: 2px;")
+            actions_label.setStyleSheet(
+                "font-weight: bold; font-size: 12px; padding: 2px;"
+            )
             actions_layout.addWidget(actions_label)
 
             # Create actions table
             self.create_actions_table()
             actions_layout.addWidget(self.actions_table)
-            
+
             self.splitter.addWidget(actions_widget)
-            
+
             # Set initial splitter proportions (50:50)
             self.splitter.setStretchFactor(0, 1)
             self.splitter.setStretchFactor(1, 1)
-            
+
             # Add splitter and button to main layout
             main_layout.addWidget(self.splitter, 1)  # Splitter gets all the space
             main_layout.addWidget(add_button_widget)  # Button stays fixed at bottom
 
             # Restore previously saved actions if any
-            if hasattr(self, 'actions_data'):
+            if hasattr(self, "actions_data"):
                 self.restore_actions_table()
 
             # Control buttons for actions table
@@ -266,7 +274,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Configure table properties
         # self.fields_table.setMaximumHeight(120)
-        self.fields_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.fields_table.setSelectionBehavior(
+            QTableWidget.SelectionBehavior.SelectRows
+        )
         header = self.fields_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
@@ -277,13 +287,25 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.actions_table = QTableWidget()
         self.actions_table.setColumnCount(3)
-        self.actions_table.setHorizontalHeaderLabels(["Field", "Action", "Output Field Name"])
+        self.actions_table.setHorizontalHeaderLabels(
+            ["Field", "Action", "Output Field Name"]
+        )
 
         # Available aggregation functions
         self.aggregation_functions = [
-            "GroupBy", "Count", "Sum", "Mean", "Min", "Max", 
-            "Std", "Var", "Median", "First", "Last",
-            "N_Unique", "List"
+            "GroupBy",
+            "Count",
+            "Sum",
+            "Mean",
+            "Min",
+            "Max",
+            "Std",
+            "Var",
+            "Median",
+            "First",
+            "Last",
+            "N_Unique",
+            "List",
         ]
 
         # Initially empty - rows added when user clicks Add
@@ -294,13 +316,13 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-        
+
         # Connect to update changes when table items are changed
         self.actions_table.itemChanged.connect(self.safe_update_groupby_data)
 
     def add_selected_field(self) -> None:
         """Add selected field from fields table to actions table"""
-        if not hasattr(self, 'fields_table') or not hasattr(self, 'actions_table'):
+        if not hasattr(self, "fields_table") or not hasattr(self, "actions_table"):
             return
 
         selected_rows = self.fields_table.selectionModel().selectedRows()
@@ -314,12 +336,16 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Check if field already exists in actions table
             if self.field_exists_in_actions(field_name):
-                global_logger.warning(f"⚠️ GroupByContent: Field '{field_name}' already added")
+                global_logger.warning(
+                    f"⚠️ GroupByContent: Field '{field_name}' already added"
+                )
                 continue
 
             # Add new row to actions table
             self.add_action_row(field_name)
-            global_logger.debug(f"📊 GroupByContent: Added field '{field_name}' to actions")
+            global_logger.debug(
+                f"📊 GroupByContent: Added field '{field_name}' to actions"
+            )
 
     def field_exists_in_actions(self, field_name: str) -> bool:
         """Check if field already exists in actions table"""
@@ -351,12 +377,14 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Connect to update changes when output name is edited
         output_item.itemChanged = self.update_groupby_data
         self.actions_table.setItem(row, 2, output_item)
-        
+
         # Update changes after adding the row
         try:
             self.update_groupby_data()
         except Exception as e:
-            global_logger.error(f"❌ GroupByContent: Error updating data after adding row: {str(e)}")
+            global_logger.error(
+                f"❌ GroupByContent: Error updating data after adding row: {str(e)}"
+            )
 
     def on_action_changed(self, row: int) -> None:
         """Handle action dropdown changes and update output field name accordingly"""
@@ -381,7 +409,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "First": "First_",
             "Last": "Last_",
             "N_Unique": "Unique_",
-            "List": "List_"
+            "List": "List_",
         }
 
         prefix = prefix_map.get(action, "")
@@ -395,17 +423,21 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if output_item:
             output_item.setText(output_name)
 
-        global_logger.debug(f"📊 GroupByContent: Updated action for '{field_name}' to '{action}' with output '{output_name}'")
-        
+        global_logger.debug(
+            f"📊 GroupByContent: Updated action for '{field_name}' to '{action}' with output '{output_name}'"
+        )
+
         # Update changes when action is changed
         try:
             self.update_groupby_data()
         except Exception as e:
-            global_logger.error(f"❌ GroupByContent: Error updating data after action change: {str(e)}")
+            global_logger.error(
+                f"❌ GroupByContent: Error updating data after action change: {str(e)}"
+            )
 
     def remove_selected_action(self) -> None:
         """Remove selected row from actions table"""
-        if not hasattr(self, 'actions_table'):
+        if not hasattr(self, "actions_table"):
             return
 
         selected_rows = self.actions_table.selectionModel().selectedRows()
@@ -418,13 +450,17 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             row = index.row()
             field_name = self.actions_table.item(row, 0).text()
             self.actions_table.removeRow(row)
-            global_logger.debug(f"📊 GroupByContent: Removed action for field '{field_name}'")
-        
+            global_logger.debug(
+                f"📊 GroupByContent: Removed action for field '{field_name}'"
+            )
+
         # Update changes after removing rows
         try:
             self.update_groupby_data()
         except Exception as e:
-            global_logger.error(f"❌ GroupByContent: Error updating data after removing rows: {str(e)}")
+            global_logger.error(
+                f"❌ GroupByContent: Error updating data after removing rows: {str(e)}"
+            )
 
     def safe_update_groupby_data(self, *args) -> None:
         """Safely update groupby data with error handling"""
@@ -436,11 +472,11 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def update_groupby_data(self) -> None:
         """Update internal groupby_data from actions table state"""
-        if not hasattr(self, 'actions_table') or not self.actions_table:
+        if not hasattr(self, "actions_table") or not self.actions_table:
             return
 
         # Ensure changes dict exists
-        if not hasattr(self, 'changes'):
+        if not hasattr(self, "changes"):
             self.changes = {"group_by_columns": [], "aggregations": {}}
 
         self.changes["group_by_columns"] = []
@@ -468,25 +504,25 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # Convert action names to lowercase for polars functions
                 function_map = {
                     "Count": "count",
-                    "Sum": "sum", 
+                    "Sum": "sum",
                     "Mean": "mean",
                     "Min": "min",
                     "Max": "max",
                     "Std": "std",
-                    "Var": "var", 
+                    "Var": "var",
                     "Median": "median",
                     "First": "first",
                     "Last": "last",
                     "N_Unique": "n_unique",
-                    "List": "list"
+                    "List": "list",
                 }
 
                 polars_function = function_map.get(action, "count")
                 self.changes["aggregations"][field_name] = {
                     "function": polars_function,
-                    "alias": alias
+                    "alias": alias,
                 }
-        
+
         # Cache actions data for serialization safety
         try:
             actions_data = []
@@ -494,22 +530,30 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 field_item = self.actions_table.item(row, 0)
                 output_item = self.actions_table.item(row, 2)
                 action_combo = self.actions_table.cellWidget(row, 1)
-                
+
                 if field_item and output_item and action_combo:
-                    actions_data.append({
-                        "field": field_item.text(),
-                        "action": action_combo.currentText(),
-                        "output_name": output_item.text()
-                    })
-            
+                    actions_data.append(
+                        {
+                            "field": field_item.text(),
+                            "action": action_combo.currentText(),
+                            "output_name": output_item.text(),
+                        }
+                    )
+
             self.cached_actions_data = actions_data
         except Exception as e:
-            global_logger.error(f"❌ GroupByContent: Error caching actions data: {str(e)}")
-            
+            global_logger.error(
+                f"❌ GroupByContent: Error caching actions data: {str(e)}"
+            )
+
         # Debug logging to verify changes are being stored
         try:
-            global_logger.debug(f"🔧 GroupByContent: Updated changes - GroupBy columns: {self.changes['group_by_columns']}")
-            global_logger.debug(f"🔧 GroupByContent: Updated changes - Aggregations: {self.changes['aggregations']}")
+            global_logger.debug(
+                f"🔧 GroupByContent: Updated changes - GroupBy columns: {self.changes['group_by_columns']}"
+            )
+            global_logger.debug(
+                f"🔧 GroupByContent: Updated changes - Aggregations: {self.changes['aggregations']}"
+            )
         except Exception as e:
             global_logger.error(f"❌ GroupByContent: Error in debug logging: {str(e)}")
 
@@ -518,7 +562,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         global_logger.info("📊 GroupByContent: Applying GroupBy operations")
 
         if self.incom_data is None:
-            global_logger.warning("⚠️ GroupByContent: No input data available for GroupBy")
+            global_logger.warning(
+                "⚠️ GroupByContent: No input data available for GroupBy"
+            )
             return
 
         self.update_groupby_data()
@@ -530,18 +576,26 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             global_logger.warning("⚠️ GroupByContent: No operations configured")
             return
 
-        global_logger.debug(f"📊 GroupByContent: Grouping by columns: {group_by_columns}")
-        global_logger.debug(f"📊 GroupByContent: Applying aggregations: {list(aggregations.keys())}")
+        global_logger.debug(
+            f"📊 GroupByContent: Grouping by columns: {group_by_columns}"
+        )
+        global_logger.debug(
+            f"📊 GroupByContent: Applying aggregations: {list(aggregations.keys())}"
+        )
 
         try:
             available_columns = self.incom_data.columns
 
             if group_by_columns:
                 # Validate that group by columns exist
-                valid_group_columns = [col for col in group_by_columns if col in available_columns]
+                valid_group_columns = [
+                    col for col in group_by_columns if col in available_columns
+                ]
 
                 if not valid_group_columns:
-                    global_logger.error("❌ GroupByContent: No valid group by columns found")
+                    global_logger.error(
+                        "❌ GroupByContent: No valid group by columns found"
+                    )
                     return
 
                 # Start grouping
@@ -552,7 +606,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
                 for column, config in aggregations.items():
                     if column not in available_columns:
-                        global_logger.warning(f"⚠️ GroupByContent: Skipping missing column '{column}'")
+                        global_logger.warning(
+                            f"⚠️ GroupByContent: Skipping missing column '{column}'"
+                        )
                         continue
 
                     func_name = config["function"]
@@ -584,7 +640,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     elif func_name == "list":
                         expr = pl.col(column).list().alias(alias)
                     else:
-                        global_logger.warning(f"⚠️ GroupByContent: Unknown aggregation function '{func_name}'")
+                        global_logger.warning(
+                            f"⚠️ GroupByContent: Unknown aggregation function '{func_name}'"
+                        )
                         continue
 
                     agg_expressions.append(expr)
@@ -600,7 +658,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 agg_expressions = []
                 for column, config in aggregations.items():
                     if column not in available_columns:
-                        global_logger.warning(f"⚠️ GroupByContent: Skipping missing column '{column}'")
+                        global_logger.warning(
+                            f"⚠️ GroupByContent: Skipping missing column '{column}'"
+                        )
                         continue
 
                     func_name = config["function"]
@@ -616,20 +676,24 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 if agg_expressions:
                     self.data = self.incom_data.select(agg_expressions)
 
-            global_logger.info(f"✅ GroupByContent: GroupBy completed - Result shape: {self.data.shape}")
+            global_logger.info(
+                f"✅ GroupByContent: GroupBy completed - Result shape: {self.data.shape}"
+            )
 
             # Emit evaluate signal to update downstream nodes
             self.evaluate.emit()
 
         except Exception as e:
-            global_logger.error(f"❌ GroupByContent: GroupBy operation failed: {str(e)}")
+            global_logger.error(
+                f"❌ GroupByContent: GroupBy operation failed: {str(e)}"
+            )
             self.data = None
 
     def reset_configuration(self) -> None:
         """Reset the GroupBy configuration"""
         global_logger.debug("📊 GroupByContent: Resetting GroupBy configuration")
 
-        if hasattr(self, 'actions_table'):
+        if hasattr(self, "actions_table"):
             # Clear all rows from actions table
             self.actions_table.setRowCount(0)
 
@@ -666,28 +730,45 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             if func_name == "count":
                 agg_expressions.append(f"pl.len().alias('{alias}')")
-            elif func_name in ["sum", "mean", "min", "max", "std", "var", "median", "first", "last", "n_unique"]:
-                agg_expressions.append(f"pl.col('{column}').{func_name}().alias('{alias}')")
+            elif func_name in [
+                "sum",
+                "mean",
+                "min",
+                "max",
+                "std",
+                "var",
+                "median",
+                "first",
+                "last",
+                "n_unique",
+            ]:
+                agg_expressions.append(
+                    f"pl.col('{column}').{func_name}().alias('{alias}')"
+                )
             elif func_name == "list":
                 agg_expressions.append(f"pl.col('{column}').list().alias('{alias}')")
 
         if group_by_columns:
             # Group by operation with aggregations
             group_cols_str = ", ".join([f"'{col}'" for col in group_by_columns])
-            
+
             if not agg_expressions:
                 agg_expressions.append("pl.len().alias('count')")
 
             agg_str = ",\n    ".join(agg_expressions)
 
-            code_lines.append(f"{self.variable_name} = {self.incoming_variable}.group_by([{group_cols_str}]).agg([")
+            code_lines.append(
+                f"{self.variable_name} = {self.incoming_variable}.group_by([{group_cols_str}]).agg(["
+            )
             code_lines.append(f"    {agg_str}")
             code_lines.append("])")
         else:
             # Just aggregations without grouping (entire dataset)
             if agg_expressions:
                 agg_str = ",\n    ".join(agg_expressions)
-                code_lines.append(f"{self.variable_name} = {self.incoming_variable}.select([")
+                code_lines.append(
+                    f"{self.variable_name} = {self.incoming_variable}.select(["
+                )
                 code_lines.append(f"    {agg_str}")
                 code_lines.append("])")
             else:
@@ -703,7 +784,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         actions_data = []
         try:
             # Check if actions_table exists and is not deleted
-            if hasattr(self, 'actions_table') and self.actions_table is not None:
+            if hasattr(self, "actions_table") and self.actions_table is not None:
                 # Additional check to ensure the widget hasn't been deleted
                 try:
                     row_count = self.actions_table.rowCount()
@@ -712,37 +793,39 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         field_item = self.actions_table.item(row, 0)
                         output_item = self.actions_table.item(row, 2)
                         action_combo = self.actions_table.cellWidget(row, 1)
-                        
+
                         if field_item and output_item and action_combo:
                             field_name = field_item.text()
                             action = action_combo.currentText()
                             output_name = output_item.text()
 
-                            actions_data.append({
-                                "field": field_name,
-                                "action": action,
-                                "output_name": output_name
-                            })
+                            actions_data.append(
+                                {
+                                    "field": field_name,
+                                    "action": action,
+                                    "output_name": output_name,
+                                }
+                            )
                 except RuntimeError:
                     # Widget has been deleted, use cached data if available
-                    global_logger.warning("⚠️ GroupBy actions_table has been deleted, using cached data")
-                    actions_data = getattr(self, 'cached_actions_data', [])
-                    
+                    global_logger.warning(
+                        "⚠️ GroupBy actions_table has been deleted, using cached data"
+                    )
+                    actions_data = getattr(self, "cached_actions_data", [])
+
         except Exception as e:
             global_logger.error(f"❌ GroupBy serialize actions error: {str(e)}")
             # Fallback to cached data
-            actions_data = getattr(self, 'cached_actions_data', [])
+            actions_data = getattr(self, "cached_actions_data", [])
 
         res["actions_data"] = actions_data
         res["changes"] = getattr(
-            self,
-            "changes", 
-            {"group_by_columns": [], "aggregations": {}}
+            self, "changes", {"group_by_columns": [], "aggregations": {}}
         )
-        
+
         # Cache the actions data for future use
         self.cached_actions_data = actions_data
-        
+
         return res
 
     def deserialize(self, data, hashmap={}):
@@ -751,10 +834,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         try:
             global_logger.debug("📊 GroupByContent: Deserializing GroupBy node")
 
-            self.changes = data.get("changes", {
-                "group_by_columns": [], 
-                "aggregations": {}
-            })
+            self.changes = data.get(
+                "changes", {"group_by_columns": [], "aggregations": {}}
+            )
 
             # Restore actions table data if available
             self.actions_data = data.get("actions_data", [])
@@ -767,10 +849,10 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def restore_actions_table(self):
         """Restore actions table from deserialized data"""
-        if hasattr(self, 'actions_data') and hasattr(self, 'actions_table'):
+        if hasattr(self, "actions_data") and hasattr(self, "actions_table"):
             for action_config in self.actions_data:
                 field_name = action_config["field"]
-                action = action_config["action"] 
+                action = action_config["action"]
                 output_name = action_config["output_name"]
 
                 # Add the row
@@ -784,12 +866,12 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # Set the output name
                 output_item = self.actions_table.item(row, 2)
                 output_item.setText(output_name)
-            
+
             # Update changes after restoring all actions
             self.update_groupby_data()
 
 
-@register_node(PreparationNodes.GROUPBY, NodeTypes.PREPARATION) 
+@register_node(PreparationNodes.GROUPBY, NodeTypes.PREPARATION)
 class TriggerNode_GroupBy(TriggerNode):
     icon = "node_groupby"
     node_code = PreparationNodes.GROUPBY
@@ -816,63 +898,84 @@ class TriggerNode_GroupBy(TriggerNode):
     def processInputs(self, input_values):
         global_logger.info("🔄 GroupByNode: Starting input processing")
         print("⚠️⚠️⚠️ GroupBy ⚠️⚠️⚠️")
-        
+
         try:
             input_node = self.getInput(0)
             socket_index = self.getSocketValue(input_node.outputs, self)
             input_value = input_values[0][socket_index]
-            
-            global_logger.debug(f"📊 GroupByNode: Retrieved input data, socket index: {socket_index}")
+
+            global_logger.debug(
+                f"📊 GroupByNode: Retrieved input data, socket index: {socket_index}"
+            )
 
             if input_value:
                 global_logger.info("✅ GroupByNode: Input data received, processing...")
                 print("We have input")
-                
+
                 # Validate input data
                 input_data = input_value.get("data")
                 variable_name = input_value.get("variable_name", "unknown")
-                
+
                 if input_data is not None:
-                    global_logger.info(f"📊 GroupByNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'")
-                    
+                    global_logger.info(
+                        f"📊 GroupByNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'"
+                    )
+
                     self.markDirty(False)
                     self.markInvalid(False)
-                    
+
                     # Store input data
                     self.content.incom_data = input_data
                     self.content.incoming_variable = variable_name
-                    
+
                     # Update changes to ensure they're current before applying
-                    if hasattr(self.content, 'actions_table') and hasattr(self.content, 'update_groupby_data'):
+                    if hasattr(self.content, "actions_table") and hasattr(
+                        self.content, "update_groupby_data"
+                    ):
                         try:
                             self.content.update_groupby_data()
                         except Exception as e:
-                            global_logger.error(f"❌ GroupByNode: Error updating groupby data: {str(e)}")
-                    
+                            global_logger.error(
+                                f"❌ GroupByNode: Error updating groupby data: {str(e)}"
+                            )
+
                     # If we have configured groupby operations and data, apply them
-                    if (hasattr(self.content, 'changes') and 
-                        (self.content.changes.get("group_by_columns") or self.content.changes.get("aggregations"))):
+                    if hasattr(self.content, "changes") and (
+                        self.content.changes.get("group_by_columns")
+                        or self.content.changes.get("aggregations")
+                    ):
                         self.content.apply_groupby()
                     else:
                         # No groupby configuration yet, pass through original data
                         self.content.data = input_data
-                        global_logger.debug("📊 GroupByNode: No GroupBy configuration, passing through data")
-                    
+                        global_logger.debug(
+                            "📊 GroupByNode: No GroupBy configuration, passing through data"
+                        )
+
                     # Validate output data
-                    if hasattr(self.content, 'data') and self.content.data is not None:
+                    if hasattr(self.content, "data") and self.content.data is not None:
                         output_shape = self.content.data.shape
-                        global_logger.info(f"📊 GroupByNode: Output DataFrame shape: {output_shape}")
-                        
+                        global_logger.info(
+                            f"📊 GroupByNode: Output DataFrame shape: {output_shape}"
+                        )
+
                         self.param = [
-                            {"data": self.content.data, "variable_name": self.content.variable_name}
+                            {
+                                "data": self.content.data,
+                                "variable_name": self.content.variable_name,
+                            }
                         ]
-                        
+
                         self.evalChildren()
-                        global_logger.info("✅ GroupByNode: Processing completed successfully")
-                        
+                        global_logger.info(
+                            "✅ GroupByNode: Processing completed successfully"
+                        )
+
                         return self.param
                     else:
-                        global_logger.error("❌ GroupByNode: No output data generated after processing")
+                        global_logger.error(
+                            "❌ GroupByNode: No output data generated after processing"
+                        )
                         self.markDirty(True)
                         self.markInvalid(True)
                         return None
@@ -881,7 +984,7 @@ class TriggerNode_GroupBy(TriggerNode):
                     self.markDirty(True)
                     self.markInvalid(True)
                     return None
-                    
+
             else:
                 global_logger.warning("⚠️ GroupByNode: No input data available")
                 print("We don't have input")
@@ -889,10 +992,14 @@ class TriggerNode_GroupBy(TriggerNode):
                 self.markInvalid(True)
                 self.grNode.setToolTip("Input is not connected")
                 return None
-                
+
         except Exception as e:
-            global_logger.error(f"❌ GroupByNode: Error during input processing: {str(e)}")
-            global_logger.critical(f"🚨 GroupByNode: Exception details: {type(e).__name__}: {str(e)}")
+            global_logger.error(
+                f"❌ GroupByNode: Error during input processing: {str(e)}"
+            )
+            global_logger.critical(
+                f"🚨 GroupByNode: Exception details: {type(e).__name__}: {str(e)}"
+            )
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip(f"Processing error: {str(e)}")

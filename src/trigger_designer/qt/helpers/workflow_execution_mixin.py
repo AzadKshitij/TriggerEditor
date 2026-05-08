@@ -118,7 +118,9 @@ class WorkflowExecutionMixin:
         print(f"\n{'=' * 60}")
         print("🎯 WORKFLOW EXECUTION SUMMARY")
         print(f"{'=' * 60}")
-        print(f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}")
+        print(
+            f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}"
+        )
 
         print(f"⏱️  This execution: {current_execution_time:.3f} seconds")
         global_logger.info(f"⏱️  This execution: {current_execution_time:.3f} seconds")

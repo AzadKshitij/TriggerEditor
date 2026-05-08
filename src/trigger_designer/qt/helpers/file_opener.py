@@ -85,8 +85,9 @@ def open_file(path: str | Path, file_manager: bool = False) -> None:
             if command is not None:
                 silent_Popen([command] + command_args, close_fds=True)
             else:
-                logger.info("Could not find command on system PATH",
-                            command=command_name)
+                logger.info(
+                    "Could not find command on system PATH", command=command_name
+                )
     except Exception:
         traceback.print_exc()
 
@@ -118,7 +119,7 @@ class FileOpenerHelper:
 
 
 class FileOpenerLabel(QLabel):
-    def __init__(self, parent: Optional[QWidget]=None) -> None:
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
         """Initialize the FileOpenerLabel.
 
         Args:

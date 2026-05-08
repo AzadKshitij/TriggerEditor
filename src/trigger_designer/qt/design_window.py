@@ -181,7 +181,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def keyPressEvent(self, event: Optional[QKeyEvent]) -> None:
         """Handle keyboard events.
-        
+
         Shortcuts:
         - Shift+A: Show node context menu
         - Shift+P: Print separator
@@ -208,35 +208,43 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             print()
         elif (
             event.key() == Qt.Key.Key_R
-            and event.modifiers() == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
+            and event.modifiers()
+            == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
         ):
             # Ctrl+Shift+R to reset workflow statistics
             self.reset_workflow_statistics()
         elif (
             event.key() == Qt.Key.Key_S
-            and event.modifiers() == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
+            and event.modifiers()
+            == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
         ):
             # Ctrl+Shift+S to show workflow statistics
             stats = self.get_workflow_statistics()
-            print(f"\n{'='*50}")
+            print(f"\n{'=' * 50}")
             print(f"📊 WORKFLOW STATISTICS")
-            print(f"{'='*50}")
+            print(f"{'=' * 50}")
             print(f"Total executions: {stats['total_executions']}")
             print(f"Total time: {stats['total_time']:.3f} seconds")
             print(f"Average time: {stats['average_execution_time']:.3f} seconds")
-            print(f"{'='*50}\n")
-            logger.info(f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
-                       f"Total time: {stats['total_time']:.3f}s, "
-                       f"Average: {stats['average_execution_time']:.3f}s")
-            
+            print(f"{'=' * 50}\n")
+            logger.info(
+                f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
+                f"Total time: {stats['total_time']:.3f}s, "
+                f"Average: {stats['average_execution_time']:.3f}s"
+            )
+
             # Example of global logging usage
-            global_logger.info(f"📊 Workflow statistics requested - {stats['total_executions']} executions")
+            global_logger.info(
+                f"📊 Workflow statistics requested - {stats['total_executions']} executions"
+            )
         elif (
             event.key() == Qt.Key.Key_G
             and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
         ):
             # Shift+G to test global logging
-            global_logger.info("🌍 Global logging test - this message was sent using global_logger!")
+            global_logger.info(
+                "🌍 Global logging test - this message was sent using global_logger!"
+            )
             global_logger.debug("🔧 Global debug message")
             global_logger.warning("⚠️ Global warning message")
             global_logger.error("❌ Global error message (test)")
@@ -312,11 +320,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def setLoggingDock(self, logging_dock: "LoggingDock") -> None:
         """Set the logging dock for this design window"""
         self._logging_dock = logging_dock
-        
+
     def getLoggingDock(self) -> Optional["LoggingDock"]:
         """Get the logging dock for this design window"""
         return self._logging_dock
-        
+
     def log(self, level: str, message: str) -> None:
         """Log a message to the shared logging dock"""
         if self._logging_dock:
@@ -325,27 +333,27 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         else:
             # Fallback to print if no logging dock is available
             print(f"[{level}] {message}")
-            
+
     def logTrace(self, message: str) -> None:
         """Log a TRACE message"""
         self.log("TRACE", message)
-        
+
     def logDebug(self, message: str) -> None:
         """Log a DEBUG message"""
         self.log("DEBUG", message)
-        
+
     def logInfo(self, message: str) -> None:
         """Log an INFO message"""
         self.log("INFO", message)
-        
+
     def logWarning(self, message: str) -> None:
         """Log a WARNING message"""
         self.log("WARNING", message)
-        
+
     def logError(self, message: str) -> None:
         """Log an ERROR message"""
         self.log("ERROR", message)
-        
+
     def logCritical(self, message: str) -> None:
         """Log a CRITICAL message"""
         self.log("CRITICAL", message)
@@ -391,14 +399,14 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             try:
                 self.logDebug(f"Creating node: {node_type} (code: {node_code})")
                 node_type_enum = NodeTypes(node_type)
-                node = get_class_from_opcode(node_code, node_type_enum)(
-                    self.scene
-                )  # type: ignore
+                node = get_class_from_opcode(node_code, node_type_enum)(self.scene)  # type: ignore
                 node.setPos(scene_position.x(), scene_position.y())
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__
                 )
-                self.logInfo(f"Successfully created {node.__class__.__name__} node at ({scene_position.x():.1f}, {scene_position.y():.1f})")
+                self.logInfo(
+                    f"Successfully created {node.__class__.__name__} node at ({scene_position.x():.1f}, {scene_position.y():.1f})"
+                )
             except Exception as e:
                 self.logError(f"Failed to create node {node_type}: {str(e)}")
                 dumpException(e)
@@ -532,5 +540,3 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             node.grNode.resetPen()
             node.grNode.update()
         self.run_button.setEnabled(True)
-
-

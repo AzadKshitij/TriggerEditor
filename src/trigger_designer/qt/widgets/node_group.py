@@ -6,9 +6,9 @@ from nodeeditor.node_node import Node
 
 
 class NodeGroup(QGraphicsRectItem):
-    def __init__(self, scene: 'Scene'):
+    def __init__(self, scene: "Scene"):
         super().__init__()
-        self.nodes: set['Node'] = set()
+        self.nodes: set["Node"] = set()
         self._scene = scene
         self.title = "Group"
         self.title_height = 25
@@ -71,8 +71,7 @@ class NodeGroup(QGraphicsRectItem):
             return
 
         # Get bounds of all nodes
-        rects = [node.grNode.boundingRect().translated(node.pos)
-                 for node in self.nodes]
+        rects = [node.grNode.boundingRect().translated(node.pos) for node in self.nodes]
         group_rect = rects[0]
         for rect in rects[1:]:
             group_rect = group_rect.united(rect)
@@ -86,7 +85,7 @@ class NodeGroup(QGraphicsRectItem):
         title_width = self.title_item.boundingRect().width()
         self.title_item.setPos(
             group_rect.left() + (group_rect.width() - title_width) / 2,
-            group_rect.top() + 5
+            group_rect.top() + 5,
         )
 
     def mousePressEvent(self, event):
@@ -112,7 +111,7 @@ class NodeGroup(QGraphicsRectItem):
             # Set single line behavior
             doc = self.title_item.document()
             doc.setMaximumBlockCount(1)  # Limit to one line
-            doc.setDocumentMargin(0)     # Remove margins
+            doc.setDocumentMargin(0)  # Remove margins
             self.title_item.setFocus()
             event.accept()
         else:
@@ -121,11 +120,17 @@ class NodeGroup(QGraphicsRectItem):
 
     def keyPressEvent(self, event):
         """Handle key events for title editing"""
-        print("🐍 File: widgets/node_group.py:125 | keyPressEvent ~ self.title_item.hasFocus()",
-              self.title_item.hasFocus())
+        print(
+            "🐍 File: widgets/node_group.py:125 | keyPressEvent ~ self.title_item.hasFocus()",
+            self.title_item.hasFocus(),
+        )
         if self.title_item.hasFocus():
             print(
-                "🐍 File: widgets/node_group.py:126 | keyPressEvent ~ event.key()", event.key(), "Qt.Key_Return:", Qt.Key_Return)
+                "🐍 File: widgets/node_group.py:126 | keyPressEvent ~ event.key()",
+                event.key(),
+                "Qt.Key_Return:",
+                Qt.Key_Return,
+            )
             if event.key() in (Qt.Key_Return, Qt.Key_Enter):
                 # Commit changes and disable editing
                 self.title = self.title_item.toPlainText().strip()
@@ -167,7 +172,7 @@ class NodeGroup(QGraphicsRectItem):
             self.rect().left(),
             self.rect().top(),
             self.rect().width(),
-            self.title_height
+            self.title_height,
         ).contains(pos)
 
     # def mouseMoveEvent(self, event):
@@ -189,12 +194,18 @@ class NodeGroup(QGraphicsRectItem):
             self.rect().left(),
             self.rect().top(),
             self.rect().width(),
-            self.title_height
+            self.title_height,
         )
 
         # Use darker color for title bar to indicate draggable area
         title_color = QColor(180, 180, 180, 150)
-        if self.hovering and self.is_title_bar_area(self.mapFromScene(self._scene.grScene.views()[0].mapToScene(self._scene.grScene.views()[0].mapFromGlobal(QCursor.pos())))):
+        if self.hovering and self.is_title_bar_area(
+            self.mapFromScene(
+                self._scene.grScene.views()[0].mapToScene(
+                    self._scene.grScene.views()[0].mapFromGlobal(QCursor.pos())
+                )
+            )
+        ):
             title_color = QColor(160, 160, 160, 180)  # Darker when hovered
 
         painter.fillRect(title_rect, title_color)
@@ -206,6 +217,7 @@ class NodeGroup(QGraphicsRectItem):
     def hoverLeaveEvent(self, event):
         self.hovering = False
         return super().hoverLeaveEvent(event)
+
 
 # class TriggerScene:
 #     def __init__(self):

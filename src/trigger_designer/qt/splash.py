@@ -35,8 +35,7 @@ class Splash:
         """Get the pixmap used for the splash screen."""
         pixmap: QPixmap | None = self.rm.get(f"{self.splash_name}")
         if not pixmap:
-            logger.error(
-                f"[Splash] Splash screen not found: {self.splash_name}")
+            logger.error(f"[Splash] Splash screen not found: {self.splash_name}")
             pixmap = QPixmap(960, 540)
             pixmap.fill(QColor("black"))
         painter = QPainter(pixmap)
@@ -53,8 +52,7 @@ class Splash:
         painter.setPen(pen)
         painter.drawText(
             QRect(0, -50, 960, 540),
-            int(Qt.AlignmentFlag.AlignBottom |
-                Qt.AlignmentFlag.AlignHCenter),
+            int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
             Splash.COPYRIGHT_STR,
         )
         # Version
@@ -62,8 +60,7 @@ class Splash:
         painter.setPen(pen)
         painter.drawText(
             QRect(0, -25, 960, 540),
-            int(Qt.AlignmentFlag.AlignBottom |
-                Qt.AlignmentFlag.AlignHCenter),
+            int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
             Splash.VERSION_STR,
         )
 
@@ -83,7 +80,8 @@ class Splash:
     def _build_splash_screen(self) -> None:
         """Build the internal splash screen."""
         self.splash_screen = QSplashScreen(
-            self.get_pixmap(), Qt.WindowType.WindowStaysOnTopHint)
+            self.get_pixmap(), Qt.WindowType.WindowStaysOnTopHint
+        )
 
     def show(self) -> None:
         """Show the splash screen."""

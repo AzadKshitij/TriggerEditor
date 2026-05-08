@@ -8,10 +8,10 @@ class PandasModel(QAbstractTableModel):
         super(PandasModel, self).__init__()
         self._data = data
 
-    def rowCount(self, parent: Optional[QWidget]=None):
+    def rowCount(self, parent: Optional[QWidget] = None):
         return self._data.shape[0]
 
-    def columnCount(self, parent: Optional[QWidget]=None):
+    def columnCount(self, parent: Optional[QWidget] = None):
         return self._data.shape[1]
 
     def data(self, index, role=Qt.DisplayRole):

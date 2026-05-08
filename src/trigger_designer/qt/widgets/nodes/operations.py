@@ -21,8 +21,7 @@ class TriggerNode_Add(TriggerNode):
     node_type = NodeTypes.CALC
     content_label = "+"
     content_label_objname = "calc_node_bg"
-    style = {
-    }
+    style = {}
 
     def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
@@ -47,8 +46,7 @@ class CalcNode_Sub(TriggerNode):
     node_type = NodeTypes.CALC
     content_label = "-"
     content_label_objname = "calc_node_bg"
-    style = {
-    }
+    style = {}
 
     def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
@@ -73,15 +71,14 @@ class TriggerNode_Mul(TriggerNode):
     node_type = NodeTypes.CALC
     content_label = "*"
     content_label_objname = "calc_node_mul"
-    style = {
-    }
+    style = {}
 
     def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
     def evalOperation(self, input1, input2):
-        print('foo')
+        print("foo")
         return input1 * input2
 
     def execute(self, node_input) -> None:
@@ -97,8 +94,7 @@ class TriggerNode_Div(TriggerNode):
     node_type = NodeTypes.CALC
     content_label = "/"
     content_label_objname = "calc_node_div"
-    style = {
-    }
+    style = {}
 
     def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
@@ -120,15 +116,14 @@ class TriggerNode_Sqrt(TriggerNode):
     node_type = NodeTypes.CALC
     content_label = "√"
     content_label_objname = "calc_node_sqrt"
-    style = {
-    }
+    style = {}
 
     def initInnerClasses(self) -> None:
         self.content = OperationContent(self)
         self.grNode = TriggerGraphicsNode(self)
 
     def evalOperation(self, input1, input2):
-        return input1 ** (1/input2)
+        return input1 ** (1 / input2)
 
     def execute(self, node_input) -> None:
         print("Input")

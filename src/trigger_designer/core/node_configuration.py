@@ -77,7 +77,7 @@ class ReportNodes(IntEnum):
 
 
 # Node registries
-NODE_REGISTRIES: Dict[NodeTypes,  Dict[int, 'TriggerNode']] = {
+NODE_REGISTRIES: Dict[NodeTypes, Dict[int, "TriggerNode"]] = {
     NodeTypes.CALC: {},
     NodeTypes.IO: {},
     NodeTypes.PREPARATION: {},
@@ -112,7 +112,9 @@ class OpCodeNotRegistered(ConfException):
 #     current_node_type[node_code] = class_reference
 
 
-def register_node_now(node_code: int, class_reference: 'TriggerNode', node_type: NodeTypes) -> None:
+def register_node_now(
+    node_code: int, class_reference: "TriggerNode", node_type: NodeTypes
+) -> None:
     if node_type not in NodeTypes:
         raise InvalidNodeRegistration(f"Invalid node type: {node_type}")
 
@@ -125,9 +127,10 @@ def register_node_now(node_code: int, class_reference: 'TriggerNode', node_type:
 
 
 def register_node(node_code: int, node_type: NodeTypes) -> Callable:
-    def decorator(original_class: 'TriggerNode') -> 'TriggerNode':
+    def decorator(original_class: "TriggerNode") -> "TriggerNode":
         register_node_now(node_code, original_class, node_type)
         return original_class
+
     return decorator
 
 
@@ -148,7 +151,9 @@ def register_node(node_code: int, node_type: NodeTypes) -> Callable:
 #             return {}
 
 
-def get_class_from_opcode(node_code: int, node_type: Union[NodeTypes, str]) -> 'TriggerNode':
+def get_class_from_opcode(
+    node_code: int, node_type: Union[NodeTypes, str]
+) -> "TriggerNode":
     """Get node class from opcode and type.
 
     Args:
@@ -163,8 +168,9 @@ def get_class_from_opcode(node_code: int, node_type: Union[NodeTypes, str]) -> '
     """
     try:
         # Convert string to enum if needed
-        node_type_enum = NodeTypes(node_type) if isinstance(
-            node_type, str) else node_type
+        node_type_enum = (
+            NodeTypes(node_type) if isinstance(node_type, str) else node_type
+        )
     except ValueError:
         raise OpCodeNotRegistered(f"Invalid node type: {node_type}")
 

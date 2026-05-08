@@ -192,7 +192,7 @@ class DataPreviewWindow(QMainWindow):
                     is_limited = True
                     logger.info(
                         f"Applied memory limit: showing {effective_rows} of {total_rows} rows "
-                        f"(estimated memory: {estimated_memory / (1024*1024):.2f}MB)"
+                        f"(estimated memory: {estimated_memory / (1024 * 1024):.2f}MB)"
                     )
                 else:
                     preview_df = data

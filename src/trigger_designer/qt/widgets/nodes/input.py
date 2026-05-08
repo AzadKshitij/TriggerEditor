@@ -10,14 +10,12 @@ from trigger_designer.qt.docks.node_config import ConfigDock
 
 
 class CalcInputContent(QDMNodeIconContentWidget):
-
     # def __init__(self, node, parent=None):
     #     self.icon = QPixmap("src/trigger_designer/Resource/icons/Input/File Output.png")
     #     print("Input Icon icon: ", self.icon)
     #     super().__init__(node, parent)
     def initUI(self) -> None:
-        icon = QPixmap(
-            "src/trigger_designer/Resource/icons/Input/File Output.png")
+        icon = QPixmap("src/trigger_designer/Resource/icons/Input/File Output.png")
         # icon = QPixmap(
         #     "src/trigger_designer/Resource/icons/Input/File Output.png")
         super().initUI(icon)
@@ -34,7 +32,7 @@ class CalcInputContent(QDMNodeIconContentWidget):
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
         try:
-            value = data['value']
+            value = data["value"]
             # self.edit.setText(value)
             return True & res
         except Exception as e:

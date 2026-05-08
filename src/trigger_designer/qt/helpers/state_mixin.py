@@ -14,10 +14,13 @@ class StateManagementMixin:
         self.initial_state = initial_state.copy()
         self.changes = initial_state.copy()
 
-    def handle_state_change(self, new_data: Any,
-                            process_func: Callable,
-                            apply_func: Callable,
-                            desc: str = "State Changed") -> None:
+    def handle_state_change(
+        self,
+        new_data: Any,
+        process_func: Callable,
+        apply_func: Callable,
+        desc: str = "State Changed",
+    ) -> None:
         """Generic state change handler with history management
 
         Args:
@@ -31,16 +34,22 @@ class StateManagementMixin:
 
         # Store old state
         old_changes = {
-            key: value.copy() if hasattr(value, 'copy') else value
+            key: value.copy() if hasattr(value, "copy") else value
             for key, value in self.changes.items()
         }
-        print("🐍 File: helpers/state_mixin.py:37 | handle_state_change ~ old_changes", old_changes)
+        print(
+            "🐍 File: helpers/state_mixin.py:37 | handle_state_change ~ old_changes",
+            old_changes,
+        )
 
         # Process new changes
         self.changes = process_func(new_data)
         print("")
         print("")
-        print("🐍 File: helpers/state_mixin.py:41 | handle_state_change ~ self.changes", self.changes)
+        print(
+            "🐍 File: helpers/state_mixin.py:41 | handle_state_change ~ self.changes",
+            self.changes,
+        )
         print("")
         print("")
 
@@ -50,43 +59,36 @@ class StateManagementMixin:
         # Store history if there are actual changes
         if old_changes != self.changes:
             history_data = {
-                'node': self.node,
-                'old_changes': old_changes,
-                'new_changes': {
-                    key: value.copy() if hasattr(value, 'copy') else value
+                "node": self.node,
+                "old_changes": old_changes,
+                "new_changes": {
+                    key: value.copy() if hasattr(value, "copy") else value
                     for key, value in self.changes.items()
-                }
+                },
             }
 
-            self.history.storeHistory(
-                desc=desc,
-                data=history_data,
-                setModified=True
-            )
+            self.history.storeHistory(desc=desc, data=history_data, setModified=True)
 
     def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
         """Default history callback for undo/redo operations"""
         if is_undo:
-            self.changes = history_data['old_changes']
+            self.changes = history_data["old_changes"]
         else:
-            self.changes = history_data['new_changes']
+            self.changes = history_data["new_changes"]
 
         # Apply the changes
-        if hasattr(self, 'apply_changes'):
+        if hasattr(self, "apply_changes"):
             self.apply_changes()
 
         # Update UI if needed
-        if hasattr(self, 'update_ui_from_changes'):
+        if hasattr(self, "update_ui_from_changes"):
             self.update_ui_from_changes()
 
     def serialize(self) -> dict:
         """Serialize the state"""
-        return {
-            'changes': self.changes,
-            'initial_state': self.initial_state
-        }
+        return {"changes": self.changes, "initial_state": self.initial_state}
 
     def deserialize(self, data: dict) -> None:
         """Deserialize the state"""
-        self.changes = data.get('changes', self.initial_state.copy())
-        self.initial_state = data.get('initial_state', {})
+        self.changes = data.get("changes", self.initial_state.copy())
+        self.initial_state = data.get("initial_state", {})

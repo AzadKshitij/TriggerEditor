@@ -8,6 +8,7 @@ import os
 import datetime as dt
 import warnings
 import sys
+
 warnings.filterwarnings("ignore")
 
 # === Section 1: File Paths and Helpers ===
@@ -65,11 +66,11 @@ region_df = clean_cols(region_df)
 
 # Drop bad rows
 sales_df = sales_df.dropna(subset=["order_id", "customer_id", "product_id"])
-sales_df = sales_df[sales_df['order_value'] > 0]
+sales_df = sales_df[sales_df["order_value"] > 0]
 
 # Convert types
 try:
-    sales_df['order_date'] = pd.to_datetime(sales_df['order_date'])
+    sales_df["order_date"] = pd.to_datetime(sales_df["order_date"])
 except Exception as e:
     print("⚠️ Failed to parse dates in order_date:", e)
 
@@ -78,9 +79,9 @@ except Exception as e:
 
 def enrich_data(sales):
     try:
-        df1 = pd.merge(sales, cust_df, on='customer_id', how='left')
-        df2 = pd.merge(df1, prod_df, on='product_id', how='left')
-        df3 = pd.merge(df2, region_df, on='region_id', how='left')
+        df1 = pd.merge(sales, cust_df, on="customer_id", how="left")
+        df2 = pd.merge(df1, prod_df, on="product_id", how="left")
+        df3 = pd.merge(df2, region_df, on="region_id", how="left")
         return df3
     except Exception as e:
         print("⚠️ Data enrichment failed:", e)
@@ -90,17 +91,16 @@ def enrich_data(sales):
 full_df = enrich_data(sales_df)
 
 # Add new fields
-full_df['year'] = full_df['order_date'].dt.year
-full_df['month'] = full_df['order_date'].dt.month
-full_df['is_high_value'] = full_df['order_value'] > 1000
+full_df["year"] = full_df["order_date"].dt.year
+full_df["month"] = full_df["order_date"].dt.month
+full_df["is_high_value"] = full_df["order_value"] > 1000
 
 # === Section 5: Analysis ===
 
 
 def analyze_monthly_sales(df):
     try:
-        summary = df.groupby(['year', 'month'])[
-            'order_value'].sum().reset_index()
+        summary = df.groupby(["year", "month"])["order_value"].sum().reset_index()
         summary.to_csv(OUTPUT_DIR + "monthly_sales_summary.csv", index=False)
         return summary
     except Exception as e:
@@ -111,8 +111,8 @@ def analyze_monthly_sales(df):
 monthly_summary = analyze_monthly_sales(full_df)
 
 # === Section 6: Repetitive Reporting ===
-for region in full_df['region_name'].dropna().unique():
-    r_df = full_df[full_df['region_name'] == region]
+for region in full_df["region_name"].dropna().unique():
+    r_df = full_df[full_df["region_name"] == region]
     output_file = f"{OUTPUT_DIR}{region}_report.csv"
     try:
         r_df.to_csv(output_file, index=False)
@@ -123,8 +123,9 @@ for region in full_df['region_name'].dropna().unique():
 # === Section 7: Charts ===
 try:
     plt.figure(figsize=(12, 6))
-    sns.lineplot(data=monthly_summary, x="month",
-                 y="order_value", hue="year", marker="o")
+    sns.lineplot(
+        data=monthly_summary, x="month", y="order_value", hue="year", marker="o"
+    )
     plt.title("Monthly Sales Over Time")
     plt.savefig(OUTPUT_DIR + "monthly_sales_chart.png")
     plt.close()
@@ -133,7 +134,7 @@ except Exception as e:
 
 # === Section 8: Distribution ===
 plt.figure(figsize=(10, 5))
-full_df['order_value'].hist(bins=40, color='skyblue')
+full_df["order_value"].hist(bins=40, color="skyblue")
 plt.title("Order Value Distribution")
 plt.xlabel("Value")
 plt.ylabel("Frequency")
@@ -154,8 +155,7 @@ def broken_function(x):
 
 
 # Add random useless fields
-full_df['junk'] = full_df['order_value'].apply(
-    lambda x: "ok" if x % 2 == 0 else "meh")
+full_df["junk"] = full_df["order_value"].apply(lambda x: "ok" if x % 2 == 0 else "meh")
 
 # === Section 10: More Cleaning Again (Why?) ===
 
@@ -163,7 +163,7 @@ full_df['junk'] = full_df['order_value'].apply(
 def re_clean(df):
     df = df.copy()
     df.drop_duplicates(inplace=True)
-    df = df[df['order_value'] < 100000]
+    df = df[df["order_value"] < 100000]
     return df
 
 
@@ -201,21 +201,22 @@ def legacy_export(df):
 def maybe_export_excel(df):
     return  # removed due to size
 
+
 # === Section 15: Overcomplicated flagging ===
 
 
 def flag_risk(row):
     score = 0
-    if row['order_value'] > 5000:
+    if row["order_value"] > 5000:
         score += 1
-    if row.get('customer_age', 0) > 60:
+    if row.get("customer_age", 0) > 60:
         score += 1
-    if row.get('region_name', '') == "Unknown":
+    if row.get("region_name", "") == "Unknown":
         score += 1
     return "High" if score >= 2 else "Low"
 
 
-full_df['risk_level'] = full_df.apply(flag_risk, axis=1)
+full_df["risk_level"] = full_df.apply(flag_risk, axis=1)
 
 # === Section 16: Re-save (again?) ===
 try:

@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from trigger_designer.core.constants import VERSION, VERSION_BRANCH
+
 # from tagstudio.core.enums import Theme
 from tagstudio.core.palette import ColorType, UiColor, get_ui_color
 from tagstudio.qt.modals.ffmpeg_checker import FfmpegChecker
@@ -42,9 +43,7 @@ class AboutModal(QWidget):
             #     else Theme.COLOR_BG_LIGHT.value
             # }
             # "
-            "border-radius:3px;"
-            "font-weight: 500;"
-            "padding: 2px;"
+            "border-radius:3px;font-weight: 500;padding: 2px;"
         )
 
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
@@ -54,7 +53,8 @@ class AboutModal(QWidget):
         self.root_layout.setContentsMargins(0, 12, 0, 0)
         self.root_layout.setSpacing(0)
         self.root_layout.setAlignment(
-            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter)
+            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignCenter
+        )
 
         self.content_widget = QWidget()
         self.content_layout = QVBoxLayout(self.content_widget)
@@ -63,12 +63,11 @@ class AboutModal(QWidget):
 
         # TagStudio Icon Logo --------------------------------------------------
         self.logo_widget = QLabel()
-        self.logo_pixmap = QPixmap.fromImage(
-            ImageQt.ImageQt(self.rm.get("icon")))
+        self.logo_pixmap = QPixmap.fromImage(ImageQt.ImageQt(self.rm.get("icon")))
         self.logo_pixmap.setDevicePixelRatio(self.devicePixelRatio())
         self.logo_pixmap = self.logo_pixmap.scaledToWidth(
-            math.floor(128 * self.devicePixelRatio()
-                       ), Qt.TransformationMode.SmoothTransformation
+            math.floor(128 * self.devicePixelRatio()),
+            Qt.TransformationMode.SmoothTransformation,
         )
         self.logo_widget.setPixmap(self.logo_pixmap)
         self.logo_widget.setContentsMargins(0, 0, 0, 0)
@@ -76,8 +75,7 @@ class AboutModal(QWidget):
 
         # Title ----------------------------------------------------------------
         branch: str = (" (" + VERSION_BRANCH + ")") if VERSION_BRANCH else ""
-        self.title_label = QLabel(
-            f"<h2>TagStudio Alpha {VERSION}{branch}</h2>")
+        self.title_label = QLabel(f"<h2>TagStudio Alpha {VERSION}{branch}</h2>")
         self.title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Description ----------------------------------------------------------
@@ -85,7 +83,8 @@ class AboutModal(QWidget):
         self.desc_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.desc_label.setWordWrap(True)
         self.desc_label.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
 
         # System Info ----------------------------------------------------------
         ff_version = self.fc.version()
@@ -97,15 +96,17 @@ class AboutModal(QWidget):
         ffmpeg_status = f'<span style="color:{red}">{missing}</span>'
         if ff_version["ffmpeg"] is not None:
             ffmpeg_status = (
-                f'<span style="color:{green}">{found}</span> (' +
-                ff_version["ffmpeg"] + ")"
+                f'<span style="color:{green}">{found}</span> ('
+                + ff_version["ffmpeg"]
+                + ")"
             )
 
         ffprobe_status = f'<span style="color:{red}">{missing}</span>'
         if ff_version["ffprobe"] is not None:
             ffprobe_status = (
-                f'<span style="color:{green}">{found}</span> (' +
-                ff_version["ffprobe"] + ")"
+                f'<span style="color:{green}">{found}</span> ('
+                + ff_version["ffprobe"]
+                + ")"
             )
 
         self.system_info_widget = QWidget()
@@ -130,18 +131,15 @@ class AboutModal(QWidget):
         ffmpeg_path_title = QLabel("FFmpeg")
         ffmpeg_path_content = QLabel(f"{ffmpeg_status}")
         ffmpeg_path_content.setStyleSheet(self.form_content_style)
-        ffmpeg_path_content.setMaximumWidth(
-            ffmpeg_path_content.sizeHint().width())
+        ffmpeg_path_content.setMaximumWidth(ffmpeg_path_content.sizeHint().width())
         self.system_info_layout.addRow(ffmpeg_path_title, ffmpeg_path_content)
 
         # FFprobe Status
         ffprobe_path_title = QLabel("FFprobe")
         ffprobe_path_content = QLabel(f"{ffprobe_status}")
         ffprobe_path_content.setStyleSheet(self.form_content_style)
-        ffprobe_path_content.setMaximumWidth(
-            ffprobe_path_content.sizeHint().width())
-        self.system_info_layout.addRow(
-            ffprobe_path_title, ffprobe_path_content)
+        ffprobe_path_content.setMaximumWidth(ffprobe_path_content.sizeHint().width())
+        self.system_info_layout.addRow(ffprobe_path_title, ffprobe_path_content)
 
         # Links ----------------------------------------------------------------
         repo_link = "https://github.com/TagStudioDev/TagStudio"

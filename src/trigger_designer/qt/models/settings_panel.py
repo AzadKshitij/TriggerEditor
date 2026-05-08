@@ -1,7 +1,19 @@
 from loguru import logger
-from qtpy.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTabWidget,
-                            QPushButton, QLabel, QComboBox, QSpinBox,
-                            QCheckBox, QGroupBox, QFormLayout, QWidget, QApplication)
+from qtpy.QtWidgets import (
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabWidget,
+    QPushButton,
+    QLabel,
+    QComboBox,
+    QSpinBox,
+    QCheckBox,
+    QGroupBox,
+    QFormLayout,
+    QWidget,
+    QApplication,
+)
 from qtpy.QtCore import Qt, QSettings
 import orjson as json
 import os
@@ -16,7 +28,7 @@ class SettingsDialog(QDialog):
         self.setWindowTitle("Settings")
         self.setMinimumWidth(400)
         self.rsm: ResourceManager = ResourceManager()
-        self.settings = QSettings('Blue Octa', 'Trigger Designer')
+        self.settings = QSettings("Blue Octa", "Trigger Designer")
         self.init_ui()
 
     def init_ui(self) -> None:
@@ -83,7 +95,7 @@ class SettingsDialog(QDialog):
         settings = {
             "theme": self.theme_combo.currentText(),
             "grid_size": self.grid_size.value(),
-            "show_grid": self.show_grid.isChecked()
+            "show_grid": self.show_grid.isChecked(),
         }
 
         # settings_file = os.path.join(os.path.dirname(
@@ -93,22 +105,20 @@ class SettingsDialog(QDialog):
         os.makedirs(os.path.dirname(settings_file), exist_ok=True)
         settings_json = json.dumps(settings, option=json.OPT_INDENT_2)
 
-        with open(settings_file, 'w') as f:
+        with open(settings_file, "w") as f:
             f.write(settings_json.decode())
 
-        qsettings = QSettings('Blue Octa', 'Trigger Designer')
+        qsettings = QSettings("Blue Octa", "Trigger Designer")
 
         logger.info(settings)
-        logger.debug(
-            qsettings.allKeys()
-        )
+        logger.debug(qsettings.allKeys())
 
-        theme = settings.get('theme', 'dark')
+        theme = settings.get("theme", "dark")
         print("🐍 File: models/settings_panel.py:106 | save_settings ~ theme", theme)
-        grid_size = settings.get('grid_size', 20)
-        show_grid = settings.get('show_grid', True)
+        grid_size = settings.get("grid_size", 20)
+        show_grid = settings.get("show_grid", True)
 
-        qsettings.setValue('theme', theme)
+        qsettings.setValue("theme", theme)
         print("🐍 File: models/settings_panel.py:111 | save_settings ~ theme", theme)
 
         style_sheet = self.rsm.load_theme(theme)

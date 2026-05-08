@@ -35,6 +35,7 @@ from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from loguru import logger
 from typing import Any, Optional, OrderedDict, TYPE_CHECKING, Type, TypeVar, Union, cast
+from trigger_designer.qt.helpers import global_logger
 
 
 if TYPE_CHECKING:
@@ -44,6 +45,7 @@ if TYPE_CHECKING:
 
 
 class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+    max_missing_file_attempts = 5
     evaluate = Signal()
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
@@ -76,6 +78,32 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # pass on variables
         self.data: Union[pl.DataFrame, pl.LazyFrame] = pl.DataFrame()
         self.variable_name = f"var_file_input_{self.id}"
+        self._missing_file_attempts: dict[str, int] = {}
+
+    def _reset_missing_file_attempts(self, file_path: str) -> None:
+        self._missing_file_attempts.pop(file_path, None)
+
+    def _log_missing_file(self, file_path: str) -> None:
+        attempts = self._missing_file_attempts.get(file_path, 0) + 1
+        self._missing_file_attempts[file_path] = attempts
+
+        if attempts > self.max_missing_file_attempts:
+            return
+
+        warning_message = (
+            f"File not found: '{file_path}' "
+            f"(attempt {attempts}/{self.max_missing_file_attempts})"
+        )
+        logger.warning(warning_message)
+        global_logger.warning(warning_message)
+
+        if attempts == self.max_missing_file_attempts:
+            give_up_message = (
+                f"Giving up after {self.max_missing_file_attempts} attempts: "
+                f"file '{file_path}' was not found."
+            )
+            logger.error(give_up_message)
+            global_logger.error(give_up_message)
 
     @property
     def node(self) -> "TriggerNode":
@@ -255,12 +283,13 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Check if the file exists
         if not os.path.exists(self.filePath):
-            print(f"Error: File '{self.filePath}' does not exist.")
-            self.node.grNode.setToolTip("File does not exist")
+            self._log_missing_file(self.filePath)
+            self.data = pl.DataFrame()
+            self.node.grNode.setToolTip(f"File '{self.filePath}' does not exist")
             self.node.markInvalid(True)
             return False
         else:
-            print(f"File '{self.filePath}' exists.")
+            self._reset_missing_file_attempts(self.filePath)
             self.node.grNode.setToolTip("")
             self.node.markInvalid(False)
 
@@ -763,16 +792,23 @@ class TriggerNode_FileInput(TriggerNode):
     #     return param
 
     def processInputs(self, input_values: list[Any]) -> Optional[list[dict[str, Any]]]:
-        print("[WARNING] File Input [WARNING]")
         # Custom processing logic for the File Input node
         if not self.content.filePath:
             self.grNode.setToolTip("No file selected")
             self.markInvalid(True)
+            self.param = []
+            self.value = None
+            return None
+
+        if not self.content.check_file_path():
+            self.markDirty(False)
+            self.markInvalid(True)
+            self.param = []
+            self.value = None
             return None
 
         self.markDirty(False)
         self.markInvalid(False)
-        self.content.check_file_path()
 
         # # Load full data for processing (not just preview)
         # if (
@@ -788,8 +824,6 @@ class TriggerNode_FileInput(TriggerNode):
         self.param = [
             {"data": self.content.data, "variable_name": self.content.variable_name}
         ]
-
-        self.evalChildren()
 
         return self.param
 

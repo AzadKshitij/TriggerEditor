@@ -1,8 +1,22 @@
 from ctypes import cast
 from qtpy.QtGui import QImage, QPixmap, QBrush, QColor, QPen, QPainter
-from qtpy.QtWidgets import QWidget, QLineEdit, QSpinBox, QComboBox, QCheckBox, QGraphicsItem, QStyleOptionGraphicsItem, QLayout
+from qtpy.QtWidgets import (
+    QWidget,
+    QLineEdit,
+    QSpinBox,
+    QComboBox,
+    QCheckBox,
+    QGraphicsItem,
+    QStyleOptionGraphicsItem,
+    QLayout,
+)
 from qtpy.QtCore import QRectF, Qt, Signal, QTimer
-from qtpy.QtWidgets import QLabel, QGraphicsPixmapItem, QGraphicsProxyWidget, QVBoxLayout
+from qtpy.QtWidgets import (
+    QLabel,
+    QGraphicsPixmapItem,
+    QGraphicsProxyWidget,
+    QVBoxLayout,
+)
 
 from nodeeditor.node_node import Node
 from nodeeditor.node_content_widget import QDMNodeContentWidget
@@ -31,7 +45,9 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     rsm = ResourceManager()
 
-    def __init__(self, node: 'TriggerNode', parent: Optional[QGraphicsItem] = None) -> None:
+    def __init__(
+        self, node: "TriggerNode", parent: Optional[QGraphicsItem] = None
+    ) -> None:
         super().__init__(node, parent)
 
         self._default_pen = QPen(QColor.fromRgb(0, 0, 0, 0))  # Black color
@@ -40,7 +56,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._selected_pen.setWidth(5)
         self._executing_pen = QPen(QColor("#FF800080"))  # Purple color
         self._executing_pen.setWidth(5)
-        self._executed_pen = QPen(QColor("#FF008000"))   # Green color
+        self._executed_pen = QPen(QColor("#FF008000"))  # Green color
         self._executed_pen.setWidth(5)
 
         self._pen = self._default_pen  # Current pen
@@ -57,10 +73,14 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     def initAssets(self) -> None:
         super().initAssets()
-        self.icons = self.rsm.get('status_icons')
+        self.icons = self.rsm.get("status_icons")
 
-    def paint(self, painter: Optional[QPainter], option: Optional[QStyleOptionGraphicsItem],
-              widget: Optional[QWidget] = None) -> None:
+    def paint(
+        self,
+        painter: Optional[QPainter],
+        option: Optional[QStyleOptionGraphicsItem],
+        widget: Optional[QWidget] = None,
+    ) -> None:
 
         if painter is None:
             return
@@ -87,7 +107,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         painter.drawImage(
             QRectF(icon_x, icon_y, 24.0, 24.0),
             self.icons,
-            QRectF(offset, 0, 24.0, 24.0)
+            QRectF(offset, 0, 24.0, 24.0),
         )
 
     def setPenExecuting(self) -> None:
@@ -115,7 +135,7 @@ class TriggerContent(QDMNodeIconContentWidget):
 
 
 class TriggerChangeHandler:
-    def __init__(self, scene: 'Scene', node: 'TriggerNode') -> None:
+    def __init__(self, scene: "Scene", node: "TriggerNode") -> None:
         self._scene = scene
         self._input_widgets: list = []
         self.node = node
@@ -124,20 +144,22 @@ class TriggerChangeHandler:
     # def node(self) -> 'TriggerNode':
     #     return self.node
 
-    def registerInputWidget(self, widget: Union[QLineEdit, QSpinBox, QComboBox, QCheckBox, QWidget]) -> None:
+    def registerInputWidget(
+        self, widget: Union[QLineEdit, QSpinBox, QComboBox, QCheckBox, QWidget]
+    ) -> None:
         """Register a single input widget for change tracking"""
         if widget in self._input_widgets:
             return
 
-        if hasattr(widget, 'textChanged'):
+        if hasattr(widget, "textChanged"):
             widget.textChanged.connect(self.onInputChanged)
-        elif hasattr(widget, 'valueChanged'):
+        elif hasattr(widget, "valueChanged"):
             widget.valueChanged.connect(self.onInputChanged)
-        elif hasattr(widget, 'currentTextChanged'):
+        elif hasattr(widget, "currentTextChanged"):
             widget.currentTextChanged.connect(self.onInputChanged)
-        elif hasattr(widget, 'stateChanged'):
+        elif hasattr(widget, "stateChanged"):
             widget.stateChanged.connect(self.onInputChanged)
-        elif hasattr(widget, 'dataChanged'):
+        elif hasattr(widget, "dataChanged"):
             widget.dataChanged.connect(self.onInputChanged)
 
         self._input_widgets.append(widget)
@@ -169,7 +191,7 @@ class TriggerChangeHandler:
 
     def onInputChanged(self, *args: list) -> None:
         """Called when any input widget changes"""
-        if hasattr(self.node, 'scene'):
+        if hasattr(self.node, "scene"):
             self.node.scene.has_been_modified = True
             self.node.scene.history.storeHistory("Input Modified")
             # Trigger node evaluation
@@ -179,27 +201,27 @@ class TriggerChangeHandler:
     def clearInputWidgets(self) -> None:
         """Clear all input widget connections"""
         for widget in self._input_widgets:
-            if hasattr(widget, 'textChanged'):
+            if hasattr(widget, "textChanged"):
                 try:
                     widget.textChanged.disconnect(self.onInputChanged)
                 except:
                     pass
-            elif hasattr(widget, 'valueChanged'):
+            elif hasattr(widget, "valueChanged"):
                 try:
                     widget.valueChanged.disconnect(self.onInputChanged)
                 except:
                     pass
-            elif hasattr(widget, 'currentTextChanged'):
+            elif hasattr(widget, "currentTextChanged"):
                 try:
                     widget.currentTextChanged.disconnect(self.onInputChanged)
                 except:
                     pass
-            elif hasattr(widget, 'stateChanged'):
+            elif hasattr(widget, "stateChanged"):
                 try:
                     widget.stateChanged.disconnect(self.onInputChanged)
                 except:
                     pass
-            elif hasattr(widget, 'dataChanged'):
+            elif hasattr(widget, "dataChanged"):
                 try:
                     widget.dataChanged.disconnect(self.onInputChanged)
                 except:
@@ -214,9 +236,7 @@ class TriggerNode(Node):
     node_type: str = ""
     content_label: str = ""
     content_label_objname: str = "calc_node_bg"
-    style: dict[str, str] = {
-        'brush_color': "#000000"
-    }
+    style: dict[str, str] = {"brush_color": "#000000"}
 
     # Explicitly define types for Node classes
     GraphicsNode_class: TriggerGraphicsNode = TriggerGraphicsNode  # type: ignore
@@ -225,9 +245,17 @@ class TriggerNode(Node):
 
     # evaluationRequested = Signal()
 
-    def __init__(self, scene: 'Scene', inputs: List[int] = [2, 2], outputs: List[int] = [1], input_text: List[str] = [], output_text: List[str] = []) -> None:
-        super().__init__(scene, self.__class__.node_title,
-                         inputs, outputs, input_text, output_text)
+    def __init__(
+        self,
+        scene: "Scene",
+        inputs: List[int] = [2, 2],
+        outputs: List[int] = [1],
+        input_text: List[str] = [],
+        output_text: List[str] = [],
+    ) -> None:
+        super().__init__(
+            scene, self.__class__.node_title, inputs, outputs, input_text, output_text
+        )
 
         self.value: Optional[Any] = None
         self.param: list = []
@@ -241,7 +269,9 @@ class TriggerNode(Node):
         self.output_socket_position = RIGHT_CENTER
         # self.evaluationRequested.connect(self.onInputChanged)
 
-    def getSocketValue(self, socket_list: list['Socket'], target_node: 'TriggerNode') -> int:
+    def getSocketValue(
+        self, socket_list: list["Socket"], target_node: "TriggerNode"
+    ) -> int:
         """Get value based on socket connection"""
         socket_index = 0
         for i, socket in enumerate(socket_list):
@@ -317,8 +347,7 @@ class TriggerNode(Node):
 
     def eval(self, index: Any = None) -> Any:
         if not self.isDirty() and not self.isInvalid():
-            print(" _> returning cached %s value:" %
-                  self.__class__.__name__)
+            print(" _> returning cached %s value:" % self.__class__.__name__)
             return self.value
         try:
             val = self.evalImplementation()
@@ -333,12 +362,12 @@ class TriggerNode(Node):
             dumpException(e)
             return None  # Add explicit return for exception case
 
-    def onEdgeConnectionChanged(self, new_edge: 'Edge') -> None:
+    def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
         # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
         self.markDirty()
         self.eval()
 
-    def onInputChanged(self, socket: Optional['Socket'] = None) -> None:
+    def onInputChanged(self, socket: Optional["Socket"] = None) -> None:
         print("🟡%s::__onInputChanged" % self.__class__.__name__)
         self.markDirty()
         self.markChildrenDirty()
@@ -346,11 +375,13 @@ class TriggerNode(Node):
 
     def serialize(self) -> OrderedDict:
         res = super().serialize()
-        res['node_code'] = self.__class__.node_code
-        res['node_type'] = self.__class__.node_type
+        res["node_code"] = self.__class__.node_code
+        res["node_type"] = self.__class__.node_type
         return res
 
-    def deserialize(self, data: dict, hashmap: dict = {}, restore_id: bool = True) -> bool:
+    def deserialize(
+        self, data: dict, hashmap: dict = {}, restore_id: bool = True
+    ) -> bool:
         res = super().deserialize(data, hashmap, restore_id)
         # print("Deserialized CalcNode '%s'" %
         #       self.__class__.__name__, "res:", res)

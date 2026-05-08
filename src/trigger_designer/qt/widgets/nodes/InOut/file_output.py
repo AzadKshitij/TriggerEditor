@@ -36,7 +36,6 @@ from loguru import logger
 
 
 class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-
     evaluate = Signal()
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
@@ -167,7 +166,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Only update UI if elements have been created
         if not hasattr(self, "delimiterEdit") or not self.delimiterEdit:
             return
-            
+
         show_delimiter = self.file_format in ["csv", "custom_delimited"]
         self.delimiterEdit.setVisible(show_delimiter)
         self.delimiterEdit.parent().layout().itemAt(0).widget().setVisible(
@@ -230,9 +229,12 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def get_code(self):
         if self.incoming_variable is None or self.incoming_variable == "":
             return "print('''No Incoming Variable''')\n"
-        
-        print("🐍 File: InOut/file_output.py | Line: 238 | get_code ~ self.incoming_variable",self.incoming_variable, "may be no incomming variable")
 
+        print(
+            "🐍 File: InOut/file_output.py | Line: 238 | get_code ~ self.incoming_variable",
+            self.incoming_variable,
+            "may be no incomming variable",
+        )
 
         code_lines = []
         var_name = self.incoming_variable

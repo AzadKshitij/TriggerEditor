@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QFileDialog,
     QMdiSubWindow,
     QTabWidget,
-    QShortcut
+    QShortcut,
 )
 from qtpy.QtCore import Qt, QSignalMapper
 
@@ -49,8 +49,9 @@ Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
 DEBUG = False
 
 
-class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsMixin, NodeEditorWindow):
-
+class TriggerWindow(
+    MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsMixin, NodeEditorWindow
+):
     def __init__(
         self,
         file_path: Optional[str] = None,
@@ -58,9 +59,9 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         name_product: str = "Trigger Editor",
     ) -> None:
         super().__init__()
-        
+
         # We'll create a single logging dock in initUI
-        
+
         self.openFile(file_path)
         self.name_company = name_company
         self.name_product = name_product
@@ -74,7 +75,7 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         # self.setWindowIcon(QIcon(":/trigger_designer/images/icon.png"))
 
     def initUI(self, parent: Optional[QWidget] = None) -> None:
-        
+
         # super(CalculatorWindow, self).__init__(parent)
         self.windowMapper = QSignalMapper(self)
 
@@ -86,10 +87,8 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
             print("Registered nodes:")
 
         self.mdiArea = QMdiArea()
-        self.mdiArea.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self.mdiArea.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.mdiArea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.mdiArea.setViewMode(QMdiArea.ViewMode.TabbedView)
         self.mdiArea.setDocumentMode(True)
         self.mdiArea.setTabsClosable(True)
@@ -124,7 +123,7 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
 
         self.setDockNestingEnabled(True)
-        
+
         # Initialize global logger with this main window
         global_logger.set_main_window(self)
         # self.tabifyDockWidget(self.configDock, self.resultDock)
@@ -233,33 +232,35 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
 
     def createMdiChild(self, child_widget=None):
         nodeeditor = (
-            child_widget if child_widget is not None else TriggerSubWindow(
-                self)
+            child_widget if child_widget is not None else TriggerSubWindow(self)
         )
         # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
         nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemSelectedListener(
-            lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems()))
+            lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems())
+        )
         nodeeditor.scene.addItemsDeselectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemsDeselectedListener(
-            lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems()))
+            lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems())
+        )
         # Connect signals
-        nodeeditor.scene.history.addHistoryModifiedListener(
-            self.updateEditMenu)
+        nodeeditor.scene.history.addHistoryModifiedListener(self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
         # nodeeditor.itemSelected.connect(self.onNodeSelected)
-        
+
         # Connect the design window to the shared logging dock
         nodeeditor.setLoggingDock(self.getLoggingDock())
-        
+
         # Switch logging dock to this window if it's the active one
         if self.mdiArea.activeSubWindow() == subwnd:
             self.switchLoggingDock(nodeeditor)
-            
+
         # Add a welcome log message for new design window
-        nodeeditor.logInfo(f"Design window '{nodeeditor.windowTitle()}' created and ready")
+        nodeeditor.logInfo(
+            f"Design window '{nodeeditor.windowTitle()}' created and ready"
+        )
 
         return subwnd
 
@@ -267,7 +268,7 @@ class TriggerWindow(MainWindowDockMixin, MainWindowMenuMixin, MainWindowActionsM
         """Handle sub window activation to switch logging dock context"""
         if sub_window:
             widget = sub_window.widget()
-            if hasattr(widget, 'setLoggingDock'):  # Check if it's a design window
+            if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
                 # Switch the logging dock to show logs for this window
                 self.switchLoggingDock(widget)
 

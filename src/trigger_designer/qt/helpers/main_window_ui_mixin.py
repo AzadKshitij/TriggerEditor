@@ -58,9 +58,7 @@ class MainWindowMenuMixin:
 
             self.actCut.setEnabled(has_mdi_child and active.hasSelectedItems())
             self.actCopy.setEnabled(has_mdi_child and active.hasSelectedItems())
-            self.actDelete.setEnabled(
-                has_mdi_child and active.hasSelectedItems()
-            )
+            self.actDelete.setEnabled(has_mdi_child and active.hasSelectedItems())
 
             self.actUndo.setEnabled(has_mdi_child and active.canUndo())
             self.actRedo.setEnabled(has_mdi_child and active.canRedo())
@@ -131,16 +129,16 @@ class MainWindowDockMixin:
 
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""
-        return getattr(self, 'loggingDock', None)
+        return getattr(self, "loggingDock", None)
 
     def switchLoggingDock(self, design_window) -> None:
         """Switch the logging dock to show logs for a specific design window"""
-        if hasattr(self, 'loggingDock') and self.loggingDock:
+        if hasattr(self, "loggingDock") and self.loggingDock:
             self.loggingDock.switch_to_design_window(design_window)
 
     def onDesignWindowClose(self, design_window, event) -> None:
         """Handle design window close event to clean up logs"""
-        if hasattr(self, 'loggingDock') and self.loggingDock:
+        if hasattr(self, "loggingDock") and self.loggingDock:
             design_window_id = str(id(design_window))
             self.loggingDock.remove_design_window(design_window_id)
 

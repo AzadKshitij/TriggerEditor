@@ -575,7 +575,9 @@ class PolarsTableViewer(QWidget):
         self.table_view = QTableView()
         self._apply_table_theme()
         self.table_view.setAlternatingRowColors(False)  # We'll handle this in model
-        self.table_view.setSelectionBehavior(QTableView.SelectItems)  # Allow cell selection for copying
+        self.table_view.setSelectionBehavior(
+            QTableView.SelectItems
+        )  # Allow cell selection for copying
         self.table_view.setSortingEnabled(False)  # Disable for performance
         self.table_view.verticalHeader().setDefaultSectionSize(
             28
@@ -585,7 +587,7 @@ class PolarsTableViewer(QWidget):
         # Enable virtual scrolling for performance
         self.table_view.setVerticalScrollMode(QTableView.ScrollPerPixel)
         self.table_view.setHorizontalScrollMode(QTableView.ScrollPerPixel)
-        
+
         # Enable copy functionality
         self._setup_copy_functionality()
 
@@ -684,32 +686,32 @@ class PolarsTableViewer(QWidget):
         # Create keyboard shortcut for Ctrl+C
         copy_shortcut = QShortcut(QKeySequence.Copy, self.table_view)
         copy_shortcut.activated.connect(self.copy_selected_to_clipboard)
-        
+
         # Create context menu for right-click copy
         self.table_view.setContextMenuPolicy(Qt.CustomContextMenu)
         self.table_view.customContextMenuRequested.connect(self._show_context_menu)
 
     def _show_context_menu(self, position):
         """Show context menu with copy options."""
-        
+
         menu = QMenu(self.table_view)
-        
+
         # Copy selected cells
         copy_action = QAction("Copy Selected", self)
         copy_action.setShortcut(QKeySequence.Copy)
         copy_action.triggered.connect(self.copy_selected_to_clipboard)
         menu.addAction(copy_action)
-        
+
         # Copy selected rows (if row selection)
         copy_rows_action = QAction("Copy Selected Rows", self)
         copy_rows_action.triggered.connect(self.copy_selected_rows_to_clipboard)
         menu.addAction(copy_rows_action)
-        
+
         # Copy all visible data
         copy_all_action = QAction("Copy All Visible Data", self)
         copy_all_action.triggered.connect(self.copy_all_visible_to_clipboard)
         menu.addAction(copy_all_action)
-        
+
         # Show menu at cursor position
         menu.exec_(self.table_view.mapToGlobal(position))
 
@@ -719,25 +721,25 @@ class PolarsTableViewer(QWidget):
             selection_model = self.table_view.selectionModel()
             if not selection_model or not selection_model.hasSelection():
                 return
-            
+
             selected_indexes = selection_model.selectedIndexes()
             if not selected_indexes:
                 return
-            
+
             # Sort indexes by row and column
             selected_indexes.sort(key=lambda idx: (idx.row(), idx.column()))
-            
+
             # Group by rows
             rows_data = {}
             for index in selected_indexes:
                 row = index.row()
                 col = index.column()
                 data = self.model.data(index, Qt.DisplayRole) or ""
-                
+
                 if row not in rows_data:
                     rows_data[row] = {}
                 rows_data[row][col] = str(data)
-            
+
             # Build text with tab separation
             clipboard_text = []
             for row in sorted(rows_data.keys()):
@@ -746,13 +748,13 @@ class PolarsTableViewer(QWidget):
                 cols = sorted(row_data.keys())
                 row_text = "\t".join(row_data.get(col, "") for col in cols)
                 clipboard_text.append(row_text)
-            
+
             # Copy to clipboard
             clipboard = QApplication.clipboard()
             clipboard.setText("\n".join(clipboard_text))
-            
+
             logger.info(f"Copied {len(clipboard_text)} rows to clipboard")
-            
+
         except Exception as e:
             logger.error(f"Error copying to clipboard: {str(e)}")
 
@@ -762,22 +764,25 @@ class PolarsTableViewer(QWidget):
             selection_model = self.table_view.selectionModel()
             if not selection_model or not selection_model.hasSelection():
                 return
-            
+
             selected_rows = set()
             for index in selection_model.selectedIndexes():
                 selected_rows.add(index.row())
-            
+
             if not selected_rows:
                 return
-            
+
             # Get headers
             headers = []
             for col in range(self.model.columnCount()):
-                header = self.model.headerData(col, Qt.Horizontal, Qt.DisplayRole) or f"Column_{col}"
+                header = (
+                    self.model.headerData(col, Qt.Horizontal, Qt.DisplayRole)
+                    or f"Column_{col}"
+                )
                 headers.append(str(header))
-            
+
             clipboard_text = ["\t".join(headers)]
-            
+
             # Get data for selected rows
             for row in sorted(selected_rows):
                 row_data = []
@@ -786,13 +791,15 @@ class PolarsTableViewer(QWidget):
                     data = self.model.data(index, Qt.DisplayRole) or ""
                     row_data.append(str(data))
                 clipboard_text.append("\t".join(row_data))
-            
+
             # Copy to clipboard
             clipboard = QApplication.clipboard()
             clipboard.setText("\n".join(clipboard_text))
-            
-            logger.info(f"Copied {len(selected_rows)} complete rows with headers to clipboard")
-            
+
+            logger.info(
+                f"Copied {len(selected_rows)} complete rows with headers to clipboard"
+            )
+
         except Exception as e:
             logger.error(f"Error copying rows to clipboard: {str(e)}")
 
@@ -801,15 +808,18 @@ class PolarsTableViewer(QWidget):
         try:
             if not self.model:
                 return
-            
+
             # Get headers
             headers = []
             for col in range(self.model.columnCount()):
-                header = self.model.headerData(col, Qt.Horizontal, Qt.DisplayRole) or f"Column_{col}"
+                header = (
+                    self.model.headerData(col, Qt.Horizontal, Qt.DisplayRole)
+                    or f"Column_{col}"
+                )
                 headers.append(str(header))
-            
+
             clipboard_text = ["\t".join(headers)]
-            
+
             # Get all visible data
             for row in range(self.model.rowCount()):
                 row_data = []
@@ -818,13 +828,15 @@ class PolarsTableViewer(QWidget):
                     data = self.model.data(index, Qt.DisplayRole) or ""
                     row_data.append(str(data))
                 clipboard_text.append("\t".join(row_data))
-            
+
             # Copy to clipboard
             clipboard = QApplication.clipboard()
             clipboard.setText("\n".join(clipboard_text))
-            
-            logger.info(f"Copied all {self.model.rowCount()} visible rows with headers to clipboard")
-            
+
+            logger.info(
+                f"Copied all {self.model.rowCount()} visible rows with headers to clipboard"
+            )
+
         except Exception as e:
             logger.error(f"Error copying all data to clipboard: {str(e)}")
 
@@ -1452,7 +1464,6 @@ class PolarsTableViewer(QWidget):
             and self.apply_filter_btn is not None
             and self.clear_filter_btn is not None
         ):
-
             # Find the search group widget and toggle its visibility
             search_group = self.search_input.parent()
             if search_group is not None:
@@ -1483,7 +1494,6 @@ class PolarsTableViewer(QWidget):
             and self.cache_size_spin is not None
             and self.auto_optimize_cb is not None
         ):
-
             # Find the performance group widget and toggle its visibility
             perf_group = self.chunk_size_spin.parent()
             if perf_group is not None:

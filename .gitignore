@@ -1,5 +1,6 @@
 .venv/
 *.pyc
+.temp/
 
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,python,qt
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,python,qt

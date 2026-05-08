@@ -122,12 +122,21 @@
         }
       ],
       "content": {
-        "sort_data": [
-          {
-            "column": "Unnamed: 0",
-            "order": "Descending"
-          }
-        ]
+        "table_data": [],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
       },
       "node_code": 5,
       "node_type": "preparation"
@@ -156,12 +165,7 @@
         }
       ],
       "content": {
-        "selected_columns": [
-          "Unnamed: 0",
-          "Keyword",
-          "Source",
-          "Autocomplete Position"
-        ]
+        "sort_data": []
       },
       "node_code": 6,
       "node_type": "preparation"
@@ -197,9 +201,7 @@
         }
       ],
       "content": {
-        "estimation_percent": 70,
-        "random_seed": 1,
-        "is_random": true
+        "selected_columns": []
       },
       "node_code": 7,
       "node_type": "preparation"
@@ -225,14 +227,19 @@
           "multi_edges": true,
           "position": 5,
           "socket_type": 1
+        },
+        {
+          "id": 1168116771856,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
         }
       ],
       "content": {
-        "field_name": "counter",
-        "field_type": "int",
-        "initial_value": 1,
-        "increment_value": 1,
-        "max_value": 10
+        "estimation_percent": 70,
+        "random_seed": 42,
+        "is_random": true
       },
       "node_code": 8,
       "node_type": "preparation"
@@ -253,7 +260,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/check.csv",
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/data/check.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -399,7 +406,10 @@
           "socket_type": 1
         }
       ],
-      "content": {},
+      "content": {
+        "total_records": 0,
+        "variable_name": "var_count_1168116776496"
+      },
       "node_code": 2,
       "node_type": "transform"
     },
@@ -458,56 +468,7 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "Keyword",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Seed",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Source",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Country",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Autocomplete Position",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Difficulty",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Hot Keyword",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "Relevancy Score",
-            "dtype": "String",
-            "rename": ""
-          }
-        ],
+        "actions_data": [],
         "changes": {
           "selected_columns": [
             "Keyword",
