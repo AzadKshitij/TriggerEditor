@@ -1,12 +1,10 @@
-from typing import Dict, Optional, List
-import pandas as pd
+from typing import Dict, Optional, List, TYPE_CHECKING
+import polars as pl
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
-    QListWidget,
     QGroupBox,
-    QAbstractItemView,
     QCheckBox,
     QScrollArea,
 )
@@ -23,16 +21,20 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.qt.helpers import global_logger
+
+if TYPE_CHECKING:
+    import polars as pl
 
 
 class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-    """Calculate running totals for numeric columns with optional grouping.
+    """Add cumulative-sum columns in the current row order.
 
-    Features:
-    - Select numeric columns for running totals
-    - Optional grouping by categorical columns
-    - Maintains original row order
-    - Prefixes new columns with "RunTot_"
+    For every selected numeric column, the node appends a new
+    ``RunTot_<column>`` column. If grouping columns are selected, the
+    cumulative sum resets within each group; otherwise it runs across the
+    entire input in the current row order.
     """
 
     evaluate = Signal()
@@ -42,8 +44,8 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.node = node
         # Data tracking
         self.incoming_variable: str = ""
-        self.incom_data: Optional[pd.DataFrame] = None
-        self.data: Optional[pd.DataFrame] = None
+        self.incom_data: Optional[pl.DataFrame] = None
+        self.data: Optional[pl.DataFrame] = None
         self.variable_name = f"var_runtot_{self.id}"
 
         # Configuration
@@ -54,6 +56,22 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Checkbox tracking
         self.sum_checkboxes: Dict[str, QCheckBox] = {}
         self.group_checkboxes: Dict[str, QCheckBox] = {}
+
+    def _get_schema(self) -> dict[str, pl.DataType]:
+        if self.incom_data is None:
+            return {}
+        if isinstance(self.incom_data, pl.LazyFrame):
+            schema = self.incom_data.collect_schema()
+            return {name: dtype for name, dtype in schema.items()}
+        return {name: dtype for name, dtype in self.incom_data.schema.items()}
+
+    def _get_columns(self) -> list[str]:
+        return list(self._get_schema().keys())
+
+    def _get_numeric_columns(self) -> list[str]:
+        return [
+            name for name, dtype in self._get_schema().items() if dtype.is_numeric()
+        ]
 
     @property
     def node(self) -> "TriggerNode":
@@ -74,9 +92,9 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             main_layout.setContentsMargins(5, 5, 5, 5)
 
             # Get numeric columns
-            self.numeric_columns = self.incom_data.select_dtypes(
-                include=["int64", "float64"]
-            ).columns.tolist()
+            self.numeric_columns = self._get_numeric_columns()
+            self.sum_checkboxes = {}
+            self.group_checkboxes = {}
 
             # Numeric Columns Selection with Checkboxes
             sum_group = QGroupBox("Select Columns for Running Total")
@@ -95,11 +113,6 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.sum_checkboxes[col] = checkbox
                 sum_checkbox_layout.addWidget(checkbox)
 
-            print(
-                "🐍 File: Transform/running_total.py:70 | create_layout ~ self.sum_checkboxes",
-                self.sum_checkboxes,
-            )
-
             sum_widget.setLayout(sum_checkbox_layout)
             sum_scroll.setWidget(sum_widget)
             sum_layout.addWidget(sum_scroll)
@@ -117,7 +130,7 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             group_checkbox_layout = QVBoxLayout()
 
             # Add checkboxes for all columns
-            for column in self.incom_data.columns:
+            for column in self._get_columns():
                 checkbox = QCheckBox(column)
                 checkbox.stateChanged.connect(self.on_group_selection_changed)
                 self.group_checkboxes[column] = checkbox
@@ -132,6 +145,7 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.update_checkboxes()
 
             dock_layout.addLayout(main_layout)
+            self.recursively_find_widgets(dock_layout)
         else:
             no_data_label = QLabel("No incoming data available")
             no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -139,62 +153,79 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addWidget(no_data_label)
 
     def process_data(self) -> None:
-        """Calculate running totals for selected columns"""
-        if self.incom_data is not None and self.sum_columns:
-            # Start with original data
-            self.data = self.incom_data.copy()
+        """Calculate running totals for selected columns using Polars."""
+        if self.incom_data is None:
+            self.data = None
+            return
 
-            # Calculate running totals
-            if self.group_by_columns:
-                # Group by selected columns
-                for col in self.sum_columns:
-                    self.data[f"RunTot_{col}"] = self.data.groupby(
-                        self.group_by_columns
-                    )[col].cumsum()
-            else:
-                # No grouping - straight cumsum
-                for col in self.sum_columns:
-                    self.data[f"RunTot_{col}"] = self.data[col].cumsum()
+        available_columns = self._get_columns()
+        self.sum_columns = [
+            column for column in self.sum_columns if column in self._get_numeric_columns()
+        ]
+        self.group_by_columns = [
+            column for column in self.group_by_columns if column in available_columns
+        ]
 
-    def on_sum_selection_changed(self, state: bool) -> None:
-        print("🐍 File: Transform/running_total.py:128 | process_data ~ state", state)
+        if not self.sum_columns:
+            self.data = self.incom_data
+            return
+
+        try:
+            expressions = []
+            for column in self.sum_columns:
+                expression = pl.col(column).cum_sum()
+                if self.group_by_columns:
+                    expression = expression.over(self.group_by_columns)
+                expressions.append(expression.alias(f"RunTot_{column}"))
+
+            self.data = self.incom_data.with_columns(expressions)
+        except Exception as e:
+            global_logger.error(
+                f"❌ RunningTotalContent: Error computing running total: {e}"
+            )
+            self.data = None
+
+    def on_sum_selection_changed(self, _state: int) -> None:
         """Handle sum columns checkbox changes"""
         self.sum_columns = [
             col for col, checkbox in self.sum_checkboxes.items() if checkbox.isChecked()
         ]
-        # self.process_data()
         self.evaluate.emit()
 
-    def on_group_selection_changed(self) -> None:
+    def on_group_selection_changed(self, *_args) -> None:
         """Handle group by columns checkbox changes"""
         self.group_by_columns = [
             col
             for col, checkbox in self.group_checkboxes.items()
             if checkbox.isChecked()
         ]
-        # self.process_data()
         self.evaluate.emit()
 
     def get_code(self) -> str:
-        """Generate code for running total calculations"""
+        """Generate Polars code for running total calculations."""
+        if not self.incoming_variable:
+            return ""
 
-        if self.incoming_variable is None:
-            return "print('No data available for running total calculation')\n"
+        if not self.sum_columns:
+            return (
+                f"# No running-total columns selected\n"
+                f"{self.variable_name} = {self.incoming_variable}\n"
+            )
 
-        code_lines = [f"{self.variable_name} = {self.incoming_variable}.copy()"]
-
+        exprs = []
         for col in self.sum_columns:
             if self.group_by_columns:
-                group_cols = ", ".join(f"'{col}'" for col in self.group_by_columns)
-                code_lines.append(
-                    f"{self.variable_name}['RunTot_{col}'] = "
-                    f"{self.variable_name}.groupby([{group_cols}])['{col}'].cumsum()"
-                )
+                group_cols = ", ".join(f'"{c}"' for c in self.group_by_columns)
+                exprs.append(f'    pl.col("{col}").cum_sum().over([{group_cols}]).alias("RunTot_{col}")')
             else:
-                code_lines.append(
-                    f"{self.variable_name}['RunTot_{col}'] = "
-                    f"{self.variable_name}['{col}'].cumsum()"
-                )
+                exprs.append(f'    pl.col("{col}").cum_sum().alias("RunTot_{col}")')
+
+        code_lines = [
+            "import polars as pl",
+            f"{self.variable_name} = {self.incoming_variable}.with_columns([",
+        ]
+        code_lines.extend(exprs)
+        code_lines.append("])")
 
         return "\n".join(code_lines) + "\n"
 
@@ -202,20 +233,8 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """Serialize node content"""
         res = super().serialize()
         res["sum_columns"] = self.sum_columns
-        print(
-            "🐍 File: Transform/running_total.py:174 | serialize ~ self.sum_columns",
-            self.sum_columns,
-        )
         res["group_by_columns"] = self.group_by_columns
-        print(
-            "🐍 File: Transform/running_total.py:176 | serialize ~ self.group_by_columns",
-            self.group_by_columns,
-        )
         res["numeric_columns"] = self.numeric_columns
-        print(
-            "🐍 File: Transform/running_total.py:178 | serialize ~ self.numeric_columns",
-            self.numeric_columns,
-        )
         return res
 
     def deserialize(self, data: dict, hashmap={}) -> bool:
@@ -240,9 +259,7 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         if self.incom_data is not None:
             # Update numeric columns
-            self.numeric_columns = self.incom_data.select_dtypes(
-                include=["int64", "float64"]
-            ).columns.tolist()
+            self.numeric_columns = self._get_numeric_columns()
 
             # Restore sum column selections
             for col in self.numeric_columns:
@@ -250,7 +267,7 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.sum_checkboxes[col].setChecked(col in self.sum_columns)
 
             # Restore group by selections
-            for col in self.incom_data.columns:
+            for col in self._get_columns():
                 if col in self.group_checkboxes:
                     self.group_checkboxes[col].setChecked(col in self.group_by_columns)
 
@@ -283,30 +300,40 @@ class TriggerNode_RunningTotal(TriggerNode):
         self.param: List = []
 
     def processInputs(self, input_values):
-        this_socket_index = 0
-        input_node = self.getInput(this_socket_index)
-        socket_index = self.getSocketValue(input_node.outputs, self)
-        input_value = input_values[this_socket_index][socket_index]
+        try:
+            input_node = self.getInput(0)
+            socket_index = self.getSocketValue(input_node.outputs, self)
+            input_value = input_values[0][socket_index]
 
-        if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
+            if input_value:
+                self.markDirty(False)
+                self.markInvalid(False)
 
-            self.content.incom_data = input_value.get("data")
-            self.content.incoming_variable = input_value.get("variable_name")
+                self.content.incom_data = input_value.get("data")
+                self.content.incoming_variable = input_value.get("variable_name")
 
-            self.content.process_data()
+                self.content.process_data()
 
-            self.param = [
-                {"data": self.content.data, "variable_name": self.content.variable_name}
-            ]
-            self.evalChildren()
-
-            return self.param
-        else:
+                if self.content.data is not None:
+                    self.param = [
+                        {"data": self.content.data, "variable_name": self.content.variable_name}
+                    ]
+                    self.evalChildren()
+                    return self.param
+                else:
+                    self.markDirty(True)
+                    self.markInvalid(True)
+                    self.grNode.setToolTip("No columns selected for running total")
+                    return None
+            else:
+                self.markDirty(True)
+                self.markInvalid(True)
+                self.grNode.setToolTip("Input is not connected")
+                return None
+        except Exception as e:
+            global_logger.error(f"❌ RunningTotalNode: Error during input processing: {e}")
             self.markDirty(True)
             self.markInvalid(True)
-            self.grNode.setToolTip("Input is not connected")
             return None
 
     def get_code(self) -> str:

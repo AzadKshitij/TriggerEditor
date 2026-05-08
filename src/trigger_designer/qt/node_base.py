@@ -245,6 +245,17 @@ class TriggerNode(Node):
 
     # evaluationRequested = Signal()
 
+    @staticmethod
+    def _normalize_socket_text(labels: List[str]) -> List[str]:
+        """Render socket labels as a single capitalized character."""
+        normalized_labels: List[str] = []
+        for label in labels:
+            if isinstance(label, str) and label:
+                normalized_labels.append(label[0].upper())
+            else:
+                normalized_labels.append(label)
+        return normalized_labels
+
     def __init__(
         self,
         scene: "Scene",
@@ -254,7 +265,12 @@ class TriggerNode(Node):
         output_text: List[str] = [],
     ) -> None:
         super().__init__(
-            scene, self.__class__.node_title, inputs, outputs, input_text, output_text
+            scene,
+            self.__class__.node_title,
+            inputs,
+            outputs,
+            input_text,
+            self._normalize_socket_text(output_text),
         )
 
         self.value: Optional[Any] = None

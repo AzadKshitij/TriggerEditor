@@ -138,6 +138,7 @@ class LoggingDock(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
             | QDockWidget.DockWidgetFeature.DockWidgetClosable
         )
+        self.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
 
     def setupAutoUpdate(self) -> None:
         """Setup timer for auto-updating the display"""

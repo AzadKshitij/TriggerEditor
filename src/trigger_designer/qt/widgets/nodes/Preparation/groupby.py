@@ -82,6 +82,49 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     evaluate = Signal()  # Emit when evaluate button is clicked
 
+    @staticmethod
+    def _normalize_changes(changes: Optional[dict]) -> dict:
+        """Ensure serialized GroupBy state always has the expected keys."""
+        normalized_changes = changes if isinstance(changes, dict) else {}
+        return {
+            "group_by_columns": list(normalized_changes.get("group_by_columns", [])),
+            "aggregations": dict(normalized_changes.get("aggregations", {})),
+        }
+
+    @staticmethod
+    def _actions_data_from_changes(changes: Optional[dict]) -> list[dict[str, str]]:
+        """Rebuild table rows from serialized GroupBy state."""
+        normalized_changes = GroupByContent._normalize_changes(changes)
+        function_map = {
+            "count": "Count",
+            "sum": "Sum",
+            "mean": "Mean",
+            "min": "Min",
+            "max": "Max",
+            "std": "Std",
+            "var": "Var",
+            "median": "Median",
+            "first": "First",
+            "last": "Last",
+            "n_unique": "N_Unique",
+            "list": "List",
+        }
+
+        actions_data = [
+            {"field": column, "action": "GroupBy", "output_name": column}
+            for column in normalized_changes["group_by_columns"]
+        ]
+        for column, config in normalized_changes["aggregations"].items():
+            actions_data.append(
+                {
+                    "field": column,
+                    "action": function_map.get(config.get("function", "count"), "Count"),
+                    "output_name": config.get("alias", column),
+                }
+            )
+
+        return actions_data
+
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         global_logger.debug(
@@ -102,10 +145,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.variable_name: str = f"var_groupby_{self.id}"
 
         # Configuration for operations
-        self.changes: dict = {
-            "group_by_columns": [],
-            "aggregations": {},  # {column: {function: alias}}
-        }
+        self.changes: dict = self._normalize_changes(None)
 
         # Cache for serialization safety
         self.cached_actions_data: list = []
@@ -130,10 +170,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Initialize changes if not already present
             if not hasattr(self, "changes") or not self.changes:
-                self.changes = {
-                    "group_by_columns": [],
-                    "aggregations": {},
-                }
+                self.changes = self._normalize_changes(getattr(self, "changes", None))
 
             # Create main widget for the GroupBy configuration
             main_widget = QWidget()
@@ -161,8 +198,8 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )  # Prevent sections from collapsing completely
 
             fields_layout.addWidget(self.fields_table)
-
-            self.splitter.addWidget(self.fields_table)
+            fields_widget.setMinimumHeight(180)
+            self.splitter.addWidget(fields_widget)
 
             # Add button container (not resizable, fixed between sections)
             add_button_widget = QWidget()
@@ -208,6 +245,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.create_actions_table()
             actions_layout.addWidget(self.actions_table)
 
+            actions_widget.setMinimumHeight(180)
             self.splitter.addWidget(actions_widget)
 
             # Set initial splitter proportions (50:50)
@@ -255,6 +293,18 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.fields_table = QTableWidget()
         self.fields_table.setColumnCount(2)
         self.fields_table.setHorizontalHeaderLabels(["Field", "Type"])
+        self.fields_table.setAlternatingRowColors(True)
+        self.fields_table.setWordWrap(False)
+        self.fields_table.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.fields_table.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.fields_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.fields_table.verticalHeader().setVisible(False)
 
         # Set row count based on available columns
         self.fields_table.setRowCount(len(self.incom_data.columns))
@@ -278,8 +328,10 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             QTableWidget.SelectionBehavior.SelectRows
         )
         header = self.fields_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+        self.fields_table.setColumnWidth(0, 220)
+        self.fields_table.setColumnWidth(1, 140)
 
     def create_actions_table(self) -> None:
         """Create the actions table for configuring groupby operations"""
@@ -290,6 +342,18 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.actions_table.setHorizontalHeaderLabels(
             ["Field", "Action", "Output Field Name"]
         )
+        self.actions_table.setAlternatingRowColors(True)
+        self.actions_table.setWordWrap(False)
+        self.actions_table.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.actions_table.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        self.actions_table.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+        )
+        self.actions_table.verticalHeader().setVisible(False)
 
         # Available aggregation functions
         self.aggregation_functions = [
@@ -313,9 +377,12 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Configure table properties
         header = self.actions_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        self.actions_table.setColumnWidth(0, 180)
+        self.actions_table.setColumnWidth(1, 120)
+        self.actions_table.setColumnWidth(2, 240)
 
         # Connect to update changes when table items are changed
         self.actions_table.itemChanged.connect(self.safe_update_groupby_data)
@@ -477,10 +544,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Ensure changes dict exists
         if not hasattr(self, "changes"):
-            self.changes = {"group_by_columns": [], "aggregations": {}}
+            self.changes = self._normalize_changes(None)
 
-        self.changes["group_by_columns"] = []
-        self.changes["aggregations"] = {}
+        self.changes = self._normalize_changes(None)
 
         for row in range(self.actions_table.rowCount()):
             field_item = self.actions_table.item(row, 0)
@@ -569,8 +635,10 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.update_groupby_data()
 
-        group_by_columns = self.changes["group_by_columns"]
-        aggregations = self.changes["aggregations"]
+        changes = self._normalize_changes(self.changes)
+        self.changes = changes
+        group_by_columns = changes["group_by_columns"]
+        aggregations = changes["aggregations"]
 
         if not group_by_columns and not aggregations:
             global_logger.warning("⚠️ GroupByContent: No operations configured")
@@ -698,22 +766,21 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.actions_table.setRowCount(0)
 
         # Clear changes
-        self.changes = {
-            "group_by_columns": [],
-            "aggregations": {},
-        }
+        self.changes = self._normalize_changes(None)
 
         global_logger.info("✅ GroupByContent: Configuration reset completed")
 
     def get_code(self) -> str:
         """Generate Polars code for the GroupBy operation"""
-        if self.data is None or self.incoming_variable is None:
+        if not self.incoming_variable:
             return ""
 
         code_lines = []
 
-        group_by_columns = self.changes["group_by_columns"]
-        aggregations = self.changes["aggregations"]
+        changes = self._normalize_changes(self.changes)
+        self.changes = changes
+        group_by_columns = changes["group_by_columns"]
+        aggregations = changes["aggregations"]
 
         global_logger.info(f"GroupBy columns: {group_by_columns}")
         global_logger.info(f"Aggregations: {aggregations}")
@@ -818,10 +885,11 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Fallback to cached data
             actions_data = getattr(self, "cached_actions_data", [])
 
+        if not actions_data:
+            actions_data = self._actions_data_from_changes(getattr(self, "changes", None))
+
         res["actions_data"] = actions_data
-        res["changes"] = getattr(
-            self, "changes", {"group_by_columns": [], "aggregations": {}}
-        )
+        res["changes"] = self._normalize_changes(getattr(self, "changes", None))
 
         # Cache the actions data for future use
         self.cached_actions_data = actions_data
@@ -834,12 +902,11 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         try:
             global_logger.debug("📊 GroupByContent: Deserializing GroupBy node")
 
-            self.changes = data.get(
-                "changes", {"group_by_columns": [], "aggregations": {}}
-            )
+            self.changes = self._normalize_changes(data.get("changes"))
 
             # Restore actions table data if available
-            self.actions_data = data.get("actions_data", [])
+            self.actions_data = data.get("actions_data") or self._actions_data_from_changes(self.changes)
+            self.cached_actions_data = list(self.actions_data)
 
             return True & res
         except Exception as e:

@@ -97,6 +97,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             global_logger.debug(
                 f"🔄 Join: Creating layout for join with {len(self.left_data.columns)} left columns and {len(self.right_data.columns)} right columns"
             )
+            self._sanitize_mapping_data()
+            self._sanitize_selected_columns()
             join_type_layout = QHBoxLayout()
             # join_type_label = QLabel("Join Type:")
             # self.join_type_combo = QComboBox()
@@ -119,6 +121,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Container for mapping rows
             self.mapping_container = QVBoxLayout()
+            self.mapping_pairs = []
 
             # Add initial mapping row
             # self.add_mapping_row()
@@ -171,8 +174,53 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
 
+    def _sanitize_mapping_data(self) -> None:
+        if self.left_data is None or self.right_data is None:
+            return
+
+        valid_left = set(self.left_data.columns)
+        valid_right = set(self.right_data.columns)
+        sanitized_mapping = []
+
+        for mapping in self.mapping_data:
+            left_column = mapping.get("left_column")
+            right_column = mapping.get("right_column")
+            candidate = {
+                "left_column": left_column,
+                "right_column": right_column,
+            }
+            if (
+                left_column in valid_left
+                and right_column in valid_right
+                and candidate not in sanitized_mapping
+            ):
+                sanitized_mapping.append(candidate)
+
+        self.mapping_data = sanitized_mapping
+
+    def _sanitize_selected_columns(self) -> None:
+        if self.left_data is None or self.right_data is None:
+            return
+
+        valid_left = set(self.left_data.columns)
+        valid_right = set(self.right_data.columns)
+        sanitized_columns = []
+
+        for column in self.selected_columns:
+            name = column.get("name")
+            source = column.get("source")
+            candidate = {"name": name, "source": source}
+
+            if source == "L" and name in valid_left and candidate not in sanitized_columns:
+                sanitized_columns.append(candidate)
+            elif source == "R" and name in valid_right and candidate not in sanitized_columns:
+                sanitized_columns.append(candidate)
+
+        self.selected_columns = sanitized_columns
+
     def load_saved_data(self) -> None:
-        if self.mapping_data is not []:
+        self._sanitize_mapping_data()
+        if self.mapping_data:
             for mapping in self.mapping_data:
                 self.add_mapping_row(
                     left_col=mapping["left_column"], right_col=mapping["right_column"]
@@ -330,15 +378,20 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         old_mapping_data = self.mapping_data.copy()
 
-        # Update current mapping data
-
+        new_mapping_data = []
         for pair in self.mapping_pairs:
-            self.mapping_data.append(
-                {
-                    "left_column": pair["left_combo"].currentText(),
-                    "right_column": pair["right_combo"].currentText(),
-                }
-            )
+            candidate = {
+                "left_column": pair["left_combo"].currentText(),
+                "right_column": pair["right_combo"].currentText(),
+            }
+            if candidate not in new_mapping_data:
+                new_mapping_data.append(candidate)
+
+        self.mapping_data = new_mapping_data
+        self._sanitize_mapping_data()
+
+        if old_mapping_data == self.mapping_data:
+            return
 
         history_data = {
             "node": self.node,
@@ -371,6 +424,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def update_output_columns(self) -> None:
         self.output_columns_list.clear()
         if self.left_data is not None and self.right_data is not None:
+            self._sanitize_selected_columns()
             if not self.selected_columns:
                 # Pre-select all columns by default
                 for col in sorted(self.left_data.columns):
@@ -567,6 +621,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"� Join: Processing join with mapping data: {self.mapping_data}"
         )
 
+        self._sanitize_mapping_data()
+        self._sanitize_selected_columns()
+
         if not self.mapping_data:
             global_logger.warning(
                 "🔄 Join: No mapping data provided for join operation"
@@ -638,6 +695,12 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                             selected_cols.append(f"{col_name}{right_suffix}")
                         else:
                             selected_cols.append(col_name)
+
+                selected_cols = [
+                    column
+                    for index, column in enumerate(selected_cols)
+                    if column in result.columns and column not in selected_cols[:index]
+                ]
 
                 # Create the main join result with selected columns
                 self.data = result.select(selected_cols)
@@ -771,6 +834,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self):
         """Generate Polars LazyFrame join code"""
+        self._sanitize_mapping_data()
+        self._sanitize_selected_columns()
+
         if not self.mapping_data or self.left_data is None or self.right_data is None:
             global_logger.warning(
                 "Join Node: No mapping data or input data is missing."
@@ -818,20 +884,19 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
 
         # Generate optimized code for left-only and right-only data extraction
-        left_cols_for_select = [
-            f"{col}" for col in left_columns
-        ]  # For .select() - needs quotes
+        left_cols_for_select = [f"{col}" for col in left_columns]
         right_cols_for_select = [
-            f"{col}" for col in right_columns
-        ]  # For .select() - needs quotes
-        # For pl.col() in list comprehension - column names should be bare strings, NOT quoted
-        left_cols_for_isnull = [col for col in left_columns]  # No quotes for pl.col()
-        right_cols_for_isnull = [col for col in right_columns]  # No quotes for pl.col()
+            f"{col}_right" if col in conflicting_cols else f"{col}"
+            for col in right_columns
+        ]
+        right_indicator_columns = [
+            f"{col}_right" if col in conflicting_cols else col for col in right_columns
+        ]
 
         # FIRST: Create the result with indicators (must come before using _result_with_indicators)
         # Create the null check expressions for right columns (if all right cols are null = left_only)
         right_null_conditions = " | ".join(
-            [f"pl.col('{col}').is_null()" for col in right_columns]
+            [f"pl.col('{col}').is_null()" for col in right_indicator_columns]
         )
         left_null_conditions = " | ".join(
             [f"pl.col('{col}').is_null()" for col in left_columns]
@@ -857,9 +922,16 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             selected_cols = []
             for col in self.selected_columns:
                 col_name = col["name"]
-                # With coalesce=True, all columns keep their original names
-                # Just use the column name as-is since Polars handles conflicts automatically
-                selected_cols.append(f"'{col_name}'")
+                source = col["source"]
+
+                if source == "R" and col_name not in right_cols and col_name in conflicting_cols:
+                    resolved_name = f"{col_name}_right"
+                elif source == "R" and col_name in conflicting_cols:
+                    resolved_name = f"{col_name}_right"
+                else:
+                    resolved_name = col_name
+
+                selected_cols.append(f"'{resolved_name}'")
 
             # Remove duplicates while preserving order
             selected_cols = list(dict.fromkeys(selected_cols))
@@ -997,7 +1069,12 @@ class TriggerNode_Join(TriggerNode):
                 f"🔄 Join: Processing inputs - Left: {self.content.left_variable}, Right: {self.content.right_variable}"
             )
 
-            self.evalChildren()
+            if self.content.transform_data() is None:
+                self.markDirty(True)
+                self.markInvalid(True)
+                self.grNode.setToolTip("No valid join mapping configured")
+                return None
+
             self.param = [
                 # Output 0 - Left data pass-through
                 {
@@ -1015,6 +1092,7 @@ class TriggerNode_Join(TriggerNode):
                     "variable_name": self.content.r_variable_name,
                 },
             ]
+            self.evalChildren()
             # Return three outputs in a list
             return self.param
 

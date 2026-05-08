@@ -57,10 +57,13 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Incoming data variables
         self.incoming_variable: str = ""
-        self.incom_data: pl.LazyFrame | None = None
+        self.incom_data: pl.DataFrame | pl.LazyFrame | None = None
 
         # Output variables
+        self.data: pl.DataFrame | pl.LazyFrame | None = None
+        self.duplicate_data: pl.DataFrame | pl.LazyFrame | None = None
         self.variable_name: str = f"var_unique_{self.id}"
+        self.duplicate_variable_name: str = f"var_duplicate_{self.id}"
 
         # UI components
         self.search_bar: QLineEdit | None = None
@@ -151,9 +154,6 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 QListWidget.SelectionMode.NoSelection
             )  # Disable multi-selection highlighting
             self.column_list.itemChanged.connect(self._on_item_changed)
-            self.column_list.itemClicked.connect(
-                self._on_item_clicked
-            )  # Handle click to toggle
 
             self.column_list.setObjectName("UniqueContentList")
             self.column_list.setAlternatingRowColors(True)
@@ -172,6 +172,25 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             no_data_label.setStyleSheet("color: gray;")
             dock_layout.addWidget(no_data_label)
+
+    def process_data(self) -> None:
+        """Build unique and duplicate outputs for the current selection."""
+        if self.incom_data is None:
+            self.data = None
+            self.duplicate_data = None
+            return
+
+        if not self.selected_columns:
+            self.data = self.incom_data
+            self.duplicate_data = self.incom_data.head(0)
+            return
+
+        duplicate_expr = pl.struct(self.selected_columns).is_duplicated()
+        self.data = self.incom_data.unique(
+            subset=self.selected_columns,
+            maintain_order=True,
+        )
+        self.duplicate_data = self.incom_data.filter(duplicate_expr)
 
     def _update_column_list(self) -> None:
         """
@@ -272,6 +291,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Store history if there was a change
             if old_selected != self.selected_columns:
                 self._store_selection_history(old_selected, "Select All Visible")
+                self.process_data()
                 self.evaluate.emit()
 
     def _deselect_all_columns(self) -> None:
@@ -303,6 +323,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Store history if there was a change
             if old_selected != self.selected_columns:
                 self._store_selection_history(old_selected, "Deselect All Visible")
+                self.process_data()
                 self.evaluate.emit()
 
     @Slot(QListWidgetItem)
@@ -347,6 +368,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self._store_selection_history(
                 old_selected_columns, f"Column '{item.text()}' Selection Changed"
             )
+            self.process_data()
             self.evaluate.emit()
 
     def _store_selection_history(
@@ -403,6 +425,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     except RuntimeError:
                         pass
 
+            self.process_data()
             self.evaluate.emit()
 
         finally:
@@ -434,33 +457,25 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             String containing the generated Python code for removing duplicates
         """
-        if not self.selected_columns or not self.incoming_variable:
-            # If no columns selected, pass through original data
-            return f"{self.variable_name} = {self.incoming_variable}\n"
+        if not self.incoming_variable:
+            return ""
 
-        code_lines = []
+        if not self.selected_columns:
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = {self.incoming_variable}\n"
+                f"{self.duplicate_variable_name} = {self.incoming_variable}.head(0)\n"
+            )
 
-        if len(self.selected_columns) == 1:
-            # Single column unique
-            column_name = self.selected_columns[0]
-            code_lines.extend(
-                [
-                    "import polars as pl",
-                    f"# Remove duplicates based on column: {column_name}",
-                    f'{self.variable_name} = {self.incoming_variable}.unique(subset=["{column_name}"])',
-                ]
-            )
-        else:
-            # Multiple columns unique
-            columns_list = [f'"{col}"' for col in self.selected_columns]
-            columns_str = "[" + ", ".join(columns_list) + "]"
-            code_lines.extend(
-                [
-                    "import polars as pl",
-                    f"# Remove duplicates based on columns: {', '.join(self.selected_columns)}",
-                    f"{self.variable_name} = {self.incoming_variable}.unique(subset={columns_str})",
-                ]
-            )
+        columns_list = [f'"{col}"' for col in self.selected_columns]
+        columns_str = "[" + ", ".join(columns_list) + "]"
+        duplicate_expr = f"pl.struct({columns_str}).is_duplicated()"
+        code_lines = [
+            "import polars as pl",
+            f"# Split into unique and duplicate records based on: {', '.join(self.selected_columns)}",
+            f"{self.variable_name} = {self.incoming_variable}.unique(subset={columns_str}, maintain_order=True)",
+            f"{self.duplicate_variable_name} = {self.incoming_variable}.filter({duplicate_expr})",
+        ]
 
         return "\n".join(code_lines) + "\n"
 
@@ -473,7 +488,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
 
         try:
-            self.selected_columns = data["selected_columns"]
+            self.selected_columns = data.get("selected_columns", [])
             return True & res
         except Exception as e:
             dumpException(e)
@@ -499,7 +514,12 @@ class TriggerNode_Unique(TriggerNode):
 
     def __init__(self, scene: "Scene") -> None:
         """Initialize the Unique node with proper scene integration."""
-        super().__init__(scene, inputs=[1], outputs=[3])
+        super().__init__(
+            scene,
+            inputs=[1],
+            outputs=[3, 3],
+            output_text=["Unique", "Duplicates"],
+        )
         self.eval()
 
     def initInnerClasses(self) -> None:
@@ -533,14 +553,18 @@ class TriggerNode_Unique(TriggerNode):
             # Set input data for unique processing
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
-
-            self.evalChildren()
+            self.content.process_data()
             self.param = [
                 {
-                    "data": self.content.incom_data,
+                    "data": self.content.data,
                     "variable_name": self.content.variable_name,
-                }
+                },
+                {
+                    "data": self.content.duplicate_data,
+                    "variable_name": self.content.duplicate_variable_name,
+                },
             ]
+            self.evalChildren()
             return self.param
         else:
             self.markDirty(True)
@@ -550,7 +574,7 @@ class TriggerNode_Unique(TriggerNode):
                     self.grNode.setToolTip("Input is not connected")
                 except RuntimeError:
                     pass
-            return [None]
+            return [None, None]
 
     def get_code(self) -> str:
         """

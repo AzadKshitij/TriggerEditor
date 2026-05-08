@@ -122,7 +122,56 @@
         }
       ],
       "content": {
-        "table_data": [],
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
         "changes": {
           "selected_columns": [
             "Keyword",
@@ -135,7 +184,17 @@
             "Relevancy Score"
           ],
           "rename_mapping": {},
-          "dtype_mapping": {}
+          "dtype_mapping": {
+            "Keyword": "String",
+            "Seed": "String",
+            "Source": "String",
+            "Country": "String",
+            "Autocomplete Position": "String",
+            "Difficulty": "Int64",
+            "Hot Keyword": "String",
+            "Relevancy Score": "Float64"
+          },
+          "column_order": []
         }
       },
       "node_code": 5,
@@ -165,7 +224,12 @@
         }
       ],
       "content": {
-        "sort_data": []
+        "sort_data": [
+          {
+            "column": "Keyword",
+            "order": "Ascending"
+          }
+        ]
       },
       "node_code": 6,
       "node_type": "preparation"
@@ -201,7 +265,9 @@
         }
       ],
       "content": {
-        "selected_columns": []
+        "selected_columns": [
+          "Relevancy Score"
+        ]
       },
       "node_code": 7,
       "node_type": "preparation"
@@ -247,8 +313,8 @@
     {
       "id": 2176004824160,
       "title": "File Input",
-      "pos_x": -489.06249999999994,
-      "pos_y": 95.31249999999999,
+      "pos_x": -867.9687499999995,
+      "pos_y": 5.468750000000057,
       "inputs": [],
       "outputs": [
         {
@@ -319,12 +385,7 @@
       ],
       "content": {
         "join_type": "inner",
-        "mapping_data": [
-          {
-            "left_column": "Unnamed: 0",
-            "right_column": "Unnamed: 0"
-          }
-        ],
+        "mapping_data": [],
         "selected_columns": [
           {
             "name": "Autocomplete Position",
@@ -359,10 +420,6 @@
             "source": "L"
           },
           {
-            "name": "Unnamed: 0",
-            "source": "L"
-          },
-          {
             "name": "Autocomplete Position",
             "source": "R"
           },
@@ -372,10 +429,6 @@
           },
           {
             "name": "Source",
-            "source": "R"
-          },
-          {
-            "name": "Unnamed: 0",
             "source": "R"
           }
         ]
@@ -407,7 +460,7 @@
         }
       ],
       "content": {
-        "total_records": 0,
+        "total_records": 10,
         "variable_name": "var_count_1168116776496"
       },
       "node_code": 2,
@@ -437,9 +490,16 @@
         }
       ],
       "content": {
-        "sum_columns": [],
-        "group_by_columns": [],
-        "numeric_columns": []
+        "sum_columns": [
+          "Difficulty"
+        ],
+        "group_by_columns": [
+          "Difficulty"
+        ],
+        "numeric_columns": [
+          "Difficulty",
+          "Relevancy Score"
+        ]
       },
       "node_code": 3,
       "node_type": "transform"
@@ -468,7 +528,97 @@
         }
       ],
       "content": {
-        "actions_data": [],
+        "actions_data": [
+          {
+            "field": "Relevancy Score",
+            "action": "GroupBy",
+            "output_name": "Relevancy Score"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "Relevancy Score"
+          ],
+          "aggregations": {}
+        }
+      },
+      "node_code": 4,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2485739490192,
+      "title": "Select",
+      "pos_x": -429.6874999999997,
+      "pos_y": -177.73437499999986,
+      "inputs": [
+        {
+          "id": 2485739491152,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2485739491632,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
         "changes": {
           "selected_columns": [
             "Keyword",
@@ -481,20 +631,129 @@
             "Relevancy Score"
           ],
           "rename_mapping": {},
+          "dtype_mapping": {
+            "Keyword": "String",
+            "Seed": "String",
+            "Source": "String",
+            "Country": "String",
+            "Autocomplete Position": "String",
+            "Difficulty": "Int64",
+            "Hot Keyword": "String",
+            "Relevancy Score": "Float64"
+          },
+          "column_order": []
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2486268150480,
+      "title": "Select",
+      "pos_x": 328.4882812499999,
+      "pos_y": 19.67578125,
+      "inputs": [
+        {
+          "id": 2486268151600,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2486268152080,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "RunTot_Difficulty",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "RunTot_Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score",
+            "RunTot_Difficulty"
+          ],
+          "rename_mapping": {},
           "dtype_mapping": {}
         }
       },
-      "node_code": 4,
+      "node_code": 5,
       "node_type": "preparation"
     }
   ],
   "edges": [
-    {
-      "id": 2176002784848,
-      "edge_type": 5,
-      "start": 2176004925488,
-      "end": 2176088583632
-    },
     {
       "id": 2176088516944,
       "edge_type": 5,
@@ -544,12 +803,6 @@
       "end": 2327088177952
     },
     {
-      "id": 2327088785360,
-      "edge_type": 5,
-      "start": 2176088581760,
-      "end": 2327088169600
-    },
-    {
       "id": 2652257635920,
       "edge_type": 5,
       "start": 2176088576864,
@@ -560,6 +813,30 @@
       "edge_type": 5,
       "start": 2176004925488,
       "end": 2976902486032
+    },
+    {
+      "id": 2485739212592,
+      "edge_type": 5,
+      "start": 2176004925488,
+      "end": 2485739491152
+    },
+    {
+      "id": 2485739319984,
+      "edge_type": 5,
+      "start": 2485739491632,
+      "end": 2176088583632
+    },
+    {
+      "id": 2485739245392,
+      "edge_type": 5,
+      "start": 2176088583344,
+      "end": 2327088169600
+    },
+    {
+      "id": 2485739204240,
+      "edge_type": 5,
+      "start": 2327088178384,
+      "end": 2486268151600
     }
   ]
 }

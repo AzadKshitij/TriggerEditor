@@ -527,7 +527,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.cleansing_stats = cleaner.get_stats()
 
     def get_code(self) -> str:
-        if self.data is None or self.incoming_variable is None:
+        if not self.incoming_variable:
             return "print('No data to process on Data Cleansing node')\n"
 
         code_lines = [
@@ -632,10 +632,11 @@ class TriggerNode_Cleansing(TriggerNode):
             # Custom processing logic for the Select node
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
-            self.evalChildren()
+            self.content.process_data()
             self.param = [
                 {"data": self.content.data, "variable_name": self.content.variable_name}
             ]
+            self.evalChildren()
             return self.param
         # variable = self.content.variable_name
         else:

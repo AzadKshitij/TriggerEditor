@@ -163,6 +163,43 @@ class WorkflowExecutionMixin:
         logger.info("📊 Workflow statistics reset")
         print("📊 Workflow execution statistics have been reset")
 
+    def _get_output_variable_names(self, node: Any) -> list[str]:
+        """Infer output variable names for a node from the latest execution."""
+        node_results = self.execution_results.get(node, {})
+        variable_names: list[str] = []
+
+        if hasattr(node, "param"):
+            for socket_data in getattr(node, "param", []) or []:
+                if not isinstance(socket_data, dict):
+                    continue
+                var_name = socket_data.get("variable_name")
+                if (
+                    isinstance(var_name, str)
+                    and var_name in node_results
+                    and var_name not in variable_names
+                ):
+                    variable_names.append(var_name)
+
+        content = getattr(node, "content", None)
+        if content is not None:
+            for attr_name, attr_value in getattr(content, "__dict__", {}).items():
+                if not isinstance(attr_value, str) or attr_name == "incoming_variable":
+                    continue
+
+                is_output_name = (
+                    attr_name == "variable_name"
+                    or attr_name.endswith("_variable_name")
+                    or attr_name.endswith("_var")
+                )
+                if (
+                    is_output_name
+                    and attr_value in node_results
+                    and attr_value not in variable_names
+                ):
+                    variable_names.append(attr_value)
+
+        return variable_names
+
     def getSocketData(self, node: Any, socket_index: int) -> Any:  # noqa: N802
         """Return the execution result bound to a socket after workflow run."""
         if not self.execution_results:
@@ -173,11 +210,15 @@ class WorkflowExecutionMixin:
             print(f"No results found for node {node}")
             return None
 
-        if hasattr(node, "param"):
-            socket_data = node.param[socket_index]
-            if socket_data:
-                var_name = socket_data.get("variable_name")
-                if var_name and var_name in self.execution_results[node]:
-                    return self.execution_results[node][var_name]
+        node_results = self.execution_results[node]
+        output_variable_names = self._get_output_variable_names(node)
+
+        if 0 <= socket_index < len(output_variable_names):
+            return node_results.get(output_variable_names[socket_index])
+
+        if socket_index == 0 and len(node_results) == 1:
+            return next(iter(node_results.values()))
+
+        print(f"No socket data found for node {node} at socket index {socket_index}")
 
         return None

@@ -26,7 +26,7 @@ from trigger_designer.qt.node_base import TriggerNode, TriggerGraphicsNode
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
-import pandas as pd
+import polars as pl
 from typing import Optional
 
 
@@ -42,8 +42,8 @@ class AppendContent(QDMNodeIconContentWidget):
         self.mapping_pairs = []
 
         # incoming variables
-        self.left_data: pd.DataFrame = None
-        self.right_data: pd.DataFrame = None
+        self.left_data: pl.DataFrame = None
+        self.right_data: pl.DataFrame = None
         self.left_variable: str = ""
         self.right_variable: str = ""
 
@@ -351,14 +351,16 @@ class AppendContent(QDMNodeIconContentWidget):
         right_cols = [m["right_column"] for m in self.mapping_data]
 
         try:
-            # Perform the merge operation
-            result = pd.merge(
-                self.left_data,
+            # Map pandas-style "outer" to polars "full"
+            polars_how = "full" if self.join_type == "outer" else self.join_type
+
+            # Perform the join operation using Polars
+            result = self.left_data.join(
                 self.right_data,
                 left_on=left_cols,
                 right_on=right_cols,
-                how=self.join_type,
-                suffixes=("_left", "_right"),
+                how=polars_how,
+                suffix="_right",
             )
 
             # Filter columns based on selected_columns
@@ -366,17 +368,14 @@ class AppendContent(QDMNodeIconContentWidget):
                 selected_cols = []
                 for col in self.selected_columns:
                     col_name = col["name"]
-                    if col["source"] == "L":
-                        # Add suffix if it's not a key column
-                        if col_name not in left_cols:
-                            col_name = f"{col_name}_left"
-                    else:  # 'R'
-                        if col_name not in right_cols:
+                    if col["source"] == "R":
+                        # Right-side columns that clash with left side get "_right" suffix
+                        if col_name not in left_cols and f"{col_name}_right" in result.columns:
                             col_name = f"{col_name}_right"
                     if col_name in result.columns:
                         selected_cols.append(col_name)
 
-                result = result[selected_cols]
+                result = result.select(selected_cols)
 
             # self.data = result
             print(
@@ -394,14 +393,14 @@ class AppendContent(QDMNodeIconContentWidget):
         code_lines = []
         left_cols = [m["left_column"] for m in self.mapping_data]
         right_cols = [m["right_column"] for m in self.mapping_data]
+        polars_how = "full" if self.join_type == "outer" else self.join_type
         code_lines.append(
-            f"{self.variable_name} = pd.merge(\n"
-            f"    {self.left_variable},\n"
+            f"{self.variable_name} = {self.left_variable}.join(\n"
             f"    {self.right_variable},\n"
             f"    left_on={left_cols},\n"
             f"    right_on={right_cols},\n"
-            f"    how='{self.join_type}',\n"
-            f"    suffixes=('_left', '_right')\n"
+            f"    how='{polars_how}',\n"
+            f"    suffix='_right'\n"
             f")"
         )
         # Filter columns based on selected_columns

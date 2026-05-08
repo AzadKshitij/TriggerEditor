@@ -1,7 +1,6 @@
 from typing import Optional, Any, Callable
-import pandas as pd
+import polars as pl
 from datetime import datetime, timedelta
-import numpy as np
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -49,8 +48,8 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Data tracking
         self.incoming_variable: str = ""
-        self.incom_data: Optional[pd.DataFrame] = None
-        self.data: Optional[pd.DataFrame] = None
+        self.incom_data: Optional[pl.DataFrame] = None
+        self.data: Optional[pl.DataFrame] = None
         self.variable_name = f"var_genrows_{self.id}"
 
         # Configuration
@@ -194,12 +193,12 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Create DataFrame
             if self.incom_data is not None:
-                # Expand existing DataFrame
-                repeated_df = pd.DataFrame({self.field_name: values})
-                self.data = pd.concat([self.incom_data, repeated_df], axis=1)
+                # Add counter column to existing DataFrame
+                repeated_df = pl.DataFrame({self.field_name: values})
+                self.data = pl.concat([self.incom_data, repeated_df], how="horizontal")
             else:
                 # Create new DataFrame
-                self.data = pd.DataFrame({self.field_name: values})
+                self.data = pl.DataFrame({self.field_name: values})
 
             self.update_stats()
 
@@ -327,12 +326,12 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"    values.append(current)",
             f"    current = {self.get_increment_code()}",
             f"",
-            f"{self.variable_name} = pd.DataFrame({{'{self.field_name}': values}})",
+            f"{self.variable_name} = pl.DataFrame({{'{self.field_name}': values}})",
         ]
 
         if self.incom_data is not None:
             code_lines.append(
-                f"{self.variable_name} = pd.concat([{self.incoming_variable}, {self.variable_name}], axis=1)"
+                f"{self.variable_name} = pl.concat([{self.incoming_variable}, {self.variable_name}], how='horizontal')"
             )
 
         return "\n".join(code_lines) + "\n"

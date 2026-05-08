@@ -60,51 +60,13 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         global_logger.debug("🔢 CountRecordsContent: Creating layout")
-
-        if self.incom_data is not None:
-            # Process data to get current count
-            self.process_data()
-
-            main_layout = QVBoxLayout()
-            main_layout.setSpacing(5)
-            main_layout.setContentsMargins(10, 10, 10, 10)
-
-            # Title
-            title_label = QLabel("Record Count")
-            title_label.setStyleSheet(
-                "font-weight: bold; font-size: 14px; padding: 5px;"
-            )
-            title_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            main_layout.addWidget(title_label)
-
-            # Display count with better formatting
-            count_label = QLabel(f"{self.total_records:,}")
-            count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            count_label.setStyleSheet("""
-                QLabel {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: #2196F3;
-                    background-color: #f5f5f5;
-                    border: 1px solid #ddd;
-                    border-radius: 5px;
-                    padding: 10px;
-                }
-            """)
-            main_layout.addWidget(count_label)
-
-            # Info label
-            info_label = QLabel("Total Records")
-            info_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            info_label.setStyleSheet("color: #666; font-size: 10px;")
-            main_layout.addWidget(info_label)
-
-            dock_layout.addLayout(main_layout)
-        else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray; font-style: italic;")
-            dock_layout.addWidget(no_data_label)
+        message_label = QLabel("No configuration needed. The output socket returns the row count.")
+        message_label.setWordWrap(True)
+        message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        message_label.setStyleSheet(
+            "color: gray; font-style: italic; padding: 12px;"
+        )
+        dock_layout.addWidget(message_label)
 
     def serialize(self):
         """Serialize the Count Records configuration"""
@@ -138,8 +100,10 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 "🔢 CountRecordsContent: Processing data to count records"
             )
             try:
-                # Get the number of rows using Polars shape attribute
-                self.total_records = self.incom_data.shape[0]
+                if isinstance(self.incom_data, pl.LazyFrame):
+                    self.total_records = self.incom_data.select(pl.len()).collect().item()
+                else:
+                    self.total_records = self.incom_data.height
 
                 # Create result DataFrame with Polars
                 self.data = pl.DataFrame({"Count": [self.total_records]})
@@ -156,14 +120,18 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self) -> str:
         """Generate Polars code for counting records"""
-        if self.data is None or self.incoming_variable is None:
+        if not self.incoming_variable:
             return ""
 
-        code_lines = []
-        code_lines.append(f"# Count records in DataFrame")
+        code_lines = ["import polars as pl"]
+        code_lines.append("# Count records in DataFrame")
         code_lines.append(
-            f"{self.variable_name} = pl.DataFrame({{'Count': [{self.incoming_variable}.shape[0]]}})"
+            f"_count_value = {self.incoming_variable}.select(pl.len()).collect().item() if hasattr({self.incoming_variable}, 'collect') else {self.incoming_variable}.height"
         )
+        code_lines.append(
+            f"{self.variable_name} = pl.DataFrame({{'Count': [_count_value]}})"
+        )
+        code_lines.append("del _count_value")
 
         return "\n".join(code_lines) + "\n"
 
@@ -217,8 +185,16 @@ class TriggerNode_CountRecords(TriggerNode):
                 variable_name = input_value.get("variable_name", "unknown")
 
                 if input_data is not None:
+                    if isinstance(input_data, pl.LazyFrame):
+                        input_shape = (
+                            "lazy",
+                            len(input_data.collect_schema().names()),
+                        )
+                    else:
+                        input_shape = input_data.shape
+
                     global_logger.info(
-                        f"🔢 CountRecordsNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'"
+                        f"🔢 CountRecordsNode: Processing DataFrame with shape {input_shape} for variable '{variable_name}'"
                     )
 
                     self.markDirty(False)

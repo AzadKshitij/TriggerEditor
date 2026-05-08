@@ -75,6 +75,11 @@ class MainWindowMenuMixin:
         toolbar_nodes.triggered.connect(self.onWindowNodesToolbar)
         toolbar_nodes.setChecked(self.nodesDock.isVisible())
 
+        if hasattr(self, "loggingDock") and self.loggingDock is not None:
+            logger_action = self.loggingDock.toggleViewAction()
+            logger_action.setText("Show Logger")
+            self.windowMenu.addAction(logger_action)
+
         self.windowMenu.addSeparator()
 
         self.windowMenu.addAction(self.actClose)
