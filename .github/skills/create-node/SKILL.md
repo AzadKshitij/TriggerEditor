@@ -36,7 +36,7 @@ Outputs are a list of such dicts (one per output socket).
 
 ## Procedure
 
-### Step 1 – Gather Requirements
+### Step 1 - Gather Requirements
 Ask (or infer from context):
 1. Node name (e.g., `Pivot`)
 2. Category (Preparation / Transform / Join / Report / IO)
@@ -45,7 +45,7 @@ Ask (or infer from context):
 5. What operation the node performs on polars DataFrames
 6. What UI controls are needed (dropdowns, text inputs, checkboxes)
 
-### Step 2 – Add Enum Entry
+### Step 2 - Add Enum Entry
 Open `src/trigger_designer/core/node_configuration.py` and add the new node to the appropriate `IntEnum`:
 
 ```python
@@ -54,7 +54,7 @@ class PreparationNodes(IntEnum):
     MY_NEW_NODE = auto()  # Add this line
 ```
 
-### Step 3 – Create the Node File
+### Step 3 - Create the Node File
 Create `src/trigger_designer/qt/widgets/nodes/<Category>/<node_name>.py`.
 
 Use the following template:
@@ -210,15 +210,15 @@ class TriggerNode_<Name>(TriggerNode):
         return self.content.get_code()
 ```
 
-### Step 4 – Add Icon (if needed)
+### Step 4 - Add Icon (if needed)
 - Icons are referenced by key in `src/trigger_designer/qt/resources/resources.json`
 - SVG/PNG icons live in `src/trigger_designer/qt/resources/`
 - If reusing an existing icon, check `resources.json` for available keys (e.g., `"node_filter"`, `"node_formula"`)
 
-### Step 5 – Verify Auto-Registration
+### Step 5 - Verify Auto-Registration
 The `__init__.py` in `src/trigger_designer/qt/widgets/nodes/` auto-imports all `.py` files via `os.walk`. Your new file will be discovered automatically — no manual import needed.
 
-### Step 6 – Verify in Node List
+### Step 6 - Verify in Node List
 Run the editor and confirm the new node appears in the node list panel (drag-and-drop sidebar). The `node_title` attribute controls the display name.
 
 ## Checklist

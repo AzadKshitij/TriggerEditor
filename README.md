@@ -106,6 +106,16 @@ TriggerEditor/
 scripts/build.bat
 ```
 
+## Instrumentation and Profiling
+### 1. Detailed cProfile + memory (run app, then close it)
+uv run --group profiling python scripts/profile_app.py
+
+### 2. Open the SnakeViz visual report in browser
+uv run --group profiling snakeviz profiles/latest.prof
+
+### 3. py-spy flamegraph (run as Administrator)
+scripts\run_pyspy.bat
+
 ## Contributing
 
 Contributions are welcome! Please see the [docs/](docs/) folder for development notes, feature plans, and architecture details.
