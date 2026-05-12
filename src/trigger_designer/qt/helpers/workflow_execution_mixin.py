@@ -59,6 +59,7 @@ class WorkflowExecutionMixin:
             return
 
         node = nodes[current_index]
+        node_name = getattr(node, "node_title", node.__class__.__name__)
 
         node.grNode.setPenExecuting()
         node.grNode.update()
@@ -66,7 +67,9 @@ class WorkflowExecutionMixin:
         try:
             result = executor.execute_node(node)
         except Exception as exc:  # pragma: no cover - visual/UI side effects
-            logger.error("Error executing node {}: {}", node, exc)
+            error_message = f"Error executing node '{node_name}': {exc}"
+            logger.error(error_message)
+            global_logger.error(error_message)
             node.grNode.resetPen()
             node.grNode.update()
             self._execution_cleanup(success=False)
@@ -77,7 +80,9 @@ class WorkflowExecutionMixin:
             node.grNode.setPenExecuted()
             node.grNode.update()
         else:
-            logger.error("Node execution failed: {}", result.error)
+            error_message = f"Node execution failed for '{node_name}': {result.error}"
+            logger.error(error_message)
+            global_logger.error(error_message)
             node.grNode.resetPen()
             node.grNode.update()
             self._execution_cleanup(success=False)
@@ -129,6 +134,7 @@ class WorkflowExecutionMixin:
         print(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
         if not success:
             print("⚠️  Execution failed - check logs for details")
+            global_logger.error("Workflow execution failed - check logs for details")
         print(f"{'=' * 60}\n")
 
         for node in self.getAllNodes():

@@ -109,6 +109,10 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
             "EXISTS",
             "ANY",
             "SOME",
+            "YEAR",
+            "MONTH",
+            "DAY",
+            "TODAY",
         ]
 
         for keyword in sql_keywords:
@@ -154,7 +158,7 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
         comment_format.setForeground(QColor(106, 153, 85))  # Green
         comment_format.setFontItalic(True)
         comment_pattern = QRegularExpression(r"--[^\r\n]*")
-        self.highlighting_rules.append((comment_pattern, comment_pattern))
+        self.highlighting_rules.append((comment_pattern, comment_format))
 
     def update_column_names(self, column_names: List[str]):
         """Update the list of available column names for highlighting."""
@@ -205,6 +209,7 @@ class SQLFormulaEditor(QTextEdit):
         str, int, int
     )  # error_message, line, column (single error - backwards compatibility)
     allErrorsDetected = Signal(list)  # List of all error messages
+    editingFinished = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -584,6 +589,11 @@ class SQLFormulaEditor(QTextEdit):
         else:
             super().keyPressEvent(event)
 
+    def focusOutEvent(self, event):
+        """Emit a commit signal when the editor loses focus."""
+        super().focusOutEvent(event)
+        self.editingFinished.emit()
+
 
 class SQLFormulaWidget(QWidget):
     """
@@ -592,6 +602,7 @@ class SQLFormulaWidget(QWidget):
 
     textChanged = Signal()
     formulaChanged = Signal(str)
+    editingFinished = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -642,6 +653,7 @@ class SQLFormulaWidget(QWidget):
     def connect_signals(self):
         """Connect widget signals."""
         self.editor.textChanged.connect(self.on_text_changed)
+        self.editor.editingFinished.connect(self.editingFinished.emit)
         self.editor.errorDetected.connect(
             self.on_error_detected
         )  # Keep for backwards compatibility

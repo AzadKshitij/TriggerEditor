@@ -386,8 +386,8 @@
     {
       "id": 2010720607024,
       "title": "Join",
-      "pos_x": 730.2490234374997,
-      "pos_y": 129.38842773437506,
+      "pos_x": 351.3427734374998,
+      "pos_y": 119.62280273437506,
       "inputs": [
         {
           "id": 2010720615664,
@@ -496,8 +496,8 @@
     {
       "id": 2010720607184,
       "title": "Join",
-      "pos_x": 907.5927734374997,
-      "pos_y": 330.65795898437494,
+      "pos_x": 561.8896484374998,
+      "pos_y": 354.0954589843749,
       "inputs": [
         {
           "id": 2010721092624,
@@ -630,7 +630,22 @@
           "socket_type": 3
         }
       ],
-      "content": {},
+      "content": {
+        "replace_null_strings": true,
+        "replace_null_numbers": true,
+        "strip_whitespace": true,
+        "normalize_spaces": true,
+        "remove_all_whitespace": false,
+        "case_modification": "none",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": false,
+        "selected_fields": [],
+        "field_selection_initialized": false,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": false,
+        "remove_null_columns": false
+      },
       "node_code": 1,
       "node_type": "preparation"
     },
@@ -858,29 +873,40 @@
       "node_type": "preparation"
     },
     {
-      "id": 2878886509328,
-      "title": "File Output",
-      "pos_x": 1154.51123046875,
-      "pos_y": 160.25244140624991,
+      "id": 1662697468016,
+      "title": "Formula",
+      "pos_x": 939.9414062499998,
+      "pos_y": 354.00390624999994,
       "inputs": [
         {
-          "id": 2879354059536,
+          "id": 1662622805808,
           "index": 0,
           "multi_edges": false,
           "position": 2,
           "socket_type": 1
         }
       ],
-      "outputs": [],
+      "outputs": [
+        {
+          "id": 1662622806288,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/Test1.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
+        "formula_sections": [
+          {
+            "target_column": "year",
+            "formula_text": "YEAR([order_date])"
+          }
+        ],
+        "formula": "YEAR([order_date])",
+        "target_column": "year"
       },
-      "node_code": 5,
-      "node_type": "input"
+      "node_code": 3,
+      "node_type": "preparation"
     }
   ],
   "edges": [
@@ -957,15 +983,15 @@
       "end": 2010721092944
     },
     {
-      "id": 2878886671792,
+      "id": 1662622395440,
       "edge_type": 5,
       "start": 2010721093584,
-      "end": 2879354059536
+      "end": 1662622805808
     }
   ],
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-05-12T11:21:31Z"
+    "saved_at": "2026-05-12T12:51:36Z"
   }
 }

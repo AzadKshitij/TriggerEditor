@@ -242,7 +242,9 @@ class FileInputContent(
             self.filePathEdit.setText(self.filePath)
             file_type = self._auto_detect_file_type(self.filePath)
             self._update_ui_visibility(file_type)
-            if self.data is None or self.data.height == 0:
+            if isinstance(self.data, pl.DataFrame) and self.data.height > 0:
+                self.table_viewer.set_dataframe(self.data)
+            else:
                 self.loadFile(self.filePath)
 
     def _on_filePathEdit_textChanged(self) -> None:

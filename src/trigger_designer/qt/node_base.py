@@ -202,9 +202,8 @@ class TriggerChangeHandler:
             # self.node.markDirty()
             # self.node.eval()
 
-    def clearInputWidgets(self) -> None:
-        """Clear all input widget connections"""
-        for widget in self._input_widgets:
+    def _disconnect_input_widget(self, widget: QWidget) -> None:
+        try:
             if hasattr(widget, "textChanged"):
                 try:
                     widget.textChanged.disconnect(self.onInputChanged)
@@ -230,6 +229,13 @@ class TriggerChangeHandler:
                     widget.dataChanged.disconnect(self.onInputChanged)
                 except:
                     pass
+        except RuntimeError:
+            return
+
+    def clearInputWidgets(self) -> None:
+        """Clear all input widget connections"""
+        for widget in self._input_widgets:
+            self._disconnect_input_widget(widget)
         self._input_widgets.clear()
 
 
@@ -303,11 +309,50 @@ class TriggerNode(Node):
         socket_index = 0
         for i, socket in enumerate(socket_list):
             if socket.edges:
-                for edge in socket.edges:
-                    if edge.getOtherSocket(socket).node == target_node:
+                for edge in list(socket.edges):
+                    other_socket = self._get_connected_socket(socket, edge)
+                    if other_socket is None:
+                        continue
+                    if other_socket.node == target_node:
                         socket_index = i
                         break
         return socket_index
+
+    def _get_connected_socket(
+        self, socket: "Socket", edge: "Edge"
+    ) -> Optional["Socket"]:
+        if edge.start_socket is not socket and edge.end_socket is not socket:
+            socket.removeEdge(edge)
+            logger.warning(
+                f"Removed stale edge reference from socket {socket.id} on {self.__class__.__name__}"
+            )
+            return None
+
+        other_socket = edge.getOtherSocket(socket)
+        if other_socket is None or getattr(other_socket, "node", None) is None:
+            try:
+                edge.remove(silent=True)
+            except Exception as exc:
+                dumpException(exc)
+            logger.warning(
+                f"Removed dangling edge while traversing {self.__class__.__name__}"
+            )
+            return None
+
+        return other_socket
+
+    def getChildrenNodes(self) -> list["Node"]:
+        if self.outputs == []:
+            return []
+
+        other_nodes = []
+        for socket in self.outputs:
+            for edge in list(socket.edges):
+                other_socket = self._get_connected_socket(socket, edge)
+                if other_socket is None:
+                    continue
+                other_nodes.append(other_socket.node)
+        return other_nodes
 
     def _refresh_selected_node_config(self) -> None:
         if getattr(self, "grNode", None) is None or not self.grNode.isSelected():

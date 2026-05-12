@@ -28,9 +28,41 @@ try:
     )
     from qtpy.QtWidgets import QApplication
     from qtpy.QtCore import QModelIndex, Qt
+    from qtpy.QtGui import QKeySequence, QShortcut
 except ImportError as e:
     print(f"Import error: {e}")
     print("Skipping Qt-dependent tests")
+
+
+class TestPolarsTableViewerShortcuts(unittest.TestCase):
+    """Regression checks for viewer shortcut scoping."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def test_copy_shortcut_is_scoped_to_table_widget(self):
+        viewer = PolarsTableViewer(
+            dataframe=pl.DataFrame({"id": [1]}),
+            show_controls=False,
+            show_info=False,
+            show_search=False,
+            show_export=False,
+            show_performance_settings=False,
+        )
+
+        copy_shortcuts = [
+            shortcut
+            for shortcut in viewer.table_view.findChildren(QShortcut)
+            if shortcut.key() == QKeySequence.Copy
+        ]
+
+        self.assertTrue(copy_shortcuts)
+        self.assertTrue(
+            all(shortcut.context() == Qt.ShortcutContext.WidgetShortcut for shortcut in copy_shortcuts)
+        )
+
+        viewer.close()
 
 
 class TestPolarsTableModel(unittest.TestCase):

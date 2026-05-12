@@ -70,6 +70,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.mapping_data = []  # Store mapping pairs
         self.selected_columns = []
         self.mapping_pairs = []
+        self.output_column_checkboxes = []
         self.history: SceneHistory = self.node.scene.history
 
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
@@ -92,10 +93,40 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         icon_: QPixmap = self.node.rsm.get(f"{self.node.icon}")
         super().initUI(icon_)
 
+    def _get_frame_schema(
+        self, frame: Optional[pl.DataFrame | pl.LazyFrame]
+    ) -> dict[str, pl.DataType]:
+        if frame is None:
+            return {}
+
+        schema = frame.collect_schema() if isinstance(frame, pl.LazyFrame) else frame.schema
+        return {name: dtype for name, dtype in schema.items()}
+
+    def _format_column_label(self, column_name: str, dtype: pl.DataType) -> str:
+        return f"{column_name} [{dtype}]"
+
+    def _populate_column_combo(
+        self,
+        combo: QComboBox,
+        frame: Optional[pl.DataFrame | pl.LazyFrame],
+        selected_column: Optional[str] = None,
+    ) -> None:
+        for column_name, dtype in self._get_frame_schema(frame).items():
+            combo.addItem(self._format_column_label(column_name, dtype), column_name)
+
+        if selected_column:
+            selected_index = combo.findData(selected_column)
+            if selected_index >= 0:
+                combo.setCurrentIndex(selected_index)
+
+    def _combo_current_column(self, combo: QComboBox) -> str:
+        current_data = combo.currentData()
+        return current_data if isinstance(current_data, str) else combo.currentText()
+
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.left_data is not None and self.right_data is not None:
             global_logger.debug(
-                f"🔄 Join: Creating layout for join with {len(self.left_data.columns)} left columns and {len(self.right_data.columns)} right columns"
+                f"🔄 Join: Creating layout for join with {len(self._get_frame_schema(self.left_data))} left columns and {len(self._get_frame_schema(self.right_data))} right columns"
             )
             self._sanitize_mapping_data()
             self._sanitize_selected_columns()
@@ -137,12 +168,35 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Output columns group
             output_layout = QVBoxLayout()
             output_label = QLabel("Output Columns:")
+            output_controls_layout = QHBoxLayout()
+            left_all_button = QPushButton("All Left")
+            left_none_button = QPushButton("None Left")
+            right_all_button = QPushButton("All Right")
+            right_none_button = QPushButton("None Right")
+            left_all_button.clicked.connect(
+                lambda: self._set_output_columns_checked("L", True)
+            )
+            left_none_button.clicked.connect(
+                lambda: self._set_output_columns_checked("L", False)
+            )
+            right_all_button.clicked.connect(
+                lambda: self._set_output_columns_checked("R", True)
+            )
+            right_none_button.clicked.connect(
+                lambda: self._set_output_columns_checked("R", False)
+            )
+            output_controls_layout.addWidget(left_all_button)
+            output_controls_layout.addWidget(left_none_button)
+            output_controls_layout.addWidget(right_all_button)
+            output_controls_layout.addWidget(right_none_button)
+            output_controls_layout.addStretch()
             self.output_columns_list = QListWidget()
             self.output_columns_list.setSelectionMode(
                 QAbstractItemView.SelectionMode.MultiSelection
             )
             # self.output_columns_list.setMaximumHeight(150)
             output_layout.addWidget(output_label)
+            output_layout.addLayout(output_controls_layout)
             output_layout.addWidget(self.output_columns_list)
 
             # self.update_columns()
@@ -178,8 +232,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.left_data is None or self.right_data is None:
             return
 
-        valid_left = set(self.left_data.columns)
-        valid_right = set(self.right_data.columns)
+        valid_left = set(self._get_frame_schema(self.left_data))
+        valid_right = set(self._get_frame_schema(self.right_data))
         sanitized_mapping = []
 
         for mapping in self.mapping_data:
@@ -202,8 +256,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.left_data is None or self.right_data is None:
             return
 
-        valid_left = set(self.left_data.columns)
-        valid_right = set(self.right_data.columns)
+        valid_left = set(self._get_frame_schema(self.left_data))
+        valid_right = set(self._get_frame_schema(self.right_data))
         sanitized_columns = []
 
         for column in self.selected_columns:
@@ -267,22 +321,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # combo.setMaximumWidth(200)
 
         if hasattr(self, "left_data") and self.left_data is not None:
-            left_column_combo.addItems(
-                self.left_data.columns
-            )  # Polars columns are already a list
-            if left_col and left_col in self.left_data.columns:
-                left_column_combo.setCurrentText(left_col)
+            self._populate_column_combo(left_column_combo, self.left_data, left_col)
 
         global_logger.debug(
             f"� Join: Adding mapping row - Right data available: {self.right_data is not None}"
         )
 
         if hasattr(self, "right_data") and self.right_data is not None:
-            right_column_combo.addItems(
-                self.right_data.columns
-            )  # Polars columns are already a list
-            if right_col and right_col in self.right_data.columns:
-                right_column_combo.setCurrentText(right_col)
+            self._populate_column_combo(right_column_combo, self.right_data, right_col)
 
         row_layout.addWidget(left_column_combo)
         row_layout.addSpacing(10)
@@ -292,8 +338,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout.addWidget(remove_button)
 
         temp_map = {
-            "left_column": left_column_combo.currentText(),
-            "right_column": right_column_combo.currentText(),
+            "left_column": self._combo_current_column(left_column_combo),
+            "right_column": self._combo_current_column(right_column_combo),
         }
         if temp_map not in self.mapping_data:
             self.mapping_data.append(temp_map)
@@ -381,8 +427,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         new_mapping_data = []
         for pair in self.mapping_pairs:
             candidate = {
-                "left_column": pair["left_combo"].currentText(),
-                "right_column": pair["right_combo"].currentText(),
+                "left_column": self._combo_current_column(pair["left_combo"]),
+                "right_column": self._combo_current_column(pair["right_combo"]),
             }
             if candidate not in new_mapping_data:
                 new_mapping_data.append(candidate)
@@ -423,13 +469,16 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def update_output_columns(self) -> None:
         self.output_columns_list.clear()
+        self.output_column_checkboxes = []
         if self.left_data is not None and self.right_data is not None:
             self._sanitize_selected_columns()
+            left_schema = self._get_frame_schema(self.left_data)
+            right_schema = self._get_frame_schema(self.right_data)
             if not self.selected_columns:
                 # Pre-select all columns by default
-                for col in sorted(self.left_data.columns):
+                for col in sorted(left_schema):
                     self.selected_columns.append({"name": col, "source": "L"})
-                for col in sorted(self.right_data.columns):
+                for col in sorted(right_schema):
                     self.selected_columns.append({"name": col, "source": "R"})
 
             # Create widget for left columns
@@ -442,8 +491,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.output_columns_list.setItemWidget(left_item, left_label)
 
             # Add left columns with L prefix and checkboxes
-            for col in sorted(self.left_data.columns):
-                self._add_output_column_item(col, "L", "#2a5d9c", self.selected_columns)
+            for col in sorted(left_schema):
+                self._add_output_column_item(
+                    col,
+                    "L",
+                    "#2a5d9c",
+                    self.selected_columns,
+                    str(left_schema[col]),
+                )
 
             # Create widget for right columns
             right_label = QLabel("Right Table Columns:")
@@ -455,11 +510,17 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.output_columns_list.setItemWidget(right_item, right_label)
 
             # Add right columns with R prefix and checkboxes
-            for col in sorted(self.right_data.columns):
-                self._add_output_column_item(col, "R", "#9c2a2a", self.selected_columns)
+            for col in sorted(right_schema):
+                self._add_output_column_item(
+                    col,
+                    "R",
+                    "#9c2a2a",
+                    self.selected_columns,
+                    str(right_schema[col]),
+                )
 
     def _add_output_column_item(
-        self, col, prefix: str, color, existing_selections
+        self, col, prefix: str, color, existing_selections, dtype_label: str
     ) -> None:
         """Helper method to add a column item to the output columns list"""
         item = QListWidgetItem()
@@ -492,6 +553,12 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         checkbox.stateChanged.connect(
             lambda: self._on_output_checkbox_changed(checkbox)
         )
+        self.output_column_checkboxes.append(
+            {"name": col, "source": prefix, "checkbox": checkbox}
+        )
+
+        dtype_value_label = QLabel(f"[{dtype_label}]")
+        dtype_value_label.setStyleSheet("color: #9aa0a6;")
 
         # Add to selected_columns if checked by default
         # if is_checked:
@@ -500,12 +567,71 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         layout.addWidget(source_label)
         layout.addWidget(checkbox)
+        layout.addWidget(dtype_value_label)
         layout.addStretch()
         widget.setLayout(layout)
 
         item.setSizeHint(widget.sizeHint())
         self.output_columns_list.addItem(item)
         self.output_columns_list.setItemWidget(item, widget)
+
+    def _get_available_output_columns(self, source: str) -> list[str]:
+        if source == "L" and self.left_data is not None:
+            return sorted(self._get_frame_schema(self.left_data))
+        if source == "R" and self.right_data is not None:
+            return sorted(self._get_frame_schema(self.right_data))
+        return []
+
+    def _sync_output_column_checkboxes(self, source: str, checked: bool) -> None:
+        for entry in self.output_column_checkboxes:
+            if entry["source"] != source:
+                continue
+            checkbox = entry["checkbox"]
+            checkbox.blockSignals(True)
+            checkbox.setChecked(checked)
+            checkbox.blockSignals(False)
+
+    def _set_output_columns_checked(self, source: str, checked: bool) -> None:
+        if self.history.is_restoring_history:
+            return
+
+        old_selected_columns = self.selected_columns.copy()
+
+        self.selected_columns = [
+            column
+            for column in self.selected_columns
+            if column.get("source") != source
+        ]
+
+        if checked:
+            for column_name in self._get_available_output_columns(source):
+                candidate = {"name": column_name, "source": source}
+                if candidate not in self.selected_columns:
+                    self.selected_columns.append(candidate)
+
+        self._sync_output_column_checkboxes(source, checked)
+
+        if old_selected_columns == self.selected_columns:
+            return
+
+        source_label = "left" if source == "L" else "right"
+        history_data = {
+            "node": self.node,
+            "old_join_type": self.join_type,
+            "new_join_type": self.join_type,
+            "old_mapping_data": self.mapping_data.copy(),
+            "new_mapping_data": self.mapping_data.copy(),
+            "old_selected_columns": old_selected_columns,
+            "new_selected_columns": self.selected_columns.copy(),
+        }
+
+        self.history.storeHistory(
+            desc=(
+                f"{'Selected' if checked else 'Deselected'} all {source_label} output columns"
+            ),
+            data=history_data,
+            setModified=True,
+        )
 
     def _on_output_checkbox_changed(self, checkbox) -> None:
         """Handle checkbox state changes"""

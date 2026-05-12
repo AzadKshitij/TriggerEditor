@@ -318,6 +318,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             loaded = super().fileLoad(filename)
 
         if loaded:
+            self.validateConnections()
             self.logDebug("File loaded successfully, evaluating outputs...")
             validation_messages = self.validateLoadedWorkflow()
             if validation_messages:
@@ -408,8 +409,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         # Remove invalid edges
         for edge in invalid_edges:
             if edge in self.scene.edges:
-                self.scene.removeEdge(edge)
-                print(f"Removed invalid edge: {edge}")
+                edge.remove(silent=True)
+                self.logWarning(f"Removed invalid edge during workflow load: {edge}")
 
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())

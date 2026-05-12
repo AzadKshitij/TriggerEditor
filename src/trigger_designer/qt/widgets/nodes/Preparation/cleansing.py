@@ -29,6 +29,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
@@ -55,8 +56,29 @@ from trigger_designer.core.utils.cleansing_util import (
 )
 
 
-class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class CleansingContent(
+    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+):
     evaluate = Signal()  # Emit when evaluate button is clicked
+    serialized_state_schema = {
+        "replace_null_strings": {"default": True},
+        "replace_null_numbers": {"default": True},
+        "strip_whitespace": {"default": True},
+        "normalize_spaces": {"default": True},
+        "remove_all_whitespace": {"default": False},
+        "case_modification": {"default": "none"},
+        "remove_letters": {"default": False},
+        "remove_numbers": {"default": False},
+        "remove_punctuation": {"default": False},
+        "selected_fields": {"default": []},
+        "field_selection_initialized": {
+            "attr": "_field_selection_initialized",
+            "default": False,
+        },
+        "remove_null_rows": {"default": False},
+        "remove_null_rows_from_selected_columns": {"default": False},
+        "remove_null_columns": {"default": False},
+    }
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
@@ -334,7 +356,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Character type options
             remove_letters_check = QCheckBox("Letters")
-            remove_letters_check.setChecked(False)
+            remove_letters_check.setChecked(self.remove_letters)
             remove_letters_check.setToolTip(
                 "Remove all letters, including non-Latin alphabet letters"
             )
@@ -343,14 +365,14 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
 
             remove_numbers_check = QCheckBox("Numbers")
-            remove_numbers_check.setChecked(False)
+            remove_numbers_check.setChecked(self.remove_numbers)
             remove_numbers_check.setToolTip("Remove all numbers")
             remove_numbers_check.stateChanged.connect(
                 lambda state: self.on_remove_numbers_changed(bool(state))
             )
 
             remove_punctuation_check = QCheckBox("Punctuation")
-            remove_punctuation_check.setChecked(False)
+            remove_punctuation_check.setChecked(self.remove_punctuation)
             remove_punctuation_check.setToolTip("Remove punctuation characters")
             remove_punctuation_check.stateChanged.connect(
                 lambda state: self.on_remove_punctuation_changed(bool(state))
@@ -656,13 +678,13 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return "\n".join(code_lines) + "\n"
 
     def serialize(self):
-        res = super().serialize()
-        return res
+        return self.serialize_content_state(super().serialize())
 
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
 
         try:
+            self.deserialize_content_state(data)
             return True & res
         except Exception as e:
             dumpException(e)

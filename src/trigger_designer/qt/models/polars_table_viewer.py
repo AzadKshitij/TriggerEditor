@@ -685,6 +685,7 @@ class PolarsTableViewer(QWidget):
         """Setup keyboard shortcuts and context menu for copying table data."""
         # Create keyboard shortcut for Ctrl+C
         copy_shortcut = QShortcut(QKeySequence.Copy, self.table_view)
+        copy_shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
         copy_shortcut.activated.connect(self.copy_selected_to_clipboard)
 
         # Create context menu for right-click copy

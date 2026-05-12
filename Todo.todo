@@ -1,1 +1,2 @@
 - Add a version check in the app so when user opens a saved file first we will check for version and will decide if the version of the saved file is compatible with what we have or not.
+- The settings from the cleanse node are not properly serializing 
