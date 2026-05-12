@@ -75,6 +75,8 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Cleansing configuration
         self.null_strategy = NullStrategy.REPLACE_WITH_DEFAULT
+        self.replace_null_strings = True
+        self.replace_null_numbers = True
         self.strip_whitespace = True
         self.normalize_spaces = True
         self.remove_all_whitespace = False
@@ -88,13 +90,38 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Field selection
         self.selected_fields = []
         self.field_checkboxes = {}
+        self._field_selection_initialized = False
 
         # Remove null data options
         self.remove_null_rows = False
+        self.remove_null_rows_from_selected_columns = False
         self.remove_null_columns = False
 
         self.cleansing_stats: Optional[CleansingStats] = None
 
+    def _get_schema(self) -> dict[str, pl.DataType]:
+        if self.incom_data is None:
+            return {}
+        if isinstance(self.incom_data, pl.LazyFrame):
+            schema = self.incom_data.collect_schema()
+            return {name: dtype for name, dtype in schema.items()}
+        return {name: dtype for name, dtype in self.incom_data.schema.items()}
+
+    def _normalize_selected_fields(self) -> None:
+        available_columns = set(self._get_schema())
+        self.selected_fields = [
+            field for field in self.selected_fields if field in available_columns
+        ]
+
+    def _get_case_display_value(self) -> str:
+        case_mapping = {
+            "none": "None",
+            "upper": "Upper Case",
+            "lower": "Lower Case",
+            "title": "Title Case",
+        }
+        return case_mapping.get(self.case_modification, "None")
+    
     @property
     def node(self) -> "TriggerNode":
         return self._node
@@ -109,6 +136,10 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
+            self._normalize_selected_fields()
+
+            schema = self._get_schema()
+
             # Create a scroll area for the entire configuration
             scroll_area = QScrollArea()
             scroll_area.setWidgetResizable(True)
@@ -148,12 +179,10 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             fields_scroll_area.setVerticalScrollBarPolicy(
                 Qt.ScrollBarPolicy.ScrollBarAsNeeded
             )
-            # Set fixed height of 500px
-            fields_scroll_area.setMinimumHeight(400)
-            fields_scroll_area.setMaximumHeight(400)
             fields_scroll_area.setSizePolicy(
-                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
             )
+            fields_scroll_area.setMinimumHeight(150)
 
             # Widget to contain the field checkboxes
             fields_widget = QWidget()
@@ -165,12 +194,16 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Field checkboxes
             self.field_checkboxes = {}
-            if self.incom_data is not None:
-                for column in self.incom_data.columns:
-                    field_check = QCheckBox(str(column))
-                    field_check.setChecked(True)  # Default all selected
+            if schema:
+                preserve_selection = self._field_selection_initialized
+                for column, dtype in schema.items():
+                    field_check = QCheckBox(f"{column} [{dtype}]")
+                    field_check.setToolTip(f"Column type: {dtype}")
+                    field_check.setChecked(
+                        not preserve_selection or column in self.selected_fields
+                    )
                     field_check.stateChanged.connect(self.on_field_selection_changed)
-                    self.field_checkboxes[str(column)] = field_check
+                    self.field_checkboxes[column] = field_check
                     fields_widget_layout.addWidget(field_check)
 
             fields_widget_layout.addStretch()
@@ -180,10 +213,9 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Set size policy for fields group to fixed 500px height
             fields_group.setSizePolicy(
-                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed
+                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
             )
-            fields_group.setMinimumHeight(500)
-            fields_group.setMaximumHeight(500)
+            fields_group.setMinimumHeight(220)
 
             # Remove Null Data Group
             null_data_group = QGroupBox("Remove Null Data")
@@ -200,6 +232,22 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 lambda state: self.on_remove_null_rows_changed(bool(state))
             )
 
+            # Remove Rows with Nulls in Selected Columns
+            remove_null_selected_columns_check = QCheckBox(
+                "Remove Rows with Nulls in Selected Columns"
+            )
+            remove_null_selected_columns_check.setChecked(
+                self.remove_null_rows_from_selected_columns
+            )
+            remove_null_selected_columns_check.setToolTip(
+                "Remove any row where one or more selected columns contain a null value"
+            )
+            remove_null_selected_columns_check.stateChanged.connect(
+                lambda state: self.on_remove_null_rows_from_selected_columns_changed(
+                    bool(state)
+                )
+            )
+
             # Remove Null Columns
             remove_null_columns_check = QCheckBox("Remove Null Columns")
             remove_null_columns_check.setChecked(self.remove_null_columns)
@@ -211,6 +259,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
 
             null_data_layout.addWidget(remove_null_rows_check)
+            null_data_layout.addWidget(remove_null_selected_columns_check)
             null_data_layout.addWidget(remove_null_columns_check)
             null_data_group.setLayout(null_data_layout)
 
@@ -226,7 +275,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Replace with Blanks (String Fields) - default checked
             replace_blanks_check = QCheckBox("Replace with Blanks (String Fields)")
-            replace_blanks_check.setChecked(True)
+            replace_blanks_check.setChecked(self.replace_null_strings)
             replace_blanks_check.setToolTip(
                 "Replace null values with a blank string value"
             )
@@ -236,7 +285,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Replace with 0 (Numeric Fields) - default checked
             replace_zeros_check = QCheckBox("Replace with 0 (Numeric Fields)")
-            replace_zeros_check.setChecked(True)
+            replace_zeros_check.setChecked(self.replace_null_numbers)
             replace_zeros_check.setToolTip("Replace null values with a 0 (zero)")
             replace_zeros_check.stateChanged.connect(
                 lambda state: self.on_replace_zeros_changed(bool(state))
@@ -258,7 +307,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Whitespace options
             whitespace_check = QCheckBox("Leading and Trailing Whitespace")
-            whitespace_check.setChecked(True)  # Default checked as per spec
+            whitespace_check.setChecked(self.strip_whitespace)
             whitespace_check.stateChanged.connect(
                 lambda state: self.on_whitespace_changed(bool(state))
             )
@@ -327,7 +376,7 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             case_combo = QComboBox()
             case_combo.addItems(["None", "Upper Case", "Lower Case", "Title Case"])
-            case_combo.setCurrentText("None")
+            case_combo.setCurrentText(self._get_case_display_value())
             case_combo.currentTextChanged.connect(self.on_case_changed)
             case_combo.setToolTip("Change the capitalization of string data types")
 
@@ -398,10 +447,17 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             for field, checkbox in self.field_checkboxes.items()
             if checkbox.isChecked()
         ]
+        self._field_selection_initialized = True
 
     def on_remove_null_rows_changed(self, state: bool) -> None:
         """Handle remove null rows checkbox changes"""
         self.remove_null_rows = state
+        self.process_data()
+        self.evaluate.emit()
+
+    def on_remove_null_rows_from_selected_columns_changed(self, state: bool) -> None:
+        """Handle remove rows with nulls in selected columns changes"""
+        self.remove_null_rows_from_selected_columns = state
         self.process_data()
         self.evaluate.emit()
 
@@ -413,15 +469,13 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def on_replace_blanks_changed(self, state: bool) -> None:
         """Handle replace with blanks checkbox changes"""
-        if state:
-            self.null_strategy = NullStrategy.REPLACE_WITH_DEFAULT
+        self.replace_null_strings = state
         self.process_data()
         self.evaluate.emit()
 
     def on_replace_zeros_changed(self, state: bool) -> None:
         """Handle replace with zeros checkbox changes"""
-        if state:
-            self.null_strategy = NullStrategy.REPLACE_WITH_DEFAULT
+        self.replace_null_numbers = state
         self.process_data()
         self.evaluate.emit()
 
@@ -485,12 +539,18 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if self.remove_null_rows:
                 cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_ROWS)
 
+            if self.remove_null_rows_from_selected_columns:
+                cleaner.remove_rows_with_nulls(self.selected_fields)
+
             if self.remove_null_columns:
                 cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_COLS)
 
             # Apply null replacement strategy
-            if self.null_strategy == NullStrategy.REPLACE_WITH_DEFAULT:
-                cleaner.handle_nulls(self.null_strategy)
+            if self.replace_null_strings or self.replace_null_numbers:
+                cleaner.replace_null_defaults(
+                    replace_strings=self.replace_null_strings,
+                    replace_numbers=self.replace_null_numbers,
+                )
 
             # Apply transformations only to selected fields
             if self.selected_fields:
@@ -542,12 +602,21 @@ class CleansingContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.remove_null_rows:
             code_lines.append("cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_ROWS)")
 
+        if self.remove_null_rows_from_selected_columns and self.selected_fields:
+            code_lines.append(
+                f"cleaner.remove_rows_with_nulls(fields={self.selected_fields!r})"
+            )
+
         if self.remove_null_columns:
             code_lines.append("cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_COLS)")
 
         # Add null replacement
-        if self.null_strategy == NullStrategy.REPLACE_WITH_DEFAULT:
-            code_lines.append("cleaner.handle_nulls(NullStrategy.REPLACE_WITH_DEFAULT)")
+        if self.replace_null_strings or self.replace_null_numbers:
+            code_lines.append(
+                "cleaner.replace_null_defaults("
+                f"replace_strings={self.replace_null_strings}, "
+                f"replace_numbers={self.replace_null_numbers})"
+            )
 
         # Add field selection
         if self.selected_fields:

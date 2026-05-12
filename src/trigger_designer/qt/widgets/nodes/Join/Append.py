@@ -142,7 +142,7 @@ class AppendContent(QDMNodeIconContentWidget):
         right_column_combo = QComboBox()
 
         if hasattr(self, "left_data") and self.left_data is not None:
-            left_column_combo.addItems(self.left_data.columns.tolist())
+            left_column_combo.addItems(list(self.left_data.columns))
             if left_col and left_col in self.left_data.columns:
                 left_column_combo.setCurrentText(left_col)
 
@@ -354,9 +354,20 @@ class AppendContent(QDMNodeIconContentWidget):
             # Map pandas-style "outer" to polars "full"
             polars_how = "full" if self.join_type == "outer" else self.join_type
 
+            left_data = (
+                self.left_data.collect()
+                if isinstance(self.left_data, pl.LazyFrame)
+                else self.left_data
+            )
+            right_data = (
+                self.right_data.collect()
+                if isinstance(self.right_data, pl.LazyFrame)
+                else self.right_data
+            )
+
             # Perform the join operation using Polars
-            result = self.left_data.join(
-                self.right_data,
+            result = left_data.join(
+                right_data,
                 left_on=left_cols,
                 right_on=right_cols,
                 how=polars_how,
@@ -394,9 +405,24 @@ class AppendContent(QDMNodeIconContentWidget):
         left_cols = [m["left_column"] for m in self.mapping_data]
         right_cols = [m["right_column"] for m in self.mapping_data]
         polars_how = "full" if self.join_type == "outer" else self.join_type
+        code_lines.extend(
+            [
+                "import polars as pl",
+                "",
+                "def _ensure_dataframe(data):",
+                "    if isinstance(data, pl.DataFrame):",
+                "        return data",
+                "    if isinstance(data, pl.LazyFrame):",
+                "        return data.collect()",
+                "    raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(data)}')",
+                "",
+                f"_left_input = _ensure_dataframe({self.left_variable})",
+                f"_right_input = _ensure_dataframe({self.right_variable})",
+            ]
+        )
         code_lines.append(
-            f"{self.variable_name} = {self.left_variable}.join(\n"
-            f"    {self.right_variable},\n"
+            f"{self.variable_name} = _left_input.join(\n"
+            f"    _right_input,\n"
             f"    left_on={left_cols},\n"
             f"    right_on={right_cols},\n"
             f"    how='{polars_how}',\n"

@@ -81,6 +81,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.scene.addItemSelectedListener(self.onItemSelected)
         self.scene.grScene.socketClicked.connect(self.onSocketClicked)
         self._close_event_listeners: list[Callable] = []
+        self._refreshing_config_dock = False
         # self.setAttribute(Qt.WA_DeleteOnClose)
 
     # Add this to where you handle socket clicks
@@ -453,6 +454,24 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def logCritical(self, message: str) -> None:
         """Log a CRITICAL message"""
         self.log("CRITICAL", message)
+
+    def refreshConfigDock(self, nodes: Optional[list[Any]] = None) -> None:
+        if self._refreshing_config_dock:
+            return
+
+        target_nodes = nodes if nodes is not None else self.getSelectedItems()
+        parent_widget = self.parentWidget()
+
+        while parent_widget is not None and not hasattr(parent_widget, "configDock"):
+            parent_widget = parent_widget.parentWidget()
+
+        config_dock = getattr(parent_widget, "configDock", None)
+        if config_dock is not None:
+            self._refreshing_config_dock = True
+            try:
+                config_dock.updateConfig(target_nodes)
+            finally:
+                self._refreshing_config_dock = False
 
     def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)

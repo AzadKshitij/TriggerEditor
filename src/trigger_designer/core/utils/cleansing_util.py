@@ -135,6 +135,68 @@ class DataCleansing:
 
         return self
 
+    def remove_rows_with_nulls(self, fields: Optional[List[str]] = None) -> "DataCleansing":
+        """Remove rows where any selected field is null."""
+        if not fields:
+            return self
+
+        selected_fields = [field for field in fields if field in self.df.columns]
+        if not selected_fields:
+            return self
+
+        original_size = len(self.df)
+        null_checks = [pl.col(field).is_null() for field in selected_fields]
+        self.df = self.df.filter(~pl.any_horizontal(*null_checks))
+        self.stats.rows_removed += original_size - len(self.df)
+        return self
+
+    def replace_null_defaults(
+        self,
+        replace_strings: bool = True,
+        replace_numbers: bool = True,
+        default_str: str = "",
+        default_num: Union[int, float] = 0,
+    ) -> "DataCleansing":
+        """Replace nulls for string and numeric columns independently."""
+        if not replace_strings and not replace_numbers:
+            return self
+
+        numeric_dtypes = {
+            pl.Int8,
+            pl.Int16,
+            pl.Int32,
+            pl.Int64,
+            pl.UInt8,
+            pl.UInt16,
+            pl.UInt32,
+            pl.UInt64,
+            pl.Float32,
+            pl.Float64,
+        }
+        string_dtypes = {pl.Utf8, pl.String}
+
+        original_nulls = 0
+        if self.df.width > 0:
+            original_nulls = self.df.null_count().sum_horizontal().item()
+
+        expressions = []
+        for column_name, dtype in self.df.schema.items():
+            expr = pl.col(column_name)
+            if replace_numbers and dtype in numeric_dtypes:
+                expr = expr.fill_null(default_num)
+            elif replace_strings and dtype in string_dtypes:
+                expr = expr.fill_null(default_str)
+            expressions.append(expr.alias(column_name))
+
+        if expressions:
+            self.df = self.df.with_columns(expressions)
+
+        if self.df.width > 0:
+            current_nulls = self.df.null_count().sum_horizontal().item()
+            self.stats.nulls_replaced += original_nulls - current_nulls
+
+        return self
+
     def strip_whitespace(
         self,
         remove_all: bool = False,

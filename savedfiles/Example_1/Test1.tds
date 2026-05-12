@@ -1,0 +1,971 @@
+{
+  "id": 2308757570896,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2010619938928,
+      "title": "File Input",
+      "pos_x": -800.0,
+      "pos_y": -159.5,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2010717013168,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/monthly_sales_2023.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "order_id",
+            "dtype": "String"
+          },
+          {
+            "name": "customer_id",
+            "dtype": "String"
+          },
+          {
+            "name": "product_id",
+            "dtype": "String"
+          },
+          {
+            "name": "order_date",
+            "dtype": "String"
+          },
+          {
+            "name": "order_value",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 130688,
+          "modified_time": 1778584600
+        }
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2010717022768,
+      "title": "File Input",
+      "pos_x": -478.25,
+      "pos_y": 2.25,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2010717025328,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/customers.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "customer_id",
+            "dtype": "String"
+          },
+          {
+            "name": "name",
+            "dtype": "String"
+          },
+          {
+            "name": "age",
+            "dtype": "String"
+          },
+          {
+            "name": "email",
+            "dtype": "String"
+          },
+          {
+            "name": "region_id",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 4883,
+          "modified_time": 1759224020
+        }
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2010717018768,
+      "title": "File Input",
+      "pos_x": -470.5,
+      "pos_y": 181.25,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2010717112432,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/products.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "product_id",
+            "dtype": "String"
+          },
+          {
+            "name": "name",
+            "dtype": "String"
+          },
+          {
+            "name": "category",
+            "dtype": "String"
+          },
+          {
+            "name": "price",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 1339,
+          "modified_time": 1759224020
+        }
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2010717117872,
+      "title": "File Input",
+      "pos_x": -468.0,
+      "pos_y": 346.75,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2010717118192,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/regions.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "region_id",
+            "dtype": "String"
+          },
+          {
+            "name": "region_name",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 68,
+          "modified_time": 1745311103
+        }
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2010717123792,
+      "title": "Select",
+      "pos_x": -593.8720703125002,
+      "pos_y": -163.8146972656249,
+      "inputs": [
+        {
+          "id": 2010717367632,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2010717368112,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "order_id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "product_id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "order_date",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "order_value",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "order_id",
+            "customer_id",
+            "product_id",
+            "order_date",
+            "order_value"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "order_id": "String",
+            "customer_id": "String",
+            "product_id": "String",
+            "order_date": "String",
+            "order_value": "Float64"
+          },
+          "column_order": []
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2010717536336,
+      "title": "Join",
+      "pos_x": 159.2333984375,
+      "pos_y": -108.87329101562493,
+      "inputs": [
+        {
+          "id": 2010717547216,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2010717547696,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2010717548016,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2010717548336,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2010717548656,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "customer_id",
+            "right_column": "customer_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "order_date",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_value",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "name",
+            "source": "R"
+          },
+          {
+            "name": "age",
+            "source": "R"
+          },
+          {
+            "name": "customer_id",
+            "source": "R"
+          },
+          {
+            "name": "email",
+            "source": "R"
+          },
+          {
+            "name": "region_id",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join"
+    },
+    {
+      "id": 2010720607024,
+      "title": "Join",
+      "pos_x": 730.2490234374997,
+      "pos_y": 129.38842773437506,
+      "inputs": [
+        {
+          "id": 2010720615664,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2010720604464,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2010720610224,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2010720600144,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2010720602224,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "product_id",
+            "right_column": "product_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "age",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "email",
+            "source": "L"
+          },
+          {
+            "name": "name",
+            "source": "L"
+          },
+          {
+            "name": "order_date",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_value",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "region_id",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "R"
+          },
+          {
+            "name": "name",
+            "source": "R"
+          },
+          {
+            "name": "price",
+            "source": "R"
+          },
+          {
+            "name": "product_id",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join"
+    },
+    {
+      "id": 2010720607184,
+      "title": "Join",
+      "pos_x": 907.5927734374997,
+      "pos_y": 330.65795898437494,
+      "inputs": [
+        {
+          "id": 2010721092624,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2010721092944,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2010721093264,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2010721093584,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2010721093904,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "region_id",
+            "right_column": "region_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "age",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "email",
+            "source": "L"
+          },
+          {
+            "name": "name",
+            "source": "L"
+          },
+          {
+            "name": "name_right",
+            "source": "L"
+          },
+          {
+            "name": "order_date",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_value",
+            "source": "L"
+          },
+          {
+            "name": "price",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "region_id",
+            "source": "L"
+          },
+          {
+            "name": "region_id",
+            "source": "R"
+          },
+          {
+            "name": "region_name",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join"
+    },
+    {
+      "id": 2889454546256,
+      "title": "Cleansing",
+      "pos_x": -301.25,
+      "pos_y": -167.5,
+      "inputs": [
+        {
+          "id": 2889454544336,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2889454544176,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {},
+      "node_code": 1,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2148973049680,
+      "title": "Filter",
+      "pos_x": -48.82812499999999,
+      "pos_y": -167.96874999999994,
+      "inputs": [
+        {
+          "id": 2149417011792,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2149417012272,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2149417012592,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "order_value",
+        "operation": "Greater Than",
+        "value": "0"
+      },
+      "node_code": 2,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2878904250320,
+      "title": "Select",
+      "pos_x": -255.85937499999994,
+      "pos_y": 9.765625000000021,
+      "inputs": [
+        {
+          "id": 2878904247440,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2878904245360,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "customer_id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "name",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "age",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "email",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "region_id",
+            "dtype": "String",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "customer_id",
+            "name",
+            "age",
+            "email",
+            "region_id"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2878904248720,
+      "title": "Select",
+      "pos_x": -138.67187499999997,
+      "pos_y": 189.45312499999994,
+      "inputs": [
+        {
+          "id": 2878904242640,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2878904250800,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "product_id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "name",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "category",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "price",
+            "dtype": "String",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "product_id",
+            "name",
+            "category",
+            "price"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2878904299312,
+      "title": "Select",
+      "pos_x": -130.85937499999997,
+      "pos_y": 367.18749999999983,
+      "inputs": [
+        {
+          "id": 2878904298192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2878904294512,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "region_id",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "region_name",
+            "dtype": "String",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "region_id",
+            "region_name"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation"
+    },
+    {
+      "id": 2878886509328,
+      "title": "File Output",
+      "pos_x": 1154.51123046875,
+      "pos_y": 160.25244140624991,
+      "inputs": [
+        {
+          "id": 2879354059536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/Test1.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "node_code": 5,
+      "node_type": "input"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2010720576336,
+      "edge_type": 5,
+      "start": 2010717548336,
+      "end": 2010720615664
+    },
+    {
+      "id": 2010716739856,
+      "edge_type": 5,
+      "start": 2010720600144,
+      "end": 2010721092624
+    },
+    {
+      "id": 2889454994768,
+      "edge_type": 5,
+      "start": 2010717013168,
+      "end": 2010717367632
+    },
+    {
+      "id": 2889455079888,
+      "edge_type": 5,
+      "start": 2010717368112,
+      "end": 2889454544336
+    },
+    {
+      "id": 2148972857056,
+      "edge_type": 5,
+      "start": 2889454544176,
+      "end": 2149417011792
+    },
+    {
+      "id": 2148972003024,
+      "edge_type": 5,
+      "start": 2149417012272,
+      "end": 2010717547216
+    },
+    {
+      "id": 2878719733312,
+      "edge_type": 5,
+      "start": 2010717025328,
+      "end": 2878904247440
+    },
+    {
+      "id": 2878903881232,
+      "edge_type": 5,
+      "start": 2878904245360,
+      "end": 2010717547696
+    },
+    {
+      "id": 2878903881872,
+      "edge_type": 5,
+      "start": 2010717112432,
+      "end": 2878904242640
+    },
+    {
+      "id": 2878720289552,
+      "edge_type": 5,
+      "start": 2878904250800,
+      "end": 2010720604464
+    },
+    {
+      "id": 2878885264304,
+      "edge_type": 5,
+      "start": 2010717118192,
+      "end": 2878904298192
+    },
+    {
+      "id": 2878729638768,
+      "edge_type": 5,
+      "start": 2878904294512,
+      "end": 2010721092944
+    },
+    {
+      "id": 2878886671792,
+      "edge_type": 5,
+      "start": 2010721093584,
+      "end": 2879354059536
+    }
+  ],
+  "workflow_metadata": {
+    "schema_version": 1,
+    "app_version": "0.1.0",
+    "saved_at": "2026-05-12T11:21:31Z"
+  }
+}

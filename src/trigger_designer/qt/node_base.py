@@ -138,6 +138,7 @@ class TriggerChangeHandler:
     def __init__(self, scene: "Scene", node: "TriggerNode") -> None:
         self._scene = scene
         self._input_widgets: list = []
+        self._suspend_input_tracking = False
         self.node = node
 
     # @property
@@ -191,6 +192,9 @@ class TriggerChangeHandler:
 
     def onInputChanged(self, *args: list) -> None:
         """Called when any input widget changes"""
+        if getattr(self, "_suspend_input_tracking", False):
+            return
+
         if hasattr(self.node, "scene"):
             self.node.scene.has_been_modified = True
             self.node.scene.history.storeHistory("Input Modified")
@@ -305,6 +309,20 @@ class TriggerNode(Node):
                         break
         return socket_index
 
+    def _refresh_selected_node_config(self) -> None:
+        if getattr(self, "grNode", None) is None or not self.grNode.isSelected():
+            return
+
+        view = self.scene.getView() if hasattr(self.scene, "getView") else None
+        owner = view.parentWidget() if view is not None else None
+
+        while owner is not None and not hasattr(owner, "refreshConfigDock"):
+            owner = owner.parentWidget()
+
+        refresher = getattr(owner, "refreshConfigDock", None)
+        if callable(refresher):
+            refresher([self.grNode])
+
     def evalOperation(self, input1: Any, input2: Any) -> int:
         return 123
 
@@ -320,6 +338,7 @@ class TriggerNode(Node):
                 self.markInvalid()
                 self.markDescendantsDirty()
                 self.grNode.setToolTip(f"Input {i} is not connected")
+                self._refresh_selected_node_config()
                 return None
 
             val = input_node.eval()
@@ -327,6 +346,7 @@ class TriggerNode(Node):
                 self.markInvalid()
                 self.markDescendantsDirty()
                 self.grNode.setToolTip(f"Input {i} is NaN")
+                self._refresh_selected_node_config()
                 return None
 
             input_values.append(val)
@@ -336,6 +356,7 @@ class TriggerNode(Node):
             self.markInvalid()
             self.markDescendantsDirty()
             self.grNode.setToolTip("Invalid operation")
+            self._refresh_selected_node_config()
             return None
 
         self.value = result
@@ -343,6 +364,7 @@ class TriggerNode(Node):
         self.markDirty(False)
         self.grNode.setToolTip("")
         self.evalChildren()
+        self._refresh_selected_node_config()
         return self.value
 
     # Uncomment if you want to use the default evalImplementation for calculator application
@@ -388,12 +410,16 @@ class TriggerNode(Node):
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
         # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
         self.markDirty()
+        self.markDescendantsDirty()
         self.eval()
 
     def onInputChanged(self, socket: Optional["Socket"] = None) -> None:
-        print("🟡%s::__onInputChanged" % self.__class__.__name__)
+        content = getattr(self, "content", None)
+        if getattr(content, "_suspend_node_evaluation", False):
+            return
+
         self.markDirty()
-        self.markChildrenDirty()
+        self.markDescendantsDirty()
         self.eval()
 
     def serialize(self) -> OrderedDict:

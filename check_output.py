@@ -3,58 +3,74 @@ import os
 
 # Always use LazyFrame for memory efficiency
 # Using LazyFrame for optimal memory usage
-var_file_input_2300670923696 = pl.scan_csv('C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/data/check.csv', infer_schema=False)
+var_file_input_1662526196144 = pl.scan_csv('C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/monthly_sales_2023.csv', infer_schema=False)
 
-# var_file_input_2300670923696 is now a LazyFrame for memory-efficient processing
+# var_file_input_1662526196144 is now a LazyFrame for memory-efficient processing
 # Use .collect() only when you need to materialize the data
+import polars as pl
+import os
+
+# Always use LazyFrame for memory efficiency
+# Using LazyFrame for optimal memory usage
+var_file_input_1662679860560 = pl.scan_csv('C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/customers.csv', infer_schema=False)
+
+# var_file_input_1662679860560 is now a LazyFrame for memory-efficient processing
+# Use .collect() only when you need to materialize the data
+import polars as pl
+import os
+
+# Always use LazyFrame for memory efficiency
+# Using LazyFrame for optimal memory usage
+var_file_input_1662679862000 = pl.scan_csv('C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/products.csv', infer_schema=False)
+
+# var_file_input_1662679862000 is now a LazyFrame for memory-efficient processing
+# Use .collect() only when you need to materialize the data
+import polars as pl
+import os
+
+# Always use LazyFrame for memory efficiency
+# Using LazyFrame for optimal memory usage
+var_file_input_1662679863280 = pl.scan_csv('C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/regions.csv', infer_schema=False)
+
+# var_file_input_1662679863280 is now a LazyFrame for memory-efficient processing
+# Use .collect() only when you need to materialize the data
+var_select_1662679867120 = var_file_input_1662526196144.select(['order_id', 'customer_id', 'product_id', 'order_date', 'order_value'])
+var_select_1662679867120 = var_select_1662679867120.with_columns(pl.col('order_id').cast(pl.String, strict=False).alias('order_id'))
+var_select_1662679867120 = var_select_1662679867120.with_columns(pl.col('customer_id').cast(pl.String, strict=False).alias('customer_id'))
+var_select_1662679867120 = var_select_1662679867120.with_columns(pl.col('product_id').cast(pl.String, strict=False).alias('product_id'))
+var_select_1662679867120 = var_select_1662679867120.with_columns(pl.col('order_date').cast(pl.String, strict=False).alias('order_date'))
+var_select_1662679867120 = var_select_1662679867120.with_columns(pl.col('order_value').cast(pl.Float64, strict=False).alias('order_value'))
+var_select_1662680252976 = var_file_input_1662679860560.select(['customer_id', 'name', 'age', 'email', 'region_id'])
+var_select_1662680254736 = var_file_input_1662679862000.select(['product_id', 'name', 'category', 'price'])
+var_select_1662680256816 = var_file_input_1662679863280.select(['region_id', 'region_name'])
+from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy
+import polars as pl
+# Convert LazyFrame to DataFrame if needed
+_cleansing_input = var_select_1662679867120.collect() if hasattr(var_select_1662679867120, 'collect') else var_select_1662679867120
+cleaner = DataCleansing(_cleansing_input)
+cleaner.remove_rows_with_nulls(fields=['order_id', 'customer_id', 'product_id', 'order_date', 'order_value'])
+var_cleansing_1662680121904 = cleaner.get_result()
 # Filter data into true and false results
-var_t_filter_2300670391824 = var_file_input_2300670923696.filter(pl.col('Keyword').str.contains('x'))
-var_f_filter_2300670391824 = var_file_input_2300670923696.filter(~(pl.col('Keyword').str.contains('x')))
-var_select_2300670695280 = var_file_input_2300670923696.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Keyword').cast(pl.String, strict=False).alias('Keyword'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Seed').cast(pl.String, strict=False).alias('Seed'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Source').cast(pl.String, strict=False).alias('Source'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Country').cast(pl.String, strict=False).alias('Country'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Autocomplete Position').cast(pl.String, strict=False).alias('Autocomplete Position'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Difficulty').cast(pl.Int64, strict=False).alias('Difficulty'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Hot Keyword').cast(pl.String, strict=False).alias('Hot Keyword'))
-var_select_2300670695280 = var_select_2300670695280.with_columns(pl.col('Relevancy Score').cast(pl.Float64, strict=False).alias('Relevancy Score'))
-var_sort_2300670838896 = var_file_input_2300670923696.sort('Keyword', descending=False)
-import polars as pl
-# Split into unique and duplicate records based on: Relevancy Score
-var_unique_2300670388784 = var_file_input_2300670923696.unique(subset=["Relevancy Score"], maintain_order=True)
-var_duplicate_2300670388784 = var_file_input_2300670923696.filter(pl.struct(["Relevancy Score"]).is_duplicated())
-import polars as pl
-# Random split with seed 42 - efficient LazyFrame approach
-# Add row index and shuffle all columns
-indexed_df = var_file_input_2300670923696.with_columns(pl.all().shuffle(seed=42)).with_row_index()
-# Split based on row index thresholds
-var_estimation_2300670850736 = indexed_df.filter(pl.col('index') < pl.col('index').max() * 0.7).drop('index')
-var_validation_2300670850736 = indexed_df.filter(pl.col('index') >= pl.col('index').max() * 0.7).drop('index')
-var_groupby_2300671379888 = var_file_input_2300670923696.group_by(['Relevancy Score']).agg([
-    pl.len().alias('count')
-])
-var_select_2300671386288 = var_file_input_2300670923696.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Keyword').cast(pl.String, strict=False).alias('Keyword'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Seed').cast(pl.String, strict=False).alias('Seed'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Source').cast(pl.String, strict=False).alias('Source'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Country').cast(pl.String, strict=False).alias('Country'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Autocomplete Position').cast(pl.String, strict=False).alias('Autocomplete Position'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Difficulty').cast(pl.Int64, strict=False).alias('Difficulty'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Hot Keyword').cast(pl.String, strict=False).alias('Hot Keyword'))
-var_select_2300671386288 = var_select_2300671386288.with_columns(pl.col('Relevancy Score').cast(pl.Float64, strict=False).alias('Relevancy Score'))
+var_t_filter_1662680131824 = var_cleansing_1662680121904.filter(pl.col('order_value') > 0)
+var_f_filter_1662680131824 = var_cleansing_1662680121904.filter(~(pl.col('order_value') > 0))
 # Polars LazyFrame Join Operation
 import polars as pl
 
-# Rename conflicting columns in right dataframe
-_right_renamed = var_duplicate_2300670388784.rename({'Keyword': 'Keyword_right', 'Seed': 'Seed_right', 'Source': 'Source_right', 'Autocomplete Position': 'Autocomplete Position_right', 'Difficulty': 'Difficulty_right', 'Hot Keyword': 'Hot Keyword_right', 'Relevancy Score': 'Relevancy Score_right'})
+def _ensure_lazyframe(data):
+    if isinstance(data, pl.DataFrame):
+        return data.lazy()
+    if isinstance(data, pl.LazyFrame):
+        return data
+    raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(data)}')
 
+_left_input = _ensure_lazyframe(var_t_filter_1662680131824)
+_right_input = _ensure_lazyframe(var_select_1662680252976)
 
 # Perform full outer join with coalesce (automatic conflict resolution)
-_join_result = var_duplicate_2300670388784.join(
-    _right_renamed,
-    left_on=['Country'],
-    right_on=['Country'],
+_join_result = _left_input.join(
+    _right_input,
+    left_on=['customer_id'],
+    right_on=['customer_id'],
     how='full',
     coalesce=True
 )
@@ -62,61 +78,194 @@ _join_result = var_duplicate_2300670388784.join(
 # OPTIMIZED: Extract all join types from single result (much faster!)
 # Add join type indicator to identify record sources
 _result_with_indicators = _join_result.with_columns([
-    pl.when(pl.col('Keyword_right').is_null() | pl.col('Seed_right').is_null() | pl.col('Source_right').is_null() | pl.col('Country').is_null() | pl.col('Autocomplete Position_right').is_null() | pl.col('Difficulty_right').is_null() | pl.col('Hot Keyword_right').is_null() | pl.col('Relevancy Score_right').is_null())
+    pl.when(pl.col('customer_id').is_null() | pl.col('name').is_null() | pl.col('age').is_null() | pl.col('email').is_null() | pl.col('region_id').is_null())
       .then(pl.lit('left_only'))
-      .when(pl.col('Keyword').is_null() | pl.col('Seed').is_null() | pl.col('Source').is_null() | pl.col('Country').is_null() | pl.col('Autocomplete Position').is_null() | pl.col('Difficulty').is_null() | pl.col('Hot Keyword').is_null() | pl.col('Relevancy Score').is_null())
+      .when(pl.col('order_id').is_null() | pl.col('customer_id').is_null() | pl.col('product_id').is_null() | pl.col('order_date').is_null() | pl.col('order_value').is_null())
       .then(pl.lit('right_only'))
       .otherwise(pl.lit('both'))
       .alias('__join_type')
 ])
 
 # Main join result with selected columns (matched records only)
-var_join_2300671146448 = _result_with_indicators.filter(
+var_join_1662680044144 = _result_with_indicators.filter(
     pl.col('__join_type') == 'both'
 ).select([
-    'Autocomplete Position',
-    'Country',
-    'Difficulty',
-    'Hot Keyword',
-    'Keyword',
-    'Relevancy Score',
-    'Seed',
-    'Source',
-    'Autocomplete Position_right',
-    'Keyword_right',
-    'Source_right'
+    'customer_id',
+    'order_date',
+    'order_id',
+    'order_value',
+    'product_id',
+    'name',
+    'age',
+    'email',
+    'region_id'
 ])
 
 # Extract left-only data efficiently
-_left_cols = ['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score']
-var_l_join_2300671146448 = _result_with_indicators.filter(
+_left_cols = ['order_id', 'customer_id', 'product_id', 'order_date', 'order_value']
+var_l_join_1662680044144 = _result_with_indicators.filter(
     pl.col('__join_type') == 'left_only'
 ).select(_left_cols)
 
 # Extract right-only data efficiently
-_right_cols = ['Keyword_right', 'Seed_right', 'Source_right', 'Country', 'Autocomplete Position_right', 'Difficulty_right', 'Hot Keyword_right', 'Relevancy Score_right']
-var_r_join_2300671146448 = _result_with_indicators.filter(
+_right_cols = ['customer_id', 'name', 'age', 'email', 'region_id']
+var_r_join_1662680044144 = _result_with_indicators.filter(
     pl.col('__join_type') == 'right_only'
 ).select(_right_cols)
 
 # Clean up temporary variables
-del _join_result, _result_with_indicators, _left_cols, _right_cols, _right_renamed
-from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy
+del _left_input, _right_input, _join_result, _result_with_indicators, _left_cols, _right_cols
+# Polars LazyFrame Join Operation
 import polars as pl
-# Convert LazyFrame to DataFrame if needed
-_cleansing_input = var_select_2300671386288.collect() if hasattr(var_select_2300671386288, 'collect') else var_select_2300671386288
-cleaner = DataCleansing(_cleansing_input)
-cleaner.handle_nulls(NullStrategy.REPLACE_WITH_DEFAULT)
-cleaner.strip_whitespace(remove_all=False, normalize_spaces=True, fields=['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
-var_cleansing_2300585477616 = cleaner.get_result()
-import polars as pl
-# Count records in DataFrame
-_count_value = var_cleansing_2300585477616.select(pl.len()).collect().item() if hasattr(var_cleansing_2300585477616, 'collect') else var_cleansing_2300585477616.height
-var_count_1168116776496 = pl.DataFrame({'Count': [_count_value]})
-del _count_value
-import polars as pl
-var_runtot_2300671224208 = var_cleansing_2300585477616.with_columns([
-    pl.col("Difficulty").cum_sum().over(["Difficulty"]).alias("RunTot_Difficulty")
-    pl.col("Relevancy Score").cum_sum().over(["Difficulty"]).alias("RunTot_Relevancy Score")
+
+def _ensure_lazyframe(data):
+    if isinstance(data, pl.DataFrame):
+        return data.lazy()
+    if isinstance(data, pl.LazyFrame):
+        return data
+    raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(data)}')
+
+_left_input = _ensure_lazyframe(var_join_1662680044144)
+_right_input = _ensure_lazyframe(var_select_1662680254736)
+# Rename conflicting columns in right dataframe
+_right_renamed = _right_input.rename({'name': 'name_right'})
+
+
+# Perform full outer join with coalesce (automatic conflict resolution)
+_join_result = _left_input.join(
+    _right_renamed,
+    left_on=['product_id'],
+    right_on=['product_id'],
+    how='full',
+    coalesce=True
+)
+
+# OPTIMIZED: Extract all join types from single result (much faster!)
+# Add join type indicator to identify record sources
+_result_with_indicators = _join_result.with_columns([
+    pl.when(pl.col('product_id').is_null() | pl.col('name_right').is_null() | pl.col('category').is_null() | pl.col('price').is_null())
+      .then(pl.lit('left_only'))
+      .when(pl.col('customer_id').is_null() | pl.col('order_date').is_null() | pl.col('order_id').is_null() | pl.col('order_value').is_null() | pl.col('product_id').is_null() | pl.col('name').is_null() | pl.col('age').is_null() | pl.col('email').is_null() | pl.col('region_id').is_null())
+      .then(pl.lit('right_only'))
+      .otherwise(pl.lit('both'))
+      .alias('__join_type')
 ])
-var_select_2300671388048 = var_runtot_2300671224208.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score', 'RunTot_Difficulty'])
+
+# Main join result with selected columns (matched records only)
+var_join_1662680050704 = _result_with_indicators.filter(
+    pl.col('__join_type') == 'both'
+).select([
+    'age',
+    'customer_id',
+    'email',
+    'name',
+    'order_date',
+    'order_id',
+    'order_value',
+    'product_id',
+    'region_id',
+    'category',
+    'name_right',
+    'price'
+])
+
+# Extract left-only data efficiently
+_left_cols = ['customer_id', 'order_date', 'order_id', 'order_value', 'product_id', 'name', 'age', 'email', 'region_id']
+var_l_join_1662680050704 = _result_with_indicators.filter(
+    pl.col('__join_type') == 'left_only'
+).select(_left_cols)
+
+# Extract right-only data efficiently
+_right_cols = ['product_id', 'name_right', 'category', 'price']
+var_r_join_1662680050704 = _result_with_indicators.filter(
+    pl.col('__join_type') == 'right_only'
+).select(_right_cols)
+
+# Clean up temporary variables
+del _left_input, _right_input, _join_result, _result_with_indicators, _left_cols, _right_cols, _right_renamed
+# Polars LazyFrame Join Operation
+import polars as pl
+
+def _ensure_lazyframe(data):
+    if isinstance(data, pl.DataFrame):
+        return data.lazy()
+    if isinstance(data, pl.LazyFrame):
+        return data
+    raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(data)}')
+
+_left_input = _ensure_lazyframe(var_join_1662680050704)
+_right_input = _ensure_lazyframe(var_select_1662680256816)
+
+# Perform full outer join with coalesce (automatic conflict resolution)
+_join_result = _left_input.join(
+    _right_input,
+    left_on=['region_id'],
+    right_on=['region_id'],
+    how='full',
+    coalesce=True
+)
+
+# OPTIMIZED: Extract all join types from single result (much faster!)
+# Add join type indicator to identify record sources
+_result_with_indicators = _join_result.with_columns([
+    pl.when(pl.col('region_id').is_null() | pl.col('region_name').is_null())
+      .then(pl.lit('left_only'))
+      .when(pl.col('age').is_null() | pl.col('customer_id').is_null() | pl.col('email').is_null() | pl.col('name').is_null() | pl.col('order_date').is_null() | pl.col('order_id').is_null() | pl.col('order_value').is_null() | pl.col('product_id').is_null() | pl.col('region_id').is_null() | pl.col('category').is_null() | pl.col('name_right').is_null() | pl.col('price').is_null())
+      .then(pl.lit('right_only'))
+      .otherwise(pl.lit('both'))
+      .alias('__join_type')
+])
+
+# Main join result with selected columns (matched records only)
+var_join_1662680053424 = _result_with_indicators.filter(
+    pl.col('__join_type') == 'both'
+).select([
+    'age',
+    'category',
+    'customer_id',
+    'email',
+    'name',
+    'name_right',
+    'order_date',
+    'order_id',
+    'order_value',
+    'price',
+    'product_id',
+    'region_id',
+    'region_name'
+])
+
+# Extract left-only data efficiently
+_left_cols = ['age', 'customer_id', 'email', 'name', 'order_date', 'order_id', 'order_value', 'product_id', 'region_id', 'category', 'name_right', 'price']
+var_l_join_1662680053424 = _result_with_indicators.filter(
+    pl.col('__join_type') == 'left_only'
+).select(_left_cols)
+
+# Extract right-only data efficiently
+_right_cols = ['region_id', 'region_name']
+var_r_join_1662680053424 = _result_with_indicators.filter(
+    pl.col('__join_type') == 'right_only'
+).select(_right_cols)
+
+# Clean up temporary variables
+del _left_input, _right_input, _join_result, _result_with_indicators, _left_cols, _right_cols
+# Ensure we're working with a LazyFrame for memory efficiency
+if var_join_1662680053424 is not None:
+    # Check if we have a LazyFrame or DataFrame
+    import polars as pl
+    if isinstance(var_join_1662680053424, pl.DataFrame):
+        var_join_1662680053424_lazy = var_join_1662680053424.lazy()
+    elif isinstance(var_join_1662680053424, pl.LazyFrame):
+        var_join_1662680053424_lazy = var_join_1662680053424
+    else:
+        raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(var_join_1662680053424)}')
+
+    try:
+        # Using LazyFrame sink for optimal memory usage
+        var_join_1662680053424_lazy.sink_csv('C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/Test1.csv')
+        print(f'[SUCCESS] Successfully saved data to C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/Test1.csv using LazyFrame')
+    except Exception as e:
+        print(f'[ERROR] Failed to save file: {e}')
+        raise e
+else:
+    print('[WARNING] No data to save')

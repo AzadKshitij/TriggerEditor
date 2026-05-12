@@ -33,7 +33,20 @@ class ConfigDock(QDockWidget):
                     self.clear_dock()
                     logger.debug("Cleared the dock!!!")
                     content = node.content
-                    content.create_layout(self.dock_layout)  # type: ignore
+                    previous_input_tracking = getattr(
+                        content, "_suspend_input_tracking", False
+                    )
+                    previous_node_evaluation = getattr(
+                        content, "_suspend_node_evaluation", False
+                    )
+                    content._suspend_input_tracking = True
+                    content._suspend_node_evaluation = True
+                    try:
+                        content.create_layout(self.dock_layout)  # type: ignore
+                    finally:
+                        content._suspend_input_tracking = previous_input_tracking
+                        content._suspend_node_evaluation = previous_node_evaluation
+
                     self.dock_widget.setLayout(self.dock_layout)
                 except Exception as e:
                     traceback.print_exc()

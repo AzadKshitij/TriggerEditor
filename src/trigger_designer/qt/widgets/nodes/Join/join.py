@@ -870,22 +870,35 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         ]
 
         code_lines.append("# Polars LazyFrame Join Operation\nimport polars as pl\n")
+        code_lines.extend(
+            [
+                "def _ensure_lazyframe(data):",
+                "    if isinstance(data, pl.DataFrame):",
+                "        return data.lazy()",
+                "    if isinstance(data, pl.LazyFrame):",
+                "        return data",
+                "    raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(data)}')",
+                "",
+                f"_left_input = _ensure_lazyframe({self.left_variable})",
+                f"_right_input = _ensure_lazyframe({self.right_variable})",
+            ]
+        )
 
         # Add column renaming if there are conflicts
         if conflicting_cols:
             rename_map = {col: f"{col}_right" for col in conflicting_cols}
             code_lines.append(
                 f"# Rename conflicting columns in right dataframe\n"
-                f"_right_renamed = {self.right_variable}.rename({rename_map})\n"
+                f"_right_renamed = _right_input.rename({rename_map})\n"
             )
             right_var = "_right_renamed"
         else:
-            right_var = self.right_variable
+            right_var = "_right_input"
 
         # Main join operation
         code_lines.append(
             f"\n# Perform full outer join with coalesce (automatic conflict resolution)\n"
-            f"_join_result = {self.left_variable}.join(\n"
+            f"_join_result = _left_input.join(\n"
             f"    {right_var},\n"
             f"    left_on={left_cols},\n"
             f"    right_on={right_cols},\n"
@@ -983,6 +996,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Clean up temporary variables
         cleanup_vars = [
+            "_left_input",
+            "_right_input",
             "_join_result",
             "_result_with_indicators",
             "_left_cols",

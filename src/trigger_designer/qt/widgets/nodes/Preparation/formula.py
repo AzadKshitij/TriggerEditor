@@ -275,7 +275,10 @@ class FormulaContent(
 
     def _get_current_formula_text(self) -> str:
         if hasattr(self, "formula_input") and self.formula_input:
-            return self.formula_input.get_text() or ""
+            try:
+                return self.formula_input.get_text() or ""
+            except (RuntimeError, AttributeError):
+                self.formula_input = None
         return self.formula_text or ""
 
     def _sync_formula_text(self) -> str:
