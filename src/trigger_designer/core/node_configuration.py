@@ -1,3 +1,4 @@
+import importlib
 from typing import Callable, Dict, TYPE_CHECKING, Union
 from enum import IntEnum, StrEnum, auto
 
@@ -9,6 +10,7 @@ __all__ = [
     "JoinNodes",
     "TransformNodes",
     "register_node",
+    "register_lazy_node",
     "get_class_from_opcode",
 ]
 
@@ -101,6 +103,40 @@ class OpCodeNotRegistered(ConfException):
     """Raised when attempting to get an unregistered node_code"""
 
 
+class LazyNodeReference:
+    def __init__(
+        self,
+        *,
+        node_code: int,
+        node_type: NodeTypes,
+        module_path: str,
+        node_title: str,
+        icon: str,
+    ) -> None:
+        self.node_code = node_code
+        self.node_type = node_type
+        self.module_path = module_path
+        self.node_title = node_title
+        self.icon = icon
+
+    def load(self):
+        registry = NODE_REGISTRIES[self.node_type]
+        current = registry.get(self.node_code)
+        if current is not None and not isinstance(current, LazyNodeReference):
+            return current
+
+        importlib.import_module(self.module_path)
+        loaded = registry.get(self.node_code)
+        if loaded is None or isinstance(loaded, LazyNodeReference):
+            raise OpCodeNotRegistered(
+                f"Lazy node import failed for '{self.module_path}' ({self.node_type}:{self.node_code})"
+            )
+        return loaded
+
+    def __call__(self, *args, **kwargs):
+        return self.load()(*args, **kwargs)
+
+
 # def register_node_now(node_code: IntEnum, class_reference: 'TriggerNode', node_type: NodeTypes) -> None:
 
 #     current_node_type: Dict[int, 'TriggerNode'] = check_node_type(node_type)
@@ -120,10 +156,39 @@ def register_node_now(
 
     registry = NODE_REGISTRIES[NodeTypes(node_type)]
     if node_code in registry:
+        if isinstance(registry[node_code], LazyNodeReference):
+            registry[node_code] = class_reference
+            return
         raise InvalidNodeRegistration(
             f"Duplicate node registration of '{node_code}'. There is already {registry[node_code]}"
         )
     registry[node_code] = class_reference
+
+
+def register_lazy_node(
+    node_code: int,
+    node_type: NodeTypes,
+    *,
+    module_path: str,
+    node_title: str,
+    icon: str,
+) -> None:
+    if node_type not in NodeTypes:
+        raise InvalidNodeRegistration(f"Invalid node type: {node_type}")
+
+    registry = NODE_REGISTRIES[NodeTypes(node_type)]
+    if node_code in registry:
+        raise InvalidNodeRegistration(
+            f"Duplicate node registration of '{node_code}'. There is already {registry[node_code]}"
+        )
+
+    registry[node_code] = LazyNodeReference(
+        node_code=node_code,
+        node_type=NodeTypes(node_type),
+        module_path=module_path,
+        node_title=node_title,
+        icon=icon,
+    )
 
 
 def register_node(node_code: int, node_type: NodeTypes) -> Callable:
@@ -177,6 +242,9 @@ def get_class_from_opcode(
     registry = NODE_REGISTRIES[node_type_enum]
     if node_code not in registry:
         raise OpCodeNotRegistered(f"OpCode '{node_code}' is not registered")
+
+    if isinstance(registry[node_code], LazyNodeReference):
+        registry[node_code] = registry[node_code].load()
 
     return registry[node_code]
 

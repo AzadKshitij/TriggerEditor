@@ -28,7 +28,6 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
 from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.resource_manager import ResourceManager
-from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
 
@@ -86,6 +85,10 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         socket_index = node.outputs.index(socket)
         data = self.getSocketData(node, socket_index)
         if data is not None:
+            from trigger_designer.qt.widgets.data_preview_window import (
+                DataPreviewWindow,
+            )
+
             # Create and show the data preview window
             title = f"Socket {socket_index} Data - {node.__class__.__name__}"
             preview_window = DataPreviewWindow(data, title, self)

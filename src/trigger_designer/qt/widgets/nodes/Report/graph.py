@@ -45,51 +45,45 @@ from typing import (
     Union,
 )
 
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import (
-    FigureCanvasQTAgg as FigureCanvas,
-    NavigationToolbar2QT as NavigationToolbar,
-)  # type: ignore
-from matplotlib.figure import Figure
-
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
     import pandas as pd
 
 
-class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=4, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
-        fig.tight_layout()
+def _create_graph_canvas(parent=None, width=5, height=4, dpi=100):
+    from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+    from matplotlib.figure import Figure
+
+    class _MplCanvas(FigureCanvasQTAgg):
+        def __init__(self, parent=None, width=5, height=4, dpi=100):
+            fig = Figure(figsize=(width, height), dpi=dpi)
+            self.axes = fig.add_subplot(111)
+            super().__init__(fig)
+            fig.tight_layout()
+
+    return _MplCanvas(parent, width=width, height=height, dpi=dpi)
 
 
-class CustomNavigationToolbar(NavigationToolbar):
-    def __init__(self, canvas, save_context, parent):
-        super().__init__(canvas, parent)
-        self.save_context = save_context
-        self.parent_widget = parent
+def _create_graph_toolbar(canvas, save_context, parent):
+    from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT
 
-    # def edit_parameters(self):
-    #     # Show a color selection dialog, parented to the graph dialog
-    #     color = QColorDialog.getColor(
-    #         parent=self.parent_widget)  # Use parent_widget
+    class _CustomNavigationToolbar(NavigationToolbar2QT):
+        def __init__(self, canvas, save_context, parent):
+            super().__init__(canvas, parent)
+            self.save_context = save_context
+            self.parent_widget = parent
 
-    #     if color.isValid():
-    #         # Change the facecolor of the axes
-    #         self.canvas.axes.set_facecolor(color.name())
-    #         self.canvas.draw()
+        def save_figure(self, *args):
+            file_choices = (
+                "PNG (*.png)|*.png;PDF (*.pdf)|*.pdf;JPG (*.jpg)|*.jpg;SVG (*.svg)|*.svg"
+            )
+            path, ext = QFileDialog.getSaveFileName(
+                self.save_context, "Save figure", "", file_choices
+            )
+            if path:
+                self.canvas.figure.savefig(path)
 
-    def save_figure(self, *args):
-        file_choices = (
-            "PNG (*.png)|*.png;PDF (*.pdf)|*.pdf;JPG (*.jpg)|*.jpg;SVG (*.svg)|*.svg"
-        )
-        path, ext = QFileDialog.getSaveFileName(
-            self.save_context, "Save figure", "", file_choices
-        )
-        if path:
-            self.canvas.figure.savefig(path)
+    return _CustomNavigationToolbar(canvas, save_context, parent)
 
 
 class GraphDialog(QDialog):
@@ -97,10 +91,8 @@ class GraphDialog(QDialog):
         super().__init__(save_context)
         self.setWindowTitle("Graph View")
         self.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
-        self.canvas = MplCanvas(self, width=8, height=6, dpi=100)
-        self.toolbar = CustomNavigationToolbar(
-            self.canvas, save_context, self
-        )  # Add the toolbar
+        self.canvas = _create_graph_canvas(self, width=8, height=6, dpi=100)
+        self.toolbar = _create_graph_toolbar(self.canvas, save_context, self)
         self.button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         self.button_box.rejected.connect(self.reject)
 

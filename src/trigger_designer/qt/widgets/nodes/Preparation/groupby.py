@@ -272,7 +272,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.apply_btn = QPushButton("Apply")
             self.apply_btn.setMinimumHeight(25)
             self.apply_btn.setMaximumWidth(80)
-            self.apply_btn.clicked.connect(self.apply_groupby)
+            self.apply_btn.clicked.connect(self.apply_groupby_from_ui)
             actions_button_layout.addWidget(self.apply_btn)
 
             actions_button_layout.addStretch()
@@ -623,7 +623,10 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         except Exception as e:
             global_logger.error(f"❌ GroupByContent: Error in debug logging: {str(e)}")
 
-    def apply_groupby(self) -> None:
+    def apply_groupby_from_ui(self) -> None:
+        self.apply_groupby(emit_evaluate=True)
+
+    def apply_groupby(self, emit_evaluate: bool = False) -> None:
         """Apply the GroupBy operations to the data"""
         global_logger.info("📊 GroupByContent: Applying GroupBy operations")
 
@@ -748,8 +751,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"✅ GroupByContent: GroupBy completed - Result shape: {self.data.shape}"
             )
 
-            # Emit evaluate signal to update downstream nodes
-            self.evaluate.emit()
+            if emit_evaluate:
+                # Only emit when the user explicitly applies changes.
+                self.evaluate.emit()
 
         except Exception as e:
             global_logger.error(
@@ -1011,7 +1015,7 @@ class TriggerNode_GroupBy(TriggerNode):
                         self.content.changes.get("group_by_columns")
                         or self.content.changes.get("aggregations")
                     ):
-                        self.content.apply_groupby()
+                        self.content.apply_groupby(emit_evaluate=False)
                     else:
                         # No groupby configuration yet, pass through original data
                         self.content.data = input_data

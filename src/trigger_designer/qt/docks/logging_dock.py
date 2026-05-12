@@ -76,6 +76,8 @@ class LoggingDock(QDockWidget):
         self.filter_text = ""
         self.auto_scroll = True
         self.max_logs = 1000  # Maximum number of logs to keep in memory per window
+        self._filters_dirty = True
+        self._display_dirty = True
 
         self.initUI()
         self.setupAutoUpdate()
@@ -170,9 +172,11 @@ class LoggingDock(QDockWidget):
                 design_window_id
             ][-self.max_logs :]
 
-        # Only apply filters if this is the current active window
+        # Defer filtering and rendering to the timer to avoid rebuilding the UI
+        # for every individual log event.
         if design_window_id == self.current_design_window_id:
-            self.apply_filters()
+            self._filters_dirty = True
+            self._display_dirty = True
 
     def apply_filters(self) -> None:
         """Apply current filters to the logs of the current active window"""
@@ -206,14 +210,20 @@ class LoggingDock(QDockWidget):
 
             self.filtered_logs.append(log_entry)
 
+        self._filters_dirty = False
+        self._display_dirty = True
+
     def refresh_display(self) -> None:
         """Refresh the log display"""
         if not hasattr(self, "last_log_count"):
             self.last_log_count = 0
 
+        if self._filters_dirty:
+            self.apply_filters()
+
         # Check if we need to update (new logs or count changed)
         current_log_count = len(self.filtered_logs)
-        if current_log_count == self.last_log_count:
+        if not self._display_dirty and current_log_count == self.last_log_count:
             return
 
         # Store current scroll position
@@ -236,16 +246,19 @@ class LoggingDock(QDockWidget):
                 scrollbar.setValue(scrollbar.maximum())
 
         self.last_log_count = current_log_count
+        self._display_dirty = False
 
     def on_level_filter_changed(self, level: str) -> None:
         """Handle log level filter change"""
         self.current_filter_level = level
-        self.apply_filters()
+        self._filters_dirty = True
+        self._display_dirty = True
 
     def on_text_filter_changed(self, text: str) -> None:
         """Handle text filter change"""
         self.filter_text = text
-        self.apply_filters()
+        self._filters_dirty = True
+        self._display_dirty = True
 
     def on_auto_scroll_changed(self, checked: bool) -> None:
         """Handle auto-scroll checkbox change"""
@@ -261,6 +274,8 @@ class LoggingDock(QDockWidget):
         self.filtered_logs.clear()
         self.log_display.clear()
         self.last_log_count = 0
+        self._filters_dirty = False
+        self._display_dirty = False
 
     def switch_to_design_window(self, design_window: "TriggerSubWindow") -> None:
         """Switch the logging dock to show logs for a specific design window"""
@@ -275,8 +290,9 @@ class LoggingDock(QDockWidget):
         if design_window_id not in self.logs_per_window:
             self.logs_per_window[design_window_id] = []
 
-        # Apply filters to show logs for this window
-        self.apply_filters()
+        # Re-filter on the next timer tick.
+        self._filters_dirty = True
+        self._display_dirty = True
         self.last_log_count = 0  # Force refresh
 
         # If this window has no logs, clear the display immediately
@@ -295,6 +311,8 @@ class LoggingDock(QDockWidget):
             self.log_display.clear()
             self.setWindowTitle("Logs")
             self.last_log_count = 0
+            self._filters_dirty = False
+            self._display_dirty = False
 
     # Convenience methods for different log levels
     def trace(self, message: str, design_window_id: Optional[str] = None) -> None:

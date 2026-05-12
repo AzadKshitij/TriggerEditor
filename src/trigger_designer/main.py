@@ -30,6 +30,10 @@ def _strip_ansi_escape_sequences(text: str) -> str:
     return _ANSI_ESCAPE_RE.sub("", text)
 
 
+def _should_flush(text: str) -> bool:
+    return "\n" in text or "\r" in text
+
+
 class _TeeStream:
     def __init__(self, terminal_stream: TextIO, log_stream: TextIO) -> None:
         self._terminal_stream = terminal_stream
@@ -42,8 +46,9 @@ class _TeeStream:
         with _LOG_STREAM_LOCK:
             self._terminal_stream.write(text)
             self._log_stream.write(_strip_ansi_escape_sequences(text))
-            self._terminal_stream.flush()
-            self._log_stream.flush()
+            if _should_flush(text):
+                self._terminal_stream.flush()
+                self._log_stream.flush()
 
         return len(text)
 
@@ -69,7 +74,8 @@ class _LogFileSink:
 
         with _LOG_STREAM_LOCK:
             self._log_stream.write(text)
-            self._log_stream.flush()
+            if _should_flush(text):
+                self._log_stream.flush()
 
         return len(text)
 

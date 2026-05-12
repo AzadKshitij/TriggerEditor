@@ -1,3 +1,5 @@
+import importlib
+
 from qtpy.QtWidgets import (
     QMainWindow,
     QTableWidget,
@@ -10,9 +12,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtCore import Qt
 import polars as pl
-import pandas as pd
-import numpy as np
-from typing import Union, Optional
+from typing import Any, Optional
 import sys
 from loguru import logger
 
@@ -20,10 +20,22 @@ from loguru import logger
 from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
 
 
+def _is_pandas_dataframe(data: Any) -> bool:
+    data_type = type(data)
+    return data_type.__name__ == "DataFrame" and data_type.__module__.startswith(
+        "pandas"
+    )
+
+
+def _pandas_is_na(value: Any) -> bool:
+    pandas = importlib.import_module("pandas")
+    return bool(pandas.isna(value))
+
+
 class DataPreviewWindow(QMainWindow):
     def __init__(
         self,
-        data: Union[pl.DataFrame, pl.LazyFrame, pd.DataFrame, list, dict, any],
+        data: Any,
         title="Data Preview",
         parent=None,
         max_rows: int = 100,
@@ -197,7 +209,7 @@ class DataPreviewWindow(QMainWindow):
                 else:
                     preview_df = data
 
-        elif isinstance(data, pd.DataFrame):
+        elif _is_pandas_dataframe(data):
             # Convert pandas to polars with limits
             total_rows = len(data)
 
@@ -299,7 +311,7 @@ class DataPreviewWindow(QMainWindow):
         total_rows = None
         is_limited = False
 
-        if isinstance(data, pd.DataFrame):
+        if _is_pandas_dataframe(data):
             # Apply row limit for pandas
             total_rows = len(data)
             if total_rows > self.max_rows:
@@ -317,7 +329,7 @@ class DataPreviewWindow(QMainWindow):
                 for col in range(len(display_df.columns)):
                     value = display_df.iloc[row, col]
                     item_text = (
-                        "NULL" if pd.isna(value) or value is None else str(value)
+                        "NULL" if value is None or _pandas_is_na(value) else str(value)
                     )
                     item = QTableWidgetItem(item_text)
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
