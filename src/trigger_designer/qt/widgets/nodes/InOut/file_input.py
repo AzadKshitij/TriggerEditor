@@ -28,6 +28,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
@@ -44,9 +45,24 @@ if TYPE_CHECKING:
     from nodeeditor.node_node import Node
 
 
-class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class FileInputContent(
+    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+):
     max_missing_file_attempts = 5
     evaluate = Signal()
+    serialized_state_schema = {
+        "filePath": {"default": ""},
+        "file_type": {"default": "csv"},
+        "record_limit": {"default": 0},
+        "output_filename_as_field": {"default": False},
+        "delimiter": {"default": ","},
+        "first_row_contains_field_names": {"default": True},
+        "selected_sheet": {"default": ""},
+        "available_sheets": {"default": []},
+        "start_row": {"default": 1},
+        "schema_snapshot": {"default": []},
+        "file_metadata": {"default": {}},
+    }
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         """Initialize the FileInputContent widget.
@@ -74,6 +90,8 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.selected_sheet = ""  # For Excel files
         self.available_sheets = []  # List of all available sheets
         self.start_row = 1  # Row to start reading from (1-based)
+        self.schema_snapshot: list[dict[str, str]] = []
+        self.file_metadata: dict[str, Any] = {}
 
         # pass on variables
         self.data: Union[pl.DataFrame, pl.LazyFrame] = pl.DataFrame()
@@ -295,6 +313,108 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.loadFile(self.filePath)
         return True
+
+    def _build_schema_snapshot(
+        self, dataframe: Optional[pl.DataFrame] = None
+    ) -> list[dict[str, str]]:
+        source_df = dataframe
+        if source_df is None and isinstance(self.data, pl.DataFrame):
+            source_df = self.data
+
+        if source_df is None or source_df.width == 0:
+            return []
+
+        return [
+            {"name": column_name, "dtype": str(dtype)}
+            for column_name, dtype in source_df.schema.items()
+        ]
+
+    def _build_file_metadata(self) -> dict[str, Any]:
+        if not self.filePath or not os.path.exists(self.filePath):
+            return {}
+
+        file_stat = os.stat(self.filePath)
+        return {
+            "size_bytes": file_stat.st_size,
+            "modified_time": int(file_stat.st_mtime),
+        }
+
+    def _refresh_saved_input_metadata(
+        self, preview_df: Optional[pl.DataFrame] = None
+    ) -> None:
+        if self.filePath and os.path.exists(self.filePath):
+            schema_source = preview_df
+            if schema_source is None:
+                schema_source = self._read_file_based_on_type(self.filePath)
+
+            snapshot = self._build_schema_snapshot(schema_source)
+            if snapshot:
+                self.schema_snapshot = snapshot
+            self.file_metadata = self._build_file_metadata()
+
+    def validate_loaded_state(self) -> list[str]:
+        issues: list[str] = []
+
+        if not self.filePath:
+            return issues
+
+        if not os.path.exists(self.filePath):
+            issues.append(f"Missing input file: {self.filePath}")
+        else:
+            preview_df = self._read_file_based_on_type(self.filePath)
+            current_snapshot = self._build_schema_snapshot(preview_df)
+            saved_columns = {
+                item.get("name", ""): item.get("dtype", "")
+                for item in self.schema_snapshot
+                if item.get("name")
+            }
+            current_columns = {
+                item.get("name", ""): item.get("dtype", "")
+                for item in current_snapshot
+                if item.get("name")
+            }
+
+            missing_columns = [
+                column for column in saved_columns if column not in current_columns
+            ]
+            added_columns = [
+                column for column in current_columns if column not in saved_columns
+            ]
+            dtype_changes = [
+                f"{column} ({saved_columns[column]} -> {current_columns[column]})"
+                for column in saved_columns.keys() & current_columns.keys()
+                if saved_columns[column] != current_columns[column]
+            ]
+
+            if missing_columns:
+                issues.append(
+                    "Missing saved columns: " + ", ".join(sorted(missing_columns))
+                )
+            if added_columns:
+                issues.append(
+                    "New columns compared to saved workflow: "
+                    + ", ".join(sorted(added_columns))
+                )
+            if dtype_changes:
+                issues.append("Column type changes: " + ", ".join(dtype_changes))
+
+            if self.file_type == "excel" and self.selected_sheet:
+                try:
+                    reader = fastexcel.read_excel(self.filePath)
+                    current_sheets = list(reader.sheet_names)
+                    if self.selected_sheet not in current_sheets:
+                        issues.append(
+                            f"Saved sheet '{self.selected_sheet}' is no longer available"
+                        )
+                except Exception as exc:
+                    issues.append(f"Could not validate Excel sheets: {exc}")
+
+        if issues:
+            tooltip = "Workflow load validation failed:\n" + "\n".join(issues)
+            self.node.grNode.setToolTip(tooltip)
+            self.node.markInvalid(True)
+
+        return issues
 
     def openFileDialog(self) -> None:
         """Open file dialog with support for multiple file types"""
@@ -577,6 +697,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Store the preview DataFrame as data for later use
             self.data = preview_df
+            self._refresh_saved_input_metadata(preview_df)
 
             # Set the dataframe in the Polars table viewer
             if getattr(self, "table_viewer", None):
@@ -701,17 +822,8 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return "\n".join(code_lines) + "\n"
 
     def serialize(self) -> OrderedDict[Any, Any]:
-        res = super().serialize()
-        res["filePath"] = self.filePath
-        res["file_type"] = self.file_type
-        res["record_limit"] = self.record_limit
-        res["output_filename_as_field"] = self.output_filename_as_field
-        res["delimiter"] = self.delimiter
-        res["first_row_contains_field_names"] = self.first_row_contains_field_names
-        res["selected_sheet"] = self.selected_sheet
-        res["available_sheets"] = self.available_sheets
-        res["start_row"] = self.start_row
-        return res
+        self._refresh_saved_input_metadata()
+        return self.serialize_content_state(super().serialize())
 
     def deserialize(
         self, data: dict, hashmap: dict = {}, restore_id: Optional[bool] = True
@@ -719,17 +831,7 @@ class FileInputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
 
         try:
-            self.filePath = data.get("filePath", "")
-            self.file_type = data.get("file_type", "csv")
-            self.record_limit = data.get("record_limit", 0)
-            self.output_filename_as_field = data.get("output_filename_as_field", False)
-            self.delimiter = data.get("delimiter", ",")
-            self.first_row_contains_field_names = data.get(
-                "first_row_contains_field_names", True
-            )
-            self.selected_sheet = data.get("selected_sheet", "")
-            self.available_sheets = data.get("available_sheets", [])
-            self.start_row = data.get("start_row", 1)
+            self.deserialize_content_state(data)
 
             # Update UI elements if they exist
             if hasattr(self, "recordLimitSpinBox"):

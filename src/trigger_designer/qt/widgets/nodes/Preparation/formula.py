@@ -26,6 +26,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -48,7 +49,9 @@ if TYPE_CHECKING:
     from nodeeditor.node_node import Node
 
 
-class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class FormulaContent(
+    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+):
     """
     Content widget for formula node that allows users to create calculated columns using SQL-like expressions.
 
@@ -68,6 +71,10 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     """
 
     evaluate = Signal()  # Emit when evaluate button is clicked
+    serialized_state_schema = {
+        "formula": {"attr": "formula_text", "default": ""},
+        "target_column": {"default": ""},
+    }
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
@@ -266,33 +273,46 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # Widget has been deleted or not properly initialized
                 pass
 
+    def _get_current_formula_text(self) -> str:
+        if hasattr(self, "formula_input") and self.formula_input:
+            return self.formula_input.get_text() or ""
+        return self.formula_text or ""
+
+    def _sync_formula_text(self) -> str:
+        current_formula = self._get_current_formula_text()
+        self.formula_text = current_formula
+        return current_formula
+
     def generate_formula(self) -> None:
         """Generate and process the formula when user modifies the formula text."""
         if self.history.is_restoring_history:
             return
 
-        if self.formula_text:
-            old_state = {
-                "target_column": self.target_column,
-                "formula_text": self.formula_text,
-            }
+        old_state = {
+            "target_column": self.target_column,
+            "formula_text": self.formula_text,
+        }
+        current_formula = self._sync_formula_text()
 
-            # self.formula_text = new_formula
+        if not current_formula or self.incom_data is None:
+            self.formula = ""
+            self.data = self.incom_data.clone() if self.incom_data is not None else None
             self.store_history(old_state)
+            return
 
-            # Update formula and data using polars
-            self.data = self.incom_data.clone()
-            self.formula = self.formula_text
+        self.store_history(old_state)
 
-            # Replace column names in formula while preserving string literals
-            if self.data is not None:
-                for col in self.data.columns:
-                    self.formula = self.formula.replace(f"[{col}]", f'"{col}"')
+        # Update formula and data using polars
+        self.data = self.incom_data.clone()
+        self.formula = current_formula
 
-            if self.target_column and self.target_column not in self.data.columns:
-                self.data = self.data.with_columns(
-                    pl.lit(None).alias(self.target_column)
-                )
+        # Replace column names in formula while preserving string literals
+        if self.data is not None:
+            for col in self.data.columns:
+                self.formula = self.formula.replace(f"[{col}]", f'"{col}"')
+
+        if self.target_column and self.target_column not in self.data.columns:
+            self.data = self.data.with_columns(pl.lit(None).alias(self.target_column))
 
     def _replace_column_names(self, formula: str, column_name: str) -> str:
         """
@@ -487,7 +507,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # if hasattr(self, 'formula_input') and self.formula_input:
         #     current_formula = self.formula_input.get_text()
         # elif self.formula_text:
-        current_formula = self.formula_text
+        current_formula = self._sync_formula_text()
 
         if not current_formula or not self.target_column or self.data is None:
             return ""
@@ -551,14 +571,8 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             Dictionary containing serialized formula settings
         """
-        res = super().serialize()
-
-        # Get current formula text from editor if available
-        current_formula = self.formula_text
-
-        res["formula"] = current_formula
-        res["target_column"] = self.target_column
-        return res
+        self._sync_formula_text()
+        return self.serialize_content_state(super().serialize())
 
     def deserialize(self, data: dict, hashmap: dict = {}) -> bool:
         """
@@ -574,8 +588,7 @@ class FormulaContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
 
         try:
-            self.formula_text = data.get("formula", "")
-            self.target_column = data.get("target_column", "")
+            self.deserialize_content_state(data)
             return True & res
         except Exception as e:
             dumpException(e)

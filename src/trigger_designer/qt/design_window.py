@@ -1,5 +1,6 @@
 from loguru import logger
 from collections import deque
+from contextlib import contextmanager
 import time
 
 from qtpy.QtGui import (
@@ -12,8 +13,10 @@ from qtpy.QtGui import (
 )
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
 from qtpy.QtWidgets import (
+    QGraphicsView,
     QWidget,
     QPushButton,
+    QMessageBox,
 )
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
@@ -27,6 +30,7 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
 from trigger_designer.qt.helpers.logger import Logger
+from trigger_designer.qt.performance_scene import TriggerScene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
@@ -45,6 +49,7 @@ DEBUG_CONTEXT = False
 
 
 class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
+    Scene_class = TriggerScene
     itemSelected = Signal(object)
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
@@ -274,17 +279,105 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def onHistoryRestored(self) -> None:
         self.doEvalOutputs()
 
+    @contextmanager
+    def _suspend_scene_restore_updates(self):
+        previous_silent_selection = getattr(
+            self.scene, "_silent_selection_events", False
+        )
+        previous_viewport_mode = self.view.viewportUpdateMode()
+        viewport = self.view.viewport()
+
+        self.scene.setSilentSelectionEvents(True)
+        self.scene.grScene.blockSignals(True)
+        self.view.setUpdatesEnabled(False)
+        viewport.setUpdatesEnabled(False)
+        self.view.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.NoViewportUpdate)
+
+        if hasattr(self.scene, "beginBulkLoad"):
+            self.scene.beginBulkLoad()
+
+        try:
+            yield
+        finally:
+            if hasattr(self.scene, "endBulkLoad"):
+                self.scene.endBulkLoad()
+
+            self.view.setViewportUpdateMode(previous_viewport_mode)
+            viewport.setUpdatesEnabled(True)
+            self.view.setUpdatesEnabled(True)
+            self.scene.grScene.blockSignals(False)
+            self.scene.setSilentSelectionEvents(previous_silent_selection)
+            self.scene.grScene.update()
+            self.view.update()
+            viewport.update()
+
     def fileLoad(self, filename: str) -> bool:
         self.logInfo(f"Loading file: {filename}")
-        if super().fileLoad(filename):
+        with self._suspend_scene_restore_updates():
+            loaded = super().fileLoad(filename)
+
+        if loaded:
             self.logDebug("File loaded successfully, evaluating outputs...")
-            # self.validateConnections()
+            validation_messages = self.validateLoadedWorkflow()
+            if validation_messages:
+                for message in validation_messages:
+                    self.logWarning(message)
+
+                QTimer.singleShot(
+                    0,
+                    lambda messages=validation_messages: self._show_workflow_validation_warnings(
+                        messages
+                    ),
+                )
+
             self.doEvalOutputs()
             self.logInfo(f"File '{filename}' loaded and initialized successfully")
             return True
 
         self.logError(f"Failed to load file: {filename}")
         return False
+
+    def validateLoadedWorkflow(self) -> list[str]:
+        validation_messages: list[str] = []
+
+        workflow_metadata = getattr(self.scene, "loaded_workflow_metadata", {})
+        schema_version = workflow_metadata.get("schema_version")
+        if schema_version:
+            self.logDebug(f"Loaded workflow schema version: {schema_version}")
+
+        for node in self.getAllNodes():
+            content = getattr(node, "content", None)
+            validator = getattr(content, "validate_loaded_state", None)
+            if not callable(validator):
+                continue
+
+            try:
+                node_messages = validator() or []
+            except Exception as exc:
+                node_messages = [f"{node.node_title}: validation failed with {exc}"]
+
+            for message in node_messages:
+                validation_messages.append(f"{node.node_title}: {message}")
+
+        return validation_messages
+
+    def _show_workflow_validation_warnings(self, messages: list[str]) -> None:
+        if not messages:
+            return
+
+        preview_messages = messages[:8]
+        dialog_message = "\n\n".join(preview_messages)
+        remaining_count = len(messages) - len(preview_messages)
+        if remaining_count > 0:
+            dialog_message += (
+                f"\n\n... and {remaining_count} more validation warning(s)."
+            )
+
+        QMessageBox.warning(
+            self,
+            "Workflow Validation Warnings",
+            dialog_message,
+        )
 
     def validateConnections(self) -> None:
         """Validate all edge connections and remove invalid ones"""

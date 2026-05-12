@@ -638,13 +638,24 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"🔄 Join: Performing join on columns - Left: {left_cols}, Right: {right_cols}"
             )
 
+            left_data = (
+                self.left_data.lazy()
+                if isinstance(self.left_data, pl.DataFrame)
+                else self.left_data
+            )
+            right_data = (
+                self.right_data.lazy()
+                if isinstance(self.right_data, pl.DataFrame)
+                else self.right_data
+            )
+
             # Prepare column suffixes to handle conflicts
             left_suffix = "_left"
             right_suffix = "_right"
 
             # Get column names from LazyFrames for conflict detection
-            left_columns = self.left_data.columns
-            right_columns = self.right_data.columns
+            left_columns = left_data.columns
+            right_columns = right_data.columns
 
             # Find conflicting columns (not in join keys)
             conflicting_cols = []
@@ -653,17 +664,17 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     conflicting_cols.append(col)
 
             # Rename conflicting columns in right dataframe before join
-            right_data_renamed = self.right_data
+            right_data_renamed = right_data
             if conflicting_cols:
                 rename_map = {col: f"{col}{right_suffix}" for col in conflicting_cols}
-                right_data_renamed = self.right_data.rename(rename_map)
+                right_data_renamed = right_data.rename(rename_map)
                 global_logger.debug(
                     f"🔄 Join: Renamed conflicting columns in right data: {rename_map}"
                 )
 
             # Perform the join operation using Polars
             # Using outer join to capture all combinations like the original pandas code
-            result = self.left_data.join(
+            result = left_data.join(
                 right_data_renamed,
                 left_on=left_cols,
                 right_on=right_cols,

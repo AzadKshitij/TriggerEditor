@@ -285,6 +285,13 @@ class TriggerNode(Node):
         self.output_socket_position = RIGHT_CENTER
         # self.evaluationRequested.connect(self.onInputChanged)
 
+    def setPos(self, x: float, y: float) -> None:
+        if getattr(self.scene, "_bulk_loading", False):
+            self.grNode.setPos(x, y)
+            return
+
+        super().setPos(x, y)
+
     def getSocketValue(
         self, socket_list: list["Socket"], target_node: "TriggerNode"
     ) -> int:

@@ -29,10 +29,12 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.node_node import Node
 from nodeeditor.utils_no_qt import dumpException
+import polars as pl
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -47,7 +49,16 @@ from typing import (
 
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
-    import pandas as pd
+
+
+def _materialize_graph_data(
+    incom_data: Optional[Union[pl.DataFrame, pl.LazyFrame]],
+) -> Optional[pl.DataFrame]:
+    if incom_data is None:
+        return None
+    if isinstance(incom_data, pl.LazyFrame):
+        return incom_data.collect()
+    return incom_data
 
 
 def _create_graph_canvas(parent=None, width=5, height=4, dpi=100):
@@ -104,7 +115,10 @@ class GraphDialog(QDialog):
 
     def plot_graph(self, graph_type, x_column, y_column, title, incom_data):
         """Plot the graph based on the selected settings."""
-        if incom_data is None or not x_column or not y_column:
+        plot_data = _materialize_graph_data(incom_data)
+        if plot_data is None or not x_column or not y_column:
+            return
+        if x_column not in plot_data.columns or y_column not in plot_data.columns:
             return
 
         # Clear the old plot
@@ -112,12 +126,14 @@ class GraphDialog(QDialog):
 
         # Plot the data
         try:
+            x_data = plot_data.get_column(x_column).to_list()
+            y_data = plot_data.get_column(y_column).to_list()
             if graph_type == "line":
-                self.canvas.axes.plot(incom_data[x_column], incom_data[y_column])
+                self.canvas.axes.plot(x_data, y_data)
             elif graph_type == "bar":
-                self.canvas.axes.bar(incom_data[x_column], incom_data[y_column])
+                self.canvas.axes.bar(x_data, y_data)
             elif graph_type == "scatter":
-                self.canvas.axes.scatter(incom_data[x_column], incom_data[y_column])
+                self.canvas.axes.scatter(x_data, y_data)
 
             self.canvas.axes.set_xlabel(x_column)
             self.canvas.axes.set_ylabel(y_column)
@@ -130,8 +146,14 @@ class GraphDialog(QDialog):
         self.canvas.draw()
 
 
-class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin):
     evaluate = Signal()  # Emit when evaluate button is clicked
+    serialized_state_schema = {
+        "graph_type": {"default": "line"},
+        "x_column": {"default": ""},
+        "y_column": {"default": ""},
+        "title": {"default": ""},
+    }
 
     def __init__(
         self, node: "TriggerNode", parent: Optional[QDMNodeIconContentWidget] = None
@@ -151,7 +173,8 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # incoming variables
         self.incoming_variable: str = ""
-        self.incom_data: Optional[pd.DataFrame] = None
+        self.incom_data: Optional[Union[pl.DataFrame, pl.LazyFrame]] = None
+        self.workflow_ran_successfully = False
 
         # pass on variables
         self.data: list = []
@@ -204,8 +227,18 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         dock_layout.addWidget(self.open_graph_button)
 
         self.update_column_options()
+        self._update_open_graph_button_visibility()
 
         # return layout
+
+    def _update_open_graph_button_visibility(self) -> None:
+        button = getattr(self, "open_graph_button", None)
+        if button is None:
+            return
+
+        can_open_graph = self.workflow_ran_successfully and self.incom_data is not None
+        button.setVisible(can_open_graph)
+        button.setEnabled(can_open_graph)
 
     def update_column_options(self):
         """Update the column options in the combo boxes based on the incoming data."""
@@ -221,6 +254,8 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.y_column_combo.clear()
             self.y_column_combo.addItems(columns)
 
+        self._update_open_graph_button_visibility()
+
     def plot_graph(self):
         """Plot the graph based on the selected settings."""
         if self.incom_data is None or not self.x_column or not self.y_column:
@@ -230,6 +265,9 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def open_graph_in_new_window(self):
         """Open the graph in a new window."""
+        if not self.workflow_ran_successfully:
+            return
+
         dialog = GraphDialog(parent=self, save_context=self.parent())
         dialog.plot_graph(
             self.graph_type, self.x_column, self.y_column, self.title, self.incom_data
@@ -255,8 +293,10 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def get_code(self) -> str:
         code_lines = [
             "import matplotlib.pyplot as plt",
-            f"x_data = {self.incoming_variable}['{self.x_column}']",
-            f"y_data = {self.incoming_variable}['{self.y_column}']",
+            "import polars as pl",
+            f"graph_df = {self.incoming_variable}.collect() if hasattr({self.incoming_variable}, 'collect') else {self.incoming_variable}",
+            f"x_data = graph_df.get_column('{self.x_column}').to_list()",
+            f"y_data = graph_df.get_column('{self.y_column}').to_list()",
             "plt.figure(figsize=(8, 6))",  # Adjust figure size as needed
         ]
 
@@ -280,15 +320,12 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return "\n".join(code_lines)
 
     def after_execution(self, context: Dict[str, Any]) -> None:
+        self.workflow_ran_successfully = True
+        self._update_open_graph_button_visibility()
         self.plot_graph()
 
     def serialize(self) -> OrderedDict[Any, Any]:
-        res = super().serialize()
-        res["graph_type"] = self.graph_type
-        res["x_column"] = self.x_column
-        res["y_column"] = self.y_column
-        res["title"] = self.title
-        return res
+        return self.serialize_content_state(super().serialize())
 
     def deserialize(
         self, data: dict, hashmap: dict = {}, restore_id: Optional[bool] = True
@@ -296,11 +333,9 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
 
         try:
-            # self.filePath = data.get('filePath', "")
-            self.graph_type = data.get("graph_type", "line")
-            self.x_column = data.get("x_column", "")
-            self.y_column = data.get("y_column", "")
-            self.title = data.get("title", "")
+            self.deserialize_content_state(data)
+            self.workflow_ran_successfully = False
+            self._update_open_graph_button_visibility()
 
             return True & res
         except Exception as e:

@@ -20,6 +20,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.qt.helpers import global_logger
@@ -28,7 +29,9 @@ if TYPE_CHECKING:
     import polars as pl
 
 
-class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class RunningTotalContent(
+    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+):
     """Add cumulative-sum columns in the current row order.
 
     For every selected numeric column, the node appends a new
@@ -38,9 +41,15 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     """
 
     evaluate = Signal()
+    serialized_state_schema = {
+        "sum_columns": {"default": []},
+        "group_by_columns": {"default": []},
+        "numeric_columns": {"default": []},
+    }
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
+        TriggerChangeHandler.__init__(self, node.scene, node)
         self.node = node
         # Data tracking
         self.incoming_variable: str = ""
@@ -231,20 +240,13 @@ class RunningTotalContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def serialize(self) -> dict:
         """Serialize node content"""
-        res = super().serialize()
-        res["sum_columns"] = self.sum_columns
-        res["group_by_columns"] = self.group_by_columns
-        res["numeric_columns"] = self.numeric_columns
-        return res
+        return self.serialize_content_state(super().serialize())
 
     def deserialize(self, data: dict, hashmap={}) -> bool:
         """Deserialize node content"""
         res = super().deserialize(data, hashmap)
         try:
-            # Load saved columns
-            self.sum_columns = data.get("sum_columns", [])
-            self.group_by_columns = data.get("group_by_columns", [])
-            self.numeric_columns = data.get("numeric_columns", [])
+            self.deserialize_content_state(data)
 
             return True & res
         except Exception as e:

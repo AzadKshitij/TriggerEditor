@@ -93,7 +93,7 @@
       ],
       "content": {
         "formula": "CASE when [RelevancyScore] > 95 then \"pass\" else \"fail\"",
-        "target_column": null
+        "target_column": ""
       },
       "node_code": 3,
       "node_type": "preparation"
@@ -334,7 +334,45 @@
         "first_row_contains_field_names": true,
         "selected_sheet": "",
         "available_sheets": [],
-        "start_row": 1
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "Keyword",
+            "dtype": "String"
+          },
+          {
+            "name": "Seed",
+            "dtype": "String"
+          },
+          {
+            "name": "Source",
+            "dtype": "String"
+          },
+          {
+            "name": "Country",
+            "dtype": "String"
+          },
+          {
+            "name": "Autocomplete Position",
+            "dtype": "String"
+          },
+          {
+            "name": "Difficulty",
+            "dtype": "String"
+          },
+          {
+            "name": "Hot Keyword",
+            "dtype": "String"
+          },
+          {
+            "name": "Relevancy Score",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 1257,
+          "modified_time": 1742365876
+        }
       },
       "node_code": 4,
       "node_type": "input"
@@ -342,8 +380,8 @@
     {
       "id": 1933364878576,
       "title": "Join",
-      "pos_x": 141.4375,
-      "pos_y": 422.7968749999999,
+      "pos_x": 92.60937500000003,
+      "pos_y": 601.0195312499999,
       "inputs": [
         {
           "id": 1933365313888,
@@ -387,8 +425,8 @@
         "join_type": "inner",
         "mapping_data": [
           {
-            "left_column": "Keyword",
-            "right_column": "Keyword"
+            "left_column": "Country",
+            "right_column": "Country"
           }
         ],
         "selected_columns": [
@@ -496,7 +534,8 @@
       ],
       "content": {
         "sum_columns": [
-          "Difficulty"
+          "Difficulty",
+          "Relevancy Score"
         ],
         "group_by_columns": [
           "Difficulty"
@@ -756,38 +795,6 @@
       },
       "node_code": 5,
       "node_type": "preparation"
-    },
-    {
-      "id": 2871666408208,
-      "title": "Graph",
-      "pos_x": 840.4254913330075,
-      "pos_y": 23.84185791015624,
-      "inputs": [
-        {
-          "id": 2871666642768,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 2871666643248,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "graph_type": "line",
-        "x_column": "Keyword",
-        "y_column": "Keyword",
-        "title": "First"
-      },
-      "node_code": 3,
-      "node_type": "report"
     }
   ],
   "edges": [
@@ -828,22 +835,10 @@
       "end": 2176088572112
     },
     {
-      "id": 1933365848592,
-      "edge_type": 5,
-      "start": 2176088575280,
-      "end": 1933365322816
-    },
-    {
       "id": 2327003215888,
       "edge_type": 5,
       "start": 2176088583344,
       "end": 2327088177952
-    },
-    {
-      "id": 2652257635920,
-      "edge_type": 5,
-      "start": 2176088576864,
-      "end": 1933365313888
     },
     {
       "id": 2976817859808,
@@ -876,10 +871,21 @@
       "end": 2486268151600
     },
     {
-      "id": 2871606597136,
+      "id": 2300671657360,
       "edge_type": 5,
-      "start": 2486268152080,
-      "end": 2871666642768
+      "start": 2176088573696,
+      "end": 1933365313888
+    },
+    {
+      "id": 2300585133520,
+      "edge_type": 5,
+      "start": 2176088573408,
+      "end": 1933365322816
     }
-  ]
+  ],
+  "workflow_metadata": {
+    "schema_version": 1,
+    "app_version": "0.1.0",
+    "saved_at": "2026-05-12T09:00:20Z"
+  }
 }

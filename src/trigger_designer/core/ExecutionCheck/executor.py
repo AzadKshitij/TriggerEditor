@@ -283,6 +283,17 @@ class NodeExecutor:
                 result.variables = local_variables.copy()
                 result.success = True
 
+            after_execution = getattr(getattr(node, "content", None), "after_execution", None)
+            if callable(after_execution):
+                try:
+                    after_execution(result.variables)
+                except Exception as hook_error:
+                    hook_message = (
+                        f"after_execution hook failed for {node_name}: {hook_error}"
+                    )
+                    result.warnings.append(hook_message)
+                    logger.warning(hook_message)
+
             # Update shared execution context with new variables
             self.execution_context.update(local_variables)
 

@@ -78,6 +78,7 @@ class LoggingDock(QDockWidget):
         self.max_logs = 1000  # Maximum number of logs to keep in memory per window
         self._filters_dirty = True
         self._display_dirty = True
+        self._full_refresh_required = True
 
         self.initUI()
         self.setupAutoUpdate()
@@ -167,16 +168,25 @@ class LoggingDock(QDockWidget):
         self.logs_per_window[design_window_id].append(entry)
 
         # Limit the number of logs to prevent memory issues
+        trimmed_logs = False
         if len(self.logs_per_window[design_window_id]) > self.max_logs:
             self.logs_per_window[design_window_id] = self.logs_per_window[
                 design_window_id
             ][-self.max_logs :]
+            trimmed_logs = True
 
         # Defer filtering and rendering to the timer to avoid rebuilding the UI
         # for every individual log event.
         if design_window_id == self.current_design_window_id:
-            self._filters_dirty = True
             self._display_dirty = True
+
+            if trimmed_logs:
+                self._filters_dirty = True
+                self._full_refresh_required = True
+                return
+
+            if self._matches_filters(entry):
+                self.filtered_logs.append(entry)
 
     def apply_filters(self) -> None:
         """Apply current filters to the logs of the current active window"""
@@ -188,30 +198,28 @@ class LoggingDock(QDockWidget):
         ):
             current_logs = self.logs_per_window[self.current_design_window_id]
 
-        # Get level priority for filtering
+        self.filtered_logs = []
+        for log_entry in current_logs:
+            if self._matches_filters(log_entry):
+                self.filtered_logs.append(log_entry)
+
+        self._filters_dirty = False
+        self._display_dirty = True
+        self._full_refresh_required = True
+
+    def _matches_filters(self, log_entry: LogEntry) -> bool:
         level_priorities = {
             level["name"]: i for i, level in enumerate(LogLevel.ALL_LEVELS)
         }
         current_priority = level_priorities.get(self.current_filter_level, 0)
+        entry_priority = level_priorities.get(log_entry.level, 0)
+        if entry_priority < current_priority:
+            return False
 
-        self.filtered_logs = []
-        for log_entry in current_logs:
-            # Level filter
-            entry_priority = level_priorities.get(log_entry.level, 0)
-            if entry_priority < current_priority:
-                continue
+        if self.filter_text and self.filter_text.lower() not in log_entry.message.lower():
+            return False
 
-            # Text filter
-            if (
-                self.filter_text
-                and self.filter_text.lower() not in log_entry.message.lower()
-            ):
-                continue
-
-            self.filtered_logs.append(log_entry)
-
-        self._filters_dirty = False
-        self._display_dirty = True
+        return True
 
     def refresh_display(self) -> None:
         """Refresh the log display"""
@@ -234,31 +242,40 @@ class LoggingDock(QDockWidget):
         if current_log_count == 0:
             # Clear display if no logs
             self.log_display.clear()
-        else:
-            html_content = ""
-            for log_entry in self.filtered_logs:
-                html_content += log_entry.to_html()
-
+        elif self._full_refresh_required or current_log_count < self.last_log_count:
+            html_content = "".join(log_entry.to_html() for log_entry in self.filtered_logs)
             self.log_display.setHtml(html_content)
+        else:
+            new_entries = self.filtered_logs[self.last_log_count :]
+            if new_entries:
+                cursor = self.log_display.textCursor()
+                cursor.movePosition(QTextCursor.MoveOperation.End)
+                cursor.insertHtml("".join(log_entry.to_html() for log_entry in new_entries))
+                self.log_display.setTextCursor(cursor)
 
             # Restore scroll position or auto-scroll
             if self.auto_scroll and (was_at_bottom or self.last_log_count == 0):
                 scrollbar.setValue(scrollbar.maximum())
+        if current_log_count == 0 and self.auto_scroll:
+            scrollbar.setValue(scrollbar.maximum())
 
         self.last_log_count = current_log_count
         self._display_dirty = False
+        self._full_refresh_required = False
 
     def on_level_filter_changed(self, level: str) -> None:
         """Handle log level filter change"""
         self.current_filter_level = level
         self._filters_dirty = True
         self._display_dirty = True
+        self._full_refresh_required = True
 
     def on_text_filter_changed(self, text: str) -> None:
         """Handle text filter change"""
         self.filter_text = text
         self._filters_dirty = True
         self._display_dirty = True
+        self._full_refresh_required = True
 
     def on_auto_scroll_changed(self, checked: bool) -> None:
         """Handle auto-scroll checkbox change"""
@@ -276,6 +293,7 @@ class LoggingDock(QDockWidget):
         self.last_log_count = 0
         self._filters_dirty = False
         self._display_dirty = False
+        self._full_refresh_required = False
 
     def switch_to_design_window(self, design_window: "TriggerSubWindow") -> None:
         """Switch the logging dock to show logs for a specific design window"""
@@ -293,6 +311,7 @@ class LoggingDock(QDockWidget):
         # Re-filter on the next timer tick.
         self._filters_dirty = True
         self._display_dirty = True
+        self._full_refresh_required = True
         self.last_log_count = 0  # Force refresh
 
         # If this window has no logs, clear the display immediately
@@ -313,6 +332,7 @@ class LoggingDock(QDockWidget):
             self.last_log_count = 0
             self._filters_dirty = False
             self._display_dirty = False
+            self._full_refresh_required = False
 
     # Convenience methods for different log levels
     def trace(self, message: str, design_window_id: Optional[str] = None) -> None:
