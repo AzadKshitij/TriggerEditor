@@ -3,14 +3,10 @@ import polars as pl
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QLabel,
-    QGroupBox,
-    QCheckBox,
-    QScrollArea,
     QComboBox,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Signal, Qt  # noqa: F401
+from qtpy.QtCore import Signal  # noqa: F401
 from trigger_designer.core.node_configuration import (
     register_node,
     TransformNodes,
@@ -24,6 +20,11 @@ from trigger_designer.qt.node_base import (
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.widgets.common import (
+    ColumnChecklist,
+    ConfigSection,
+    EmptyStateLabel,
+)
 
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
@@ -72,111 +73,47 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        if self.incom_data is not None:
-            main_layout = QVBoxLayout()
-            main_layout.setSpacing(2)
-            main_layout.setContentsMargins(5, 5, 5, 5)
+        if self.incom_data is None:
+            dock_layout.addWidget(EmptyStateLabel())
+            return
 
-            # Key Columns Selection
-            key_group = QGroupBox("Select Key Columns (ID Variables)")
-            key_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-            key_layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(2)
+        main_layout.setContentsMargins(5, 5, 5, 5)
 
-            # Add info label for key columns
-            key_info = QLabel(
-                "These columns will be preserved as identifiers in the transposed result."
-            )
-            key_info.setStyleSheet("color: #666; font-size: 10px; margin: 2px;")
-            key_info.setWordWrap(True)
-            key_layout.addWidget(key_info)
+        key_section = ConfigSection(
+            "Select Key Columns (ID Variables)",
+            "These columns will be preserved as identifiers in the transposed result.",
+        )
+        self.key_list = ColumnChecklist(self.incom_data.columns, self.key_columns)
+        self.key_list.changed.connect(self.on_key_selection_changed)
+        self.key_checkboxes = self.key_list.checkboxes
+        key_section.addWidget(self.key_list)
+        main_layout.addWidget(key_section)
 
-            key_scroll = QScrollArea()
-            key_scroll.setWidgetResizable(True)
-            key_scroll.setMaximumHeight(150)
-            key_widget = QWidget()
-            key_checkbox_layout = QVBoxLayout()
+        data_section = ConfigSection(
+            "Select Columns to Transpose (Value Variables)",
+            "These columns will be transposed from columns to rows. Column names become 'Name' values, column data becomes 'Value' values.",
+        )
+        self.data_list = ColumnChecklist(self.incom_data.columns, self.data_columns)
+        self.data_list.changed.connect(self.on_data_selection_changed)
+        self.data_checkboxes = self.data_list.checkboxes
+        data_section.addWidget(self.data_list)
+        main_layout.addWidget(data_section)
 
-            for col in self.incom_data.columns:
-                checkbox = QCheckBox(col)
-                checkbox.stateChanged.connect(self.on_key_selection_changed)
-                self.key_checkboxes[col] = checkbox
-                key_checkbox_layout.addWidget(checkbox)
+        action_section = ConfigSection(
+            "Missing Columns Handling",
+            "How to handle columns that are selected but don't exist in the input data.",
+        )
+        self.action_combo = QComboBox()
+        self.action_combo.addItems(["error", "warn", "ignore"])
+        self.action_combo.setCurrentText(self.missing_action)
+        self.action_combo.currentTextChanged.connect(self.on_action_changed)
+        action_section.addWidget(self.action_combo)
+        main_layout.addWidget(action_section)
 
-            key_widget.setLayout(key_checkbox_layout)
-            key_scroll.setWidget(key_widget)
-            key_layout.addWidget(key_scroll)
-            key_group.setLayout(key_layout)
-            main_layout.addWidget(key_group)
-
-            # Data Columns Selection
-            data_group = QGroupBox("Select Columns to Transpose (Value Variables)")
-            data_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-            data_layout = QVBoxLayout()
-
-            # Add info label for data columns
-            data_info = QLabel(
-                "These columns will be transposed from columns to rows. Column names become 'Name' values, column data becomes 'Value' values."
-            )
-            data_info.setStyleSheet("color: #666; font-size: 10px; margin: 2px;")
-            data_info.setWordWrap(True)
-            data_layout.addWidget(data_info)
-
-            data_scroll = QScrollArea()
-            data_scroll.setWidgetResizable(True)
-            data_scroll.setMaximumHeight(150)
-            data_widget = QWidget()
-            data_checkbox_layout = QVBoxLayout()
-
-            for col in self.incom_data.columns:
-                checkbox = QCheckBox(col)
-                checkbox.stateChanged.connect(self.on_data_selection_changed)
-                self.data_checkboxes[col] = checkbox
-                data_checkbox_layout.addWidget(checkbox)
-
-            data_widget.setLayout(data_checkbox_layout)
-            data_scroll.setWidget(data_widget)
-            data_layout.addWidget(data_scroll)
-            data_group.setLayout(data_layout)
-            main_layout.addWidget(data_group)
-
-            # Missing Columns Action
-            action_group = QGroupBox("Missing Columns Handling")
-            action_group.setStyleSheet("QGroupBox { font-weight: bold; }")
-            action_layout = QVBoxLayout()
-
-            # Add info label for missing columns handling
-            action_info = QLabel(
-                "How to handle columns that are selected but don't exist in the input data."
-            )
-            action_info.setStyleSheet("color: #666; font-size: 10px; margin: 2px;")
-            action_info.setWordWrap(True)
-            action_layout.addWidget(action_info)
-
-            self.action_combo = QComboBox()
-            self.action_combo.addItems(["error", "warn", "ignore"])
-            self.action_combo.setCurrentText(self.missing_action)
-            self.action_combo.currentTextChanged.connect(self.on_action_changed)
-            action_layout.addWidget(self.action_combo)
-            action_group.setLayout(action_layout)
-            main_layout.addWidget(action_group)
-
-            # Update checkbox states based on saved configuration
-            for col, checkbox in self.key_checkboxes.items():
-                checkbox.setChecked(col in self.key_columns)
-
-            for col, checkbox in self.data_checkboxes.items():
-                checkbox.setChecked(col in self.data_columns)
-
-            # Update combo box state
-            self.action_combo.setCurrentText(self.missing_action)
-
-            dock_layout.addLayout(main_layout)
-
-        else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+        dock_layout.addLayout(main_layout)
+        self.recursively_find_widgets(dock_layout)
 
     def process_data(self) -> None:
         """Transpose selected columns while maintaining key columns using Polars"""
@@ -300,24 +237,18 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         return "\n".join(code_lines) + "\n"
 
-    def on_key_selection_changed(self) -> None:
+    def on_key_selection_changed(self, checked: list) -> None:
         """Handle key columns checkbox changes"""
-        self.key_columns = [
-            col for col, checkbox in self.key_checkboxes.items() if checkbox.isChecked()
-        ]
+        self.key_columns = list(checked)
         global_logger.debug(
             f"📊 TransposeContent: Key columns updated: {self.key_columns}"
         )
         self.process_data()
         self.evaluate.emit()
 
-    def on_data_selection_changed(self) -> None:
+    def on_data_selection_changed(self, checked: list) -> None:
         """Handle data columns checkbox changes"""
-        self.data_columns = [
-            col
-            for col, checkbox in self.data_checkboxes.items()
-            if checkbox.isChecked()
-        ]
+        self.data_columns = list(checked)
         global_logger.debug(
             f"📊 TransposeContent: Data columns updated: {self.data_columns}"
         )

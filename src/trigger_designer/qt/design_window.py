@@ -520,6 +520,15 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__
                 )
+                # Palette-drop split: reuse package logic (validates, keeps
+                # TriggerEdge, notifies nodes so data flows like manual edges).
+                if getattr(node, "inputs", []) and getattr(node, "outputs", []):
+                    try:
+                        self.view.edgeIntersect.dropNode(
+                            node, scene_position.x(), scene_position.y()
+                        )
+                    except Exception:
+                        pass
                 self.logInfo(
                     f"Successfully created {node.__class__.__name__} node at ({scene_position.x():.1f}, {scene_position.y():.1f})"
                 )

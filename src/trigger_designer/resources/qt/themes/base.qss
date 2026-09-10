@@ -1717,3 +1717,10 @@ UniqueContentList::item{{
     padding: 4px;
     margin: 1px 0px;
 }}
+/* TriggerDesigner shared config widgets ---------------------------------- */
+QLabel#ConfigSectionInfo {{
+  color: {text_inactive};
+  font-size: 10px;
+  margin: 2px; }}
+QLabel#EmptyStateLabel {{
+  color: {text_inactive}; }}

@@ -3,13 +3,10 @@ import polars as pl
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QLabel,
-    QGroupBox,
     QCheckBox,
-    QScrollArea,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Signal, Qt
+from qtpy.QtCore import Signal
 from trigger_designer.core.node_configuration import (
     register_node,
     TransformNodes,
@@ -21,6 +18,11 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
+from trigger_designer.qt.widgets.common import (
+    ColumnChecklist,
+    ConfigSection,
+    EmptyStateLabel,
+)
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.qt.helpers import global_logger
@@ -95,71 +97,32 @@ class RunningTotalContent(
         super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        if self.incom_data is not None:
-            main_layout = QVBoxLayout()
-            main_layout.setSpacing(2)
-            main_layout.setContentsMargins(5, 5, 5, 5)
+        if self.incom_data is None:
+            dock_layout.addWidget(EmptyStateLabel())
+            return
 
-            # Get numeric columns
-            self.numeric_columns = self._get_numeric_columns()
-            self.sum_checkboxes = {}
-            self.group_checkboxes = {}
+        main_layout = QVBoxLayout()
+        main_layout.setSpacing(2)
+        main_layout.setContentsMargins(5, 5, 5, 5)
 
-            # Numeric Columns Selection with Checkboxes
-            sum_group = QGroupBox("Select Columns for Running Total")
-            sum_layout = QVBoxLayout()
+        self.numeric_columns = self._get_numeric_columns()
 
-            # Create scrollable area for sum columns
-            sum_scroll = QScrollArea()
-            sum_scroll.setWidgetResizable(True)
-            sum_widget = QWidget()
-            sum_checkbox_layout = QVBoxLayout()
+        sum_section = ConfigSection("Select Columns for Running Total")
+        self.sum_list = ColumnChecklist(self.numeric_columns, self.sum_columns)
+        self.sum_list.changed.connect(self.on_sum_selection_changed)
+        self.sum_checkboxes = self.sum_list.checkboxes
+        sum_section.addWidget(self.sum_list)
+        main_layout.addWidget(sum_section)
 
-            # Add checkboxes for numeric columns
-            for col in self.numeric_columns:
-                checkbox = QCheckBox(col)
-                checkbox.stateChanged.connect(self.on_sum_selection_changed)
-                self.sum_checkboxes[col] = checkbox
-                sum_checkbox_layout.addWidget(checkbox)
+        group_section = ConfigSection("Group By (Optional)")
+        self.group_list = ColumnChecklist(self._get_columns(), self.group_by_columns)
+        self.group_list.changed.connect(self.on_group_selection_changed)
+        self.group_checkboxes = self.group_list.checkboxes
+        group_section.addWidget(self.group_list)
+        main_layout.addWidget(group_section)
 
-            sum_widget.setLayout(sum_checkbox_layout)
-            sum_scroll.setWidget(sum_widget)
-            sum_layout.addWidget(sum_scroll)
-            sum_group.setLayout(sum_layout)
-            main_layout.addWidget(sum_group)
-
-            # Group By Columns Selection with Checkboxes
-            group_box = QGroupBox("Group By (Optional)")
-            group_layout = QVBoxLayout()
-
-            # Create scrollable area for group columns
-            group_scroll = QScrollArea()
-            group_scroll.setWidgetResizable(True)
-            group_widget = QWidget()
-            group_checkbox_layout = QVBoxLayout()
-
-            # Add checkboxes for all columns
-            for column in self._get_columns():
-                checkbox = QCheckBox(column)
-                checkbox.stateChanged.connect(self.on_group_selection_changed)
-                self.group_checkboxes[column] = checkbox
-                group_checkbox_layout.addWidget(checkbox)
-
-            group_widget.setLayout(group_checkbox_layout)
-            group_scroll.setWidget(group_widget)
-            group_layout.addWidget(group_scroll)
-            group_box.setLayout(group_layout)
-            main_layout.addWidget(group_box)
-
-            self.update_checkboxes()
-
-            dock_layout.addLayout(main_layout)
-            self.recursively_find_widgets(dock_layout)
-        else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+        dock_layout.addLayout(main_layout)
+        self.recursively_find_widgets(dock_layout)
 
     def process_data(self) -> None:
         """Calculate running totals for selected columns using Polars."""
@@ -169,7 +132,9 @@ class RunningTotalContent(
 
         available_columns = self._get_columns()
         self.sum_columns = [
-            column for column in self.sum_columns if column in self._get_numeric_columns()
+            column
+            for column in self.sum_columns
+            if column in self._get_numeric_columns()
         ]
         self.group_by_columns = [
             column for column in self.group_by_columns if column in available_columns
@@ -194,20 +159,14 @@ class RunningTotalContent(
             )
             self.data = None
 
-    def on_sum_selection_changed(self, _state: int) -> None:
+    def on_sum_selection_changed(self, checked: list) -> None:
         """Handle sum columns checkbox changes"""
-        self.sum_columns = [
-            col for col, checkbox in self.sum_checkboxes.items() if checkbox.isChecked()
-        ]
+        self.sum_columns = list(checked)
         self.evaluate.emit()
 
-    def on_group_selection_changed(self, *_args) -> None:
+    def on_group_selection_changed(self, checked: list) -> None:
         """Handle group by columns checkbox changes"""
-        self.group_by_columns = [
-            col
-            for col, checkbox in self.group_checkboxes.items()
-            if checkbox.isChecked()
-        ]
+        self.group_by_columns = list(checked)
         self.evaluate.emit()
 
     def get_code(self) -> str:
@@ -225,7 +184,9 @@ class RunningTotalContent(
         for col in self.sum_columns:
             if self.group_by_columns:
                 group_cols = ", ".join(f'"{c}"' for c in self.group_by_columns)
-                exprs.append(f'    pl.col("{col}").cum_sum().over([{group_cols}]).alias("RunTot_{col}")')
+                exprs.append(
+                    f'    pl.col("{col}").cum_sum().over([{group_cols}]).alias("RunTot_{col}")'
+                )
             else:
                 exprs.append(f'    pl.col("{col}").cum_sum().alias("RunTot_{col}")')
 
@@ -255,23 +216,13 @@ class RunningTotalContent(
 
     def update_checkboxes(self) -> None:
         """Update checkbox states when data changes"""
-        # Clear existing checkboxes
-        # self.sum_checkboxes.clear()
-        # self.group_checkboxes.clear()
-
-        if self.incom_data is not None:
-            # Update numeric columns
-            self.numeric_columns = self._get_numeric_columns()
-
-            # Restore sum column selections
-            for col in self.numeric_columns:
-                if col in self.sum_checkboxes:
-                    self.sum_checkboxes[col].setChecked(col in self.sum_columns)
-
-            # Restore group by selections
-            for col in self._get_columns():
-                if col in self.group_checkboxes:
-                    self.group_checkboxes[col].setChecked(col in self.group_by_columns)
+        if self.incom_data is None:
+            return
+        self.numeric_columns = self._get_numeric_columns()
+        if hasattr(self, "sum_list"):
+            self.sum_list.setChecked(self.sum_columns)
+        if hasattr(self, "group_list"):
+            self.group_list.setChecked(self.group_by_columns)
 
     def clear_data(self) -> None:
         """Clear all data and selections"""
@@ -279,8 +230,12 @@ class RunningTotalContent(
         self.sum_columns.clear()
         self.group_by_columns.clear()
         self.numeric_columns.clear()
-        self.sum_checkboxes.clear()
-        self.group_checkboxes.clear()
+        for checklist in (
+            getattr(self, "sum_list", None),
+            getattr(self, "group_list", None),
+        ):
+            if checklist is not None:
+                checklist.setChecked([])
 
 
 @register_node(TransformNodes.RUNNING_TOTAL, NodeTypes.TRANSFORM)
@@ -318,7 +273,10 @@ class TriggerNode_RunningTotal(TriggerNode):
 
                 if self.content.data is not None:
                     self.param = [
-                        {"data": self.content.data, "variable_name": self.content.variable_name}
+                        {
+                            "data": self.content.data,
+                            "variable_name": self.content.variable_name,
+                        }
                     ]
                     self.evalChildren()
                     return self.param
@@ -333,7 +291,9 @@ class TriggerNode_RunningTotal(TriggerNode):
                 self.grNode.setToolTip("Input is not connected")
                 return None
         except Exception as e:
-            global_logger.error(f"❌ RunningTotalNode: Error during input processing: {e}")
+            global_logger.error(
+                f"❌ RunningTotalNode: Error during input processing: {e}"
+            )
             self.markDirty(True)
             self.markInvalid(True)
             return None
