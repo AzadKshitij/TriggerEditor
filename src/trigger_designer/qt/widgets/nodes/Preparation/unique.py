@@ -7,7 +7,6 @@ from qtpy.QtWidgets import (
     QLabel,
     QListWidget,
     QListWidgetItem,
-    QGroupBox,
     QLineEdit,
     QPushButton,
 )
@@ -24,6 +23,7 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import ConfigSection, EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 from nodeeditor.node_scene import Scene
@@ -95,15 +95,12 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
         if self.incom_data is not None:
             # Main configuration group
-            config_group = QGroupBox("Unique Configuration")
-            config_layout = QVBoxLayout()
-            config_layout.setSpacing(10)
-            config_layout.setContentsMargins(15, 15, 15, 15)
-
-            # Instructions
-            instruction_label = QLabel("Select columns to determine uniqueness:")
-            instruction_label.setStyleSheet("font-weight: bold; margin-bottom: 5px;")
-            config_layout.addWidget(instruction_label)
+            config_group = ConfigSection(
+                "Unique Configuration",
+                "Select columns to determine uniqueness:",
+            )
+            config_group.layout().setSpacing(10)
+            config_group.layout().setContentsMargins(15, 15, 15, 15)
 
             # Search bar
             search_layout = QHBoxLayout()
@@ -114,7 +111,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.search_bar.textChanged.connect(self._filter_columns)
             search_layout.addWidget(search_label)
             search_layout.addWidget(self.search_bar)
-            config_layout.addLayout(search_layout)
+            config_group.addLayout(search_layout)
 
             # Selection buttons
             button_layout = QHBoxLayout()
@@ -146,7 +143,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             button_layout.addWidget(select_all_btn)
             button_layout.addWidget(deselect_all_btn)
             button_layout.addStretch()
-            config_layout.addLayout(button_layout)
+            config_group.addLayout(button_layout)
 
             # Column selection list - takes all remaining vertical space
             self.column_list = QListWidget()
@@ -159,19 +156,15 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.column_list.setAlternatingRowColors(True)
 
             self._update_column_list()
-            config_layout.addWidget(
+            config_group.layout().addWidget(
                 self.column_list, 1
             )  # Give it stretch factor 1 to take available space
 
-            config_group.setLayout(config_layout)
             dock_layout.addWidget(config_group, 1)  # Take all available vertical space
 
             self.recursively_find_widgets(dock_layout)
         else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
 
     def process_data(self) -> None:
         """Build unique and duplicate outputs for the current selection."""

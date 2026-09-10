@@ -5,7 +5,6 @@ from qtpy.QtWidgets import (
     QLayout,
     QVBoxLayout,
     QListWidget,
-    QLabel,
     QTableView,
     QHBoxLayout,
     QStyledItemDelegate,
@@ -41,6 +40,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.widgets.select_table_widget import (
@@ -245,10 +245,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             dock_layout.addWidget(self.table_view, 1)
         else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
 
         # return layout
 
@@ -659,7 +656,9 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     continue
 
                 self.data = self.data.with_columns(expr)
-                global_logger.trace(f"✅ SelectContent: Column '{col}' converted to {dtype}")
+                global_logger.trace(
+                    f"✅ SelectContent: Column '{col}' converted to {dtype}"
+                )
             except Exception as e:
                 global_logger.error(
                     f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"

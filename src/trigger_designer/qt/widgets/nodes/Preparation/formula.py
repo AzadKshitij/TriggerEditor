@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import duckdb
 import polars as pl
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Signal
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QComboBox,
@@ -18,6 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.core.node_configuration import (
     NodeTypes,
@@ -52,9 +53,7 @@ class FormulaContent(
 
     evaluate = Signal()
     serialized_state_schema = {
-        "formula_sections": {
-            "default": [{"target_column": "", "formula_text": ""}]
-        }
+        "formula_sections": {"default": [{"target_column": "", "formula_text": ""}]}
     }
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
@@ -101,10 +100,7 @@ class FormulaContent(
         self._dock_layout = dock_layout
 
         if self.incom_data is None:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
             return
 
         self.formula_sections = self._normalize_sections(self.formula_sections)
@@ -153,7 +149,9 @@ class FormulaContent(
 
     def _sync_legacy_fields(self) -> None:
         first_section = (
-            self.formula_sections[0] if self.formula_sections else self._default_section()
+            self.formula_sections[0]
+            if self.formula_sections
+            else self._default_section()
         )
         self.formula_text = first_section["formula_text"] or None
         self.target_column = first_section["target_column"] or None
@@ -440,9 +438,7 @@ class FormulaContent(
     def _quote_identifier(self, identifier: str) -> str:
         return '"' + identifier.replace('"', '""') + '"'
 
-    def _apply_outside_string_literals(
-        self, formula: str, transform: Any
-    ) -> str:
+    def _apply_outside_string_literals(self, formula: str, transform: Any) -> str:
         parts: List[str] = []
         current_pos = 0
         string_literals = list(re.finditer(r"'[^']*'|\"[^\"]*\"", formula))

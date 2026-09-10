@@ -12,11 +12,10 @@ from qtpy.QtWidgets import (
     QLayout,
     QComboBox,
     QLineEdit,
-    QLabel,
     QHBoxLayout,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Signal
 from trigger_designer.core.node_configuration import (
     register_node,
     PreparationNodes,
@@ -29,6 +28,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 from loguru import logger
 import polars as pl
@@ -113,10 +113,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
 
         if self.incom_data is None:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
             # return layout
         else:
             main_layout = QVBoxLayout()

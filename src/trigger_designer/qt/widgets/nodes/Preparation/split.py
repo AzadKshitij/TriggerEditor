@@ -4,7 +4,6 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
-    QGroupBox,
     QSpinBox,
     QHBoxLayout,
     QCheckBox,
@@ -22,6 +21,7 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import ConfigSection, EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 
 if TYPE_CHECKING:
@@ -101,9 +101,8 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
         if self.incom_data is not None:
             # Main configuration group
-            config_group = QGroupBox("Split Configuration")
-            config_layout = QVBoxLayout()
-            config_layout.setSpacing(8)  # Tighter spacing between elements
+            config_group = ConfigSection("Split Configuration")
+            config_group.layout().setSpacing(8)  # Tighter spacing between elements
 
             # Estimation percentage
             estimation_layout = QHBoxLayout()
@@ -122,7 +121,7 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.validation_display = validation_label
             estimation_layout.addWidget(validation_label)
             estimation_layout.addStretch()  # Push elements to the left
-            config_layout.addLayout(estimation_layout)
+            config_group.addLayout(estimation_layout)
 
             # Split mode selection
             mode_layout = QHBoxLayout()
@@ -134,7 +133,7 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             mode_layout.addWidget(mode_label)
             mode_layout.addWidget(self.random_checkbox)
             mode_layout.addStretch()  # Push elements to the left
-            config_layout.addLayout(mode_layout)
+            config_group.addLayout(mode_layout)
 
             # Random seed (only enabled if random mode is selected)
             seed_layout = QHBoxLayout()
@@ -148,19 +147,15 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             seed_layout.addWidget(seed_label)
             seed_layout.addWidget(self.seed_spin)
             seed_layout.addStretch()  # Push elements to the left
-            config_layout.addLayout(seed_layout)
+            config_group.addLayout(seed_layout)
 
-            config_group.setLayout(config_layout)
             dock_layout.addWidget(config_group)
             dock_layout.addStretch()  # Push the group box to the top
 
             self.recursively_find_widgets(dock_layout)
 
         else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
 
     def get_code(self) -> str:
         """

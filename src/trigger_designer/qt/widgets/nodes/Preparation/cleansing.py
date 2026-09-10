@@ -7,6 +7,7 @@ Need to Improve this Null logic in the cleanse node
 Returns:
     _type_: _description_
 """
+
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
@@ -21,7 +22,6 @@ from qtpy.QtWidgets import (
     QLayout,
     QComboBox,
     QLineEdit,
-    QLabel,
     QHBoxLayout,
     QScrollArea,
     QSizePolicy,
@@ -41,6 +41,11 @@ from trigger_designer.qt.node_base import (
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import (
+    ColumnChecklist,
+    ConfigSection,
+    EmptyStateLabel,
+)
 from nodeeditor.utils_no_qt import dumpException
 import polars as pl
 from typing import (
@@ -152,7 +157,7 @@ class CleansingContent(
             "title": "Title Case",
         }
         return case_mapping.get(self.case_modification, "None")
-    
+
     @property
     def node(self) -> "TriggerNode":
         return self._node
@@ -186,9 +191,7 @@ class CleansingContent(
             main_layout.setContentsMargins(5, 5, 5, 5)
 
             # Field Selection Group - TOP PRIORITY, 50% of space with scrollbar
-            fields_group = QGroupBox("Select Fields to Cleanse")
-            fields_layout = QVBoxLayout()
-            fields_layout.setSpacing(1)
+            fields_group = ConfigSection("Select Fields to Cleanse")
 
             # All/None buttons
             buttons_layout = QHBoxLayout()
@@ -199,48 +202,24 @@ class CleansingContent(
             buttons_layout.addWidget(all_button)
             buttons_layout.addWidget(none_button)
             buttons_layout.addStretch()
-            fields_layout.addLayout(buttons_layout)
+            fields_group.addLayout(buttons_layout)
 
-            # Create scroll area for field checkboxes
-            fields_scroll_area = QScrollArea()
-            fields_scroll_area.setWidgetResizable(True)
-            fields_scroll_area.setHorizontalScrollBarPolicy(
-                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            # Field checklist (replaces hand-rolled scroll area + checkboxes)
+            preserve_selection = self._field_selection_initialized
+            initial_checked = (
+                list(self.selected_fields) if preserve_selection else list(schema)
             )
-            fields_scroll_area.setVerticalScrollBarPolicy(
-                Qt.ScrollBarPolicy.ScrollBarAsNeeded
+            self.fields_list = ColumnChecklist(
+                list(schema),
+                initial_checked,
+                label_fn=lambda column: f"{column} [{schema[column]}]",
+                max_height=220,
             )
-            fields_scroll_area.setSizePolicy(
-                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
-            )
-            fields_scroll_area.setMinimumHeight(150)
-
-            # Widget to contain the field checkboxes
-            fields_widget = QWidget()
-            fields_widget_layout = QVBoxLayout(fields_widget)
-            fields_widget_layout.setSpacing(3)  # Increased spacing between checkboxes
-            fields_widget_layout.setContentsMargins(
-                10, 10, 10, 10
-            )  # More padding around checkboxes
-
-            # Field checkboxes
-            self.field_checkboxes = {}
-            if schema:
-                preserve_selection = self._field_selection_initialized
-                for column, dtype in schema.items():
-                    field_check = QCheckBox(f"{column} [{dtype}]")
-                    field_check.setToolTip(f"Column type: {dtype}")
-                    field_check.setChecked(
-                        not preserve_selection or column in self.selected_fields
-                    )
-                    field_check.stateChanged.connect(self.on_field_selection_changed)
-                    self.field_checkboxes[column] = field_check
-                    fields_widget_layout.addWidget(field_check)
-
-            fields_widget_layout.addStretch()
-            fields_scroll_area.setWidget(fields_widget)
-            fields_layout.addWidget(fields_scroll_area)
-            fields_group.setLayout(fields_layout)
+            for column, checkbox in self.fields_list.checkboxes.items():
+                checkbox.setToolTip(f"Column type: {schema[column]}")
+            self.fields_list.changed.connect(self.on_field_selection_changed)
+            self.field_checkboxes = self.fields_list.checkboxes
+            fields_group.addWidget(self.fields_list)
 
             # Set size policy for fields group to fixed 500px height
             fields_group.setSizePolicy(
@@ -442,10 +421,7 @@ class CleansingContent(
             self.update_selected_fields()
             self.process_data()
         else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
 
         # return layout
 
@@ -465,7 +441,7 @@ class CleansingContent(
         self.process_data()
         self.evaluate.emit()
 
-    def on_field_selection_changed(self) -> None:
+    def on_field_selection_changed(self, *_args) -> None:
         """Handle field selection changes"""
         self.update_selected_fields()
         self.process_data()

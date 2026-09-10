@@ -31,6 +31,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from nodeeditor.utils import dumpException
 import polars as pl
 
@@ -102,10 +103,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             The updated dock layout
         """
         if self.incom_data is None:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
             return dock_layout
 
         # Get column names from LazyFrame

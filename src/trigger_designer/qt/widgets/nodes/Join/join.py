@@ -29,6 +29,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 import polars as pl
@@ -99,7 +100,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if frame is None:
             return {}
 
-        schema = frame.collect_schema() if isinstance(frame, pl.LazyFrame) else frame.schema
+        schema = (
+            frame.collect_schema() if isinstance(frame, pl.LazyFrame) else frame.schema
+        )
         return {name: dtype for name, dtype in schema.items()}
 
     def _format_column_label(self, column_name: str, dtype: pl.DataType) -> str:
@@ -223,10 +226,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.recursively_find_widgets(dock_layout)
 
         else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
 
     def _sanitize_mapping_data(self) -> None:
         if self.left_data is None or self.right_data is None:
@@ -265,9 +265,17 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             source = column.get("source")
             candidate = {"name": name, "source": source}
 
-            if source == "L" and name in valid_left and candidate not in sanitized_columns:
+            if (
+                source == "L"
+                and name in valid_left
+                and candidate not in sanitized_columns
+            ):
                 sanitized_columns.append(candidate)
-            elif source == "R" and name in valid_right and candidate not in sanitized_columns:
+            elif (
+                source == "R"
+                and name in valid_right
+                and candidate not in sanitized_columns
+            ):
                 sanitized_columns.append(candidate)
 
         self.selected_columns = sanitized_columns
@@ -598,9 +606,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         old_selected_columns = self.selected_columns.copy()
 
         self.selected_columns = [
-            column
-            for column in self.selected_columns
-            if column.get("source") != source
+            column for column in self.selected_columns if column.get("source") != source
         ]
 
         if checked:
@@ -1074,7 +1080,11 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 col_name = col["name"]
                 source = col["source"]
 
-                if source == "R" and col_name not in right_cols and col_name in conflicting_cols:
+                if (
+                    source == "R"
+                    and col_name not in right_cols
+                    and col_name in conflicting_cols
+                ):
                     resolved_name = f"{col_name}_right"
                 elif source == "R" and col_name in conflicting_cols:
                     resolved_name = f"{col_name}_right"

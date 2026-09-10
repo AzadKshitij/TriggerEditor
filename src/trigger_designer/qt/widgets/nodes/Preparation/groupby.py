@@ -41,6 +41,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.helpers import global_logger
@@ -118,7 +119,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             actions_data.append(
                 {
                     "field": column,
-                    "action": function_map.get(config.get("function", "count"), "Count"),
+                    "action": function_map.get(
+                        config.get("function", "count"), "Count"
+                    ),
                     "output_name": config.get("alias", column),
                 }
             )
@@ -281,10 +284,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addWidget(main_widget)
 
         else:
-            no_data_label = QLabel("No incoming data available")
-            no_data_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            no_data_label.setStyleSheet("color: gray;")
-            dock_layout.addWidget(no_data_label)
+            dock_layout.addWidget(EmptyStateLabel())
 
     def create_fields_table(self) -> None:
         """Create the fields table showing available columns"""
@@ -890,7 +890,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             actions_data = getattr(self, "cached_actions_data", [])
 
         if not actions_data:
-            actions_data = self._actions_data_from_changes(getattr(self, "changes", None))
+            actions_data = self._actions_data_from_changes(
+                getattr(self, "changes", None)
+            )
 
         res["actions_data"] = actions_data
         res["changes"] = self._normalize_changes(getattr(self, "changes", None))
@@ -909,7 +911,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.changes = self._normalize_changes(data.get("changes"))
 
             # Restore actions table data if available
-            self.actions_data = data.get("actions_data") or self._actions_data_from_changes(self.changes)
+            self.actions_data = data.get(
+                "actions_data"
+            ) or self._actions_data_from_changes(self.changes)
             self.cached_actions_data = list(self.actions_data)
 
             return True & res

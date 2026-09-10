@@ -5,7 +5,6 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QLabel,
-    QGroupBox,
     QLineEdit,
     QComboBox,
     QSpinBox,
@@ -25,6 +24,7 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import ConfigSection
 from nodeeditor.utils_no_qt import dumpException
 
 
@@ -86,15 +86,14 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         main_layout.setContentsMargins(5, 5, 5, 5)
 
         # Field Configuration
-        field_group = QGroupBox("Field Settings")
-        field_layout = QVBoxLayout()
+        field_group = ConfigSection("Field Settings")
 
         # Field name
         name_label = QLabel("Field Name:")
         self.name_edit = QLineEdit(self.field_name)
         self.name_edit.textChanged.connect(self.on_field_name_changed)
-        field_layout.addWidget(name_label)
-        field_layout.addWidget(self.name_edit)
+        field_group.addWidget(name_label)
+        field_group.addWidget(self.name_edit)
 
         # Field type
         type_label = QLabel("Field Type:")
@@ -102,44 +101,39 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.type_combo.addItems(["int", "float", "string", "datetime"])
         self.type_combo.setCurrentText(self.field_type)
         self.type_combo.currentTextChanged.connect(self.on_field_type_changed)
-        field_layout.addWidget(type_label)
-        field_layout.addWidget(self.type_combo)
+        field_group.addWidget(type_label)
+        field_group.addWidget(self.type_combo)
 
-        field_group.setLayout(field_layout)
         main_layout.addWidget(field_group)
 
         # Value Configuration
-        value_group = QGroupBox("Value Settings")
-        value_layout = QVBoxLayout()
+        value_group = ConfigSection("Value Settings")
 
         # Initial value
         initial_label = QLabel("Start Value:")
         self.initial_widget = self.create_value_widget(self.field_type)
-        value_layout.addWidget(initial_label)
-        value_layout.addWidget(self.initial_widget)
+        value_group.addWidget(initial_label)
+        value_group.addWidget(self.initial_widget)
 
         # Increment value
         increment_label = QLabel("Increment By:")
         self.increment_widget = self.create_value_widget(self.field_type)
-        value_layout.addWidget(increment_label)
-        value_layout.addWidget(self.increment_widget)
+        value_group.addWidget(increment_label)
+        value_group.addWidget(self.increment_widget)
 
         # Max value
         max_label = QLabel("End Value:")
         self.max_widget = self.create_value_widget(self.field_type)
-        value_layout.addWidget(max_label)
-        value_layout.addWidget(self.max_widget)
+        value_group.addWidget(max_label)
+        value_group.addWidget(self.max_widget)
 
-        value_group.setLayout(value_layout)
         main_layout.addWidget(value_group)
 
         # Stats display
-        stats_group = QGroupBox("Statistics")
-        stats_layout = QVBoxLayout()
+        stats_group = ConfigSection("Statistics")
         self.stats_label = QLabel()
         self.update_stats()
-        stats_layout.addWidget(self.stats_label)
-        stats_group.setLayout(stats_layout)
+        stats_group.addWidget(self.stats_label)
         main_layout.addWidget(stats_group)
 
         dock_layout.addLayout(main_layout)
