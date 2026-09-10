@@ -318,6 +318,133 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         }
         return type_string_mapping.get(dtype_str, "pl.String")
 
+    def _date_parse_formats(self) -> list[str]:
+        return [
+            "%Y-%m-%d",
+            "%Y/%m/%d",
+            "%Y.%m.%d",
+            "%d-%m-%Y",
+            "%d/%m/%Y",
+            "%d.%m.%Y",
+            "%m-%d-%Y",
+            "%m/%d/%Y",
+            "%m.%m.%Y",
+            "%d %b %Y",
+            "%d %B %Y",
+            "%b %d %Y",
+            "%B %d %Y",
+            "%d-%b-%Y",
+            "%d-%B-%Y",
+        ]
+
+    def _datetime_parse_formats(self) -> list[str]:
+        base_date_formats = self._date_parse_formats()
+        time_suffixes = [
+            " %H:%M:%S",
+            " %H:%M",
+            "T%H:%M:%S",
+            "T%H:%M",
+        ]
+
+        formats: list[str] = []
+        for date_format in base_date_formats:
+            for suffix in time_suffixes:
+                formats.append(f"{date_format}{suffix}")
+
+        formats.extend(
+            [
+                "%d %b %Y %H:%M:%S",
+                "%d %B %Y %H:%M:%S",
+                "%b %d %Y %H:%M:%S",
+                "%B %d %Y %H:%M:%S",
+                "%d %b %Y %H:%M",
+                "%d %B %Y %H:%M",
+                "%b %d %Y %H:%M",
+                "%B %d %Y %H:%M",
+            ]
+        )
+        return formats
+
+    def _build_dtype_conversion_expr(self, col: str, dtype: str) -> Optional[pl.Expr]:
+        """Build a Polars expression that converts a column to the requested dtype."""
+        polars_dtype = self._map_dtype_to_polars(dtype)
+        if polars_dtype is None:
+            return None
+
+        if polars_dtype not in (pl.Date, pl.Datetime):
+            return pl.col(col).cast(polars_dtype, strict=False).alias(col)
+
+        text_expr = pl.col(col).cast(pl.String, strict=False)
+
+        if polars_dtype == pl.Date:
+            parse_exprs: list[pl.Expr] = []
+            parse_exprs.extend(
+                text_expr.str.strptime(pl.Date, fmt, strict=False, exact=True)
+                for fmt in self._date_parse_formats()
+            )
+            parse_exprs.extend(
+                text_expr.str.strptime(pl.Datetime, fmt, strict=False, exact=True).cast(
+                    pl.Date, strict=False
+                )
+                for fmt in self._datetime_parse_formats()
+            )
+            parse_exprs.append(text_expr.str.to_date(strict=False))
+            parse_exprs.append(pl.col(col).cast(pl.Date, strict=False))
+            return pl.coalesce(parse_exprs).alias(col)
+
+        parse_exprs = []
+        parse_exprs.extend(
+            text_expr.str.strptime(pl.Datetime, fmt, strict=False, exact=True)
+            for fmt in self._datetime_parse_formats()
+        )
+        parse_exprs.extend(
+            text_expr.str.strptime(pl.Date, fmt, strict=False, exact=True).cast(
+                pl.Datetime, strict=False
+            )
+            for fmt in self._date_parse_formats()
+        )
+        parse_exprs.append(text_expr.str.to_datetime(strict=False))
+        parse_exprs.append(pl.col(col).cast(pl.Datetime, strict=False))
+        return pl.coalesce(parse_exprs).alias(col)
+
+    def _build_dtype_conversion_code(self, col: str, dtype: str) -> Optional[str]:
+        """Build generated code for converting a column to the requested dtype."""
+        polars_dtype = self._map_dtype_to_polars(dtype)
+        if polars_dtype is None:
+            return None
+
+        if polars_dtype not in (pl.Date, pl.Datetime):
+            type_str = self._get_polars_type_string(dtype)
+            return f"pl.col('{col}').cast({type_str}, strict=False).alias('{col}')"
+
+        text_expr = f"pl.col('{col}').cast(pl.String, strict=False)"
+
+        if polars_dtype == pl.Date:
+            expressions = [
+                f"{text_expr}.str.strptime(pl.Date, {fmt!r}, strict=False, exact=True)"
+                for fmt in self._date_parse_formats()
+            ]
+            expressions.extend(
+                f"{text_expr}.str.strptime(pl.Datetime, {fmt!r}, strict=False, exact=True).cast(pl.Date, strict=False)"
+                for fmt in self._datetime_parse_formats()
+            )
+            expressions.append(f"{text_expr}.str.to_date(strict=False)")
+            expressions.append(f"pl.col('{col}').cast(pl.Date, strict=False)")
+        else:
+            expressions = [
+                f"{text_expr}.str.strptime(pl.Datetime, {fmt!r}, strict=False, exact=True)"
+                for fmt in self._datetime_parse_formats()
+            ]
+            expressions.extend(
+                f"{text_expr}.str.strptime(pl.Date, {fmt!r}, strict=False, exact=True).cast(pl.Datetime, strict=False)"
+                for fmt in self._date_parse_formats()
+            )
+            expressions.append(f"{text_expr}.str.to_datetime(strict=False)")
+            expressions.append(f"pl.col('{col}').cast(pl.Datetime, strict=False)")
+
+        joined = ",\n        ".join(expressions)
+        return f"pl.coalesce([\n        {joined}\n    ]).alias('{col}')"
+
     def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
         global_logger.debug(
@@ -427,19 +554,17 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     global_logger.debug(
                         f"📋 SelectContent: Converting column '{col}' to type '{dtype}'"
                     )
-                    # Map common data type names to Polars types
-                    polars_dtype = self._map_dtype_to_polars(dtype)
-                    if polars_dtype:
-                        self.data = self.data.with_columns(
-                            pl.col(col).cast(polars_dtype, strict=False).alias(col)
-                        )
-                        global_logger.info(
-                            f"✅ SelectContent: Successfully converted column '{col}' to {dtype}"
-                        )
-                    else:
+                    expr = self._build_dtype_conversion_expr(col, dtype)
+                    if expr is None:
                         global_logger.warning(
                             f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}', skipping conversion"
                         )
+                        continue
+
+                    self.data = self.data.with_columns(expr)
+                    global_logger.info(
+                        f"✅ SelectContent: Successfully converted column '{col}' to {dtype}"
+                    )
                 except Exception as e:
                     global_logger.error(
                         f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"
@@ -526,18 +651,15 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 global_logger.debug(
                     f"🔄 SelectContent: Converting column '{col}' to type '{dtype}'"
                 )
-                polars_dtype = self._map_dtype_to_polars(dtype)
-                if polars_dtype:
-                    self.data = self.data.with_columns(
-                        pl.col(col).cast(polars_dtype, strict=False).alias(col)
-                    )
-                    global_logger.trace(
-                        f"✅ SelectContent: Column '{col}' converted to {dtype}"
-                    )
-                else:
+                expr = self._build_dtype_conversion_expr(col, dtype)
+                if expr is None:
                     global_logger.warning(
                         f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}'"
                     )
+                    continue
+
+                self.data = self.data.with_columns(expr)
+                global_logger.trace(f"✅ SelectContent: Column '{col}' converted to {dtype}")
             except Exception as e:
                 global_logger.error(
                     f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"
@@ -692,13 +814,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Apply data type changes from stored changes
         for col, dtype in self.changes["dtype_mapping"].items():
-            polars_dtype = self._map_dtype_to_polars(dtype)
-            if polars_dtype:
-                # Get the string representation for the type
-                type_str = self._get_polars_type_string(dtype)
+            expr_code = self._build_dtype_conversion_code(col, dtype)
+            if expr_code:
                 code_lines.append(
-                    f"{self.variable_name} = {self.variable_name}.with_columns("
-                    f"pl.col('{col}').cast({type_str}, strict=False).alias('{col}'))"
+                    f"{self.variable_name} = {self.variable_name}.with_columns(\n"
+                    f"    {expr_code}\n"
+                    f")"
                 )
 
         # Apply column renaming from stored changes

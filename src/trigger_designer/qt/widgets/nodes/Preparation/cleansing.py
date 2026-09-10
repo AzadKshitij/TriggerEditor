@@ -1,3 +1,12 @@
+"""
+Need to Improve this Null logic in the cleanse node
+- Add a new option in the Remove Null Section
+1. Remove Nulls from selected columns (One at a time like remove row if any of the column has nulls then the entire row will be removed)
+
+
+Returns:
+    _type_: _description_
+"""
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,

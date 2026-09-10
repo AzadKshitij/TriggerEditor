@@ -52,7 +52,7 @@
         ],
         "file_metadata": {
           "size_bytes": 130688,
-          "modified_time": 1778584600
+          "modified_time": 1778592379
         }
       },
       "node_code": 4,
@@ -253,7 +253,7 @@
           {
             "checked": true,
             "text": "order_date",
-            "dtype": "String",
+            "dtype": "Date",
             "rename": ""
           },
           {
@@ -276,7 +276,7 @@
             "order_id": "String",
             "customer_id": "String",
             "product_id": "String",
-            "order_date": "String",
+            "order_date": "Date",
             "order_value": "Float64"
           },
           "column_order": []
@@ -992,6 +992,6 @@
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-05-12T12:51:36Z"
+    "saved_at": "2026-05-12T16:06:19Z"
   }
 }
