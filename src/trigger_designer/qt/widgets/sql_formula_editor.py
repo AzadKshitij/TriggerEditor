@@ -10,7 +10,7 @@ This module provides a custom QTextEdit widget with:
 """
 
 import re
-from typing import List, Optional, Dict, Set
+from typing import Callable, List, Optional, Dict, Set
 from qtpy.QtWidgets import (
     QTextEdit,
     QWidget,
@@ -217,6 +217,7 @@ class SQLFormulaEditor(QTextEdit):
         # Initialize components
         self.column_names: List[str] = []
         self.errors: List[Dict] = []
+        self.external_validator: Optional[Callable[[str], List[Dict]]] = None
         self.error_timer = QTimer()
         self.error_timer.setSingleShot(True)
         self.error_timer.timeout.connect(self.check_for_errors)
@@ -315,6 +316,13 @@ class SQLFormulaEditor(QTextEdit):
         column_errors = self.validate_column_references(text)
         self.errors.extend(column_errors)
 
+        # External (e.g. DuckDB EXPLAIN) validation
+        if self.external_validator is not None:
+            try:
+                self.errors.extend(self.external_validator(text) or [])
+            except Exception:
+                pass
+
         # Update visual error indicators
         self.update_error_highlights()
 
@@ -386,26 +394,45 @@ class SQLFormulaEditor(QTextEdit):
                             }
                         )
 
-        # Check for incomplete CASE statements
-        case_pattern = re.compile(
-            r"\bCASE\b.*?\bWHEN\b.*?\bTHEN\b.*?(?:\bELSE\b.*?)?(?!\bEND\b)",
-            re.IGNORECASE | re.DOTALL,
-        )
-        if case_pattern.search(text) and not re.search(r"\bEND\b", text, re.IGNORECASE):
-            lines = text.split("\n")
-            for line_num, line in enumerate(lines, 1):
-                if re.search(r"\bCASE\b", line, re.IGNORECASE):
-                    errors.append(
-                        {
-                            "message": "CASE statement missing END keyword",
-                            "line": line_num,
-                            "column": 0,
-                            "length": len(line),
-                        }
-                    )
-                    break
+        # Check CASE/END balance on code (strings and comments masked out).
+        # Each CASE needs a matching END; point at the unmatched CASE token.
+        code = self._mask_strings_and_comments(text)
+        case_starts = [
+            match.start() for match in re.finditer(r"\bCASE\b", code, re.IGNORECASE)
+        ]
+        end_starts = [
+            match.start() for match in re.finditer(r"\bEND\b", code, re.IGNORECASE)
+        ]
+        for start in case_starts[len(end_starts) :]:
+            line_num, column = self._offset_to_line_col(text, start)
+            errors.append(
+                {
+                    "message": "CASE statement missing END keyword",
+                    "line": line_num,
+                    "column": column,
+                    "length": 4,
+                }
+            )
 
         return errors
+
+    @staticmethod
+    def _mask_strings_and_comments(text: str) -> str:
+        """Replace string literals/-- comments with spaces (keeps offsets)."""
+
+        def _spaces(match: re.Match) -> str:
+            return " " * (match.end() - match.start())
+
+        masked = re.sub(r"'[^']*'|\"[^\"]*\"", _spaces, text)
+        return re.sub(r"--[^\r\n]*", _spaces, masked)
+
+    @staticmethod
+    def _offset_to_line_col(text: str, offset: int) -> tuple:
+        """Convert a character offset into a 1-based (line, column) pair."""
+        offset = max(0, min(offset, len(text)))
+        line_num = text.count("\n", 0, offset) + 1
+        column = offset - (text.rfind("\n", 0, offset) + 1)
+        return line_num, column
 
     def validate_column_references(self, text: str) -> List[Dict]:
         """Validate column references in square brackets."""
@@ -413,14 +440,15 @@ class SQLFormulaEditor(QTextEdit):
         if not self.column_names:
             return errors
 
+        known = {name.strip().lower(): name for name in self.column_names}
         # Find all column references in square brackets
         column_pattern = re.compile(r"\[([^\]]+)\]")
         lines = text.split("\n")
 
         for line_num, line in enumerate(lines, 1):
             for match in column_pattern.finditer(line):
-                column_ref = match.group(1)
-                if column_ref not in self.column_names:
+                column_ref = match.group(1).strip()
+                if column_ref.lower() not in known:
                     errors.append(
                         {
                             "message": f"Unknown column '{column_ref}'",
@@ -453,25 +481,32 @@ class SQLFormulaEditor(QTextEdit):
         error_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
 
         # Apply error highlights
+        lines = self.toPlainText().split("\n")
         for error in self.errors:
+            line_index = max(0, min(error["line"] - 1, len(lines) - 1))
+            line_text = lines[line_index] if lines else ""
+            column = max(0, min(error["column"], len(line_text)))
+            length = max(1, min(error.get("length", 1), len(line_text) - column))
+            if not line_text:
+                continue
             cursor.movePosition(QTextCursor.MoveOperation.Start)
 
             # Move to the error line
-            for _ in range(error["line"] - 1):
+            for _ in range(line_index):
                 cursor.movePosition(QTextCursor.MoveOperation.Down)
 
             # Move to the error column
             cursor.movePosition(
                 QTextCursor.MoveOperation.Right,
                 QTextCursor.MoveMode.MoveAnchor,
-                error["column"],
+                column,
             )
 
             # Select the error text
             cursor.movePosition(
                 QTextCursor.MoveOperation.Right,
                 QTextCursor.MoveMode.KeepAnchor,
-                error.get("length", 1),
+                length,
             )
 
             # Apply error format
@@ -751,3 +786,9 @@ class SQLFormulaWidget(QWidget):
     def set_available_columns(self, column_names: List[str]):
         """Set available column names (alternative method name for set_column_names)."""
         self.set_column_names(column_names)
+
+    def set_validate_callback(
+        self, callback: Optional[Callable[[str], List[Dict]]]
+    ) -> None:
+        """Set a Callable[[text], errors] run after the heuristic checks."""
+        self.editor.external_validator = callback

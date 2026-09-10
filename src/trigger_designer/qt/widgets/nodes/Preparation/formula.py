@@ -1,6 +1,6 @@
 from functools import partial
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import duckdb
 import polars as pl
@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QInputDialog,
     QLabel,
+    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -174,11 +175,11 @@ class FormulaContent(
             "formula_sections": [section.copy() for section in self.formula_sections]
         }
 
-    def _configured_sections(self) -> List[Dict[str, str]]:
+    def _configured_sections(self) -> List[Tuple[int, Dict[str, str]]]:
         self._sync_sections_from_widgets()
         return [
-            section.copy()
-            for section in self.formula_sections
+            (index, section.copy())
+            for index, section in enumerate(self.formula_sections)
             if section["target_column"].strip() and section["formula_text"].strip()
         ]
 
@@ -281,6 +282,9 @@ class FormulaContent(
             )
             if section["formula_text"]:
                 formula_input.set_text(section["formula_text"])
+            formula_input.set_validate_callback(
+                partial(self.validate_section_text, index)
+            )
             formula_input.editingFinished.connect(
                 partial(self.commit_formula_text, index)
             )
@@ -380,17 +384,7 @@ class FormulaContent(
             return
 
         if selected_text == NEW_COLUMN_OPTION:
-            existing_target = self.formula_sections[section_index]["target_column"]
-            new_column, accepted = QInputDialog.getText(
-                self,
-                "Add Column",
-                "Column name:",
-                text=existing_target,
-            )
-            if accepted:
-                self._set_section_target(section_index, new_column.strip())
-            else:
-                self._refresh_section_dependencies()
+            self._prompt_new_column(section_index)
             return
 
         if selected_text == EMPTY_TARGET_OPTION:
@@ -398,6 +392,51 @@ class FormulaContent(
             return
 
         self._set_section_target(section_index, selected_text)
+
+    def _known_target_names(self, exclude_section: Optional[int] = None) -> set:
+        """Lowercased input + section target names for duplicate detection."""
+        known = set()
+        if self.incom_data is not None:
+            known.update(col.strip().lower() for col in self.incom_data.columns)
+        for index, section in enumerate(self.formula_sections):
+            if index == exclude_section:
+                continue
+            target = section["target_column"].strip()
+            if target:
+                known.add(target.lower())
+        return known
+
+    @staticmethod
+    def _new_column_error(name: str, known: set) -> Optional[str]:
+        """Validate a new column name. Returns an error message or None."""
+        if not name:
+            return "Column name cannot be empty."
+        if name.lower() in known:
+            return f"Column '{name}' already exists."
+        return None
+
+    def _prompt_new_column(self,section_index: int, parent=None, ) -> None:
+        """App-level dialog loop for adding a target column."""
+        existing_target = self.formula_sections[section_index]["target_column"]
+        known = self._known_target_names(exclude_section=section_index)
+        text = existing_target
+        while True:
+            new_column, accepted = QInputDialog.getText(
+                parent,
+                "Add Column",
+                "Column name:",
+                text=text,
+            )
+            if not accepted:
+                self._refresh_section_dependencies()
+                return
+            name = new_column.strip()
+            error = self._new_column_error(name, known)
+            if error is None:
+                self._set_section_target(section_index, name)
+                return
+            text = name
+            QMessageBox.warning(parent, "Add Column", error)
 
     def _set_section_target(self, section_index: int, target_column: str) -> None:
         old_state = self._current_state()
@@ -466,13 +505,17 @@ class FormulaContent(
         )
 
     def _replace_column_names(self, formula: str, column_name: str) -> str:
-        """Replace bracketed column names while preserving string literals."""
-        pattern = rf"\[{re.escape(column_name)}\]"
+        """Replace bracketed column names while preserving string literals.
+
+        Matches case-insensitively with optional padding inside the brackets
+        (mirroring editor validation) and rewrites to the canonical casing.
+        """
+        pattern = rf"\[\s*{re.escape(column_name)}\s*\]"
         replacement = self._quote_identifier(column_name)
 
         return self._apply_outside_string_literals(
             formula,
-            lambda segment: re.sub(pattern, replacement, segment),
+            lambda segment: re.sub(pattern, replacement, segment, flags=re.IGNORECASE),
         )
 
     def _prepare_formula_for_sql(
@@ -482,6 +525,105 @@ class FormulaContent(
         for column_name in available_columns:
             sql_formula = self._replace_column_names(sql_formula, column_name)
         return sql_formula
+
+    def _section_query(
+        self,
+        section: Dict[str, str],
+        available_columns: List[str],
+        relation_name: str,
+    ) -> Tuple[str, List[str]]:
+        """Build the SELECT query for one section (shared by run/codegen)."""
+        target_column = section["target_column"]
+        sql_formula = self._prepare_formula_for_sql(
+            section["formula_text"], available_columns
+        )
+        if target_column in available_columns:
+            query = (
+                f"SELECT * EXCLUDE {self._quote_identifier(target_column)}, "
+                f"{sql_formula} AS {self._quote_identifier(target_column)} "
+                f"FROM {relation_name}"
+            )
+        else:
+            query = (
+                f"SELECT *, {sql_formula} AS {self._quote_identifier(target_column)} "
+                f"FROM {relation_name}"
+            )
+            available_columns = available_columns + [target_column]
+        return query, available_columns
+
+    def _run_sections(
+        self,
+        current_df: pl.DataFrame,
+        configured: List[Tuple[int, Dict[str, str]]],
+        explain_index: Optional[int] = None,
+    ) -> Tuple[pl.DataFrame, List[str], Dict[int, str]]:
+        """Apply configured (index, section) pairs in order.
+
+        With explain_index set, that section is EXPLAINed instead of run
+        (prior sections still run so later sections validate in context).
+        Returns (frame, available columns, {index: error message}).
+        """
+        available_columns = list(current_df.columns)
+        errors: Dict[int, str] = {}
+        with duckdb.connect(":memory:") as duck:
+            for index, section in configured:
+                relation_name = f"df_step_{index}"
+                query, available_columns = self._section_query(
+                    section, available_columns, relation_name
+                )
+                duck.register(relation_name, current_df)
+                try:
+                    if index == explain_index:
+                        duck.execute(f"EXPLAIN {query}").fetchall()
+                    else:
+                        current_df = duck.execute(query).pl()
+                except Exception as exc:
+                    errors[index] = str(exc)
+                    break
+        return current_df, available_columns, errors
+
+    def validate_section_text(
+        self, section_index: int, formula_text: str, sample_n: int = 200
+    ) -> List[Dict[str, Any]]:
+        """Dry-run one section's text via EXPLAIN on a sample. Editor errors out."""
+        if self.incom_data is None:
+            return []
+        if not 0 <= section_index < len(self.formula_sections):
+            return []
+        sections = [section.copy() for section in self.formula_sections]
+        sections[section_index] = {
+            **sections[section_index],
+            "formula_text": formula_text,
+        }
+        configured = [
+            (index, section)
+            for index, section in enumerate(sections)
+            if section["target_column"].strip() and section["formula_text"].strip()
+        ]
+        if section_index not in [index for index, _ in configured]:
+            return []
+        try:
+            sample = self.incom_data.head(sample_n)
+            if isinstance(sample, pl.LazyFrame):
+                sample = sample.collect()
+        except Exception:
+            return []
+        try:
+            _, _, errors = self._run_sections(
+                sample, configured, explain_index=section_index
+            )
+        except Exception:
+            return []
+        if section_index in errors:
+            return [
+                {
+                    "message": errors[section_index],
+                    "line": 1,
+                    "column": 0,
+                    "length": 1,
+                }
+            ]
+        return []
 
     def _collect_input_data(self) -> tuple[pl.DataFrame, bool]:
         if isinstance(self.incom_data, pl.LazyFrame):
@@ -507,31 +649,10 @@ class FormulaContent(
 
         try:
             current_df, was_lazy = self._collect_input_data()
-            available_columns = list(current_df.columns)
-
-            with duckdb.connect(":memory:") as duck:
-                for section_index, section in enumerate(configured_sections):
-                    relation_name = f"df_step_{section_index}"
-                    target_column = section["target_column"]
-                    sql_formula = self._prepare_formula_for_sql(
-                        section["formula_text"], available_columns
-                    )
-
-                    duck.register(relation_name, current_df)
-                    if target_column in available_columns:
-                        query = (
-                            f"SELECT * EXCLUDE {self._quote_identifier(target_column)}, "
-                            f"{sql_formula} AS {self._quote_identifier(target_column)} "
-                            f"FROM {relation_name}"
-                        )
-                    else:
-                        query = (
-                            f"SELECT *, {sql_formula} AS {self._quote_identifier(target_column)} "
-                            f"FROM {relation_name}"
-                        )
-                        available_columns.append(target_column)
-
-                    current_df = duck.execute(query).pl()
+            current_df, _, errors = self._run_sections(current_df, configured_sections)
+            if errors:
+                failed = min(errors)
+                raise ValueError(f"Section {failed + 1}: {errors[failed]}")
 
             self.data = current_df.lazy() if was_lazy else current_df
         except Exception as exc:
@@ -595,27 +716,13 @@ class FormulaContent(
             ),
         ]
 
-        for section_index, section in enumerate(configured_sections):
+        for section_index, section in configured_sections:
             relation_name = f"df_step_{section_index}"
-            target_column = section["target_column"]
-            sql_formula = self._prepare_formula_for_sql(
-                section["formula_text"], available_columns
+            query, available_columns = self._section_query(
+                section, available_columns, relation_name
             )
 
             code_lines.append(f"duck.register('{relation_name}', df_for_duck)")
-            if target_column in available_columns:
-                query = (
-                    f"SELECT * EXCLUDE {self._quote_identifier(target_column)}, "
-                    f"{sql_formula} AS {self._quote_identifier(target_column)} "
-                    f"FROM {relation_name}"
-                )
-            else:
-                query = (
-                    f"SELECT *, {sql_formula} AS {self._quote_identifier(target_column)} "
-                    f"FROM {relation_name}"
-                )
-                available_columns.append(target_column)
-
             code_lines.append(f"df_for_duck = duck.execute('''{query}''').pl()")
 
         code_lines.extend(

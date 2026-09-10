@@ -20,7 +20,10 @@ from trigger_designer.qt.widgets.nodes.Preparation.formula import (
     MAX_FORMULA_SECTIONS,
     FormulaContent,
 )
-from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
+from trigger_designer.qt.widgets.sql_formula_editor import (
+    SQLFormulaEditor,
+    SQLFormulaWidget,
+)
 
 
 APP = QApplication.instance() or QApplication([])
@@ -130,11 +133,84 @@ def test_sql_formula_widget_emits_editing_finished() -> None:
     widget.deleteLater()
 
 
+def test_case_end_balanced_produces_no_error() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    editor.set_column_names(["Age"])
+    errors = editor.validate_sql_syntax(
+        "CASE WHEN [Age] > 30 THEN 'Adult' ELSE 'Young' END"
+    )
+    assert errors == []
+    editor.deleteLater()
+
+
+def test_case_missing_end_points_at_case_token() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    errors = editor.validate_sql_syntax("CASE WHEN [Age] > 30 THEN 'Adult'")
+    assert len(errors) == 1
+    assert errors[0]["message"] == "CASE statement missing END keyword"
+    assert errors[0]["length"] == 4
+    editor.deleteLater()
+
+
+def test_column_matching_ignores_case_and_padding() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    editor.set_column_names(["RelevancyScore"])
+    assert editor.validate_column_references("[RelevancyScore]") == []
+    assert editor.validate_column_references("[relevancyscore]") == []
+    assert editor.validate_column_references("[ RelevancyScore ]") == []
+    unknown = editor.validate_column_references("[Nope]")
+    assert len(unknown) == 1
+    editor.deleteLater()
+
+
+def test_runtime_column_rewrite_matches_validation() -> None:
+    content = _build_formula_content(
+        [{"target_column": "double_amount", "formula_text": "[AMOUNT] * 2"}]
+    )
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data["double_amount"].to_list() == [20, 50]
+
+
+def test_validate_section_text_catches_bad_function() -> None:
+    content = _build_formula_content(
+        [{"target_column": "x", "formula_text": "NOSUCHFUNC([amount])"}]
+    )
+    errors = content.validate_section_text(0, "NOSUCHFUNC([amount])")
+    assert len(errors) == 1
+    assert "x" not in (content.data.columns if content.data is not None else [])
+
+
+def test_validate_section_text_passes_good_formula() -> None:
+    content = _build_formula_content(
+        [{"target_column": "double_amount", "formula_text": "[amount] * 2"}]
+    )
+    assert content.validate_section_text(0, "[amount] * 2") == []
+
+
+def test_new_column_error() -> None:
+    known = {"amount", "double_amount"}
+    assert FormulaContent._new_column_error("", known) is not None
+    assert FormulaContent._new_column_error("amount", known) is not None
+    assert FormulaContent._new_column_error("AMOUNT", known) is not None
+    assert FormulaContent._new_column_error("fresh", known) is None
+
+
 def main() -> None:
     _get_app()
     test_formula_content_applies_multiple_sections_in_order()
     test_formula_content_normalizes_sections()
     test_sql_formula_widget_emits_editing_finished()
+    test_case_end_balanced_produces_no_error()
+    test_case_missing_end_points_at_case_token()
+    test_column_matching_ignores_case_and_padding()
+    test_runtime_column_rewrite_matches_validation()
+    test_validate_section_text_catches_bad_function()
+    test_validate_section_text_passes_good_formula()
+    test_new_column_error()
     print("ok")
 
 

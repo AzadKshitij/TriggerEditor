@@ -3,78 +3,102 @@ import os
 
 # Always use LazyFrame for memory efficiency
 # Using LazyFrame for optimal memory usage
-var_file_input_1866610570768 = pl.scan_csv('C:/Projects/TriggerEditor/data/check.csv', infer_schema=False)
+var_file_input_1849068782448 = pl.scan_csv('C:/Projects/TriggerEditor/data/check.csv', infer_schema=False)
 
-# var_file_input_1866610570768 is now a LazyFrame for memory-efficient processing
+# var_file_input_1849068782448 is now a LazyFrame for memory-efficient processing
 # Use .collect() only when you need to materialize the data
 # Filter data into true and false results
-var_t_filter_1866609799920 = var_file_input_1866610570768.filter(pl.col('Keyword').str.contains('x'))
-var_f_filter_1866609799920 = var_file_input_1866610570768.filter(~(pl.col('Keyword').str.contains('x')))
-var_formula_1866609921232 = var_file_input_1866610570768
-var_select_1866610273776 = var_file_input_1866610570768.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_t_filter_1849067747792 = var_file_input_1849068782448.filter(pl.col('Keyword').str.contains('x'))
+var_f_filter_1849067747792 = var_file_input_1849068782448.filter(~(pl.col('Keyword').str.contains('x')))
+var_select_1849068305168 = var_file_input_1849068782448.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Keyword').cast(pl.String, strict=False).alias('Keyword')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Seed').cast(pl.String, strict=False).alias('Seed')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Source').cast(pl.String, strict=False).alias('Source')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Country').cast(pl.String, strict=False).alias('Country')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Autocomplete Position').cast(pl.String, strict=False).alias('Autocomplete Position')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Difficulty').cast(pl.Int64, strict=False).alias('Difficulty')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Hot Keyword').cast(pl.String, strict=False).alias('Hot Keyword')
 )
-var_select_1866610273776 = var_select_1866610273776.with_columns(
+var_select_1849068305168 = var_select_1849068305168.with_columns(
     pl.col('Relevancy Score').cast(pl.Float64, strict=False).alias('Relevancy Score')
 )
-var_sort_1866610518096 = var_file_input_1866610570768.sort('Keyword', descending=False)
+var_sort_1849068124784 = var_file_input_1849068782448.sort('Keyword', descending=False)
 import polars as pl
 # Split into unique and duplicate records based on: Relevancy Score
-var_unique_1866610523696 = var_file_input_1866610570768.unique(subset=["Relevancy Score"], maintain_order=True)
-var_duplicate_1866610523696 = var_file_input_1866610570768.filter(pl.struct(["Relevancy Score"]).is_duplicated())
+var_unique_1849067744432 = var_file_input_1849068782448.unique(subset=["Relevancy Score"], maintain_order=True)
+var_duplicate_1849067744432 = var_file_input_1849068782448.filter(pl.struct(["Relevancy Score"]).is_duplicated())
 import polars as pl
 # Random split with seed 42 - efficient LazyFrame approach
 # Add row index and shuffle all columns
-indexed_df = var_file_input_1866610570768.with_columns(pl.all().shuffle(seed=42)).with_row_index()
+indexed_df = var_file_input_1849068782448.with_columns(pl.all().shuffle(seed=42)).with_row_index()
 # Split based on row index thresholds
-var_estimation_1866610563088 = indexed_df.filter(pl.col('index') < pl.col('index').max() * 0.7).drop('index')
-var_validation_1866610563088 = indexed_df.filter(pl.col('index') >= pl.col('index').max() * 0.7).drop('index')
-var_groupby_1866611080752 = var_file_input_1866610570768.group_by(['Relevancy Score']).agg([
+var_estimation_1849068627088 = indexed_df.filter(pl.col('index') < pl.col('index').max() * 0.7).drop('index')
+var_validation_1849068627088 = indexed_df.filter(pl.col('index') >= pl.col('index').max() * 0.7).drop('index')
+var_groupby_1849069158960 = var_file_input_1849068782448.group_by(['Relevancy Score']).agg([
     pl.len().alias('count')
 ])
-var_select_1866611316592 = var_file_input_1866610570768.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_file_input_1849068782448.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Keyword').cast(pl.String, strict=False).alias('Keyword')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Seed').cast(pl.String, strict=False).alias('Seed')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Source').cast(pl.String, strict=False).alias('Source')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Country').cast(pl.String, strict=False).alias('Country')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Autocomplete Position').cast(pl.String, strict=False).alias('Autocomplete Position')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Difficulty').cast(pl.Int64, strict=False).alias('Difficulty')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Hot Keyword').cast(pl.String, strict=False).alias('Hot Keyword')
 )
-var_select_1866611316592 = var_select_1866611316592.with_columns(
+var_select_1849069165360 = var_select_1849069165360.with_columns(
     pl.col('Relevancy Score').cast(pl.Float64, strict=False).alias('Relevancy Score')
+)
+var_select_1849069470256 = var_file_input_1849068782448.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score'])
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Keyword').cast(pl.String, strict=False).alias('Keyword')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Seed').cast(pl.String, strict=False).alias('Seed')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Source').cast(pl.String, strict=False).alias('Source')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Country').cast(pl.String, strict=False).alias('Country')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Autocomplete Position').cast(pl.String, strict=False).alias('Autocomplete Position')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Difficulty').cast(pl.String, strict=False).alias('Difficulty')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Hot Keyword').cast(pl.String, strict=False).alias('Hot Keyword')
+)
+var_select_1849069470256 = var_select_1849069470256.with_columns(
+    pl.col('Relevancy Score').cast(pl.Decimal, strict=False).alias('Relevancy Score')
 )
 # Polars LazyFrame Join Operation
 import polars as pl
@@ -86,8 +110,8 @@ def _ensure_lazyframe(data):
         return data
     raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {type(data)}')
 
-_left_input = _ensure_lazyframe(var_duplicate_1866610523696)
-_right_input = _ensure_lazyframe(var_duplicate_1866610523696)
+_left_input = _ensure_lazyframe(var_duplicate_1849067744432)
+_right_input = _ensure_lazyframe(var_duplicate_1849067744432)
 # Rename conflicting columns in right dataframe
 _right_renamed = _right_input.rename({'Keyword': 'Keyword_right', 'Seed': 'Seed_right', 'Source': 'Source_right', 'Autocomplete Position': 'Autocomplete Position_right', 'Difficulty': 'Difficulty_right', 'Hot Keyword': 'Hot Keyword_right', 'Relevancy Score': 'Relevancy Score_right'})
 
@@ -113,7 +137,7 @@ _result_with_indicators = _join_result.with_columns([
 ])
 
 # Main join result with selected columns (matched records only)
-var_join_1866611005936 = _result_with_indicators.filter(
+var_join_1849068971792 = _result_with_indicators.filter(
     pl.col('__join_type') == 'both'
 ).select([
     'Autocomplete Position',
@@ -131,13 +155,13 @@ var_join_1866611005936 = _result_with_indicators.filter(
 
 # Extract left-only data efficiently
 _left_cols = ['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score']
-var_l_join_1866611005936 = _result_with_indicators.filter(
+var_l_join_1849068971792 = _result_with_indicators.filter(
     pl.col('__join_type') == 'left_only'
 ).select(_left_cols)
 
 # Extract right-only data efficiently
 _right_cols = ['Keyword_right', 'Seed_right', 'Source_right', 'Country', 'Autocomplete Position_right', 'Difficulty_right', 'Hot Keyword_right', 'Relevancy Score_right']
-var_r_join_1866611005936 = _result_with_indicators.filter(
+var_r_join_1849068971792 = _result_with_indicators.filter(
     pl.col('__join_type') == 'right_only'
 ).select(_right_cols)
 
@@ -146,17 +170,28 @@ del _left_input, _right_input, _join_result, _result_with_indicators, _left_cols
 from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy
 import polars as pl
 # Convert LazyFrame to DataFrame if needed
-_cleansing_input = var_select_1866611316592.collect() if hasattr(var_select_1866611316592, 'collect') else var_select_1866611316592
+_cleansing_input = var_select_1849069165360.collect() if hasattr(var_select_1849069165360, 'collect') else var_select_1849069165360
 cleaner = DataCleansing(_cleansing_input)
 cleaner.replace_null_defaults(replace_strings=True, replace_numbers=True)
-var_cleansing_1866530027664 = cleaner.get_result()
+var_cleansing_1851126708208 = cleaner.get_result()
+import duckdb
+import polars as pl
+# Initialize DuckDB connection
+duck = duckdb.connect(':memory:')
+# Convert polars LazyFrame to DataFrame if needed for DuckDB
+df_for_duck = var_select_1849069470256.collect() if hasattr(var_select_1849069470256, 'collect') else var_select_1849069470256
+duck.register('df_step_0', df_for_duck)
+df_for_duck = duck.execute('''SELECT *, CASE when "Relevancy Score" > 95 then "pass" else "fail" end AS "Check" FROM df_step_0''').pl()
+# Preserve lazy execution when the incoming value is lazy
+var_formula_1849067853520 = df_for_duck.lazy() if hasattr(var_select_1849069470256, 'collect') else df_for_duck
+duck.close()
 import polars as pl
 # Count records in DataFrame
-_count_value = var_cleansing_1866530027664.select(pl.len()).collect().item() if hasattr(var_cleansing_1866530027664, 'collect') else var_cleansing_1866530027664.height
+_count_value = var_cleansing_1851126708208.select(pl.len()).collect().item() if hasattr(var_cleansing_1851126708208, 'collect') else var_cleansing_1851126708208.height
 var_count_1168116776496 = pl.DataFrame({'Count': [_count_value]})
 del _count_value
 import polars as pl
-var_runtot_1866611070192 = var_cleansing_1866530027664.with_columns([
+var_runtot_1849069068816 = var_cleansing_1851126708208.with_columns([
     pl.col("Difficulty").cum_sum().over(["Difficulty"]).alias("RunTot_Difficulty")
 ])
-var_select_1866611318352 = var_runtot_1866611070192.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score', 'RunTot_Difficulty'])
+var_select_1849069167120 = var_runtot_1849069068816.select(['Keyword', 'Seed', 'Source', 'Country', 'Autocomplete Position', 'Difficulty', 'Hot Keyword', 'Relevancy Score', 'RunTot_Difficulty'])

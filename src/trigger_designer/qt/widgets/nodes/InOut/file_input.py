@@ -583,7 +583,7 @@ class FileInputContent(
             # Use direct read for small preview data
             df = pl.read_csv(fileName, **read_options)
 
-            logger.debug(f"Successfully read CSV preview with {len(df)} rows")
+            # logger.debug(f"Successfully read CSV preview with {len(df)} rows")
             return df
 
         except Exception as e:
