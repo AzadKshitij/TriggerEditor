@@ -58,6 +58,8 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._executing_pen.setWidth(5)
         self._executed_pen = QPen(QColor("#FF008000"))  # Green color
         self._executed_pen.setWidth(5)
+        self._error_pen = QPen(QColor("#FFFF0000"))  # Red color
+        self._error_pen.setWidth(5)
 
         self._pen = self._default_pen  # Current pen
         # self._brush_title = QBrush(QColor(style['brush_color']))
@@ -118,6 +120,11 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
     def setPenExecuted(self) -> None:
         """Set node border to green after execution"""
         self._pen = self._executed_pen
+        self.update()
+
+    def setPenError(self) -> None:
+        """Set node border to red on execution error"""
+        self._pen = self._error_pen
         self.update()
 
     def resetPen(self) -> None:

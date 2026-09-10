@@ -34,6 +34,7 @@ class WorkflowExecutionMixin:
         # Reset node visuals and stored results
         self.execution_results.clear()
         for node in self.getAllNodes():
+            node.markInvalid(False)
             node.grNode.resetPen()
             node.grNode.update()
 
@@ -70,7 +71,8 @@ class WorkflowExecutionMixin:
             error_message = f"Error executing node '{node_name}': {exc}"
             logger.error(error_message)
             global_logger.error(error_message)
-            node.grNode.resetPen()
+            node.markInvalid()
+            node.grNode.setPenError()
             node.grNode.update()
             self._execution_cleanup(success=False)
             return
@@ -83,7 +85,8 @@ class WorkflowExecutionMixin:
             error_message = f"Node execution failed for '{node_name}': {result.error}"
             logger.error(error_message)
             global_logger.error(error_message)
-            node.grNode.resetPen()
+            node.markInvalid()
+            node.grNode.setPenError()
             node.grNode.update()
             self._execution_cleanup(success=False)
             return
@@ -138,6 +141,9 @@ class WorkflowExecutionMixin:
         print(f"{'=' * 60}\n")
 
         for node in self.getAllNodes():
+            if node.isInvalid():
+                node.grNode.update()
+                continue
             node.grNode.resetPen()
             node.grNode.update()
 

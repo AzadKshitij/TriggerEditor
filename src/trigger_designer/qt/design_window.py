@@ -537,7 +537,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.logInfo("Starting workflow execution...")
         try:
             self.executeWorkflow()
-            self.logInfo("Workflow execution completed successfully")
         except Exception as e:
             self.logError(f"Workflow execution failed: {str(e)}")
             raise

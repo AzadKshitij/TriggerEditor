@@ -26,7 +26,22 @@
           "socket_type": 3
         }
       ],
-      "content": {},
+      "content": {
+        "replace_null_strings": true,
+        "replace_null_numbers": true,
+        "strip_whitespace": true,
+        "normalize_spaces": true,
+        "remove_all_whitespace": false,
+        "case_modification": "none",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": false,
+        "selected_fields": [],
+        "field_selection_initialized": false,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": false,
+        "remove_null_columns": false
+      },
       "node_code": 1,
       "node_type": "preparation"
     },
@@ -92,6 +107,12 @@
         }
       ],
       "content": {
+        "formula_sections": [
+          {
+            "target_column": "",
+            "formula_text": "CASE when [RelevancyScore] > 95 then \"pass\" else \"fail\""
+          }
+        ],
         "formula": "CASE when [RelevancyScore] > 95 then \"pass\" else \"fail\"",
         "target_column": ""
       },
@@ -326,7 +347,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/data/check.csv",
+        "filePath": "C:/Projects/TriggerEditor/data/check.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -371,7 +392,7 @@
         ],
         "file_metadata": {
           "size_bytes": 1257,
-          "modified_time": 1742365876
+          "modified_time": 1789063649
         }
       },
       "node_code": 4,
@@ -534,8 +555,7 @@
       ],
       "content": {
         "sum_columns": [
-          "Difficulty",
-          "Relevancy Score"
+          "Difficulty"
         ],
         "group_by_columns": [
           "Difficulty"
@@ -883,9 +903,10 @@
       "end": 1933365322816
     }
   ],
+  "groups": [],
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-05-12T09:00:20Z"
+    "saved_at": "2026-09-10T18:47:40Z"
   }
 }
