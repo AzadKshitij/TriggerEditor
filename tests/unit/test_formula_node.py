@@ -594,6 +594,40 @@ def test_new_column_error() -> None:
     assert FormulaContent._new_column_error("fresh", known) is None
 
 
+def test_autocomplete_prefix_and_matches() -> None:
+    from trigger_designer.qt.widgets.sql_formula_editor import (
+        extract_completion_prefix,
+        match_completions,
+    )
+
+    assert extract_completion_prefix("COA", 3) == ("COA", False)
+    assert extract_completion_prefix("[cus", 4) == ("cus", True)
+    assert "COALESCE()" in match_completions("COA", False, ["amount"])
+    assert match_completions("cus", True, ["customer_id", "city"]) == ["customer_id"]
+    assert "[customer_id]" in match_completions("cus", False, ["customer_id"])
+
+
+def test_autocomplete_insert_replaces_prefix() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    editor.set_column_names(["amount", "customer_id"])
+
+    editor.setPlainText("COA")
+    cursor = editor.textCursor()
+    cursor.movePosition(cursor.MoveOperation.End)
+    editor.setTextCursor(cursor)
+    editor._insert_completion("COALESCE()")
+    assert editor.toPlainText() == "COALESCE()"
+
+    editor.setPlainText("[cus")
+    cursor = editor.textCursor()
+    cursor.movePosition(cursor.MoveOperation.End)
+    editor.setTextCursor(cursor)
+    editor._insert_completion("customer_id")
+    assert editor.toPlainText() == "[customer_id]"
+    editor.deleteLater()
+
+
 def main() -> None:
     _get_app()
     test_formula_content_applies_multiple_sections_in_order()
@@ -607,6 +641,8 @@ def main() -> None:
     test_validate_section_text_catches_bad_function()
     test_validate_section_text_passes_good_formula()
     test_new_column_error()
+    test_autocomplete_prefix_and_matches()
+    test_autocomplete_insert_replaces_prefix()
     test_target_name_survives_serialize_round_trip()
     test_double_quoted_text_is_a_string()
     test_bracket_text_inside_strings_is_ignored()

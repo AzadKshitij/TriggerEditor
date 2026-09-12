@@ -10,9 +10,10 @@ This module provides a custom QTextEdit widget with:
 """
 
 import re
-from typing import Callable, List, Optional, Dict, Set
+from typing import Callable, List, Optional, Dict, Set, Tuple
 
 from qtpy.QtWidgets import (
+    QCompleter,
     QTextEdit,
     QWidget,
     QVBoxLayout,
@@ -20,7 +21,7 @@ from qtpy.QtWidgets import (
     QMainWindow,
     QPushButton,
 )
-from qtpy.QtCore import Qt, QTimer, QRect, Signal, QRegularExpression
+from qtpy.QtCore import Qt, QTimer, QRect, Signal, QRegularExpression, QStringListModel
 from qtpy.QtGui import (
     QSyntaxHighlighter,
     QTextCharFormat,
@@ -51,6 +52,158 @@ def mask_string_literals(text: str) -> str:
     )
 
 
+#: Shared keyword list for highlighting + autocomplete (single source of truth).
+SQL_KEYWORDS = [
+    "SELECT",
+    "FROM",
+    "WHERE",
+    "AND",
+    "OR",
+    "NOT",
+    "IN",
+    "LIKE",
+    "IS",
+    "NULL",
+    "CASE",
+    "WHEN",
+    "THEN",
+    "ELSE",
+    "END",
+    "AS",
+    "ASC",
+    "DESC",
+    "ORDER",
+    "BY",
+    "GROUP",
+    "HAVING",
+    "JOIN",
+    "LEFT",
+    "RIGHT",
+    "INNER",
+    "OUTER",
+    "ON",
+    "UNION",
+    "ALL",
+    "DISTINCT",
+    "COUNT",
+    "SUM",
+    "AVG",
+    "MIN",
+    "MAX",
+    "CAST",
+    "CONVERT",
+    "SUBSTRING",
+    "UPPER",
+    "LOWER",
+    "TRIM",
+    "LENGTH",
+    "COALESCE",
+    "ISNULL",
+    "NULLIF",
+    "BETWEEN",
+    "EXISTS",
+    "ANY",
+    "SOME",
+    "YEAR",
+    "MONTH",
+    "DAY",
+    "TODAY",
+]
+
+#: DuckDB scalar functions surfaced in autocomplete (from FORMULA_TOOL_REFERENCE).
+FUNCTION_NAMES = [
+    "ABS",
+    "CEIL",
+    "COALESCE",
+    "CONCAT",
+    "CURRENT_DATE",
+    "CURRENT_TIMESTAMP",
+    "DATE_PART",
+    "DATE_TRUNC",
+    "DATEDIFF",
+    "DAY",
+    "EXTRACT",
+    "FLOOR",
+    "GREATEST",
+    "IF",
+    "IFF",
+    "LEFT",
+    "LENGTH",
+    "LOWER",
+    "LEAST",
+    "MAX",
+    "MIN",
+    "MOD",
+    "MONTH",
+    "NULLIF",
+    "POWER",
+    "REGEXP_EXTRACT",
+    "REGEXP_MATCHES",
+    "REGEXP_REPLACE",
+    "REPLACE",
+    "RIGHT",
+    "ROUND",
+    "SPLIT_PART",
+    "SQRT",
+    "STRFTIME",
+    "SUBSTRING",
+    "SUM",
+    "TRIM",
+    "TRY_CAST",
+    "UPPER",
+    "YEAR",
+]
+
+#: Minimum typed chars before the popup shows on its own (Ctrl+Space forces it).
+AUTOCOMPLETE_MIN_PREFIX = 2
+
+_WORD_PREFIX_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*$")
+
+
+def extract_completion_prefix(block_text: str, pos_in_block: int) -> Tuple[str, bool]:
+    """Return (prefix, in_brackets) for the cursor at pos_in_block.
+
+    in_brackets is True when the cursor sits inside an unclosed '['.
+    Pure helper so it can be unit-tested without Qt.
+    """
+    before = block_text[: max(0, min(pos_in_block, len(block_text)))]
+    bracket_open = before.rfind("[")
+    bracket_close = before.rfind("]")
+    if bracket_open != -1 and bracket_open > bracket_close:
+        return before[bracket_open + 1 :].lstrip(), True
+    match = _WORD_PREFIX_RE.search(before)
+    return (match.group() if match else "", False)
+
+
+def match_completions(
+    prefix: str, in_brackets: bool, column_names: List[str]
+) -> List[str]:
+    """Filter completion candidates for prefix (case-insensitive)."""
+    if in_brackets and not prefix:
+        return list(column_names)[:50]
+    if not prefix:
+        return []
+    lowered = prefix.lower()
+    if in_brackets:
+        return [c for c in column_names if c.lower().startswith(lowered)][:50]
+    out: List[str] = []
+    seen = set()
+    for name in FUNCTION_NAMES:
+        if name.lower().startswith(lowered) and name not in seen:
+            seen.add(name)
+            out.append(f"{name}()")
+    for kw in SQL_KEYWORDS:
+        if kw.lower().startswith(lowered) and kw not in seen:
+            seen.add(kw)
+            out.append(kw)
+    for col in column_names:
+        label = f"[{col}]"
+        if col.lower().startswith(lowered) and label not in seen:
+            seen.add(label)
+            out.append(label)
+    return out[:50]
+
+
 class SQLSyntaxHighlighter(QSyntaxHighlighter):
     """SQL syntax highlighter for the formula editor."""
 
@@ -70,62 +223,7 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
         keyword_format.setForeground(QColor(86, 156, 214))  # Blue
         keyword_format.setFontWeight(QFont.Weight.Bold)
 
-        sql_keywords = [
-            "SELECT",
-            "FROM",
-            "WHERE",
-            "AND",
-            "OR",
-            "NOT",
-            "IN",
-            "LIKE",
-            "IS",
-            "NULL",
-            "CASE",
-            "WHEN",
-            "THEN",
-            "ELSE",
-            "END",
-            "AS",
-            "ASC",
-            "DESC",
-            "ORDER",
-            "BY",
-            "GROUP",
-            "HAVING",
-            "JOIN",
-            "LEFT",
-            "RIGHT",
-            "INNER",
-            "OUTER",
-            "ON",
-            "UNION",
-            "ALL",
-            "DISTINCT",
-            "COUNT",
-            "SUM",
-            "AVG",
-            "MIN",
-            "MAX",
-            "CAST",
-            "CONVERT",
-            "SUBSTRING",
-            "UPPER",
-            "LOWER",
-            "TRIM",
-            "LENGTH",
-            "COALESCE",
-            "ISNULL",
-            "NULLIF",
-            "BETWEEN",
-            "EXISTS",
-            "ANY",
-            "SOME",
-            "YEAR",
-            "MONTH",
-            "DAY",
-            "TODAY",
-        ]
+        sql_keywords = SQL_KEYWORDS
 
         for keyword in sql_keywords:
             pattern = QRegularExpression(
@@ -244,6 +342,7 @@ class SQLFormulaEditor(QTextEdit):
         # Set up the editor
         self.setup_editor()
         self.setup_syntax_highlighter()
+        self.setup_completer()
         self.connect_signals()
         # Note: Line numbers disabled for compatibility
         # self.setup_line_numbers()
@@ -292,6 +391,86 @@ class SQLFormulaEditor(QTextEdit):
         self.syntax_highlighter = SQLSyntaxHighlighter(
             self.document(), self.column_names
         )
+
+    def setup_completer(self):
+        """Set up VS Code-style autocomplete (functions, keywords, columns)."""
+        self.completer = QCompleter(self)
+        self.completer.setWidget(self)
+        self.completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+        self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.completer.setModel(QStringListModel([], self.completer))
+        try:  # Qt6 substring filtering so "[col]" matches a bare prefix
+            self.completer.setFilterMode(Qt.MatchFlag.MatchContains)
+        except AttributeError:
+            pass
+        self.completer.activated[str].connect(self._insert_completion)
+        self.completer.popup().setStyleSheet(
+            "background-color: #1e1e1e; color: #d4d4d4;"
+            "selection-background-color: #264f78;"
+        )
+
+    def _prefix_at_cursor(self) -> Tuple[str, bool]:
+        cursor = self.textCursor()
+        block_text = cursor.block().text()
+        return extract_completion_prefix(block_text, cursor.positionInBlock())
+
+    def _maybe_autocomplete(self, forced: bool = False) -> None:
+        prefix, in_brackets = self._prefix_at_cursor()
+        # Bare "[" is an explicit column request: show all columns at once.
+        if (
+            not forced
+            and len(prefix) < AUTOCOMPLETE_MIN_PREFIX
+            and not in_brackets
+        ):
+            self.completer.popup().hide()
+            return
+        matches = match_completions(prefix, in_brackets, self.column_names)
+        if not matches:
+            self.completer.popup().hide()
+            return
+        model = self.completer.model()
+        if isinstance(model, QStringListModel):
+            model.setStringList(matches)
+        self.completer.setCompletionPrefix(prefix)
+        popup = self.completer.popup()
+        popup.setFont(self.font())
+        try:
+            first = self.completer.completionModel().index(0, 0)
+            popup.setCurrentIndex(first)
+        except (AttributeError, RuntimeError):
+            pass
+        # complete(rect) sizes the popup from the rect: a bare cursorRect()
+        # is only a few px wide and renders as a thin sliver, so widen it
+        # from the popup contents (Qt's own QTextEdit-completer example).
+        rect = self.cursorRect()
+        try:
+            content_width = popup.sizeHintForColumn(0)
+        except (AttributeError, RuntimeError):
+            content_width = -1
+        try:
+            content_width += popup.verticalScrollBar().sizeHint().width()
+        except (AttributeError, RuntimeError):
+            pass
+        rect.setWidth(max(content_width + 12, 200))
+        self.completer.complete(rect)
+
+    def _insert_completion(self, completion: str) -> None:
+        """Replace the current prefix with the chosen completion."""
+        prefix, in_brackets = self._prefix_at_cursor()
+        cursor = self.textCursor()
+        # ponytail: O(n) cursor move, per-keystroke model rebuild if this lags
+        for _ in range(len(prefix)):
+            cursor.deletePreviousChar()
+        if in_brackets:
+            cursor.insertText(completion)
+            if self.document().characterAt(cursor.position()) != "]":
+                cursor.insertText("]")
+        elif completion.endswith("()"):
+            cursor.insertText(completion)
+            cursor.movePosition(QTextCursor.MoveOperation.Left)
+            self.setTextCursor(cursor)
+        else:
+            cursor.insertText(completion)
 
     def connect_signals(self):
         """Connect internal signals."""
@@ -620,7 +799,28 @@ class SQLFormulaEditor(QTextEdit):
         self.setExtraSelections(extra_selections)
 
     def keyPressEvent(self, event):
-        """Handle key press events for auto-indentation and other features."""
+        """Handle autocomplete popup, Ctrl+Space, and auto-indentation."""
+        completer = getattr(self, "completer", None)
+        popup_visible = bool(
+            completer is not None and completer.popup().isVisible()
+        )
+        if popup_visible and event.key() in (
+            Qt.Key.Key_Enter,
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Tab,
+        ):
+            event.ignore()
+            self._insert_completion(completer.currentCompletion())
+            completer.popup().hide()
+            return
+        if popup_visible and event.key() == Qt.Key.Key_Escape:
+            completer.popup().hide()
+            event.ignore()
+            return
+        if event.key() == Qt.Key.Key_Space and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            self._maybe_autocomplete(forced=True)
+            return
+
         if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
             # Auto-indent on new line
             cursor = self.textCursor()
@@ -634,11 +834,33 @@ class SQLFormulaEditor(QTextEdit):
 
             super().keyPressEvent(event)
             self.insertPlainText(indent)
+            if completer is not None:
+                completer.popup().hide()
         else:
             super().keyPressEvent(event)
+            if completer is not None and (
+                completer.popup().isVisible()
+                or event.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete)
+                or (
+                    event.text()
+                    and (event.text().isalnum() or event.text() in ("_", "[", "]"))
+                )
+            ):
+                self._maybe_autocomplete()
 
     def focusOutEvent(self, event):
         """Emit a commit signal when the editor loses focus."""
+        # Picking from the popup must not commit half-typed section text.
+        try:
+            if event.reason() == Qt.FocusReason.PopupFocusReason:
+                event.ignore()
+                return
+        except AttributeError:
+            pass
+        completer = getattr(self, "completer", None)
+        if completer is not None and completer.popup().isVisible():
+            event.ignore()
+            return
         super().focusOutEvent(event)
         self.editingFinished.emit()
 
