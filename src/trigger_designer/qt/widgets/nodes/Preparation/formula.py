@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import duckdb
 import polars as pl
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Qt, QTimer, Signal
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QComboBox,
@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -33,6 +34,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
 )
 from trigger_designer.qt.widgets.sql_formula_editor import (
+    ERROR_CHECK_DEBOUNCE_MS,
     SQLFormulaWidget,
     STRING_LITERAL_RE,
 )
@@ -48,6 +50,81 @@ NEW_COLUMN_OPTION = "+ add column"
 FORMULA_PLACEHOLDER = (
     "Enter formula e.g.:\nCASE WHEN [Age] > 30 THEN 'Adult' ELSE 'Young' END"
 )
+MIN_EDITOR_HEIGHT = 60
+MAX_EDITOR_HEIGHT = 600
+DEFAULT_EDITOR_HEIGHT = 120
+AUTO_DTYPE_OPTION = "Auto"
+DTYPE_OPTIONS = [
+    AUTO_DTYPE_OPTION,
+    "String",
+    "Integer",
+    "Float",
+    "Boolean",
+    "Date",
+    "Datetime",
+    "Time",
+    "Categorical",
+]
+DTYPE_TO_DUCKDB = {
+    "String": "VARCHAR",
+    "Integer": "BIGINT",
+    "Float": "DOUBLE",
+    "Boolean": "BOOLEAN",
+    "Date": "DATE",
+    "Datetime": "TIMESTAMP",
+    "Time": "TIME",
+    "Categorical": "VARCHAR",
+}
+
+
+class _ResizeGrip(QFrame):
+    """Drag handle adjusting one section editor's fixed height."""
+
+    def __init__(
+        self, content: "FormulaContent", section_index: int, editor: QWidget
+    ) -> None:
+        super().__init__()
+        self._content = content
+        self._section_index = section_index
+        self._editor = editor
+        self.setObjectName("formulaResizeGrip")
+        self.setFixedHeight(6)
+        self.setCursor(Qt.CursorShape.SizeVerCursor)
+        self.setStyleSheet(
+            "QFrame#formulaResizeGrip { background-color: #3c3c3c;"
+            " border-radius: 3px; }"
+        )
+        self._press_y: Optional[int] = None
+        self._press_height = DEFAULT_EDITOR_HEIGHT
+        self._old_state: Optional[Dict[str, List[Dict[str, Any]]]] = None
+
+    def mousePressEvent(self, event) -> None:
+        self._press_y = event.globalPosition().toPoint().y()
+        self._press_height = self._editor.height()
+        self._old_state = self._content._current_state()
+
+    def mouseMoveEvent(self, event) -> None:
+        if self._press_y is None:
+            return
+        delta = event.globalPosition().toPoint().y() - self._press_y
+        height = min(
+            MAX_EDITOR_HEIGHT, max(MIN_EDITOR_HEIGHT, self._press_height + delta)
+        )
+        self._editor.setFixedHeight(height)
+
+    def mouseReleaseEvent(self, event) -> None:
+        if self._press_y is None:
+            return
+        self._press_y = None
+        try:
+            sections = self._content.formula_sections
+            if 0 <= self._section_index < len(sections):
+                sections[self._section_index]["editor_height"] = self._editor.height()
+                if self._old_state is not None:
+                    self._content.store_history(self._old_state)
+        except RuntimeError:
+            pass
+        self._old_state = None
 
 
 class FormulaContent(
@@ -57,7 +134,16 @@ class FormulaContent(
 
     evaluate = Signal()
     serialized_state_schema = {
-        "formula_sections": {"default": [{"target_column": "", "formula_text": ""}]}
+        "formula_sections": {
+            "default": [
+                {
+                    "target_column": "",
+                    "formula_text": "",
+                    "editor_height": 120,
+                    "target_dtype": "",
+                }
+            ]
+        }
     }
 
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
@@ -65,12 +151,11 @@ class FormulaContent(
         self.history = self.node.scene.history
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
-        self.formula_sections: List[Dict[str, str]] = [self._default_section()]
+        self.formula_sections: List[Dict[str, Any]] = [self._default_section()]
         self.section_widgets: List[Dict[str, Any]] = []
         self.sections_layout: Optional[QVBoxLayout] = None
         self.add_section_button: Optional[QPushButton] = None
         self.section_count_label: Optional[QLabel] = None
-        self._dock_layout: Optional[QVBoxLayout] = None
 
         self.incoming_variable: str = ""
         self.incom_data: Optional[pl.DataFrame | pl.LazyFrame] = None
@@ -95,15 +180,14 @@ class FormulaContent(
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         """Create the layout for the formula content widget."""
-        self._dock_layout = dock_layout
-
         if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
             return
 
         self.formula_sections = self._normalize_sections(self.formula_sections)
 
-        main_layout = QVBoxLayout()
+        container = QWidget()
+        main_layout = QVBoxLayout(container)
         self.sections_layout = QVBoxLayout()
         self.sections_layout.setSpacing(10)
 
@@ -120,23 +204,42 @@ class FormulaContent(
         main_layout.addLayout(self.sections_layout)
         main_layout.addLayout(controls_layout)
         main_layout.addStretch()
-        dock_layout.addLayout(main_layout)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setWidget(container)
+        dock_layout.addWidget(scroll_area, 1)
 
         self._rebuild_section_widgets()
 
-    def _default_section(self) -> Dict[str, str]:
-        return {"target_column": "", "formula_text": ""}
+    def _default_section(self) -> Dict[str, Any]:
+        return {
+            "target_column": "",
+            "formula_text": "",
+            "editor_height": 120,
+            "target_dtype": "",
+        }
 
     def _normalize_sections(
         self, sections: Optional[List[Dict[str, Any]]]
-    ) -> List[Dict[str, str]]:
-        normalized_sections: List[Dict[str, str]] = []
+    ) -> List[Dict[str, Any]]:
+        normalized_sections: List[Dict[str, Any]] = []
 
         for section in sections or []:
+            try:
+                editor_height = int(section.get("editor_height", 120))
+            except (TypeError, ValueError):
+                editor_height = 120
+            target_dtype = str(section.get("target_dtype") or "")
+            if target_dtype not in DTYPE_OPTIONS[1:]:
+                target_dtype = ""
             normalized_sections.append(
                 {
                     "target_column": str(section.get("target_column") or ""),
                     "formula_text": str(section.get("formula_text") or ""),
+                    "editor_height": min(600, max(60, editor_height)),
+                    "target_dtype": target_dtype,
                 }
             )
 
@@ -154,19 +257,83 @@ class FormulaContent(
             except (AttributeError, RuntimeError, IndexError):
                 continue
 
-    def _current_state(self) -> Dict[str, List[Dict[str, str]]]:
+    def _current_state(self) -> Dict[str, List[Dict[str, Any]]]:
         self._sync_sections_from_widgets()
         return {
             "formula_sections": [section.copy() for section in self.formula_sections]
         }
 
-    def _configured_sections(self) -> List[Tuple[int, Dict[str, str]]]:
+    def _configured_sections(self) -> List[Tuple[int, Dict[str, Any]]]:
         self._sync_sections_from_widgets()
         return [
             (index, section.copy())
             for index, section in enumerate(self.formula_sections)
             if section["target_column"].strip() and section["formula_text"].strip()
         ]
+
+    @staticmethod
+    def polars_dtype_to_label(dtype: Any) -> str:
+        """Map a polars dtype to a dropdown label ("" when unmapped)."""
+        match = re.match(r"[A-Za-z0-9]+", str(dtype))
+        key = match.group() if match else ""
+        mapping = {
+            "String": "String",
+            "Utf8": "String",
+            "Int8": "Integer",
+            "Int16": "Integer",
+            "Int32": "Integer",
+            "Int64": "Integer",
+            "UInt8": "Integer",
+            "UInt16": "Integer",
+            "UInt32": "Integer",
+            "UInt64": "Integer",
+            "Float32": "Float",
+            "Float64": "Float",
+            "Boolean": "Boolean",
+            "Date": "Date",
+            "Datetime": "Datetime",
+            "Time": "Time",
+            "Categorical": "Categorical",
+            "Enum": "Categorical",
+        }
+        return mapping.get(key, "")
+
+    def _dtype_state_for_section(self, section_index: int) -> tuple:
+        """Return (current label, enabled) for a section's dtype dropdown.
+
+        Existing input columns show their actual type, disabled. New targets
+        stay editable so a cast can be picked before the first run.
+        """
+        section = self.formula_sections[section_index]
+        target = section["target_column"].strip()
+        if self.incom_data is not None and target:
+            try:
+                schema = (
+                    self.incom_data.collect_schema()
+                    if isinstance(self.incom_data, pl.LazyFrame)
+                    else self.incom_data.schema
+                )
+                for column_name, dtype in schema.items():
+                    if column_name == target:
+                        return self.polars_dtype_to_label(dtype), False
+            except Exception:
+                pass
+        return section.get("target_dtype") or AUTO_DTYPE_OPTION, True
+
+    def _set_section_dtype(self, section_index: int, target_dtype: str) -> None:
+        old_state = {
+            "formula_sections": [section.copy() for section in self.formula_sections]
+        }
+        normalized = target_dtype.strip()
+        if normalized not in DTYPE_OPTIONS[1:]:
+            normalized = ""
+
+        if self.formula_sections[section_index].get("target_dtype", "") == normalized:
+            return
+
+        self.formula_sections[section_index]["target_dtype"] = normalized
+        self.update_data()
+        self.store_history(old_state)
 
     def _available_columns_before_section(self, section_index: int) -> List[str]:
         available_columns: List[str] = []
@@ -212,14 +379,11 @@ class FormulaContent(
             del item
 
     def _refresh_input_tracking(self) -> None:
+        # Formula manages its own commit/history explicitly (debounce timer,
+        # focus-out, selector handlers). Auto-tracking is left disabled: it
+        # would store a history entry (and serialize the scene) per keystroke
+        # while never recomputing with the new text.
         self.clearInputWidgets()
-        if self._dock_layout is not None:
-            self.recursively_find_widgets(self._dock_layout)
-        # Formula editors commit on focus-out; exclude them from keystroke eval
-        # so typing never recomputes with stale section text.
-        for widget in self._input_widgets:
-            if isinstance(widget, SQLFormulaWidget):
-                self._disconnect_input_widget(widget)
 
     def _rebuild_section_widgets(self) -> None:
         if self.sections_layout is None:
@@ -260,13 +424,21 @@ class FormulaContent(
             target_selector.activated.connect(
                 partial(self.handle_column_activation, index)
             )
-            target_row.addWidget(QLabel("Target:"))
-            target_row.addWidget(target_selector)
+            dtype_selector = QComboBox()
+            dtype_selector.addItems(DTYPE_OPTIONS)
+            dtype_label, dtype_enabled = self._dtype_state_for_section(index)
+            dtype_selector.setCurrentText(dtype_label or AUTO_DTYPE_OPTION)
+            dtype_selector.setEnabled(dtype_enabled)
+            dtype_selector.setToolTip("Data type for the target column")
+            dtype_selector.activated.connect(
+                partial(self.handle_dtype_activation, index)
+            )
+            target_row.addWidget(target_selector, 1)
+            target_row.addWidget(dtype_selector, 1)
 
-            formula_label = QLabel("Formula:")
             formula_input = SQLFormulaWidget()
             formula_input.set_placeholder_text(FORMULA_PLACEHOLDER)
-            formula_input.setMinimumHeight(120)
+            formula_input.setFixedHeight(section.get("editor_height", 120))
             formula_input.set_available_columns(
                 self._available_columns_before_section(index)
             )
@@ -275,6 +447,12 @@ class FormulaContent(
             formula_input.set_validate_callback(
                 partial(self.validate_section_text, index)
             )
+            debounce_timer = QTimer(card)
+            debounce_timer.setSingleShot(True)
+            debounce_timer.setInterval(ERROR_CHECK_DEBOUNCE_MS)
+            debounce_timer.timeout.connect(partial(self._debounced_commit, index))
+            formula_input.textChanged.connect(debounce_timer.start)
+            formula_input.editingFinished.connect(debounce_timer.stop)
             formula_input.editingFinished.connect(
                 partial(self.commit_formula_text, index)
             )
@@ -287,8 +465,8 @@ class FormulaContent(
 
             card_layout.addLayout(header_layout)
             card_layout.addLayout(target_row)
-            card_layout.addWidget(formula_label)
             card_layout.addWidget(formula_input)
+            card_layout.addWidget(_ResizeGrip(self, index, formula_input))
             card_layout.addWidget(error_label)
 
             self.sections_layout.addWidget(card)
@@ -298,6 +476,7 @@ class FormulaContent(
                     "title_label": title_label,
                     "remove_button": remove_button,
                     "target_selector": target_selector,
+                    "dtype_selector": dtype_selector,
                     "formula_input": formula_input,
                     "error_label": error_label,
                 }
@@ -346,6 +525,14 @@ class FormulaContent(
             selector.addItems(self._target_items_for_section(index))
             self._set_target_selector_value(selector, current_target)
             selector.blockSignals(False)
+
+            dtype_selector = widgets.get("dtype_selector")
+            if dtype_selector is not None:
+                dtype_label, dtype_enabled = self._dtype_state_for_section(index)
+                dtype_selector.blockSignals(True)
+                dtype_selector.setCurrentText(dtype_label or AUTO_DTYPE_OPTION)
+                dtype_selector.setEnabled(dtype_enabled)
+                dtype_selector.blockSignals(False)
 
             try:
                 widgets["formula_input"].set_available_columns(
@@ -433,6 +620,7 @@ class FormulaContent(
         """App-level dialog loop for adding a target column."""
         existing_target = self.formula_sections[section_index]["target_column"]
         known = self._known_target_names(exclude_section=section_index)
+        parent = parent or self.window()
         text = existing_target
         while True:
             new_column, accepted = QInputDialog.getText(
@@ -465,12 +653,32 @@ class FormulaContent(
         self.update_data()
         self.store_history(old_state)
 
+    def handle_dtype_activation(self, section_index: int, index: int) -> None:
+        """Handle target dtype selection for a formula section."""
+        if self.history.is_restoring_history:
+            return
+
+        try:
+            selector: QComboBox = self.section_widgets[section_index]["dtype_selector"]
+            selected_text = selector.itemText(index)
+        except (IndexError, KeyError, RuntimeError):
+            return
+
+        self._set_section_dtype(section_index, selected_text)
+
+    def _debounced_commit(self, section_index: int) -> None:
+        """Apply a section's text after the debounce pause (history every pause)."""
+        if self.history.is_restoring_history:
+            return
+        try:
+            self.commit_formula_text(section_index)
+        except RuntimeError:
+            pass
+
     def commit_formula_text(self, section_index: int) -> None:
         """Commit a section's formula text after editing finishes."""
         if self.history.is_restoring_history:
             return
-
-        old_state = self._current_state()
 
         try:
             current_formula = (
@@ -479,9 +687,13 @@ class FormulaContent(
         except (IndexError, KeyError, RuntimeError):
             return
 
+        # Compare before any widget->state sync so real edits are detected.
         if self.formula_sections[section_index]["formula_text"] == current_formula:
             return
 
+        old_state = {
+            "formula_sections": [section.copy() for section in self.formula_sections]
+        }
         self.formula_sections[section_index]["formula_text"] = current_formula
         self.update_data()
         self.store_history(old_state)
@@ -549,13 +761,30 @@ class FormulaContent(
             sql_formula = self._replace_column_names(sql_formula, column_name)
         return sql_formula
 
+    @staticmethod
+    def _shorten_error(message: str) -> str:
+        """Reduce a DuckDB error to its first useful sentence."""
+        text = (message or "").strip().replace("\r\n", "\n")
+        match = re.search(r'Referenced column "[^"]+" not found', text)
+        if match:
+            return match.group()
+        first_line = text.split("\n", 1)[0].strip()
+        for prefix in ("Binder Error:", "Catalog Error:", "Parser Error:"):
+            if first_line.startswith(prefix):
+                first_line = first_line[len(prefix) :].strip()
+        return first_line[:160]
+
     def _section_query(
         self,
-        section: Dict[str, str],
+        section: Dict[str, Any],
         available_columns: List[str],
         relation_name: str,
     ) -> Tuple[str, List[str]]:
-        """Build the SELECT query for one section (shared by run/codegen)."""
+        """Build the SELECT query for one section (shared by run/codegen).
+
+        A picked dtype casts new target columns only; overwrites keep the
+        expression result untouched. CAST failures surface as section errors.
+        """
         target_column = section["target_column"]
         sql_formula = self._prepare_formula_for_sql(
             section["formula_text"], available_columns
@@ -567,6 +796,9 @@ class FormulaContent(
                 f"FROM {relation_name}"
             )
         else:
+            db_type = DTYPE_TO_DUCKDB.get(section.get("target_dtype") or "")
+            if db_type:
+                sql_formula = f"CAST({sql_formula} AS {db_type})"
             query = (
                 f"SELECT *, {sql_formula} AS {self._quote_identifier(target_column)} "
                 f"FROM {relation_name}"
@@ -577,7 +809,7 @@ class FormulaContent(
     def _run_sections(
         self,
         current_df: pl.DataFrame,
-        configured: List[Tuple[int, Dict[str, str]]],
+        configured: List[Tuple[int, Dict[str, Any]]],
         explain_index: Optional[int] = None,
     ) -> Tuple[pl.DataFrame, List[str], Dict[int, str]]:
         """Apply configured (index, section) pairs in order.
@@ -601,7 +833,7 @@ class FormulaContent(
                     else:
                         current_df = duck.execute(query).pl()
                 except Exception as exc:
-                    errors[index] = str(exc)
+                    errors[index] = self._shorten_error(str(exc))
                     break
         return current_df, available_columns, errors
 
@@ -686,7 +918,7 @@ class FormulaContent(
         finally:
             self._refresh_section_errors()
 
-    def store_history(self, old_state: Dict[str, List[Dict[str, str]]]) -> None:
+    def store_history(self, old_state: Dict[str, List[Dict[str, Any]]]) -> None:
         """Store undo/redo history for formula-section changes."""
         new_state = self._current_state()
 

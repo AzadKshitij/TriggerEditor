@@ -94,7 +94,14 @@ def test_formula_content_normalizes_sections() -> None:
         ]
     )
 
-    assert empty_sections == [{"target_column": "", "formula_text": ""}]
+    assert empty_sections == [
+        {
+            "target_column": "",
+            "formula_text": "",
+            "editor_height": 120,
+            "target_dtype": "",
+        }
+    ]
     assert len(oversized_sections) == MAX_FORMULA_SECTIONS
 
 
@@ -233,12 +240,174 @@ def test_escaped_quotes_do_not_raise() -> None:
     assert content.data["quote"].to_list() == ["it's", "it's"]
 
 
+def test_target_dtype_normalized_and_defaulted() -> None:
+    content = _build_formula_content([])
+    sections = content._normalize_sections(
+        [
+            {"target_column": "a", "formula_text": "1", "target_dtype": "Integer"},
+            {"target_column": "b", "formula_text": "2", "target_dtype": "Nope"},
+            {"target_column": "c", "formula_text": "3"},
+        ]
+    )
+    assert [s["target_dtype"] for s in sections] == ["Integer", "", ""]
+    assert all(s["editor_height"] == 120 for s in sections)
+
+
 def test_debounce_is_fixed_at_800ms() -> None:
     from trigger_designer.qt.widgets.sql_formula_editor import (
         ERROR_CHECK_DEBOUNCE_MS,
     )
 
     assert ERROR_CHECK_DEBOUNCE_MS == 800
+
+
+def test_shorten_error_keeps_only_referenced_column() -> None:
+    blob = (
+        'Binder Error: Referenced column "RelevancyScore" not found in FROM clause!\n'
+        'Candidate bindings: "Relevancy Score", "Hot Keyword", "Seed"\n'
+        "LINE 1: SELECT t, CASE when [RelevancyScore] > 95 then 'pass' else 'fail' END AS \"Check\""
+    )
+    assert (
+        FormulaContent._shorten_error(blob)
+        == 'Referenced column "RelevancyScore" not found'
+    )
+    assert FormulaContent._shorten_error("Binder Error: boom\nsecond line") == "boom"
+
+
+def test_update_data_reports_short_section_error() -> None:
+    content = _build_formula_content(
+        [{"target_column": "x", "formula_text": "NOSUCHFUNC([amount])"}]
+    )
+    content.update_data()
+    assert content.last_error.startswith("Section 1:")
+    assert "Candidate bindings" not in content.last_error
+    assert "LINE" not in content.last_error
+    assert content.section_errors == {0: content.last_error.removeprefix("Section 1: ")}
+
+
+def test_editor_height_normalized_and_clamped() -> None:
+    content = _build_formula_content([])
+    sections = content._normalize_sections(
+        [
+            {"target_column": "a", "formula_text": "1", "editor_height": 300},
+            {"target_column": "b", "formula_text": "2", "editor_height": 5},
+            {"target_column": "c", "formula_text": "3"},
+        ]
+    )
+    assert [s["editor_height"] for s in sections] == [300, 60, 120]
+
+
+def test_debounced_commit_applies_without_focus_out() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        TriggerNode_Formula,
+    )
+
+    node = TriggerNode_Formula(Scene())
+    content = node.content
+    content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    content._set_section_target(0, "double_amount")
+    host = QWidget()
+    content.create_layout(QVBoxLayout(host))
+    content.section_widgets[0]["formula_input"].set_text("[amount] * 2")
+    content._debounced_commit(0)
+    assert content.last_error == ""
+    assert content.data["double_amount"].to_list() == [20, 50]
+    assert content.section_widgets[0]["formula_input"].height() == 120
+
+
+def test_dtype_cast_applies_to_new_columns_only() -> None:
+    content = _build_formula_content(
+        [
+            {
+                "target_column": "half",
+                "formula_text": "[amount] / 2",
+                "target_dtype": "Integer",
+            },
+            {
+                "target_column": "amount",
+                "formula_text": "[amount] + 1",
+                "target_dtype": "String",
+            },
+        ]
+    )
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data["half"].dtype == pl.Int64
+    assert content.data["amount"].dtype == pl.Int64
+
+    generated_code = content.get_code()
+    assert "CAST" in generated_code
+    assert generated_code.count("CAST") == 1
+
+
+def test_dtype_state_existing_locked_new_editable() -> None:
+    content = _build_formula_content(
+        [
+            {"target_column": "amount", "formula_text": "[amount]"},
+            {
+                "target_column": "fresh",
+                "formula_text": "[amount]",
+                "target_dtype": "Float",
+            },
+        ]
+    )
+    assert content._dtype_state_for_section(0) == ("Integer", False)
+    assert content._dtype_state_for_section(1) == ("Float", True)
+
+
+def test_dtype_dropdown_row_and_scroll_area() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+    from qtpy.QtWidgets import QScrollArea, QVBoxLayout, QWidget
+
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        DTYPE_OPTIONS,
+        TriggerNode_Formula,
+    )
+
+    node = TriggerNode_Formula(Scene())
+    content = node.content
+    content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    host = QWidget()
+    content.create_layout(QVBoxLayout(host))
+    widgets = content.section_widgets[0]
+    assert [widgets["dtype_selector"].itemText(i) for i in range(9)] == DTYPE_OPTIONS
+    assert host.findChild(QScrollArea) is not None
+
+    content._set_section_target(0, "fresh")
+    widgets = content.section_widgets[0]
+    assert widgets["dtype_selector"].isEnabled()
+    integer_index = widgets["dtype_selector"].findText("Integer")
+    content.handle_dtype_activation(0, integer_index)
+    assert content.formula_sections[0]["target_dtype"] == "Integer"
+
+
+def test_target_name_survives_serialize_round_trip() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        TriggerNode_Formula,
+    )
+
+    scene = Scene()
+    node = TriggerNode_Formula(scene)
+    content = node.content
+    content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    content._set_section_target(0, "Check")
+    assert content.formula_sections[0]["target_column"] == "Check"
+
+    payload = content.serialize()
+    assert payload["formula_sections"][0]["target_column"] == "Check"
+
+    scene2 = Scene()
+    node2 = TriggerNode_Formula(scene2)
+    assert node2.content.deserialize(payload, hashmap={}) is not False
+    assert node2.content.formula_sections[0]["target_column"] == "Check"
 
 
 def test_new_column_error() -> None:
@@ -262,10 +431,19 @@ def main() -> None:
     test_validate_section_text_catches_bad_function()
     test_validate_section_text_passes_good_formula()
     test_new_column_error()
+    test_target_name_survives_serialize_round_trip()
     test_double_quoted_text_is_a_string()
     test_bracket_text_inside_strings_is_ignored()
     test_escaped_quotes_do_not_raise()
     test_debounce_is_fixed_at_800ms()
+    test_shorten_error_keeps_only_referenced_column()
+    test_update_data_reports_short_section_error()
+    test_editor_height_normalized_and_clamped()
+    test_debounced_commit_applies_without_focus_out()
+    test_target_dtype_normalized_and_defaulted()
+    test_dtype_cast_applies_to_new_columns_only()
+    test_dtype_state_existing_locked_new_editable()
+    test_dtype_dropdown_row_and_scroll_area()
     print("ok")
 
 

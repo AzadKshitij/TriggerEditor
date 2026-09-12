@@ -110,7 +110,15 @@
         "formula_sections": [
           {
             "target_column": "Check",
-            "formula_text": "CASE when [Relevancy Score] > 95 then 'pass' else 'fail' End"
+            "formula_text": "CASE when [Relevancy Score] > 95 \nthen 'pass' \nelse 'fail' \nEnd",
+            "editor_height": 88,
+            "target_dtype": "String"
+          },
+          {
+            "target_column": "",
+            "formula_text": "",
+            "editor_height": 94,
+            "target_dtype": ""
           }
         ]
       },
@@ -813,6 +821,108 @@
       },
       "node_code": 5,
       "node_type": "preparation"
+    },
+    {
+      "id": 2600581196496,
+      "title": "Select",
+      "pos_x": -446.7773437499998,
+      "pos_y": 41.50390625,
+      "inputs": [
+        {
+          "id": 2600581197776,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2600581198096,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "Keyword": "String",
+            "Seed": "String",
+            "Source": "String",
+            "Country": "String",
+            "Autocomplete Position": "String",
+            "Difficulty": "String",
+            "Hot Keyword": "String",
+            "Relevancy Score": "Float64"
+          },
+          "column_order": []
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation"
     }
   ],
   "edges": [
@@ -821,12 +931,6 @@
       "edge_type": 5,
       "start": 2176004925488,
       "end": 2176088582048
-    },
-    {
-      "id": 2176088877392,
-      "edge_type": 5,
-      "start": 2176004925488,
-      "end": 2176088580176
     },
     {
       "id": 2176089004176,
@@ -899,12 +1003,24 @@
       "edge_type": 5,
       "start": 2176088573408,
       "end": 1933365322816
+    },
+    {
+      "id": 2600581684832,
+      "edge_type": 5,
+      "start": 2176004925488,
+      "end": 2600581197776
+    },
+    {
+      "id": 2600579660688,
+      "edge_type": 5,
+      "start": 2600581198096,
+      "end": 2176088580176
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-11T15:01:46Z"
+    "saved_at": "2026-09-12T12:10:08Z"
   }
 }

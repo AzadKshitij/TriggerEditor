@@ -10,7 +10,7 @@ This file documents what the Formula node and SQL formula editor support today.
 - Later sections can reference columns created by earlier sections in the same node.
 - Column references must use square brackets, for example `[Order Date]` or `[Customer Name]`. Anything in `'...'` or `"..."` is a string literal, never a column (`"..."` is auto-converted to `'...'` on commit).
 - String literals may use single or double quotes, for example `'Active'` or `"Active"` (SQL `''`/`""` escapes supported).
-- The editor does lightweight validation for bracketed column names, quotes, parentheses, and `CASE ... END` balance. It does not do full SQL parsing.
+- The editor validates bracketed column names, quotes, parentheses, and `CASE ... END` balance, plus a DuckDB `EXPLAIN` dry-run of each section against a 200-row sample (~800ms after typing stops).
 
 ## Syntax Highlighting in the Editor
 
@@ -299,3 +299,8 @@ Examples can be found in:
 - If a cast may fail, prefer `TRY_CAST(...)` so bad values become `NULL` instead of throwing an error.
 - If you add a new column in section 1, you can reference it in section 2 and later.
 - Incomplete sections are ignored until both a target column and a formula are provided.
+- Target-column names and editor heights are saved with the workflow and restored on load.
+- Each section has a data-type dropdown next to the target: new columns offer `Auto` (no cast) plus `String`, `Integer`, `Float`, `Boolean`, `Date`, `Datetime`, `Time`, `Categorical`, applied as a DuckDB `CAST` on run; existing columns show their actual type, disabled. Failed casts raise a section error.
+- Typing pauses (~800ms) recompute live with undo history; leaving the editor commits too.
+- Each editor box is drag-resizable via the grip below it (60–600px, saved per section).
+- DuckDB errors are shortened to one line (e.g. `Referenced column "X" not found`); failing sections are badged on their own card without blanking earlier sections.
