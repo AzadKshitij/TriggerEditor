@@ -810,9 +810,10 @@ class FormulaContent(
             section["formula_text"], available_columns
         )
         if target_column in available_columns:
+            # REPLACE keeps the column at its original ordinal position
+            # (EXCLUDE + re-add would move it to the end of the table).
             query = (
-                f"SELECT * EXCLUDE {self._quote_identifier(target_column)}, "
-                f"{sql_formula} AS {self._quote_identifier(target_column)} "
+                f"SELECT * REPLACE ({sql_formula} AS {self._quote_identifier(target_column)}) "
                 f"FROM {relation_name}"
             )
         else:

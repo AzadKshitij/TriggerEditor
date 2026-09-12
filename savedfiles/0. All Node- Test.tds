@@ -112,11 +112,11 @@
             "target_column": "Check",
             "formula_text": "CASE when [Relevancy Score] > 95 \nthen 'pass' \nelse 'fail' \nEnd",
             "editor_height": 88,
-            "target_dtype": "String"
+            "target_dtype": "Categorical"
           },
           {
-            "target_column": "Keyword",
-            "formula_text": "\"Kshitij\"",
+            "target_column": "Autocomplete Position",
+            "formula_text": "[Autocomplete Position] * 2",
             "editor_height": 94,
             "target_dtype": ""
           }
@@ -874,7 +874,7 @@
           {
             "checked": true,
             "text": "Autocomplete Position",
-            "dtype": "String",
+            "dtype": "Int64",
             "rename": ""
           },
           {
@@ -913,7 +913,7 @@
             "Seed": "String",
             "Source": "String",
             "Country": "String",
-            "Autocomplete Position": "String",
+            "Autocomplete Position": "Int64",
             "Difficulty": "String",
             "Hot Keyword": "String",
             "Relevancy Score": "Float64"
@@ -1021,6 +1021,6 @@
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-12T12:26:30Z"
+    "saved_at": "2026-09-12T12:32:34Z"
   }
 }

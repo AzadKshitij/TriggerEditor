@@ -386,6 +386,19 @@ def test_dtype_dropdown_row_and_scroll_area() -> None:
     assert content.formula_sections[0]["target_dtype"] == "Integer"
 
 
+def test_existing_column_keeps_position_new_appends_last() -> None:
+    content = _build_formula_content(
+        [
+            {"target_column": "amount", "formula_text": "[amount] * 2"},
+            {"target_column": "brand_new", "formula_text": "[amount] + 1"},
+        ]
+    )
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data.columns == ["amount", "category", "order_date", "brand_new"]
+    assert content.data["amount"].to_list() == [20, 50]
+
+
 def test_config_dock_skips_rebuild_for_same_node() -> None:
     _get_app()
     from nodeeditor.node_scene import Scene
@@ -507,6 +520,7 @@ def main() -> None:
     test_dtype_cast_applies_to_new_columns_only()
     test_dtype_state_existing_locked_new_editable()
     test_dtype_dropdown_row_and_scroll_area()
+    test_existing_column_keeps_position_new_appends_last()
     test_config_dock_skips_rebuild_for_same_node()
     test_formula_refreshes_selectors_on_schema_change()
     print("ok")
