@@ -115,8 +115,8 @@
             "target_dtype": "String"
           },
           {
-            "target_column": "",
-            "formula_text": "",
+            "target_column": "Keyword",
+            "formula_text": "\"Kshitij\"",
             "editor_height": 94,
             "target_dtype": ""
           }
@@ -407,8 +407,8 @@
     {
       "id": 1933364878576,
       "title": "Join",
-      "pos_x": 92.60937500000003,
-      "pos_y": 601.0195312499999,
+      "pos_x": 89.55761718750003,
+      "pos_y": 618.3300781249998,
       "inputs": [
         {
           "id": 1933365313888,
@@ -1021,6 +1021,6 @@
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-12T12:10:08Z"
+    "saved_at": "2026-09-12T12:26:30Z"
   }
 }

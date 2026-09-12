@@ -10,6 +10,7 @@ if TYPE_CHECKING:
 class ConfigDock(QDockWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__("Node Configuration", parent)
+        self._current_key = None
         self.initUI()
 
     def initUI(self) -> None:
@@ -25,34 +26,51 @@ class ConfigDock(QDockWidget):
         )
 
     def updateConfig(self, nodes: List["TriggerNode"]) -> None:
-        if len(nodes) == 1:
-            node: TriggerNode = nodes[0]
-            if hasattr(node, "node") or hasattr(node, "socket"):
-                try:
-                    logger.debug(f"Updating config for node type: {type(node)}")
-                    self.clear_dock()
-                    logger.debug("Cleared the dock!!!")
-                    content = node.content
-                    previous_input_tracking = getattr(
-                        content, "_suspend_input_tracking", False
-                    )
-                    previous_node_evaluation = getattr(
-                        content, "_suspend_node_evaluation", False
-                    )
-                    content._suspend_input_tracking = True
-                    content._suspend_node_evaluation = True
-                    try:
-                        content.create_layout(self.dock_layout)  # type: ignore
-                    finally:
-                        content._suspend_input_tracking = previous_input_tracking
-                        content._suspend_node_evaluation = previous_node_evaluation
-
-                    self.dock_widget.setLayout(self.dock_layout)
-                except Exception as e:
-                    traceback.print_exc()
-                    logger.trace(e)
-        else:
+        if len(nodes) != 1:
+            self._current_key = None
             self.clear_dock()
+            return
+        node: TriggerNode = nodes[0]
+        if not (hasattr(node, "node") or hasattr(node, "socket")):
+            self._current_key = None
+            self.clear_dock()
+            return
+        try:
+            content = node.content
+        except Exception as e:
+            traceback.print_exc()
+            logger.trace(e)
+            return
+        if content is None:
+            self._current_key = None
+            self.clear_dock()
+            return
+        if id(content) == self._current_key:
+            # Already showing this node: skip the wipe so focused editors
+            # keep focus and scroll positions survive. Live widgets refresh
+            # themselves through their own non-destructive paths.
+            return
+        self._current_key = id(content)
+        try:
+            logger.debug(f"Updating config for node type: {type(node)}")
+            self.clear_dock()
+            logger.debug("Cleared the dock!!!")
+            previous_input_tracking = getattr(content, "_suspend_input_tracking", False)
+            previous_node_evaluation = getattr(
+                content, "_suspend_node_evaluation", False
+            )
+            content._suspend_input_tracking = True
+            content._suspend_node_evaluation = True
+            try:
+                content.create_layout(self.dock_layout)  # type: ignore
+            finally:
+                content._suspend_input_tracking = previous_input_tracking
+                content._suspend_node_evaluation = previous_node_evaluation
+
+            self.dock_widget.setLayout(self.dock_layout)
+        except Exception as e:
+            traceback.print_exc()
+            logger.trace(e)
 
     def clear_dock(self) -> None:
         # for i in reversed(range(self.dock_layout.count())):

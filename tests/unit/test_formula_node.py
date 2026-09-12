@@ -386,6 +386,69 @@ def test_dtype_dropdown_row_and_scroll_area() -> None:
     assert content.formula_sections[0]["target_dtype"] == "Integer"
 
 
+def test_config_dock_skips_rebuild_for_same_node() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from trigger_designer.qt.docks.node_config import ConfigDock
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        TriggerNode_Formula,
+    )
+
+    scene = Scene()
+    node = TriggerNode_Formula(scene)
+    node.content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    dock = ConfigDock()
+    dock.updateConfig([node.grNode])
+    assert dock.dock_layout.count() > 0
+    first = [
+        dock.dock_layout.itemAt(i).widget() for i in range(dock.dock_layout.count())
+    ]
+
+    dock.updateConfig([node.grNode])
+    second = [
+        dock.dock_layout.itemAt(i).widget() for i in range(dock.dock_layout.count())
+    ]
+    assert first == second
+
+    node2 = TriggerNode_Formula(scene)
+    node2.content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    dock.updateConfig([node2.grNode])
+    third = [
+        dock.dock_layout.itemAt(i).widget() for i in range(dock.dock_layout.count())
+    ]
+    assert third != first
+
+    dock.updateConfig([])
+    assert dock.dock_layout.count() == 0
+    dock.deleteLater()
+
+
+def test_formula_refreshes_selectors_on_schema_change() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        TriggerNode_Formula,
+    )
+
+    node = TriggerNode_Formula(Scene())
+    content = node.content
+    content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    host = QWidget()
+    content.create_layout(QVBoxLayout(host))
+    selector = content.section_widgets[0]["target_selector"]
+    assert selector.findText("amount") >= 0
+    assert selector.findText("total") < 0
+
+    content.incom_data = pl.DataFrame({"amount": [10, 25], "total": [1, 2]})
+    content.refresh_dependencies_for_new_data()
+    assert selector.findText("total") >= 0
+    host.deleteLater()
+
+
 def test_target_name_survives_serialize_round_trip() -> None:
     _get_app()
     from nodeeditor.node_scene import Scene
@@ -444,6 +507,8 @@ def main() -> None:
     test_dtype_cast_applies_to_new_columns_only()
     test_dtype_state_existing_locked_new_editable()
     test_dtype_dropdown_row_and_scroll_area()
+    test_config_dock_skips_rebuild_for_same_node()
+    test_formula_refreshes_selectors_on_schema_change()
     print("ok")
 
 

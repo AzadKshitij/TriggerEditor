@@ -515,6 +515,26 @@ class FormulaContent(
             widgets["title_label"].setText(f"Formula {index + 1}")
             widgets["remove_button"].setEnabled(section_count > 1)
 
+    def refresh_dependencies_for_new_data(self) -> None:
+        """Refresh selectors when the input schema changed (no widget rebuild).
+
+        The config dock no longer rebuilds on every eval, so without this the
+        target/dtype dropdowns would go stale when new columns arrive. Only
+        combo items are touched: editors keep focus and scroll is preserved.
+        """
+        if self.incom_data is None or not self.section_widgets:
+            return
+        try:
+            columns = list(self.incom_data.columns)
+        except Exception:
+            return
+        if columns != getattr(self, "_dep_columns", None):
+            self._dep_columns = columns
+            try:
+                self._refresh_section_dependencies()
+            except RuntimeError:
+                pass
+
     def _refresh_section_dependencies(self) -> None:
         for index, widgets in enumerate(self.section_widgets):
             selector = widgets["target_selector"]
@@ -620,7 +640,7 @@ class FormulaContent(
         """App-level dialog loop for adding a target column."""
         existing_target = self.formula_sections[section_index]["target_column"]
         known = self._known_target_names(exclude_section=section_index)
-        parent = parent or self.window()
+        parent = parent
         text = existing_target
         while True:
             new_column, accepted = QInputDialog.getText(
@@ -1059,6 +1079,7 @@ class TriggerNode_Formula(TriggerNode):
 
         self.content.incom_data = input_value.get("data")
         self.content.incoming_variable = input_value.get("variable_name")
+        self.content.refresh_dependencies_for_new_data()
         self.content.update_data()
 
         if self.content.last_error:
