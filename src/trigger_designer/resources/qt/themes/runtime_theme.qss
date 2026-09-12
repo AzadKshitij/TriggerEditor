@@ -1724,3 +1724,23 @@ QLabel#ConfigSectionInfo {
   margin: 2px; }
 QLabel#EmptyStateLabel {
   color: #999999; }
+/* Formula section cards: borderless, separated by background only */
+QFrame#formulaSectionCard {
+  background-color: #14171b;
+  border: none; }
+QFrame#formulaResizeGrip {
+  background-color: #3c3c3c; }
+QFrame#formulaSeparator {
+  background-color: #3c3c3c;
+  border: none; }
+QLabel#formulaSectionError {
+  color: #ff6b6b;
+  font-size: 11px; }
+QLabel#formulaSectionCount {
+  color: #999999; }
+QTextEdit#formulaEditor {
+  background-color: #14171b;
+  color: #ffffff;
+  border: 1px solid #3c3c3c;
+  selection-background-color: #264f78;
+  selection-color: #ffffff; }

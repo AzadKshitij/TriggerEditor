@@ -1724,3 +1724,23 @@ QLabel#ConfigSectionInfo {{
   margin: 2px; }}
 QLabel#EmptyStateLabel {{
   color: {text_inactive}; }}
+/* Formula section cards: borderless, separated by background only */
+QFrame#formulaSectionCard {{
+  background-color: {card_background};
+  border: none; }}
+QFrame#formulaResizeGrip {{
+  background-color: {card_border}; }}
+QFrame#formulaSeparator {{
+  background-color: {card_border};
+  border: none; }}
+QLabel#formulaSectionError {{
+  color: {error_text};
+  font-size: 11px; }}
+QLabel#formulaSectionCount {{
+  color: {text_inactive}; }}
+QTextEdit#formulaEditor {{
+  background-color: {editor_background};
+  color: {text_primary};
+  border: 1px solid {card_border};
+  selection-background-color: #264f78;
+  selection-color: #ffffff; }}

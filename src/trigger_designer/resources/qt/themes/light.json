@@ -35,8 +35,13 @@
     "border_dark": "#cccccc",
     "border_accent": "#0078d4",
 
-    "border_width": "1px",
+    "border_width": "1px",              
     "border_radius": "4px",
+
+    "card_background": "#ffffff",
+    "card_border": "#cccccc",
+    "editor_background": "#ffffff",
+    "error_text": "#b00020",
 
     "spacing_tiny": "2px",
     "spacing_small": "4px",

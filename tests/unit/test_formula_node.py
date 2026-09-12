@@ -378,6 +378,11 @@ def test_dtype_dropdown_row_and_scroll_area() -> None:
     assert [widgets["dtype_selector"].itemText(i) for i in range(9)] == DTYPE_OPTIONS
     assert host.findChild(QScrollArea) is not None
 
+    from trigger_designer.qt.widgets.common import NoWheelComboBox
+
+    assert isinstance(widgets["target_selector"], NoWheelComboBox)
+    assert isinstance(widgets["dtype_selector"], NoWheelComboBox)
+
     content._set_section_target(0, "fresh")
     widgets = content.section_widgets[0]
     assert widgets["dtype_selector"].isEnabled()
@@ -397,6 +402,101 @@ def test_existing_column_keeps_position_new_appends_last() -> None:
     assert content.last_error == ""
     assert content.data.columns == ["amount", "category", "order_date", "brand_new"]
     assert content.data["amount"].to_list() == [20, 50]
+
+
+def test_formula_cards_borderless_themed_untitled() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        TriggerNode_Formula,
+    )
+
+    node = TriggerNode_Formula(Scene())
+    content = node.content
+    content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    content.formula_sections.append(content._default_section())
+    host = QWidget()
+    content.create_layout(QVBoxLayout(host))
+    assert len(content.section_widgets) == 2
+    for widgets in content.section_widgets:
+        assert "title_label" not in widgets
+        assert widgets["card"].styleSheet() == ""
+        assert widgets["error_label"].styleSheet() == ""
+        assert widgets["remove_button"].toolTip() == "Remove formula"
+    assert content.section_widgets[0]["remove_button"].isEnabled()
+
+    from qtpy.QtWidgets import QFrame
+
+    separators = [
+        frame
+        for frame in host.findChildren(QFrame)
+        if frame.objectName() == "formulaSeparator"
+    ]
+    assert len(separators) == 1
+
+    row = None
+    card_layout = content.section_widgets[0]["card"].layout()
+    for i in range(card_layout.count()):
+        child = card_layout.itemAt(i).layout()
+        if child is not None and any(
+            child.itemAt(j).widget() is content.section_widgets[0]["target_selector"]
+            for j in range(child.count())
+        ):
+            row = child
+    assert row is not None
+    assert row.indexOf(content.section_widgets[0]["remove_button"]) >= 0
+    host.deleteLater()
+
+
+def test_formula_sidebar_uses_compact_spacing() -> None:
+    _get_app()
+    from nodeeditor.node_scene import Scene
+    from qtpy.QtWidgets import QVBoxLayout, QWidget
+
+    from trigger_designer.qt.widgets.nodes.Preparation.formula import (
+        TriggerNode_Formula,
+    )
+
+    node = TriggerNode_Formula(Scene())
+    content = node.content
+    content.incom_data = pl.DataFrame({"amount": [10, 25]})
+    host = QWidget()
+    content.create_layout(QVBoxLayout(host))
+    assert content.sections_layout.spacing() == 2
+    card_margins = content.section_widgets[0]["card"].layout().contentsMargins()
+    assert (card_margins.left(), card_margins.top()) == (4, 4)
+    assert content.section_widgets[0]["card"].layout().spacing() == 2
+    host.deleteLater()
+
+
+def test_dropdowns_ignore_wheel_without_focus() -> None:
+    _get_app()
+    from qtpy.QtCore import QPoint, QPointF, Qt
+    from qtpy.QtGui import QWheelEvent
+    from qtpy.QtWidgets import QApplication
+
+    from trigger_designer.qt.widgets.common import NoWheelComboBox
+
+    combo = NoWheelComboBox()
+    combo.addItems(["a", "b", "c"])
+    combo.setCurrentIndex(0)
+
+    event = QWheelEvent(
+        QPointF(5, 5),
+        QPointF(5, 5),
+        QPoint(0, 0),
+        QPoint(0, 120),
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+        Qt.ScrollPhase.NoScrollPhase,
+        False,
+    )
+    QApplication.sendEvent(combo, event)
+    assert not event.isAccepted()
+    assert combo.currentIndex() == 0
+    combo.deleteLater()
 
 
 def test_config_dock_skips_rebuild_for_same_node() -> None:
@@ -522,6 +622,9 @@ def main() -> None:
     test_dtype_dropdown_row_and_scroll_area()
     test_existing_column_keeps_position_new_appends_last()
     test_config_dock_skips_rebuild_for_same_node()
+    test_dropdowns_ignore_wheel_without_focus()
+    test_formula_sidebar_uses_compact_spacing()
+    test_formula_cards_borderless_themed_untitled()
     test_formula_refreshes_selectors_on_schema_change()
     print("ok")
 

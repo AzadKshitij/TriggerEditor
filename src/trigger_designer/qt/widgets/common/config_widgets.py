@@ -5,6 +5,7 @@ from typing import Callable, Iterable, Optional
 from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QGroupBox,
     QLabel,
     QLayout,
@@ -12,6 +13,25 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+
+class NoWheelComboBox(QComboBox):
+    """Combo box that ignores the mouse wheel unless its popup is open.
+
+    Prevents accidental selection changes when scrolling a sidebar with
+    the cursor resting over a dropdown (a focused combo would otherwise
+    keep stealing wheel events long after it was touched).
+    """
+
+    def wheelEvent(self, event) -> None:
+        try:
+            popup_open = self.view().isVisible()
+        except RuntimeError:
+            popup_open = False
+        if not popup_open:
+            event.ignore()
+            return
+        super().wheelEvent(event)
 
 
 class ConfigSection(QGroupBox):

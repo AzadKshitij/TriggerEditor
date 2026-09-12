@@ -37,6 +37,11 @@
 
     "border_width": "1px",              
     "border_radius": "4px",
+
+    "card_background": "#14171b",
+    "card_border": "#3c3c3c",
+    "editor_background": "#14171b",
+    "error_text": "#ff6b6b",
     
     "spacing_tiny": "1px",
     "spacing_small": "2px",

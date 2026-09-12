@@ -304,3 +304,4 @@ Examples can be found in:
 - Typing pauses (~800ms) recompute live with undo history; leaving the editor commits too.
 - Each editor box is drag-resizable via the grip below it (60–600px, saved per section).
 - DuckDB errors are shortened to one line (e.g. `Referenced column "X" not found`); failing sections are badged on their own card without blanking earlier sections.
+- The sidebar shows borderless flush cards (no per-card titles; the `N/5` counter tracks sections) with a separator between formulas, a drag grip per editor, and a scrollbar for many sections.

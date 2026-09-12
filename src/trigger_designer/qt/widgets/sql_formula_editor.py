@@ -233,6 +233,7 @@ class SQLFormulaEditor(QTextEdit):
         super().__init__(parent)
 
         # Initialize components
+        self.setObjectName("formulaEditor")
         self.column_names: List[str] = []
         self.errors: List[Dict] = []
         self.external_validator: Optional[Callable[[str], List[Dict]]] = None
@@ -264,17 +265,9 @@ class SQLFormulaEditor(QTextEdit):
         # Configure editor behavior
         self.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
         self.setAcceptRichText(False)
+        # self.document().setDocumentMargin(2)
 
-        # Set colors for dark theme
-        self.setStyleSheet("""
-            QTextEdit {
-                background-color: #1e1e1e;
-                color: #d4d4d4;
-                border: 1px solid #3c3c3c;
-                selection-background-color: #264f78;
-                selection-color: #ffffff;
-            }
-        """)
+        # Colors come from base.qss (QTextEdit#formulaEditor)
 
     def setup_line_numbers(self):
         """Set up the line number area."""
