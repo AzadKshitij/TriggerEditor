@@ -5,7 +5,7 @@
 
 
 VERSION: str = "0.1.0"  # Major.Minor.Patch
-WORKFLOW_SCHEMA_VERSION: int = 1
+WORKFLOW_SCHEMA_VERSION: int = 2
 APP_NAME: str = "TriggerDesigner"
 VERSION_BRANCH: str = ""
 APP_TITLE: str = f"{APP_NAME} {VERSION} {VERSION_BRANCH}"

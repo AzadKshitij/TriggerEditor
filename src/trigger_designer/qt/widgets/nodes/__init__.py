@@ -2,7 +2,6 @@ import os
 from os.path import dirname, join
 
 from trigger_designer.core.node_configuration import (
-    CalcNodes,
     IONodes,
     JoinNodes,
     NodeTypes,
@@ -28,20 +27,6 @@ _LAZY_NODE_SPECS = [
         "icon": "node_file_output",
     },
     {
-        "module_path": "InOut.text_output",
-        "node_code": IONodes.TEXT_OUTPUT,
-        "node_type": NodeTypes.IO,
-        "node_title": "Text Output",
-        "icon": "node_file_output",
-    },
-    {
-        "module_path": "input",
-        "node_code": CalcNodes.INPUT,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Input",
-        "icon": ":/IO/qt/images/node_icons/Input/Browse.svg",
-    },
-    {
         "module_path": "Join.Append",
         "node_code": JoinNodes.APPEND,
         "node_type": NodeTypes.JOIN,
@@ -54,48 +39,6 @@ _LAZY_NODE_SPECS = [
         "node_type": NodeTypes.JOIN,
         "node_title": "Join",
         "icon": "node_join",
-    },
-    {
-        "module_path": "operations",
-        "node_code": CalcNodes.ADD,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Add",
-        "icon": "node_file_input",
-    },
-    {
-        "module_path": "operations",
-        "node_code": CalcNodes.SUB,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Substract",
-        "icon": "node_file_input",
-    },
-    {
-        "module_path": "operations",
-        "node_code": CalcNodes.MUL,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Multiply",
-        "icon": "node_file_input",
-    },
-    {
-        "module_path": "operations",
-        "node_code": CalcNodes.DIV,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Divide",
-        "icon": "node_file_input",
-    },
-    {
-        "module_path": "operations",
-        "node_code": CalcNodes.SQRT,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Square Root",
-        "icon": "node_file_input",
-    },
-    {
-        "module_path": "output",
-        "node_code": CalcNodes.OUTPUT,
-        "node_type": NodeTypes.CALC,
-        "node_title": "Output",
-        "icon": "node_file_output",
     },
     {
         "module_path": "Preparation.cleansing",

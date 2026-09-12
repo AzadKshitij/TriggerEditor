@@ -25,11 +25,14 @@ from nodeeditor.utils import dumpException
 from trigger_designer.core.node_configuration import (
     NODE_REGISTRIES,
     NodeTypes,
+    OpCodeNotRegistered,
+    get_class_from_op,
     get_class_from_opcode,
+    migrate_v1_data,
     LISTBOX_MIMETYPE,
 )
+from trigger_designer.qt.widgets.nodes.unknown import TriggerNode_Unknown
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
-from trigger_designer.qt.helpers.logger import Logger
 from trigger_designer.qt.performance_scene import TriggerScene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
@@ -56,7 +59,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         super().__init__(parent)
         print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
-        self.logger: Logger = Logger(self)
         self.rsm: ResourceManager = ResourceManager()
         self._logging_dock: Optional["LoggingDock"] = None
 
@@ -234,7 +236,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             print(f"{'=' * 50}")
             print(f"Total executions: {stats['total_executions']}")
             print(f"Total time: {stats['total_time']:.3f} seconds")
-            print(f"Average time: {stats['average_execution_time']:.3f} seconds")
+            print(
+                f"Average time: {stats['average_execution_time']:.3f} seconds")
             print(f"{'=' * 50}\n")
             logger.info(
                 f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
@@ -267,9 +270,24 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def getNodeClassFromData(self, data):
         print(f"getNodeClassFromData: {data}")
-        if "node_code" not in data:
-            return Node
-        return get_class_from_opcode(data["node_code"], data["node_type"])
+        # v2+: stable op id — immune to enum renumbering/reordering.
+        if "op" in data:
+            try:
+                return get_class_from_op(data["op"])
+            except OpCodeNotRegistered:
+                return TriggerNode_Unknown
+        # v1 and older: map frozen int codes to op ids, then resolve.
+        # Unmappable codes become a visible placeholder instead of
+        # silently loading the wrong node class.
+        if "node_code" in data or "op_code" in data:
+            op = migrate_v1_data(data)
+            if op is not None:
+                try:
+                    return get_class_from_op(op)
+                except OpCodeNotRegistered:
+                    pass
+            return TriggerNode_Unknown
+        return TriggerNode_Unknown
 
     def doEvalOutputs(self) -> None:
         # eval all output nodes
@@ -292,7 +310,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.scene.grScene.blockSignals(True)
         self.view.setUpdatesEnabled(False)
         viewport.setUpdatesEnabled(False)
-        self.view.setViewportUpdateMode(QGraphicsView.ViewportUpdateMode.NoViewportUpdate)
+        self.view.setViewportUpdateMode(
+            QGraphicsView.ViewportUpdateMode.NoViewportUpdate)
 
         if hasattr(self.scene, "beginBulkLoad"):
             self.scene.beginBulkLoad()
@@ -333,7 +352,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 )
 
             self.doEvalOutputs()
-            self.logInfo(f"File '{filename}' loaded and initialized successfully")
+            self.logInfo(
+                f"File '{filename}' loaded and initialized successfully")
             return True
 
         self.logError(f"Failed to load file: {filename}")
@@ -348,6 +368,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             self.logDebug(f"Loaded workflow schema version: {schema_version}")
 
         for node in self.getAllNodes():
+            if isinstance(node, TriggerNode_Unknown):
+                validation_messages.append(
+                    f"Unknown node type '{node.missing_op}' "
+                    f"(saved as '{node.title}'). Its settings were kept; "
+                    "install the providing node or replace it."
+                )
+                continue
             content = getattr(node, "content", None)
             validator = getattr(content, "validate_loaded_state", None)
             if not callable(validator):
@@ -356,7 +383,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             try:
                 node_messages = validator() or []
             except Exception as exc:
-                node_messages = [f"{node.node_title}: validation failed with {exc}"]
+                node_messages = [
+                    f"{node.node_title}: validation failed with {exc}"]
 
             for message in node_messages:
                 validation_messages.append(f"{node.node_title}: {message}")
@@ -410,7 +438,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         for edge in invalid_edges:
             if edge in self.scene.edges:
                 edge.remove(silent=True)
-                self.logWarning(f"Removed invalid edge during workflow load: {edge}")
+                self.logWarning(
+                    f"Removed invalid edge during workflow load: {edge}")
 
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
@@ -492,7 +521,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def onDrop(self, event: QDropEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             eventData = event.mimeData().data(LISTBOX_MIMETYPE)
-            dataStream = QDataStream(eventData, QIODevice.OpenModeFlag.ReadOnly)
+            dataStream = QDataStream(
+                eventData, QIODevice.OpenModeFlag.ReadOnly)
             pixmap = QPixmap()
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
@@ -501,7 +531,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             node_type = dataStream.readQString()
 
             mouse_position = event.pos()
-            scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
+            scene_position = self.scene.grScene.views()[
+                0].mapToScene(mouse_position)
 
             if DEBUG:
                 print(
@@ -513,9 +544,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 )
 
             try:
-                self.logDebug(f"Creating node: {node_type} (code: {node_code})")
+                self.logDebug(
+                    f"Creating node: {node_type} (code: {node_code})")
                 node_type_enum = NodeTypes(node_type)
-                node = get_class_from_opcode(node_code, node_type_enum)(self.scene)  # type: ignore
+                node = get_class_from_opcode(node_code, node_type_enum)(
+                    self.scene)  # type: ignore
                 node.setPos(scene_position.x(), scene_position.y())
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__

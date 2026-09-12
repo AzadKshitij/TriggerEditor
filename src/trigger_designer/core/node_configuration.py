@@ -4,14 +4,16 @@ from enum import IntEnum, StrEnum, auto
 
 __all__ = [
     "NodeTypes",
-    "CalcNodes",
     "IONodes",
     "PreparationNodes",
     "JoinNodes",
     "TransformNodes",
+    "ReportNodes",
     "register_node",
     "register_lazy_node",
     "get_class_from_opcode",
+    "get_class_from_op",
+    "migrate_v1_data",
 ]
 
 if TYPE_CHECKING:
@@ -20,31 +22,17 @@ if TYPE_CHECKING:
 
 class NodeTypes(StrEnum):
     IO = "input"
-    CALC = "calc"
     PREPARATION = "preparation"
     JOIN = "join"
     TRANSFORM = "transform"
     REPORT = "report"
-    # Add more node types as needed
-
-
-class CalcNodes(IntEnum):
-    INPUT = auto()
-    OUTPUT = auto()
-    ADD = auto()
-    SUB = auto()
-    MUL = auto()
-    DIV = auto()
-    SQRT = auto()
 
 
 class IONodes(IntEnum):
     BROWSER = auto()
-    DIRECTORY = auto()
     TEXT_INPUT = auto()
     FILE_INPUT = auto()
     FILE_OUTPUT = auto()
-    TEXT_OUTPUT = auto()
 
 
 class PreparationNodes(IntEnum):
@@ -73,19 +61,60 @@ class TransformNodes(IntEnum):
 
 
 class ReportNodes(IntEnum):
-    TABLE = auto()
-    PLOT = auto()
+
     GRAPH = auto()
 
 
 # Node registries
 NODE_REGISTRIES: Dict[NodeTypes, Dict[int, "TriggerNode"]] = {
-    NodeTypes.CALC: {},
     NodeTypes.IO: {},
     NodeTypes.PREPARATION: {},
     NodeTypes.JOIN: {},
     NodeTypes.TRANSFORM: {},
     NodeTypes.REPORT: {},
+}
+
+# Opcode enums keyed by family. Used to resolve stable op ids
+# ("<family>.<NAME>", e.g. "preparation.sort") without touching ints.
+_OPCODE_ENUMS = {
+    NodeTypes.IO: IONodes,
+    NodeTypes.PREPARATION: PreparationNodes,
+    NodeTypes.JOIN: JoinNodes,
+    NodeTypes.TRANSFORM: TransformNodes,
+    NodeTypes.REPORT: ReportNodes,
+}
+
+# Frozen v1 numbering (pre-stable-op). Maps (family, int code) as stored
+# in schema v1 files to stable op ids. NEVER edit: new codes only ever
+# get new op ids, old numbers are never reused.
+# Covers deleted codes too (calc/*, browser, ...) so they load as a
+# visible placeholder instead of silently becoming the wrong node.
+V1_OPCODE_TO_OP: Dict[tuple, str] = {
+    ("input", 1): "input.browser",
+    ("input", 2): "input.directory",
+    ("input", 3): "input.text_input",
+    ("input", 4): "input.file_input",
+    ("input", 5): "input.file_output",
+    ("input", 6): "input.text_output",
+    ("preparation", 1): "preparation.cleansing",
+    ("preparation", 2): "preparation.filter",
+    ("preparation", 3): "preparation.formula",
+    ("preparation", 4): "preparation.groupby",
+    ("preparation", 5): "preparation.select",
+    ("preparation", 6): "preparation.sort",
+    ("preparation", 7): "preparation.unique",
+    ("preparation", 8): "preparation.split",
+    ("preparation", 9): "preparation.dynamic_row_builder",
+    ("join", 1): "join.append",
+    ("join", 2): "join.join",
+    ("join", 3): "join.union",
+    ("transform", 1): "transform.arrange",
+    ("transform", 2): "transform.count_records",
+    ("transform", 3): "transform.running_total",
+    ("transform", 4): "transform.transpose",
+    ("report", 1): "report.table",
+    ("report", 2): "report.plot",
+    ("report", 3): "report.graph",
 }
 
 LISTBOX_MIMETYPE = "application/x-item"
@@ -199,23 +228,6 @@ def register_node(node_code: int, node_type: NodeTypes) -> Callable:
     return decorator
 
 
-# def check_node_type(node_type: str) -> Dict:
-#     match node_type:
-#         case NodeTypes.INPUT:
-#             return INPUT_NODES
-#         case NodeTypes.CALC:
-#             return CALC_NODES
-#         case NodeTypes.PREPARATION:
-#             return PREPARATION_NODES
-#         case NodeTypes.JOIN:
-#             return JOIN_NODES
-#         case NodeTypes.TRANSFORM:
-#             return TRANSFORM_NODES
-
-#         case _:
-#             return {}
-
-
 def get_class_from_opcode(
     node_code: int, node_type: Union[NodeTypes, str]
 ) -> "TriggerNode":
@@ -247,6 +259,49 @@ def get_class_from_opcode(
         registry[node_code] = registry[node_code].load()
 
     return registry[node_code]
+
+
+def get_class_from_op(op: str) -> "TriggerNode":
+    """Resolve a stable op id ("<family>.<NAME>") to its node class.
+
+    Op ids derive from enum member *names*, so inserting, removing, or
+    reordering members never changes them. Add new members freely;
+    never rename existing ones (old files reference them).
+
+    Raises:
+        OpCodeNotRegistered: If the family/name is unknown or unregistered.
+    """
+    family, sep, name = op.partition(".")
+    if not sep or not name:
+        raise OpCodeNotRegistered(f"Invalid op id: {op!r}")
+    try:
+        node_type_enum = NodeTypes(family)
+    except ValueError:
+        raise OpCodeNotRegistered(f"Invalid op family: {family!r}")
+    try:
+        node_code = _OPCODE_ENUMS[node_type_enum][name.upper()]
+    except KeyError:
+        raise OpCodeNotRegistered(f"Op name '{name}' is not registered")
+    return get_class_from_opcode(node_code, node_type_enum)
+
+
+def migrate_v1_data(data: dict) -> Union[str, None]:
+    """Map a v1 node dict to its stable op id. None if unmappable.
+
+    Accepts current-style {"node_code": int, "node_type": str} and
+    oldest-style {"op_code": int, "op_type": UPPERCASE} keys.
+    """
+    if "node_code" in data:
+        family, code = data.get("node_type"), data.get("node_code")
+    elif "op_code" in data:
+        family, code = str(data.get("op_type", "")
+                           ).lower(), data.get("op_code")
+    else:
+        return None
+    try:
+        return V1_OPCODE_TO_OP.get((family, int(code)))
+    except (TypeError, ValueError):
+        return None
 
 
 # import all nodes and register them

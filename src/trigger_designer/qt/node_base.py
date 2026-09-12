@@ -478,6 +478,17 @@ class TriggerNode(Node):
         res = super().serialize()
         res["node_code"] = self.__class__.node_code
         res["node_type"] = self.__class__.node_type
+        # Stable identity: "<family>.<NAME>" from enum member names, so
+        # renumbering/reordering members never breaks saved files.
+        # The loader prefers "op" and only falls back to node_code ints
+        # for pre-v2 files.
+        try:
+            res["op"] = (
+                f"{self.__class__.node_type.value}"
+                f".{self.__class__.node_code.name.lower()}"
+            )
+        except AttributeError:
+            res["op"] = "unknown.unknown"
         return res
 
     def deserialize(
