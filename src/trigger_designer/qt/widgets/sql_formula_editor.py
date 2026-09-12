@@ -11,13 +11,11 @@ This module provides a custom QTextEdit widget with:
 
 import re
 from typing import Callable, List, Optional, Dict, Set
+
 from qtpy.QtWidgets import (
     QTextEdit,
     QWidget,
     QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
-    QFrame,
     QApplication,
     QMainWindow,
     QPushButton,
@@ -37,6 +35,20 @@ from qtpy.QtGui import (
     QPen,
     QTextFormat,
 )
+
+#: Matches '...' and "..." literals, SQL-style ''/"" escapes included.
+STRING_LITERAL_RE = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"")
+
+#: Fixed debounce between typing and validation.
+ERROR_CHECK_DEBOUNCE_MS = 800
+
+
+def mask_string_literals(text: str) -> str:
+    """Replace string literals with spaces, preserving offsets and newlines."""
+    return STRING_LITERAL_RE.sub(
+        lambda match: "".join(" " if char != "\n" else "\n" for char in match.group()),
+        text,
+    )
 
 
 class SQLSyntaxHighlighter(QSyntaxHighlighter):
@@ -125,8 +137,9 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
         # String literals (single quotes)
         string_format = QTextCharFormat()
         string_format.setForeground(QColor(206, 145, 120))  # Orange
-        string_pattern = QRegularExpression(r"'([^'\\]|\\.)*'")
-        self.highlighting_rules.append((string_pattern, string_format))
+        string_pattern = QRegularExpression(r"'([^']|'')*'")
+        # Double-quoted strings (same rule: only [...] are columns)
+        double_string_pattern = QRegularExpression(r'"([^"]|"")*"')
 
         # Numeric literals
         number_format = QTextCharFormat()
@@ -134,7 +147,7 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
         number_pattern = QRegularExpression(r"\b\d+\.?\d*\b")
         self.highlighting_rules.append((number_pattern, number_format))
 
-        # Column names in square brackets
+        # Column names in square brackets (only [...] are columns)
         column_format = QTextCharFormat()
         column_format.setForeground(QColor(156, 220, 254))  # Light blue
         column_format.setFontWeight(QFont.Weight.Bold)
@@ -152,6 +165,11 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
         operator_format.setForeground(QColor(212, 212, 212))  # Light gray
         operator_pattern = QRegularExpression(r"[+\-*/=<>!]+|<=|>=|<>|!=")
         self.highlighting_rules.append((operator_pattern, operator_format))
+
+        # String literals paint last (over columns) so '[x]' inside a
+        # string keeps string color; comments paint over everything.
+        self.highlighting_rules.append((string_pattern, string_format))
+        self.highlighting_rules.append((double_string_pattern, string_format))
 
         # Comments (-- style)
         comment_format = QTextCharFormat()
@@ -295,7 +313,7 @@ class SQLFormulaEditor(QTextEdit):
     def on_text_changed(self):
         """Handle text changes and trigger error checking."""
         self.error_timer.stop()
-        self.error_timer.start(500)  # Check for errors 500ms after typing stops
+        self.error_timer.start(ERROR_CHECK_DEBOUNCE_MS)
 
     def check_for_errors(self):
         """Check the current text for SQL syntax errors."""
@@ -354,9 +372,9 @@ class SQLFormulaEditor(QTextEdit):
             if not line:
                 continue
 
-            # Check for unmatched quotes
-            single_quotes = line.count("'") - line.count("\\'")
-            if single_quotes % 2 != 0:
+            # Check for unmatched single quotes ('' escapes don't count)
+            remainder = STRING_LITERAL_RE.sub("", line)
+            if "'" in remainder:
                 errors.append(
                     {
                         "message": "Unmatched single quote",
@@ -419,12 +437,12 @@ class SQLFormulaEditor(QTextEdit):
     @staticmethod
     def _mask_strings_and_comments(text: str) -> str:
         """Replace string literals/-- comments with spaces (keeps offsets)."""
-
-        def _spaces(match: re.Match) -> str:
-            return " " * (match.end() - match.start())
-
-        masked = re.sub(r"'[^']*'|\"[^\"]*\"", _spaces, text)
-        return re.sub(r"--[^\r\n]*", _spaces, masked)
+        masked = mask_string_literals(text)
+        return re.sub(
+            r"--[^\r\n]*",
+            lambda match: " " * (match.end() - match.start()),
+            masked,
+        )
 
     @staticmethod
     def _offset_to_line_col(text: str, offset: int) -> tuple:
@@ -441,20 +459,22 @@ class SQLFormulaEditor(QTextEdit):
             return errors
 
         known = {name.strip().lower(): name for name in self.column_names}
-        # Find all column references in square brackets
+        # Find all column references in square brackets (outside strings)
         column_pattern = re.compile(r"\[([^\]]+)\]")
         lines = text.split("\n")
+        masked_lines = mask_string_literals(text).split("\n")
 
-        for line_num, line in enumerate(lines, 1):
-            for match in column_pattern.finditer(line):
-                column_ref = match.group(1).strip()
+        for line_num, (line, masked_line) in enumerate(zip(lines, masked_lines), 1):
+            for match in column_pattern.finditer(masked_line):
+                start, end = match.start(), match.end()
+                column_ref = line[start + 1 : end - 1].strip()
                 if column_ref.lower() not in known:
                     errors.append(
                         {
                             "message": f"Unknown column '{column_ref}'",
                             "line": line_num,
-                            "column": match.start(),
-                            "length": match.end() - match.start(),
+                            "column": start,
+                            "length": end - start,
                         }
                     )
 
@@ -636,7 +656,6 @@ class SQLFormulaWidget(QWidget):
     """
 
     textChanged = Signal()
-    formulaChanged = Signal(str)
     editingFinished = Signal()
 
     def __init__(self, parent: Optional[QWidget] = None):
@@ -645,38 +664,9 @@ class SQLFormulaWidget(QWidget):
         self.connect_signals()
 
     def setup_ui(self):
-        """Set up the user interface."""
+        """Set up the user interface (editor only; errors surface inline)."""
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-
-        # Error display bar - dynamic sizing
-        self.error_frame = QFrame()
-        self.error_frame.setStyleSheet("""
-            QFrame {
-                background-color: #3c1e1e;
-                border: 1px solid #8b0000;
-                border-radius: 3px;
-                padding: 5px;
-            }
-        """)
-        self.error_frame.hide()
-
-        error_layout = QVBoxLayout(self.error_frame)
-        error_layout.setContentsMargins(8, 5, 8, 5)
-
-        self.error_label = QLabel()
-        self.error_label.setStyleSheet("""
-            QLabel {
-                color: #ff6b6b; 
-                font-weight: bold;
-                font-size: 12px;
-            }
-        """)
-        self.error_label.setWordWrap(True)  # Allow text wrapping for long messages
-        self.error_label.setAlignment(Qt.AlignmentFlag.AlignTop)
-        error_layout.addWidget(self.error_label)
-
-        layout.addWidget(self.error_frame)
 
         # SQL Editor
         self.editor = SQLFormulaEditor()
@@ -689,73 +679,10 @@ class SQLFormulaWidget(QWidget):
         """Connect widget signals."""
         self.editor.textChanged.connect(self.on_text_changed)
         self.editor.editingFinished.connect(self.editingFinished.emit)
-        self.editor.errorDetected.connect(
-            self.on_error_detected
-        )  # Keep for backwards compatibility
-        self.editor.allErrorsDetected.connect(
-            self.on_all_errors_detected
-        )  # Use for better error display
 
     def on_text_changed(self):
         """Handle text changes."""
         self.textChanged.emit()
-        self.formulaChanged.emit(self.get_text())
-
-        # Hide error bar if text is empty
-        if not self.editor.toPlainText().strip():
-            self.error_frame.hide()
-
-    def on_error_detected(self, message: str, line: int, column: int):
-        """Handle error detection with dynamic sizing."""
-        formatted_message = f"Line {line}, Col {column}: {message}"
-        self.error_label.setText(formatted_message)
-
-        # Adjust the error frame height based on content
-        self.error_label.adjustSize()
-
-        # Calculate required height for the text
-        label_height = self.error_label.sizeHint().height()
-        frame_padding = 10  # Top and bottom padding
-        min_height = 25  # Minimum height for single line
-        max_height = 100  # Maximum height to prevent excessive growth
-
-        required_height = max(min_height, min(max_height, label_height + frame_padding))
-        self.error_frame.setFixedHeight(required_height)
-
-        self.error_frame.show()
-
-    def on_all_errors_detected(self, error_messages: List[str]):
-        """Handle multiple error detection with dynamic sizing."""
-        self.show_errors(error_messages)
-
-    def show_errors(self, errors: List[str]):
-        """Display multiple error messages."""
-        if not errors:
-            self.error_frame.hide()
-            return
-
-        if len(errors) == 1:
-            self.error_label.setText(errors[0])
-        else:
-            # Format multiple errors with bullet points
-            error_text = "Multiple issues found:\n" + "\n".join(
-                f"• {error}" for error in errors
-            )
-            self.error_label.setText(error_text)
-
-        # Adjust the error frame height based on content
-        self.error_label.adjustSize()
-
-        # Calculate required height for the text
-        label_height = self.error_label.sizeHint().height()
-        frame_padding = 10  # Top and bottom padding
-        min_height = 25  # Minimum height for single line
-        max_height = 150  # Increased maximum height for multiple errors
-
-        required_height = max(min_height, min(max_height, label_height + frame_padding))
-        self.error_frame.setFixedHeight(required_height)
-
-        self.error_frame.show()
 
     def set_text(self, text: str):
         """Set the editor text."""
@@ -765,27 +692,18 @@ class SQLFormulaWidget(QWidget):
         """Get the editor text."""
         return self.editor.toPlainText()
 
-    def set_column_names(self, column_names: List[str]):
-        """Set available column names for validation and highlighting."""
-        self.editor.set_column_names(column_names)
-
     def clear_errors(self):
         """Clear all error indicators."""
         self.editor.errors.clear()
         self.editor.update_error_highlights()
-        self.error_frame.hide()
 
-    def setPlaceholderText(self, text: str):
+    def set_placeholder_text(self, text: str):
         """Set placeholder text in the editor."""
         self.editor.setPlaceholderText(text)
 
-    def set_placeholder_text(self, text: str):
-        """Set placeholder text in the editor (alternative method name)."""
-        self.setPlaceholderText(text)
-
     def set_available_columns(self, column_names: List[str]):
-        """Set available column names (alternative method name for set_column_names)."""
-        self.set_column_names(column_names)
+        """Set available column names for validation and highlighting."""
+        self.editor.set_column_names(column_names)
 
     def set_validate_callback(
         self, callback: Optional[Callable[[str], List[Dict]]]

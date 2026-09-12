@@ -35,10 +35,6 @@ def _get_app() -> QApplication:
 
 def _build_formula_content(formula_sections):
     content = FormulaContent.__new__(FormulaContent)
-    content.formula = ""
-    content.formula_text = None
-    content.target_column = None
-    content.is_new_column = False
     content.formula_sections = formula_sections
     content.section_widgets = []
     content.sections_layout = None
@@ -56,7 +52,7 @@ def _build_formula_content(formula_sections):
     content.data = None
     content.variable_name = "var_formula_test"
     content.last_error = ""
-    content._sync_legacy_fields()
+    content.section_errors = {}
     return content
 
 
@@ -102,10 +98,10 @@ def test_formula_content_normalizes_sections() -> None:
     assert len(oversized_sections) == MAX_FORMULA_SECTIONS
 
 
-def test_formula_content_supports_bracket_function_shorthand() -> None:
+def test_formula_content_supports_date_functions() -> None:
     content = _build_formula_content(
         [
-            {"target_column": "order_year", "formula_text": "YEAR[order_date]"},
+            {"target_column": "order_year", "formula_text": "YEAR([order_date])"},
         ]
     )
 
@@ -191,6 +187,60 @@ def test_validate_section_text_passes_good_formula() -> None:
     assert content.validate_section_text(0, "[amount] * 2") == []
 
 
+def test_double_quoted_text_is_a_string() -> None:
+    content = _build_formula_content(
+        [{"target_column": "label", "formula_text": '"pass"'}]
+    )
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data["label"].to_list() == ["pass", "pass"]
+
+
+def test_bracket_text_inside_strings_is_ignored() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    editor.set_column_names(["amount"])
+    assert (
+        editor.validate_column_references(
+            "CASE WHEN [amount] > 20 THEN '[oops]' ELSE 'low' END"
+        )
+        == []
+    )
+    editor.deleteLater()
+    content = _build_formula_content(
+        [
+            {
+                "target_column": "band",
+                "formula_text": "CASE WHEN [amount] > 20 THEN '[oops]' ELSE 'low' END",
+            }
+        ]
+    )
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data["band"].to_list() == ["low", "[oops]"]
+
+
+def test_escaped_quotes_do_not_raise() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    assert editor.validate_sql_syntax("'it''s'") == []
+    editor.deleteLater()
+    content = _build_formula_content(
+        [{"target_column": "quote", "formula_text": "'it''s'"}]
+    )
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data["quote"].to_list() == ["it's", "it's"]
+
+
+def test_debounce_is_fixed_at_800ms() -> None:
+    from trigger_designer.qt.widgets.sql_formula_editor import (
+        ERROR_CHECK_DEBOUNCE_MS,
+    )
+
+    assert ERROR_CHECK_DEBOUNCE_MS == 800
+
+
 def test_new_column_error() -> None:
     known = {"amount", "double_amount"}
     assert FormulaContent._new_column_error("", known) is not None
@@ -204,6 +254,7 @@ def main() -> None:
     test_formula_content_applies_multiple_sections_in_order()
     test_formula_content_normalizes_sections()
     test_sql_formula_widget_emits_editing_finished()
+    test_formula_content_supports_date_functions()
     test_case_end_balanced_produces_no_error()
     test_case_missing_end_points_at_case_token()
     test_column_matching_ignores_case_and_padding()
@@ -211,6 +262,10 @@ def main() -> None:
     test_validate_section_text_catches_bad_function()
     test_validate_section_text_passes_good_formula()
     test_new_column_error()
+    test_double_quoted_text_is_a_string()
+    test_bracket_text_inside_strings_is_ignored()
+    test_escaped_quotes_do_not_raise()
+    test_debounce_is_fixed_at_800ms()
     print("ok")
 
 

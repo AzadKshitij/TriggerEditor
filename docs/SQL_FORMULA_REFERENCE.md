@@ -8,8 +8,8 @@ This file documents what the Formula node and SQL formula editor support today.
 - A single Formula node can now contain up to 5 sections.
 - Sections run from top to bottom.
 - Later sections can reference columns created by earlier sections in the same node.
-- Column references should use square brackets, for example `[Order Date]` or `[Customer Name]`.
-- String literals should use single quotes, for example `'Active'`.
+- Column references must use square brackets, for example `[Order Date]` or `[Customer Name]`. Anything in `'...'` or `"..."` is a string literal, never a column (`"..."` is auto-converted to `'...'` on commit).
+- String literals may use single or double quotes, for example `'Active'` or `"Active"` (SQL `''`/`""` escapes supported).
 - The editor does lightweight validation for bracketed column names, quotes, parentheses, and `CASE ... END` balance. It does not do full SQL parsing.
 
 ## Syntax Highlighting in the Editor

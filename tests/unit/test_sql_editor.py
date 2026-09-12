@@ -106,7 +106,6 @@ class SQLEditorTestWindow(QMainWindow):
         self.test_complex_button.clicked.connect(self.load_complex_sql)
         self.clear_button.clicked.connect(self.clear_editor)
 
-        self.sql_widget.formulaChanged.connect(self.on_formula_changed)
         self.sql_widget.editor.errorDetected.connect(self.on_error_detected)
 
     def setup_test_data(self):
@@ -128,7 +127,7 @@ class SQLEditorTestWindow(QMainWindow):
             "last_login",
             "score",
         ]
-        self.sql_widget.set_column_names(sample_columns)
+        self.sql_widget.set_available_columns(sample_columns)
 
     def load_valid_sql(self):
         """Load a valid SQL formula example."""
@@ -168,13 +167,6 @@ END"""
         self.sql_widget.set_text("")
         self.sql_widget.clear_errors()
         self.status_label.setText("Editor cleared")
-
-    def on_formula_changed(self, formula: str):
-        """Handle formula changes."""
-        if formula.strip():
-            self.status_label.setText(f"Formula length: {len(formula)} characters")
-        else:
-            self.status_label.setText("Ready - Type or load example SQL formulas")
 
     def on_error_detected(self, message: str, line: int, column: int):
         """Handle error detection."""

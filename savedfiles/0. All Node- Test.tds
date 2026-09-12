@@ -109,12 +109,10 @@
       "content": {
         "formula_sections": [
           {
-            "target_column": "",
-            "formula_text": "CASE when [RelevancyScore] > 95 then \"pass\" else \"fail\""
+            "target_column": "Check",
+            "formula_text": "CASE when [Relevancy Score] > 95 then 'pass' else 'fail' End"
           }
-        ],
-        "formula": "CASE when [RelevancyScore] > 95 then \"pass\" else \"fail\"",
-        "target_column": ""
+        ]
       },
       "node_code": 3,
       "node_type": "preparation"
@@ -907,6 +905,6 @@
   "workflow_metadata": {
     "schema_version": 1,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-10T18:47:40Z"
+    "saved_at": "2026-09-11T15:01:46Z"
   }
 }

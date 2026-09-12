@@ -41,7 +41,7 @@ formula_editor = SQLFormulaWidget()
 
 # Set available column names for validation
 column_names = ['customer_id', 'name', 'age', 'email', 'salary']
-formula_editor.set_column_names(column_names)
+formula_editor.set_available_columns(column_names)
 
 # Set initial formula text
 formula_editor.set_text("""
@@ -56,7 +56,8 @@ END
 formula = formula_editor.get_text()
 
 # Connect to signals
-formula_editor.formulaChanged.connect(on_formula_changed)
+formula_editor.textChanged.connect(on_text_changed)
+formula_editor.editingFinished.connect(on_commit)
 formula_editor.editor.errorDetected.connect(on_error_detected)
 ```
 
@@ -98,7 +99,7 @@ from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
 
 # NEW CODE:
 self.formula_input = SQLFormulaWidget() 
-self.formula_input.set_column_names(list(self.incom_data.columns))
+self.formula_input.set_available_columns(list(self.incom_data.columns))
 ```
 
 ### 3. Update Method Calls
@@ -111,7 +112,9 @@ self.formula_input.set_column_names(list(self.incom_data.columns))
 # NEW: self.formula_input.set_text(text)
 
 # OLD: self.formula_input.textChanged.connect(...)
-# NEW: self.formula_input.formulaChanged.connect(...)
+# NEW: self.formula_input.textChanged.connect(...)
+# Commit on editingFinished; optional EXPLAIN validation via
+# self.formula_input.set_validate_callback(fn)
 ```
 
 ### 4. Add Error Handling (Optional)

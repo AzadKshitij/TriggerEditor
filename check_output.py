@@ -181,7 +181,7 @@ duck = duckdb.connect(':memory:')
 # Convert polars LazyFrame to DataFrame if needed for DuckDB
 df_for_duck = var_select_1849069470256.collect() if hasattr(var_select_1849069470256, 'collect') else var_select_1849069470256
 duck.register('df_step_0', df_for_duck)
-df_for_duck = duck.execute('''SELECT *, CASE when "Relevancy Score" > 95 then "pass" else "fail" end AS "Check" FROM df_step_0''').pl()
+df_for_duck = duck.execute('''SELECT *, CASE when "Relevancy Score" > 95 then 'pass' else 'fail' end AS "Check" FROM df_step_0''').pl()
 # Preserve lazy execution when the incoming value is lazy
 var_formula_1849067853520 = df_for_duck.lazy() if hasattr(var_select_1849069470256, 'collect') else df_for_duck
 duck.close()

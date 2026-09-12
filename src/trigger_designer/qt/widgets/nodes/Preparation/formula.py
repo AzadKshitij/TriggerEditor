@@ -32,7 +32,10 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
     TriggerNode,
 )
-from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
+from trigger_designer.qt.widgets.sql_formula_editor import (
+    SQLFormulaWidget,
+    STRING_LITERAL_RE,
+)
 
 if TYPE_CHECKING:
     from nodeeditor.node_node import Node
@@ -62,11 +65,6 @@ class FormulaContent(
         self.history = self.node.scene.history
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
-        self.formula: str = ""
-        self.formula_text: Optional[str] = None
-        self.target_column: Optional[str] = None
-        self.is_new_column: bool = False
-
         self.formula_sections: List[Dict[str, str]] = [self._default_section()]
         self.section_widgets: List[Dict[str, Any]] = []
         self.sections_layout: Optional[QVBoxLayout] = None
@@ -80,8 +78,7 @@ class FormulaContent(
         self.data: Optional[pl.DataFrame | pl.LazyFrame] = None
         self.variable_name = f"var_formula_{self.id}"
         self.last_error: str = ""
-
-        self._sync_legacy_fields()
+        self.section_errors: Dict[int, str] = {}
 
     @property
     def node(self) -> "TriggerNode":
@@ -148,16 +145,6 @@ class FormulaContent(
 
         return normalized_sections[:MAX_FORMULA_SECTIONS]
 
-    def _sync_legacy_fields(self) -> None:
-        first_section = (
-            self.formula_sections[0]
-            if self.formula_sections
-            else self._default_section()
-        )
-        self.formula_text = first_section["formula_text"] or None
-        self.target_column = first_section["target_column"] or None
-        self.formula = first_section["formula_text"]
-
     def _sync_sections_from_widgets(self) -> None:
         for index, widgets in enumerate(self.section_widgets):
             try:
@@ -166,8 +153,6 @@ class FormulaContent(
                 )
             except (AttributeError, RuntimeError, IndexError):
                 continue
-
-        self._sync_legacy_fields()
 
     def _current_state(self) -> Dict[str, List[Dict[str, str]]]:
         self._sync_sections_from_widgets()
@@ -230,6 +215,11 @@ class FormulaContent(
         self.clearInputWidgets()
         if self._dock_layout is not None:
             self.recursively_find_widgets(self._dock_layout)
+        # Formula editors commit on focus-out; exclude them from keystroke eval
+        # so typing never recomputes with stale section text.
+        for widget in self._input_widgets:
+            if isinstance(widget, SQLFormulaWidget):
+                self._disconnect_input_widget(widget)
 
     def _rebuild_section_widgets(self) -> None:
         if self.sections_layout is None:
@@ -289,10 +279,17 @@ class FormulaContent(
                 partial(self.commit_formula_text, index)
             )
 
+            error_label = QLabel()
+            error_label.setObjectName("formulaSectionError")
+            error_label.setWordWrap(True)
+            error_label.setStyleSheet("color: #ff6b6b; font-size: 11px;")
+            error_label.hide()
+
             card_layout.addLayout(header_layout)
             card_layout.addLayout(target_row)
             card_layout.addWidget(formula_label)
             card_layout.addWidget(formula_input)
+            card_layout.addWidget(error_label)
 
             self.sections_layout.addWidget(card)
             self.section_widgets.append(
@@ -302,12 +299,27 @@ class FormulaContent(
                     "remove_button": remove_button,
                     "target_selector": target_selector,
                     "formula_input": formula_input,
+                    "error_label": error_label,
                 }
             )
 
         self._refresh_section_controls()
         self._refresh_section_dependencies()
+        self._refresh_section_errors()
         self._refresh_input_tracking()
+
+    def _refresh_section_errors(self) -> None:
+        """Show per-section error messages on their cards."""
+        for index, widgets in enumerate(self.section_widgets):
+            label = widgets.get("error_label")
+            if label is None:
+                continue
+            try:
+                message = self.section_errors.get(index, "")
+                label.setText(message)
+                label.setVisible(bool(message))
+            except RuntimeError:
+                continue
 
     def _refresh_section_controls(self) -> None:
         section_count = len(self.formula_sections)
@@ -352,7 +364,6 @@ class FormulaContent(
 
         old_state = self._current_state()
         self.formula_sections.append(self._default_section())
-        self._sync_legacy_fields()
         self._rebuild_section_widgets()
         self.update_data()
         self.store_history(old_state)
@@ -367,7 +378,6 @@ class FormulaContent(
 
         old_state = self._current_state()
         self.formula_sections.pop(section_index)
-        self._sync_legacy_fields()
         self._rebuild_section_widgets()
         self.update_data()
         self.store_history(old_state)
@@ -415,7 +425,11 @@ class FormulaContent(
             return f"Column '{name}' already exists."
         return None
 
-    def _prompt_new_column(self,section_index: int, parent=None, ) -> None:
+    def _prompt_new_column(
+        self,
+        section_index: int,
+        parent=None,
+    ) -> None:
         """App-level dialog loop for adding a target column."""
         existing_target = self.formula_sections[section_index]["target_column"]
         known = self._known_target_names(exclude_section=section_index)
@@ -447,7 +461,6 @@ class FormulaContent(
             return
 
         self.formula_sections[section_index]["target_column"] = normalized_target
-        self._sync_legacy_fields()
         self._refresh_section_dependencies()
         self.update_data()
         self.store_history(old_state)
@@ -470,7 +483,6 @@ class FormulaContent(
             return
 
         self.formula_sections[section_index]["formula_text"] = current_formula
-        self._sync_legacy_fields()
         self.update_data()
         self.store_history(old_state)
 
@@ -480,7 +492,7 @@ class FormulaContent(
     def _apply_outside_string_literals(self, formula: str, transform: Any) -> str:
         parts: List[str] = []
         current_pos = 0
-        string_literals = list(re.finditer(r"'[^']*'|\"[^\"]*\"", formula))
+        string_literals = list(STRING_LITERAL_RE.finditer(formula))
 
         for match in string_literals:
             before_string = formula[current_pos : match.start()]
@@ -491,18 +503,6 @@ class FormulaContent(
         remaining = formula[current_pos:]
         parts.append(transform(remaining))
         return "".join(parts)
-
-    def _normalize_function_bracket_calls(self, formula: str) -> str:
-        """Support legacy shorthand like YEAR[column] by inserting call parens."""
-
-        return self._apply_outside_string_literals(
-            formula,
-            lambda segment: re.sub(
-                r"\b([A-Za-z_][A-Za-z0-9_]*)(\[[^\]]+\])",
-                r"\1(\2)",
-                segment,
-            ),
-        )
 
     def _replace_column_names(self, formula: str, column_name: str) -> str:
         """Replace bracketed column names while preserving string literals.
@@ -518,10 +518,33 @@ class FormulaContent(
             lambda segment: re.sub(pattern, replacement, segment, flags=re.IGNORECASE),
         )
 
+    @staticmethod
+    def _normalize_double_quoted(match: re.Match) -> str:
+        inner = match.group()[1:-1].replace('""', '"').replace("'", "''")
+        return f"'{inner}'"
+
+    def _normalize_string_literals(self, formula: str) -> str:
+        """Rewrite "..." as '...' (only [...] are columns).
+
+        Single-quoted strings and bracketed column refs pass through.
+        """
+        token_pattern = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"|\[[^\]]*\]")
+        parts: List[str] = []
+        current_pos = 0
+        for match in token_pattern.finditer(formula):
+            parts.append(formula[current_pos : match.start()])
+            token = match.group()
+            if token.startswith('"'):
+                token = self._normalize_double_quoted(match)
+            parts.append(token)
+            current_pos = match.end()
+        parts.append(formula[current_pos:])
+        return "".join(parts)
+
     def _prepare_formula_for_sql(
         self, formula_text: str, available_columns: List[str]
     ) -> str:
-        sql_formula = self._normalize_function_bracket_calls(formula_text)
+        sql_formula = self._normalize_string_literals(formula_text)
         for column_name in available_columns:
             sql_formula = self._replace_column_names(sql_formula, column_name)
         return sql_formula
@@ -637,6 +660,7 @@ class FormulaContent(
     def update_data(self) -> None:
         """Apply all configured formulas to the incoming data."""
         self.last_error = ""
+        self.section_errors = {}
 
         if self.incom_data is None:
             self.data = None
@@ -651,6 +675,7 @@ class FormulaContent(
             current_df, was_lazy = self._collect_input_data()
             current_df, _, errors = self._run_sections(current_df, configured_sections)
             if errors:
+                self.section_errors = errors
                 failed = min(errors)
                 raise ValueError(f"Section {failed + 1}: {errors[failed]}")
 
@@ -658,6 +683,8 @@ class FormulaContent(
         except Exception as exc:
             self.data = None
             self.last_error = str(exc)
+        finally:
+            self._refresh_section_errors()
 
     def store_history(self, old_state: Dict[str, List[Dict[str, str]]]) -> None:
         """Store undo/redo history for formula-section changes."""
@@ -682,7 +709,6 @@ class FormulaContent(
             state = history_data["old_state"] if is_undo else history_data["new_state"]
 
             self.formula_sections = self._normalize_sections(state["formula_sections"])
-            self._sync_legacy_fields()
 
             self._rebuild_section_widgets()
             self.update_data()
@@ -739,12 +765,9 @@ class FormulaContent(
         return "\n".join(code_lines) + "\n"
 
     def serialize(self) -> dict:
-        """Serialize the formula content, keeping legacy fields for compatibility."""
+        """Serialize the formula content (legacy keys still load, not written)."""
         self._sync_sections_from_widgets()
-        payload = self.serialize_content_state(super().serialize())
-        payload["formula"] = self.formula_sections[0]["formula_text"]
-        payload["target_column"] = self.formula_sections[0]["target_column"]
-        return payload
+        return self.serialize_content_state(super().serialize())
 
     def deserialize(self, data: dict, hashmap: dict = {}) -> bool:
         """Deserialize formula content from either new or legacy saved state."""
@@ -761,7 +784,6 @@ class FormulaContent(
                 ]
 
             self.formula_sections = self._normalize_sections(sections)
-            self._sync_legacy_fields()
             return True & res
         except Exception as exc:
             dumpException(exc)
