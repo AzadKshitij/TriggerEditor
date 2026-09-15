@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QWidget,
 )
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.core.node_configuration import register_node, JoinNodes, NodeTypes
 from trigger_designer.qt.node_base import (
@@ -161,7 +161,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # self.add_mapping_row()
 
             # Add button for new mapping
-            add_mapping_button = QPushButton("+")
+            add_mapping_button = QPushButton()
+            add_mapping_button.setIcon(QIcon(self.node.rsm.get("icon_add")))
+            add_mapping_button.setToolTip("Add mapping")
             add_mapping_button.setMaximumWidth(30)
             add_mapping_button.clicked.connect(self.add_mapping_row)
 
@@ -341,7 +343,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout.addWidget(left_column_combo)
         row_layout.addSpacing(10)
         row_layout.addWidget(right_column_combo)
-        remove_button = QPushButton("-")
+        remove_button = QPushButton()
+        remove_button.setIcon(QIcon(self.node.rsm.get("icon_remove")))
+        remove_button.setToolTip("Remove mapping")
         remove_button.setMaximumWidth(30)
         row_layout.addWidget(remove_button)
 

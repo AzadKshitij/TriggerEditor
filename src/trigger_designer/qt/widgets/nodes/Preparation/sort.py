@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QHBoxLayout,
 )
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.core.node_configuration import (
     register_node,
@@ -130,7 +130,9 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.add_sort_row()
 
         # Add row for the add button
-        add_btn = QPushButton("+")
+        add_btn = QPushButton()
+        add_btn.setIcon(QIcon(self.node.rsm.get("icon_add")))
+        add_btn.setToolTip("Add sort key")
         add_btn.setFixedWidth(30)
         add_btn.clicked.connect(self.add_sort_row)
 
@@ -178,7 +180,9 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout.addWidget(order_selector)
 
         # Add remove button
-        remove_button = QPushButton("-")
+        remove_button = QPushButton()
+        remove_button.setIcon(QIcon(self.node.rsm.get("icon_remove")))
+        remove_button.setToolTip("Remove sort key")
         remove_button.setMaximumWidth(30)
         remove_button.clicked.connect(partial(self.remove_sort_row, row_id))
         row_layout.addWidget(remove_button)

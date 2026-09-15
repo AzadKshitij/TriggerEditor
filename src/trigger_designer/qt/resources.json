@@ -93,5 +93,14 @@
     "node_graph":{
         "path":"qt/images/node_icons/Report/Graph.svg",
         "mode": "rb"
+    },
+
+    "icon_add":{
+        "path":"qt/images/node_icons/add.png",
+        "mode": "qpixmap"
+    },
+    "icon_remove":{
+        "path":"qt/images/node_icons/sub.png",
+        "mode": "qpixmap"
     }
 }

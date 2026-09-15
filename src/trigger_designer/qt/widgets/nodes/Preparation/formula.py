@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 import duckdb
 import polars as pl
 from qtpy.QtCore import Qt, QTimer, Signal
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtWidgets import (
     QComboBox,
     QFrame,
@@ -408,7 +408,8 @@ class FormulaContent(
             card_layout.setContentsMargins(4, 4, 4, 4)
             card_layout.setSpacing(2)
 
-            remove_button = QPushButton("-")
+            remove_button = QPushButton()
+            remove_button.setIcon(QIcon(self.node.rsm.get("icon_remove")))
             remove_button.setFixedWidth(28)
             remove_button.setToolTip("Remove formula")
             remove_button.clicked.connect(

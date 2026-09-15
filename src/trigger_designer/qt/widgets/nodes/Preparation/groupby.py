@@ -211,6 +211,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             add_button_layout.addStretch()
 
             self.add_btn = QPushButton("Add")
+            self.add_btn.setIcon(QIcon(self.node.rsm.get("icon_add")))
             self.add_btn.setMinimumHeight(30)
             self.add_btn.setMinimumWidth(100)
             self.add_btn.setStyleSheet("""
