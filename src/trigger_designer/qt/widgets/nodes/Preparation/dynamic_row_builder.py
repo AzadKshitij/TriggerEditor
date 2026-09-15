@@ -177,7 +177,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     break
 
                 values.append(current)
-                current = self.increment_value(current, increment)
+                current = self._increment_value(current, increment)
                 iteration += 1
 
                 if iteration == self.MAX_ITERATIONS:
@@ -307,37 +307,68 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.process_data()
         self.evaluate.emit()
 
+    @staticmethod
+    def _render_literal(value: Any) -> str:
+        """Render a configured value as Python source (strings quoted,
+        datetimes rebuilt; QDateTime accepted too)."""
+        if isinstance(value, str):
+            return repr(value)
+        if isinstance(value, datetime):
+            return f"datetime.fromisoformat({value.isoformat()!r})"
+        if hasattr(value, "toPython"):  # QDateTime
+            try:
+                return f"datetime.fromisoformat({value.toPython().isoformat()!r})"
+            except Exception:
+                pass
+        return repr(value)
+
     def get_code(self) -> str:
         """Generate code for row generation"""
-        if self.incom_data is None:
-            return "print('No data generated')\n"
-
         code_lines = [
+            "import polars as pl",
+            "from datetime import datetime, timedelta",
             f"# Generate rows",
             f"values = []",
-            f"current = {self.initial_value}",
-            f"while current <= {self.max_value}:",
-            f"    values.append(current)",
-            f"    current = {self.get_increment_code()}",
-            f"",
-            f"{self.variable_name} = pl.DataFrame({{'{self.field_name}': values}})",
+            f"current = {self._render_literal(self.initial_value)}",
+            f"iteration = 0",
         ]
+        if self.field_type == "string":
+            # Live should_stop() is always False for strings: cap only.
+            code_lines.append(f"while iteration < {self.MAX_ITERATIONS}:")
+        else:
+            code_lines.append(
+                f"while current <= {self._render_literal(self.max_value)}"
+                f" and iteration < {self.MAX_ITERATIONS}:"
+            )
+        code_lines.append(f"    values.append(current)")
+        code_lines.append(f"    {self._increment_statement()}")
+        code_lines.append(f"    iteration += 1")
+        code_lines.append(f"")
+        code_lines.append(
+            f"{self.variable_name} = pl.DataFrame({{'{self.field_name}': values}})"
+        )
 
-        if self.incom_data is not None:
+        if self.incoming_variable:
             code_lines.append(
                 f"{self.variable_name} = pl.concat([{self.incoming_variable}, {self.variable_name}], how='horizontal')"
             )
 
         return "\n".join(code_lines) + "\n"
 
-    def get_increment_code(self) -> str:
-        """Get code for increment operation"""
+    def _increment_statement(self) -> str:
+        """Loop increment source line matching live _increment_value()."""
         if self.field_type in ["int", "float"]:
-            return f"current + {self.increment_value}"
-        elif self.field_type == "datetime":
-            return f"current + timedelta(seconds={self.increment_value})"
-        else:
-            return 'f"{current}{self.increment_value}"'
+            return f"current = current + {self._render_literal(self.increment_value)}"
+        if self.field_type == "datetime":
+            return (
+                "current = current + "
+                f"timedelta(seconds={self._render_literal(self.increment_value)})"
+            )
+        return f"current = current + {self._render_literal(str(self.increment_value))}"
+
+    def get_increment_code(self) -> str:
+        """Get code for increment operation (legacy, kept for compatibility)."""
+        return self._increment_statement().replace("current = ", "", 1)
 
     def serialize(self) -> dict:
         """Serialize node content"""

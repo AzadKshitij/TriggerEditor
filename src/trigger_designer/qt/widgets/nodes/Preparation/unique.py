@@ -451,7 +451,13 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             String containing the generated Python code for removing duplicates
         """
         if not self.incoming_variable:
-            return ""
+            # Fallback: always define both outputs so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+                f"{self.duplicate_variable_name} = pl.DataFrame()\n"
+            )
 
         if not self.selected_columns:
             return (

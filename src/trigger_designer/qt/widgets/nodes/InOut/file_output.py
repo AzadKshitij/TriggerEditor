@@ -228,13 +228,8 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self):
         if self.incoming_variable is None or self.incoming_variable == "":
-            return "print('''No Incoming Variable''')\n"
-
-        print(
-            "🐍 File: InOut/file_output.py | Line: 238 | get_code ~ self.incoming_variable",
-            self.incoming_variable,
-            "may be no incomming variable",
-        )
+            # Fail loudly: a print stub would report success while saving nothing.
+            return "raise ValueError('File Output: no incoming data — connect an input')\n"
 
         code_lines = []
         var_name = self.incoming_variable

@@ -404,7 +404,12 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
 
         if self.incoming_variable is None or self.incoming_variable == "":
-            return "print('''No Incoming Variable for sort''')\n"
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+            )
 
         if not self.sort_data:
             return f"{self.variable_name} = {self.incoming_variable}\n"
@@ -428,8 +433,8 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"{self.variable_name} = {self.incoming_variable}.sort('{column}', descending={descending})"
             )
         else:
-            # Multiple column sort
-            columns = [f"{col}" for col, _ in sort_conditions]
+            # Multiple column sort (list repr supplies the quotes)
+            columns = [col for col, _ in sort_conditions]
             descending_flags = [desc for _, desc in sort_conditions]
             code_lines.append(
                 f"{self.variable_name} = {self.incoming_variable}.sort({columns}, descending={descending_flags})"

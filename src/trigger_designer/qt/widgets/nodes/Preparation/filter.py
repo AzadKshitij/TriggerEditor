@@ -515,8 +515,21 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             or self.column is None
             or self.operation is None
             or self.value is None
+            or not self.incoming_variable
         ):
-            return "# No data or filter settings available"
+            # Fallback: always define both outputs so downstream code never
+            # NameErrors. Unconfigured-but-wired passes everything to True
+            # (nothing filtered out) and an empty frame to False.
+            code = ["import polars as pl"]
+            if self.incoming_variable:
+                code.append(f"{self.variable_name} = {self.incoming_variable}")
+                code.append(
+                    f"{self.f_variable_name} = {self.incoming_variable}.head(0)"
+                )
+            else:
+                code.append(f"{self.variable_name} = pl.DataFrame()")
+                code.append(f"{self.f_variable_name} = pl.DataFrame()")
+            return "\n".join(code) + "\n"
 
         # Get column data type
         col_dtype = self.incom_data[self.column].dtype

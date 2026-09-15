@@ -812,8 +812,19 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         return type_string_mapping.get(dtype_str, "pl.String")
 
     def get_code(self) -> str:
-        if self.data is None or self.incoming_variable is None:
-            return ""
+        if self.data is None or not self.incoming_variable:
+            # Fallback: always define the output so downstream code never
+            # NameErrors (or SyntaxErrors on an empty incoming variable).
+            code = ["import polars as pl"]
+            if self.incoming_variable:
+                code.append(f"{self.variable_name} = {self.incoming_variable}")
+            else:
+                code.append(f"{self.variable_name} = pl.DataFrame()")
+            return "\n".join(code) + "\n"
+
+        if not self.changes["selected_columns"]:
+            # No selection: keep everything (matches live apply_changes).
+            return f"{self.variable_name} = {self.incoming_variable}\n"
 
         code_lines = []
 

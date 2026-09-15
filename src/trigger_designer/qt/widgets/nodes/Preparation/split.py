@@ -165,7 +165,19 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             String containing the generated Python code for data splitting
         """
         if self.incom_data is None or not self.incoming_variable:
-            return "# No data available for split operation\n"
+            # Fallback: always define both outputs so downstream code never
+            # NameErrors. Wired-but-unevaluated passes everything to
+            # estimation (nothing split out yet), empty to validation.
+            code = ["import polars as pl"]
+            if self.incoming_variable:
+                code.append(f"{self.estimation_var} = {self.incoming_variable}")
+                code.append(
+                    f"{self.validation_var} = {self.incoming_variable}.head(0)"
+                )
+            else:
+                code.append(f"{self.estimation_var} = pl.DataFrame()")
+                code.append(f"{self.validation_var} = pl.DataFrame()")
+            return "\n".join(code) + "\n"
 
         # "__split_idx" is unlikely to collide with a user column, and the
         # max()-threshold keeps the whole plan lazy (no collect needed).

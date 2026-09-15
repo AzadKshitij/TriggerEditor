@@ -980,7 +980,12 @@ class FormulaContent(
         configured_sections = self._configured_sections()
 
         if not self.incoming_variable:
-            return ""
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+            )
 
         if not configured_sections:
             return f"{self.variable_name} = {self.incoming_variable}\n"

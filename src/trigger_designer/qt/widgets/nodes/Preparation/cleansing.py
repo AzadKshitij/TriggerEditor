@@ -595,7 +595,12 @@ class CleansingContent(
 
     def get_code(self) -> str:
         if not self.incoming_variable:
-            return "print('No data to process on Data Cleansing node')\n"
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+            )
 
         code_lines = [
             "from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy",

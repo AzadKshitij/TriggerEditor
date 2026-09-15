@@ -126,7 +126,15 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self) -> Optional[str]:
         if not self.left_variable or not self.right_variable:
-            return "# Append: both inputs must be connected\n"
+            # Fallback: always define the output so downstream code never
+            # NameErrors. Concat whichever side is known, else empty frame.
+            known = [v for v in (self.left_variable, self.right_variable) if v]
+            code = ["import polars as pl"]
+            if known:
+                code.append(f"{self.variable_name} = {known[0]}")
+            else:
+                code.append(f"{self.variable_name} = pl.DataFrame()")
+            return "\n".join(code) + "\n"
         # Inline _as_lazy equivalent so the snippet runs standalone.
         return (
             "import polars as pl\n"

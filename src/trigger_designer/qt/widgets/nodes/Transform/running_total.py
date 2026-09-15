@@ -172,7 +172,12 @@ class RunningTotalContent(
     def get_code(self) -> str:
         """Generate Polars code for running total calculations."""
         if not self.incoming_variable:
-            return ""
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+            )
 
         if not self.sum_columns:
             return (

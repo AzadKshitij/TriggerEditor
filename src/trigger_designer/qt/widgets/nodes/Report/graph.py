@@ -291,6 +291,13 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableC
         # self.plot_graph()
 
     def get_code(self) -> str:
+        if not self.incoming_variable:
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+            )
         code_lines = [
             "import matplotlib.pyplot as plt",
             "import polars as pl",
@@ -314,6 +321,9 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableC
                 f"plt.title('{self.title}')",
                 "plt.grid(True)",
                 "plt.show()",
+                # Graph is a sink visually, but keep the socket contract:
+                # downstream code needs this variable defined.
+                f"{self.variable_name} = {self.incoming_variable}",
             ]
         )
 

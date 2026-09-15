@@ -723,7 +723,12 @@ class FileInputContent(
 
     def get_code(self) -> str:
         if not self.filePath:
-            return ""
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+            )
 
         code_lines = []
         code_lines.append("import polars as pl")
