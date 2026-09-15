@@ -5,7 +5,7 @@ description = "A visual data processing tool with node-based workflow editor"
 readme = "README.md"
 requires-python = ">=3.13.12,<3.14"
 license = {text = "MIT"}
-authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail"}]
+authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 
 # Core dependencies organized by category
 dependencies = [

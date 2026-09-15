@@ -43,15 +43,8 @@ class ContextMenuMixin:
         for category, nodes in self.nodes_by_type.items():
             for node_code, node_class in nodes.items():
                 action_key = f"{category}_{node_code}"
-                icon_path = self.rsm.get_icon_path(node_class.icon)
-                logger.success(
-                    "Registering action: '{}' for node '{}' and icon path '{}'",
-                    action_key,
-                    node_class.node_title,
-                    icon_path,
-                )
                 action = QAction(
-                    self._get_action_icon(category, icon_path),
+                    self._get_action_icon(category, node_class.icon),
                     node_class.node_title,
                 )
                 node_type = next(
@@ -62,10 +55,21 @@ class ContextMenuMixin:
                 action.setData([node_code, node_type])
                 self.node_actions[action_key] = action
 
-    def _get_action_icon(self, category: str, icon_path: str):
-        from qtpy.QtGui import QIcon  # Local import to avoid circular deps
+    def _get_action_icon(self, category: str, icon_id: str):
+        from qtpy.QtGui import QIcon, QPixmap  # Local import to avoid circular deps
 
-        return QIcon(f":{category}/{icon_path}")
+        icon = QIcon(f":{category}/{self.rsm.get_icon_path(icon_id)}")
+        if icon.isNull():
+            # ponytail: filesystem fallback — icons.qrc may miss an entry
+            # (recompile icons_rc.py when adding icons permanently)
+            pixmap = self.rsm.get(icon_id)
+            if isinstance(pixmap, QPixmap) and not pixmap.isNull():
+                icon = QIcon(pixmap)
+            else:
+                logger.warning(
+                    "Missing icon '{}' for category '{}'", icon_id, category
+                )
+        return icon
 
     # --- Context menu factories ----------------------------------------------------
     def initNodesContextMenu(self):

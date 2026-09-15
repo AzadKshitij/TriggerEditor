@@ -6,8 +6,8 @@
     {
       "id": 2176088586800,
       "title": "Cleansing",
-      "pos_x": -208.17187500000003,
-      "pos_y": -182.22363281250003,
+      "pos_x": -206.21875000000003,
+      "pos_y": -238.86425781249994,
       "inputs": [
         {
           "id": 2176088583632,
@@ -36,14 +36,24 @@
         "remove_letters": false,
         "remove_numbers": false,
         "remove_punctuation": false,
-        "selected_fields": [],
-        "field_selection_initialized": false,
+        "selected_fields": [
+          "Keyword",
+          "Seed",
+          "Source",
+          "Country",
+          "Autocomplete Position",
+          "Difficulty",
+          "Hot Keyword",
+          "Relevancy Score"
+        ],
+        "field_selection_initialized": true,
         "remove_null_rows": false,
         "remove_null_rows_from_selected_columns": false,
         "remove_null_columns": false
       },
       "node_code": 1,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
     },
     {
       "id": 2176088583056,
@@ -81,7 +91,8 @@
         "value": "x"
       },
       "node_code": 2,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.filter"
     },
     {
       "id": 2176088581184,
@@ -119,15 +130,22 @@
             "formula_text": "[Autocomplete Position] * 2",
             "editor_height": 60,
             "target_dtype": ""
+          },
+          {
+            "target_column": "Year",
+            "formula_text": "YEAR(TODAY())",
+            "editor_height": 120,
+            "target_dtype": ""
           }
         ]
       },
       "node_code": 3,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.formula"
     },
     {
       "id": 2176088587088,
-      "title": "Sort",
+      "title": "Select",
       "pos_x": -209.22851562499994,
       "pos_y": 352.14843749999994,
       "inputs": [
@@ -225,11 +243,12 @@
         }
       },
       "node_code": 5,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.select"
     },
     {
       "id": 2176088576576,
-      "title": "Unique",
+      "title": "Sort",
       "pos_x": -199.75585937499994,
       "pos_y": 484.9863281249998,
       "inputs": [
@@ -259,11 +278,12 @@
         ]
       },
       "node_code": 6,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.sort"
     },
     {
       "id": 2176088574992,
-      "title": "Split",
+      "title": "Unique",
       "pos_x": -200.53710937499994,
       "pos_y": 617.7724609375,
       "inputs": [
@@ -297,11 +317,12 @@
         ]
       },
       "node_code": 7,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.unique"
     },
     {
       "id": 2176088573120,
-      "title": "Generate Rows",
+      "title": "Split",
       "pos_x": -202.05078124999994,
       "pos_y": 748.9257812499999,
       "inputs": [
@@ -335,7 +356,8 @@
         "is_random": true
       },
       "node_code": 8,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.split"
     },
     {
       "id": 2176004824160,
@@ -401,8 +423,9 @@
           "modified_time": 1789063649
         }
       },
-      "node_code": 4,
-      "node_type": "input"
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
     },
     {
       "id": 1933364878576,
@@ -452,44 +475,16 @@
         "join_type": "inner",
         "mapping_data": [
           {
-            "left_column": "Country",
-            "right_column": "Country"
+            "left_column": "Relevancy Score",
+            "right_column": "Relevancy Score"
           }
         ],
         "selected_columns": [
-          {
-            "name": "Autocomplete Position",
-            "source": "L"
-          },
-          {
-            "name": "Country",
-            "source": "L"
-          },
-          {
-            "name": "Difficulty",
-            "source": "L"
-          },
-          {
-            "name": "Hot Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Keyword",
-            "source": "L"
-          },
           {
             "name": "Relevancy Score",
             "source": "L"
           },
           {
-            "name": "Seed",
-            "source": "L"
-          },
-          {
-            "name": "Source",
-            "source": "L"
-          },
-          {
             "name": "Autocomplete Position",
             "source": "R"
           },
@@ -500,11 +495,20 @@
           {
             "name": "Source",
             "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "count",
+            "source": "L"
           }
         ]
       },
       "node_code": 2,
-      "node_type": "join"
+      "node_type": "join",
+      "op": "join.join"
     },
     {
       "id": 2327088172912,
@@ -534,7 +538,8 @@
         "variable_name": "var_count_1168116776496"
       },
       "node_code": 2,
-      "node_type": "transform"
+      "node_type": "transform",
+      "op": "transform.count_records"
     },
     {
       "id": 2327088068736,
@@ -572,11 +577,12 @@
         ]
       },
       "node_code": 3,
-      "node_type": "transform"
+      "node_type": "transform",
+      "op": "transform.running_total"
     },
     {
       "id": 2976902487312,
-      "title": "Select",
+      "title": "GroupBy",
       "pos_x": -210.0,
       "pos_y": 218.0,
       "inputs": [
@@ -603,23 +609,34 @@
             "field": "Relevancy Score",
             "action": "GroupBy",
             "output_name": "Relevancy Score"
+          },
+          {
+            "field": "Hot Keyword",
+            "action": "Count",
+            "output_name": "Count_Hot Keyword"
           }
         ],
         "changes": {
           "group_by_columns": [
             "Relevancy Score"
           ],
-          "aggregations": {}
+          "aggregations": {
+            "Hot Keyword": {
+              "function": "count",
+              "alias": "Count_Hot Keyword"
+            }
+          }
         }
       },
       "node_code": 4,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.groupby"
     },
     {
       "id": 2485739490192,
       "title": "Select",
-      "pos_x": -429.6874999999997,
-      "pos_y": -177.73437499999986,
+      "pos_x": -541.9921874999997,
+      "pos_y": -219.23828124999983,
       "inputs": [
         {
           "id": 2485739491152,
@@ -715,7 +732,8 @@
         }
       },
       "node_code": 5,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.select"
     },
     {
       "id": 2486268150480,
@@ -820,7 +838,8 @@
         }
       },
       "node_code": 5,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.select"
     },
     {
       "id": 2600581196496,
@@ -922,7 +941,364 @@
         }
       },
       "node_code": 5,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2190689705232,
+      "title": "Append",
+      "pos_x": 66.40624999999999,
+      "pos_y": 222.65624999999994,
+      "inputs": [
+        {
+          "id": 2190689709072,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2190689709392,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2190689709712,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "how": "diagonal_relaxed"
+      },
+      "node_code": 1,
+      "node_type": "join",
+      "op": "join.append"
+    },
+    {
+      "id": 2190690272752,
+      "title": "Append",
+      "pos_x": 49.999999999999936,
+      "pos_y": 816.249999999999,
+      "inputs": [
+        {
+          "id": 2190690273872,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2190690274192,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2190690274512,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "how": "diagonal_relaxed"
+      },
+      "node_code": 1,
+      "node_type": "join",
+      "op": "join.append"
+    },
+    {
+      "id": 2190701251952,
+      "title": "Cleansing",
+      "pos_x": -212.8906249999999,
+      "pos_y": -408.20312499999994,
+      "inputs": [
+        {
+          "id": 2190701253072,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2190701253392,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "replace_null_strings": true,
+        "replace_null_numbers": true,
+        "strip_whitespace": false,
+        "normalize_spaces": false,
+        "remove_all_whitespace": false,
+        "case_modification": "title",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": true,
+        "selected_fields": [
+          "Keyword"
+        ],
+        "field_selection_initialized": true,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": false,
+        "remove_null_columns": false
+      },
+      "node_code": 1,
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
+    },
+    {
+      "id": 2190701775280,
+      "title": "Select",
+      "pos_x": 310.93749999999983,
+      "pos_y": -279.6874999999999,
+      "inputs": [
+        {
+          "id": 2190701775760,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2190701775120,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Count",
+            "dtype": "Int64",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2190709734960,
+      "title": "Select",
+      "pos_x": 315.6249999999998,
+      "pos_y": -418.7499999999997,
+      "inputs": [
+        {
+          "id": 2190701781680,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2190701782960,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2752153528080,
+      "title": "Select",
+      "pos_x": -888.6718749999997,
+      "pos_y": -217.28515624999991,
+      "inputs": [
+        {
+          "id": 2752153529040,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2752153529360,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "String",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
     }
   ],
   "edges": [
@@ -993,12 +1369,6 @@
       "end": 2486268151600
     },
     {
-      "id": 2300671657360,
-      "edge_type": 5,
-      "start": 2176088573696,
-      "end": 1933365313888
-    },
-    {
       "id": 2300585133520,
       "edge_type": 5,
       "start": 2176088573408,
@@ -1015,12 +1385,66 @@
       "edge_type": 5,
       "start": 2600581198096,
       "end": 2176088580176
+    },
+    {
+      "id": 2190688888656,
+      "edge_type": 5,
+      "start": 2176088579888,
+      "end": 2190689709072
+    },
+    {
+      "id": 2190689131472,
+      "edge_type": 5,
+      "start": 2976902486672,
+      "end": 2190689709392
+    },
+    {
+      "id": 2190690274992,
+      "edge_type": 5,
+      "start": 2176088587232,
+      "end": 2190690273872
+    },
+    {
+      "id": 2190706490576,
+      "edge_type": 5,
+      "start": 1168116771856,
+      "end": 2190690274192
+    },
+    {
+      "id": 2190707104976,
+      "edge_type": 5,
+      "start": 2976902486672,
+      "end": 1933365313888
+    },
+    {
+      "id": 2190701365200,
+      "edge_type": 5,
+      "start": 2485739491632,
+      "end": 2190701253072
+    },
+    {
+      "id": 2190709604688,
+      "edge_type": 5,
+      "start": 2176088583344,
+      "end": 2190701775760
+    },
+    {
+      "id": 2190707442128,
+      "edge_type": 5,
+      "start": 2176088583344,
+      "end": 2190701781680
+    },
+    {
+      "id": 2752154024144,
+      "edge_type": 5,
+      "start": 2176004925488,
+      "end": 2752153529040
     }
   ],
   "groups": [],
   "workflow_metadata": {
-    "schema_version": 1,
+    "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-12T17:03:06Z"
+    "saved_at": "2026-09-15T17:54:29Z"
   }
 }

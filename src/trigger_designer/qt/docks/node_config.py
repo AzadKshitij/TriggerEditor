@@ -8,8 +8,10 @@ if TYPE_CHECKING:
 
 
 class ConfigDock(QDockWidget):
+    BASE_TITLE = "Node Configuration"
+
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        super().__init__("Node Configuration", parent)
+        super().__init__(self.BASE_TITLE, parent)
         self._current_key = None
         self.initUI()
 
@@ -28,11 +30,13 @@ class ConfigDock(QDockWidget):
     def updateConfig(self, nodes: List["TriggerNode"]) -> None:
         if len(nodes) != 1:
             self._current_key = None
+            self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
         node: TriggerNode = nodes[0]
         if not (hasattr(node, "node") or hasattr(node, "socket")):
             self._current_key = None
+            self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
         try:
@@ -43,6 +47,7 @@ class ConfigDock(QDockWidget):
             return
         if content is None:
             self._current_key = None
+            self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
         if id(content) == self._current_key:
@@ -53,6 +58,7 @@ class ConfigDock(QDockWidget):
         self._current_key = id(content)
         try:
             logger.debug(f"Updating config for node type: {type(node)}")
+            self.setWindowTitle(f"{self.BASE_TITLE} ({self._node_name(node)})")
             self.clear_dock()
             logger.debug("Cleared the dock!!!")
             previous_input_tracking = getattr(content, "_suspend_input_tracking", False)
@@ -71,6 +77,17 @@ class ConfigDock(QDockWidget):
         except Exception as e:
             traceback.print_exc()
             logger.trace(e)
+
+    @staticmethod
+    def _node_name(node: "TriggerNode") -> str:
+        """Best-effort display name for a selected (graphics) node."""
+        inner = getattr(node, "node", None)
+        for obj in (inner, node):
+            for attr in ("title", "node_title"):
+                name = getattr(obj, attr, None)
+                if isinstance(name, str) and name.strip():
+                    return name.strip()
+        return type(inner if inner is not None else node).__name__
 
     def clear_dock(self) -> None:
         # for i in reversed(range(self.dock_layout.count())):

@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/monthly_sales_2023.csv",
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_1/data/monthly_sales_2023.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -52,11 +52,12 @@
         ],
         "file_metadata": {
           "size_bytes": 130688,
-          "modified_time": 1778592379
+          "modified_time": 1789063649
         }
       },
-      "node_code": 4,
-      "node_type": "input"
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
     },
     {
       "id": 2010717022768,
@@ -74,7 +75,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/customers.csv",
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_1/data/customers.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -106,12 +107,13 @@
           }
         ],
         "file_metadata": {
-          "size_bytes": 4883,
-          "modified_time": 1759224020
+          "size_bytes": 4782,
+          "modified_time": 1757009092
         }
       },
-      "node_code": 4,
-      "node_type": "input"
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
     },
     {
       "id": 2010717018768,
@@ -129,7 +131,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/products.csv",
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_1/data/products.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -157,12 +159,13 @@
           }
         ],
         "file_metadata": {
-          "size_bytes": 1339,
-          "modified_time": 1759224020
+          "size_bytes": 1288,
+          "modified_time": 1757009092
         }
       },
-      "node_code": 4,
-      "node_type": "input"
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
     },
     {
       "id": 2010717117872,
@@ -180,7 +183,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_1/data/regions.csv",
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_1/data/regions.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -200,12 +203,13 @@
           }
         ],
         "file_metadata": {
-          "size_bytes": 68,
-          "modified_time": 1745311103
+          "size_bytes": 62,
+          "modified_time": 1757009092
         }
       },
-      "node_code": 4,
-      "node_type": "input"
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
     },
     {
       "id": 2010717123792,
@@ -231,59 +235,11 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "order_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "product_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "order_date",
-            "dtype": "Date",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "order_value",
-            "dtype": "Float64",
-            "rename": ""
-          }
-        ],
-        "changes": {
-          "selected_columns": [
-            "order_id",
-            "customer_id",
-            "product_id",
-            "order_date",
-            "order_value"
-          ],
-          "rename_mapping": {},
-          "dtype_mapping": {
-            "order_id": "String",
-            "customer_id": "String",
-            "product_id": "String",
-            "order_date": "Date",
-            "order_value": "Float64"
-          },
-          "column_order": []
-        }
+        "sort_data": []
       },
-      "node_code": 5,
-      "node_type": "preparation"
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
     },
     {
       "id": 2010717536336,
@@ -381,7 +337,8 @@
         ]
       },
       "node_code": 2,
-      "node_type": "join"
+      "node_type": "join",
+      "op": "join.join"
     },
     {
       "id": 2010720607024,
@@ -491,7 +448,8 @@
         ]
       },
       "node_code": 2,
-      "node_type": "join"
+      "node_type": "join",
+      "op": "join.join"
     },
     {
       "id": 2010720607184,
@@ -605,7 +563,8 @@
         ]
       },
       "node_code": 2,
-      "node_type": "join"
+      "node_type": "join",
+      "op": "join.join"
     },
     {
       "id": 2889454546256,
@@ -647,7 +606,8 @@
         "remove_null_columns": false
       },
       "node_code": 1,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
     },
     {
       "id": 2148973049680,
@@ -685,7 +645,8 @@
         "value": "0"
       },
       "node_code": 2,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.filter"
     },
     {
       "id": 2878904250320,
@@ -711,52 +672,11 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "customer_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "age",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "email",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "region_id",
-            "dtype": "String",
-            "rename": ""
-          }
-        ],
-        "changes": {
-          "selected_columns": [
-            "customer_id",
-            "name",
-            "age",
-            "email",
-            "region_id"
-          ],
-          "rename_mapping": {},
-          "dtype_mapping": {}
-        }
+        "sort_data": []
       },
-      "node_code": 5,
-      "node_type": "preparation"
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
     },
     {
       "id": 2878904248720,
@@ -782,45 +702,11 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "product_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "category",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "price",
-            "dtype": "String",
-            "rename": ""
-          }
-        ],
-        "changes": {
-          "selected_columns": [
-            "product_id",
-            "name",
-            "category",
-            "price"
-          ],
-          "rename_mapping": {},
-          "dtype_mapping": {}
-        }
+        "sort_data": []
       },
-      "node_code": 5,
-      "node_type": "preparation"
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
     },
     {
       "id": 2878904299312,
@@ -846,31 +732,11 @@
         }
       ],
       "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "region_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "region_name",
-            "dtype": "String",
-            "rename": ""
-          }
-        ],
-        "changes": {
-          "selected_columns": [
-            "region_id",
-            "region_name"
-          ],
-          "rename_mapping": {},
-          "dtype_mapping": {}
-        }
+        "sort_data": []
       },
-      "node_code": 5,
-      "node_type": "preparation"
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
     },
     {
       "id": 1662697468016,
@@ -899,14 +765,15 @@
         "formula_sections": [
           {
             "target_column": "year",
-            "formula_text": "YEAR([order_date])"
+            "formula_text": "YEAR([order_date])",
+            "editor_height": 120,
+            "target_dtype": ""
           }
-        ],
-        "formula": "YEAR([order_date])",
-        "target_column": "year"
+        ]
       },
       "node_code": 3,
-      "node_type": "preparation"
+      "node_type": "preparation",
+      "op": "preparation.formula"
     }
   ],
   "edges": [
@@ -989,9 +856,10 @@
       "end": 1662622805808
     }
   ],
+  "groups": [],
   "workflow_metadata": {
-    "schema_version": 1,
+    "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-05-12T16:06:19Z"
+    "saved_at": "2026-09-15T17:54:27Z"
   }
 }

@@ -167,32 +167,36 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is None or not self.incoming_variable:
             return "# No data available for split operation\n"
 
-        code_lines = []
+        # "__split_idx" is unlikely to collide with a user column, and the
+        # max()-threshold keeps the whole plan lazy (no collect needed).
+        split_col = "__split_idx"
+        threshold = self.estimation_percent / 100.0
+        code_lines = ["import polars as pl"]
 
         if self.is_random:
-            # Random split using efficient shuffle and row indexing approach
+            # Full-row shuffle by sorting on a shuffled row index: reorders
+            # whole rows, so row correlation survives (per-column shuffle
+            # would destroy it). Stays lazy, deterministic per seed.
             code_lines.extend(
                 [
-                    "import polars as pl",
-                    f"# Random split with seed {self.random_seed} - efficient LazyFrame approach",
-                    f"# Add row index and shuffle all columns",
-                    f"indexed_df = {self.incoming_variable}.with_columns(pl.all().shuffle(seed={self.random_seed})).with_row_index()",
-                    f"# Split based on row index thresholds",
-                    f"{self.estimation_var} = indexed_df.filter(pl.col('index') < pl.col('index').max() * {self.estimation_percent / 100.0}).drop('index')",
-                    f"{self.validation_var} = indexed_df.filter(pl.col('index') >= pl.col('index').max() * {self.estimation_percent / 100.0}).drop('index')",
+                    f"# Random split with seed {self.random_seed} (row-safe full shuffle)",
+                    f"indexed_df = {self.incoming_variable}.with_row_index('{split_col}').sort(pl.col('{split_col}').shuffle(seed={self.random_seed}))",
                 ]
             )
         else:
-            # Sequential split - no shuffling, just slice based on row count
             code_lines.extend(
                 [
-                    "import polars as pl",
                     f"# Sequential split - first {self.estimation_percent}% for estimation",
-                    f"indexed_df = {self.incoming_variable}.with_row_index()",
-                    f"{self.estimation_var} = indexed_df.filter(pl.col('index') < pl.col('index').max() * {self.estimation_percent / 100.0}).drop('index')",
-                    f"{self.validation_var} = indexed_df.filter(pl.col('index') >= pl.col('index').max() * {self.estimation_percent / 100.0}).drop('index')",
+                    f"indexed_df = {self.incoming_variable}.with_row_index('{split_col}')",
                 ]
             )
+
+        code_lines.extend(
+            [
+                f"{self.estimation_var} = indexed_df.filter(pl.col('{split_col}') < pl.col('{split_col}').max() * {threshold}).drop('{split_col}')",
+                f"{self.validation_var} = indexed_df.filter(pl.col('{split_col}') >= pl.col('{split_col}').max() * {threshold}).drop('{split_col}')",
+            ]
+        )
 
         return "\n".join(code_lines) + "\n"
 
@@ -504,9 +508,27 @@ class TriggerNode_Split(TriggerNode):
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
 
-            # Set the data references for outputs (LazyFrames will be processed in generated code)
-            self.content.estimation_data = self.content.incom_data
-            self.content.validation_data = self.content.incom_data
+            if self.content.incom_data is None:
+                self.markDirty(True)
+                self.markInvalid(True)
+                self.grNode.setToolTip("Input has no data")
+                return None
+
+            # Real lazy split so previews match the generated code.
+            split_col = "__split_idx"
+            threshold = self.content.estimation_percent / 100.0
+            if self.content.is_random:
+                indexed = self.content.incom_data.with_row_index(split_col).sort(
+                    pl.col(split_col).shuffle(seed=self.content.random_seed)
+                )
+            else:
+                indexed = self.content.incom_data.with_row_index(split_col)
+            self.content.estimation_data = indexed.filter(
+                pl.col(split_col) < pl.col(split_col).max() * threshold
+            ).drop(split_col)
+            self.content.validation_data = indexed.filter(
+                pl.col(split_col) >= pl.col(split_col).max() * threshold
+            ).drop(split_col)
 
             self.evalChildren()
             self.param = [
@@ -524,7 +546,7 @@ class TriggerNode_Split(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip("Input is not connected")
-            return [None, None]
+            return None
 
     def get_code(self) -> str:
         """

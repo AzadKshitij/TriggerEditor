@@ -431,8 +431,6 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"{self.variable_name} = {self.incoming_variable}.sort({columns}, descending={descending_flags})"
             )
 
-        print("\n".join(code_lines) + "\n")
-
         return "\n".join(code_lines) + "\n"
 
     def serialize(self) -> Dict[str, Any]:
@@ -539,7 +537,20 @@ class TriggerNode_Sort(TriggerNode):
             # Custom processing logic for the Sort node
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
-            self.content.data = self.content.incom_data
+            # Real lazy sort so previews match the generated code.
+            incom = self.content.incom_data
+            sort_items = [s for s in self.content.sort_data if s.get("column")]
+            if incom is not None and sort_items:
+                try:
+                    incom = incom.sort(
+                        [s["column"] for s in sort_items],
+                        descending=[
+                            s["order"] == "Descending" for s in sort_items
+                        ],
+                    )
+                except Exception:
+                    pass
+            self.content.data = incom
             self.evalChildren()
             self.param = [
                 {"data": self.content.data, "variable_name": self.content.variable_name}
@@ -549,7 +560,7 @@ class TriggerNode_Sort(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip("Input is not connected")
-            return [None]
+            return None
 
     def get_code(self) -> str:
         """

@@ -108,6 +108,14 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.data: Optional[pl.DataFrame] = None
         self.variable_name: str = f"var_select_{self.id}"
 
+        # Must exist before create_layout runs so processInputs can call
+        # apply_changes() on first connection.
+        self.changes: dict = {
+            "selected_columns": [],
+            "rename_mapping": {},
+            "dtype_mapping": {},
+        }
+
     @property
     def node(self) -> "TriggerNode":
         return self._node
@@ -455,6 +463,11 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         ):
             selected_columns = self.changes["selected_columns"]
             available_columns = list(self.incom_data.columns)
+
+            # First time with data: select all columns by default
+            if not selected_columns:
+                selected_columns = available_columns
+                self.changes["selected_columns"] = selected_columns
 
             global_logger.debug(
                 f"📊 SelectContent: Available columns: {available_columns}"

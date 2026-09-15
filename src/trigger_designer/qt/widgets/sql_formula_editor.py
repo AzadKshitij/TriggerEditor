@@ -10,6 +10,7 @@ This module provides a custom QTextEdit widget with:
 """
 
 import re
+import time
 from typing import Callable, List, Optional, Dict, Set, Tuple
 
 from qtpy.QtWidgets import (
@@ -107,7 +108,6 @@ SQL_KEYWORDS = [
     "YEAR",
     "MONTH",
     "DAY",
-    "TODAY",
 ]
 
 #: DuckDB scalar functions surfaced in autocomplete (from FORMULA_TOOL_REFERENCE).
@@ -148,6 +148,7 @@ FUNCTION_NAMES = [
     "STRFTIME",
     "SUBSTRING",
     "SUM",
+    "TODAY",
     "TRIM",
     "TRY_CAST",
     "UPPER",
@@ -189,12 +190,12 @@ def match_completions(
     out: List[str] = []
     seen = set()
     for name in FUNCTION_NAMES:
-        if name.lower().startswith(lowered) and name not in seen:
-            seen.add(name)
+        if name.lower().startswith(lowered) and name.upper() not in seen:
+            seen.add(name.upper())
             out.append(f"{name}()")
     for kw in SQL_KEYWORDS:
-        if kw.lower().startswith(lowered) and kw not in seen:
-            seen.add(kw)
+        if kw.lower().startswith(lowered) and kw.upper() not in seen:
+            seen.add(kw.upper())
             out.append(kw)
     for col in column_names:
         label = f"[{col}]"
@@ -335,6 +336,8 @@ class SQLFormulaEditor(QTextEdit):
         self.column_names: List[str] = []
         self.errors: List[Dict] = []
         self.external_validator: Optional[Callable[[str], List[Dict]]] = None
+        self._last_completion = ""
+        self._last_completion_ts = 0.0
         self.error_timer = QTimer()
         self.error_timer.setSingleShot(True)
         self.error_timer.timeout.connect(self.check_for_errors)
@@ -457,6 +460,18 @@ class SQLFormulaEditor(QTextEdit):
     def _insert_completion(self, completion: str) -> None:
         """Replace the current prefix with the chosen completion."""
         prefix, in_brackets = self._prefix_at_cursor()
+        # Guard: keyboard accept (keyPressEvent) + activated signal can fire
+        # for one choice -> second call sees empty prefix at same spot.
+        now = time.monotonic()
+        if (
+            completion == self._last_completion
+            and not prefix
+            and not in_brackets
+            and (now - self._last_completion_ts) < 1.0
+        ):
+            return
+        self._last_completion = completion
+        self._last_completion_ts = now
         cursor = self.textCursor()
         # ponytail: O(n) cursor move, per-keystroke model rebuild if this lags
         for _ in range(len(prefix)):
@@ -809,9 +824,14 @@ class SQLFormulaEditor(QTextEdit):
             Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
         ):
-            event.ignore()
-            self._insert_completion(completer.currentCompletion())
+            completion = completer.currentCompletion()
             completer.popup().hide()
+            completer.blockSignals(True)
+            try:
+                self._insert_completion(completion)
+            finally:
+                completer.blockSignals(False)
+            event.accept()
             return
         if popup_visible and event.key() == Qt.Key.Key_Escape:
             completer.popup().hide()
