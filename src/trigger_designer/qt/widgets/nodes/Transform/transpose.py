@@ -117,6 +117,16 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def process_data(self) -> None:
         """Transpose selected columns while maintaining key columns using Polars"""
+        if self.incom_data is None:
+            self.data = None
+            return
+        if not self.data_columns:
+            # Unconfigured: pass input through so downstream nodes keep working.
+            global_logger.debug(
+                "📊 TransposeContent: No columns selected, passing input through"
+            )
+            self.data = self.incom_data
+            return
         if self.incom_data is not None and self.data_columns:
             global_logger.debug(
                 "📊 TransposeContent: Processing data for transpose operation"
@@ -192,8 +202,15 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self) -> str:
         """Generate Polars code for transpose operation"""
-        if self.data is None or self.incoming_variable is None:
-            return "# No data available for transpose operation\n"
+        if self.data is None or not self.incoming_variable:
+            # Fallback: always define the output so downstream code never
+            # NameErrors (or SyntaxErrors on an empty incoming variable).
+            code = ["import polars as pl"]
+            if self.incoming_variable:
+                code.append(f"{self.variable_name} = {self.incoming_variable}")
+            else:
+                code.append(f"{self.variable_name} = pl.DataFrame()")
+            return "\n".join(code) + "\n"
 
         code_lines = []
 

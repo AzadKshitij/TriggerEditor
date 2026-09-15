@@ -115,7 +115,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         selected_column: Optional[str] = None,
     ) -> None:
         for column_name, dtype in self._get_frame_schema(frame).items():
-            combo.addItem(self._format_column_label(column_name, dtype), column_name)
+            combo.addItem(self._format_column_label(
+                column_name, dtype), column_name)
 
         if selected_column:
             selected_index = combo.findData(selected_column)
@@ -282,6 +283,27 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.selected_columns = sanitized_columns
 
+    def ensure_default_mapping(self) -> None:
+        """Guarantee at least one mapping pair once both inputs are present.
+
+        Defaults to the first column of each table. Data-only (no widgets):
+        the config dock renders mapping_data rows via load_saved_data().
+        """
+        if self.mapping_data:
+            return
+        if self.left_data is None or self.right_data is None:
+            return
+        left_cols = list(self._get_frame_schema(self.left_data))
+        right_cols = list(self._get_frame_schema(self.right_data))
+        if not left_cols or not right_cols:
+            return
+        self.mapping_data.append(
+            {"left_column": left_cols[0], "right_column": right_cols[0]}
+        )
+        global_logger.info(
+            f"🔄 Join: Auto-mapped {left_cols[0]!r} to {right_cols[0]!r}"
+        )
+
     def load_saved_data(self) -> None:
         self._sanitize_mapping_data()
         if self.mapping_data:
@@ -325,20 +347,23 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Set size policies for mapping combos
         for combo in [left_column_combo, right_column_combo]:
-            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+            combo.setSizeAdjustPolicy(
+                QComboBox.SizeAdjustPolicy.AdjustToContents)
             combo.setMinimumWidth(120)  # Set minimum width
             # Set maximum width to prevent too wide combos
             # combo.setMaximumWidth(200)
 
         if hasattr(self, "left_data") and self.left_data is not None:
-            self._populate_column_combo(left_column_combo, self.left_data, left_col)
+            self._populate_column_combo(
+                left_column_combo, self.left_data, left_col)
 
         global_logger.debug(
             f"� Join: Adding mapping row - Right data available: {self.right_data is not None}"
         )
 
         if hasattr(self, "right_data") and self.right_data is not None:
-            self._populate_column_combo(right_column_combo, self.right_data, right_col)
+            self._populate_column_combo(
+                right_column_combo, self.right_data, right_col)
 
         row_layout.addWidget(left_column_combo)
         row_layout.addSpacing(10)
@@ -367,7 +392,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # connect signal
         left_column_combo.currentTextChanged.connect(self.update_mapping_data)
         right_column_combo.currentTextChanged.connect(self.update_mapping_data)
-        remove_button.clicked.connect(lambda: self.remove_mapping_row(mapping_pair))
+        remove_button.clicked.connect(
+            lambda: self.remove_mapping_row(mapping_pair))
 
         # Add to container
         self.mapping_container.addLayout(row_layout)
@@ -554,7 +580,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         checkbox = QCheckBox(col)
         # Set checked state based on existing selections
         is_checked = (
-            any(x["name"] == col and x["source"] == prefix for x in existing_selections)
+            any(x["name"] == col and x["source"] ==
+                prefix for x in existing_selections)
             if existing_selections
             else True
         )
@@ -709,14 +736,16 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if is_undo:
                 # Undo operation
                 self.join_type = history_data.get("old_join_type", "inner")
-                self.mapping_data = history_data.get("old_mapping_data", []).copy()
+                self.mapping_data = history_data.get(
+                    "old_mapping_data", []).copy()
                 self.selected_columns = history_data.get(
                     "old_selected_columns", []
                 ).copy()
             else:
                 # Redo operation
                 self.join_type = history_data.get("new_join_type", "inner")
-                self.mapping_data = history_data.get("new_mapping_data", []).copy()
+                self.mapping_data = history_data.get(
+                    "new_mapping_data", []).copy()
                 self.selected_columns = history_data.get(
                     "new_selected_columns", []
                 ).copy()
@@ -750,7 +779,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         and significantly reduced memory usage.
         """
         if self.left_data is None or self.right_data is None:
-            global_logger.warning("🔄 Join: No input data available for join operation")
+            global_logger.warning(
+                "🔄 Join: No input data available for join operation")
             return None
 
         global_logger.debug(
@@ -802,16 +832,27 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Rename conflicting columns in right dataframe before join
             right_data_renamed = right_data
             if conflicting_cols:
-                rename_map = {col: f"{col}{right_suffix}" for col in conflicting_cols}
+                rename_map = {
+                    col: f"{col}{right_suffix}" for col in conflicting_cols}
                 right_data_renamed = right_data.rename(rename_map)
                 global_logger.debug(
                     f"🔄 Join: Renamed conflicting columns in right data: {rename_map}"
                 )
 
+            # Tag rows pre-join: tags ride through under any key names
+            # (coalescing can drop a right key column, tags never drop),
+            # so splitting into join/left-only/right-only stays correct
+            # even when the key columns differ by name.
+            left_tag, right_tag = "__left_present", "__right_present"
+            left_tagged = left_data.with_columns(pl.lit(1).alias(left_tag))
+            right_tagged = right_data_renamed.with_columns(
+                pl.lit(1).alias(right_tag)
+            )
+
             # Perform the join operation using Polars
             # Using outer join to capture all combinations like the original pandas code
-            result = left_data.join(
-                right_data_renamed,
+            result = left_tagged.join(
+                right_tagged,
                 left_on=left_cols,
                 right_on=right_cols,
                 how="full",  # Full outer join equivalent to pandas 'outer'
@@ -819,7 +860,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 coalesce=True,  # Coalesce join columns to avoid duplicates
             )
 
-            global_logger.debug(f"🔄 Join: Join operation completed successfully")
+            global_logger.debug(
+                f"🔄 Join: Join operation completed successfully")
 
             # Filter columns based on selected_columns
             if self.selected_columns:
@@ -843,87 +885,40 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         else:
                             selected_cols.append(col_name)
 
+                # Coalescing drops a right key column when key names differ;
+                # its left counterpart holds the same values for matched rows.
+                result_cols = set(result.columns)
+                fixed_cols = []
+                for column in selected_cols:
+                    if column not in result_cols and column in right_cols:
+                        counterpart = left_cols[right_cols.index(column)]
+                        column = (
+                            counterpart
+                            if counterpart in result_cols
+                            else column
+                        )
+                    fixed_cols.append(column)
+                selected_cols = fixed_cols
+
                 selected_cols = [
                     column
                     for index, column in enumerate(selected_cols)
                     if column in result.columns and column not in selected_cols[:index]
                 ]
+            # (self.data is assigned below after the single collect.)
 
-                # Create the main join result with selected columns
-                self.data = result.select(selected_cols)
-                global_logger.debug(
-                    f"� Join: Selected columns for output: {selected_cols}"
-                )
-            else:
-                # If no specific columns selected, return all joined data
-                self.data = result
-                global_logger.debug(
-                    "🔄 Join: No column selection specified, returning all joined data"
-                )
-
-            # OPTIMIZED: Extract all join types from single result (3x faster!)
-            # Use a simpler approach: check for nulls in non-coalesced columns to determine join type
-
-            # Create join type indicator based on null patterns
-            # In a full join, nulls in right columns = left-only, nulls in left columns = right-only
-            non_join_right_cols = [
-                col for col in right_columns if col not in right_cols
-            ]
-            non_join_left_cols = [col for col in left_columns if col not in left_cols]
-
-            # Look for suffixed columns to detect null patterns
-            right_indicator_cols = [
-                f"{col}{right_suffix}"
-                for col in non_join_right_cols
-                if f"{col}{right_suffix}" in result.columns
-            ]
-            left_indicator_cols = [
-                f"{col}{left_suffix}"
-                for col in non_join_left_cols
-                if f"{col}{left_suffix}" in result.columns
-            ]
-
-            # If no indicator columns, use join keys
-            if not right_indicator_cols and not left_indicator_cols:
-                # Fallback to checking join keys for nulls (though they should be coalesced)
-                right_indicator_cols = right_cols
-                left_indicator_cols = left_cols
-
-            # Create join type classification
-            if right_indicator_cols:
-                right_null_condition = pl.all_horizontal(
-                    [pl.col(col).is_null() for col in right_indicator_cols[:1]]
-                )  # Just check first col for efficiency
-            else:
-                right_null_condition = pl.lit(False)
-
-            if left_indicator_cols:
-                left_null_condition = pl.all_horizontal(
-                    [pl.col(col).is_null() for col in left_indicator_cols[:1]]
-                )  # Just check first col for efficiency
-            else:
-                left_null_condition = pl.lit(False)
-
-            result_with_indicators = result.with_columns(
-                [
-                    pl.when(right_null_condition)
-                    .then(pl.lit("left_only"))
-                    .when(left_null_condition)
-                    .then(pl.lit("right_only"))
-                    .otherwise(pl.lit("both"))
-                    .alias("__join_type")
-                ]
+            # OPTIMIZED: Extract all join types from single result (much faster!)
+            # Presence tags (never coalesced away, unlike right key columns)
+            # identify record sources under any key names.
+            collected = result.collect()
+            both_condition = (
+                pl.col(left_tag).is_not_null() & pl.col(right_tag).is_not_null()
             )
-
-            # One collect: derive all three eager outputs from a single
-            # materialization instead of re-running the join per output.
-            # Live outputs stay eager (downstream assumes .shape/[col].dtype);
-            # codegen (get_code) remains lazy.
-            collected = result_with_indicators.collect()
+            left_only_condition = pl.col(right_tag).is_null()
+            right_only_condition = pl.col(left_tag).is_null()
 
             # Extract the three outputs efficiently from single result
             # Main join data (both exist)
-            both_condition = pl.col("__join_type") == "both"
             if self.selected_columns:
                 self.data = collected.filter(both_condition).select(
                     selected_cols
@@ -937,7 +932,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 )
 
             # Left-only data
-            left_only_condition = pl.col("__join_type") == "left_only"
             left_final_cols = [
                 col
                 for col in result.columns
@@ -955,7 +949,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
 
             # Right-only data
-            right_only_condition = pl.col("__join_type") == "right_only"
             right_final_cols = [
                 col
                 for col in result.columns
@@ -968,6 +961,16 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             right_final_cols = [
                 col for col in right_final_cols if not col.startswith("__")
             ]
+            # Reattach coalesced-away right keys via their left counterparts
+            # (full join fills them with the right key values).
+            result_cols = set(result.columns)
+            for l_key, r_key in zip(left_cols, right_cols):
+                if (
+                    r_key not in result_cols
+                    and l_key in result_cols
+                    and l_key not in right_final_cols
+                ):
+                    right_final_cols.append(l_key)
             self.r_data = collected.filter(right_only_condition).select(
                 right_final_cols
             )
@@ -994,7 +997,22 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             global_logger.warning(
                 "Join Node: No mapping data or input data is missing."
             )
-            return ""
+            # Fallback: always define all 3 outputs so downstream code
+            # never NameErrors. Prefer passthrough; else empty frames.
+            fallback = ["import polars as pl"]
+            if self.left_variable:
+                fallback.append(
+                    f"{self.l_variable_name} = {self.left_variable}")
+                fallback.append(f"{self.variable_name} = {self.left_variable}")
+            else:
+                fallback.append(f"{self.l_variable_name} = pl.DataFrame()")
+                fallback.append(f"{self.variable_name} = pl.DataFrame()")
+            if self.right_variable:
+                fallback.append(
+                    f"{self.r_variable_name} = {self.right_variable}")
+            else:
+                fallback.append(f"{self.r_variable_name} = pl.DataFrame()")
+            return "\n".join(fallback) + "\n"
 
         code_lines = []
         left_cols = [m["left_column"] for m in self.mapping_data]
@@ -1011,7 +1029,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if col in left_columns and col not in right_cols
         ]
 
-        code_lines.append("# Polars LazyFrame Join Operation\nimport polars as pl\n")
+        code_lines.append(
+            "# Polars LazyFrame Join Operation\nimport polars as pl\n")
         code_lines.extend(
             [
                 "def _ensure_lazyframe(data):",
@@ -1037,11 +1056,13 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         else:
             right_var = "_right_input"
 
-        # Main join operation
+        # Main join operation (presence tags ride through under any key names)
         code_lines.append(
             f"\n# Perform full outer join with coalesce (automatic conflict resolution)\n"
-            f"_join_result = _left_input.join(\n"
-            f"    {right_var},\n"
+            f"_left_tagged = _left_input.with_columns(pl.lit(1).alias('__left_present'))\n"
+            f"_right_tagged = {right_var}.with_columns(pl.lit(1).alias('__right_present'))\n"
+            f"_join_result = _left_tagged.join(\n"
+            f"    _right_tagged,\n"
             f"    left_on={left_cols},\n"
             f"    right_on={right_cols},\n"
             f"    how='full',\n"
@@ -1050,40 +1071,24 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
 
         # Generate optimized code for left-only and right-only data extraction
+        # (a right key coalesced away is represented by its left counterpart)
         left_cols_for_select = [f"{col}" for col in left_columns]
-        right_cols_for_select = [
-            f"{col}_right" if col in conflicting_cols else f"{col}"
-            for col in right_columns
-        ]
-        right_indicator_columns = [
-            f"{col}_right" if col in conflicting_cols else col for col in right_columns
-        ]
+        right_cols_for_select = []
+        for col in right_columns:
+            if col in conflicting_cols:
+                right_cols_for_select.append(f"{col}_right")
+            elif col in right_cols and col not in left_columns:
+                right_cols_for_select.append(left_cols[right_cols.index(col)])
+            else:
+                right_cols_for_select.append(f"{col}")
 
-        # FIRST: Create the result with indicators (must come before using _result_with_indicators)
-        # Create the null check expressions for right columns (if all right cols are null = left_only)
-        right_null_conditions = " | ".join(
-            [f"pl.col('{col}').is_null()" for col in right_indicator_columns]
-        )
-        left_null_conditions = " | ".join(
-            [f"pl.col('{col}').is_null()" for col in left_columns]
-        )
+        # Split via presence tags (coalescing can drop a right key column,
+        # tags never drop) — correct even when key names differ.
+        both_cond = "(pl.col('__left_present').is_not_null() & pl.col('__right_present').is_not_null())"
+        left_only_cond = "pl.col('__right_present').is_null()"
+        right_only_cond = "pl.col('__left_present').is_null()"
 
-        code_lines.extend(
-            [
-                f"\n# OPTIMIZED: Extract all join types from single result (much faster!)",
-                f"# Add join type indicator to identify record sources",
-                f"_result_with_indicators = _join_result.with_columns([",
-                f"    pl.when({right_null_conditions})",
-                f"      .then(pl.lit('left_only'))",
-                f"      .when({left_null_conditions})",
-                f"      .then(pl.lit('right_only'))",
-                f"      .otherwise(pl.lit('both'))",
-                f"      .alias('__join_type')",
-                f"])",
-            ]
-        )
-
-        # THEN: Filter columns based on selected_columns (now _result_with_indicators is defined)
+        # THEN: Filter columns based on selected_columns
         if self.selected_columns:
             selected_cols = []
             for col in self.selected_columns:
@@ -1091,6 +1096,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 source = col["source"]
 
                 if (
+                    source == "R"
+                    and col_name in right_cols
+                    and col_name not in left_columns
+                    and col_name not in conflicting_cols
+                ):
+                    # Coalesced-away right key: left counterpart holds values.
+                    resolved_name = left_cols[right_cols.index(col_name)]
+                elif (
                     source == "R"
                     and col_name not in right_cols
                     and col_name in conflicting_cols
@@ -1109,8 +1122,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             code_lines.append(
                 f"\n# Main join result with selected columns (matched records only)"
-                f"\n{self.variable_name} = _result_with_indicators.filter("
-                f"\n    pl.col('__join_type') == 'both'"
+                f"\n{self.variable_name} = _join_result.filter("
+                f"\n    {both_cond}"
                 f"\n).select(["
                 f"\n    {cols_str}"
                 f"\n])"
@@ -1118,8 +1131,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         else:
             code_lines.append(
                 f"\n# Main join result (all columns, matched records only)"
-                f"\n{self.variable_name} = _result_with_indicators.filter("
-                f"\n    pl.col('__join_type') == 'both'"
+                f"\n{self.variable_name} = _join_result.filter("
+                f"\n    {both_cond}"
                 f"\n).select([col for col in _join_result.columns if not col.startswith('__')])"
             )
 
@@ -1128,14 +1141,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             [
                 f"\n# Extract left-only data efficiently",
                 f"_left_cols = {left_cols_for_select}",
-                f"{self.l_variable_name} = _result_with_indicators.filter(",
-                f"    pl.col('__join_type') == 'left_only'",
+                f"{self.l_variable_name} = _join_result.filter(",
+                f"    {left_only_cond}",
                 f").select(_left_cols)",
                 f"",
                 f"# Extract right-only data efficiently",
                 f"_right_cols = {right_cols_for_select}",
-                f"{self.r_variable_name} = _result_with_indicators.filter(",
-                f"    pl.col('__join_type') == 'right_only'",
+                f"{self.r_variable_name} = _join_result.filter(",
+                f"    {right_only_cond}",
                 f").select(_right_cols)",
             ]
         )
@@ -1144,8 +1157,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         cleanup_vars = [
             "_left_input",
             "_right_input",
+            "_left_tagged",
+            "_right_tagged",
             "_join_result",
-            "_result_with_indicators",
             "_left_cols",
             "_right_cols",
         ]
@@ -1218,9 +1232,11 @@ class TriggerNode_Join(TriggerNode):
 
         # Get socket index of incoming data
         input_node = self.getInput(this_left_skt)
-        left_skt = self.getSocketValue(input_node.outputs, self)  # type: ignore
+        left_skt = self.getSocketValue(
+            input_node.outputs, self)  # type: ignore
         input_node = self.getInput(this_right_skt)
-        right_skt = self.getSocketValue(input_node.outputs, self)  # type: ignore
+        right_skt = self.getSocketValue(
+            input_node.outputs, self)  # type: ignore
 
         left_input = input_values[this_left_skt][left_skt]
         right_input = input_values[this_right_skt][right_skt]
@@ -1236,6 +1252,10 @@ class TriggerNode_Join(TriggerNode):
             # Process right input
             self.content.right_data = right_input.get("data")
             self.content.right_variable = right_input.get("variable_name")
+
+            # Both inputs present: ensure at least one mapping pair
+            # (first column of each table) so the node works out of the box.
+            self.content.ensure_default_mapping()
 
             global_logger.info(
                 f"🔄 Join: Processing inputs - Left: {self.content.left_variable}, Right: {self.content.right_variable}"

@@ -121,7 +121,12 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def get_code(self) -> str:
         """Generate Polars code for counting records"""
         if not self.incoming_variable:
-            return ""
+            # Fallback: always define the output (zero records when unwired)
+            # so downstream code never NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame({{'Count': [0]}})\n"
+            )
 
         code_lines = ["import polars as pl"]
         code_lines.append("# Count records in DataFrame")

@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional
 
 import polars as pl
+from polars._typing import ConcatMethod
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
@@ -46,7 +47,7 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().__init__(node, parent)
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
-        self.how: str = "diagonal_relaxed"
+        self.how: ConcatMethod = "diagonal_relaxed"
 
         # incoming variables
         self.left_data: Optional[Any] = None

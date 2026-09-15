@@ -1524,6 +1524,97 @@
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
+    },
+    {
+      "id": 2293627242288,
+      "title": "Join",
+      "pos_x": 322.2656249999999,
+      "pos_y": 656.7382812499998,
+      "inputs": [
+        {
+          "id": 2293627243408,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2293627243728,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2293627244048,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2293627244368,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2293627244688,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "Relevancy Score",
+            "right_column": "Relevancy Score"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "Autocomplete Position",
+            "source": "L"
+          },
+          {
+            "name": "Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "L"
+          },
+          {
+            "name": "Source",
+            "source": "L"
+          },
+          {
+            "name": "Autocomplete Position",
+            "source": "R"
+          },
+          {
+            "name": "Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "Source",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
     }
   ],
   "edges": [
@@ -1676,12 +1767,24 @@
       "edge_type": 5,
       "start": 2176088573696,
       "end": 1933365322816
+    },
+    {
+      "id": 2293627337936,
+      "edge_type": 5,
+      "start": 1933365323392,
+      "end": 2293627243408
+    },
+    {
+      "id": 2293627436624,
+      "edge_type": 5,
+      "start": 1933365323392,
+      "end": 2293627243728
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-15T18:20:06Z"
+    "saved_at": "2026-09-15T19:22:33Z"
   }
 }
