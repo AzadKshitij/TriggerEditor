@@ -63,8 +63,14 @@ class SearchableMenu(QMenu):
 
     def _apply_filter(self, text: str) -> None:
         search_text = text.lower()
+        first_visible = None
         for action in self.actions()[1:]:
-            action.setVisible(search_text in action.text().lower())
+            visible = search_text in action.text().lower()
+            action.setVisible(visible)
+            if visible and first_visible is None:
+                first_visible = action
+        # Keep the first match highlighted so Enter adds it.
+        self.setActiveAction(first_visible)
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)

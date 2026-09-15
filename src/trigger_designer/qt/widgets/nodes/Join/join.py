@@ -911,18 +911,24 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 ]
             )
 
+            # One collect: derive all three eager outputs from a single
+            # materialization instead of re-running the join per output.
+            # Live outputs stay eager (downstream assumes .shape/[col].dtype);
+            # codegen (get_code) remains lazy.
+            collected = result_with_indicators.collect()
+
             # Extract the three outputs efficiently from single result
             # Main join data (both exist)
             both_condition = pl.col("__join_type") == "both"
             if self.selected_columns:
-                self.data = result_with_indicators.filter(both_condition).select(
+                self.data = collected.filter(both_condition).select(
                     selected_cols
                 )
             else:
                 non_indicator_cols = [
                     col for col in result.columns if not col.startswith("__")
                 ]
-                self.data = result_with_indicators.filter(both_condition).select(
+                self.data = collected.filter(both_condition).select(
                     non_indicator_cols
                 )
 
@@ -940,7 +946,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             left_final_cols = [
                 col for col in left_final_cols if not col.startswith("__")
             ]
-            self.l_data = result_with_indicators.filter(left_only_condition).select(
+            self.l_data = collected.filter(left_only_condition).select(
                 left_final_cols
             )
 
@@ -958,7 +964,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             right_final_cols = [
                 col for col in right_final_cols if not col.startswith("__")
             ]
-            self.r_data = result_with_indicators.filter(right_only_condition).select(
+            self.r_data = collected.filter(right_only_condition).select(
                 right_final_cols
             )
 
@@ -966,7 +972,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 "� Join: OPTIMIZED join transformation completed - used single join instead of 3 separate operations!"
             )
             global_logger.debug(
-                f"🔄 Join: Result statistics - Total records processed: {result.select(pl.len()).collect().item()}"
+                f"🔄 Join: Result statistics - Total records processed: {collected.height}"
             )
             return result
 

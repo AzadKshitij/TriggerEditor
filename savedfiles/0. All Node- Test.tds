@@ -499,10 +499,6 @@
           {
             "name": "Relevancy Score",
             "source": "R"
-          },
-          {
-            "name": "count",
-            "source": "L"
           }
         ]
       },
@@ -1210,8 +1206,8 @@
     {
       "id": 2752153528080,
       "title": "Select",
-      "pos_x": -888.6718749999997,
-      "pos_y": -217.28515624999991,
+      "pos_x": -1038.2080078124995,
+      "pos_y": 390.0146484374998,
       "inputs": [
         {
           "id": 2752153529040,
@@ -1299,6 +1295,235 @@
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
+    },
+    {
+      "id": 1618725236848,
+      "title": "Join",
+      "pos_x": -732.4218749999997,
+      "pos_y": 442.50488281249983,
+      "inputs": [
+        {
+          "id": 1618724797200,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1618724796560,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1618724794000,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1618724798320,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1618740172016,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [],
+        "selected_columns": []
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 1618740169776,
+      "title": "Join",
+      "pos_x": -732.4218749999997,
+      "pos_y": 442.50488281249983,
+      "inputs": [
+        {
+          "id": 1618740166736,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1618740171536,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1618740172176,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1618740170416,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1618740171056,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [],
+        "selected_columns": []
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 1618740169296,
+      "title": "Join",
+      "pos_x": -732.4218749999997,
+      "pos_y": 442.50488281249983,
+      "inputs": [
+        {
+          "id": 1618740166896,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 1618740167216,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1618740172336,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1618740172656,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1618740172976,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "Keyword",
+            "right_column": "Keyword"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "Autocomplete Position",
+            "source": "L"
+          },
+          {
+            "name": "Country",
+            "source": "L"
+          },
+          {
+            "name": "Difficulty",
+            "source": "L"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "L"
+          },
+          {
+            "name": "Seed",
+            "source": "L"
+          },
+          {
+            "name": "Source",
+            "source": "L"
+          },
+          {
+            "name": "Autocomplete Position",
+            "source": "R"
+          },
+          {
+            "name": "Country",
+            "source": "R"
+          },
+          {
+            "name": "Difficulty",
+            "source": "R"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "Seed",
+            "source": "R"
+          },
+          {
+            "name": "Source",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
     }
   ],
   "edges": [
@@ -1369,12 +1594,6 @@
       "end": 2486268151600
     },
     {
-      "id": 2300585133520,
-      "edge_type": 5,
-      "start": 2176088573408,
-      "end": 1933365322816
-    },
-    {
       "id": 2600581684832,
       "edge_type": 5,
       "start": 2176004925488,
@@ -1439,12 +1658,30 @@
       "edge_type": 5,
       "start": 2176004925488,
       "end": 2752153529040
+    },
+    {
+      "id": 1618725077072,
+      "edge_type": 5,
+      "start": 2752153529360,
+      "end": 1618740166896
+    },
+    {
+      "id": 1618740746960,
+      "edge_type": 5,
+      "start": 2752153529360,
+      "end": 1618740167216
+    },
+    {
+      "id": 1618741649744,
+      "edge_type": 5,
+      "start": 2176088573696,
+      "end": 1933365322816
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-15T17:54:29Z"
+    "saved_at": "2026-09-15T18:20:06Z"
   }
 }
