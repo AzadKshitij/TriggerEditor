@@ -1,6 +1,7 @@
 import dataclasses
 from typing import Optional
 from loguru import logger
+from qtpy.QtGui import QPalette, QPainter, QPen
 from qtpy.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -29,7 +30,7 @@ from qtpy.QtCore import (
     QSortFilterProxyModel,
     QItemSelectionModel,
 )
-from qtpy.QtCore import Qt, Signal, QVariant, QModelIndex
+from qtpy.QtCore import Qt, Signal
 import polars as pl
 
 
@@ -664,11 +665,13 @@ class ComboBoxDelegate(QStyledItemDelegate):
         # Create the editor widget (a QComboBox)
         if index.column() == 2:  # Apply only to the 'Option' column
             editor = QComboBox(parent)
+            # Themed via QSS; setAutoFillBackground(True) would repaint it
+            # with the default palette and undo the dock colours.
+            editor.setObjectName("DataTypeCombo")
             # Get the list of options from the model using Qt.UserRole
             options = index.model().data(index, Qt.UserRole)
             if options:
                 editor.addItems(options)
-            editor.setAutoFillBackground(True)  # Helps with painting
             return editor
         # Use default editor for other columns
         return super().createEditor(parent, option, index)
@@ -702,58 +705,63 @@ class ComboBoxDelegate(QStyledItemDelegate):
         # Get the value from the model
         value = index.data(Qt.ItemDataRole.DisplayRole)
 
-        # Create style option for combo box
+        # Create style option for combo box. The palette/font MUST be copied
+        # from the view option: a bare QStyleOptionComboBox falls back to the
+        # application default palette, which renders a light grey box that
+        # clashes with the themed table.
         opt = QStyleOptionComboBox()
         opt.rect = option.rect
         opt.state = option.state
-
-        # Convert QVariant to string if needed
-        if isinstance(value, QVariant):
-            value = value.toString() if value.isValid() else ""
-        else:
-            value = str(value)
-
-        opt.currentText = value
-
-        # Draw the combo box
-        if option.widget:
-            style = option.widget.style()
-        else:
-            style = QApplication.style()
-
-        style.drawComplexControl(QStyle.ComplexControl.CC_ComboBox, opt, painter)
-        style.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, opt, painter)
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-        editor.addItems(
-            [
-                "String",
-                "Int64",
-                "Float64",
-                "Boolean",
-                "Date",
-                "Datetime",
-                "List",
-                "Struct",
-                "Categorical",
-                "Binary",
-                "Decimal",
-                "Duration",
-            ]
+        opt.palette = option.palette
+        opt.font = option.font
+        opt.fontMetrics = option.fontMetrics
+        opt.subControls = (
+            QStyle.SubControl.SC_ComboBoxFrame | QStyle.SubControl.SC_ComboBoxArrow
         )
-        return editor
+        opt.activeSubControls = QStyle.SubControl.SC_ComboBoxArrow
+        opt.currentText = ""
 
-    def setEditorData(self, editor, index):
-        value = index.data(Qt.ItemDataRole.DisplayRole)
-        if isinstance(value, QVariant):
-            value = value.toString() if value.isValid() else ""
+        # Cell background first: keeps alternating rows and selection intact.
+        painter.save()
+        if option.backgroundBrush.style() != Qt.BrushStyle.NoBrush:
+            option.backgroundBrush.draw(painter, option.rect)
         else:
-            value = str(value)
-        editor.setCurrentText(value)
+            painter.fillRect(option.rect, option.palette.color(QPalette.ColorRole.Base))
 
-    def setModelData(self, editor, model, index):
-        model.setData(index, editor.currentText(), Qt.ItemDataRole.EditRole)
+        text_rect = option.rect.adjusted(6, 0, -20, 0)
+
+        # Text colour follows selection state, like every other cell.
+        selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        text_color = option.palette.color(
+            QPalette.ColorRole.HighlightedText if selected else QPalette.ColorRole.Text
+        )
+
+        # Subtle field frame so the cell still reads as a dropdown.
+        frame_color = option.palette.color(QPalette.ColorRole.Mid)
+        painter.setPen(QPen(frame_color, 1))
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        field_rect = option.rect.adjusted(3, 3, -3, -3)
+        painter.drawRoundedRect(field_rect, 3, 3)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+
+        painter.setPen(QPen(text_color))
+        elided = option.fontMetrics.elidedText(
+            str(value), Qt.TextElideMode.ElideRight, text_rect.width()
+        )
+        painter.drawText(
+            text_rect,
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            elided,
+        )
+
+        # Chevron, drawn in the same colour as the text.
+        painter.setPen(QPen(text_color, 1))
+        cx = option.rect.right() - 12
+        cy = option.rect.center().y() + 1
+        painter.drawLine(cx - 3, cy - 1, cx, cy + 2)
+        painter.drawLine(cx, cy + 2, cx + 3, cy - 1)
+
+        painter.restore()
 
     def editorEvent(self, event, model, option, index):
         # Handle events within the cell, even when not in edit mode

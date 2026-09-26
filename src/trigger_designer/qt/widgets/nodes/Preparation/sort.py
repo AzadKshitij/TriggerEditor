@@ -3,20 +3,12 @@ import pprint
 from typing import Dict, Optional, List, Any, TYPE_CHECKING
 from qtpy.QtWidgets import (
     QWidget,
-    QLineEdit,
-    QPushButton,
-    QFileDialog,
     QVBoxLayout,
-    QTextEdit,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
     QLayout,
-    QComboBox,
     QLabel,
     QHBoxLayout,
 )
-from qtpy.QtGui import QIcon, QPixmap
+from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
 from trigger_designer.core.node_configuration import (
     register_node,
@@ -31,7 +23,11 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel
+from trigger_designer.qt.widgets.common import (
+    EmptyStateLabel,
+    IconButton,
+    NoWheelComboBox,
+)
 from nodeeditor.utils import dumpException
 import polars as pl
 
@@ -109,15 +105,19 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         try:
             column_names = list(frame_schema(self.incom_data))
         except Exception:
-            # If we can't get columns, show error
+            # If we can't get columns, show error via themed info label
             error_label = QLabel("Error: Unable to read column information")
+            error_label.setObjectName("ConfigSectionInfo")
             error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            error_label.setStyleSheet("color: red;")
+            error_label.setWordWrap(True)
             dock_layout.addWidget(error_label)
             return dock_layout
 
         main_layout = QVBoxLayout()
+        main_layout.setSpacing(2)
+        main_layout.setContentsMargins(5, 5, 5, 5)
         self.sort_layout = QVBoxLayout()
+        self.sort_layout.setSpacing(2)
 
         # Create rows based on saved sort_data or add initial row if none exists
         if self.sort_data:
@@ -128,11 +128,11 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Add default first row if no saved data
             self.add_sort_row()
 
-        # Add row for the add button
-        add_btn = QPushButton()
-        add_btn.setIcon(QIcon(self.node.rsm.get("icon_add")))
-        add_btn.setToolTip("Add sort key")
-        add_btn.setFixedWidth(30)
+        # Add row for the add button (icon-only per design system §4)
+        add_btn = IconButton.themed(
+            "Add sort key",
+            rsm_icon=self.node.rsm.get("icon_add"),
+        )
         add_btn.clicked.connect(self.add_sort_row)
 
         main_layout.addLayout(self.sort_layout)
@@ -155,7 +155,9 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             old_state = {"sort_data": [item.copy() for item in self.sort_data]}
 
         row_layout = QHBoxLayout()
-        column_selector = QComboBox()
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        column_selector = NoWheelComboBox()
+        column_selector.setMinimumHeight(30)
 
         # Get column names from LazyFrame
         if self.incom_data is not None:
@@ -171,7 +173,8 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout.addWidget(column_selector)
 
         # Add order selector
-        order_selector = QComboBox()
+        order_selector = NoWheelComboBox()
+        order_selector.setMinimumHeight(30)
         order_selector.addItems(["Ascending", "Descending"])
         order_selector.currentTextChanged.connect(
             partial(self.on_order_changed, row_id)
@@ -179,10 +182,10 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row_layout.addWidget(order_selector)
 
         # Add remove button
-        remove_button = QPushButton()
-        remove_button.setIcon(QIcon(self.node.rsm.get("icon_remove")))
-        remove_button.setToolTip("Remove sort key")
-        remove_button.setMaximumWidth(30)
+        remove_button = IconButton.themed(
+            "Remove sort key",
+            rsm_icon=self.node.rsm.get("icon_remove"),
+        )
         remove_button.clicked.connect(partial(self.remove_sort_row, row_id))
         row_layout.addWidget(remove_button)
 
@@ -405,10 +408,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incoming_variable is None or self.incoming_variable == "":
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
         if not self.sort_data:
             return f"{self.variable_name} = {self.incoming_variable}\n"
@@ -552,9 +552,7 @@ class TriggerNode_Sort(TriggerNode):
                 try:
                     incom = incom.sort(
                         [s["column"] for s in sort_items],
-                        descending=[
-                            s["order"] == "Descending" for s in sort_items
-                        ],
+                        descending=[s["order"] == "Descending" for s in sort_items],
                     )
                 except Exception:
                     pass

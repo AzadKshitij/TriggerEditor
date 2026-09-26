@@ -1,33 +1,20 @@
 import polars as pl
 from qtpy.QtWidgets import (
     QWidget,
-    QLineEdit,
     QVBoxLayout,
     QHBoxLayout,
-    QListWidget,
     QLabel,
-    QTableView,
-    QStyledItemDelegate,
     QSizePolicy,
-    QSpacerItem,
-    QListWidgetItem,
     QTableWidget,
     QTableWidgetItem,
-    QCheckBox,
-    QComboBox,
     QHeaderView,
-    QPushButton,
     QSplitter,
 )
-from qtpy.QtGui import QPixmap, QIcon
+from qtpy.QtGui import QPixmap
 from qtpy.QtCore import (
     Qt,
-    QSaveFile,
     Signal,
-    QVariant,
-    QModelIndex,
-    QSortFilterProxyModel,
-    QSize,
+    QTimer,
 )
 from trigger_designer.core.node_configuration import (
     register_node,
@@ -41,27 +28,21 @@ from trigger_designer.qt.node_base import (
     frame_schema,
     frame_shape,
 )
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel
+from trigger_designer.qt.widgets.common import (
+    EmptyStateLabel,
+    IconButton,
+    NoWheelComboBox,
+)
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.helpers import global_logger
 from typing import (
     Optional,
     TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    OrderedDict,
-    Type,
-    cast,
-    Union,
 )
 
 if TYPE_CHECKING:
-    from nodeeditor.node_scene import Scene
-    from nodeeditor.node_node import Node
     import polars as pl
 
 
@@ -155,6 +136,14 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Cache for serialization safety
         self.cached_actions_data: list = []
 
+        # Live-by-default: coalesce rapid edits (text/alias typing) into a
+        # single recompute instead of re-running polars on every keystroke.
+        self._apply_timer = QTimer(self)
+        self._apply_timer.setSingleShot(True)
+        self._apply_timer.setInterval(300)
+        self._apply_timer.timeout.connect(self._apply_debounced)
+        self._applying = False
+
     @property
     def node(self) -> "TriggerNode":
         return self._node
@@ -181,16 +170,16 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             main_widget = QWidget()
             main_layout = QVBoxLayout(main_widget)
             main_layout.setContentsMargins(5, 5, 5, 5)
+            main_layout.setSpacing(2)
 
             # Fields Section (Top Widget)
             fields_widget = QWidget()
             fields_layout = QVBoxLayout(fields_widget)
-            fields_layout.setContentsMargins(2, 2, 2, 2)
+            fields_layout.setContentsMargins(0, 0, 0, 0)
+            fields_layout.setSpacing(2)
 
-            fields_label = QLabel("Fields:")
-            fields_label.setStyleSheet(
-                "font-weight: bold; font-size: 12px; padding: 2px;"
-            )
+            fields_label = QLabel("Fields")
+            fields_label.setObjectName("ConfigSectionInfo")
             fields_layout.addWidget(fields_label)
 
             # Create fields table (shows available columns)
@@ -206,32 +195,16 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             fields_widget.setMinimumHeight(180)
             self.splitter.addWidget(fields_widget)
 
-            # Add button container (not resizable, fixed between sections)
+            # Add button container (icon-only per design system §4)
             add_button_widget = QWidget()
             add_button_layout = QHBoxLayout(add_button_widget)
-            add_button_layout.setContentsMargins(2, 5, 2, 5)
+            add_button_layout.setContentsMargins(0, 0, 0, 0)
             add_button_layout.addStretch()
 
-            self.add_btn = QPushButton("Add")
-            self.add_btn.setIcon(QIcon(self.node.rsm.get("icon_add")))
-            self.add_btn.setMinimumHeight(30)
-            self.add_btn.setMinimumWidth(100)
-            self.add_btn.setStyleSheet("""
-                QPushButton {
-                    background-color: #2196F3;
-                    color: white;
-                    border: none;
-                    border-radius: 15px;
-                    font-weight: bold;
-                    font-size: 12px;
-                }
-                QPushButton:hover {
-                    background-color: #1976D2;
-                }
-                QPushButton:pressed {
-                    background-color: #0D47A1;
-                }
-            """)
+            self.add_btn = IconButton.themed(
+                "Add selected field as group key",
+                rsm_icon=self.node.rsm.get("icon_add"),
+            )
             self.add_btn.clicked.connect(self.add_selected_field)
             add_button_layout.addWidget(self.add_btn)
             add_button_layout.addStretch()
@@ -239,12 +212,11 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Actions Section (Bottom Widget)
             actions_widget = QWidget()
             actions_layout = QVBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(2, 2, 2, 2)
+            actions_layout.setContentsMargins(0, 0, 0, 0)
+            actions_layout.setSpacing(2)
 
-            actions_label = QLabel("Actions:")
-            actions_label.setStyleSheet(
-                "font-weight: bold; font-size: 12px; padding: 2px;"
-            )
+            actions_label = QLabel("Actions")
+            actions_label.setObjectName("ConfigSectionInfo")
             actions_layout.addWidget(actions_label)
 
             # Create actions table
@@ -266,18 +238,25 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if hasattr(self, "actions_data"):
                 self.restore_actions_table()
 
-            # Control buttons for actions table
+            # Control buttons for actions table (icon-only per design system §4)
             actions_button_layout = QHBoxLayout()
+            actions_button_layout.setContentsMargins(0, 0, 0, 0)
 
-            self.remove_btn = QPushButton("Remove")
-            self.remove_btn.setMinimumHeight(25)
-            self.remove_btn.setMaximumWidth(80)
+            self.remove_btn = IconButton.themed(
+                "Remove selected action",
+                rsm_icon=self.node.rsm.get("icon_remove"),
+            )
             self.remove_btn.clicked.connect(self.remove_selected_action)
             actions_button_layout.addWidget(self.remove_btn)
 
-            self.apply_btn = QPushButton("Apply")
-            self.apply_btn.setMinimumHeight(25)
-            self.apply_btn.setMaximumWidth(80)
+            # Apply stays available (explicit recompute) but edits also apply
+            # live via the debounced handler wired in create_actions_table.
+            self.apply_btn = IconButton.themed(
+                "Apply group by now",
+                rsm_icon=self.node.rsm.get("icon_apply"),
+                qss_fallback=":/qss_icons/dark/rc/checkbox_checked.png",
+                theme_fallback="emblem-ok",
+            )
             self.apply_btn.clicked.connect(self.apply_groupby_from_ui)
             actions_button_layout.addWidget(self.apply_btn)
 
@@ -436,8 +415,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.actions_table.setItem(row, 0, field_item)
 
         # Action dropdown
-        action_combo = QComboBox()
+        action_combo = NoWheelComboBox()
         action_combo.addItems(self.aggregation_functions)
+        action_combo.setMinimumHeight(30)
         action_combo.setCurrentText("Count")  # Default to Count
         action_combo.currentTextChanged.connect(lambda: self.on_action_changed(row))
         self.actions_table.setCellWidget(row, 1, action_combo)
@@ -498,13 +478,16 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"📊 GroupByContent: Updated action for '{field_name}' to '{action}' with output '{output_name}'"
         )
 
-        # Update changes when action is changed
+        # Update changes when action is changed, then apply live (debounced).
         try:
             self.update_groupby_data()
         except Exception as e:
             global_logger.error(
                 f"❌ GroupByContent: Error updating data after action change: {str(e)}"
             )
+            return
+        if not getattr(self, "_applying", False):
+            self._apply_timer.start()
 
     def remove_selected_action(self) -> None:
         """Remove selected row from actions table"""
@@ -534,12 +517,28 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
 
     def safe_update_groupby_data(self, *args) -> None:
-        """Safely update groupby data with error handling"""
+        """Safely update groupby data with error handling, then apply live."""
         try:
             self.update_groupby_data()
         except Exception as e:
             global_logger.error(f"❌ GroupByContent: Safe update error: {str(e)}")
             # Don't re-raise the exception to prevent UI crashes
+            return
+        # Live-by-default: recompute after edits settle (300ms debounce).
+        if not getattr(self, "_applying", False):
+            self._apply_timer.start()
+
+    def _apply_debounced(self) -> None:
+        """Debounced live apply, skipped while restoring history."""
+        if getattr(self, "_applying", False):
+            return
+        if getattr(self.history, "is_restoring_history", False):
+            return
+        if not self.changes.get("group_by_columns") and not self.changes.get(
+            "aggregations"
+        ):
+            return
+        self.apply_groupby_from_ui()
 
     def update_groupby_data(self) -> None:
         """Update internal groupby_data from actions table state"""
@@ -628,7 +627,11 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             global_logger.error(f"❌ GroupByContent: Error in debug logging: {str(e)}")
 
     def apply_groupby_from_ui(self) -> None:
-        self.apply_groupby(emit_evaluate=True)
+        self._applying = True
+        try:
+            self.apply_groupby(emit_evaluate=True)
+        finally:
+            self._applying = False
 
     def apply_groupby(self, emit_evaluate: bool = False) -> None:
         """Apply the GroupBy operations to the data"""
@@ -783,10 +786,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if not self.incoming_variable:
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
         code_lines = []
 

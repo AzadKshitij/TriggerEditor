@@ -1,8 +1,8 @@
 from typing import Optional, TYPE_CHECKING
 import polars as pl
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QLabel
+from qtpy.QtWidgets import QWidget, QVBoxLayout
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Signal, Qt
+from qtpy.QtCore import Signal
 from trigger_designer.core.node_configuration import (
     register_node,
     TransformNodes,
@@ -14,6 +14,7 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 from trigger_designer.qt.helpers import global_logger
 
 if TYPE_CHECKING:
@@ -60,11 +61,8 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         global_logger.debug("🔢 CountRecordsContent: Creating layout")
-        message_label = QLabel("No configuration needed. The output socket returns the row count.")
-        message_label.setWordWrap(True)
-        message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        message_label.setStyleSheet(
-            "color: gray; font-style: italic; padding: 12px;"
+        message_label = EmptyStateLabel(
+            "No configuration needed. The output socket returns the row count."
         )
         dock_layout.addWidget(message_label)
 
@@ -101,7 +99,9 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             try:
                 if isinstance(self.incom_data, pl.LazyFrame):
-                    self.total_records = self.incom_data.select(pl.len()).collect().item()
+                    self.total_records = (
+                        self.incom_data.select(pl.len()).collect().item()
+                    )
                 else:
                     self.total_records = self.incom_data.height
 

@@ -530,7 +530,7 @@
         }
       ],
       "content": {
-        "total_records": 10,
+        "total_records": 16,
         "variable_name": "var_count_1168116776496"
       },
       "node_code": 2,
@@ -1200,6 +1200,137 @@
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
+    },
+    {
+      "id": 1750148797360,
+      "title": "Select",
+      "pos_x": -2.44140625,
+      "pos_y": -439.4531249999997,
+      "inputs": [
+        {
+          "id": 1750148795600,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1750148796080,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "Int64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {}
+        }
+      },
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 1750148216656,
+      "title": "Transpose",
+      "pos_x": 180.6640624999999,
+      "pos_y": -441.8945312499997,
+      "inputs": [
+        {
+          "id": 1750280440080,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1750280440400,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "key_columns": [
+          "Keyword"
+        ],
+        "data_columns": [
+          "Country",
+          "Difficulty",
+          "Relevancy Score"
+        ],
+        "missing_action": "warn"
+      },
+      "node_code": 4,
+      "node_type": "transform",
+      "op": "transform.transpose"
     }
   ],
   "edges": [
@@ -1340,12 +1471,24 @@
       "edge_type": 5,
       "start": 1933365323392,
       "end": 2293627243728
+    },
+    {
+      "id": 1750148773968,
+      "edge_type": 5,
+      "start": 2190701253392,
+      "end": 1750148795600
+    },
+    {
+      "id": 1750279719120,
+      "edge_type": 5,
+      "start": 1750148796080,
+      "end": 1750280440080
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-15T19:32:51Z"
+    "saved_at": "2026-09-26T10:49:26Z"
   }
 }

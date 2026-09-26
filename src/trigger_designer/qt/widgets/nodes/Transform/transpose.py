@@ -3,7 +3,6 @@ import polars as pl
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QComboBox,
 )
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Signal  # noqa: F401
@@ -26,6 +25,7 @@ from trigger_designer.qt.widgets.common import (
     ColumnChecklist,
     ConfigSection,
     EmptyStateLabel,
+    NoWheelComboBox,
 )
 
 if TYPE_CHECKING:
@@ -87,7 +87,9 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "Select Key Columns (ID Variables)",
             "These columns will be preserved as identifiers in the transposed result.",
         )
-        self.key_list = ColumnChecklist(list(frame_schema(self.incom_data)), self.key_columns)
+        self.key_list = ColumnChecklist(
+            list(frame_schema(self.incom_data)), self.key_columns
+        )
         self.key_list.changed.connect(self.on_key_selection_changed)
         self.key_checkboxes = self.key_list.checkboxes
         key_section.addWidget(self.key_list)
@@ -97,7 +99,9 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "Select Columns to Transpose (Value Variables)",
             "These columns will be transposed from columns to rows. Column names become 'Name' values, column data becomes 'Value' values.",
         )
-        self.data_list = ColumnChecklist(list(frame_schema(self.incom_data)), self.data_columns)
+        self.data_list = ColumnChecklist(
+            list(frame_schema(self.incom_data)), self.data_columns
+        )
         self.data_list.changed.connect(self.on_data_selection_changed)
         self.data_checkboxes = self.data_list.checkboxes
         data_section.addWidget(self.data_list)
@@ -107,8 +111,9 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "Missing Columns Handling",
             "How to handle columns that are selected but don't exist in the input data.",
         )
-        self.action_combo = QComboBox()
+        self.action_combo = NoWheelComboBox()
         self.action_combo.addItems(["error", "warn", "ignore"])
+        self.action_combo.setMinimumHeight(30)
         self.action_combo.setCurrentText(self.missing_action)
         self.action_combo.currentTextChanged.connect(self.on_action_changed)
         action_section.addWidget(self.action_combo)

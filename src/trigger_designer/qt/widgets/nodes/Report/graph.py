@@ -1,21 +1,10 @@
 from qtpy.QtWidgets import (
-    QWidget,
     QLineEdit,
-    QPushButton,
     QFileDialog,
     QVBoxLayout,
-    QTextEdit,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QLayout,
-    QComboBox,
-    QLineEdit,
     QLabel,
-    QHBoxLayout,
     QDialogButtonBox,
     QDialog,
-    QColorDialog,
 )
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Qt, Signal
@@ -31,10 +20,13 @@ from trigger_designer.qt.node_base import (
     frame_schema,
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.node_node import Node
 from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    IconButton,
+    NoWheelComboBox,
+)
 from trigger_designer.qt.helpers import global_logger
 import polars as pl
 from typing import (
@@ -44,8 +36,6 @@ from typing import (
     List,
     Optional,
     OrderedDict,
-    Type,
-    cast,
     Union,
 )
 
@@ -87,9 +77,7 @@ def _create_graph_toolbar(canvas, save_context, parent):
             self.parent_widget = parent
 
         def save_figure(self, *args):
-            file_choices = (
-                "PNG (*.png);;PDF (*.pdf);;JPG (*.jpg);;SVG (*.svg)"
-            )
+            file_choices = "PNG (*.png);;PDF (*.pdf);;JPG (*.jpg);;SVG (*.svg)"
             path, ext = QFileDialog.getSaveFileName(
                 self.save_context, "Save figure", "", file_choices
             )
@@ -148,7 +136,9 @@ class GraphDialog(QDialog):
         self.canvas.draw()
 
 
-class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin):
+class GraphContent(
+    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+):
     evaluate = Signal()  # Emit when evaluate button is clicked
     serialized_state_schema = {
         "graph_type": {"default": "line"},
@@ -195,38 +185,55 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableC
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(2)
+
+        graph_section = ConfigSection("Graph Configuration")
+
         # Graph Type Selection
-        self.graph_type_combo = QComboBox()
+        self.graph_type_combo = NoWheelComboBox()
+        self.graph_type_combo.setMinimumHeight(30)
         self.graph_type_combo.addItems(["line", "bar", "scatter"])
         self.graph_type_combo.currentTextChanged.connect(self.on_graph_type_changed)
-        dock_layout.addWidget(QLabel("Graph Type:"))
-        dock_layout.addWidget(self.graph_type_combo)
+        graph_section.addWidget(QLabel("Graph type"))
+        graph_section.addWidget(self.graph_type_combo)
 
         # X Column Selection
-        self.x_column_combo = QComboBox()
+        self.x_column_combo = NoWheelComboBox()
+        self.x_column_combo.setMinimumHeight(30)
         self.x_column_combo.currentTextChanged.connect(self.on_x_column_changed)
-        dock_layout.addWidget(QLabel("X Column:"))
-        dock_layout.addWidget(self.x_column_combo)
+        graph_section.addWidget(QLabel("X column"))
+        graph_section.addWidget(self.x_column_combo)
 
         # Y Column Selection
-        self.y_column_combo = QComboBox()
+        self.y_column_combo = NoWheelComboBox()
+        self.y_column_combo.setMinimumHeight(30)
         self.y_column_combo.currentTextChanged.connect(self.on_y_column_changed)
-        dock_layout.addWidget(QLabel("Y Column:"))
-        dock_layout.addWidget(self.y_column_combo)
+        graph_section.addWidget(QLabel("Y column"))
+        graph_section.addWidget(self.y_column_combo)
 
         # Graph Title Input
         self.title_edit = QLineEdit()
+        self.title_edit.setMinimumHeight(30)
+        self.title_edit.setPlaceholderText("Chart title")
         self.title_edit.textChanged.connect(self.on_title_changed)
-        dock_layout.addWidget(QLabel("Title:"))
-        dock_layout.addWidget(self.title_edit)
+        graph_section.addWidget(QLabel("Title"))
+        graph_section.addWidget(self.title_edit)
 
-        # Matplotlib Canvas
-        # self.sc = MplCanvas(self, width=5, height=4, dpi=100)
-        # dock_layout.addWidget(self.sc)
-        # Add button to open graph in new window
-        self.open_graph_button = QPushButton("Open Graph in New Window")
+        main_layout.addWidget(graph_section)
+
+        # Open in new window (icon-only per design system §4)
+        self.open_graph_button = IconButton.themed(
+            "Open graph in new window",
+            rsm_icon=self.node.rsm.get("icon_external"),
+            theme_fallback="window-new",
+        )
         self.open_graph_button.clicked.connect(self.open_graph_in_new_window)
-        dock_layout.addWidget(self.open_graph_button)
+        main_layout.addWidget(self.open_graph_button)
+        main_layout.addStretch()
+
+        dock_layout.addLayout(main_layout)
 
         self.update_column_options()
         self._update_open_graph_button_visibility()
@@ -296,10 +303,7 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableC
         if not self.incoming_variable:
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
         code_lines = [
             "import matplotlib.pyplot as plt",
             "import polars as pl",

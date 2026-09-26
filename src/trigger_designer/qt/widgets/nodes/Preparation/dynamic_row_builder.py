@@ -6,7 +6,6 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QLineEdit,
-    QComboBox,
     QSpinBox,
     QDateTimeEdit,
     QDoubleSpinBox,
@@ -25,7 +24,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.widgets.common import ConfigSection
+from trigger_designer.qt.widgets.common import ConfigSection, NoWheelComboBox
 from nodeeditor.utils_no_qt import dumpException
 
 
@@ -98,8 +97,9 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Field type
         type_label = QLabel("Field Type:")
-        self.type_combo = QComboBox()
+        self.type_combo = NoWheelComboBox()
         self.type_combo.addItems(["int", "float", "string", "datetime"])
+        self.type_combo.setMinimumHeight(30)
         self.type_combo.setCurrentText(self.field_type)
         self.type_combo.currentTextChanged.connect(self.on_field_type_changed)
         field_group.addWidget(type_label)

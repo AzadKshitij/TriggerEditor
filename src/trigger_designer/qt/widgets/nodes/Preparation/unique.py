@@ -4,14 +4,10 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QLabel,
-    QListWidget,
-    QListWidgetItem,
     QLineEdit,
-    QPushButton,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, Signal, QSize, Slot
+from qtpy.QtCore import Signal, Slot
 from trigger_designer.core.node_configuration import (
     register_node,
     PreparationNodes,
@@ -24,7 +20,12 @@ from trigger_designer.qt.node_base import (
     frame_schema,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import ConfigSection, EmptyStateLabel
+from trigger_designer.qt.widgets.common import (
+    ColumnChecklist,
+    ConfigSection,
+    EmptyStateLabel,
+    TextButton,
+)
 from nodeeditor.utils_no_qt import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 from nodeeditor.node_scene import Scene
@@ -68,8 +69,9 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # UI components
         self.search_bar: QLineEdit | None = None
-        self.column_list: QListWidget | None = None
+        self.column_list: ColumnChecklist | None = None
         self.all_columns: list[str] = []  # Store all available columns for filtering
+        self._visible_columns: list[str] = []  # Columns currently shown (post-filter)
 
     @property
     def node(self) -> "TriggerNode":
@@ -95,66 +97,33 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout: The layout to add components to
         """
         if self.incom_data is not None:
-            # Main configuration group
+            # Main configuration group (design system defaults: spacing 2)
             config_group = ConfigSection(
                 "Unique Configuration",
                 "Select columns to determine uniqueness:",
             )
-            config_group.layout().setSpacing(10)
-            config_group.layout().setContentsMargins(15, 15, 15, 15)
 
-            # Search bar
-            search_layout = QHBoxLayout()
-            search_label = QLabel("Search:")
-            search_label.setStyleSheet("font-weight: normal;")
+            # Toolbar: search + icon-only select/deselect (design system §4)
+            toolbar_layout = QHBoxLayout()
+            toolbar_layout.setContentsMargins(0, 0, 0, 0)
             self.search_bar = QLineEdit()
             self.search_bar.setPlaceholderText("Type to filter columns...")
+            self.search_bar.setClearButtonEnabled(True)
+            self.search_bar.setMinimumHeight(30)
             self.search_bar.textChanged.connect(self._filter_columns)
-            search_layout.addWidget(search_label)
-            search_layout.addWidget(self.search_bar)
-            config_group.addLayout(search_layout)
+            toolbar_layout.addWidget(self.search_bar)
 
-            # Selection buttons
-            button_layout = QHBoxLayout()
-            select_all_btn = QPushButton("Select All")
-            deselect_all_btn = QPushButton("Deselect All")
-
+            select_all_btn = TextButton("All", "Select all visible columns")
+            deselect_all_btn = TextButton("None", "Deselect all visible columns")
             select_all_btn.clicked.connect(self._select_all_columns)
             deselect_all_btn.clicked.connect(self._deselect_all_columns)
-
-            # # Style buttons
-            # button_style = """
-            #     QPushButton {
-            #         padding: 6px 12px;
-            #         font-size: 11px;
-            #         border: 1px solid #ccc;
-            #         border-radius: 4px;
-            #         background-color: #f8f9fa;
-            #     }
-            #     QPushButton:hover {
-            #         background-color: #e9ecef;
-            #     }
-            #     QPushButton:pressed {
-            #         background-color: #dee2e6;
-            #     }
-            # """
-            # select_all_btn.setStyleSheet(button_style)
-            # deselect_all_btn.setStyleSheet(button_style)
-
-            button_layout.addWidget(select_all_btn)
-            button_layout.addWidget(deselect_all_btn)
-            button_layout.addStretch()
-            config_group.addLayout(button_layout)
+            toolbar_layout.addWidget(select_all_btn)
+            toolbar_layout.addWidget(deselect_all_btn)
+            config_group.addLayout(toolbar_layout)
 
             # Column selection list - takes all remaining vertical space
-            self.column_list = QListWidget()
-            self.column_list.setSelectionMode(
-                QListWidget.SelectionMode.NoSelection
-            )  # Disable multi-selection highlighting
-            self.column_list.itemChanged.connect(self._on_item_changed)
-
-            self.column_list.setObjectName("UniqueContentList")
-            self.column_list.setAlternatingRowColors(True)
+            self.column_list = ColumnChecklist(max_height=220)
+            self.column_list.changed.connect(self._on_checklist_changed)
 
             self._update_column_list()
             config_group.layout().addWidget(
@@ -190,16 +159,15 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
         Update the column list when input data changes.
 
-        Populates the column list widget with checkboxes for each available column.
+        Populates the checklist with one checkbox per available column.
         Preserves previously selected columns when data is refreshed.
         """
         if not hasattr(self, "column_list") or self.column_list is None:
             return
 
-        self.column_list.clear()
         if self.incom_data is not None:
             try:
-                # Get column names from LazyFrame and store them
+                # Get column names and store them
                 self.all_columns = list(frame_schema(self.incom_data))
                 self._populate_column_list(self.all_columns)
             except Exception:
@@ -208,7 +176,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _populate_column_list(self, columns: List[str]) -> None:
         """
-        Populate the column list widget with the given columns.
+        Populate the checklist with the given columns.
 
         Args:
             columns: List of column names to display
@@ -216,23 +184,11 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if not hasattr(self, "column_list") or self.column_list is None:
             return
 
-        for column in columns:
-            item = QListWidgetItem(column)
-            item.setFlags(
-                item.flags()
-                | Qt.ItemFlag.ItemIsUserCheckable
-                | Qt.ItemFlag.ItemIsEnabled
-            )
-
-            # Set a larger size hint for better spacing and checkbox size
-            item.setSizeHint(QSize(-1, 40))  # Fixed height of 40px for better spacing
-
-            # Check if column was previously selected
-            if column in self.selected_columns:
-                item.setCheckState(Qt.CheckState.Checked)
-            else:
-                item.setCheckState(Qt.CheckState.Unchecked)
-            self.column_list.addItem(item)
+        # Remember what is on screen: filtering hides columns, and hidden
+        # selections must survive a checkbox toggle on the visible subset.
+        self._visible_columns = list(columns)
+        checked = [col for col in columns if col in self.selected_columns]
+        self.column_list.setColumns(columns, checked)
 
     @Slot(str)
     def _filter_columns(self, search_text: str) -> None:
@@ -253,7 +209,6 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         else:
             filtered_columns = self.all_columns.copy()
 
-        self.column_list.clear()
         self._populate_column_list(filtered_columns)
 
     def _select_all_columns(self) -> None:
@@ -262,11 +217,9 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
 
         # Get currently visible columns
-        visible_columns = []
-        for index in range(self.column_list.count()):
-            item = self.column_list.item(index)
-            if item:
-                visible_columns.append(item.text())
+        visible_columns = list(getattr(self, "_visible_columns", [])) or list(
+            self.column_list.checkboxes.keys()
+        )
 
         if visible_columns:
             old_selected = self.selected_columns.copy()
@@ -277,10 +230,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.selected_columns.append(column)
 
             # Update UI
-            for index in range(self.column_list.count()):
-                item = self.column_list.item(index)
-                if item:
-                    item.setCheckState(Qt.CheckState.Checked)
+            self.column_list.setChecked(self.selected_columns)
 
             # Store history if there was a change
             if old_selected != self.selected_columns:
@@ -294,11 +244,9 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
 
         # Get currently visible columns
-        visible_columns = []
-        for index in range(self.column_list.count()):
-            item = self.column_list.item(index)
-            if item:
-                visible_columns.append(item.text())
+        visible_columns = list(getattr(self, "_visible_columns", [])) or list(
+            self.column_list.checkboxes.keys()
+        )
 
         if visible_columns:
             old_selected = self.selected_columns.copy()
@@ -309,10 +257,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.selected_columns.remove(column)
 
             # Update UI
-            for index in range(self.column_list.count()):
-                item = self.column_list.item(index)
-                if item:
-                    item.setCheckState(Qt.CheckState.Unchecked)
+            self.column_list.setChecked(self.selected_columns)
 
             # Store history if there was a change
             if old_selected != self.selected_columns:
@@ -320,47 +265,33 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.process_data()
                 self.evaluate.emit()
 
-    @Slot(QListWidgetItem)
-    def _on_item_clicked(self, item: QListWidgetItem) -> None:
-        """
-        Handle item clicks to toggle checkbox state.
-        Makes the entire item clickable, not just the checkbox.
-
-        Args:
-            item: The clicked list widget item
-        """
-        if item and item.flags() & Qt.ItemFlag.ItemIsEnabled:
-            # Toggle the checkbox state when clicking anywhere on the item
-            if item.checkState() == Qt.CheckState.Checked:
-                item.setCheckState(Qt.CheckState.Unchecked)
-            else:
-                item.setCheckState(Qt.CheckState.Checked)
-
-    @Slot(QListWidgetItem)
-    def _on_item_changed(self, item: QListWidgetItem) -> None:
-        """
-        Handle checkbox state changes with history tracking.
-
-        Args:
-            item: The list widget item that was changed
-        """
+    def _on_checklist_changed(self, checked: List[str]) -> None:
+        """Handle checkbox changes with history tracking."""
         # Prevent storing history during restoration
         if self.history.is_restoring_history:
             return
 
         old_selected_columns = self.selected_columns.copy()
-
-        if item.checkState() == Qt.CheckState.Checked:
-            if item.text() not in self.selected_columns:
-                self.selected_columns.append(item.text())
-        else:
-            if item.text() in self.selected_columns:
-                self.selected_columns.remove(item.text())
+        visible = list(getattr(self, "_visible_columns", checked))
+        checked_set = set(checked)
+        # Keep hidden selections: only reconcile the columns currently on screen.
+        new_selected = [col for col in self.selected_columns if col not in visible]
+        # Preserve prior order for still-checked visible columns, then append
+        # newly checked ones in checklist order.
+        new_selected += [
+            col for col in visible if col in checked_set and col in old_selected_columns
+        ]
+        new_selected += [
+            col
+            for col in visible
+            if col in checked_set and col not in old_selected_columns
+        ]
+        self.selected_columns = new_selected
 
         # Only store history if there was an actual change
         if old_selected_columns != self.selected_columns:
             self._store_selection_history(
-                old_selected_columns, f"Column '{item.text()}' Selection Changed"
+                old_selected_columns, "Column Selection Changed"
             )
             self.process_data()
             self.evaluate.emit()
@@ -432,17 +363,13 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             List of column names that are checked in the column list
         """
-        selected_columns = []
         if hasattr(self, "column_list") and self.column_list is not None:
             try:
-                for index in range(self.column_list.count()):
-                    item = self.column_list.item(index)
-                    if item and item.checkState() == Qt.CheckState.Checked:
-                        selected_columns.append(item.text())
+                return self.column_list.checked()
             except RuntimeError:
                 # Widget has been deleted, return stored selection
                 return self.selected_columns.copy()
-        return selected_columns
+        return []
 
     def get_code(self) -> str:
         """

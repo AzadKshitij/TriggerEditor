@@ -100,9 +100,8 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout: The layout to add components to
         """
         if self.incom_data is not None:
-            # Main configuration group
+            # Main configuration group (design system defaults: spacing 2)
             config_group = ConfigSection("Split Configuration")
-            config_group.layout().setSpacing(8)  # Tighter spacing between elements
 
             # Estimation percentage
             estimation_layout = QHBoxLayout()
@@ -117,7 +116,7 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Show validation percentage (calculated automatically)
             validation_label = QLabel(f"Validation %: {100 - self.estimation_percent}")
-            validation_label.setStyleSheet("color: #888888;")
+            validation_label.setObjectName("ConfigSectionInfo")
             self.validation_display = validation_label
             estimation_layout.addWidget(validation_label)
             estimation_layout.addStretch()  # Push elements to the left
@@ -171,9 +170,7 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             code = ["import polars as pl"]
             if self.incoming_variable:
                 code.append(f"{self.estimation_var} = {self.incoming_variable}")
-                code.append(
-                    f"{self.validation_var} = {self.incoming_variable}.head(0)"
-                )
+                code.append(f"{self.validation_var} = {self.incoming_variable}.head(0)")
             else:
                 code.append(f"{self.estimation_var} = pl.DataFrame()")
                 code.append(f"{self.validation_var} = pl.DataFrame()")

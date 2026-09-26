@@ -5,7 +5,6 @@ from polars._typing import ConcatMethod
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QLayout,
@@ -21,7 +20,11 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils import dumpException
-from trigger_designer.qt.widgets.common import ConfigSection, EmptyStateLabel
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    EmptyStateLabel,
+    NoWheelComboBox,
+)
 
 
 def _as_lazy(frame: Any) -> Any:
@@ -72,16 +75,21 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QLayout:
-        if self.left_data is None and self.right_data is None:
-            dock_layout.addWidget(EmptyStateLabel())
+        if self.left_data is None or self.right_data is None:
+            dock_layout.addWidget(EmptyStateLabel("Both inputs must be connected"))
             return dock_layout
+
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(2)
 
         config_group = ConfigSection("Append Configuration")
         row = QHBoxLayout()
         row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(QLabel("How:"))
-        self.how_combo = QComboBox()
+        row.addWidget(QLabel("How"))
+        self.how_combo = NoWheelComboBox()
         self.how_combo.addItems(["diagonal_relaxed", "diagonal", "vertical"])
+        self.how_combo.setMinimumHeight(30)
         self.how_combo.setToolTip(
             "diagonal_relaxed: union of columns, missing filled with null,\n"
             "mismatched dtypes coerced to supertype.\n"
@@ -94,8 +102,10 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         row.addStretch()
         config_group.addLayout(row)
 
-        dock_layout.addWidget(config_group)
-        dock_layout.addStretch()
+        main_layout.addWidget(config_group)
+        main_layout.addStretch()
+
+        dock_layout.addLayout(main_layout)
         self.recursively_find_widgets(dock_layout)
         return dock_layout
 
@@ -193,10 +203,8 @@ class TriggerNode_Append(TriggerNode):
             self.grNode.setToolTip("Both inputs must be connected")
             return None
 
-        left_input = input_values[0][self.getSocketValue(
-            left_node.outputs, self)]
-        right_input = input_values[1][self.getSocketValue(
-            right_node.outputs, self)]
+        left_input = input_values[0][self.getSocketValue(left_node.outputs, self)]
+        right_input = input_values[1][self.getSocketValue(right_node.outputs, self)]
 
         if not left_input or not right_input:
             self.markDirty(True)
@@ -220,7 +228,8 @@ class TriggerNode_Append(TriggerNode):
                 self.markDirty(True)
                 self.markInvalid(True)
                 self.grNode.setToolTip(
-                    f"Append failed: {mismatch} Try 'diagonal_relaxed'.")
+                    f"Append failed: {mismatch} Try 'diagonal_relaxed'."
+                )
                 return None
 
         try:
@@ -231,8 +240,7 @@ class TriggerNode_Append(TriggerNode):
             # e.g. vertical/diagonal with incompatible schemas.
             self.markDirty(True)
             self.markInvalid(True)
-            self.grNode.setToolTip(
-                f"Append failed ({e}). Try 'diagonal_relaxed'.")
+            self.grNode.setToolTip(f"Append failed ({e}). Try 'diagonal_relaxed'.")
             return None
 
         self.grNode.setToolTip("")

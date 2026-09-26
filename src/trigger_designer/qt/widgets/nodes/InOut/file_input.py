@@ -4,24 +4,15 @@ import fastexcel
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
-    QPushButton,
     QFileDialog,
     QVBoxLayout,
-    QTextEdit,
-    QHeaderView,
-    QLayout,
-    QComboBox,
     QHBoxLayout,
     QLabel,
     QSpinBox,
     QCheckBox,
-    QDialog,
-    QListWidget,
-    QDialogButtonBox,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, Signal
-from trigger_designer.qt.resource_manager import ResourceManager
+from qtpy.QtCore import Signal
 from trigger_designer.core.node_configuration import register_node, IONodes, NodeTypes
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
@@ -31,19 +22,18 @@ from trigger_designer.qt.node_base import (
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
+from trigger_designer.qt.widgets.common import IconButton, NoWheelComboBox
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from loguru import logger
-from typing import Any, Optional, OrderedDict, TYPE_CHECKING, Type, TypeVar, Union, cast
+from typing import Any, Optional, OrderedDict, TYPE_CHECKING, Union
 from trigger_designer.qt.helpers import global_logger
 
 
 if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
     from trigger_designer.qt.node_base import TriggerNode
-    from nodeeditor.node_node import Node
 
 
 class FileInputContent(
@@ -137,18 +127,29 @@ class FileInputContent(
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(2)
 
-        # File path input (top)
+        # File path row: path field + icon-only browse button (design system §1, §4)
+        path_row = QHBoxLayout()
+        path_row.setContentsMargins(0, 0, 0, 0)
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
+        self.filePathEdit.setMinimumHeight(30)
         self.filePathEdit.textChanged.connect(self._on_filePathEdit_textChanged)
         self.registerInputWidget(self.filePathEdit)
-        dock_layout.addWidget(self.filePathEdit)
+        path_row.addWidget(self.filePathEdit, 1)
 
-        # Load button (top)
-        self.loadButton = QPushButton("Load File", self)
+        self.loadButton = IconButton.themed(
+            "Browse for file",
+            rsm_icon=self.node.rsm.get("icon_folder_open"),
+            theme_fallback="document-open",
+            parent=self,
+        )
         self.loadButton.clicked.connect(self.openFileDialog)
-        dock_layout.addWidget(self.loadButton)
+        path_row.addWidget(self.loadButton)
+        main_layout.addLayout(path_row)
 
         # Settings form layout
         from qtpy.QtWidgets import QFormLayout
@@ -156,10 +157,13 @@ class FileInputContent(
         # Create a widget to hold the settings form (so we can hide the entire section)
         self.settings_widget = QWidget()
         settings_form = QFormLayout()
+        settings_form.setContentsMargins(0, 0, 0, 0)
+        settings_form.setSpacing(2)
         self.settings_widget.setLayout(settings_form)
 
         # Record Limit
         self.recordLimitSpinBox = QSpinBox(self)
+        self.recordLimitSpinBox.setMinimumHeight(30)
         self.recordLimitSpinBox.setMinimum(0)
         self.recordLimitSpinBox.setMaximum(999999999)
         self.recordLimitSpinBox.setValue(self.record_limit)
@@ -182,6 +186,7 @@ class FileInputContent(
         # Delimiter (for CSV/TXT files)
         self.delimiterEdit = QLineEdit(self)
         self.delimiterEdit.setText(self.delimiter)
+        self.delimiterEdit.setMinimumHeight(30)
         self.delimiterEdit.setPlaceholderText("e.g., , ; | \\t")
         self.delimiterEdit.textChanged.connect(self._on_delimiter_changed)
         self.registerInputWidget(self.delimiterEdit)
@@ -201,7 +206,8 @@ class FileInputContent(
         self.first_row_widget = self.firstRowFieldNamesCheckBox
 
         # Selected Sheet (for Excel files)
-        self.selectedSheetCombo = QComboBox(self)
+        self.selectedSheetCombo = NoWheelComboBox(self)
+        self.selectedSheetCombo.setMinimumHeight(30)
         self.selectedSheetCombo.currentTextChanged.connect(
             self._on_selected_sheet_changed
         )
@@ -211,6 +217,7 @@ class FileInputContent(
 
         # Start Row (for Excel files)
         self.startRowSpinBox = QSpinBox(self)
+        self.startRowSpinBox.setMinimumHeight(30)
         self.startRowSpinBox.setMinimum(1)
         self.startRowSpinBox.setMaximum(999999)
         self.startRowSpinBox.setValue(self.start_row)
@@ -220,7 +227,7 @@ class FileInputContent(
         self.start_row_widget = self.startRowSpinBox
 
         # Add the settings widget to the main layout
-        dock_layout.addWidget(self.settings_widget)
+        main_layout.addWidget(self.settings_widget)
 
         # Polars table viewer for preview (data-only mode for clean interface)
         self.table_viewer = PolarsTableViewer(
@@ -231,7 +238,8 @@ class FileInputContent(
             show_export=False,  # Export not needed in node context
             show_performance_settings=False,  # Performance settings not needed
         )
-        dock_layout.addWidget(self.table_viewer)
+        main_layout.addWidget(self.table_viewer, 1)
+        dock_layout.addLayout(main_layout)
 
         # Keep reference to tableWidget for backward compatibility
         # Some methods might still reference self.tableWidget
@@ -669,10 +677,7 @@ class FileInputContent(
                 # Default to CSV with memory optimization
                 frame = pl.scan_csv(fileName, infer_schema=False)
 
-            if (
-                self.output_filename_as_field
-                and self.file_type not in ["csv", "txt"]
-            ):
+            if self.output_filename_as_field and self.file_type not in ["csv", "txt"]:
                 filename_only = os.path.basename(fileName)
                 if isinstance(frame, pl.LazyFrame):
                     frame = frame.with_columns(pl.lit(filename_only).alias("FileName"))
@@ -745,10 +750,7 @@ class FileInputContent(
         if not self.filePath:
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
         code_lines = []
         code_lines.append("import polars as pl")

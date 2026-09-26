@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 import duckdb
 import polars as pl
 from qtpy.QtCore import Qt, QTimer, Signal
-from qtpy.QtGui import QIcon, QPixmap
+from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QComboBox,
     QFrame,
@@ -13,14 +13,17 @@ from qtpy.QtWidgets import (
     QInputDialog,
     QLabel,
     QMessageBox,
-    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
 
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel, NoWheelComboBox
+from trigger_designer.qt.widgets.common import (
+    EmptyStateLabel,
+    IconButton,
+    NoWheelComboBox,
+)
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.core.node_configuration import (
     NodeTypes,
@@ -41,8 +44,7 @@ from trigger_designer.qt.widgets.sql_formula_editor import (
 )
 
 if TYPE_CHECKING:
-    from nodeeditor.node_node import Node
-    from nodeeditor.node_scene import Scene
+    pass
 
 
 MAX_FORMULA_SECTIONS = 5
@@ -105,8 +107,7 @@ class _ResizeGrip(QFrame):
             return
         delta = event.globalPosition().toPoint().y() - self._press_y
         height = min(
-            MAX_EDITOR_HEIGHT, max(
-                MIN_EDITOR_HEIGHT, self._press_height + delta)
+            MAX_EDITOR_HEIGHT, max(MIN_EDITOR_HEIGHT, self._press_height + delta)
         )
         self._editor.setFixedHeight(height)
 
@@ -152,7 +153,7 @@ class FormulaContent(
         self.formula_sections: List[Dict[str, Any]] = [self._default_section()]
         self.section_widgets: List[Dict[str, Any]] = []
         self.sections_layout: Optional[QVBoxLayout] = None
-        self.add_section_button: Optional[QPushButton] = None
+        self.add_section_button: Optional[IconButton] = None
         self.section_count_label: Optional[QLabel] = None
 
         self.incoming_variable: str = ""
@@ -186,13 +187,17 @@ class FormulaContent(
 
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(2, 2, 2, 2)
+        main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(2)
         self.sections_layout = QVBoxLayout()
         self.sections_layout.setSpacing(2)
 
         controls_layout = QHBoxLayout()
-        self.add_section_button = QPushButton("+ Add formula")
+        controls_layout.setContentsMargins(0, 0, 0, 0)
+        self.add_section_button = IconButton.themed(
+            "Add formula",
+            rsm_icon=self.node.rsm.get("icon_add"),
+        )
         self.add_section_button.clicked.connect(self.add_formula_section)
         self.section_count_label = QLabel("")
         self.section_count_label.setObjectName("formulaSectionCount")
@@ -207,8 +212,7 @@ class FormulaContent(
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll_area.setWidget(container)
         dock_layout.addWidget(scroll_area, 1)
 
@@ -349,10 +353,8 @@ class FormulaContent(
         return available_columns
 
     def _target_items_for_section(self, section_index: int) -> List[str]:
-        available_columns = self._available_columns_before_section(
-            section_index)
-        current_target = self.formula_sections[section_index]["target_column"].strip(
-        )
+        available_columns = self._available_columns_before_section(section_index)
+        current_target = self.formula_sections[section_index]["target_column"].strip()
 
         items = [EMPTY_TARGET_OPTION, NEW_COLUMN_OPTION]
         if current_target and current_target not in available_columns:
@@ -409,18 +411,16 @@ class FormulaContent(
             card_layout.setContentsMargins(4, 4, 4, 4)
             card_layout.setSpacing(2)
 
-            remove_button = QPushButton()
-            remove_button.setIcon(QIcon(self.node.rsm.get("icon_remove")))
-            remove_button.setFixedWidth(28)
-            remove_button.setToolTip("Remove formula")
-            remove_button.clicked.connect(
-                partial(self.remove_formula_section, index))
+            remove_button = IconButton.themed(
+                "Remove formula",
+                rsm_icon=self.node.rsm.get("icon_remove"),
+            )
+            remove_button.clicked.connect(partial(self.remove_formula_section, index))
 
             target_row = QHBoxLayout()
             target_selector = NoWheelComboBox()
             target_selector.addItems(self._target_items_for_section(index))
-            self._set_target_selector_value(
-                target_selector, section["target_column"])
+            self._set_target_selector_value(target_selector, section["target_column"])
             target_selector.activated.connect(
                 partial(self.handle_column_activation, index)
             )
@@ -451,8 +451,7 @@ class FormulaContent(
             debounce_timer = QTimer(card)
             debounce_timer.setSingleShot(True)
             debounce_timer.setInterval(ERROR_CHECK_DEBOUNCE_MS)
-            debounce_timer.timeout.connect(
-                partial(self._debounced_commit, index))
+            debounce_timer.timeout.connect(partial(self._debounced_commit, index))
             formula_input.textChanged.connect(debounce_timer.start)
             formula_input.editingFinished.connect(debounce_timer.stop)
             formula_input.editingFinished.connect(
@@ -503,8 +502,7 @@ class FormulaContent(
         section_count = len(self.formula_sections)
 
         if self.add_section_button is not None:
-            self.add_section_button.setEnabled(
-                section_count < MAX_FORMULA_SECTIONS)
+            self.add_section_button.setEnabled(section_count < MAX_FORMULA_SECTIONS)
 
         if self.section_count_label is not None:
             self.section_count_label.setText(
@@ -547,8 +545,7 @@ class FormulaContent(
 
             dtype_selector = widgets.get("dtype_selector")
             if dtype_selector is not None:
-                dtype_label, dtype_enabled = self._dtype_state_for_section(
-                    index)
+                dtype_label, dtype_enabled = self._dtype_state_for_section(index)
                 dtype_selector.blockSignals(True)
                 dtype_selector.setCurrentText(dtype_label or AUTO_DTYPE_OPTION)
                 dtype_selector.setEnabled(dtype_enabled)
@@ -614,8 +611,7 @@ class FormulaContent(
         """Lowercased input + section target names for duplicate detection."""
         known = set()
         if self.incom_data is not None:
-            known.update(col.strip().lower()
-                         for col in frame_schema(self.incom_data))
+            known.update(col.strip().lower() for col in frame_schema(self.incom_data))
         for index, section in enumerate(self.formula_sections):
             if index == exclude_section:
                 continue
@@ -703,8 +699,7 @@ class FormulaContent(
 
         try:
             current_formula = (
-                self.section_widgets[section_index]["formula_input"].get_text(
-                ) or ""
+                self.section_widgets[section_index]["formula_input"].get_text() or ""
             )
         except (IndexError, KeyError, RuntimeError):
             return
@@ -729,7 +724,7 @@ class FormulaContent(
         string_literals = list(STRING_LITERAL_RE.finditer(formula))
 
         for match in string_literals:
-            before_string = formula[current_pos: match.start()]
+            before_string = formula[current_pos : match.start()]
             parts.append(transform(before_string))
             parts.append(match.group())
             current_pos = match.end()
@@ -749,8 +744,7 @@ class FormulaContent(
 
         return self._apply_outside_string_literals(
             formula,
-            lambda segment: re.sub(pattern, replacement,
-                                   segment, flags=re.IGNORECASE),
+            lambda segment: re.sub(pattern, replacement, segment, flags=re.IGNORECASE),
         )
 
     @staticmethod
@@ -763,12 +757,11 @@ class FormulaContent(
 
         Single-quoted strings and bracketed column refs pass through.
         """
-        token_pattern = re.compile(
-            r"'([^']|'')*'|\"([^\"]|\"\")*\"|\[[^\]]*\]")
+        token_pattern = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"|\[[^\]]*\]")
         parts: List[str] = []
         current_pos = 0
         for match in token_pattern.finditer(formula):
-            parts.append(formula[current_pos: match.start()])
+            parts.append(formula[current_pos : match.start()])
             token = match.group()
             if token.startswith('"'):
                 token = self._normalize_double_quoted(match)
@@ -795,7 +788,7 @@ class FormulaContent(
         first_line = text.split("\n", 1)[0].strip()
         for prefix in ("Binder Error:", "Catalog Error:", "Parser Error:"):
             if first_line.startswith(prefix):
-                first_line = first_line[len(prefix):].strip()
+                first_line = first_line[len(prefix) :].strip()
         return first_line[:160]
 
     def _section_query(
@@ -912,8 +905,7 @@ class FormulaContent(
         if isinstance(self.incom_data, pl.DataFrame):
             return self.incom_data.clone(), False
 
-        raise ValueError(
-            "Formula input must be a Polars DataFrame or LazyFrame")
+        raise ValueError("Formula input must be a Polars DataFrame or LazyFrame")
 
     def update_data(self) -> None:
         """Apply all configured formulas to the incoming data."""
@@ -931,8 +923,7 @@ class FormulaContent(
 
         try:
             current_df, was_lazy = self._collect_input_data()
-            current_df, _, errors = self._run_sections(
-                current_df, configured_sections)
+            current_df, _, errors = self._run_sections(current_df, configured_sections)
             if errors:
                 self.section_errors = errors
                 failed = min(errors)
@@ -967,8 +958,7 @@ class FormulaContent(
             self.history.is_restoring_history = True
             state = history_data["old_state"] if is_undo else history_data["new_state"]
 
-            self.formula_sections = self._normalize_sections(
-                state["formula_sections"])
+            self.formula_sections = self._normalize_sections(state["formula_sections"])
 
             self._rebuild_section_widgets()
             self.update_data()
@@ -983,10 +973,7 @@ class FormulaContent(
         if not self.incoming_variable:
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
         if not configured_sections:
             return f"{self.variable_name} = {self.incoming_variable}\n"
@@ -1014,8 +1001,7 @@ class FormulaContent(
             )
 
             code_lines.append(f"duck.register('{relation_name}', df_for_duck)")
-            code_lines.append(
-                f"df_for_duck = duck.execute('''{query}''').pl()")
+            code_lines.append(f"df_for_duck = duck.execute('''{query}''').pl()")
 
         code_lines.extend(
             [

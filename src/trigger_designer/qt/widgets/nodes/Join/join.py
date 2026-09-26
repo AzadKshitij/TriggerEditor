@@ -1,26 +1,17 @@
 from qtpy.QtWidgets import (
-    QLineEdit,
-    QPushButton,
-    QFileDialog,
     QVBoxLayout,
-    QTextEdit,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QLayout,
     QComboBox,
     QLineEdit,
     QLabel,
     QHBoxLayout,
     QListWidget,
-    QAbstractItemView,
-    QFormLayout,
     QListWidgetItem,
     QCheckBox,
+    QMenu,
     QWidget,
 )
-from qtpy.QtGui import QIcon, QPixmap
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtGui import QPixmap
+from qtpy.QtCore import Qt, QTimer, Signal
 from trigger_designer.core.node_configuration import register_node, JoinNodes, NodeTypes
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
@@ -28,9 +19,12 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
     frame_schema,
 )
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel
+from trigger_designer.qt.widgets.common import (
+    EmptyStateLabel,
+    IconButton,
+    NoWheelComboBox,
+)
 from nodeeditor.utils_no_qt import dumpException
 from nodeeditor.node_scene_history import SceneHistory
 import polars as pl
@@ -75,6 +69,13 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.output_column_checkboxes = []
         self.history: SceneHistory = self.node.scene.history
 
+        # Live-by-default: coalesce rapid edits into a single recompute.
+        self._apply_timer = QTimer(self)
+        self._apply_timer.setSingleShot(True)
+        self._apply_timer.setInterval(300)
+        self._apply_timer.timeout.connect(self._apply_debounced)
+        self._applying = False
+
         # incoming variables
         self.left_data: Optional[pl.LazyFrame] = None
         self.right_data: Optional[pl.LazyFrame] = None
@@ -114,8 +115,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         selected_column: Optional[str] = None,
     ) -> None:
         for column_name, dtype in self._get_frame_schema(frame).items():
-            combo.addItem(self._format_column_label(
-                column_name, dtype), column_name)
+            combo.addItem(self._format_column_label(column_name, dtype), column_name)
 
         if selected_column:
             selected_index = combo.findData(selected_column)
@@ -136,65 +136,77 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Join columns mapping area
             join_mapping_layout = QVBoxLayout()
-            join_mapping_label = QLabel("Join Column Mapping:")
+            join_mapping_layout.setContentsMargins(0, 0, 0, 0)
+            join_mapping_layout.setSpacing(2)
+            join_mapping_label = QLabel("Join column mapping")
+            join_mapping_label.setObjectName("ConfigSectionInfo")
             join_mapping_layout.addWidget(join_mapping_label)
 
             # Container for mapping rows
             self.mapping_container = QVBoxLayout()
+            self.mapping_container.setContentsMargins(0, 0, 0, 0)
+            self.mapping_container.setSpacing(2)
             self.mapping_pairs = []
 
-            # Add initial mapping row
-
-            # Add button for new mapping
-            add_mapping_button = QPushButton()
-            add_mapping_button.setIcon(QIcon(self.node.rsm.get("icon_add")))
-            add_mapping_button.setToolTip("Add mapping")
-            add_mapping_button.setMaximumWidth(30)
+            # Add button for new mapping (icon-only per design system §4)
+            add_mapping_button = IconButton.themed(
+                "Add mapping",
+                rsm_icon=self.node.rsm.get("icon_add"),
+            )
             add_mapping_button.clicked.connect(self.add_mapping_row)
 
             join_mapping_layout.addLayout(self.mapping_container)
             join_mapping_layout.addWidget(add_mapping_button)
 
-            # Output columns group
+            # Output columns group: toolbar with search + bulk options menu
             output_layout = QVBoxLayout()
-            output_label = QLabel("Output Columns:")
-            output_controls_layout = QHBoxLayout()
-            left_all_button = QPushButton("All Left")
-            left_none_button = QPushButton("None Left")
-            right_all_button = QPushButton("All Right")
-            right_none_button = QPushButton("None Right")
-            left_all_button.clicked.connect(
-                lambda: self._set_output_columns_checked("L", True)
-            )
-            left_none_button.clicked.connect(
-                lambda: self._set_output_columns_checked("L", False)
-            )
-            right_all_button.clicked.connect(
-                lambda: self._set_output_columns_checked("R", True)
-            )
-            right_none_button.clicked.connect(
-                lambda: self._set_output_columns_checked("R", False)
-            )
-            output_controls_layout.addWidget(left_all_button)
-            output_controls_layout.addWidget(left_none_button)
-            output_controls_layout.addWidget(right_all_button)
-            output_controls_layout.addWidget(right_none_button)
-            output_controls_layout.addStretch()
-            self.output_columns_list = QListWidget()
-            self.output_columns_list.setSelectionMode(
-                QAbstractItemView.SelectionMode.MultiSelection
-            )
+            output_layout.setContentsMargins(0, 0, 0, 0)
+            output_layout.setSpacing(2)
+            output_label = QLabel("Output columns")
+            output_label.setObjectName("ConfigSectionInfo")
             output_layout.addWidget(output_label)
-            output_layout.addLayout(output_controls_layout)
-            output_layout.addWidget(self.output_columns_list)
+
+            output_toolbar = QWidget()
+            output_toolbar.setFixedHeight(40)
+            output_controls_layout = QHBoxLayout(output_toolbar)
+            output_controls_layout.setContentsMargins(0, 0, 0, 0)
+
+            self.output_search = QLineEdit()
+            self.output_search.setPlaceholderText("Search columns...")
+            self.output_search.setClearButtonEnabled(True)
+            self.output_search.setMinimumHeight(30)
+            self.output_search.textChanged.connect(self._filter_output_columns)
+            output_controls_layout.addWidget(self.output_search)
+
+            # Bulk select/clear moved into one Options menu (design system §4.4)
+            self.output_options_btn = IconButton.themed(
+                "Output column options",
+                rsm_icon=self.node.rsm.get("icon_options"),
+                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            )
+            self.output_options_btn.setObjectName("OptionsButton")
+            self._build_output_options_menu(self.output_options_btn)
+            output_controls_layout.addWidget(self.output_options_btn)
+
+            self.output_columns_list = QListWidget()
+            self.output_columns_list.setObjectName("JoinOutputList")
+            output_layout.addWidget(output_toolbar)
+            output_layout.addWidget(self.output_columns_list, 1)
 
             # Main layout assembly
             main_layout = QVBoxLayout()
+            main_layout.setContentsMargins(5, 5, 5, 5)
+            main_layout.setSpacing(2)
             main_layout.addLayout(join_mapping_layout)
-            main_layout.addLayout(output_layout)
+            main_layout.addLayout(output_layout, 1)
 
-            # add a button to transform data
-            self.eval_button = QPushButton("Evaluate")
+            # Evaluate (icon-only); edits also apply live via the debounced timer
+            self.eval_button = IconButton.themed(
+                "Evaluate join now",
+                rsm_icon=self.node.rsm.get("icon_apply"),
+                qss_fallback=":/qss_icons/dark/rc/checkbox_checked.png",
+                theme_fallback="emblem-ok",
+            )
             self.eval_button.clicked.connect(self.transform_data)
             main_layout.addWidget(self.eval_button)
 
@@ -207,7 +219,41 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.recursively_find_widgets(dock_layout)
 
         else:
-            dock_layout.addWidget(EmptyStateLabel())
+            dock_layout.addWidget(EmptyStateLabel("Both inputs must be connected"))
+
+    def _build_output_options_menu(self, button: QWidget) -> None:
+        """Bulk left/right selection lives in one menu, not four text buttons."""
+        menu = QMenu(button)
+        check_left = menu.addAction("Check all left columns")
+        check_left.triggered.connect(
+            lambda: self._set_output_columns_checked("L", True)
+        )
+        clear_left = menu.addAction("Uncheck all left columns")
+        clear_left.triggered.connect(
+            lambda: self._set_output_columns_checked("L", False)
+        )
+        menu.addSeparator()
+        check_right = menu.addAction("Check all right columns")
+        check_right.triggered.connect(
+            lambda: self._set_output_columns_checked("R", True)
+        )
+        clear_right = menu.addAction("Uncheck all right columns")
+        clear_right.triggered.connect(
+            lambda: self._set_output_columns_checked("R", False)
+        )
+        button.setMenu(menu)
+
+    def _filter_output_columns(self, text: str) -> None:
+        """Hide output rows that do not match the search text."""
+        needle = text.strip().lower()
+        for row in range(self.output_columns_list.count()):
+            item = self.output_columns_list.item(row)
+            widget = self.output_columns_list.itemWidget(item)
+            if widget is None:
+                continue
+            label = widget.findChild(QCheckBox)
+            name = label.text() if label is not None else ""
+            item.setHidden(bool(needle) and needle not in name.lower())
 
     def _sanitize_mapping_data(self) -> None:
         if self.left_data is None or self.right_data is None:
@@ -319,34 +365,33 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def add_mapping_row(self, left_col=None, right_col=None) -> None:
         # Create a new row for mapping
         row_layout = QHBoxLayout()
-        left_column_combo = QComboBox()
-        right_column_combo = QComboBox()
+        row_layout.setContentsMargins(0, 0, 0, 0)
+        left_column_combo = NoWheelComboBox()
+        right_column_combo = NoWheelComboBox()
 
         # Set size policies for mapping combos
         for combo in [left_column_combo, right_column_combo]:
-            combo.setSizeAdjustPolicy(
-                QComboBox.SizeAdjustPolicy.AdjustToContents)
+            combo.setSizeAdjustPolicy(NoWheelComboBox.SizeAdjustPolicy.AdjustToContents)
             combo.setMinimumWidth(120)  # Set minimum width
+            combo.setMinimumHeight(30)
 
         if hasattr(self, "left_data") and self.left_data is not None:
-            self._populate_column_combo(
-                left_column_combo, self.left_data, left_col)
+            self._populate_column_combo(left_column_combo, self.left_data, left_col)
 
         global_logger.debug(
             f"� Join: Adding mapping row - Right data available: {self.right_data is not None}"
         )
 
         if hasattr(self, "right_data") and self.right_data is not None:
-            self._populate_column_combo(
-                right_column_combo, self.right_data, right_col)
+            self._populate_column_combo(right_column_combo, self.right_data, right_col)
 
         row_layout.addWidget(left_column_combo)
         row_layout.addSpacing(10)
         row_layout.addWidget(right_column_combo)
-        remove_button = QPushButton()
-        remove_button.setIcon(QIcon(self.node.rsm.get("icon_remove")))
-        remove_button.setToolTip("Remove mapping")
-        remove_button.setMaximumWidth(30)
+        remove_button = IconButton.themed(
+            "Remove mapping",
+            rsm_icon=self.node.rsm.get("icon_remove"),
+        )
         row_layout.addWidget(remove_button)
 
         temp_map = {
@@ -367,8 +412,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # connect signal
         left_column_combo.currentTextChanged.connect(self.update_mapping_data)
         right_column_combo.currentTextChanged.connect(self.update_mapping_data)
-        remove_button.clicked.connect(
-            lambda: self.remove_mapping_row(mapping_pair))
+        remove_button.clicked.connect(lambda: self.remove_mapping_row(mapping_pair))
 
         # Add to container
         self.mapping_container.addLayout(row_layout)
@@ -453,6 +497,9 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.history.storeHistory(
             desc="Join mapping updated", data=history_data, setModified=True
         )
+        # Live-by-default: recompute once edits settle.
+        if not self._applying:
+            self._apply_timer.start()
 
     def update_output_columns(self) -> None:
         self.output_columns_list.clear()
@@ -469,8 +516,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.selected_columns.append({"name": col, "source": "R"})
 
             # Create widget for left columns
-            left_label = QLabel("Left Table Columns:")
-            left_label.setStyleSheet("font-weight: bold; color: #4a9eff;")
+            left_label = QLabel("Left table columns")
+            left_label.setObjectName("JoinSourceHeaderLeft")
             left_item = QListWidgetItem()
             # Make header non-selectable
             left_item.setFlags(Qt.ItemFlag.NoItemFlags)
@@ -482,14 +529,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self._add_output_column_item(
                     col,
                     "L",
-                    "#2a5d9c",
+                    "JoinSourceLeft",
                     self.selected_columns,
                     str(left_schema[col]),
                 )
 
             # Create widget for right columns
-            right_label = QLabel("Right Table Columns:")
-            right_label.setStyleSheet("font-weight: bold; color: #ff4a4a;")
+            right_label = QLabel("Right table columns")
+            right_label.setObjectName("JoinSourceHeaderRight")
             right_item = QListWidgetItem()
             # Make header non-selectable
             right_item.setFlags(Qt.ItemFlag.NoItemFlags)
@@ -501,13 +548,18 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self._add_output_column_item(
                     col,
                     "R",
-                    "#9c2a2a",
+                    "JoinSourceRight",
                     self.selected_columns,
                     str(right_schema[col]),
                 )
 
     def _add_output_column_item(
-        self, col, prefix: str, color, existing_selections, dtype_label: str
+        self,
+        col,
+        prefix: str,
+        source_object_name: str,
+        existing_selections,
+        dtype_label: str,
     ) -> None:
         """Helper method to add a column item to the output columns list"""
         item = QListWidgetItem()
@@ -515,22 +567,17 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         layout = QHBoxLayout()
         layout.setContentsMargins(5, 2, 5, 2)
 
-        # Source indicator
+        # Source indicator (styled via QSS objectName, no inline QSS)
         source_label = QLabel(prefix)
-        source_label.setStyleSheet(f"""
-            background-color: {color};
-            color: white;
-            border-radius: 3px;
-            font-weight: bold;
-        """)
+        source_label.setObjectName(source_object_name)
+        source_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         source_label.setFixedWidth(20)
 
         # Checkbox
         checkbox = QCheckBox(col)
         # Set checked state based on existing selections
         is_checked = (
-            any(x["name"] == col and x["source"] ==
-                prefix for x in existing_selections)
+            any(x["name"] == col and x["source"] == prefix for x in existing_selections)
             if existing_selections
             else True
         )
@@ -546,7 +593,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
 
         dtype_value_label = QLabel(f"[{dtype_label}]")
-        dtype_value_label.setStyleSheet("color: #9aa0a6;")
+        dtype_value_label.setObjectName("JoinDtypeLabel")
 
         # Add to selected_columns if checked by default
         # if is_checked:
@@ -655,6 +702,23 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             data=history_data,
             setModified=True,
         )
+        # Live-by-default: recompute once edits settle.
+        if not self._applying:
+            self._apply_timer.start()
+
+    def _apply_debounced(self) -> None:
+        """Debounced live apply, skipped while restoring history or mid-apply."""
+        if self._applying:
+            return
+        if self.history.is_restoring_history:
+            return
+        self._applying = True
+        try:
+            self.transform_data()
+        except Exception as e:
+            global_logger.error(f"❌ Join: live apply failed: {e}")
+        finally:
+            self._applying = False
 
     def history_stamp_callback(self, history_data, is_undo: bool) -> None:
         """Callback for undo/redo operations"""
@@ -667,16 +731,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if is_undo:
                 # Undo operation
                 self.join_type = history_data.get("old_join_type", "inner")
-                self.mapping_data = history_data.get(
-                    "old_mapping_data", []).copy()
+                self.mapping_data = history_data.get("old_mapping_data", []).copy()
                 self.selected_columns = history_data.get(
                     "old_selected_columns", []
                 ).copy()
             else:
                 # Redo operation
                 self.join_type = history_data.get("new_join_type", "inner")
-                self.mapping_data = history_data.get(
-                    "new_mapping_data", []).copy()
+                self.mapping_data = history_data.get("new_mapping_data", []).copy()
                 self.selected_columns = history_data.get(
                     "new_selected_columns", []
                 ).copy()
@@ -709,8 +771,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         and significantly reduced memory usage.
         """
         if self.left_data is None or self.right_data is None:
-            global_logger.warning(
-                "🔄 Join: No input data available for join operation")
+            global_logger.warning("🔄 Join: No input data available for join operation")
             return None
 
         global_logger.debug(
@@ -762,8 +823,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Rename conflicting columns in right dataframe before join
             right_data_renamed = right_data
             if conflicting_cols:
-                rename_map = {
-                    col: f"{col}{right_suffix}" for col in conflicting_cols}
+                rename_map = {col: f"{col}{right_suffix}" for col in conflicting_cols}
                 right_data_renamed = right_data.rename(rename_map)
                 global_logger.debug(
                     f"🔄 Join: Renamed conflicting columns in right data: {rename_map}"
@@ -775,9 +835,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # even when the key columns differ by name.
             left_tag, right_tag = "__left_present", "__right_present"
             left_tagged = left_data.with_columns(pl.lit(1).alias(left_tag))
-            right_tagged = right_data_renamed.with_columns(
-                pl.lit(1).alias(right_tag)
-            )
+            right_tagged = right_data_renamed.with_columns(pl.lit(1).alias(right_tag))
 
             # Perform the join operation using Polars
             # Using outer join to capture all combinations like the original pandas code
@@ -790,8 +848,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 coalesce=True,  # Coalesce join columns to avoid duplicates
             )
 
-            global_logger.debug(
-                f"🔄 Join: Join operation completed successfully")
+            global_logger.debug(f"🔄 Join: Join operation completed successfully")
 
             # Filter columns based on selected_columns
             if self.selected_columns:
@@ -822,11 +879,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 for column in selected_cols:
                     if column not in result_cols and column in right_cols:
                         counterpart = left_cols[right_cols.index(column)]
-                        column = (
-                            counterpart
-                            if counterpart in result_cols
-                            else column
-                        )
+                        column = counterpart if counterpart in result_cols else column
                     fixed_cols.append(column)
                 selected_cols = fixed_cols
 
@@ -850,16 +903,12 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Extract the three outputs efficiently from single result
             # Main join data (both exist)
             if self.selected_columns:
-                self.data = collected.filter(both_condition).select(
-                    selected_cols
-                )
+                self.data = collected.filter(both_condition).select(selected_cols)
             else:
                 non_indicator_cols = [
                     col for col in result.columns if not col.startswith("__")
                 ]
-                self.data = collected.filter(both_condition).select(
-                    non_indicator_cols
-                )
+                self.data = collected.filter(both_condition).select(non_indicator_cols)
 
             # Left-only data
             left_final_cols = [
@@ -874,9 +923,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             left_final_cols = [
                 col for col in left_final_cols if not col.startswith("__")
             ]
-            self.l_data = collected.filter(left_only_condition).select(
-                left_final_cols
-            )
+            self.l_data = collected.filter(left_only_condition).select(left_final_cols)
 
             # Right-only data
             right_final_cols = [
@@ -931,15 +978,13 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # never NameErrors. Prefer passthrough; else empty frames.
             fallback = ["import polars as pl"]
             if self.left_variable:
-                fallback.append(
-                    f"{self.l_variable_name} = {self.left_variable}")
+                fallback.append(f"{self.l_variable_name} = {self.left_variable}")
                 fallback.append(f"{self.variable_name} = {self.left_variable}")
             else:
                 fallback.append(f"{self.l_variable_name} = pl.DataFrame()")
                 fallback.append(f"{self.variable_name} = pl.DataFrame()")
             if self.right_variable:
-                fallback.append(
-                    f"{self.r_variable_name} = {self.right_variable}")
+                fallback.append(f"{self.r_variable_name} = {self.right_variable}")
             else:
                 fallback.append(f"{self.r_variable_name} = pl.DataFrame()")
             return "\n".join(fallback) + "\n"
@@ -959,8 +1004,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if col in left_columns and col not in right_cols
         ]
 
-        code_lines.append(
-            "# Polars LazyFrame Join Operation\nimport polars as pl\n")
+        code_lines.append("# Polars LazyFrame Join Operation\nimport polars as pl\n")
         code_lines.extend(
             [
                 "def _ensure_lazyframe(data):",
@@ -1161,11 +1205,9 @@ class TriggerNode_Join(TriggerNode):
 
         # Get socket index of incoming data
         input_node = self.getInput(this_left_skt)
-        left_skt = self.getSocketValue(
-            input_node.outputs, self)  # type: ignore
+        left_skt = self.getSocketValue(input_node.outputs, self)  # type: ignore
         input_node = self.getInput(this_right_skt)
-        right_skt = self.getSocketValue(
-            input_node.outputs, self)  # type: ignore
+        right_skt = self.getSocketValue(input_node.outputs, self)  # type: ignore
 
         left_input = input_values[this_left_skt][left_skt]
         right_input = input_values[this_right_skt][right_skt]

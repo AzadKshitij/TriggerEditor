@@ -2321,3 +2321,69 @@ PlotWidget {
     /* Fix cut labels in plots #134 */
     padding: 0px;
 }
+
+
+/* TriggerDesigner shared config widgets ---------------------------------- */
+QLabel#ConfigSectionInfo {
+    color: $COLOR_TEXT_3;
+    font-size: 10px;
+    margin: 2px;
+}
+QLabel#EmptyStateLabel {
+    color: $COLOR_TEXT_3;
+}
+
+/* Icon / text buttons in the Config Dock.
+   An objectName selector outranks QPushButton:hover, so hover and pressed
+   have to be restated here or they never apply. The base border is 1px in
+   both states so recolouring it does not shift the button by a pixel. */
+QPushButton#IconButton,
+QPushButton#OptionsButton,
+QPushButton#TextButton {
+    background-color: $COLOR_BACKGROUND_3;
+    color: $COLOR_TEXT_1;
+    border: 1px solid $COLOR_BACKGROUND_3;
+    border-radius: $SIZE_BORDER_RADIUS;
+    padding: 0px;
+    margin: 0px;
+    text-align: center;
+
+    &:hover {
+        background-color: $COLOR_BACKGROUND_4;
+        border: 1px solid $COLOR_ACCENT_2;
+    }
+
+    &:pressed {
+        background-color: $COLOR_BACKGROUND_5;
+        border: 1px solid $COLOR_ACCENT_2;
+    }
+
+    &:disabled {
+        background-color: $COLOR_BACKGROUND_3;
+        border: 1px solid $COLOR_BACKGROUND_3;
+        color: $COLOR_DISABLED;
+    }
+}
+QPushButton#TextButton {
+    padding: 2px 8px;
+    margin: 0px;
+    text-align: center;
+}
+QPushButton#OptionsButton::menu-indicator {
+    width: 0px;
+    image: none;
+}
+
+/* Data type editor inside the Select table: must match the dock theme
+   instead of the bare Fusion combo colours. */
+QComboBox#DataTypeCombo {
+    background-color: $COLOR_BACKGROUND_2;
+    color: $COLOR_TEXT_1;
+    border: 1px solid $COLOR_ACCENT_1;
+    border-radius: $SIZE_BORDER_RADIUS;
+    padding: 1px 4px;
+
+    &:focus {
+        border: 1px solid $COLOR_ACCENT_2;
+    }
+}

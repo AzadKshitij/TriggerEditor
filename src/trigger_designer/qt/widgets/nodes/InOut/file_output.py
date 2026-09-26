@@ -3,32 +3,22 @@ import polars as pl
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
-    QPushButton,
     QFileDialog,
     QVBoxLayout,
-    QTextEdit,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QLayout,
-    QSpacerItem,
-    QSizePolicy,
-    QComboBox,
     QLabel,
     QHBoxLayout,
     QCheckBox,
-    QSpinBox,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Signal
 from trigger_designer.core.node_configuration import register_node, IONodes, NodeTypes
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
 )
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.widgets.common import IconButton, NoWheelComboBox
 
 from nodeeditor.utils import dumpException
 from typing import Optional, Union
@@ -69,63 +59,75 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        # File path input
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setSpacing(2)
+
+        # File path row: path field + icon-only browse button (design system §1, §4)
+        path_row = QHBoxLayout()
+        path_row.setContentsMargins(0, 0, 0, 0)
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
+        self.filePathEdit.setMinimumHeight(30)
         self.filePathEdit.textChanged.connect(self._on_filePathEdit_textChanged)
         self.registerInputWidget(self.filePathEdit)
+        path_row.addWidget(self.filePathEdit, 1)
+        main_layout.addLayout(path_row)
+
+        # Save/browse button (icon-only)
+        self.saveButton = IconButton.themed(
+            "Browse for save location",
+            rsm_icon=self.node.rsm.get("icon_save"),
+            theme_fallback="document-save",
+            parent=self,
+        )
+        self.saveButton.clicked.connect(self.openFileDialog)
 
         # File format selection
         format_layout = QHBoxLayout()
-        format_label = QLabel("Format:")
-        self.formatCombo = QComboBox(self)
+        format_layout.setContentsMargins(0, 0, 0, 0)
+        format_label = QLabel("Format")
+        self.formatCombo = NoWheelComboBox(self)
+        self.formatCombo.setMinimumHeight(30)
         self.formatCombo.addItems(
             ["csv", "excel", "parquet", "json", "ndjson", "ipc", "custom_delimited"]
         )
         self.formatCombo.currentTextChanged.connect(self._on_format_changed)
         format_layout.addWidget(format_label)
-        format_layout.addWidget(self.formatCombo)
+        format_layout.addWidget(self.formatCombo, 1)
+        main_layout.addLayout(format_layout)
 
         # Custom delimiter (for CSV/custom delimited)
         delimiter_layout = QHBoxLayout()
-        delimiter_label = QLabel("Delimiter:")
+        delimiter_layout.setContentsMargins(0, 0, 0, 0)
+        delimiter_label = QLabel("Delimiter")
         self.delimiterEdit = QLineEdit(self)
         self.delimiterEdit.setText(",")
+        self.delimiterEdit.setMinimumHeight(30)
         self.delimiterEdit.setMaximumWidth(50)
         self.delimiterEdit.textChanged.connect(self._on_delimiter_changed)
         delimiter_layout.addWidget(delimiter_label)
         delimiter_layout.addWidget(self.delimiterEdit)
+        main_layout.addLayout(delimiter_layout)
 
         # Streaming option
         self.streamingCheckbox = QCheckBox("Use streaming (memory optimized)")
         self.streamingCheckbox.setChecked(True)
         self.streamingCheckbox.toggled.connect(self._on_streaming_changed)
+        main_layout.addWidget(self.streamingCheckbox)
 
         # BOM option
         self.bomCheckbox = QCheckBox("Include BOM (for UTF-8)")
         self.bomCheckbox.toggled.connect(self._on_bom_changed)
+        main_layout.addWidget(self.bomCheckbox)
 
-        # Save button
-        self.saveButton = QPushButton("Save File", self)
-        self.saveButton.clicked.connect(self.openFileDialog)
+        main_layout.addWidget(self.saveButton)
+        main_layout.addStretch()
 
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
 
-        # Add widgets to layout
-        dock_layout.addWidget(self.filePathEdit)
-        dock_layout.addLayout(format_layout)
-        dock_layout.addLayout(delimiter_layout)
-        dock_layout.addWidget(self.streamingCheckbox)
-        dock_layout.addWidget(self.bomCheckbox)
-        dock_layout.addWidget(self.saveButton)
-
-        dock_layout.setContentsMargins(0, 0, 0, 0)
-        dock_layout.addSpacerItem(
-            QSpacerItem(
-                20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-            )
-        )
+        dock_layout.addLayout(main_layout)
 
         # Set initial visibility
         self._update_ui_visibility()
@@ -230,7 +232,9 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def get_code(self):
         if self.incoming_variable is None or self.incoming_variable == "":
             # Fail loudly: a print stub would report success while saving nothing.
-            return "raise ValueError('File Output: no incoming data — connect an input')\n"
+            return (
+                "raise ValueError('File Output: no incoming data — connect an input')\n"
+            )
 
         code_lines = []
         var_name = self.incoming_variable

@@ -46,6 +46,7 @@ uv run --project . pytest tests/
 2. Inherit from the base node content class
 3. Register the node type in `src/trigger_designer/core/node_configuration.py`
 4. Add tests in `tests/unit/`
+5. Follow `docs/DESIGN_SYSTEM.md` for the Config Dock UI (see `AGENTS.md`)
 
 ## Pull Request Guidelines
 

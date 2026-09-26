@@ -102,5 +102,26 @@
     "icon_remove":{
         "path":"qt/images/node_icons/sub.png",
         "mode": "qpixmap"
+    },
+
+    "icon_folder_open":{
+        "path":"qt/images/node_icons/ui/folder_open.svg",
+        "mode": "rb"
+    },
+    "icon_save":{
+        "path":"qt/images/node_icons/ui/document_save.svg",
+        "mode": "rb"
+    },
+    "icon_external":{
+        "path":"qt/images/node_icons/ui/open_external.svg",
+        "mode": "rb"
+    },
+    "icon_apply":{
+        "path":"qt/images/node_icons/ui/apply_check.svg",
+        "mode": "rb"
+    },
+    "icon_options":{
+        "path":"qt/images/node_icons/ui/options_sliders.svg",
+        "mode": "rb"
     }
 }

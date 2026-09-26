@@ -3,31 +3,16 @@ import dataclasses
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
-    QLayout,
     QVBoxLayout,
-    QListWidget,
     QTableView,
     QHBoxLayout,
     QStyledItemDelegate,
-    QSizePolicy,
-    QSpacerItem,
-    QListWidgetItem,
-    QTableWidget,
-    QTableWidgetItem,
-    QCheckBox,
-    QComboBox,
-    QHeaderView,
-    QPushButton,
 )
-from qtpy.QtGui import QPixmap, QIcon
+from qtpy.QtGui import QPixmap
 from qtpy.QtCore import (
     Qt,
-    QSaveFile,
     Signal,
-    QVariant,
-    QModelIndex,
     QSortFilterProxyModel,
-    QSize,
 )
 from trigger_designer.core.node_configuration import (
     register_node,
@@ -41,9 +26,8 @@ from trigger_designer.qt.node_base import (
     frame_schema,
     frame_shape,
 )
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel
+from trigger_designer.qt.widgets.common import EmptyStateLabel, IconButton
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.widgets.select_table_widget import (
@@ -55,18 +39,9 @@ from trigger_designer.qt.helpers import global_logger
 from typing import (
     Optional,
     TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    OrderedDict,
-    Type,
-    cast,
-    Union,
 )
 
 if TYPE_CHECKING:
-    from nodeeditor.node_scene import Scene
-    from nodeeditor.node_node import Node
     import polars as pl
 
 
@@ -168,44 +143,35 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.search_input.setMinimumHeight(30)
             toolbar_layout.addWidget(self.search_input)
 
-            # Move buttons
-            self.up_btn = QPushButton()
-            self.up_btn.setIcon(QIcon.fromTheme("go-up"))
-            self.up_btn.setIconSize(QSize(12, 12))
-            self.up_btn.setMinimumSize(QSize(30, 30))
+            # Move buttons (icon-only, 30x30/12px per design system §4)
+            self.up_btn = IconButton.themed(
+                "Move column up",
+                rsm_icon=None,
+                qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
+                theme_fallback="go-up",
+                parent=toolbar_widget,
+            )
 
-            self.down_btn = QPushButton()
-            self.down_btn.setIcon(QIcon.fromTheme("go-down"))
-            self.down_btn.setIconSize(QSize(12, 12))
-            self.down_btn.setMinimumSize(QSize(30, 30))
+            self.down_btn = IconButton.themed(
+                "Move column down",
+                rsm_icon=None,
+                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+                theme_fallback="go-down",
+                parent=toolbar_widget,
+            )
 
             toolbar_layout.addWidget(self.up_btn)
             toolbar_layout.addWidget(self.down_btn)
 
-            # Options menu button
-            self.options_btn = QPushButton()
-            self.options_btn.setText("Options")  # Set text separately
-            self.options_btn.setIcon(
-                QIcon(":/qss_icons/dark/rc/arrow_down.png")
-            )  # Set custom icon
-            self.options_btn.setStyleSheet(
-                """
-                QPushButton {
-                    text-align: center;
-                    padding: 0px 0px 0px 10px;
-                    margin: 0;
-                }
-                QPushButton::menu-indicator {
-                    width: 0;
-                    image: none;
-                }
-            """
+            # Options menu button (icon-only; QSS hides menu indicator)
+            self.options_btn = IconButton.themed(
+                "Column options",
+                rsm_icon=self.node.rsm.get("icon_options"),
+                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+                theme_fallback=None,
+                parent=toolbar_widget,
             )
-            # Configure button properties
-            self.options_btn.setMinimumHeight(30)
-            self.options_btn.setMinimumWidth(60)
-            self.options_btn.setIconSize(QSize(12, 12))
-            self.options_btn.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+            self.options_btn.setObjectName("OptionsButton")
 
             toolbar_layout.addWidget(self.options_btn)
 

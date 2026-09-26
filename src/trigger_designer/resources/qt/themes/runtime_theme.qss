@@ -758,31 +758,42 @@ QPushButton {
   border-radius: 4px;
   padding: 2px;
   outline: none;
-  border: none; }
+  /* Constant 1px border (same colour as the fill) so :hover can recolour
+     the border without shifting the button by a pixel. */
+  border: 1px solid #191e21; }
   QPushButton:disabled {
     background-color: #191e21;
     color: #4a4a4a;
+    border: 1px solid #191e21;
     border-radius: 4px;
     padding: 2px; }
   QPushButton:checked {
     background-color: #4b4b4b;
+    border: 1px solid #5680c2;
     border-radius: 4px;
     padding: 2px;
     outline: none; }
     QPushButton:checked:disabled {
       background-color: #4b4b4b;
       color: #4a4a4a;
+      border: 1px solid #191e21;
       border-radius: 4px;
       padding: 2px;
       outline: none; }
     QPushButton:checked:selected {
       background: #4b4b4b; }
   QPushButton:hover {
-    background-color: #1a1f23;
+    background-color: #232323;
     border: 1px solid #5680c2;
     color: #ffffff; }
+  QPushButton:hover:disabled {
+    background-color: #191e21;
+    border: 1px solid #191e21;
+    color: #4a4a4a; }
   QPushButton:pressed {
-    background-color: #4b4b4b; }
+    background-color: #4b4b4b;
+    border: 1px solid #5680c2;
+    color: #ffffff; }
   QPushButton:selected {
     background: #4b4b4b;
     color: #ffffff; }
@@ -790,6 +801,36 @@ QPushButton {
     subcontrol-origin: padding;
     subcontrol-position: bottom right;
     bottom: 4px; }
+/* Icon buttons: an objectName selector outranks QPushButton:hover, so the
+   hover/pressed states have to be restated here or they never apply. */
+QPushButton#IconButton, QPushButton#OptionsButton, QPushButton#TextButton {
+  background-color: #191e21;
+  color: #ffffff;
+  border: 1px solid #191e21;
+  border-radius: 4px;
+  padding: 0px; }
+  QPushButton#IconButton:hover, QPushButton#OptionsButton:hover,
+  QPushButton#TextButton:hover {
+    background-color: #232323;
+    border: 1px solid #5680c2; }
+  QPushButton#IconButton:pressed, QPushButton#OptionsButton:pressed,
+  QPushButton#TextButton:pressed {
+    background-color: #4b4b4b;
+    border: 1px solid #5680c2; }
+  QPushButton#IconButton:disabled, QPushButton#OptionsButton:disabled,
+  QPushButton#TextButton:disabled {
+    background-color: #191e21;
+    border: 1px solid #191e21;
+    color: #4a4a4a; }
+/* The Options button already carries a sliders glyph; the generic
+   QPushButton::menu-indicator would add a second, redundant down arrow. */
+QPushButton#OptionsButton::menu-indicator {
+  width: 0px;
+  height: 0px;
+  border: none;
+  image: none;
+  subcontrol-origin: padding;
+  subcontrol-position: center; }
 
 QDialogButtonBox QPushButton {
   /* Issue #194 #248 - Special case of QPushButton inside dialogs, for better UI */
@@ -806,7 +847,7 @@ QToolButton {
   border-radius: 4px;
   padding: 2px;
   outline: none;
-  border: none;
+  border: 1px solid #191e21;
   /* The subcontrols below are used only in the DelayedPopup mode */
   /* The subcontrols below are used only in the MenuButtonPopup mode */
   /* The subcontrol below is used only in the InstantPopup or DelayedPopup mode */ }
@@ -835,10 +876,17 @@ QToolButton {
       background: #4b4b4b;
       color: #ffffff; }
   QToolButton:hover {
-    background-color: #1a1f23;
+    background-color: #232323;
+    border: 1px solid #5680c2;
     color: #ffffff; }
+  QToolButton:hover:disabled {
+    background-color: #191e21;
+    border: 1px solid #191e21;
+    color: #4a4a4a; }
   QToolButton:pressed {
-    background-color: #4b4b4b; }
+    background-color: #4b4b4b;
+    border: 1px solid #5680c2;
+    color: #ffffff; }
   QToolButton:selected {
     background: #4b4b4b;
     color: #ffffff; }
@@ -1723,6 +1771,37 @@ QLabel#ConfigSectionInfo {
   font-size: 10px;
   margin: 2px; }
 QLabel#EmptyStateLabel {
+  color: #999999; }
+/* Data type editor inside the Select table: match the dock theme instead of
+   the bare Fusion combo colours. */
+QComboBox#DataTypeCombo {
+  background-color: #14171b;
+  color: #ffffff;
+  border: 1px solid #5680c2;
+  border-radius: 4px;
+  padding: 1px 4px; }
+  QComboBox#DataTypeCombo:focus {
+    border: 1px solid #6a96d7; }
+/* Join output column list: source badges, headers, dtype hints */
+QLabel#JoinSourceLeft {
+  background-color: #6a96d7;
+  color: #ffffff;
+  border-radius: 3px;
+  font-weight: bold; }
+QLabel#JoinSourceRight {
+  background-color: #ff6b6b;
+  color: #ffffff;
+  border-radius: 3px;
+  font-weight: bold; }
+QLabel#JoinSourceHeaderLeft {
+  color: #6a96d7;
+  font-weight: bold;
+  padding: 2px 5px; }
+QLabel#JoinSourceHeaderRight {
+  color: #ff6b6b;
+  font-weight: bold;
+  padding: 2px 5px; }
+QLabel#JoinDtypeLabel {
   color: #999999; }
 /* Formula section cards: borderless, separated by background only */
 QFrame#formulaSectionCard {

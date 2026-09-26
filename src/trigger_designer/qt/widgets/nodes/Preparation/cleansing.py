@@ -10,17 +10,8 @@ Returns:
 
 from qtpy.QtWidgets import (
     QWidget,
-    QLineEdit,
-    QPushButton,
-    QFileDialog,
     QVBoxLayout,
-    QTableWidget,
     QCheckBox,
-    QGroupBox,
-    QTableWidgetItem,
-    QHeaderView,
-    QLayout,
-    QComboBox,
     QHBoxLayout,
     QScrollArea,
     QSizePolicy,
@@ -38,12 +29,13 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
-from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import (
     ColumnChecklist,
     ConfigSection,
     EmptyStateLabel,
+    NoWheelComboBox,
+    TextButton,
 )
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.qt.helpers import global_logger
@@ -51,18 +43,10 @@ import polars as pl
 from typing import (
     Optional,
     TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    OrderedDict,
-    Type,
-    cast,
-    Union,
 )
 
 if TYPE_CHECKING:
-    from nodeeditor.node_scene import Scene
-    from nodeeditor.node_node import Node
+    pass
 from trigger_designer.core.utils.cleansing_util import (
     DataCleansing,
     CleansingStats,
@@ -193,10 +177,11 @@ class CleansingContent(
             # Field Selection Group - TOP PRIORITY, 50% of space with scrollbar
             fields_group = ConfigSection("Select Fields to Cleanse")
 
-            # All/None buttons
+            # All/None buttons (text: paired bulk actions, design system §4.3)
             buttons_layout = QHBoxLayout()
-            all_button = QPushButton("All")
-            none_button = QPushButton("None")
+            buttons_layout.setContentsMargins(0, 0, 0, 0)
+            all_button = TextButton("All", "Select all fields")
+            none_button = TextButton("None", "Select no fields")
             all_button.clicked.connect(self.select_all_fields)
             none_button.clicked.connect(self.select_no_fields)
             buttons_layout.addWidget(all_button)
@@ -228,9 +213,7 @@ class CleansingContent(
             fields_group.setMinimumHeight(220)
 
             # Remove Null Data Group
-            null_data_group = QGroupBox("Remove Null Data")
-            null_data_layout = QVBoxLayout()
-            null_data_layout.setSpacing(1)
+            null_data_group = ConfigSection("Remove Null Data")
 
             # Remove Null Rows
             remove_null_rows_check = QCheckBox("Remove Null Rows")
@@ -268,10 +251,9 @@ class CleansingContent(
                 lambda state: self.on_remove_null_columns_changed(bool(state))
             )
 
-            null_data_layout.addWidget(remove_null_rows_check)
-            null_data_layout.addWidget(remove_null_selected_columns_check)
-            null_data_layout.addWidget(remove_null_columns_check)
-            null_data_group.setLayout(null_data_layout)
+            null_data_group.addWidget(remove_null_rows_check)
+            null_data_group.addWidget(remove_null_selected_columns_check)
+            null_data_group.addWidget(remove_null_columns_check)
 
             # Set size policy to take minimum space required
             null_data_group.setSizePolicy(
@@ -279,9 +261,7 @@ class CleansingContent(
             )
 
             # Replace Nulls Group
-            replace_nulls_group = QGroupBox("Replace Nulls")
-            replace_nulls_layout = QVBoxLayout()
-            replace_nulls_layout.setSpacing(1)
+            replace_nulls_group = ConfigSection("Replace Nulls")
 
             # Replace with Blanks (String Fields) - default checked
             replace_blanks_check = QCheckBox("Replace with Blanks (String Fields)")
@@ -301,9 +281,8 @@ class CleansingContent(
                 lambda state: self.on_replace_zeros_changed(bool(state))
             )
 
-            replace_nulls_layout.addWidget(replace_blanks_check)
-            replace_nulls_layout.addWidget(replace_zeros_check)
-            replace_nulls_group.setLayout(replace_nulls_layout)
+            replace_nulls_group.addWidget(replace_blanks_check)
+            replace_nulls_group.addWidget(replace_zeros_check)
 
             # Set size policy to take minimum space required
             replace_nulls_group.setSizePolicy(
@@ -311,9 +290,7 @@ class CleansingContent(
             )
 
             # Character Removal Group
-            char_group = QGroupBox("Remove Unwanted Characters")
-            char_layout = QVBoxLayout()
-            char_layout.setSpacing(1)
+            char_group = ConfigSection("Remove Unwanted Characters")
 
             # Whitespace options
             whitespace_check = QCheckBox("Leading and Trailing Whitespace")
@@ -366,13 +343,12 @@ class CleansingContent(
                 lambda state: self.on_remove_punctuation_changed(bool(state))
             )
 
-            char_layout.addWidget(whitespace_check)
-            char_layout.addWidget(normalize_spaces_check)
-            char_layout.addWidget(remove_all_whitespace_check)
-            char_layout.addWidget(remove_letters_check)
-            char_layout.addWidget(remove_numbers_check)
-            char_layout.addWidget(remove_punctuation_check)
-            char_group.setLayout(char_layout)
+            char_group.addWidget(whitespace_check)
+            char_group.addWidget(normalize_spaces_check)
+            char_group.addWidget(remove_all_whitespace_check)
+            char_group.addWidget(remove_letters_check)
+            char_group.addWidget(remove_numbers_check)
+            char_group.addWidget(remove_punctuation_check)
 
             # Set size policy to take minimum space required
             char_group.setSizePolicy(
@@ -380,18 +356,16 @@ class CleansingContent(
             )
 
             # Case Modification Group
-            case_group = QGroupBox("Modify Case")
-            case_layout = QVBoxLayout()
-            case_layout.setSpacing(1)
+            case_group = ConfigSection("Modify Case")
 
-            case_combo = QComboBox()
+            case_combo = NoWheelComboBox()
             case_combo.addItems(["None", "Upper Case", "Lower Case", "Title Case"])
             case_combo.setCurrentText(self._get_case_display_value())
             case_combo.currentTextChanged.connect(self.on_case_changed)
             case_combo.setToolTip("Change the capitalization of string data types")
+            case_combo.setMinimumHeight(30)
 
-            case_layout.addWidget(case_combo)
-            case_group.setLayout(case_layout)
+            case_group.addWidget(case_combo)
 
             # Set size policy to take minimum space required
             case_group.setSizePolicy(
@@ -604,10 +578,7 @@ class CleansingContent(
         if not self.incoming_variable:
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
         code_lines = [
             "from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy",

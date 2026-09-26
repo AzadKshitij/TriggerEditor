@@ -1,17 +1,7 @@
 from typing import Optional, Union
 from qtpy.QtWidgets import (
-    QWidget,
     QLineEdit,
-    QPushButton,
-    QFileDialog,
     QVBoxLayout,
-    QTextEdit,
-    QTableWidget,
-    QTableWidgetItem,
-    QHeaderView,
-    QLayout,
-    QComboBox,
-    QHBoxLayout,
 )
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Signal
@@ -28,7 +18,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel
+from trigger_designer.qt.widgets.common import EmptyStateLabel, NoWheelComboBox
 from nodeeditor.utils_no_qt import dumpException
 from loguru import logger
 import polars as pl
@@ -114,27 +104,29 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
-            # return layout
+            return
         else:
             main_layout = QVBoxLayout()
-
-            # Create filter container
-            filter_layout = QHBoxLayout()
+            main_layout.setSpacing(2)
+            main_layout.setContentsMargins(5, 5, 5, 5)
 
             # Column selector combobox
-            self.column_selector = QComboBox()
+            self.column_selector = NoWheelComboBox()
             self.column_selector.setObjectName("columnSelector")
             self.column_selector.setMinimumWidth(100)
+            self.column_selector.setMinimumHeight(30)
 
             # Operation selector combobox
-            self.operation_selector = QComboBox()
+            self.operation_selector = NoWheelComboBox()
             self.operation_selector.setObjectName("operationSelector")
+            self.operation_selector.setMinimumHeight(30)
             # Operations will be populated dynamically based on selected column type
 
             # Value input line edit
             self.value_input = QLineEdit()
             self.value_input.setObjectName("valueInput")
             self.value_input.setPlaceholderText("Enter filter value...")
+            self.value_input.setMinimumHeight(30)
 
             # Initialize default values after creating widgets
             # self.column = self.column_selector.currentText()
@@ -150,15 +142,14 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             main_layout.addStretch()
 
-            main_layout.addLayout(filter_layout)
             dock_layout.addLayout(main_layout)
 
             self.recursively_find_widgets(dock_layout)
 
-        # Connect signals
-        self.column_selector.currentTextChanged.connect(self.on_column_changed)
-        self.operation_selector.currentTextChanged.connect(self.on_filter_changed)
-        self.value_input.textChanged.connect(self.on_filter_changed)  # return layout
+            # Connect signals (inside data guard — widgets exist only here)
+            self.column_selector.currentTextChanged.connect(self.on_column_changed)
+            self.operation_selector.currentTextChanged.connect(self.on_filter_changed)
+            self.value_input.textChanged.connect(self.on_filter_changed)
 
     def _get_column_type_category(self, column_name: str) -> str:
         """

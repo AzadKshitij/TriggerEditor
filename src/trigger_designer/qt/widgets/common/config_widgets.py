@@ -1,18 +1,98 @@
 """Shared config-dock widgets: one style, no per-node UI rewrites."""
 
-from typing import Callable, Iterable, Optional
+from collections.abc import Callable, Iterable
+from typing import Optional
 
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import QSize, Qt, Signal
+from qtpy.QtGui import QIcon, QPixmap
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
     QGroupBox,
     QLabel,
     QLayout,
+    QPushButton,
     QScrollArea,
     QVBoxLayout,
     QWidget,
 )
+
+
+class IconButton(QPushButton):
+    """Icon-only button: 30x30, 12px icon, tooltip + accessible name required.
+
+    Resolves the icon via ResourceManager id first, then a compiled
+    ``:/qss_icons`` fallback, then ``QIcon.fromTheme`` (last resort —
+    blank on Windows, see docs/DESIGN_SYSTEM.md §4).
+    """
+
+    def __init__(
+        self,
+        tooltip: str,
+        icon: QIcon | QPixmap | str | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("IconButton")
+        self.setText("")
+        self.setToolTip(tooltip)
+        self.setAccessibleName(tooltip)
+        self.setFixedSize(QSize(30, 30))
+        self.setIconSize(QSize(12, 12))
+        if isinstance(icon, QIcon):
+            self.setIcon(icon)
+        elif isinstance(icon, QPixmap):
+            self.setIcon(QIcon(icon))
+        elif isinstance(icon, str):
+            self.setIcon(QIcon(icon))
+
+    @classmethod
+    def themed(
+        cls,
+        tooltip: str,
+        rsm_icon: QIcon | QPixmap | None = None,
+        qss_fallback: str | None = None,
+        theme_fallback: str | None = None,
+        parent: QWidget | None = None,
+    ) -> "IconButton":
+        """Build an IconButton trying rsm -> :/qss_icons -> fromTheme."""
+        icon: QIcon | None = None
+        if isinstance(rsm_icon, QPixmap):
+            icon = QIcon(rsm_icon)
+        elif isinstance(rsm_icon, QIcon) and not rsm_icon.isNull():
+            icon = rsm_icon
+        if icon is None and qss_fallback:
+            candidate = QIcon(qss_fallback)
+            if not candidate.isNull():
+                icon = candidate
+        if icon is None and theme_fallback:
+            candidate = QIcon.fromTheme(theme_fallback)
+            if not candidate.isNull():
+                icon = candidate
+        return cls(tooltip, icon, parent)
+
+
+class TextButton(QPushButton):
+    """Labelled button for bulk actions whose icon alone is ambiguous.
+
+    Reserved for pairs like "All" / "None" (select-all vs deselect-all) where
+    two near-identical checkbox glyphs cannot be told apart at a glance.
+    Everything else in the Config Dock stays icon-only; see
+    docs/DESIGN_SYSTEM.md §4.3.
+    """
+
+    def __init__(
+        self,
+        text: str,
+        tooltip: str | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(text, parent)
+        self.setObjectName("TextButton")
+        self.setToolTip(tooltip or text)
+        self.setAccessibleName(tooltip or text)
+        self.setMinimumHeight(30)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
 
 
 class NoWheelComboBox(QComboBox):

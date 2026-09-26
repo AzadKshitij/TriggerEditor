@@ -174,10 +174,7 @@ class RunningTotalContent(
         if not self.incoming_variable:
             # Fallback: always define the output so downstream code never
             # NameErrors.
-            return (
-                "import polars as pl\n"
-                f"{self.variable_name} = pl.DataFrame()\n"
-            )
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
         if not self.sum_columns:
             return (
