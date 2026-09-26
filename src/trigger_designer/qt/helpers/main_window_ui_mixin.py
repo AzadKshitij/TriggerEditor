@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from qtpy.QtCore import Qt
+import os
 
 from nodeeditor.utils import dumpException
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QMenu, QMessageBox
 
+from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
-from trigger_designer.qt.docks.logging_dock import LoggingDock
+from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 
 
 class MainWindowMenuMixin:
@@ -17,6 +20,11 @@ class MainWindowMenuMixin:
 
     def createMenus(self) -> None:  # noqa: N802 (Qt naming style)
         super().createMenus()
+
+        self.openRecentMenu = QMenu("&Open Recent", self)
+        self.fileMenu.insertMenu(self.actSave, self.openRecentMenu)
+        self.openRecentMenu.aboutToShow.connect(self._rebuild_recent_menu)
+        self._rebuild_recent_menu()
 
         self.editMenu.addSeparator()
         self.editMenu.addAction(self.actSettings)
@@ -135,6 +143,80 @@ class MainWindowMenuMixin:
             self.nodesDock.hide()
         else:
             self.nodesDock.show()
+
+    def _recent_manager(self) -> RecentFilesManager:
+        return RecentFilesManager()
+
+    def refresh_recent_menu(self) -> None:
+        if hasattr(self, "openRecentMenu"):
+            self._rebuild_recent_menu()
+
+    def _record_recent(self, path: str | None) -> None:
+        if not path:
+            return
+        try:
+            self._recent_manager().add_recent(path)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            dumpException(exc)
+        self.refresh_recent_menu()
+
+    def _rebuild_recent_menu(self) -> None:
+        menu = getattr(self, "openRecentMenu", None)
+        if menu is None:
+            return
+        try:
+            recents = self._recent_manager().recents()
+        except Exception as exc:  # pragma: no cover - defensive logging
+            dumpException(exc)
+            recents = []
+        menu.clear()
+        menu.menuAction().setVisible(bool(recents))
+        for index, path in enumerate(recents):
+            label = os.path.basename(path) or path
+            if index < 9:
+                label = f"&{index + 1} {label}"
+            action = menu.addAction(label)
+            action.setToolTip(path)
+            action.setStatusTip(path)
+            action.triggered.connect(
+                lambda _checked=False, p=path: self.open_recent_file(p)
+            )
+        if recents:
+            menu.addSeparator()
+            clear_action = menu.addAction("Clear Recent Files")
+            clear_action.triggered.connect(self._clear_recents)
+
+    def _clear_recents(self) -> None:
+        try:
+            self._recent_manager().clear()
+        except Exception as exc:  # pragma: no cover - defensive logging
+            dumpException(exc)
+        self.refresh_recent_menu()
+
+    def open_recent_file(self, path: str) -> None:
+        manager = self._recent_manager()
+        if not os.path.isfile(path):
+            QMessageBox.warning(
+                self,
+                "Recent file not found",
+                f'"{path}" no longer exists.\nIt was removed from recent files.',
+            )
+            try:
+                manager.remove_recent(path)
+            except Exception as exc:  # pragma: no cover - defensive logging
+                dumpException(exc)
+            self.refresh_recent_menu()
+            return
+        try:
+            if not self.maybeSave():
+                return
+        except Exception as exc:  # pragma: no cover - defensive logging
+            dumpException(exc)
+            return
+        try:
+            self.openFile(path)
+        except Exception as exc:  # pragma: no cover - defensive logging
+            dumpException(exc)
 
 
 class MainWindowDockMixin:

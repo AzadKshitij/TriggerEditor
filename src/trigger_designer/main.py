@@ -190,6 +190,12 @@ def main() -> None:
     # Hide splash screen
     splash.finish(main_window)
 
+    if not file_path:
+        try:
+            main_window.showWelcomeDialogIfNeeded()
+        except Exception as exc:
+            logger.warning(f"Welcome dialog skipped: {exc}")
+
     logger.info("Trigger Designer started successfully")
     sys.exit(app.exec())
 

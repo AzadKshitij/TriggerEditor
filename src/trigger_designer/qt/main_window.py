@@ -211,6 +211,7 @@ class TriggerWindow(
                 existing = self.findMdiChild(fname)
                 if existing:
                     self.mdiArea.setActiveSubWindow(existing)
+                    self._record_recent(fname)
                 else:
                     # we need to create new subWindow and open the file
                     nodeeditor = TriggerSubWindow()
@@ -220,6 +221,7 @@ class TriggerWindow(
                         nodeeditor.setTitle()
                         subwnd = self.createMdiChild(nodeeditor)
                         subwnd.show()
+                        self._record_recent(fname)
                     else:
                         nodeeditor.close()
         except Exception as e:
@@ -239,6 +241,7 @@ class TriggerWindow(
                     existing = self.findMdiChild(fname)
                     if existing:
                         self.mdiArea.setActiveSubWindow(existing)
+                        self._record_recent(fname)
                     else:
                         # we need to create new subWindow and open the file
                         nodeeditor = TriggerSubWindow()
@@ -250,10 +253,51 @@ class TriggerWindow(
                             nodeeditor.setTitle()
                             subwnd = self.createMdiChild(nodeeditor)
                             subwnd.show()
+                            self._record_recent(fname)
                         else:
                             nodeeditor.close()
         except Exception as e:
             dumpException(e)
+
+    def onFileSave(self):
+        result = super().onFileSave()
+        if result:
+            current = self.getCurrentNodeEditorWidget()
+            filename = getattr(current, "filename", None)
+            self._record_recent(filename)
+        return result
+
+    def onFileSaveAs(self):
+        result = super().onFileSaveAs()
+        if result:
+            current = self.getCurrentNodeEditorWidget()
+            filename = getattr(current, "filename", None)
+            self._record_recent(filename)
+        return result
+
+    def showWelcomeDialogIfNeeded(self) -> None:
+        """Show the startup welcome dialog unless opted out."""
+        from trigger_designer.qt.dialogs.welcome_dialog import WelcomeDialog
+        from trigger_designer.qt.helpers.recent_files import RecentFilesManager
+
+        manager = RecentFilesManager()
+        if not manager.is_welcome_enabled():
+            return
+        dialog = WelcomeDialog(
+            manager.recents(),
+            show_on_startup=manager.is_welcome_enabled(),
+            parent=self,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            manager.set_welcome_enabled(dialog.show_on_startup)
+            return
+        manager.set_welcome_enabled(dialog.show_on_startup)
+        if dialog.action == "open" and dialog.selected_path:
+            self.open_recent_file(dialog.selected_path)
+        elif dialog.action == "new":
+            self.onFileNew()
+        elif dialog.action == "browse":
+            self.onFileOpen()
 
     def about(self) -> None:
         QMessageBox.about(
