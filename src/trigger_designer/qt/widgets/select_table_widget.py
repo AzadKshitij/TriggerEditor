@@ -377,8 +377,15 @@ class SelectTableWidget(QAbstractTableModel):
             # Update rename
             row_data.rename = changes["rename_mapping"].get(row_data.text, "")
 
-        # Notify view that data has changed
-        self.layoutChanged.emit()
+        # Notify the view that values changed. This must be a bounded
+        # dataChanged, not layoutChanged: nothing structural changed, and a
+        # bare layoutChanged with an active selection segfaults (the proxy
+        # rebuilds selection state around a layout change that never
+        # happened).
+        if self._data:
+            top_left = self.index(0, 0)
+            bottom_right = self.index(len(self._data) - 1, 3)
+            self.dataChanged.emit(top_left, bottom_right, [])
         self.data_processed.emit(self.getData())
 
     def toggleRowSelection(self, index: QModelIndex, state: bool) -> None:

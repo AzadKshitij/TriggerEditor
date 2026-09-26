@@ -171,12 +171,18 @@ def enrich(
         }
     )
     enriched = df.merge(customers, on="customer_id", how="left")
+    record("01 enriched customer_id", enriched)
     enriched = enriched.merge(products, on="product_id", how="left")
+    record("02 enriched product_id", enriched)
     enriched = enriched.merge(suppliers, on="supplier_id", how="left")
+    record("03 enriched supplier_id", enriched)
     enriched = enriched.merge(channels, on="channel_id", how="left")
+    record("04 enriched channel_id", enriched)
     enriched = enriched.merge(fx, on="currency", how="left")
+    record("05 enriched currency", enriched)
 
     g = enriched["quantity"] * enriched["unit_price_local"]
+
     enriched["gross_local"] = g
     enriched["discount_local"] = g * enriched["discount_pct"]
     enriched["net_local"] = g - enriched["discount_local"]
@@ -189,6 +195,8 @@ def enrich(
     enriched["tax_usd"] = enriched["tax_local"] * enriched["usd_rate"]
     enriched["shipping_usd"] = enriched["shipping_local"] * enriched["usd_rate"]
     enriched["total_usd"] = enriched["total_local"] * enriched["usd_rate"]
+
+    print(enriched)
 
     # unit_cost comes from the product catalogue, which is priced in USD. It is
     # already USD, so it must NOT be multiplied by usd_rate again - that is a

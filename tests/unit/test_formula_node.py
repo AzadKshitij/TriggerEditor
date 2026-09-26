@@ -628,6 +628,19 @@ def test_autocomplete_insert_replaces_prefix() -> None:
     editor.deleteLater()
 
 
+def test_strip_alias_runs_as_trim() -> None:
+    content = _build_formula_content(
+        [{"target_column": "clean_category", "formula_text": "strip([category])"}]
+    )
+    prepared = content._prepare_formula_for_sql(
+        "strip([category])", ["amount", "category", "order_date"]
+    )
+    assert prepared == 'trim("category")', prepared
+    content.update_data()
+    assert content.last_error == ""
+    assert content.data["clean_category"].to_list() == ["A", "B"]
+
+
 def main() -> None:
     _get_app()
     test_formula_content_applies_multiple_sections_in_order()
@@ -662,6 +675,7 @@ def main() -> None:
     test_formula_sidebar_uses_compact_spacing()
     test_formula_cards_borderless_themed_untitled()
     test_formula_refreshes_selectors_on_schema_change()
+    test_strip_alias_runs_as_trim()
     print("ok")
 
 

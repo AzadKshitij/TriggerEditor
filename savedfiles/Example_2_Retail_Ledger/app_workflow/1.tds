@@ -6,8 +6,8 @@
     {
       "id": 2667100539792,
       "title": "File Input",
-      "pos_x": -695.2656249999999,
-      "pos_y": -80.296875,
+      "pos_x": -657.004211425781,
+      "pos_y": 474.3601074218746,
       "inputs": [],
       "outputs": [
         {
@@ -58,8 +58,8 @@
     {
       "id": 2667100541712,
       "title": "File Input",
-      "pos_x": -690.2656249999999,
-      "pos_y": 63.703125,
+      "pos_x": -680.7288818359374,
+      "pos_y": -117.49499511718741,
       "inputs": [],
       "outputs": [
         {
@@ -154,8 +154,8 @@
     {
       "id": 2667100549232,
       "title": "File Input",
-      "pos_x": -688.2656249999999,
-      "pos_y": 213.7031249999999,
+      "pos_x": -669.1921386718749,
+      "pos_y": 32.50500488281253,
       "inputs": [],
       "outputs": [
         {
@@ -230,8 +230,8 @@
     {
       "id": 2667100543472,
       "title": "File Input",
-      "pos_x": -686.2656249999999,
-      "pos_y": 365.7031249999999,
+      "pos_x": -661.8515624999998,
+      "pos_y": 167.94921875,
       "inputs": [],
       "outputs": [
         {
@@ -302,8 +302,8 @@
     {
       "id": 2667100647376,
       "title": "File Input",
-      "pos_x": -689.2656249999999,
-      "pos_y": 516.7031249999999,
+      "pos_x": -664.8515624999998,
+      "pos_y": 318.94921875,
       "inputs": [],
       "outputs": [
         {
@@ -358,8 +358,8 @@
     {
       "id": 2667100865712,
       "title": "File Input",
-      "pos_x": -691.2656249999999,
-      "pos_y": 661.7031249999999,
+      "pos_x": -654.64453125,
+      "pos_y": 639.73046875,
       "inputs": [],
       "outputs": [
         {
@@ -406,8 +406,8 @@
     {
       "id": 2667100707312,
       "title": "Select",
-      "pos_x": -470.21484374999994,
-      "pos_y": 65.91796874999987,
+      "pos_x": -497.2991943359374,
+      "pos_y": -115.28015136718753,
       "inputs": [
         {
           "id": 2667100712272,
@@ -431,7 +431,7 @@
           {
             "checked": true,
             "text": " Order ID ",
-            "dtype": "Int64",
+            "dtype": "String",
             "rename": ""
           },
           {
@@ -539,7 +539,7 @@
           ],
           "rename_mapping": {},
           "dtype_mapping": {
-            " Order ID ": "Int64",
+            " Order ID ": "String",
             "Customer_Id": "Int64",
             "PRODUCT_ID": "Int64",
             "supplier id": "Int64",
@@ -565,8 +565,8 @@
     {
       "id": 2667100716752,
       "title": "Select",
-      "pos_x": -511.7187499999999,
-      "pos_y": -80.078125,
+      "pos_x": 1489.4332885742176,
+      "pos_y": 455.04760742187466,
       "inputs": [
         {
           "id": 2667100703632,
@@ -636,8 +636,8 @@
     {
       "id": 2667100714672,
       "title": "Select",
-      "pos_x": -480.4687499999998,
-      "pos_y": 222.6562499999999,
+      "pos_x": 738.4567260742181,
+      "pos_y": 20.20263671875003,
       "inputs": [
         {
           "id": 2667100701712,
@@ -668,13 +668,13 @@
             "checked": true,
             "text": "email",
             "dtype": "String",
-            "rename": ""
+            "rename": "customer_email"
           },
           {
             "checked": true,
             "text": "full_name",
             "dtype": "String",
-            "rename": ""
+            "rename": "customer_full_name"
           },
           {
             "checked": true,
@@ -686,7 +686,7 @@
             "checked": true,
             "text": "country",
             "dtype": "String",
-            "rename": ""
+            "rename": "customer_country"
           },
           {
             "checked": true,
@@ -698,7 +698,7 @@
             "checked": true,
             "text": "currency",
             "dtype": "String",
-            "rename": ""
+            "rename": "customer_currency"
           },
           {
             "checked": true,
@@ -710,7 +710,7 @@
             "checked": true,
             "text": "age_band",
             "dtype": "String",
-            "rename": ""
+            "rename": "customer_age_band"
           },
           {
             "checked": true,
@@ -732,7 +732,13 @@
             "age_band",
             "loyalty_tier"
           ],
-          "rename_mapping": {},
+          "rename_mapping": {
+            "email": "customer_email",
+            "full_name": "customer_full_name",
+            "country": "customer_country",
+            "currency": "customer_currency",
+            "age_band": "customer_age_band"
+          },
           "dtype_mapping": {
             "customer_id": "Int64",
             "email": "String",
@@ -755,8 +761,8 @@
     {
       "id": 2667100711312,
       "title": "Select",
-      "pos_x": -474.6093749999999,
-      "pos_y": 363.28124999999966,
+      "pos_x": 1004.8828124999991,
+      "pos_y": 177.73437499999974,
       "inputs": [
         {
           "id": 2667100877392,
@@ -866,8 +872,8 @@
     {
       "id": 2667100873712,
       "title": "Select",
-      "pos_x": -484.3749999999999,
-      "pos_y": 517.5781249999999,
+      "pos_x": 1229.492187499999,
+      "pos_y": 329.5898437499999,
       "inputs": [
         {
           "id": 2667248194640,
@@ -945,8 +951,8 @@
     {
       "id": 2667248191760,
       "title": "Select",
-      "pos_x": -469.36035156249994,
-      "pos_y": 659.6679687499999,
+      "pos_x": 507.20214843749943,
+      "pos_y": 635.2539062499999,
       "inputs": [
         {
           "id": 2667248190320,
@@ -1008,8 +1014,8 @@
     {
       "id": 2667252787280,
       "title": "Cleansing",
-      "pos_x": -116.5771484375,
-      "pos_y": 67.74902343749999,
+      "pos_x": -107.0404052734375,
+      "pos_y": -113.44909667968741,
       "inputs": [
         {
           "id": 2667252786960,
@@ -1029,8 +1035,8 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
+        "replace_null_strings": false,
+        "replace_null_numbers": false,
         "strip_whitespace": true,
         "normalize_spaces": true,
         "remove_all_whitespace": false,
@@ -1053,8 +1059,8 @@
     {
       "id": 2206727594032,
       "title": "Cleansing",
-      "pos_x": 61.03515624999977,
-      "pos_y": 67.13867187499993,
+      "pos_x": 70.57189941406227,
+      "pos_y": -114.05944824218741,
       "inputs": [
         {
           "id": 2207682771728,
@@ -1074,8 +1080,8 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
+        "replace_null_strings": false,
+        "replace_null_numbers": false,
         "strip_whitespace": true,
         "normalize_spaces": true,
         "remove_all_whitespace": false,
@@ -1084,9 +1090,9 @@
         "remove_numbers": false,
         "remove_punctuation": false,
         "selected_fields": [
-          "Customer_Id",
-          "PRODUCT_ID",
-          "is_returned"
+          "order_id",
+          "customer_id",
+          "product_id"
         ],
         "field_selection_initialized": true,
         "remove_null_rows": false,
@@ -1100,8 +1106,8 @@
     {
       "id": 2699443889456,
       "title": "Filter",
-      "pos_x": 236.19140624999966,
-      "pos_y": 65.40527343749991,
+      "pos_x": 245.72814941406205,
+      "pos_y": -115.79284667968753,
       "inputs": [
         {
           "id": 2699443890576,
@@ -1133,7 +1139,7 @@
         "value": "",
         "value2": "",
         "mode": "expression",
-        "expression": "[quantity] in_between (0, 500)"
+        "expression": "[quantity] >= 1 and [quantity] <= 500"
       },
       "node_code": 2,
       "node_type": "preparation",
@@ -1142,8 +1148,8 @@
     {
       "id": 2699443583920,
       "title": "Filter",
-      "pos_x": 411.07910156249966,
-      "pos_y": 62.499999999999915,
+      "pos_x": 420.61584472656205,
+      "pos_y": -118.69812011718753,
       "inputs": [
         {
           "id": 2699443576240,
@@ -1184,8 +1190,8 @@
     {
       "id": 2699443578640,
       "title": "Filter",
-      "pos_x": 580.0683593749997,
-      "pos_y": 61.10351562499994,
+      "pos_x": 589.605102539062,
+      "pos_y": -120.09460449218741,
       "inputs": [
         {
           "id": 2699443880656,
@@ -1217,7 +1223,7 @@
         "value": "",
         "value2": "",
         "mode": "expression",
-        "expression": "YEAR([order_ts]) <= 2025 AND\nLOWER([is_returned]) = \"true\""
+        "expression": "YEAR([order_ts]) <= 2025"
       },
       "node_code": 2,
       "node_type": "preparation",
@@ -1226,8 +1232,8 @@
     {
       "id": 2824864141616,
       "title": "Normalize Columns",
-      "pos_x": -314.3310546874999,
-      "pos_y": 67.13867187499999,
+      "pos_x": -304.7943115234374,
+      "pos_y": -114.05944824218741,
       "inputs": [
         {
           "id": 2824864148496,
@@ -1251,8 +1257,24 @@
         "spaces_to_underscore": true,
         "remove_all_whitespace": false,
         "case_modification": "lower",
-        "selected_columns": [],
-        "field_selection_initialized": false
+        "selected_columns": [
+          " Order ID ",
+          "Customer_Id",
+          "PRODUCT_ID",
+          "supplier id",
+          "Channel ID",
+          "Currency",
+          "Order TS",
+          "Quantity",
+          "unit_price_local",
+          "Discount Pct",
+          "tax_local",
+          "shipping_local",
+          "Status",
+          "Payment Method",
+          "is_returned"
+        ],
+        "field_selection_initialized": true
       },
       "node_code": 10,
       "node_type": "preparation",
@@ -1261,8 +1283,8 @@
     {
       "id": 2259315345840,
       "title": "Unique",
-      "pos_x": 776.2499999999993,
-      "pos_y": 48.74999999999996,
+      "pos_x": 785.7867431640618,
+      "pos_y": -132.44812011718741,
       "inputs": [
         {
           "id": 2259315346960,
@@ -1300,8 +1322,8 @@
     {
       "id": 2259284024432,
       "title": "Formula",
-      "pos_x": -250.12,
-      "pos_y": 663.7800000000001,
+      "pos_x": 1047.3348339843749,
+      "pos_y": 764.0302441406249,
       "inputs": [
         {
           "id": 2259284030832,
@@ -1325,6 +1347,1131 @@
           {
             "target_column": "currency",
             "formula_text": "LOWER([currency])",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2607119136912,
+      "title": "Join",
+      "pos_x": 1008.859375,
+      "pos_y": -68.35937499999997,
+      "inputs": [
+        {
+          "id": 2607119138192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119138512,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119188048,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119188368,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119188688,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "customer_id",
+            "right_column": "customer_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "R"
+          },
+          {
+            "name": "customer_country",
+            "source": "R"
+          },
+          {
+            "name": "customer_currency",
+            "source": "R"
+          },
+          {
+            "name": "customer_email",
+            "source": "R"
+          },
+          {
+            "name": "customer_full_name",
+            "source": "R"
+          },
+          {
+            "name": "customer_id",
+            "source": "R"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "R"
+          },
+          {
+            "name": "region",
+            "source": "R"
+          },
+          {
+            "name": "segment",
+            "source": "R"
+          },
+          {
+            "name": "signup_date",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607119194288,
+      "title": "Join",
+      "pos_x": 1240.2343749999995,
+      "pos_y": 92.77343749999997,
+      "inputs": [
+        {
+          "id": 2607119192048,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119192688,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119192208,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119192528,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119191568,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "product_id",
+            "right_column": "product_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_full_name",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "brand",
+            "source": "R"
+          },
+          {
+            "name": "category",
+            "source": "R"
+          },
+          {
+            "name": "launch_date",
+            "source": "R"
+          },
+          {
+            "name": "product_id",
+            "source": "R"
+          },
+          {
+            "name": "product_name",
+            "source": "R"
+          },
+          {
+            "name": "sku",
+            "source": "R"
+          },
+          {
+            "name": "subcategory",
+            "source": "R"
+          },
+          {
+            "name": "unit_cost",
+            "source": "R"
+          },
+          {
+            "name": "unit_price",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607119191728,
+      "title": "Join",
+      "pos_x": 1496.5820312499998,
+      "pos_y": 241.6992187499999,
+      "inputs": [
+        {
+          "id": 2607119189808,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119189488,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119189328,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119136592,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119123472,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "supplier_id",
+            "right_column": "supplier_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_full_name",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "R"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "R"
+          },
+          {
+            "name": "reliability_score",
+            "source": "R"
+          },
+          {
+            "name": "supplier_id",
+            "source": "R"
+          },
+          {
+            "name": "supplier_name",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607119123792,
+      "title": "Join",
+      "pos_x": 1721.1914062499993,
+      "pos_y": 375.9765624999999,
+      "inputs": [
+        {
+          "id": 2607119126192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119125232,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119125872,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119127952,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119132112,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "channel_id",
+            "right_column": "channel_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_full_name",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "reliability_score",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "supplier_name",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "channel_group",
+            "source": "R"
+          },
+          {
+            "name": "channel_id",
+            "source": "R"
+          },
+          {
+            "name": "channel_name",
+            "source": "R"
+          },
+          {
+            "name": "is_digital",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607193616816,
+      "title": "Join",
+      "pos_x": 1914.062499999999,
+      "pos_y": 505.3710937499998,
+      "inputs": [
+        {
+          "id": 2607193607536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607193605296,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607193619376,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607193617136,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607193615856,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "currency",
+            "right_column": "currency"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_group",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "channel_name",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_full_name",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_digital",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "reliability_score",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "supplier_name",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "R"
+          },
+          {
+            "name": "currency_name",
+            "source": "R"
+          },
+          {
+            "name": "usd_rate",
+            "source": "R"
+          }
+        ]
+      },
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607196374192,
+      "title": "Formula",
+      "pos_x": 2131.2499999999986,
+      "pos_y": 509.99999999999955,
+      "inputs": [
+        {
+          "id": 2607196385232,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119197008,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "g",
+            "formula_text": "[quantity] * [unit_price_local]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "gross_local",
+            "formula_text": "[g]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "discount_local",
+            "formula_text": "[g] * [discount_pct]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "net_local",
+            "formula_text": "[g] - [discount_local]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "total_local",
+            "formula_text": "[net_local] + [tax_local] + [shipping_local]",
+            "editor_height": 65,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2607193611536,
+      "title": "Formula",
+      "pos_x": 2313.749999999998,
+      "pos_y": 509.99999999999955,
+      "inputs": [
+        {
+          "id": 2607193615216,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607198105232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "unit_price_usd",
+            "formula_text": "[unit_price_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "net_revenue_usd",
+            "formula_text": "[net_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "tax_usd",
+            "formula_text": "[tax_local] * [usd_rate]",
+            "editor_height": 120,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "shipping_usd",
+            "formula_text": "[shipping_local] * [usd_rate]",
+            "editor_height": 120,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "total_usd",
+            "formula_text": "[total_local] * [usd_rate]",
             "editor_height": 120,
             "target_dtype": ""
           }
@@ -1419,12 +2566,84 @@
       "edge_type": 5,
       "start": 2667248190160,
       "end": 2259284030832
+    },
+    {
+      "id": 2606410094544,
+      "edge_type": 5,
+      "start": 2259315344720,
+      "end": 2607119138192
+    },
+    {
+      "id": 2607193357008,
+      "edge_type": 5,
+      "start": 2667100709552,
+      "end": 2607119138512
+    },
+    {
+      "id": 2607193931600,
+      "edge_type": 5,
+      "start": 2667100873552,
+      "end": 2607119192688
+    },
+    {
+      "id": 2607196022352,
+      "edge_type": 5,
+      "start": 2607119188368,
+      "end": 2607119192048
+    },
+    {
+      "id": 2607193465936,
+      "edge_type": 5,
+      "start": 2667248194320,
+      "end": 2607119189488
+    },
+    {
+      "id": 2607196683984,
+      "edge_type": 5,
+      "start": 2607119192528,
+      "end": 2607119189808
+    },
+    {
+      "id": 2607196830032,
+      "edge_type": 5,
+      "start": 2667100712592,
+      "end": 2607119125232
+    },
+    {
+      "id": 2607197164624,
+      "edge_type": 5,
+      "start": 2607119136592,
+      "end": 2607119126192
+    },
+    {
+      "id": 2607197775696,
+      "edge_type": 5,
+      "start": 2607119127952,
+      "end": 2607193607536
+    },
+    {
+      "id": 2607920666320,
+      "edge_type": 5,
+      "start": 2667248190160,
+      "end": 2607193605296
+    },
+    {
+      "id": 2607198401232,
+      "edge_type": 5,
+      "start": 2607193617136,
+      "end": 2607196385232
+    },
+    {
+      "id": 2608889654864,
+      "edge_type": 5,
+      "start": 2607119197008,
+      "end": 2607193615216
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-26T17:15:03Z"
+    "saved_at": "2026-09-26T18:59:51Z"
   }
 }

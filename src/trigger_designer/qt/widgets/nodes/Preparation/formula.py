@@ -42,6 +42,7 @@ from trigger_designer.qt.widgets.sql_formula_editor import (
     ERROR_CHECK_DEBOUNCE_MS,
     SQLFormulaWidget,
     STRING_LITERAL_RE,
+    translate_function_aliases,
 )
 
 if TYPE_CHECKING:
@@ -806,6 +807,9 @@ class FormulaContent(
         self, formula_text: str, available_columns: List[str]
     ) -> str:
         sql_formula = self._normalize_string_literals(formula_text)
+        sql_formula = self._apply_outside_string_literals(
+            sql_formula, translate_function_aliases
+        )
         for column_name in available_columns:
             sql_formula = self._replace_column_names(sql_formula, column_name)
         return sql_formula

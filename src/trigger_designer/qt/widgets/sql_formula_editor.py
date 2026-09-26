@@ -53,6 +53,16 @@ def mask_string_literals(text: str) -> str:
     )
 
 
+def translate_function_aliases(segment: str) -> str:
+    """Rewrite convenience function spellings to DuckDB names.
+
+    Applied to code segments only (never inside string literals): ``strip(``
+    is the Python spelling of DuckDB's ``trim(``. Signatures match, so a
+    plain token swap is semantics-preserving.
+    """
+    return re.sub(r"(?i)\bstrip\s*\(", "trim(", segment)
+
+
 #: Shared keyword list for highlighting + autocomplete (single source of truth).
 SQL_KEYWORDS = [
     "SELECT",
@@ -153,6 +163,9 @@ FUNCTION_NAMES = [
     "TRY_CAST",
     "UPPER",
     "YEAR",
+    # Aliases translated to DuckDB spellings before execution (see
+    # translate_function_aliases below): STRIP -> TRIM.
+    "STRIP",
 ]
 
 #: Minimum typed chars before the popup shows on its own (Ctrl+Space forces it).
@@ -818,7 +831,15 @@ class SQLFormulaEditor(QTextEdit):
             Qt.Key.Key_Return,
             Qt.Key.Key_Tab,
         ):
-            completion = completer.currentCompletion()
+            # Read the popup's highlighted row directly: currentCompletion()
+            # goes stale (it keeps returning the first match after the view
+            # selection moves), so Enter would insert the wrong suggestion.
+            index = completer.popup().currentIndex()
+            if index.isValid():
+                highlighted = index.data(Qt.ItemDataRole.DisplayRole)
+                completion = highlighted or completer.currentCompletion()
+            else:
+                completion = completer.currentCompletion()
             completer.popup().hide()
             completer.blockSignals(True)
             try:

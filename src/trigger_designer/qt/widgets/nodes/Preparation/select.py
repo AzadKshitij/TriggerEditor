@@ -307,15 +307,56 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         menu.addMenu(dtype_menu)
 
     def _bulk_target_rows(self, selected_only: bool) -> list:
-        """Rows a bulk action applies to. Empty scope is a no-op, never a fallback."""
-        if selected_only:
-            return [row for row in self.table_data if row.checked]
-        return list(self.table_data)
+        """Rows a bulk action applies to.
+
+        "Selected" means highlighted rows in the view - the same vocabulary
+        as Check/Uncheck Selected - mapped through the search proxy. "All"
+        means every row. An empty highlight is a no-op, never a fallback to
+        everything: with everything checked by default, checked-state would
+        make "Selected" silently mean "All".
+        """
+        if not selected_only:
+            return list(self.table_data)
+        try:
+            view = getattr(self, "table_view", None)
+            selection = view.selectionModel() if view is not None else None
+            if selection is None:
+                return []
+            rows = []
+            seen = set()
+            for index in selection.selectedRows():
+                model = view.model()
+                if isinstance(model, QSortFilterProxyModel):
+                    index = model.mapToSource(index)
+                row = index.row()
+                if 0 <= row < len(self.table_data) and row not in seen:
+                    seen.add(row)
+                    rows.append(self.table_data[row])
+        except RuntimeError:
+            # Dock was rebuilt under this menu; nothing valid to target.
+            return []
+        return rows
 
     def _bulk_commit(self) -> None:
-        """Repaint the table and run one history-tracked pipeline pass."""
-        self.table_widget.layoutChanged.emit()
-        self.handleDataChanged(self.table_widget.getData())
+        """Repaint the table and run one history-tracked pipeline pass.
+
+        Emits a bounded dataChanged (values changed, structure did not). A
+        bare layoutChanged here segfaults once a selection exists: the proxy
+        and view rebuild selection state around a layout change that never
+        happened.
+        """
+        try:
+            if self.table_data:
+                top_left = self.table_widget.index(0, 0)
+                bottom_right = self.table_widget.index(len(self.table_data) - 1, 3)
+                self.table_widget.dataChanged.emit(top_left, bottom_right, [])
+            self.handleDataChanged(self.table_widget.getData())
+        except Exception as exc:
+            global_logger.error(f"Select bulk edit failed: {exc}")
+            try:
+                self.node.grNode.setToolTip(f"Bulk edit failed: {exc}")
+            except RuntimeError:
+                pass
 
     def prompt_bulk_affix(self, selected_only: bool, is_prefix: bool) -> None:
         """Ask for an affix, then compose it onto the effective names."""

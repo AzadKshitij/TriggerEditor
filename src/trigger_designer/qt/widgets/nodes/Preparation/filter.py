@@ -25,6 +25,7 @@ from trigger_designer.qt.widgets.common import EmptyStateLabel, NoWheelComboBox
 from trigger_designer.qt.widgets.sql_formula_editor import (
     SQLFormulaWidget,
     STRING_LITERAL_RE,
+    translate_function_aliases,
 )
 from nodeeditor.utils_no_qt import dumpException
 from loguru import logger
@@ -769,6 +770,9 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         sql_expression = self._normalize_string_literals(expression_text)
         sql_expression = self._apply_outside_string_literals(
             sql_expression, self._translate_in_between
+        )
+        sql_expression = self._apply_outside_string_literals(
+            sql_expression, translate_function_aliases
         )
         for column_name in available_columns:
             sql_expression = self._replace_column_names(sql_expression, column_name)

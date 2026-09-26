@@ -1,0 +1,2 @@
+channel_id,currency,customer_id,discount_pct,is_returned,order_id,order_ts,payment_method,product_id,quantity,shipping_local,status,supplier_id,tax_local,unit_price_local,customer_age_band,customer_country,customer_currency,customer_email,customer_full_name,loyalty_tier,region,segment,signup_date
+6,PLN,1085,0.3,true,0,2024-02-06T09:27:49.000000,PayPal,500129,8,4.99,Paid,900039,102.73,113.71,45-54,SG,NOK,ulrike.quintero1085@example.com,Ulrike Quintero,Bronze,Asia Pacific,Consumer,2021-10-10

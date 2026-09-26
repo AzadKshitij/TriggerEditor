@@ -150,3 +150,14 @@ def test_commit_preserves_caret_position() -> None:
     assert content.value_input.cursorPosition() == 1
 
     parent.deleteLater()
+
+
+def test_strip_alias_filters_like_trim() -> None:
+    parent, _window, content = _make_content()
+    content.mode = "expression"
+    content.expression = "strip([status]) = 'paid'"
+    content.update_data()
+    assert content.data.collect().get_column("order_value").to_list() == [10, 600]
+    code = content.get_code()
+    assert "trim(" in code and "strip(" not in code.split("WHERE", 1)[-1]
+    parent.deleteLater()
