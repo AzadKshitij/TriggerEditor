@@ -283,3 +283,4 @@ savedfiles/Example_1/data/monthly_sales_2023_5000000_new.csv
 savedfiles/Example_2_Retail_Ledger/*.csv
 savedfiles/Example_2_Retail_Ledger/reference_output/
 savedfiles/Example_2_Retail_Ledger/data/
+docs/assets/node_icons/*.png

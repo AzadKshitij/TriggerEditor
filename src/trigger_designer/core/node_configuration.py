@@ -45,6 +45,7 @@ class PreparationNodes(IntEnum):
     UNIQUE = auto()
     SPLIT = auto()
     DYNAMIC_ROW_BUILDER = auto()
+    NORMALIZE_COLUMNS = auto()
 
 
 class JoinNodes(IntEnum):
@@ -61,7 +62,6 @@ class TransformNodes(IntEnum):
 
 
 class ReportNodes(IntEnum):
-
     GRAPH = auto()
 
 
@@ -297,8 +297,7 @@ def migrate_v1_data(data: dict) -> Union[str, None]:
     if "node_code" in data:
         family, code = data.get("node_type"), data.get("node_code")
     elif "op_code" in data:
-        family, code = str(data.get("op_type", "")
-                           ).lower(), data.get("op_code")
+        family, code = str(data.get("op_type", "")).lower(), data.get("op_code")
     else:
         return None
     try:

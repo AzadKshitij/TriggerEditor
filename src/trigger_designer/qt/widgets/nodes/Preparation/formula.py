@@ -7,6 +7,7 @@ import polars as pl
 from qtpy.QtCore import Qt, QTimer, Signal
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
+    QApplication,
     QComboBox,
     QFrame,
     QHBoxLayout,
@@ -391,6 +392,27 @@ class FormulaContent(
         self.clearInputWidgets()
 
     def _rebuild_section_widgets(self) -> None:
+        # Remember the focused editor so a structural rebuild (add/remove,
+        # or an undo that changes shape) can hand focus back instead of
+        # dropping it onto the scene.
+        focus_index: Optional[int] = None
+        focus_pos = 0
+        try:
+            focused = QApplication.focusWidget()
+            for index, widgets in enumerate(self.section_widgets):
+                editor = widgets.get("formula_input")
+                if editor is not None and (
+                    editor is focused or editor.isAncestorOf(focused)
+                ):
+                    focus_index = index
+                    try:
+                        focus_pos = editor.editor.textCursor().position()
+                    except (AttributeError, RuntimeError):
+                        pass
+                    break
+        except RuntimeError:
+            pass
+
         if self.sections_layout is None:
             return
 
@@ -484,6 +506,16 @@ class FormulaContent(
         self._refresh_section_dependencies()
         self._refresh_section_errors()
         self._refresh_input_tracking()
+
+        if focus_index is not None and focus_index < len(self.section_widgets):
+            try:
+                new_editor = self.section_widgets[focus_index]["formula_input"].editor
+                new_editor.setFocus()
+                cursor = new_editor.textCursor()
+                cursor.setPosition(min(focus_pos, len(new_editor.toPlainText())))
+                new_editor.setTextCursor(cursor)
+            except (AttributeError, IndexError, KeyError, RuntimeError):
+                pass
 
     def _refresh_section_errors(self) -> None:
         """Show per-section error messages on their cards."""
@@ -950,10 +982,10 @@ class FormulaContent(
     def store_history(self, old_state: Dict[str, List[Dict[str, Any]]]) -> None:
         """Record a formula-section change as one undoable step.
 
-        Covers every section change uniformly: adding a section, removing one,
-        retargeting a column, editing the expression, changing the dtype. The
-        number of widgets may change, so it is recorded as a list-structure
-        edit, which rebuilds the Config Dock on restore.
+        Text-only edits (same section count, targets and dtypes) travel as a
+        value change with a typing merge key, so restoring them rewrites the
+        live editors instead of tearing them down - typing never loses focus.
+        Structural edits keep the list command, which rebuilds the dock.
         """
         new_state = self._current_state()
         old_sections = old_state["formula_sections"]
@@ -962,9 +994,44 @@ class FormulaContent(
         if old_sections == new_sections:
             return
 
+        if self._sections_shape(old_sections) == self._sections_shape(new_sections):
+            self.push_property_change(
+                ("formula_sections",),
+                old_sections,
+                new_sections,
+                "Formula Changed",
+                merge_key="formula-text",
+            )
+            return
+
         self.push_list_change(
             ("formula_sections",), old_sections, new_sections, "Formula Changed"
         )
+
+    @staticmethod
+    def _sections_shape(sections: List[Dict[str, Any]]) -> List[tuple]:
+        """Structural identity of sections: everything except the text."""
+        return [
+            (section.get("target_column"), section.get("target_dtype"))
+            for section in sections
+        ]
+
+    def _sync_widgets_from_model(self) -> None:
+        """Write model texts into the live editors, preserving identity.
+
+        Only touched editors update, so cursor position and focus survive an
+        undo of a typing burst.
+        """
+        for index, section in enumerate(self.formula_sections):
+            try:
+                editor = self.section_widgets[index]["formula_input"]
+            except (AttributeError, IndexError, KeyError, TypeError):
+                continue
+            try:
+                if editor.get_text() != section.get("formula_text", ""):
+                    editor.set_text(section.get("formula_text", ""))
+            except RuntimeError:
+                continue
 
     def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
         """Restore formula sections from a whole-scene snapshot restore.

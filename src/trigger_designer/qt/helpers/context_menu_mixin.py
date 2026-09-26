@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from typing import Any, Dict, Optional
 
 from loguru import logger
@@ -66,9 +67,7 @@ class ContextMenuMixin:
             if isinstance(pixmap, QPixmap) and not pixmap.isNull():
                 icon = QIcon(pixmap)
             else:
-                logger.warning(
-                    "Missing icon '{}' for category '{}'", icon_id, category
-                )
+                logger.warning("Missing icon '{}' for category '{}'", icon_id, category)
         return icon
 
     # --- Context menu factories ----------------------------------------------------
@@ -99,6 +98,19 @@ class ContextMenuMixin:
     def add_node_to_scene(self) -> None:
         if not self.selected_action_data:
             return
+
+        # Belt-and-braces against double Enter handling: an identical request
+        # within half a second of the previous one is the same keypress.
+        now = time.monotonic()
+        last_ts = getattr(self, "_last_add_node_ts", 0.0)
+        if (
+            list(self.selected_action_data)
+            == getattr(self, "_last_add_node_data", None)
+            and now - last_ts < 0.5
+        ):
+            return
+        self._last_add_node_ts = now
+        self._last_add_node_data = list(self.selected_action_data)
 
         node_code, node_type = self.selected_action_data
         new_calc_node = get_class_from_opcode(node_code, node_type)(self.scene)

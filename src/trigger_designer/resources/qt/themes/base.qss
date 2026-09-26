@@ -803,21 +803,37 @@ QPushButton {{
     bottom: 4px; }}
 /* Icon buttons: an objectName selector outranks QPushButton:hover, so the
    hover/pressed states have to be restated here or they never apply. */
-QPushButton#IconButton, QPushButton#OptionsButton, QPushButton#TextButton {{
+QPushButton#IconButton, QPushButton#OptionsButton {{
   background-color: {button_bg};
   color: {text_primary};
   border: 1px solid {button_bg};
   border-radius: 4px;
   padding: 0px; }}
-  QPushButton#IconButton:hover, QPushButton#OptionsButton:hover,
+  QPushButton#IconButton:hover, QPushButton#OptionsButton:hover {{
+    background-color: {background_hover};
+    border: 1px solid {accent_primary}; }}
+  QPushButton#IconButton:pressed, QPushButton#OptionsButton:pressed {{
+    background-color: {background_pressed};
+    border: 1px solid {accent_primary}; }}
+  QPushButton#IconButton:disabled, QPushButton#OptionsButton:disabled {{
+    background-color: {button_bg};
+    border: 1px solid {button_bg};
+    color: {text_disabled}; }}
+/* Text buttons carry labels, so they get horizontal breathing room instead
+   of the icon buttons' zero padding. States restated for the same
+   specificity reason as above (§4.5). */
+QPushButton#TextButton {{
+  background-color: {button_bg};
+  color: {text_primary};
+  border: 1px solid {button_bg};
+  border-radius: 4px;
+  padding: 4px 12px; }}
   QPushButton#TextButton:hover {{
     background-color: {background_hover};
     border: 1px solid {accent_primary}; }}
-  QPushButton#IconButton:pressed, QPushButton#OptionsButton:pressed,
   QPushButton#TextButton:pressed {{
     background-color: {background_pressed};
     border: 1px solid {accent_primary}; }}
-  QPushButton#IconButton:disabled, QPushButton#OptionsButton:disabled,
   QPushButton#TextButton:disabled {{
     background-color: {button_bg};
     border: 1px solid {button_bg};

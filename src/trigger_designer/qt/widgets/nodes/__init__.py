@@ -104,6 +104,14 @@ _LAZY_NODE_SPECS = [
         "icon": "node_unique",
     },
     {
+        "module_path": "Preparation.normalize_columns",
+        "node_code": PreparationNodes.NORMALIZE_COLUMNS,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Normalize Columns",
+        # Reuses the Select glyph until a dedicated icon ships.
+        "icon": "node_select",
+    },
+    {
         "module_path": "Report.graph",
         "node_code": ReportNodes.GRAPH,
         "node_type": NodeTypes.REPORT,
@@ -133,10 +141,7 @@ _LAZY_NODE_SPECS = [
     },
 ]
 
-_LAZY_MODULE_NAMES = {
-    spec["module_path"]
-    for spec in _LAZY_NODE_SPECS
-}
+_LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
 
 modules = []
 base_dir = dirname(__file__)

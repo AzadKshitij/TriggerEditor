@@ -406,8 +406,8 @@
     {
       "id": 2667100707312,
       "title": "Select",
-      "pos_x": -492.1874999999999,
-      "pos_y": 68.35937499999989,
+      "pos_x": -470.21484374999994,
+      "pos_y": 65.91796874999987,
       "inputs": [
         {
           "id": 2667100712272,
@@ -679,7 +679,7 @@
           {
             "checked": true,
             "text": "signup_date",
-            "dtype": "String",
+            "dtype": "Date",
             "rename": ""
           },
           {
@@ -737,7 +737,7 @@
             "customer_id": "Int64",
             "email": "String",
             "full_name": "String",
-            "signup_date": "String",
+            "signup_date": "Date",
             "country": "String",
             "region": "String",
             "currency": "String",
@@ -828,7 +828,7 @@
           {
             "checked": true,
             "text": "launch_date",
-            "dtype": "String",
+            "dtype": "Date",
             "rename": ""
           }
         ],
@@ -854,7 +854,7 @@
             "brand": "String",
             "unit_price": "Float64",
             "unit_cost": "Float64",
-            "launch_date": "String"
+            "launch_date": "Date"
           },
           "column_order": []
         }
@@ -909,13 +909,13 @@
           {
             "checked": true,
             "text": "lead_time_days",
-            "dtype": "String",
+            "dtype": "Int64",
             "rename": ""
           },
           {
             "checked": true,
             "text": "reliability_score",
-            "dtype": "String",
+            "dtype": "Float64",
             "rename": ""
           }
         ],
@@ -932,8 +932,8 @@
             "supplier_id": "Int64",
             "supplier_name": "String",
             "country": "String",
-            "lead_time_days": "String",
-            "reliability_score": "String"
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
           },
           "column_order": []
         }
@@ -945,8 +945,8 @@
     {
       "id": 2667248191760,
       "title": "Select",
-      "pos_x": -478.5156249999999,
-      "pos_y": 671.8749999999999,
+      "pos_x": -469.36035156249994,
+      "pos_y": 659.6679687499999,
       "inputs": [
         {
           "id": 2667248190320,
@@ -982,7 +982,7 @@
           {
             "checked": true,
             "text": "usd_rate",
-            "dtype": "String",
+            "dtype": "Float64",
             "rename": ""
           }
         ],
@@ -993,7 +993,12 @@
             "usd_rate"
           ],
           "rename_mapping": {},
-          "dtype_mapping": {}
+          "dtype_mapping": {
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64"
+          },
+          "column_order": []
         }
       },
       "node_code": 5,
@@ -1003,8 +1008,8 @@
     {
       "id": 2667252787280,
       "title": "Cleansing",
-      "pos_x": -305.7861328124999,
-      "pos_y": 61.645507812499986,
+      "pos_x": -116.5771484375,
+      "pos_y": 67.74902343749999,
       "inputs": [
         {
           "id": 2667252786960,
@@ -1046,59 +1051,10 @@
       "op": "preparation.cleansing"
     },
     {
-      "id": 2206727601712,
-      "title": "Formula",
-      "pos_x": 82.880859375,
-      "pos_y": 62.72460937499997,
-      "inputs": [
-        {
-          "id": 2206727600752,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 2206727601072,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "formula_sections": [
-          {
-            "target_column": "is_returned",
-            "formula_text": "[is_returned] = \"true\"",
-            "editor_height": 60,
-            "target_dtype": ""
-          },
-          {
-            "target_column": "good_qty",
-            "formula_text": "[Quantity] < 500 AND [Quantity] > 0",
-            "editor_height": 60,
-            "target_dtype": "Float"
-          },
-          {
-            "target_column": "good_price",
-            "formula_text": "[unit_price_local] > 0  \nand \n[unit_price_local] < 5000 ",
-            "editor_height": 120,
-            "target_dtype": ""
-          }
-        ]
-      },
-      "node_code": 3,
-      "node_type": "preparation",
-      "op": "preparation.formula"
-    },
-    {
       "id": 2206727594032,
       "title": "Cleansing",
-      "pos_x": -100.70800781249999,
-      "pos_y": 67.13867187499994,
+      "pos_x": 61.03515624999977,
+      "pos_y": 67.13867187499993,
       "inputs": [
         {
           "id": 2207682771728,
@@ -1128,7 +1084,6 @@
         "remove_numbers": false,
         "remove_punctuation": false,
         "selected_fields": [
-          " Order ID ",
           "Customer_Id",
           "PRODUCT_ID",
           "is_returned"
@@ -1145,8 +1100,8 @@
     {
       "id": 2699443889456,
       "title": "Filter",
-      "pos_x": 254.99999999999977,
-      "pos_y": 56.24999999999996,
+      "pos_x": 236.19140624999966,
+      "pos_y": 65.40527343749991,
       "inputs": [
         {
           "id": 2699443890576,
@@ -1173,9 +1128,12 @@
         }
       ],
       "content": {
-        "column": "Quantity",
+        "column": "order_id",
         "operation": "Equals",
-        "value": ""
+        "value": "",
+        "value2": "",
+        "mode": "expression",
+        "expression": "[quantity] in_between (0, 500)"
       },
       "node_code": 2,
       "node_type": "preparation",
@@ -1184,8 +1142,8 @@
     {
       "id": 2699443583920,
       "title": "Filter",
-      "pos_x": 451.24999999999955,
-      "pos_y": 62.49999999999996,
+      "pos_x": 411.07910156249966,
+      "pos_y": 62.499999999999915,
       "inputs": [
         {
           "id": 2699443576240,
@@ -1212,9 +1170,12 @@
         }
       ],
       "content": {
-        "column": null,
+        "column": "order_id",
         "operation": "Equals",
-        "value": ""
+        "value": "",
+        "value2": "",
+        "mode": "expression",
+        "expression": "[unit_price_local] > 0 and \n[unit_price_local] <= 5000"
       },
       "node_code": 2,
       "node_type": "preparation",
@@ -1223,8 +1184,8 @@
     {
       "id": 2699443578640,
       "title": "Filter",
-      "pos_x": 812.4999999999993,
-      "pos_y": 54.99999999999997,
+      "pos_x": 580.0683593749997,
+      "pos_y": 61.10351562499994,
       "inputs": [
         {
           "id": 2699443880656,
@@ -1251,13 +1212,127 @@
         }
       ],
       "content": {
-        "column": null,
+        "column": "order_id",
         "operation": "Equals",
-        "value": ""
+        "value": "",
+        "value2": "",
+        "mode": "expression",
+        "expression": "YEAR([order_ts]) <= 2025 AND\nLOWER([is_returned]) = \"true\""
       },
       "node_code": 2,
       "node_type": "preparation",
       "op": "preparation.filter"
+    },
+    {
+      "id": 2824864141616,
+      "title": "Normalize Columns",
+      "pos_x": -314.3310546874999,
+      "pos_y": 67.13867187499999,
+      "inputs": [
+        {
+          "id": 2824864148496,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2824864148816,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "trim_whitespace": true,
+        "spaces_to_underscore": true,
+        "remove_all_whitespace": false,
+        "case_modification": "lower",
+        "selected_columns": [],
+        "field_selection_initialized": false
+      },
+      "node_code": 10,
+      "node_type": "preparation",
+      "op": "preparation.normalize_columns"
+    },
+    {
+      "id": 2259315345840,
+      "title": "Unique",
+      "pos_x": 776.2499999999993,
+      "pos_y": 48.74999999999996,
+      "inputs": [
+        {
+          "id": 2259315346960,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2259315344720,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2259315346160,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "selected_columns": [
+          "order_id"
+        ]
+      },
+      "node_code": 7,
+      "node_type": "preparation",
+      "op": "preparation.unique"
+    },
+    {
+      "id": 2259284024432,
+      "title": "Formula",
+      "pos_x": -250.12,
+      "pos_y": 663.7800000000001,
+      "inputs": [
+        {
+          "id": 2259284030832,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2259284033072,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "currency",
+            "formula_text": "LOWER([currency])",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
     }
   ],
   "edges": [
@@ -1298,28 +1373,10 @@
       "end": 2667248190320
     },
     {
-      "id": 2667278450256,
-      "edge_type": 5,
-      "start": 2667100705712,
-      "end": 2667252786960
-    },
-    {
       "id": 2207683796688,
       "edge_type": 5,
       "start": 2667252790640,
       "end": 2207682771728
-    },
-    {
-      "id": 2207683797840,
-      "edge_type": 5,
-      "start": 2207682769008,
-      "end": 2206727600752
-    },
-    {
-      "id": 2699444320208,
-      "edge_type": 5,
-      "start": 2206727601072,
-      "end": 2699443890576
     },
     {
       "id": 2699499031888,
@@ -1332,12 +1389,42 @@
       "edge_type": 5,
       "start": 2699443584720,
       "end": 2699443880656
+    },
+    {
+      "id": 2824864691792,
+      "edge_type": 5,
+      "start": 2667100705712,
+      "end": 2824864148496
+    },
+    {
+      "id": 2824864692944,
+      "edge_type": 5,
+      "start": 2824864148816,
+      "end": 2667252786960
+    },
+    {
+      "id": 2259277169616,
+      "edge_type": 5,
+      "start": 2207682769008,
+      "end": 2699443890576
+    },
+    {
+      "id": 2259313318352,
+      "edge_type": 5,
+      "start": 2699443888496,
+      "end": 2259315346960
+    },
+    {
+      "id": 2259283823696,
+      "edge_type": 5,
+      "start": 2667248190160,
+      "end": 2259284030832
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-26T15:18:08Z"
+    "saved_at": "2026-09-26T17:15:03Z"
   }
 }

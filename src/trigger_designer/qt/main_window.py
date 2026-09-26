@@ -7,6 +7,7 @@ from qtpy.QtGui import (
     QCloseEvent,
 )
 from qtpy.QtWidgets import (
+    QApplication,
     QMdiArea,
     QWidget,
     QMessageBox,
@@ -16,6 +17,9 @@ from qtpy.QtWidgets import (
     QShortcut,
 )
 from qtpy.QtCore import Qt, QSignalMapper
+
+import orjson as json
+from orjson import JSONDecodeError
 
 from nodeeditor.node_editor_window import NodeEditorWindow
 from nodeeditor.utils import dumpException
@@ -47,6 +51,25 @@ Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
 
 
 DEBUG = False
+
+
+def parse_node_clipboard_payload(raw_text: str) -> dict | None:
+    """Validate clipboard text as a node paste payload.
+
+    ``orjson.loads`` happily parses JSON scalars (``true`` -> ``True``),
+    and the base-class paste handler then crashes on ``'nodes' not in
+    data``. Reject anything that is not a ``{"nodes": [...]}`` mapping
+    before it gets there. Returns the payload dict, or ``None``.
+    """
+    try:
+        data = json.loads(raw_text)
+    except JSONDecodeError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    if not isinstance(data.get("nodes"), list):
+        return None
+    return data
 
 
 class TriggerWindow(
@@ -133,6 +156,25 @@ class TriggerWindow(
             self.showNormal()
         else:
             self.showFullScreen()
+
+    @override
+    def onEditPaste(self) -> None:
+        """Paste nodes, ignoring clipboard text that is not node data.
+
+        Overrides the base implementation, which raises ``TypeError`` on
+        valid JSON scalars (``true``, ``123``) instead of ignoring them.
+        """
+        if self.getCurrentNodeEditorWidget() is None:
+            return
+        clipboard = QApplication.instance().clipboard()
+        raw_text = clipboard.text() if clipboard is not None else ""
+        if parse_node_clipboard_payload(raw_text) is None:
+            message = "Paste ignored: clipboard does not contain node data"
+            if self.statusBar() is not None:
+                self.statusBar().showMessage(message, 5000)
+            global_logger.warning(message)
+            return
+        super().onEditPaste()
 
     def closeEvent(self, event: Optional[QCloseEvent]) -> None:
         self.mdiArea.closeAllSubWindows()

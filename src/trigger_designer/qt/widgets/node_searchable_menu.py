@@ -41,6 +41,11 @@ class SearchableMenu(QMenu):
         self.all_submenus: dict = {}
         self.is_flat_view: bool = False
 
+        # Enter reaches us twice per keypress (the search box's
+        # returnPressed plus this menu's keyPressEvent). Confirm at most
+        # once per showing or every Enter spawns duplicate nodes.
+        self._confirming: bool = False
+
         self.setFixedWidth(300)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setAttribute(Qt.WA_NoSystemBackground)
@@ -74,15 +79,30 @@ class SearchableMenu(QMenu):
 
     def showEvent(self, event: QShowEvent) -> None:
         super().showEvent(event)
+        self._confirming = False
         self.searchBox.setFocus()
 
     def _confirm_first_match(self) -> None:
+        self._confirm()
+
+    def _confirm(self) -> None:
+        """Add the first visible node action, at most once per showing.
+
+        Enter reaches us twice per keypress (the search box's
+        returnPressed, then this menu's keyPressEvent for the same key).
+        The latch survives both because it is only cleared on show, while
+        the posted hide only takes effect afterwards.
+        """
+        if self._confirming:
+            return
         if not self.is_flat_view:
             self.showFlatList()
             return
         for action in self.actions()[1:]:
             if action.isVisible():
+                self._confirming = True
                 action.trigger()
+                self.hide()
                 break
 
     def showFlatList(self) -> None:
@@ -146,10 +166,9 @@ class SearchableMenu(QMenu):
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Return or event.key() == Qt.Key.Key_Enter:
-            active_action = self.activeAction()
-            if active_action:
-                active_action.trigger()
-                self.hide()
+            self._confirm()
+            event.accept()
+            return
         if event.key() == Qt.Key.Key_Escape:
             self.hide()
         else:

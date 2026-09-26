@@ -1,5 +1,7 @@
 import polars as pl
 import dataclasses
+import re
+from datetime import datetime
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
@@ -7,6 +9,8 @@ from qtpy.QtWidgets import (
     QTableView,
     QHBoxLayout,
     QStyledItemDelegate,
+    QMenu,
+    QInputDialog,
 )
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import (
@@ -244,6 +248,177 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Options menu
         self.table_widget.setupOptionsMenu(self.options_btn, self.table_view)
 
+        # Bulk rename / retype actions (appended to the same Options menu)
+        self.setup_bulk_menus()
+
+    BULK_SAMPLE_ROWS = 1000
+
+    def setup_bulk_menus(self) -> None:
+        """Append Bulk Rename / Bulk Data Type submenus to the Options menu."""
+        menu = self.options_btn.menu()
+        if menu is None:
+            return
+        menu.addSeparator()
+
+        rename_menu = QMenu("Bulk Rename", menu)
+        rename_menu.addAction("Add Prefix to Selected...").triggered.connect(
+            lambda _checked=False: self.prompt_bulk_affix(
+                selected_only=True, is_prefix=True
+            )
+        )
+        rename_menu.addAction("Add Prefix to All...").triggered.connect(
+            lambda _checked=False: self.prompt_bulk_affix(
+                selected_only=False, is_prefix=True
+            )
+        )
+        rename_menu.addAction("Add Suffix to Selected...").triggered.connect(
+            lambda _checked=False: self.prompt_bulk_affix(
+                selected_only=True, is_prefix=False
+            )
+        )
+        rename_menu.addAction("Add Suffix to All...").triggered.connect(
+            lambda _checked=False: self.prompt_bulk_affix(
+                selected_only=False, is_prefix=False
+            )
+        )
+        rename_menu.addSeparator()
+        rename_menu.addAction("Clear Renames (Selected)").triggered.connect(
+            lambda _checked=False: self.bulk_clear_renames(selected_only=True)
+        )
+        rename_menu.addAction("Clear Renames (All)").triggered.connect(
+            lambda _checked=False: self.bulk_clear_renames(selected_only=False)
+        )
+        menu.addMenu(rename_menu)
+
+        dtype_menu = QMenu("Bulk Data Type", menu)
+        dtype_menu.addAction("Auto-Detect Types (Selected)").triggered.connect(
+            lambda _checked=False: self.bulk_auto_detect(selected_only=True)
+        )
+        dtype_menu.addAction("Auto-Detect Types (All)").triggered.connect(
+            lambda _checked=False: self.bulk_auto_detect(selected_only=False)
+        )
+        dtype_menu.addSeparator()
+        dtype_menu.addAction("Reset Types (Selected)").triggered.connect(
+            lambda _checked=False: self.bulk_reset_dtypes(selected_only=True)
+        )
+        dtype_menu.addAction("Reset Types (All)").triggered.connect(
+            lambda _checked=False: self.bulk_reset_dtypes(selected_only=False)
+        )
+        menu.addMenu(dtype_menu)
+
+    def _bulk_target_rows(self, selected_only: bool) -> list:
+        """Rows a bulk action applies to. Empty scope is a no-op, never a fallback."""
+        if selected_only:
+            return [row for row in self.table_data if row.checked]
+        return list(self.table_data)
+
+    def _bulk_commit(self) -> None:
+        """Repaint the table and run one history-tracked pipeline pass."""
+        self.table_widget.layoutChanged.emit()
+        self.handleDataChanged(self.table_widget.getData())
+
+    def prompt_bulk_affix(self, selected_only: bool, is_prefix: bool) -> None:
+        """Ask for an affix, then compose it onto the effective names."""
+        scope = "Selected" if selected_only else "All"
+        kind = "Prefix" if is_prefix else "Suffix"
+        affix, accepted = QInputDialog.getText(
+            None,
+            f"Add {kind} ({scope})",
+            f"{kind} to add:",
+        )
+        if not accepted or not affix:
+            return
+        rows = self._bulk_target_rows(selected_only)
+        if not rows:
+            return
+        for row in rows:
+            base = row.rename or row.text
+            row.rename = f"{affix}{base}" if is_prefix else f"{base}{affix}"
+        self._bulk_commit()
+
+    def bulk_clear_renames(self, selected_only: bool) -> None:
+        rows = self._bulk_target_rows(selected_only)
+        if not rows:
+            return
+        for row in rows:
+            row.rename = ""
+        self._bulk_commit()
+
+    def bulk_reset_dtypes(self, selected_only: bool) -> None:
+        """Restore source-schema dtypes for the scoped rows."""
+        if self.incom_data is None:
+            return
+        rows = self._bulk_target_rows(selected_only)
+        if not rows:
+            return
+        try:
+            schema = frame_schema(self.incom_data)
+        except Exception:
+            return
+        for row in rows:
+            if row.text in schema:
+                row.dtype = str(schema[row.text])
+        self._bulk_commit()
+
+    def bulk_auto_detect(self, selected_only: bool) -> None:
+        """Infer dtypes from a capped sample of each scoped column."""
+        if self.incom_data is None:
+            return
+        rows = self._bulk_target_rows(selected_only)
+        if not rows:
+            return
+        for row in rows:
+            inferred = self._infer_column_dtype(row.text)
+            if inferred is not None:
+                row.dtype = inferred
+        self._bulk_commit()
+
+    def _infer_column_dtype(self, column: str) -> Optional[str]:
+        """Infer a display dtype from up to BULK_SAMPLE_ROWS values.
+
+        Precedence: Boolean -> Int64 -> Float64 -> Date -> String. Anything
+        unparseable (or all-null) stays String.
+        """
+        try:
+            series = (
+                self.incom_data.select(pl.col(column).cast(pl.String))
+                .head(self.BULK_SAMPLE_ROWS)
+                .collect()
+                .get_column(column)
+            )
+        except Exception:
+            return None
+        values = [
+            value
+            for value in series.to_list()
+            if value is not None and str(value).strip() != ""
+        ]
+        if not values:
+            return "String"
+        lowered = [str(value).strip().lower() for value in values]
+        if all(value in ("true", "false") for value in lowered):
+            return "Boolean"
+        try:
+            for value in values:
+                int(str(value).strip())
+            return "Int64"
+        except (TypeError, ValueError):
+            pass
+        try:
+            for value in values:
+                float(str(value).strip())
+            return "Float64"
+        except (TypeError, ValueError):
+            pass
+        for fmt in self._date_parse_formats():
+            try:
+                for value in values:
+                    datetime.strptime(str(value).strip(), fmt)
+                return "Date"
+            except (TypeError, ValueError, re.error):
+                continue
+        return "String"
+
     def _map_dtype_to_polars(self, dtype_str: str) -> Optional[pl.DataType]:
         """Map string data type to Polars data type"""
         dtype_mapping = {
@@ -302,7 +477,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "%d.%m.%Y",
             "%m-%d-%Y",
             "%m/%d/%Y",
-            "%m.%m.%Y",
+            "%m.%d.%Y",
             "%d %b %Y",
             "%d %B %Y",
             "%b %d %Y",
