@@ -280,3 +280,6 @@ savedfiles/Example_1/data/monthly_sales_2023_2000000_polars.csv
 .gitignore
 savedfiles/Example_1/data/monthly_sales_2023_5000000.csv
 savedfiles/Example_1/data/monthly_sales_2023_5000000_new.csv
+savedfiles/Example_2_Retail_Ledger/*.csv
+savedfiles/Example_2_Retail_Ledger/reference_output/
+savedfiles/Example_2_Retail_Ledger/data/
