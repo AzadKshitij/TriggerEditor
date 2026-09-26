@@ -21,6 +21,7 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import ConfigSection, EmptyStateLabel
@@ -199,7 +200,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is not None:
             try:
                 # Get column names from LazyFrame and store them
-                self.all_columns = self.incom_data.columns
+                self.all_columns = list(frame_schema(self.incom_data))
                 self._populate_column_list(self.all_columns)
             except Exception:
                 # Handle case where column names can't be accessed
@@ -488,7 +489,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         try:
             self.selected_columns = data.get("selected_columns", [])
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res
@@ -570,10 +571,13 @@ class TriggerNode_Unique(TriggerNode):
             self.markInvalid(True)
             if hasattr(self, "grNode") and self.grNode is not None:
                 try:
-                    self.grNode.setToolTip("Input is not connected")
+                    if self.getInput(this_socket_index) is None:
+                        self.grNode.setToolTip("Input is not connected")
+                    else:
+                        self.grNode.setToolTip("Upstream node produced no output")
                 except RuntimeError:
                     pass
-            return [None, None]
+            return None
 
     def get_code(self) -> str:
         """

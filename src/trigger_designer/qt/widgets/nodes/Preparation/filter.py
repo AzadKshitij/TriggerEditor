@@ -11,7 +11,6 @@ from qtpy.QtWidgets import (
     QHeaderView,
     QLayout,
     QComboBox,
-    QLineEdit,
     QHBoxLayout,
 )
 from qtpy.QtGui import QPixmap
@@ -25,6 +24,7 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -170,10 +170,13 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Returns:
             Category string: 'numeric', 'string', 'date', or 'other'
         """
-        if self.incom_data is None or column_name not in self.incom_data.columns:
+        if self.incom_data is None:
+            return "other"
+        schema = frame_schema(self.incom_data)
+        if column_name not in schema:
             return "other"
 
-        col_dtype = self.incom_data[column_name].dtype
+        col_dtype = schema[column_name]
 
         # Numeric types
         if col_dtype in [
@@ -279,9 +282,8 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is not None:
             if self.column and self.operation and self.value:
                 try:
-                    print("Updating data with filter settings:")
                     # Get column data type for value conversion
-                    col_dtype = self.incom_data[self.column].dtype
+                    col_dtype = frame_schema(self.incom_data)[self.column]
 
                     # Convert value based on column type
                     if col_dtype in [
@@ -330,9 +332,6 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.data = None
                     self.f_data = None
             else:
-                print(
-                    "Filter settings are incomplete. Please select a column, operation, and value."
-                )
                 self.data = None
                 self.f_data = None
 
@@ -345,7 +344,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
         if self.incom_data is not None:
             self.column_selector.clear()
-            self.column_selector.addItems(list(self.incom_data.columns))
+            self.column_selector.addItems(list(frame_schema(self.incom_data)))
 
             # Block signals during initial setup
             self.column_selector.blockSignals(True)
@@ -532,7 +531,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return "\n".join(code) + "\n"
 
         # Get column data type
-        col_dtype = self.incom_data[self.column].dtype
+        col_dtype = frame_schema(self.incom_data)[self.column]
 
         # Format value based on data type
         if col_dtype in [
@@ -610,11 +609,12 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
 
         try:
-            # Get stored settings individually
-            self.column = data.get("column", "")
-            self.operation = data.get("operation", "")
+            # Get stored settings individually (normalize to __init__
+            # defaults so a fresh node and a reloaded one behave alike)
+            self.column = data.get("column", "") or None
+            self.operation = data.get("operation", "") or "Equals"
             self.value = data.get("value", "")
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res
@@ -687,11 +687,6 @@ class TriggerNode_Filter(TriggerNode):
         input_node = self.getInput(this_socket_index)
         socket_index = self.getSocketValue(input_node.outputs, self)
         input_value = input_values[this_socket_index][socket_index]
-
-        print(
-            "🐍 File: Preparation/filter.py | Line: 207 | processInputs ~ input_value",
-            input_value,
-        )
 
         if input_value:
             self.markDirty(False)

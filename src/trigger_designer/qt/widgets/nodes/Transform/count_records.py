@@ -86,7 +86,7 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.total_records = data.get("total_records", 0)
             self.variable_name = data.get("variable_name", f"var_count_{self.id}")
 
-            return True & res
+            return True and res
         except Exception as e:
             global_logger.error(
                 f"❌ CountRecordsContent: Deserialization failed: {str(e)}"
@@ -168,7 +168,6 @@ class TriggerNode_CountRecords(TriggerNode):
 
     def processInputs(self, input_values):
         global_logger.info("🔄 CountRecordsNode: Starting input processing")
-        print("⚠️⚠️⚠️ Count Records ⚠️⚠️⚠️")
 
         try:
             input_node = self.getInput(0)
@@ -183,7 +182,6 @@ class TriggerNode_CountRecords(TriggerNode):
                 global_logger.info(
                     "✅ CountRecordsNode: Input data received, processing..."
                 )
-                print("We have input")
 
                 # Validate input data
                 input_data = input_value.get("data")
@@ -240,6 +238,7 @@ class TriggerNode_CountRecords(TriggerNode):
                         )
                         self.markDirty(True)
                         self.markInvalid(True)
+                        self.grNode.setToolTip("Count failed: no output generated")
                         return None
                 else:
                     global_logger.warning(
@@ -247,11 +246,11 @@ class TriggerNode_CountRecords(TriggerNode):
                     )
                     self.markDirty(True)
                     self.markInvalid(True)
+                    self.grNode.setToolTip("Upstream node produced no data")
                     return None
 
             else:
                 global_logger.warning("⚠️ CountRecordsNode: No input data available")
-                print("We don't have input")
                 self.markDirty(True)
                 self.markInvalid(True)
                 self.grNode.setToolTip("Input is not connected")

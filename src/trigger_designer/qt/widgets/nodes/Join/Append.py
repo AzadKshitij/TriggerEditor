@@ -158,7 +158,7 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.how = data.get("how", "diagonal_relaxed")
             if self.how not in ("diagonal_relaxed", "diagonal", "vertical"):
                 self.how = "diagonal_relaxed"
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res

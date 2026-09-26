@@ -24,6 +24,7 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.widgets.common import ConfigSection
 from nodeeditor.utils_no_qt import dumpException
 
@@ -112,18 +113,21 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Initial value
         initial_label = QLabel("Start Value:")
         self.initial_widget = self.create_value_widget(self.field_type)
+        self._restore_widget_value(self.initial_widget, self.initial_value)
         value_group.addWidget(initial_label)
         value_group.addWidget(self.initial_widget)
 
         # Increment value
         increment_label = QLabel("Increment By:")
         self.increment_widget = self.create_value_widget(self.field_type)
+        self._restore_widget_value(self.increment_widget, self.increment_value)
         value_group.addWidget(increment_label)
         value_group.addWidget(self.increment_widget)
 
         # Max value
         max_label = QLabel("End Value:")
         self.max_widget = self.create_value_widget(self.field_type)
+        self._restore_widget_value(self.max_widget, self.max_value)
         value_group.addWidget(max_label)
         value_group.addWidget(self.max_widget)
 
@@ -159,6 +163,50 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             widget.textChanged.connect(self.on_value_changed)
         return widget
 
+    @staticmethod
+    def _restore_widget_value(widget: QWidget, value: Any) -> None:
+        """Seed a fresh widget from deserialized state (best effort).
+
+        Signals stay blocked: sibling widgets may not exist yet and
+        on_value_changed compares against all three.
+        """
+        try:
+            widget.blockSignals(True)
+            if isinstance(widget, QDateTimeEdit):
+                dt = value
+                if isinstance(dt, str):
+                    try:
+                        dt = datetime.fromisoformat(dt)
+                    except ValueError:
+                        return
+                elif hasattr(dt, "toPython"):  # QDateTime
+                    return  # already displayable; widget default stands in
+                if isinstance(dt, datetime):
+                    text = dt.isoformat()
+                    fmt = (
+                        Qt.DateFormat.ISODateWithMs
+                        if "." in text
+                        else Qt.DateFormat.ISODate
+                    )
+                    parsed = QDateTime.fromString(text, fmt)
+                    if parsed.isValid():
+                        widget.setDateTime(parsed)
+            elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
+                if isinstance(value, bool):
+                    return
+                if isinstance(value, (int, float)):
+                    widget.setValue(value)
+            elif isinstance(widget, QLineEdit):
+                if isinstance(value, str):
+                    widget.setText(value)
+        except Exception:
+            pass
+        finally:
+            try:
+                widget.blockSignals(False)
+            except Exception:
+                pass
+
     def process_data(self) -> None:
         """Generate rows based on configuration"""
         try:
@@ -181,23 +229,28 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 iteration += 1
 
                 if iteration == self.MAX_ITERATIONS:
-                    print(
+                    global_logger.warning(
                         f"Warning: Reached maximum iterations ({self.MAX_ITERATIONS})"
                     )
 
-            # Create DataFrame
+            # Create DataFrame (match lazy/eager kind so concat never mixes)
+            frame_kind = (
+                pl.LazyFrame
+                if isinstance(self.incom_data, pl.LazyFrame)
+                else pl.DataFrame
+            )
             if self.incom_data is not None:
                 # Add counter column to existing DataFrame
-                repeated_df = pl.DataFrame({self.field_name: values})
+                repeated_df = frame_kind({self.field_name: values})
                 self.data = pl.concat([self.incom_data, repeated_df], how="horizontal")
             else:
                 # Create new DataFrame
-                self.data = pl.DataFrame({self.field_name: values})
+                self.data = frame_kind({self.field_name: values})
 
             self.update_stats()
 
         except Exception as e:
-            print(f"Error generating rows: {str(e)}")
+            global_logger.error(f"Error generating rows: {str(e)}")
             self.data = None
 
     def get_typed_value(self, widget: QWidget) -> Any:
@@ -231,8 +284,13 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def update_stats(self) -> None:
         """Update statistics display"""
-        if self.data is not None:
-            stats = f"Generated Rows: {len(self.data):,}"
+        if self.data is not None and getattr(self, "stats_label", None) is not None:
+            try:
+                total = len(self.data)
+            except TypeError:
+                # LazyFrame: count rows without materializing data.
+                total = self.data.select(pl.len()).collect().item()
+            stats = f"Generated Rows: {total:,}"
             self.stats_label.setText(stats)
 
     def on_field_name_changed(self, value: str) -> None:
@@ -370,6 +428,18 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """Get code for increment operation (legacy, kept for compatibility)."""
         return self._increment_statement().replace("current = ", "", 1)
 
+    @staticmethod
+    def _serialize_value(value: Any) -> Any:
+        """Make a configured value JSON-safe (datetimes → iso strings)."""
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if hasattr(value, "toPython"):  # QDateTime
+            try:
+                return value.toPython().isoformat()
+            except Exception:
+                return None
+        return value
+
     def serialize(self) -> dict:
         """Serialize node content"""
         res = super().serialize()
@@ -377,9 +447,9 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             {
                 "field_name": self.field_name,
                 "field_type": self.field_type,
-                "initial_value": self.initial_value,
-                "increment_value": self.increment_value,
-                "max_value": self.max_value,
+                "initial_value": self._serialize_value(self.initial_value),
+                "increment_value": self._serialize_value(self.increment_value),
+                "max_value": self._serialize_value(self.max_value),
             }
         )
         return res
@@ -393,7 +463,16 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.initial_value = data.get("initial_value", 1)
             self.increment_value = data.get("increment_value", 1)
             self.max_value = data.get("max_value", 10)
-            return True & res
+            if self.field_type == "datetime":
+                # Revive iso strings written by _serialize_value.
+                for attr in ("initial_value", "increment_value", "max_value"):
+                    value = getattr(self, attr)
+                    if isinstance(value, str):
+                        try:
+                            setattr(self, attr, datetime.fromisoformat(value))
+                        except ValueError:
+                            pass
+            return True and res
         except Exception as e:
             dumpException(e)
             return res

@@ -161,5 +161,5 @@ lines = [
 ## Reference Files
 - [filter.py `get_code()`](../../src/trigger_designer/qt/widgets/nodes/Preparation/filter.py) — simple operation, two outputs
 - [formula.py `get_code()`](../../src/trigger_designer/qt/widgets/nodes/Preparation/formula.py) — DuckDB SQL formula pattern
-- [count_recors.py `get_code()`](../../src/trigger_designer/qt/widgets/nodes/Transform/count_recors.py) — transform pattern
+- [count_records.py `get_code()`](../../src/trigger_designer/qt/widgets/nodes/Transform/count_records.py) — transform pattern
 - [node_base.py](../../src/trigger_designer/qt/node_base.py) — TriggerNode base (shows how get_code is called)

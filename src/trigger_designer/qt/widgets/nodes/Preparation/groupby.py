@@ -38,6 +38,8 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
+    frame_shape,
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -168,7 +170,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
             global_logger.debug(
-                f"📊 GroupByContent: Creating layout for {len(self.incom_data.columns)} columns"
+                f"📊 GroupByContent: Creating layout for {len(frame_schema(self.incom_data))} columns"
             )
 
             # Initialize changes if not already present
@@ -308,17 +310,18 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.fields_table.verticalHeader().setVisible(False)
 
         # Set row count based on available columns
-        self.fields_table.setRowCount(len(self.incom_data.columns))
+        schema = frame_schema(self.incom_data)
+        self.fields_table.setRowCount(len(schema))
 
         # Populate the table with column information
-        for row, column in enumerate(self.incom_data.columns):
+        for row, column in enumerate(schema):
             # Field name (selectable)
             field_item = QTableWidgetItem(column)
             field_item.setFlags(field_item.flags() | Qt.ItemFlag.ItemIsSelectable)
             self.fields_table.setItem(row, 0, field_item)
 
             # Data type
-            dtype = str(self.incom_data[column].dtype)
+            dtype = str(schema[column])
             type_item = QTableWidgetItem(dtype)
             type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.fields_table.setItem(row, 1, type_item)
@@ -656,7 +659,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
 
         try:
-            available_columns = self.incom_data.columns
+            available_columns = list(frame_schema(self.incom_data))
 
             if group_by_columns:
                 # Validate that group by columns exist
@@ -749,7 +752,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.data = self.incom_data.select(agg_expressions)
 
             global_logger.info(
-                f"✅ GroupByContent: GroupBy completed - Result shape: {self.data.shape}"
+                f"✅ GroupByContent: GroupBy completed - Result shape: {frame_shape(self.data)}"
             )
 
             if emit_evaluate:
@@ -922,7 +925,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             ) or self._actions_data_from_changes(self.changes)
             self.cached_actions_data = list(self.actions_data)
 
-            return True & res
+            return True and res
         except Exception as e:
             global_logger.error(f"❌ GroupByContent: Deserialization failed: {str(e)}")
             dumpException(e)
@@ -978,7 +981,6 @@ class TriggerNode_GroupBy(TriggerNode):
 
     def processInputs(self, input_values):
         global_logger.info("🔄 GroupByNode: Starting input processing")
-        print("⚠️⚠️⚠️ GroupBy ⚠️⚠️⚠️")
 
         try:
             input_node = self.getInput(0)
@@ -991,7 +993,6 @@ class TriggerNode_GroupBy(TriggerNode):
 
             if input_value:
                 global_logger.info("✅ GroupByNode: Input data received, processing...")
-                print("We have input")
 
                 # Validate input data
                 input_data = input_value.get("data")
@@ -999,7 +1000,7 @@ class TriggerNode_GroupBy(TriggerNode):
 
                 if input_data is not None:
                     global_logger.info(
-                        f"📊 GroupByNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'"
+                        f"📊 GroupByNode: Processing DataFrame with shape {frame_shape(input_data)} for variable '{variable_name}'"
                     )
 
                     self.markDirty(False)
@@ -1035,7 +1036,7 @@ class TriggerNode_GroupBy(TriggerNode):
 
                     # Validate output data
                     if hasattr(self.content, "data") and self.content.data is not None:
-                        output_shape = self.content.data.shape
+                        output_shape = frame_shape(self.content.data)
                         global_logger.info(
                             f"📊 GroupByNode: Output DataFrame shape: {output_shape}"
                         )
@@ -1068,7 +1069,6 @@ class TriggerNode_GroupBy(TriggerNode):
 
             else:
                 global_logger.warning("⚠️ GroupByNode: No input data available")
-                print("We don't have input")
                 self.markDirty(True)
                 self.markInvalid(True)
                 self.grNode.setToolTip("Input is not connected")

@@ -100,7 +100,15 @@ class SettingsDialog(QDialog):
 
         # settings_file = os.path.join(os.path.dirname(
         #     __file__), "../resources/settings.json")
+        import sys
+        from pathlib import Path
+
         settings_file = self.rsm._res_folder / "resources/qt/settings.json"
+        if getattr(sys, "frozen", False):
+            # ponytail: bundle is read-only when installed; persist to user scope
+            appdata = os.getenv("APPDATA")
+            base = Path(appdata) / "Trigger Designer" if appdata else Path.home() / ".trigger_designer"
+            settings_file = base / "settings.json"
 
         os.makedirs(os.path.dirname(settings_file), exist_ok=True)
         settings_json = json.dumps(settings, option=json.OPT_INDENT_2)

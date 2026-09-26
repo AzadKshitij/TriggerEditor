@@ -214,7 +214,7 @@ class RunningTotalContent(
         try:
             self.deserialize_content_state(data)
 
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
             return res
@@ -288,7 +288,10 @@ class TriggerNode_RunningTotal(TriggerNode):
                 else:
                     self.markDirty(True)
                     self.markInvalid(True)
-                    self.grNode.setToolTip("No columns selected for running total")
+                    if self.content.incom_data is None:
+                        self.grNode.setToolTip("Upstream node produced no data")
+                    else:
+                        self.grNode.setToolTip("Running total failed (see logs)")
                     return None
             else:
                 self.markDirty(True)

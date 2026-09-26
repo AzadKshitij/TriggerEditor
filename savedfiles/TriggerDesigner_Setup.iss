@@ -36,9 +36,9 @@ DisableProgramGroupPage=yes
 ; Uncomment the following line to run in non administrative install mode (install for current user only).
 ;PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
-OutputDir=C:\Projects\TriggerEditor\dist
+OutputDir=..\dist
 OutputBaseFilename=TriggerDesigner_Setup
-SetupIconFile=C:\Projects\TriggerEditor\src\trigger_designer\resources\Icon.ico
+SetupIconFile=..\src\trigger_designer\resources\Icon.ico
 SolidCompression=yes
 WizardStyle=modern
 
@@ -49,8 +49,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Projects\TriggerEditor\dist\TriggerEditor\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Projects\TriggerEditor\dist\TriggerEditor\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\dist\TriggerEditor\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\dist\TriggerEditor\_internal\*"; DestDir: "{app}\_internal"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Registry]

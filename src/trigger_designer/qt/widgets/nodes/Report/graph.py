@@ -28,12 +28,14 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.node_node import Node
 from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.qt.helpers import global_logger
 import polars as pl
 from typing import (
     TYPE_CHECKING,
@@ -86,7 +88,7 @@ def _create_graph_toolbar(canvas, save_context, parent):
 
         def save_figure(self, *args):
             file_choices = (
-                "PNG (*.png)|*.png;PDF (*.pdf)|*.pdf;JPG (*.jpg)|*.jpg;SVG (*.svg)|*.svg"
+                "PNG (*.png);;PDF (*.pdf);;JPG (*.jpg);;SVG (*.svg)"
             )
             path, ext = QFileDialog.getSaveFileName(
                 self.save_context, "Save figure", "", file_choices
@@ -140,7 +142,7 @@ class GraphDialog(QDialog):
             self.canvas.axes.set_title(title)
             self.canvas.axes.grid()
         except Exception as e:
-            print(f"Error plotting graph: {e}")
+            global_logger.warning(f"Error plotting graph: {e}")
 
         # Refresh the canvas
         self.canvas.draw()
@@ -243,7 +245,7 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableC
     def update_column_options(self):
         """Update the column options in the combo boxes based on the incoming data."""
         if self.incom_data is not None:
-            columns = list(self.incom_data.columns)
+            columns = list(frame_schema(self.incom_data))
         else:
             columns = []
 
@@ -347,7 +349,7 @@ class GraphContent(QDMNodeIconContentWidget, TriggerChangeHandler, SerializableC
             self.workflow_ran_successfully = False
             self._update_open_graph_button_visibility()
 
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res

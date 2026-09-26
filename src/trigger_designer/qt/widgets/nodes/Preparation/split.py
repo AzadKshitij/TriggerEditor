@@ -442,7 +442,7 @@ class SplitContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.estimation_percent = data.get("estimation_percent", 70)
             self.random_seed = data.get("random_seed", 42)
             self.is_random = data.get("is_random", True)
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
             return res

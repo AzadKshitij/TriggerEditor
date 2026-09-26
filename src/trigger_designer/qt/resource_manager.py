@@ -1,3 +1,5 @@
+import os
+import sys
 from pathlib import Path
 from typing import Any, Optional
 
@@ -12,11 +14,27 @@ import orjson as json
 logger = logger.bind(resource_manager=True)
 
 
+def _bundle_base() -> Path:
+    # ponytail: _MEIPASS/_internal is read-only under Program Files; writes go to user scope
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS) / "trigger_designer"
+    return Path(__file__).parents[1]
+
+
+def _writable_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        appdata = os.getenv("APPDATA")
+        if appdata:
+            return Path(appdata) / "Trigger Designer"
+        return Path.home() / ".trigger_designer"
+    return _bundle_base()
+
+
 class ResourceManager:
     _map: dict = {}
     _cache: dict[str, Any] = {}
     _initialized: bool = False
-    _res_folder: Path = Path(__file__).parents[1]
+    _res_folder: Path = _bundle_base()
 
     def __init__(self) -> None:
         """Load JSON resource map"""
@@ -28,6 +46,8 @@ class ResourceManager:
     def load_resource_map(self) -> None:
         """Load JSON resource map"""
         logger.debug("Loading resource map")
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            ResourceManager._res_folder = _bundle_base()
         with open(Path(__file__).parent / "resources.json", encoding="utf-8") as f:
             # Read file content as string first
             content = f.read()
@@ -88,12 +108,23 @@ class ResourceManager:
         except Exception as e:
             logger.error(e)
 
-        # Save this theme to a file
-        with open(
-            str(ResourceManager._res_folder / "resources/qt/themes/runtime_theme.qss"),
-            "w",
-        ) as f:
-            f.write(theme_qss)
+        # Save this theme to a file (best-effort: bundle may be read-only)
+        try:
+            with open(
+                str(
+                    ResourceManager._res_folder
+                    / "resources/qt/themes/runtime_theme.qss"
+                ),
+                "w",
+            ) as f:
+                f.write(theme_qss)
+        except OSError:
+            try:
+                fallback = _writable_dir() / "runtime_theme.qss"
+                fallback.parent.mkdir(parents=True, exist_ok=True)
+                fallback.write_text(theme_qss)
+            except OSError as exc:
+                logger.warning(f"Unable to cache runtime theme: {exc}")
 
         return theme_qss
 

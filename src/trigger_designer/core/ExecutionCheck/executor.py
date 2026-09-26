@@ -13,6 +13,8 @@ import traceback
 import re
 import psutil
 import os
+import polars as pl
+from datetime import datetime, timedelta
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -105,12 +107,20 @@ class NodeExecutor:
             security_config: Configuration for execution limits (timeout, memory)
         """
         self.execution_context: Dict[str, Any] = {}
+        self._seed_base_globals()
         self.security_config = security_config or SecurityConfig()
         self.stats = ExecutionStats()
         self.execution_history: List[ExecutionResult] = []
         self._cancel_event = threading.Event()
         self._current_thread: Optional[threading.Thread] = None
         self._missing_dependency_attempts: Dict[str, int] = {}
+
+    def _seed_base_globals(self) -> None:
+        # ponytail: seed once here instead of per-node imports; generated code
+        # uses bare pl/timedelta and previously relied on FileInput leakage
+        self.execution_context.update(
+            {"pl": pl, "os": os, "datetime": datetime, "timedelta": timedelta}
+        )
 
     def _track_missing_dependency(self, dependency_type: str, identifier: str) -> int:
         key = f"{dependency_type}:{identifier}"
@@ -386,6 +396,7 @@ class NodeExecutor:
     def clear_context(self) -> None:
         """Clear the shared execution context."""
         self.execution_context.clear()
+        self._seed_base_globals()
         logger.debug("Execution context cleared")
 
     def get_context_info(self) -> Dict[str, Any]:

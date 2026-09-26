@@ -21,7 +21,6 @@ from qtpy.QtWidgets import (
     QHeaderView,
     QLayout,
     QComboBox,
-    QLineEdit,
     QHBoxLayout,
     QScrollArea,
     QSizePolicy,
@@ -47,6 +46,7 @@ from trigger_designer.qt.widgets.common import (
     EmptyStateLabel,
 )
 from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.qt.helpers import global_logger
 import polars as pl
 from typing import (
     Optional,
@@ -518,7 +518,7 @@ class CleansingContent(
             self.process_data()
             self.evaluate.emit()
         else:
-            print(f"Invalid case modification value: {value}")
+            global_logger.warning(f"Invalid case modification value: {value}")
 
     def on_whitespace_changed(self, state: bool) -> None:
         """Handle whitespace checkbox changes"""
@@ -540,7 +540,14 @@ class CleansingContent(
 
     def process_data(self) -> None:
         if self.incom_data is not None:
-            cleaner = DataCleansing(self.incom_data)
+            # DataCleansing needs eager data (len/.item stats); codegen
+            # collects the same way, so live matches Run exactly.
+            data = (
+                self.incom_data.collect()
+                if isinstance(self.incom_data, pl.LazyFrame)
+                else self.incom_data
+            )
+            cleaner = DataCleansing(data)
 
             # Apply null row/column removal first
             if self.remove_null_rows:
@@ -675,7 +682,7 @@ class CleansingContent(
 
         try:
             self.deserialize_content_state(data)
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res

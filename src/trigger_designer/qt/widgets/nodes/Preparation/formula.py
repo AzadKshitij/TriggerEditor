@@ -32,6 +32,7 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
     TriggerNode,
+    frame_schema,
 )
 from trigger_designer.qt.widgets.sql_formula_editor import (
     ERROR_CHECK_DEBOUNCE_MS,
@@ -338,7 +339,7 @@ class FormulaContent(
     def _available_columns_before_section(self, section_index: int) -> List[str]:
         available_columns: List[str] = []
         if self.incom_data is not None:
-            available_columns.extend(list(self.incom_data.columns))
+            available_columns.extend(list(frame_schema(self.incom_data)))
 
         for section in self.formula_sections[:section_index]:
             target_column = section["target_column"].strip()
@@ -523,7 +524,7 @@ class FormulaContent(
         if self.incom_data is None or not self.section_widgets:
             return
         try:
-            columns = list(self.incom_data.columns)
+            columns = list(frame_schema(self.incom_data))
         except Exception:
             return
         if columns != getattr(self, "_dep_columns", None):
@@ -614,7 +615,7 @@ class FormulaContent(
         known = set()
         if self.incom_data is not None:
             known.update(col.strip().lower()
-                         for col in self.incom_data.columns)
+                         for col in frame_schema(self.incom_data))
         for index, section in enumerate(self.formula_sections):
             if index == exclude_section:
                 continue
@@ -992,7 +993,7 @@ class FormulaContent(
 
         available_columns: List[str] = []
         if self.incom_data is not None:
-            available_columns.extend(list(self.incom_data.columns))
+            available_columns.extend(list(frame_schema(self.incom_data)))
 
         code_lines = [
             "import duckdb",
@@ -1049,7 +1050,7 @@ class FormulaContent(
                 ]
 
             self.formula_sections = self._normalize_sections(sections)
-            return True & res
+            return True and res
         except Exception as exc:
             dumpException(exc)
         return res
@@ -1084,7 +1085,6 @@ class TriggerNode_Formula(TriggerNode):
         input_value = input_values[this_socket_index][socket_index]
 
         if not input_value:
-            print("👉🚫 Input is not connected", self.__class__.__name__)
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip("Input is not connected")

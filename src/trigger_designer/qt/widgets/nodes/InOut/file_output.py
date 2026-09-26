@@ -180,20 +180,21 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def check_file_path(self) -> bool:
         if not self.filePath:
             return False
-        # self.evaluate.emit()
 
-        # Check if the file exists
-        if not os.path.exists(self.filePath):
-            print(f"Error: File '{self.filePath}' does not exist.")
-            self.node.grNode.setToolTip("File does not exist")
-            self.node.markInvalid(True)
-            return False
-        else:
-            print(f"File '{self.filePath}' exists.")
+        # Outputs may target files that don't exist yet: validate the
+        # parent directory instead of the file itself.
+        if os.path.exists(self.filePath):
             self.node.grNode.setToolTip("")
             self.node.markInvalid(False)
-
-        return True
+            return True
+        parent = os.path.dirname(self.filePath) or "."
+        if os.path.isdir(parent):
+            self.node.grNode.setToolTip("")
+            self.node.markInvalid(False)
+            return True
+        self.node.grNode.setToolTip("Directory does not exist")
+        self.node.markInvalid(True)
+        return False
 
     def openFileDialog(self) -> None:
         format_filters = {
@@ -265,7 +266,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             options_str = ", " + ", ".join(options) if options else ""
             code_lines.append(
-                f"        {var_name}_lazy.sink_csv('{self.filePath}'{options_str})"
+                f"        {var_name}_lazy.sink_csv({self.filePath!r}{options_str})"
             )
 
         elif self.file_format == "custom_delimited":
@@ -280,7 +281,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # Custom delimiter: '{delimiter}' with LazyFrame"
             )
             code_lines.append(
-                f"        {var_name}_lazy.sink_csv('{self.filePath}'{options_str})"
+                f"        {var_name}_lazy.sink_csv({self.filePath!r}{options_str})"
             )
 
         elif self.file_format == "excel":
@@ -289,7 +290,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # Excel requires eager evaluation - collecting LazyFrame"
             )
             code_lines.append(
-                f"        {var_name}_lazy.collect().write_excel('{self.filePath}')"
+                f"        {var_name}_lazy.collect().write_excel({self.filePath!r})"
             )
 
         elif self.file_format == "parquet":
@@ -298,7 +299,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # Using LazyFrame sink_parquet for zero-copy streaming"
             )
             code_lines.append(
-                f"        {var_name}_lazy.sink_parquet('{self.filePath}', compression='snappy')"
+                f"        {var_name}_lazy.sink_parquet({self.filePath!r}, compression='snappy')"
             )
 
         elif self.file_format == "json":
@@ -307,7 +308,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # JSON requires eager evaluation - collecting LazyFrame"
             )
             code_lines.append(
-                f"        {var_name}_lazy.collect().write_json('{self.filePath}')"
+                f"        {var_name}_lazy.collect().write_json({self.filePath!r})"
             )
 
         elif self.file_format == "ndjson":
@@ -315,19 +316,19 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             code_lines.append(
                 f"        # Using LazyFrame sink_ndjson for memory-efficient streaming"
             )
-            code_lines.append(f"        {var_name}_lazy.sink_ndjson('{self.filePath}')")
+            code_lines.append(f"        {var_name}_lazy.sink_ndjson({self.filePath!r})")
 
         elif self.file_format == "ipc":
             # Arrow IPC format with lazy execution
             code_lines.append(
                 f"        # Using LazyFrame sink_ipc for ultra-fast columnar streaming"
             )
-            code_lines.append(f"        {var_name}_lazy.sink_ipc('{self.filePath}')")
+            code_lines.append(f"        {var_name}_lazy.sink_ipc({self.filePath!r})")
 
         else:
             # Default to CSV with lazy execution
             code_lines.append(f"        # Defaulting to CSV format with LazyFrame")
-            code_lines.append(f"        {var_name}_lazy.sink_csv('{self.filePath}')")
+            code_lines.append(f"        {var_name}_lazy.sink_csv({self.filePath!r})")
 
         # Add success message (note: we can't easily get row count from LazyFrame without collecting)
         code_lines.append(
@@ -377,7 +378,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if hasattr(self, "_update_ui_visibility"):
                 self._update_ui_visibility()
 
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
             return res
@@ -418,8 +419,6 @@ class TriggerNode_FileOutput(TriggerNode):
 
         self.content.incoming_variable = input_value.get("variable_name")
         self.grNode.setToolTip("")
-
-        print(f"Value Received in {self.__class__.__name__}:", input_value)
 
         return input_value
 

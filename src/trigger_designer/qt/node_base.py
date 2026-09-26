@@ -38,6 +38,34 @@ if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
 
 from loguru import logger
+import polars as pl
+
+
+def frame_schema(frame) -> dict:
+    """Column names and dtypes without collecting (lazy-safe).
+
+    Live data may be a LazyFrame (e.g. downstream of Append/Join) — use
+    this anywhere only names/types are needed instead of `.columns`/`.dtype`.
+    """
+    # ponytail: one shared helper, not per-node isinstance blocks
+    if frame is None:
+        return {}
+    if isinstance(frame, pl.LazyFrame):
+        schema = frame.collect_schema()
+    else:
+        schema = frame.schema
+    return {name: dtype for name, dtype in schema.items()}
+
+
+def frame_shape(frame) -> tuple:
+    """(height, width) for logs; height is "lazy" without collecting."""
+    width = len(frame_schema(frame))
+    if isinstance(frame, pl.LazyFrame):
+        return ("lazy", width)
+    try:
+        return (frame.height, width)
+    except Exception:
+        return ("?", width)
 
 
 class TriggerGraphicsNode(QDMIconGraphicsNode):
@@ -313,7 +341,6 @@ class TriggerNode(Node):
         self, socket_list: list["Socket"], target_node: "TriggerNode"
     ) -> int:
         """Get value based on socket connection"""
-        socket_index = 0
         for i, socket in enumerate(socket_list):
             if socket.edges:
                 for edge in list(socket.edges):
@@ -321,9 +348,11 @@ class TriggerNode(Node):
                     if other_socket is None:
                         continue
                     if other_socket.node == target_node:
-                        socket_index = i
-                        break
-        return socket_index
+                        return i
+        raise ValueError(
+            f"No edge from {self.__class__.__name__} reaches "
+            f"{target_node.__class__.__name__}"
+        )
 
     def _get_connected_socket(
         self, socket: "Socket", edge: "Edge"
@@ -397,7 +426,7 @@ class TriggerNode(Node):
             if val is None:
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self.grNode.setToolTip(f"Input {i} is NaN")
+                self.grNode.setToolTip(f"Input {i}: upstream node produced no output")
                 self._refresh_selected_node_config()
                 return None
 
@@ -407,7 +436,8 @@ class TriggerNode(Node):
         if result is None:
             self.markInvalid()
             self.markDescendantsDirty()
-            self.grNode.setToolTip("Invalid operation")
+            if not self.grNode.toolTip():
+                self.grNode.setToolTip("Invalid operation")
             self._refresh_selected_node_config()
             return None
 

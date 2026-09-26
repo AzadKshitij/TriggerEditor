@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
     QHeaderView,
     QLayout,
     QComboBox,
-    QLineEdit,
     QLabel,
     QHBoxLayout,
 )
@@ -28,6 +27,7 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -70,7 +70,6 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.next_row_id: int = 0  # Unique identifier for each row
 
         self.history = self.node.scene.history
-        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.incoming_variable: str = ""
@@ -108,7 +107,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Get column names from LazyFrame
         try:
-            column_names = self.incom_data.columns
+            column_names = list(frame_schema(self.incom_data))
         except Exception:
             # If we can't get columns, show error
             error_label = QLabel("Error: Unable to read column information")
@@ -160,7 +159,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Get column names from LazyFrame
         if self.incom_data is not None:
-            column_selector.addItems(self.incom_data.columns)
+            column_selector.addItems(list(frame_schema(self.incom_data)))
 
         row_id = self.next_row_id
         self.next_row_id += 1
@@ -469,7 +468,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.sort_data = data.get("sort_data", [])
 
         try:
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res

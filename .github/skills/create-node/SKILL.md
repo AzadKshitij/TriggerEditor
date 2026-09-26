@@ -241,4 +241,4 @@ Run the editor and confirm the new node appears in the node list panel (drag-and
 - [node_configuration.py](../../src/trigger_designer/core/node_configuration.py) — enums and registration
 - [filter.py](../../src/trigger_designer/qt/widgets/nodes/Preparation/filter.py) — simple 1-in, 2-out example
 - [formula.py](../../src/trigger_designer/qt/widgets/nodes/Preparation/formula.py) — complex UI example
-- [count_recors.py](../../src/trigger_designer/qt/widgets/nodes/Transform/count_recors.py) — transform example
+- [count_records.py](../../src/trigger_designer/qt/widgets/nodes/Transform/count_records.py) — transform example

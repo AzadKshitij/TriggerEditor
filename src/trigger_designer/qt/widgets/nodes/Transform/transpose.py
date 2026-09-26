@@ -16,6 +16,8 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
+    frame_shape,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
@@ -85,7 +87,7 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "Select Key Columns (ID Variables)",
             "These columns will be preserved as identifiers in the transposed result.",
         )
-        self.key_list = ColumnChecklist(self.incom_data.columns, self.key_columns)
+        self.key_list = ColumnChecklist(list(frame_schema(self.incom_data)), self.key_columns)
         self.key_list.changed.connect(self.on_key_selection_changed)
         self.key_checkboxes = self.key_list.checkboxes
         key_section.addWidget(self.key_list)
@@ -95,7 +97,7 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "Select Columns to Transpose (Value Variables)",
             "These columns will be transposed from columns to rows. Column names become 'Name' values, column data becomes 'Value' values.",
         )
-        self.data_list = ColumnChecklist(self.incom_data.columns, self.data_columns)
+        self.data_list = ColumnChecklist(list(frame_schema(self.incom_data)), self.data_columns)
         self.data_list.changed.connect(self.on_data_selection_changed)
         self.data_checkboxes = self.data_list.checkboxes
         data_section.addWidget(self.data_list)
@@ -132,7 +134,7 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 "📊 TransposeContent: Processing data for transpose operation"
             )
             try:
-                available_columns = self.incom_data.columns
+                available_columns = list(frame_schema(self.incom_data))
 
                 # Validate columns exist
                 missing = [
@@ -148,7 +150,6 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         global_logger.warning(
                             f"⚠️ TransposeContent: Missing columns will be skipped: {missing}"
                         )
-                        print(f"Warning: Missing columns will be skipped: {missing}")
 
                 # Validate key columns exist
                 missing_key_cols = [
@@ -190,14 +191,13 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 )
 
                 global_logger.info(
-                    f"✅ TransposeContent: Transpose completed - Result shape: {self.data.shape}"
+                    f"✅ TransposeContent: Transpose completed - Result shape: {frame_shape(self.data)}"
                 )
 
             except Exception as e:
                 global_logger.error(
                     f"❌ TransposeContent: Error in transpose operation: {str(e)}"
                 )
-                print(f"Error in transpose operation: {str(e)}")
                 self.data = None
 
     def get_code(self) -> str:
@@ -212,7 +212,14 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 code.append(f"{self.variable_name} = pl.DataFrame()")
             return "\n".join(code) + "\n"
 
-        code_lines = []
+        code_lines = ["import polars as pl"]
+
+        # Column names without collecting (incoming may be lazy).
+        code_lines.append(
+            f"_{self.id}_cols = ({self.incoming_variable}.collect_schema().names()"
+            f" if isinstance({self.incoming_variable}, pl.LazyFrame)"
+            f" else {self.incoming_variable}.columns)"
+        )
 
         # Add column validation if needed
         if self.missing_action != "ignore":
@@ -220,7 +227,7 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             code_lines.extend(
                 [
                     f"# Validate data columns",
-                    f"missing = [col for col in [{data_cols_str}] if col not in {self.incoming_variable}.columns]",
+                    f"missing = [col for col in [{data_cols_str}] if col not in _{self.id}_cols]",
                     f"if missing:",
                 ]
             )
@@ -239,8 +246,8 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         code_lines.extend(
             [
                 f"# Filter to existing columns",
-                f"valid_key_cols = [col for col in [{key_cols_str}] if col in {self.incoming_variable}.columns]",
-                f"valid_data_cols = [col for col in [{data_cols_str}] if col in {self.incoming_variable}.columns]",
+                f"valid_key_cols = [col for col in [{key_cols_str}] if col in _{self.id}_cols]",
+                f"valid_data_cols = [col for col in [{data_cols_str}] if col in _{self.id}_cols]",
                 f"",
                 f"# Transpose operation using Polars unpivot",
                 f"{self.variable_name} = {self.incoming_variable}.unpivot(",
@@ -313,7 +320,7 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"📊 TransposeContent: Restored missing action: {self.missing_action}"
             )
 
-            return True & res
+            return True and res
         except Exception as e:
             global_logger.error(
                 f"❌ TransposeContent: Deserialization failed: {str(e)}"
@@ -347,7 +354,6 @@ class TriggerNode_Transpose(TriggerNode):
 
     def processInputs(self, input_values):
         global_logger.info("🔄 TransposeNode: Starting input processing")
-        print("⚠️⚠️⚠️ Transpose ⚠️⚠️⚠️")
 
         try:
             input_node = self.getInput(0)
@@ -362,7 +368,6 @@ class TriggerNode_Transpose(TriggerNode):
                 global_logger.info(
                     "✅ TransposeNode: Input data received, processing..."
                 )
-                print("We have input")
 
                 # Validate input data
                 input_data = input_value.get("data")
@@ -370,7 +375,7 @@ class TriggerNode_Transpose(TriggerNode):
 
                 if input_data is not None:
                     global_logger.info(
-                        f"📊 TransposeNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'"
+                        f"📊 TransposeNode: Processing DataFrame with shape {frame_shape(input_data)} for variable '{variable_name}'"
                     )
 
                     self.markDirty(False)
@@ -385,7 +390,7 @@ class TriggerNode_Transpose(TriggerNode):
 
                     # Validate output data
                     if hasattr(self.content, "data") and self.content.data is not None:
-                        output_shape = self.content.data.shape
+                        output_shape = frame_shape(self.content.data)
                         global_logger.info(
                             f"📊 TransposeNode: Output DataFrame shape: {output_shape}"
                         )
@@ -408,6 +413,7 @@ class TriggerNode_Transpose(TriggerNode):
                         )
                         self.markDirty(True)
                         self.markInvalid(True)
+                        self.grNode.setToolTip("Transpose failed: no output generated")
                         return None
                 else:
                     global_logger.warning(
@@ -415,11 +421,11 @@ class TriggerNode_Transpose(TriggerNode):
                     )
                     self.markDirty(True)
                     self.markInvalid(True)
+                    self.grNode.setToolTip("Upstream node produced no data")
                     return None
 
             else:
                 global_logger.warning("⚠️ TransposeNode: No input data available")
-                print("We don't have input")
                 self.markDirty(True)
                 self.markInvalid(True)
                 self.grNode.setToolTip("Input is not connected")

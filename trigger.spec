@@ -49,45 +49,64 @@ analysis = Analysis(
     hiddenimports=[
         # Core data processing
         "pandas",
-        "numpy", 
+        "numpy",
         "polars",
         "duckdb",
-        
+        "fastexcel",
+        "openpyxl",
+        "PIL",
+        "PIL.ImageQt",
+
         # GUI frameworks
         "qtpy",
         "qtpy.QtCore",
-        "qtpy.QtGui", 
+        "qtpy.QtGui",
         "qtpy.QtWidgets",
-        
-        # Visualization
+        "PyQt6.sip",
+
+        # Visualization (qtagg is the Qt6 backend; keep qt5agg alias harmless)
         "matplotlib",
+        "matplotlib.backends.backend_qtagg",
         "matplotlib.backends.backend_qt5agg",
         "seaborn",
-        
+
         # Other dependencies
         "loguru",
         "psutil",
         "orjson",
     ],
-    
+
     # PyInstaller hooks
     hookspath=[],
     hooksconfig={},
-    
-    # Modules to exclude
+
+    # Modules to exclude (startup + size: never imported at runtime)
     excludes=[
         "tkinter",
         "unittest",
         "test",
         "_pytest",
+        "pytest",
+        "setuptools",
+        "distutils",
+        "matplotlib.tests",
+        "matplotlib.testing",
+        "numpy.tests",
+        "numpy.f2py",
+        "pandas.tests",
+        "PIL.ImageTk",
     ],
-    
+
     # Runtime hooks
-    runtime_hooks=["log_dist.py"] if Path("log_dist.py").exists() else [],
-    
+    runtime_hooks=(
+        ["scripts/log_dist.py"] if Path("scripts/log_dist.py").exists()
+        else ["log_dist.py"] if Path("log_dist.py").exists()
+        else []
+    ),
+
     # Build options
     noarchive=False,
-    optimize=0,
+    optimize=1,
 )
 
 # Python bytecode archive
@@ -109,10 +128,11 @@ executable = EXE(
     hide_console="hide-early",
     disable_windowed_traceback=False,
     
-    # Debug and optimization
-    debug=True,
+    # Debug and optimization (production: no debug console, no UPX —
+    # UPX decompression + AV rescans cost more cold-start than they save)
+    debug=False,
     strip=False,
-    upx=True,
+    upx=False,
     upx_exclude=[],
     
     # Executable properties  
@@ -135,11 +155,11 @@ collection = (
     None if options.portable
     else COLLECT(
         executable,
-        analysis.binaries, 
+        analysis.binaries,
         analysis.datas,
         name=app_name,
         strip=False,
-        upx=True,
+        upx=False,
         upx_exclude=[],
     )
 )

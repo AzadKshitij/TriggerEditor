@@ -26,6 +26,7 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -73,8 +74,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.mapping_pairs = []
         self.output_column_checkboxes = []
         self.history: SceneHistory = self.node.scene.history
-
-        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
 
         # incoming variables
         self.left_data: Optional[pl.LazyFrame] = None
@@ -134,20 +133,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             self._sanitize_mapping_data()
             self._sanitize_selected_columns()
-            join_type_layout = QHBoxLayout()
-            # join_type_label = QLabel("Join Type:")
-            # self.join_type_combo = QComboBox()
-            # self.join_type_combo.addItems(["inner", "left", "right", "outer"])
-            # self.join_type_combo.currentTextChanged.connect(
-            # self.on_join_type_changed)
-            # self.join_type_combo.setSizeAdjustPolicy(
-            # QComboBox.SizeAdjustPolicy.AdjustToContents)
-            # self.join_type_combo.setMinimumWidth(80)
-            # self.join_type_combo.setMaximumWidth(120)
-            # join_type_layout.addWidget(join_type_label)
-            # join_type_layout.addWidget(self.join_type_combo)
-            # self.join_type_combo.setCurrentText(self.join_type)
-            # join_type_layout.addStretch()
 
             # Join columns mapping area
             join_mapping_layout = QVBoxLayout()
@@ -159,7 +144,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.mapping_pairs = []
 
             # Add initial mapping row
-            # self.add_mapping_row()
 
             # Add button for new mapping
             add_mapping_button = QPushButton()
@@ -200,17 +184,12 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.output_columns_list.setSelectionMode(
                 QAbstractItemView.SelectionMode.MultiSelection
             )
-            # self.output_columns_list.setMaximumHeight(150)
             output_layout.addWidget(output_label)
             output_layout.addLayout(output_controls_layout)
             output_layout.addWidget(self.output_columns_list)
 
-            # self.update_columns()
-
-            # Main layout assembly
             # Main layout assembly
             main_layout = QVBoxLayout()
-            main_layout.addLayout(join_type_layout)
             main_layout.addLayout(join_mapping_layout)
             main_layout.addLayout(output_layout)
 
@@ -222,7 +201,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             dock_layout.addLayout(main_layout)
             # Update UI after layout is created
 
-            #     self.update_columns()
             self.load_saved_data()
             self.update_output_columns()
 
@@ -314,7 +292,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # check if col exist in output_column it it does check the checkbox or uncheck it
 
     def on_join_type_changed(self, join_type) -> None:
-        # self.join_type = join_type
         if self.history.is_restoring_history:
             return
 
@@ -350,8 +327,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             combo.setSizeAdjustPolicy(
                 QComboBox.SizeAdjustPolicy.AdjustToContents)
             combo.setMinimumWidth(120)  # Set minimum width
-            # Set maximum width to prevent too wide combos
-            # combo.setMaximumWidth(200)
 
         if hasattr(self, "left_data") and self.left_data is not None:
             self._populate_column_combo(
@@ -410,18 +385,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             layout.deleteLater()
 
     def remove_mapping_row(self, mapping_pair) -> None:
-        # if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
-        # # Remove from layout
-        # self.delete_layout(mapping_pair['layout'])
-
-        # # Find and remove corresponding mapping data
-        # idx = self.mapping_pairs.index(mapping_pair)
-        # if idx < len(self.mapping_data):
-        #     self.mapping_data.pop(idx)
-
-        # # Remove from UI storage
-        # self.mapping_pairs.remove(mapping_pair)
-
         if len(self.mapping_pairs) > 1:  # Keep at least one mapping row
             if self.history.is_restoring_history:
                 return
@@ -490,20 +453,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.history.storeHistory(
             desc="Join mapping updated", data=history_data, setModified=True
         )
-
-        # for i, pair in enumerate(self.mapping_pairs):
-        #     if i < len(self.mapping_data):
-        #         self.mapping_data[i] = {
-        #             'left_column': pair['left_combo'].currentText(),
-        #             'right_column': pair['right_combo'].currentText()
-        #         }
-        #     else:
-        #         self.mapping_data.append({
-        #             'left_column': pair['left_combo'].currentText(),
-        #             'right_column': pair['right_combo'].currentText()
-        #         })
-        # # Trim extra mapping data if UI has fewer rows
-        # self.mapping_data = self.mapping_data[:len(self.mapping_pairs)]
 
     def update_output_columns(self) -> None:
         self.output_columns_list.clear()
@@ -672,24 +621,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _on_output_checkbox_changed(self, checkbox) -> None:
         """Handle checkbox state changes"""
-        # col_name = checkbox.text()
-        # source = checkbox.property('source')
-        # col_data = {'name': col_name, 'source': source}
-
-        # if checkbox.isChecked():
-        #     # Check if column already exists
-        #     exists = False
-        #     for existing in self.selected_columns:
-        #         if existing['name'] == col_name and existing['source'] == source:
-        #             exists = True
-        #             break
-        #     if not exists:
-        #         self.selected_columns.append(col_data)
-        # else:
-        #     # Remove the column if it exists
-        #     self.selected_columns = [col for col in self.selected_columns
-        #                              if not (col['name'] == col_name and col['source'] == source)]
-
         if self.history.is_restoring_history:
             return
 
@@ -751,7 +682,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 ).copy()
 
             # Update UI to reflect changes
-            # self.join_type_combo.setCurrentText(self.join_type)
 
             # Clear existing mapping rows
             for pair in self.mapping_pairs[:]:
@@ -820,8 +750,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             right_suffix = "_right"
 
             # Get column names from LazyFrames for conflict detection
-            left_columns = left_data.columns
-            right_columns = right_data.columns
+            left_columns = list(frame_schema(left_data))
+            right_columns = list(frame_schema(right_data))
 
             # Find conflicting columns (not in join keys)
             conflicting_cols = []
@@ -1019,8 +949,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         right_cols = [m["right_column"] for m in self.mapping_data]
 
         # Get column names for conflict detection
-        left_columns = self.left_data.columns
-        right_columns = self.right_data.columns
+        left_columns = list(frame_schema(self.left_data))
+        right_columns = list(frame_schema(self.right_data))
 
         # Find conflicting columns (not in join keys)
         conflicting_cols = [
@@ -1184,7 +1114,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res = super().deserialize(data, hashmap)
         try:
             # Store join type
-            self.join_type = data["join_type"]
+            self.join_type = data.get("join_type", "inner")
 
             # Store mapping data
             self.mapping_data = data.get("mapping_data", [])
@@ -1192,7 +1122,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Store output columns
             self.selected_columns = data.get("selected_columns", [])
 
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res
@@ -1225,7 +1155,6 @@ class TriggerNode_Join(TriggerNode):
 
     def processInputs(self, input_values):
 
-        print("⚠️⚠️⚠️⚠️Join processInputs⚠️⚠️⚠️⚠️")
         # Only one input for simplicity
         this_left_skt = 0
         this_right_skt = 1

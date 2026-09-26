@@ -27,6 +27,7 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
@@ -242,8 +243,8 @@ class FileInputContent(
             self.filePathEdit.setText(self.filePath)
             file_type = self._auto_detect_file_type(self.filePath)
             self._update_ui_visibility(file_type)
-            if isinstance(self.data, pl.DataFrame) and self.data.height > 0:
-                self.table_viewer.set_dataframe(self.data)
+            if self.data is not None and len(frame_schema(self.data)) > 0:
+                self.table_viewer.set_dataframe(self._preview_frame())
             else:
                 self.loadFile(self.filePath)
 
@@ -305,7 +306,7 @@ class FileInputContent(
         if not os.path.exists(self.filePath):
             self._log_missing_file(self.filePath)
             self.data = pl.DataFrame()
-            self.node.grNode.setToolTip(f"File '{self.filePath}' does not exist")
+            self.node.grNode.setToolTip(f"File {self.filePath!r} does not exist")
             self.node.markInvalid(True)
             return False
         else:
@@ -317,18 +318,18 @@ class FileInputContent(
         return True
 
     def _build_schema_snapshot(
-        self, dataframe: Optional[pl.DataFrame] = None
+        self, dataframe: Optional[Union[pl.DataFrame, pl.LazyFrame]] = None
     ) -> list[dict[str, str]]:
         source_df = dataframe
-        if source_df is None and isinstance(self.data, pl.DataFrame):
+        if source_df is None and self.data is not None:
             source_df = self.data
 
-        if source_df is None or source_df.width == 0:
+        if source_df is None:
             return []
 
         return [
             {"name": column_name, "dtype": str(dtype)}
-            for column_name, dtype in source_df.schema.items()
+            for column_name, dtype in frame_schema(source_df).items()
         ]
 
     def _build_file_metadata(self) -> dict[str, Any]:
@@ -565,31 +566,6 @@ class FileInputContent(
                             label_item.widget().setVisible(is_excel)
                         break
 
-    def _read_csv(self, fileName: str, n_rows: Optional[int] = None) -> pl.DataFrame:
-        """Read CSV/TXT file preview using polars - for preview purposes only"""
-        try:
-            read_options = {
-                "separator": self.delimiter,
-                "has_header": self.first_row_contains_field_names,
-                "infer_schema": False,  # Read all as strings initially
-                "low_memory": True,  # Enable low memory mode
-                "rechunk": False,  # Don't rechunk to save memory
-            }
-
-            # Only read the specified preview rows (no record limit applied)
-            if n_rows is not None and n_rows > 0:
-                read_options["n_rows"] = n_rows
-
-            # Use direct read for small preview data
-            df = pl.read_csv(fileName, **read_options)
-
-            # logger.debug(f"Successfully read CSV preview with {len(df)} rows")
-            return df
-
-        except Exception as e:
-            logger.error(f"Error reading CSV preview {fileName}: {e}")
-            return pl.DataFrame()
-
     def _read_excel(self, fileName: str, n_rows: Optional[int] = None) -> pl.DataFrame:
         """Read Excel file preview using fastexcel - for preview purposes only"""
         try:
@@ -655,40 +631,84 @@ class FileInputContent(
             logger.error(f"Error reading Excel preview {fileName}: {e}")
             return pl.DataFrame()
 
-    def _read_file_based_on_type(self, fileName: str) -> pl.DataFrame:
-        """Read file based on the selected file type"""
+    def _scan_csv_full(self, fileName: str) -> pl.LazyFrame:
+        """Full-file lazy scan mirroring get_code (no preview cap).
+
+        Live data stays lazy; only names/types resolve until a downstream
+        node collects. record_limit applies as a lazy head, like codegen.
+        """
+        scan_options: dict[str, Any] = {"infer_schema": False}
+        if self.delimiter != ",":
+            scan_options["separator"] = self.delimiter
+        if not self.first_row_contains_field_names:
+            scan_options["has_header"] = False
+        frame = pl.scan_csv(fileName, **scan_options)
+        if self.record_limit > 0:
+            frame = frame.head(self.record_limit)
+        if self.output_filename_as_field:
+            frame = frame.with_columns(
+                pl.lit(os.path.basename(fileName)).alias("FileName")
+            )
+        return frame
+
+    def _read_file_based_on_type(
+        self, fileName: str
+    ) -> Union[pl.DataFrame, pl.LazyFrame]:
+        """Read the full file, mirroring get_code (no preview cap)."""
         try:
             if self.file_type == "excel":
-                df = self._read_excel(fileName, self.preview_rows)
+                # Full read like codegen (n_rows = record_limit only).
+                df = self._read_excel(
+                    fileName,
+                    self.record_limit if self.record_limit > 0 else None,
+                )
+                frame: Union[pl.DataFrame, pl.LazyFrame] = df.lazy()
             elif self.file_type in ["csv", "txt"]:
-                df = self._read_csv(fileName, self.preview_rows)
+                frame = self._scan_csv_full(fileName)
             else:
                 # Default to CSV with memory optimization
-                df = pl.read_csv(
-                    fileName, infer_schema=False, low_memory=True, rechunk=False
-                )
+                frame = pl.scan_csv(fileName, infer_schema=False)
 
-            # Add filename as field if requested
-            if self.output_filename_as_field:
+            if (
+                self.output_filename_as_field
+                and self.file_type not in ["csv", "txt"]
+            ):
                 filename_only = os.path.basename(fileName)
-                df = df.with_columns(pl.lit(filename_only).alias("FileName"))
+                if isinstance(frame, pl.LazyFrame):
+                    frame = frame.with_columns(pl.lit(filename_only).alias("FileName"))
+                else:
+                    frame = frame.with_columns(pl.lit(filename_only).alias("FileName"))
 
-            return df
+            return frame
 
         except Exception as e:
             logger.error(f"Error reading file {fileName}: {e}")
             # Return empty DataFrame on error
             return pl.DataFrame()
 
+    def _preview_frame(self) -> pl.DataFrame:
+        """Small eager sample for the table viewer (live data stays lazy)."""
+        data = getattr(self, "data", None)
+        if data is None:
+            return pl.DataFrame()
+        if isinstance(data, pl.LazyFrame):
+            return data.head(self.preview_rows).collect()
+        return data.head(self.preview_rows)
+
     def loadFile(self, fileName: str) -> None:
-        """Load file using Polars table viewer for enhanced performance and memory efficiency"""
+        """Load file: full data for processing, preview sample for the viewer"""
         # Clear any existing data to free memory first
         if hasattr(self, "data"):
             del self.data
 
         try:
-            # Load preview data using the new simplified functions
-            preview_df = self._read_file_based_on_type(fileName)
+            # Full read (lazy for csv) so live matches Run output exactly
+            full_df = self._read_file_based_on_type(fileName)
+            preview_df = (
+                full_df.head(self.preview_rows).collect()
+                if isinstance(full_df, pl.LazyFrame)
+                else full_df.head(self.preview_rows)
+            )
 
             if preview_df.height == 0:
                 # Create empty DataFrame for display
@@ -697,16 +717,16 @@ class FileInputContent(
                     self.table_viewer.set_dataframe(self.data)
                 return
 
-            # Store the preview DataFrame as data for later use
-            self.data = preview_df
-            self._refresh_saved_input_metadata(preview_df)
+            # Store the full frame as data for later use
+            self.data = full_df
+            self._refresh_saved_input_metadata(full_df)
 
-            # Set the dataframe in the Polars table viewer
+            # Set the preview sample in the Polars table viewer
             if getattr(self, "table_viewer", None):
                 self.table_viewer.set_dataframe(preview_df)
 
             logger.info(
-                f"Loaded preview: {preview_df.height} rows, {len(preview_df.columns)} columns"
+                f"Loaded preview: {preview_df.height} rows, {len(frame_schema(full_df))} columns"
             )
 
         except Exception as e:
@@ -740,7 +760,7 @@ class FileInputContent(
             # Excel file code generation using fastexcel with LazyFrame conversion
             code_lines.append("import fastexcel")
             code_lines.append(
-                f"reader_{self.id} = fastexcel.read_excel('{self.filePath}')"
+                f"reader_{self.id} = fastexcel.read_excel({self.filePath!r})"
             )
 
             # Build load_sheet parameters
@@ -788,7 +808,7 @@ class FileInputContent(
             code_lines.append("# Using LazyFrame for optimal memory usage")
 
             # Build the scan_csv call
-            lazy_call = f"pl.scan_csv('{self.filePath}'"
+            lazy_call = f"pl.scan_csv({self.filePath!r}"
             if read_params:
                 lazy_call += f", {', '.join(read_params)}"
             lazy_call += ")"
@@ -805,14 +825,14 @@ class FileInputContent(
             # Default to CSV with LazyFrame
             code_lines.append("# Default to CSV with LazyFrame")
             code_lines.append(
-                f"{self.variable_name} = pl.scan_csv('{self.filePath}', infer_schema=False)"
+                f"{self.variable_name} = pl.scan_csv({self.filePath!r}, infer_schema=False)"
             )
 
         # Add filename as field if requested - using lazy operations
         if self.output_filename_as_field:
             filename_var = f"filename_{self.id}"
             code_lines.append(f"# Add filename field using lazy operations")
-            code_lines.append(f"{filename_var} = os.path.basename('{self.filePath}')")
+            code_lines.append(f"{filename_var} = os.path.basename({self.filePath!r})")
             code_lines.append(
                 f"{self.variable_name} = {self.variable_name}.with_columns(pl.lit({filename_var}).alias('FileName'))"
             )
@@ -892,14 +912,6 @@ class TriggerNode_FileInput(TriggerNode):
         self.content.evaluate.connect(self.onInputChanged)
         self.param: list = []
 
-    # def evalImplementation(self):
-    #     param = {
-    #         "data": self.content.data,
-    #         "variable_name": self.content.variable_name
-    #     }
-    #     # variable = self.content.variable_name
-    #     return param
-
     def processInputs(self, input_values: list[Any]) -> Optional[list[dict[str, Any]]]:
         # Custom processing logic for the File Input node
         if not self.content.filePath:
@@ -918,17 +930,6 @@ class TriggerNode_FileInput(TriggerNode):
 
         self.markDirty(False)
         self.markInvalid(False)
-
-        # # Load full data for processing (not just preview)
-        # if (
-        #     self.content.data is None
-        #     or self.content.data.height <= self.content.preview_rows
-        # ):
-        #     # Current data is just preview, need to load full data
-        #     self.content.data = self.content._read_file_based_on_type(
-        #         self.content.filePath
-        #     )
-        #     logger.info(f"Loaded full data for processing: {self.content.data.shape}")
 
         self.param = [
             {"data": self.content.data, "variable_name": self.content.variable_name}

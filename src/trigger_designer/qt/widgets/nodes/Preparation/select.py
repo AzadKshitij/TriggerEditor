@@ -1,4 +1,5 @@
 import polars as pl
+import dataclasses
 from qtpy.QtWidgets import (
     QWidget,
     QLineEdit,
@@ -37,6 +38,8 @@ from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
+    frame_schema,
+    frame_shape,
 )
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
@@ -132,16 +135,16 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is not None:
             # Initialize table_data if not already present (e.g., from deserialization)
             if not self.table_data:
+                schema = frame_schema(self.incom_data)
                 self.table_data = [
-                    RowData(True, col, str(self.incom_data[col].dtype))
-                    for col in self.incom_data.columns
+                    RowData(True, col, str(schema[col])) for col in schema
                 ]
 
             # Initialize changes if not already present (e.g., from deserialization)
             if not hasattr(self, "changes") or not self.changes:
                 self.changes: dict = {
                     "selected_columns": list(
-                        self.incom_data.columns
+                        frame_schema(self.incom_data)
                     ),  # Select all by default
                     "rename_mapping": {},
                     "dtype_mapping": {},
@@ -149,7 +152,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Ensure selected_columns has default values if empty
             if not self.changes.get("selected_columns"):
-                self.changes["selected_columns"] = list(self.incom_data.columns)
+                self.changes["selected_columns"] = list(frame_schema(self.incom_data))
 
             # Create toolbar layout with fixed height
             toolbar_widget = QWidget()
@@ -462,7 +465,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             and getattr(self, "incom_data", None) is not None
         ):
             selected_columns = self.changes["selected_columns"]
-            available_columns = list(self.incom_data.columns)
+            available_columns = list(frame_schema(self.incom_data))
 
             # First time with data: select all columns by default
             if not selected_columns:
@@ -513,10 +516,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"📊 SelectContent: Applying changes to {len(valid_columns)} valid columns"
             )
 
-            print(f"🐍 Applying changes: selected_columns={valid_columns}")
-            print(f"🐍 dtype_mapping={self.changes.get('dtype_mapping', {})}")
-            print(f"🐍 rename_mapping={self.changes.get('rename_mapping', {})}")
-
             try:
                 global_logger.debug(
                     f"📋 SelectContent: Selecting columns: {valid_columns}"
@@ -552,7 +551,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Apply data type changes if any (only for columns that exist in the data)
         if self.data is not None:
-            current_columns = self.data.columns
+            current_columns = list(frame_schema(self.data))
             for col, dtype in self.changes["dtype_mapping"].items():
                 if col not in current_columns:
                     global_logger.warning(
@@ -579,7 +578,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     global_logger.error(
                         f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"
                     )
-                    print(f"Failed to convert column {col} to {dtype}: {str(e)}")
 
         # Apply renaming if any
         if self.changes["rename_mapping"]:
@@ -592,7 +590,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         # Summary log
         if hasattr(self, "data") and self.data is not None:
-            final_shape = self.data.shape
+            final_shape = frame_shape(self.data)
             global_logger.info(
                 f"🎯 SelectContent: Column selection completed - Final DataFrame shape: {final_shape}"
             )
@@ -600,11 +598,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             global_logger.warning(
                 "⚠️ SelectContent: No output data generated after applying changes"
             )
-
-        print(
-            "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid",
-            self.node._is_invalid,
-        )
 
     def process_data_changes(
         self, data_: list[list]
@@ -676,11 +669,10 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 global_logger.error(
                     f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"
                 )
-                print(f"Failed to convert column {col} to {dtype}: {str(e)}")
 
         # Apply renaming if any (only for columns that exist in the data)
         if rename_mapping and self.data is not None:
-            current_columns = self.data.columns
+            current_columns = list(frame_schema(self.data))
             # Filter rename mapping to only include existing columns
             valid_rename_mapping = {
                 old_name: new_name
@@ -707,7 +699,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     global_logger.error(
                         f"❌ SelectContent: Failed to rename columns: {str(e)}"
                     )
-                    print(f"Failed to rename columns: {str(e)}")
 
     def handleDataChanged(self, data_: list) -> None:
         if self.history.is_restoring_history:
@@ -718,11 +709,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         global_logger.debug(
             f"📋 SelectContent: Handling data changes for {len(data_)} items"
-        )
-        print(
-            "🐍 File: Preparation/select.py | Line: 322 | handleDataChanged ~ data_",
-            data_,
-            type(data_),
         )
 
         # Store old state before changes
@@ -859,7 +845,10 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def serialize(self):
         res = super().serialize()
-        res["table_data"] = self.table_data
+        res["table_data"] = [
+            dataclasses.asdict(item) if dataclasses.is_dataclass(item) else item
+            for item in self.table_data
+        ]
         res["changes"] = getattr(
             self,
             "changes",
@@ -870,7 +859,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def deserialize(self, data, hashmap={}):
         res = super().deserialize(data, hashmap)
         try:
-            print("deserialize Select node")
             # Load the table data and convert dictionaries back to RowData objects
             raw_table_data = data.get("table_data", [])
             self.table_data = []
@@ -899,7 +887,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if hasattr(self, "incom_data") and self.incom_data is not None:
                 self.apply_changes()
 
-            return True & res
+            return True and res
         except Exception as e:
             dumpException(e)
         return res
@@ -931,7 +919,6 @@ class TriggerNode_Select(TriggerNode):
 
     def processInputs(self, input_values):
         global_logger.info("🔄 SelectNode: Starting input processing")
-        print("⚠️⚠️⚠️ Select ⚠️⚠️⚠️")
 
         try:
             input_node = self.getInput(0)
@@ -944,7 +931,6 @@ class TriggerNode_Select(TriggerNode):
 
             if input_value:
                 global_logger.info("✅ SelectNode: Input data received, processing...")
-                print("We have input")
 
                 # Validate input data
                 input_data = input_value.get("data")
@@ -952,7 +938,7 @@ class TriggerNode_Select(TriggerNode):
 
                 if input_data is not None:
                     global_logger.info(
-                        f"📊 SelectNode: Processing DataFrame with shape {input_data.shape} for variable '{variable_name}'"
+                        f"📊 SelectNode: Processing DataFrame with shape {frame_shape(input_data)} for variable '{variable_name}'"
                     )
 
                     self.markDirty(False)
@@ -967,7 +953,7 @@ class TriggerNode_Select(TriggerNode):
 
                     # Validate output data
                     if hasattr(self.content, "data") and self.content.data is not None:
-                        output_shape = self.content.data.shape
+                        output_shape = frame_shape(self.content.data)
                         global_logger.info(
                             f"📊 SelectNode: Output DataFrame shape: {output_shape}"
                         )
@@ -982,11 +968,6 @@ class TriggerNode_Select(TriggerNode):
                         self.evalChildren()
                         global_logger.info(
                             "✅ SelectNode: Processing completed successfully"
-                        )
-
-                        print(
-                            "🐍 File: Preparation/select.py | Line: 279 | processInputs ~ self._is_invalid",
-                            self._is_invalid,
                         )
 
                         return self.param
@@ -1005,14 +986,9 @@ class TriggerNode_Select(TriggerNode):
 
             else:
                 global_logger.warning("⚠️ SelectNode: No input data available")
-                print("We don't have input")
                 self.markDirty(True)
                 self.markInvalid(True)
                 self.grNode.setToolTip("Input is not connected")
-                print(
-                    "🐍 File: Preparation/select.py | Line: 292 | processInputs ~ self._is_invalid",
-                    self._is_invalid,
-                )
                 return None
 
         except Exception as e:

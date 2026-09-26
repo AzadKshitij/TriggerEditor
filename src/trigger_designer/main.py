@@ -12,15 +12,12 @@ from typing import Optional, TextIO
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from loguru import logger
-from qtpy.QtCore import QResource, Qt, QSettings
-from qtpy.QtGui import QIcon, QPalette, QColor, QGuiApplication, QScreen
+from qtpy.QtCore import QSettings
+from qtpy.QtGui import QIcon, QGuiApplication, QScreen
 from qtpy.QtWidgets import QApplication
 
-from trigger_designer.qt.main_window import TriggerWindow
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.splash import Splash
-import trigger_designer.qt.darkstyle_rc  # noqa
-import trigger_designer.resources.icons_rc  # noqa
 
 _LOG_STREAM_LOCK = threading.Lock()
 _ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
@@ -84,11 +81,21 @@ class _LogFileSink:
             self._log_stream.flush()
 
 
+def _log_dir() -> Path:
+    # ponytail: frozen logs go to user scope; Program Files is not writable
+    if getattr(sys, "frozen", False):
+        appdata = os.getenv("APPDATA")
+        if appdata:
+            return Path(appdata) / "Trigger Designer" / "logs"
+        return Path.home() / ".trigger_designer" / "logs"
+    return Path(__file__).resolve().parents[2] / "logs"
+
+
 def _configure_logging() -> None:
     original_stdout = sys.stdout
     original_stderr = sys.stderr
     time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    log_dir = Path(__file__).resolve().parents[2] / "logs"
+    log_dir = _log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file_path = log_dir / f"trigger_designer_{time}.log"
 
@@ -125,19 +132,14 @@ _configure_logging()
 
 
 def main() -> None:
-    rsm: ResourceManager = ResourceManager()
-    # app: QApplication = QApplication(sys.argv)
     file_path: Optional[str] = sys.argv[1] if len(sys.argv) > 1 else None
 
     logger.info("Starting Trigger Designer...")
     logger.info(f"System arguments: {sys.argv}")
 
-    # Initialize application
+    # Initialize application first so the splash paints before heavy imports
     app = QApplication(sys.argv)
     app.setStyle("Fusion")
-
-    # Get file path from command line arguments
-    file_path: Optional[str] = sys.argv[1] if len(sys.argv) > 1 else None
 
     # Application configuration
     name_company = "Trigger"
@@ -149,19 +151,10 @@ def main() -> None:
     resource_manager = ResourceManager()
     app.setWindowIcon(QIcon(str(resource_manager.get_full_path("app_icon"))))
 
-    # Load settings and theme
-    settings = QSettings(name_company, name_product)
-    logger.debug(f"Available settings keys: {settings.allKeys()}")
-
-    theme_qss = resource_manager.load_theme(settings.value("theme", "dark"))
-    if theme_qss:
-        app.setStyleSheet(theme_qss)
-
-    # Get screen dimensions for splash screen
+    # Show splash screen BEFORE importing the main window (imports
+    # nodeeditor + all dock/node machinery, ~0.4s on importtime profile)
     primary_screen: Optional[QScreen] = QGuiApplication.primaryScreen()
     screen_width = primary_screen.geometry().width() if primary_screen else 800
-
-    # Show splash screen
     splash = Splash(
         resource_manager=resource_manager,
         screen_width=screen_width,
@@ -169,6 +162,21 @@ def main() -> None:
         device_ratio=app.devicePixelRatio(),
     )
     splash.show()
+    app.processEvents()
+
+    # Heavy imports deferred until the splash is visible
+    import trigger_designer.qt.darkstyle_rc  # noqa: F401
+    import trigger_designer.resources.icons_rc  # noqa: F401
+    from trigger_designer.qt.main_window import TriggerWindow
+
+    # Load settings and theme
+    settings = QSettings(name_company, name_product)
+    logger.debug(f"Available settings keys: {settings.allKeys()}")
+
+    theme_qss = resource_manager.load_theme(settings.value("theme", "dark"))
+    if theme_qss:
+        app.setStyleSheet(theme_qss)
+    app.processEvents()
 
     # Create and show main window
     main_window = TriggerWindow(
@@ -187,4 +195,8 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    import multiprocessing
+
+    sys.dont_write_bytecode = True
+    multiprocessing.freeze_support()
     main()
