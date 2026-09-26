@@ -328,9 +328,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             history_data: Dictionary containing old and new states
             is_undo: True if this is an undo operation, False for redo
         """
-        try:
-            self.history.is_restoring_history = True
-
+        with self.history.restoring(is_undo=is_undo):
             if is_undo:
                 self.selected_columns = history_data["old_selected_columns"]
             else:
@@ -353,8 +351,164 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.process_data()
             self.evaluate.emit()
 
-        finally:
-            self.history.is_restoring_history = False
+    def _get_selected_columns(self) -> List[str]:
+        """
+        Get list of currently selected column names from the UI.
+
+        Returns:
+            List of column names that are checked in the column list
+        """
+        if hasattr(self, "column_list") and self.column_list is not None:
+            try:
+                return self.column_list.checked()
+            except RuntimeError:
+                # Widget has been deleted, return stored selection
+                return self.selected_columns.copy()
+        return []
+
+    def get_code(self) -> str:
+        """
+        Generate Python code for the unique operation using Polars.
+
+        Returns:
+            String containing the generated Python code for removing duplicates
+        """
+        if not self.incoming_variable:
+            # Fallback: always define both outputs so downstream code never
+            # NameErrors.
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = pl.DataFrame()\n"
+                f"{self.duplicate_variable_name} = pl.DataFrame()\n"
+            )
+
+        if not self.selected_columns:
+            return (
+                "import polars as pl\n"
+                f"{self.variable_name} = {self.incoming_variable}\n"
+                f"{self.duplicate_variable_name} = {self.incoming_variable}.head(0)\n"
+            )
+
+        columns_list = [f'"{col}"' for col in self.selected_columns]
+        columns_str = "[" + ", ".join(columns_list) + "]"
+        duplicate_expr = f"pl.struct({columns_str}).is_duplicated()"
+        code_lines = [
+            "import polars as pl",
+            f"# Split into unique and duplicate records based on: {', '.join(self.selected_columns)}",
+            f"{self.variable_name} = {self.incoming_variable}.unique(subset={columns_str}, maintain_order=True)",
+            f"{self.duplicate_variable_name} = {self.incoming_variable}.filter({duplicate_expr})",
+        ]
+
+        return "\n".join(code_lines) + "\n"
+
+    def serialize(self):
+        res = super().serialize()
+        res["selected_columns"] = self.selected_columns
+        return res
+
+    def deserialize(self, data, hashmap={}):
+        res = super().deserialize(data, hashmap)
+
+        try:
+            self.selected_columns = data.get("selected_columns", [])
+            return True and res
+        except Exception as e:
+            dumpException(e)
+        return res
+
+
+@register_node(PreparationNodes.UNIQUE, NodeTypes.PREPARATION)
+class TriggerNode_Unique(TriggerNode):
+    """
+    Node for removing duplicate rows based on selected columns using Polars.
+
+    Provides functionality to remove duplicate rows from a LazyFrame based on
+    one or more selected columns. Uses Polars unique() operation for efficient
+    deduplication while maintaining lazy evaluation.
+    """
+
+    icon = "node_unique"
+    node_code = PreparationNodes.UNIQUE
+    node_type = NodeTypes.PREPARATION
+    node_title = "Unique"
+    content_label_objname = "trigger_node_unique"
+    style = {}
+
+    def __init__(self, scene: "Scene") -> None:
+        """Initialize the Unique node with proper scene integration."""
+        super().__init__(
+            scene,
+            inputs=[1],
+            outputs=[3, 3],
+            output_text=["Unique", "Duplicates"],
+        )
+        self.eval()
+
+    def initInnerClasses(self) -> None:
+        """Initialize inner classes for content, graphics node and connections."""
+        self.content: UniqueContent = UniqueContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
+        self.param: List[Dict[str, Any]] = []
+
+    def processInputs(
+        self, input_values: List[List[Dict[str, Any]]]
+    ) -> List[Dict[str, Any]]:
+        """
+        Process incoming data and prepare for unique operation.
+
+        Args:
+            input_values: List of input data from connected nodes
+
+        Returns:
+            List containing processed data with unique operation applied
+        """
+        this_socket_index = 0
+        input_node = self.getInput(this_socket_index)
+        socket_index = self.getSocketValue(input_node.outputs, self)
+        input_value = input_values[this_socket_index][socket_index]
+
+        if input_value:
+            self.markDirty(False)
+            self.markInvalid(False)
+
+            # Set input data for unique processing
+            self.content.incom_data = input_value.get("data")
+            self.content.incoming_variable = input_value.get("variable_name")
+            self.content.process_data()
+            self.param = [
+                {
+                    "data": self.content.data,
+                    "variable_name": self.content.variable_name,
+                },
+                {
+                    "data": self.content.duplicate_data,
+                    "variable_name": self.content.duplicate_variable_name,
+                },
+            ]
+            self.evalChildren()
+            return self.param
+        else:
+            self.markDirty(True)
+            self.markInvalid(True)
+            if hasattr(self, "grNode") and self.grNode is not None:
+                try:
+                    if self.getInput(this_socket_index) is None:
+                        self.grNode.setToolTip("Input is not connected")
+                    else:
+                        self.grNode.setToolTip("Upstream node produced no output")
+                except RuntimeError:
+                    pass
+            return None
+
+    def get_code(self) -> str:
+        """
+        Get the generated Python code for the unique operation.
+
+        Returns:
+            String containing Polars code for removing duplicates
+        """
+        return self.content.get_code()
 
     def _get_selected_columns(self) -> List[str]:
         """

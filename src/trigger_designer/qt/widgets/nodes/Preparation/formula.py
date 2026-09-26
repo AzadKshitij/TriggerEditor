@@ -936,35 +936,48 @@ class FormulaContent(
         finally:
             self._refresh_section_errors()
 
+    def _rebuild_widgets(self) -> None:
+        """Undo protocol hook: recreate the section editors from the model.
+
+        Adding or removing a section changes how many editors exist, so a
+        restore has to rebuild structure rather than just write values, and
+        recompute the frame because the set of derived columns changed.
+        ``sync_from_model`` emits ``evaluate`` afterwards.
+        """
+        self._rebuild_section_widgets()
+        self.update_data()
+
     def store_history(self, old_state: Dict[str, List[Dict[str, Any]]]) -> None:
-        """Store undo/redo history for formula-section changes."""
+        """Record a formula-section change as one undoable step.
+
+        Covers every section change uniformly: adding a section, removing one,
+        retargeting a column, editing the expression, changing the dtype. The
+        number of widgets may change, so it is recorded as a list-structure
+        edit, which rebuilds the Config Dock on restore.
+        """
         new_state = self._current_state()
+        old_sections = old_state["formula_sections"]
+        new_sections = new_state["formula_sections"]
 
-        if old_state["formula_sections"] != new_state["formula_sections"]:
-            history_data = {
-                "node": self.node,
-                "old_state": old_state,
-                "new_state": new_state,
-            }
+        if old_sections == new_sections:
+            return
 
-            self.history.storeHistory(
-                desc="Formula Changed", data=history_data, setModified=True
-            )
-            self.evaluate.emit()
+        self.push_list_change(
+            ("formula_sections",), old_sections, new_sections, "Formula Changed"
+        )
 
     def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
-        """Restore formula sections during undo/redo."""
-        try:
-            self.history.is_restoring_history = True
-            state = history_data["old_state"] if is_undo else history_data["new_state"]
+        """Restore formula sections from a whole-scene snapshot restore.
 
+        Only reached for snapshot commands; the fine-grained path in
+        :meth:`store_history` goes through :meth:`push_list_change` instead.
+        ``restoring`` is a depth counter, so this block cannot re-enable
+        recording part-way through an outer restore.
+        """
+        state = history_data["old_state"] if is_undo else history_data["new_state"]
+        with self.history.restoring(is_undo=is_undo):
             self.formula_sections = self._normalize_sections(state["formula_sections"])
-
-            self._rebuild_section_widgets()
-            self.update_data()
-            self.evaluate.emit()
-        finally:
-            self.history.is_restoring_history = False
+            self._rebuild_widgets()
 
     def get_code(self) -> str:
         """Generate Python code for all configured formula sections."""

@@ -62,8 +62,29 @@ class MainWindowMenuMixin:
 
             self.actUndo.setEnabled(has_mdi_child and active.canUndo())
             self.actRedo.setEnabled(has_mdi_child and active.canRedo())
+            self._syncUndoRedoText(active)
         except Exception as exc:  # pragma: no cover - defensive logging
             dumpException(exc)
+
+    def _syncUndoRedoText(self, active) -> None:
+        """Label the undo/redo actions with the step they will apply.
+
+        Falls back to the plain labels when the active window predates the
+        command stack, so the menu is never left showing a stale description.
+        """
+        history = getattr(getattr(active, "scene", None), "history", None)
+        undo_text = getattr(history, "currentText", lambda: "")()
+        redo_text = getattr(history, "nextText", lambda: "")()
+
+        if undo_text:
+            self.actUndo.setText(f"&Undo {undo_text}")
+        else:
+            self.actUndo.setText("&Undo")
+
+        if redo_text:
+            self.actRedo.setText(f"&Redo {redo_text}")
+        else:
+            self.actRedo.setText("&Redo")
 
     def updateWindowMenu(self) -> None:
         if not self.windowMenu:

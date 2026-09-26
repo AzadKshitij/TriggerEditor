@@ -23,9 +23,12 @@ dependencies = [
     "pyqt6-qt6==6.8.1",
     "pyqt6-sip==13.9.1",
     "qtpy==2.4.2",
-    # NOTE: qtpy-nodeeditor (git) is installed separately via scripts/build.bat
-    # and scripts/ensure-deps: its published metadata requires newer
-    # pyqt6/qtpy than this project pins, so it must stay out of uv lock.
+    # NOTE: qtpy-nodeeditor (git) is installed separately by scripts/build.bat,
+    # which tracks the upstream `main` branch and installs with --no-deps; set
+    # QTNODEEDITOR_REF to a SHA to pin. It must stay out of the uv lock because
+    # its metadata requires newer pyqt6/qtpy than this project pins, and
+    # `uv sync` prunes it - re-run scripts/build.bat (or
+    # scripts/sync-nodeeditor.ps1) afterwards.
     # Visualization
     "matplotlib==3.10.3",
     "seaborn==0.13.2",
@@ -71,6 +74,7 @@ dev = [
     "pandas-stubs>=2.2.3.250308",
     "pre-commit",
     "pyinstaller>=6.12.0",
+    "pytest>=8.3.0",
     "ruff",
     "ty",
 ]

@@ -449,8 +449,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             history_data: Dictionary containing old and new state information
             is_undo: True for undo operations, False for redo operations
         """
-        try:
-            self.history.is_restoring_history = True
+        with self.history.restoring(is_undo=is_undo):
             if is_undo:
                 # Undo operation
                 state = history_data["old_state"]
@@ -487,8 +486,229 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Update the data
             self.update_data()
-        finally:
-            self.history.is_restoring_history = False
+
+    def get_code(self) -> str:
+        """
+        Generate Python code for the filter operation.
+
+        Creates polars-based filter code that can be executed to reproduce
+        the filter operation on the data.
+
+        Returns:
+            String containing the generated Python code
+        """
+        if (
+            self.incom_data is None
+            or self.column is None
+            or self.operation is None
+            or self.value is None
+            or not self.incoming_variable
+        ):
+            # Fallback: always define both outputs so downstream code never
+            # NameErrors. Unconfigured-but-wired passes everything to True
+            # (nothing filtered out) and an empty frame to False.
+            code = ["import polars as pl"]
+            if self.incoming_variable:
+                code.append(f"{self.variable_name} = {self.incoming_variable}")
+                code.append(
+                    f"{self.f_variable_name} = {self.incoming_variable}.head(0)"
+                )
+            else:
+                code.append(f"{self.variable_name} = pl.DataFrame()")
+                code.append(f"{self.f_variable_name} = pl.DataFrame()")
+            return "\n".join(code) + "\n"
+
+        # Get column data type
+        col_dtype = frame_schema(self.incom_data)[self.column]
+
+        # Format value based on data type
+        if col_dtype in [
+            pl.Float32,
+            pl.Float64,
+            pl.Int8,
+            pl.Int16,
+            pl.Int32,
+            pl.Int64,
+            pl.UInt8,
+            pl.UInt16,
+            pl.UInt32,
+            pl.UInt64,
+        ]:
+            formatted_value = self.value  # Numeric value doesn't need quotes
+        elif col_dtype in [pl.Date, pl.Datetime, pl.Time, pl.Duration]:
+            formatted_value = f"'{self.value}'"  # Date/time values as strings
+        else:
+            formatted_value = f"'{self.value}'"  # String value needs quotes
+
+        code_lines = []
+
+        # Generate polars filter expression
+        if self.operation == "Equals":
+            filter_expr = f"pl.col('{self.column}') == {formatted_value}"
+        elif self.operation == "Not Equals":
+            filter_expr = f"pl.col('{self.column}') != {formatted_value}"
+        elif self.operation == "Contains":
+            filter_expr = f"pl.col('{self.column}').str.contains('{self.value}')"
+        elif self.operation == "Less Than":
+            filter_expr = f"pl.col('{self.column}') < {formatted_value}"
+        elif self.operation == "Greater Than":
+            filter_expr = f"pl.col('{self.column}') > {formatted_value}"
+        elif self.operation == "Less Than or Equal":
+            filter_expr = f"pl.col('{self.column}') <= {formatted_value}"
+        elif self.operation == "Greater Than or Equal":
+            filter_expr = f"pl.col('{self.column}') >= {formatted_value}"
+        else:
+            filter_expr = f"pl.col('{self.column}') == {formatted_value}"
+
+        code_lines.append("# Filter data into true and false results")
+        code_lines.append(
+            f"{self.variable_name} = {self.incoming_variable}.filter({filter_expr})"
+        )
+        code_lines.append(
+            f"{self.f_variable_name} = {self.incoming_variable}.filter(~({filter_expr}))"
+        )
+
+        return "\n".join(code_lines) + "\n"
+
+    def serialize(self) -> dict:
+        """
+        Serialize the filter content to a dictionary.
+
+        Returns:
+            Dictionary containing serialized filter settings
+        """
+        res = super().serialize()
+        res["column"] = self.column
+        res["operation"] = self.operation
+        res["value"] = self.value
+        return res
+
+    def deserialize(self, data: dict, hashmap: dict = {}) -> bool:
+        """
+        Deserialize filter content from a dictionary.
+
+        Args:
+            data: Dictionary containing serialized data
+            hashmap: Hash map for object references
+
+        Returns:
+            True if deserialization was successful
+        """
+        res = super().deserialize(data, hashmap)
+
+        try:
+            # Get stored settings individually (normalize to __init__
+            # defaults so a fresh node and a reloaded one behave alike)
+            self.column = data.get("column", "") or None
+            self.operation = data.get("operation", "") or "Equals"
+            self.value = data.get("value", "")
+            return True and res
+        except Exception as e:
+            dumpException(e)
+        return res
+
+
+@register_node(PreparationNodes.FILTER, NodeTypes.PREPARATION)
+class TriggerNode_Filter(TriggerNode):
+    """
+    A node for filtering data based on column values and comparison operations.
+
+    This node provides a user interface for applying filters to incoming data.
+    It supports various comparison operations (equals, contains, greater than, etc.)
+    and produces two outputs: filtered data (true results) and excluded data (false results).
+
+    Attributes:
+        icon: Icon identifier for the node
+        node_code: Unique code identifying this node type
+        node_type: Category of the node (PREPARATION)
+        node_title: Display title for the node
+        content_label_objname: Object name for the content widget
+        style: Visual styling options
+    """
+
+    icon = "node_filter"
+    node_code = PreparationNodes.FILTER
+    node_type = NodeTypes.PREPARATION
+    node_title = "Filter"
+    content_label_objname = "trigger_node_filter"
+    style = {}
+
+    def __init__(self, scene) -> None:
+        """
+        Initialize the filter node.
+
+        Args:
+            scene: The node editor scene containing this node
+        """
+        super().__init__(scene, inputs=[1], outputs=[3, 3], output_text=["T", "F"])
+        # self.eval()
+        self.markInvalid(True)
+
+    def initInnerClasses(self) -> None:
+        """
+        Initialize the inner classes for the filter node.
+
+        Sets up the content widget, graphics node, and connects signals.
+        """
+        self.content: FilterContent = FilterContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
+
+    def processInputs(self, input_values: list) -> Optional[list]:
+        """
+        Process input data and apply filter operations.
+
+        Takes incoming data, applies the configured filter, and produces
+        two output datasets: one containing filtered results (true) and
+        one containing excluded data (false).
+
+        Args:
+            input_values: List of input values from connected nodes
+
+        Returns:
+            List containing two dictionaries with filtered data and variable names,
+            or None if no valid input is available
+        """
+        # Only one input for simplicity
+        this_socket_index = 0
+        input_node = self.getInput(this_socket_index)
+        socket_index = self.getSocketValue(input_node.outputs, self)
+        input_value = input_values[this_socket_index][socket_index]
+
+        if input_value:
+            self.markDirty(False)
+            self.markInvalid(False)
+            # Custom processing logic for the Filter node
+            self.content.incom_data = input_value.get("data")
+            self.content.incoming_variable = input_value.get("variable_name")
+            self.content.update_data()
+            self.param = [
+                {
+                    "data": self.content.data,
+                    "variable_name": self.content.variable_name,
+                },
+                {
+                    "data": self.content.f_data,
+                    "variable_name": self.content.f_variable_name,
+                },
+            ]
+            self.evalChildren()
+            return self.param
+        else:
+            self.markDirty(True)
+            self.markInvalid(True)
+            self.grNode.setToolTip("Input is not connected")
+            return None
+
+    def get_code(self) -> str:
+        """
+        Get the generated code for this filter node.
+
+        Returns:
+            String containing the Python code for the filter operation
+        """
+        return self.content.get_code()
 
     def get_code(self) -> str:
         """

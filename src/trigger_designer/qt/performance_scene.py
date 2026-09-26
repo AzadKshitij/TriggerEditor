@@ -7,6 +7,7 @@ from nodeeditor.node_graphics_edge import QDMGraphicsEdge
 from nodeeditor.node_scene import Scene
 
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
+from trigger_designer.qt.undo.history import TriggerSceneHistory
 
 
 class CachedGraphicsEdge(QDMGraphicsEdge):
@@ -65,6 +66,9 @@ class TriggerEdge(Edge):
 
 
 class TriggerScene(Scene):
+    #: Undo/redo runs on a Qt command stack rather than a list of snapshots.
+    historyClass = TriggerSceneHistory
+
     def __init__(self) -> None:
         super().__init__()
         self._bulk_loading = False

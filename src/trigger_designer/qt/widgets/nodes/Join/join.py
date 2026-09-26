@@ -726,8 +726,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if node_data != self.node:
             return
 
-        self.history.is_restoring_history = True
-        try:
+        with self.history.restoring(is_undo=is_undo):
             if is_undo:
                 # Undo operation
                 self.join_type = history_data.get("old_join_type", "inner")
@@ -758,9 +757,6 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Update output columns
             self.update_output_columns()
-
-        finally:
-            self.history.is_restoring_history = False
 
     def transform_data(self):
         """

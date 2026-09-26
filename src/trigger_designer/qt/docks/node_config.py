@@ -1,7 +1,7 @@
 import traceback
 from loguru import logger
-from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QLabel, QWidget, QLayout
-from typing import Optional, List, TYPE_CHECKING
+from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QWidget, QLayout
+from typing import Any, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from trigger_designer.qt.node_base import TriggerNode
@@ -13,7 +13,16 @@ class ConfigDock(QDockWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(self.BASE_TITLE, parent)
         self._current_key = None
+        #: The node currently on display. Kept alongside ``_current_key`` so a
+        #: caller can re-show it when the scene selection is empty - a history
+        #: restore replays the selection recorded in the stamp, which for the
+        #: pre-edit stamp is whatever was selected when the file was loaded.
+        self._current_node = None
         self.initUI()
+
+    def currentNode(self) -> Optional[Any]:
+        """The node this dock is currently showing, or ``None``."""
+        return self._current_node
 
     def initUI(self) -> None:
         self.dock_widget = QWidget()
@@ -27,15 +36,28 @@ class ConfigDock(QDockWidget):
             | QDockWidget.DockWidgetFeature.DockWidgetFloatable
         )
 
-    def updateConfig(self, nodes: List["TriggerNode"]) -> None:
+    def updateConfig(self, nodes: List["TriggerNode"], force: bool = False) -> None:
+        """Show ``nodes`` in the dock.
+
+        :param force: rebuild even when the same node is already shown.
+
+            The early return below normally protects a focused editor from
+            being torn down mid-typing. Undo/redo must bypass it: a restore
+            reverts the *selected* node in place, so ``_current_key`` still
+            matches and the widgets keep displaying values the model no
+            longer holds - a renamed field or a changed dtype that appears
+            to have ignored the undo.
+        """
         if len(nodes) != 1:
             self._current_key = None
+            self._current_node = None
             self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
         node: TriggerNode = nodes[0]
         if not (hasattr(node, "node") or hasattr(node, "socket")):
             self._current_key = None
+            self._current_node = None
             self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
@@ -47,15 +69,17 @@ class ConfigDock(QDockWidget):
             return
         if content is None:
             self._current_key = None
+            self._current_node = None
             self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
-        if id(content) == self._current_key:
+        if id(content) == self._current_key and not force:
             # Already showing this node: skip the wipe so focused editors
             # keep focus and scroll positions survive. Live widgets refresh
             # themselves through their own non-destructive paths.
             return
         self._current_key = id(content)
+        self._current_node = node
         try:
             logger.debug(f"Updating config for node type: {type(node)}")
             self.setWindowTitle(f"{self.BASE_TITLE} ({self._node_name(node)})")
@@ -70,6 +94,12 @@ class ConfigDock(QDockWidget):
             try:
                 content.create_layout(self.dock_layout)  # type: ignore
             finally:
+                # Sweep for controls the node did not register itself, so every
+                # dock control is undoable by default. Done inside the
+                # suspension window so building the panel records nothing.
+                register_unbound = getattr(content, "registerUnboundDockWidgets", None)
+                if callable(register_unbound):
+                    register_unbound(self.dock_layout)
                 content._suspend_input_tracking = previous_input_tracking
                 content._suspend_node_evaluation = previous_node_evaluation
 
@@ -90,10 +120,6 @@ class ConfigDock(QDockWidget):
         return type(inner if inner is not None else node).__name__
 
     def clear_dock(self) -> None:
-        # for i in reversed(range(self.dock_layout.count())):
-        #     widget = self.dock_layout.itemAt(i).widget()
-        #     if widget is not None:
-        #         widget.deleteLater()
         while self.dock_layout.count():
             item = self.dock_layout.takeAt(0)
             if item.widget():
@@ -104,19 +130,6 @@ class ConfigDock(QDockWidget):
             # Clear spacer items as well
             self.dock_layout.removeItem(item)
             del item
-
-        # # Reset the dock widget's layout to ensure it's clean
-        # print("Clearing layout")
-        # old_layout = self.dock_widget.layout()
-        # if old_layout is not None:
-        #     # self.dock_widget.setLayout(None)  # Detach the layout
-        #     del old_layout
-
-        # # self.dock_layout = QVBoxLayout()
-        # self.dock_layout = QVBoxLayout()
-        # self.dock_widget.setLayout(self.dock_layout)  # Detach the layout
-
-        print("Layout cleared")
 
     def clear_layout(self, layout: QLayout) -> None:
         # Helper method to clear nested layouts

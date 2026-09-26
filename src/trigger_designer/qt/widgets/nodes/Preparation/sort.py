@@ -322,9 +322,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             history_data: Dictionary containing old and new states
             is_undo: True if this is an undo operation, False for redo
         """
-        try:
-            self.history.is_restoring_history = True
-
+        with self.history.restoring(is_undo=is_undo):
             # Get the appropriate state
             if is_undo:
                 state = history_data["old_state"]
@@ -369,8 +367,210 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             self.evaluate.emit()
 
-        finally:
-            self.history.is_restoring_history = False
+    def store_history(
+        self, old_state: Dict[str, Any], new_state: Dict[str, Any]
+    ) -> None:
+        """
+        Store history data for undo/redo only if states are different.
+
+        Args:
+            old_state: Previous state before changes
+            new_state: New state after changes
+        """
+        if self.history.is_restoring_history:
+            return
+
+        # Compare states
+        if old_state["sort_data"] != new_state["sort_data"]:
+            history_data = {
+                "node": self.node,
+                "old_state": old_state,
+                "new_state": new_state,
+            }
+
+            self.history.storeHistory(
+                desc="Sort Configuration Changed", data=history_data, setModified=True
+            )
+
+    def get_code(self) -> str:
+        """
+        Generate Python code for the sort operation using Polars.
+
+        Returns:
+            String containing the generated Python code for sorting
+        """
+
+        if self.incoming_variable is None or self.incoming_variable == "":
+            # Fallback: always define the output so downstream code never
+            # NameErrors.
+            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
+
+        if not self.sort_data:
+            return f"{self.variable_name} = {self.incoming_variable}\n"
+
+        sort_conditions = []
+        for item in self.sort_data:
+            if item["column"]:  # Only add if column is selected
+                # Convert to polars sort format: column name and descending flag
+                descending = item["order"] == "Descending"
+                sort_conditions.append((item["column"], descending))
+
+        if not sort_conditions:
+            return f"{self.variable_name} = {self.incoming_variable}\n"
+
+        # Build polars sort expression
+        code_lines = []
+        if len(sort_conditions) == 1:
+            # Single column sort
+            column, descending = sort_conditions[0]
+            code_lines.append(
+                f"{self.variable_name} = {self.incoming_variable}.sort('{column}', descending={descending})"
+            )
+        else:
+            # Multiple column sort (list repr supplies the quotes)
+            columns = [col for col, _ in sort_conditions]
+            descending_flags = [desc for _, desc in sort_conditions]
+            code_lines.append(
+                f"{self.variable_name} = {self.incoming_variable}.sort({columns}, descending={descending_flags})"
+            )
+
+        return "\n".join(code_lines) + "\n"
+
+    def serialize(self) -> Dict[str, Any]:
+        """
+        Serialize the sort content to a dictionary.
+
+        Returns:
+            Dictionary containing serialized sort configuration
+        """
+        res = super().serialize()
+        res["sort_data"] = self.sort_data
+        return res
+
+    def deserialize(self, data: Dict[str, Any], hashmap: Dict[str, Any] = {}) -> bool:
+        """
+        Deserialize sort content from a dictionary.
+
+        Args:
+            data: Dictionary containing serialized data
+            hashmap: Hash map for object references
+
+        Returns:
+            True if deserialization was successful
+        """
+        res = super().deserialize(data, hashmap)
+
+        self.sort_data = data.get("sort_data", [])
+
+        try:
+            return True and res
+        except Exception as e:
+            dumpException(e)
+        return res
+
+
+@register_node(PreparationNodes.SORT, NodeTypes.PREPARATION)
+class TriggerNode_Sort(TriggerNode):
+    """
+    A node for sorting data by multiple columns in ascending or descending order.
+
+    This node allows users to configure multiple sort conditions with different
+    columns and sort orders. Uses Polars for efficient data sorting operations.
+
+    Attributes:
+        icon: Icon identifier for the node
+        node_code: Unique code identifying this node type
+        node_type: Category of the node (PREPARATION)
+        node_title: Display title for the node
+        content_label_objname: Object name for the content widget
+        style: Visual styling options
+    """
+
+    icon = "node_sort"
+    node_code = PreparationNodes.SORT
+    node_type = NodeTypes.PREPARATION
+    node_title = "Sort"
+    content_label_objname = "trigger_node_sort"
+    style = {}
+
+    def __init__(self, scene) -> None:
+        """
+        Initialize the sort node.
+
+        Args:
+            scene: The node editor scene containing this node
+        """
+        super().__init__(scene, inputs=[1], outputs=[3])
+
+    def initInnerClasses(self) -> None:
+        """
+        Initialize the inner classes for the sort node.
+
+        Sets up the content widget, graphics node, and connects signals.
+        """
+        self.content: SortContent = SortContent(self)
+        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
+        self.content.evaluate.connect(self.onInputChanged)
+        self.param: List[Dict[str, Any]] = []
+
+    def processInputs(
+        self, input_values: List[List[Any]]
+    ) -> Optional[List[Dict[str, Any]]]:
+        """
+        Process input data and apply sort operations.
+
+        Takes incoming data and applies the configured sort conditions using Polars.
+
+        Args:
+            input_values: List of input values from connected nodes
+
+        Returns:
+            List containing dictionary with processed data and variable name,
+            or None if no valid input is available
+        """
+        # Only one input for simplicity
+        this_socket_index = 0
+        input_node = self.getInput(this_socket_index)
+        socket_index = self.getSocketValue(input_node.outputs, self)
+        input_value = input_values[this_socket_index][socket_index]
+
+        if input_value:
+            self.markDirty(False)
+            self.markInvalid(False)
+            # Custom processing logic for the Sort node
+            self.content.incom_data = input_value.get("data")
+            self.content.incoming_variable = input_value.get("variable_name")
+            # Real lazy sort so previews match the generated code.
+            incom = self.content.incom_data
+            sort_items = [s for s in self.content.sort_data if s.get("column")]
+            if incom is not None and sort_items:
+                try:
+                    incom = incom.sort(
+                        [s["column"] for s in sort_items],
+                        descending=[s["order"] == "Descending" for s in sort_items],
+                    )
+                except Exception:
+                    pass
+            self.content.data = incom
+            self.evalChildren()
+            self.param = [
+                {"data": self.content.data, "variable_name": self.content.variable_name}
+            ]
+            return self.param
+        else:
+            self.markDirty(True)
+            self.markInvalid(True)
+            self.grNode.setToolTip("Input is not connected")
+            return None
+
+    def get_code(self) -> str:
+        """
+        Get the generated code for this sort node.
+
+        Returns:
+            String containing the Python code for the sort operation
+        """
+        return self.content.get_code()
 
     def store_history(
         self, old_state: Dict[str, Any], new_state: Dict[str, Any]

@@ -141,6 +141,10 @@ class ConfigSection(QGroupBox):
 class ColumnChecklist(QWidget):
     """Scrollable checkbox list. Emits checked column names on change."""
 
+    # Emits its own `changed` signal, so the undo layer must not also bind the
+    # checkboxes nested inside it - that would record one edit twice.
+    _undo_composite = True
+
     changed = Signal(list)
 
     def __init__(

@@ -41,6 +41,7 @@ from trigger_designer.qt.helpers import global_logger
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from trigger_designer.qt.docks.node_config import ConfigDock
     from trigger_designer.qt.main_window import TriggerWindow
     from trigger_designer.qt.node_base import TriggerNode
     from nodeeditor.node_node import Node
@@ -57,7 +58,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)
-        print("🐍 File: qt/design_window.py:32 | __init__ ~ parent", parent)
         # self.initUI()
         self.rsm: ResourceManager = ResourceManager()
         self._logging_dock: Optional["LoggingDock"] = None
@@ -236,8 +236,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             print(f"{'=' * 50}")
             print(f"Total executions: {stats['total_executions']}")
             print(f"Total time: {stats['total_time']:.3f} seconds")
-            print(
-                f"Average time: {stats['average_execution_time']:.3f} seconds")
+            print(f"Average time: {stats['average_execution_time']:.3f} seconds")
             print(f"{'=' * 50}\n")
             logger.info(
                 f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
@@ -296,7 +295,31 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             node.eval()
 
     def onHistoryRestored(self) -> None:
+        # Force the Config Dock to rebuild: a restore reverts the selected
+        # node in place, so without force=True the dock's _current_key check
+        # would short-circuit and leave the widgets showing stale values.
+        #
+        # A snapshot restore also replays the selection recorded in the stamp,
+        # and the stamp we revert *to* may predate this node being picked - so
+        # the scene can end up with nothing selected. Fall back to whatever the
+        # dock was already showing, or the panel blanks and the undo looks like
+        # it did nothing.
+        nodes = self.getSelectedItems()
+        if not nodes:
+            config_dock = self._find_config_dock()
+            if config_dock is not None:
+                shown = config_dock.currentNode()
+                if shown is not None:
+                    nodes = [shown]
+        self.refreshConfigDock(nodes, force=True)
         self.doEvalOutputs()
+
+    def _find_config_dock(self) -> Optional["ConfigDock"]:
+        """Walk up the parent chain to the window that owns the Config Dock."""
+        parent_widget = self.parentWidget()
+        while parent_widget is not None and not hasattr(parent_widget, "configDock"):
+            parent_widget = parent_widget.parentWidget()
+        return getattr(parent_widget, "configDock", None)
 
     @contextmanager
     def _suspend_scene_restore_updates(self):
@@ -311,7 +334,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.view.setUpdatesEnabled(False)
         viewport.setUpdatesEnabled(False)
         self.view.setViewportUpdateMode(
-            QGraphicsView.ViewportUpdateMode.NoViewportUpdate)
+            QGraphicsView.ViewportUpdateMode.NoViewportUpdate
+        )
 
         if hasattr(self.scene, "beginBulkLoad"):
             self.scene.beginBulkLoad()
@@ -346,14 +370,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
                 QTimer.singleShot(
                     0,
-                    lambda messages=validation_messages: self._show_workflow_validation_warnings(
-                        messages
+                    lambda messages=validation_messages: (
+                        self._show_workflow_validation_warnings(messages)
                     ),
                 )
 
             self.doEvalOutputs()
-            self.logInfo(
-                f"File '{filename}' loaded and initialized successfully")
+            self.logInfo(f"File '{filename}' loaded and initialized successfully")
             return True
 
         self.logError(f"Failed to load file: {filename}")
@@ -383,8 +406,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             try:
                 node_messages = validator() or []
             except Exception as exc:
-                node_messages = [
-                    f"{node.node_title}: validation failed with {exc}"]
+                node_messages = [f"{node.node_title}: validation failed with {exc}"]
 
             for message in node_messages:
                 validation_messages.append(f"{node.node_title}: {message}")
@@ -438,8 +460,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         for edge in invalid_edges:
             if edge in self.scene.edges:
                 edge.remove(silent=True)
-                self.logWarning(
-                    f"Removed invalid edge during workflow load: {edge}")
+                self.logWarning(f"Removed invalid edge during workflow load: {edge}")
 
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
@@ -485,21 +506,20 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         """Log a CRITICAL message"""
         self.log("CRITICAL", message)
 
-    def refreshConfigDock(self, nodes: Optional[list[Any]] = None) -> None:
+    def refreshConfigDock(
+        self,
+        nodes: Optional[list[Any]] = None,
+        force: bool = False,
+    ) -> None:
         if self._refreshing_config_dock:
             return
 
         target_nodes = nodes if nodes is not None else self.getSelectedItems()
-        parent_widget = self.parentWidget()
-
-        while parent_widget is not None and not hasattr(parent_widget, "configDock"):
-            parent_widget = parent_widget.parentWidget()
-
-        config_dock = getattr(parent_widget, "configDock", None)
+        config_dock = self._find_config_dock()
         if config_dock is not None:
             self._refreshing_config_dock = True
             try:
-                config_dock.updateConfig(target_nodes)
+                config_dock.updateConfig(target_nodes, force=force)
             finally:
                 self._refreshing_config_dock = False
 
@@ -521,8 +541,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def onDrop(self, event: QDropEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             eventData = event.mimeData().data(LISTBOX_MIMETYPE)
-            dataStream = QDataStream(
-                eventData, QIODevice.OpenModeFlag.ReadOnly)
+            dataStream = QDataStream(eventData, QIODevice.OpenModeFlag.ReadOnly)
             pixmap = QPixmap()
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
@@ -531,8 +550,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             node_type = dataStream.readQString()
 
             mouse_position = event.pos()
-            scene_position = self.scene.grScene.views()[
-                0].mapToScene(mouse_position)
+            scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
 
             if DEBUG:
                 print(
@@ -544,11 +562,9 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 )
 
             try:
-                self.logDebug(
-                    f"Creating node: {node_type} (code: {node_code})")
+                self.logDebug(f"Creating node: {node_type} (code: {node_code})")
                 node_type_enum = NodeTypes(node_type)
-                node = get_class_from_opcode(node_code, node_type_enum)(
-                    self.scene)  # type: ignore
+                node = get_class_from_opcode(node_code, node_type_enum)(self.scene)  # type: ignore
                 node.setPos(scene_position.x(), scene_position.y())
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__

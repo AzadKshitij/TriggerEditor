@@ -420,11 +420,7 @@ class SQLFormulaEditor(QTextEdit):
     def _maybe_autocomplete(self, forced: bool = False) -> None:
         prefix, in_brackets = self._prefix_at_cursor()
         # Bare "[" is an explicit column request: show all columns at once.
-        if (
-            not forced
-            and len(prefix) < AUTOCOMPLETE_MIN_PREFIX
-            and not in_brackets
-        ):
+        if not forced and len(prefix) < AUTOCOMPLETE_MIN_PREFIX and not in_brackets:
             self.completer.popup().hide()
             return
         matches = match_completions(prefix, in_brackets, self.column_names)
@@ -816,9 +812,7 @@ class SQLFormulaEditor(QTextEdit):
     def keyPressEvent(self, event):
         """Handle autocomplete popup, Ctrl+Space, and auto-indentation."""
         completer = getattr(self, "completer", None)
-        popup_visible = bool(
-            completer is not None and completer.popup().isVisible()
-        )
+        popup_visible = bool(completer is not None and completer.popup().isVisible())
         if popup_visible and event.key() in (
             Qt.Key.Key_Enter,
             Qt.Key.Key_Return,
@@ -837,7 +831,10 @@ class SQLFormulaEditor(QTextEdit):
             completer.popup().hide()
             event.ignore()
             return
-        if event.key() == Qt.Key.Key_Space and event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+        if (
+            event.key() == Qt.Key.Key_Space
+            and event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        ):
             self._maybe_autocomplete(forced=True)
             return
 
@@ -889,6 +886,10 @@ class SQLFormulaWidget(QWidget):
     """
     Complete SQL formula editing widget with editor, error display, and toolbar.
     """
+
+    # Owns its own textChanged / editingFinished signals, so the undo layer
+    # must not also bind the nested editor - that would record one edit twice.
+    _undo_composite = True
 
     textChanged = Signal()
     editingFinished = Signal()
