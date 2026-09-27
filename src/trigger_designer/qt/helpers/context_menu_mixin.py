@@ -6,21 +6,21 @@ from typing import Any, Dict, Optional
 from loguru import logger
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QContextMenuEvent, QCursor
-from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QMenu
+from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QInputDialog, QMenu
 
-from nodeeditor.utils import dumpException
 from nodeeditor.node_edge import (
     EDGE_TYPE_BEZIER,
     EDGE_TYPE_DIRECT,
     EDGE_TYPE_SQUARE,
 )
+from nodeeditor.node_group import Group
+from nodeeditor.utils import dumpException
 
 from trigger_designer.core.node_configuration import (
     NODE_REGISTRIES,
     NodeTypes,
     get_class_from_opcode,
 )
-from trigger_designer.qt.widgets.node_group import NodeGroup
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 
 
@@ -131,8 +131,11 @@ class ContextMenuMixin:
             if isinstance(item, QGraphicsProxyWidget):
                 item = item.widget()
 
-            if isinstance(item, NodeGroup):
-                self.handleGroupContextMenu(event)
+            if isinstance(item, Group):
+                # Upstream Group paints its own header menu
+                # (collapse/rename/recolor/ungroup/delete) - let it through.
+                super().contextMenuEvent(event)
+                return
             elif hasattr(item, "node") or hasattr(item, "socket"):
                 self.handleNodeContextMenu(event)
             elif hasattr(item, "edge"):
@@ -144,23 +147,80 @@ class ContextMenuMixin:
         except Exception as exc:
             dumpException(exc)
 
-    def handleGroupContextMenu(self, event: QContextMenuEvent) -> None:
-        context_menu = QMenu(self)
-        ungroupAct = context_menu.addAction("Ungroup")
-        deleteGroupAct = context_menu.addAction("Delete Group")
-        context_menu.addSeparator()
+    # --- Node candidates ---------------------------------------------------------
+    def resolve_node_candidates(self, item) -> tuple:
+        """Right-clicked node merged into the current selection, deduped.
 
-        action = context_menu.exec_(self.mapToGlobal(event.pos()))
+        Returns ``(clicked, candidates)`` where ``clicked`` is the node under
+        the cursor (or ``None``) and ``candidates`` is the selection plus the
+        clicked node. Factored out so grouping/label logic is testable
+        without opening a menu.
+        """
+        selected = [
+            graph_item.node
+            for graph_item in self.scene.getSelectedItems()
+            if hasattr(graph_item, "node")
+        ]
+        clicked = None
+        if hasattr(item, "node"):
+            clicked = item.node
+        elif hasattr(item, "socket"):
+            clicked = item.socket.node
+        candidates = list(selected)
+        if clicked is not None and clicked not in candidates:
+            candidates.append(clicked)
+        return clicked, candidates
 
-        item = self.scene.getItemAt(event.pos())
-        if isinstance(item, NodeGroup):
-            if action == ungroupAct:
-                self.ungroupSelected()
-            elif action == deleteGroupAct:
-                for node in item.nodes:
-                    self.scene.removeNode(node)
-                self.scene.removeItem(item)
-                self.scene.history.storeHistory("Deleted Group and Nodes")
+    # --- Node labels -------------------------------------------------------------
+    def set_nodes_label(self, nodes, text: str) -> bool:
+        """Set the floating label on ``nodes`` as a single undo step."""
+        nodes = [node for node in dict.fromkeys(nodes) if node is not None]
+        if not nodes:
+            return False
+        changed = False
+        for node in nodes:
+            if node.getNodeLabel() != text:
+                node.setNodeLabel(text, store_history=False)
+                changed = True
+        if changed:
+            self.scene.history.storeHistory("Node label changed", setModified=True)
+        return changed
+
+    def set_nodes_label_visible(self, nodes, visible: bool) -> int:
+        """Show/hide floating labels on ``nodes`` as a single undo step.
+
+        Showing is a no-op for nodes with no label text (upstream hides
+        empty labels unconditionally). Returns the number of nodes changed.
+        """
+        nodes = [node for node in dict.fromkeys(nodes) if node is not None]
+        changed = 0
+        for node in nodes:
+            if visible and not node.getNodeLabel():
+                continue
+            if node.isNodeLabelVisible() != visible:
+                node.setNodeLabelVisible(visible)
+                changed += 1
+        if changed:
+            count = "Node" if len(nodes) == 1 else "Nodes"
+            shown = "shown" if visible else "hidden"
+            self.scene.history.storeHistory(f"{count} label {shown}", setModified=True)
+        return changed
+
+    def prompt_node_label(self, nodes) -> bool:
+        """Ask for label text once, apply to ``nodes``. ``False`` = cancelled."""
+        nodes = [node for node in dict.fromkeys(nodes) if node is not None]
+        if not nodes:
+            return False
+        initial = nodes[0].getNodeLabel() if len(nodes) == 1 else ""
+        text, accepted = QInputDialog.getText(
+            self,
+            "Set Node Label",
+            "Label text (empty removes it):",
+            text=initial,
+        )
+        if not accepted:
+            return False
+        return self.set_nodes_label(nodes, text)
 
     def handleNodeContextMenu(self, event: QContextMenuEvent) -> None:
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
@@ -172,53 +232,70 @@ class ContextMenuMixin:
         markInvalidAct = context_menu.addAction("Mark Invalid")
         unmarkInvalidAct = context_menu.addAction("Unmark Invalid")
         evalAct = context_menu.addAction("Eval")
+        context_menu.addSeparator()
 
         item = self.scene.getItemAt(event.pos())
         if isinstance(item, QGraphicsProxyWidget):
             item = item.widget()
 
-        selected_nodes = [
-            graph_item.node
-            for graph_item in self.scene.getSelectedItems()
-            if hasattr(graph_item, "node")
-        ]
-        print(
-            "🐍 File: qt/design_window.py:375 | handleNodeContextMenu ~ selected_nodes",
-            selected_nodes,
-        )
+        clicked_node, candidates = self.resolve_node_candidates(item)
 
-        if len(selected_nodes) > 1:
-            groupAct = context_menu.addAction("Group Nodes")
-            context_menu.addSeparator()
+        setLabelAct = context_menu.addAction("Set Label...")
+        if len(candidates) > 1:
+            showLabelsAct = context_menu.addAction("Show Labels")
+            hideLabelsAct = context_menu.addAction("Hide Labels")
+            showLabelAct = None
         else:
-            groupAct = None
+            showLabelAct = context_menu.addAction("Show Label")
+            showLabelAct.setCheckable(True)
+            if candidates:
+                showLabelAct.setChecked(
+                    bool(candidates[0].getNodeLabel())
+                    and candidates[0].isNodeLabelVisible()
+                )
+            showLabelsAct = hideLabelsAct = None
+
+        detachAct = None
+        if clicked_node is not None and clicked_node.parent_group is not None:
+            detachAct = context_menu.addAction("Detach from Group")
+
+        groupAct = None
+        if len(candidates) > 1:
+            groupAct = context_menu.addAction("Group Selected Nodes")
 
         action = context_menu.exec(self.mapToGlobal(event.pos()))
 
-        selected_node = None
-        if hasattr(item, "node"):
-            selected_node = item.node
-        if hasattr(item, "socket"):
-            selected_node = item.socket.node
-
         if debug_context:
-            print("got item:", selected_node)
+            print("got item:", clicked_node)
 
-        if selected_node and action == markDirtyAct:
-            selected_node.markDirty()
-        if selected_node and action == markDirtyDescendantsAct:
-            selected_node.markDescendantsDirty()
-        if selected_node and action == markInvalidAct:
-            selected_node.markInvalid()
-        if selected_node and action == unmarkInvalidAct:
-            selected_node.markInvalid(False)
-        if selected_node and action == evalAct:
-            value = selected_node.eval()
+        if clicked_node and action == markDirtyAct:
+            clicked_node.markDirty()
+        if clicked_node and action == markDirtyDescendantsAct:
+            clicked_node.markDescendantsDirty()
+        if clicked_node and action == markInvalidAct:
+            clicked_node.markInvalid()
+        if clicked_node and action == unmarkInvalidAct:
+            clicked_node.markInvalid(False)
+        if clicked_node and action == evalAct:
+            value = clicked_node.eval()
             if debug_context:
                 print("EVALUATED:", value)
 
-        if selected_nodes and groupAct and action == groupAct:
-            self.createGroup(selected_nodes)
+        if candidates and action == setLabelAct:
+            self.prompt_node_label(candidates)
+        if showLabelAct is not None and action == showLabelAct:
+            self.set_nodes_label_visible(candidates, showLabelAct.isChecked())
+        if showLabelsAct is not None and action == showLabelsAct:
+            self.set_nodes_label_visible(candidates, True)
+        if hideLabelsAct is not None and action == hideLabelsAct:
+            self.set_nodes_label_visible(candidates, False)
+        if detachAct is not None and action == detachAct:
+            clicked_node.parent_group.removeNode(clicked_node)
+            self.scene.history.storeHistory(
+                "Detached node from group", setModified=True
+            )
+        if candidates and groupAct and action == groupAct:
+            self.createGroup(candidates)
 
     def handleEdgeContextMenu(self, event: QContextMenuEvent) -> None:
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
@@ -278,27 +355,29 @@ class ContextMenuMixin:
         new_calc_node.grNode.onSelected()
 
     def createGroup(self, nodes=None):
-        """Create a new node group containing the selected nodes."""
+        """Group ``nodes`` in an upstream visual ``Group``.
+
+        Needs 2+ nodes; returns the ``Group`` or ``None``. Drag-and-drop
+        into groups, collapse/expand, serialization and history are handled
+        by the ``nodeeditor`` package itself.
+        """
         if nodes is None:
             nodes = [
                 item.node
                 for item in self.scene.selectedItems()
                 if hasattr(item, "node")
             ]
+        nodes = [node for node in dict.fromkeys(nodes) if node is not None]
 
         if len(nodes) < 2:
             return None
 
-        group = NodeGroup(self.scene)
+        group = Group(self.scene, title=f"Group ({len(nodes)} nodes)")
         for node in nodes:
-            group.add_node(node)
+            group.addNode(node)
+        group.updateBounds()
 
-        self.scene.history.storeHistory("Created Node Group")
+        self.scene.history.storeHistory(
+            f"Created group with {len(nodes)} nodes", setModified=True
+        )
         return group
-
-    def ungroupSelected(self):
-        """Ungroup the selected group."""
-        for item in self.scene.getSelectedItems():
-            if isinstance(item, NodeGroup):
-                self.scene.grScene.removeItem(item)
-                self.scene.history.storeHistory("Ungroup Nodes")

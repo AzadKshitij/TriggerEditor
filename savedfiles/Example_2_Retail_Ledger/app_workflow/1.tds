@@ -51,8 +51,8 @@
           "modified_time": 1790430354
         }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "Cgannels",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
@@ -150,8 +150,8 @@
           "modified_time": 1790430354
         }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "Orders",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
@@ -229,8 +229,8 @@
           "modified_time": 1790430354
         }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "Customers",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
@@ -304,8 +304,8 @@
           "modified_time": 1790430354
         }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "Products",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
@@ -363,8 +363,8 @@
           "modified_time": 1790430354
         }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "Suppliers",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
@@ -414,8 +414,8 @@
           "modified_time": 1790430354
         }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "FX_Rates",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
@@ -586,8 +586,8 @@
     {
       "id": 2667100716752,
       "title": "Select",
-      "pos_x": 1489.4332885742176,
-      "pos_y": 455.04760742187466,
+      "pos_x": 792.0589447021482,
+      "pos_y": 490.8103942871089,
       "inputs": [
         {
           "id": 2667100703632,
@@ -788,8 +788,8 @@
     {
       "id": 2667100711312,
       "title": "Select",
-      "pos_x": 1004.8828124999991,
-      "pos_y": 177.73437499999974,
+      "pos_x": 760.5037689208978,
+      "pos_y": 177.73437499999977,
       "inputs": [
         {
           "id": 2667100877392,
@@ -902,8 +902,8 @@
     {
       "id": 2667100873712,
       "title": "Select",
-      "pos_x": 1229.492187499999,
-      "pos_y": 329.5898437499999,
+      "pos_x": 758.6154937744138,
+      "pos_y": 353.4317016601561,
       "inputs": [
         {
           "id": 2667248194640,
@@ -1183,8 +1183,8 @@
         "mode": "expression",
         "expression": "[quantity] >= 1 and [quantity] <= 500"
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "Quantity Filter",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 2,
       "node_type": "preparation",
@@ -1419,8 +1419,8 @@
     {
       "id": 2607119136912,
       "title": "Join",
-      "pos_x": 1008.859375,
-      "pos_y": -68.35937499999997,
+      "pos_x": 1582.5898437499993,
+      "pos_y": 244.1406249999996,
       "inputs": [
         {
           "id": 2607119138192,
@@ -1581,8 +1581,8 @@
     {
       "id": 2607119194288,
       "title": "Join",
-      "pos_x": 1351.1718749999993,
-      "pos_y": 78.71093749999997,
+      "pos_x": 1924.9023437499984,
+      "pos_y": 391.21093749999955,
       "inputs": [
         {
           "id": 2607119192048,
@@ -1775,8 +1775,8 @@
     {
       "id": 2607119191728,
       "title": "Join",
-      "pos_x": 1694.7070312499998,
-      "pos_y": 234.19921874999983,
+      "pos_x": 2268.437499999999,
+      "pos_y": 546.6992187499994,
       "inputs": [
         {
           "id": 2607119189808,
@@ -1985,8 +1985,8 @@
     {
       "id": 2607119123792,
       "title": "Join",
-      "pos_x": 2049.941406249999,
-      "pos_y": 379.72656249999983,
+      "pos_x": 2623.671874999999,
+      "pos_y": 692.2265624999994,
       "inputs": [
         {
           "id": 2607119126192,
@@ -2207,8 +2207,8 @@
     {
       "id": 2607193616816,
       "title": "Join",
-      "pos_x": 2388.256835937499,
-      "pos_y": 549.0051269531248,
+      "pos_x": 2961.987304687499,
+      "pos_y": 861.5051269531243,
       "inputs": [
         {
           "id": 2607193607536,
@@ -2437,8 +2437,8 @@
     {
       "id": 2607196374192,
       "title": "Formula",
-      "pos_x": 2859.1875,
-      "pos_y": 519.2287597656245,
+      "pos_x": 1829.2192382812514,
+      "pos_y": 175.9060058593751,
       "inputs": [
         {
           "id": 2607196385232,
@@ -2491,8 +2491,8 @@
           }
         ]
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "g",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "preparation",
@@ -2501,8 +2501,8 @@
     {
       "id": 2607193611536,
       "title": "Formula",
-      "pos_x": 3041.687499999998,
-      "pos_y": 519.2287597656245,
+      "pos_x": 2011.7192382812495,
+      "pos_y": 175.9060058593751,
       "inputs": [
         {
           "id": 2607193615216,
@@ -2538,25 +2538,25 @@
           {
             "target_column": "tax_usd",
             "formula_text": "[tax_local] * [usd_rate]",
-            "editor_height": 120,
+            "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "shipping_usd",
             "formula_text": "[shipping_local] * [usd_rate]",
-            "editor_height": 120,
+            "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "total_usd",
             "formula_text": "[total_local] * [usd_rate]",
-            "editor_height": 120,
+            "editor_height": 60,
             "target_dtype": ""
           }
         ]
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "usd_rate",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 3,
       "node_type": "preparation",
@@ -2565,8 +2565,8 @@
     {
       "id": 2433019852784,
       "title": "Union",
-      "pos_x": 1172.4999999999993,
-      "pos_y": -76.24999999999999,
+      "pos_x": 1746.2304687499984,
+      "pos_y": 236.2499999999996,
       "inputs": [
         {
           "id": 2433019854224,
@@ -2599,8 +2599,8 @@
     {
       "id": 2433020497584,
       "title": "Union",
-      "pos_x": 1523.4374999999993,
-      "pos_y": 78.43749999999994,
+      "pos_x": 2117.480468749998,
+      "pos_y": 390.93749999999955,
       "inputs": [
         {
           "id": 2433020499024,
@@ -2633,8 +2633,8 @@
     {
       "id": 2433832559440,
       "title": "Union",
-      "pos_x": 1864.3749999999984,
-      "pos_y": 231.24999999999983,
+      "pos_x": 2438.105468749998,
+      "pos_y": 543.7499999999994,
       "inputs": [
         {
           "id": 2433832557040,
@@ -2667,8 +2667,8 @@
     {
       "id": 2433832553680,
       "title": "Union",
-      "pos_x": 2209.999999999998,
-      "pos_y": 377.4999999999996,
+      "pos_x": 2783.730468749998,
+      "pos_y": 689.9999999999992,
       "inputs": [
         {
           "id": 2433832556400,
@@ -2701,8 +2701,8 @@
     {
       "id": 2431667623632,
       "title": "Union",
-      "pos_x": 2623.580078124998,
-      "pos_y": 513.5234375,
+      "pos_x": 3197.310546874998,
+      "pos_y": 826.0234374999995,
       "inputs": [
         {
           "id": 2431667621552,
@@ -2731,6 +2731,279 @@
       "node_code": 3,
       "node_type": "join",
       "op": "join.union"
+    },
+    {
+      "id": 2074988698416,
+      "title": "GroupBy",
+      "pos_x": 2688.7499999999995,
+      "pos_y": 172.49999999999994,
+      "inputs": [
+        {
+          "id": 2074988542576,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2074988528496,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "order_year_month",
+            "action": "GroupBy",
+            "output_name": "order_year_month"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "order_year_month"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "Agg1",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2074988497808,
+      "title": "Formula",
+      "pos_x": 2166.2499999999995,
+      "pos_y": 173.74999999999994,
+      "inputs": [
+        {
+          "id": 2074988502768,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2074988507728,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "cogs_usd",
+            "formula_text": "[quantity] * [unit_cost]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "gross_margin_usd",
+            "formula_text": "[net_revenue_usd] * [cogs_usd]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "margin_pct",
+            "formula_text": "CASE\n    WHEN [net_revenue_usd] IS NULL OR [net_revenue_usd] = 0 THEN NULL\n    ELSE [gross_margin_usd] / [net_revenue_usd]\nEND",
+            "editor_height": 118,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2074988703216,
+      "title": "Formula",
+      "pos_x": 2353.7499999999995,
+      "pos_y": 168.74999999999991,
+      "inputs": [
+        {
+          "id": 2074988508528,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2074988531376,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "order_year",
+            "formula_text": "YEAR([order_ts])",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "order_month",
+            "formula_text": "MONTH([order_ts])",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "order_year_month",
+            "formula_text": "STRFTIME([order_ts], '%Y-%m')",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "is_bulk",
+            "formula_text": "[quantity] >= 6",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "value_band",
+            "formula_text": "CASE\n    WHEN [net_revenue_usd] IS NULL THEN NULL\n    WHEN [net_revenue_usd] <= 250  THEN 'Low'\n    WHEN [net_revenue_usd] <= 1000 THEN 'Medium'\n    ELSE 'High'\nEND\n",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "Orders",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2073979223760,
+      "title": "Formula",
+      "pos_x": 2517.4999999999995,
+      "pos_y": 173.74999999999994,
+      "inputs": [
+        {
+          "id": 2073979213520,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2073979219280,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "risk_score",
+            "formula_text": "(CASE WHEN [is_returned] THEN 2 ELSE 0 END)\n+ (CASE WHEN [status] IN ('refunded', 'cancelled') THEN 2 ELSE 0 END)\n+ (CASE WHEN [net_revenue_usd] > 2000 THEN 1 ELSE 0 END)\n+ (CASE WHEN [margin_pct] < 0.10 THEN 1 ELSE 0 END)\n+ (CASE WHEN [segment] IS NULL THEN 2 ELSE 0 END)\n",
+            "editor_height": 125,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "risk_band",
+            "formula_text": "CASE\n    WHEN [risk_score] >= 4 THEN 'High'\n    WHEN [risk_score] >= 2 THEN 'Medium'\n    ELSE 'Low'\nEND",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "Risk",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2075644041232,
+      "title": "Sort",
+      "pos_x": 2872.4999999999995,
+      "pos_y": 179.99999999999991,
+      "inputs": [
+        {
+          "id": 2075644035632,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2075644036112,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "order_year_month",
+            "order": "Ascending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
     }
   ],
   "edges": [
@@ -3021,12 +3294,96 @@
       "end": 2431667621552,
       "label": "#2",
       "input_index": 1
+    },
+    {
+      "id": 2073981885904,
+      "edge_type": 5,
+      "start": 2607198105232,
+      "end": 2074988502768,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2074999315664,
+      "edge_type": 5,
+      "start": 2074988507728,
+      "end": 2074988508528,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2075001562448,
+      "edge_type": 5,
+      "start": 2074988531376,
+      "end": 2073979213520,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2075001563728,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2074988542576,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2075006325584,
+      "edge_type": 5,
+      "start": 2074988528496,
+      "end": 2075644035632,
+      "label": "",
+      "input_index": 0
     }
   ],
-  "groups": [],
+  "groups": [
+    {
+      "id": 2074988691696,
+      "type": "Group",
+      "version": 2,
+      "title": "Joins",
+      "x": 1562.589843749999,
+      "y": 186.24999999999955,
+      "w": 180.0,
+      "h": 182.0,
+      "collapsed": true,
+      "children": [
+        2607193616816,
+        2433832559440,
+        2607119191728,
+        2433019852784,
+        2607119136912,
+        2433832553680,
+        2431667623632,
+        2607119123792,
+        2433020497584,
+        2607119194288
+      ],
+      "style": {
+        "color": [
+          140,
+          100,
+          180,
+          200
+        ],
+        "title_color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "border_color": [
+          50,
+          50,
+          50,
+          255
+        ]
+      }
+    }
+  ],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-27T08:34:07Z"
+    "saved_at": "2026-09-27T09:56:05Z"
   }
 }

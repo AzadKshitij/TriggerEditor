@@ -44,16 +44,60 @@ class TriggerEdge(Edge):
     def getGraphicsEdgeClass(self):
         return CachedGraphicsEdge
 
+    def _collapsed_group(self, node) -> object | None:
+        """The collapsed upstream ``Group`` containing ``node``, if any."""
+        finder = getattr(self.scene, "findCollapsedGroupForNode", None)
+        if finder is None or node is None:
+            return None
+        try:
+            return finder(node)
+        except Exception:
+            return None
+
+    def _stub_pos(self, group) -> list | None:
+        try:
+            point = group.stubPosFor(self)
+        except Exception:
+            return None
+        if point is None:
+            return None
+        return [point.x(), point.y()]
+
     def updatePositions(self) -> None:
+        start_node = getattr(self.start_socket, "node", None)
+        end_node = (
+            getattr(self.end_socket, "node", None)
+            if self.end_socket is not None
+            else None
+        )
+        start_group = self._collapsed_group(start_node)
+        end_group = self._collapsed_group(end_node)
+        if start_group is not None and start_group is end_group:
+            # Internal edge of a collapsed group: stay hidden, positions
+            # untouched. expand()/restoreExpandedVisuals() reveals it again.
+            try:
+                self.grEdge.hide()
+            except Exception:
+                pass
+            return
+
         source_pos = self.start_socket.getSocketPosition()
         source_pos[0] += self.start_socket.node.grNode.pos().x()
         source_pos[1] += self.start_socket.node.grNode.pos().y()
+        if start_group is not None:
+            stub = self._stub_pos(start_group)
+            if stub is not None:
+                source_pos = stub
         self.grEdge.setSource(*source_pos)
 
         if self.end_socket is not None:
             end_pos = self.end_socket.getSocketPosition()
             end_pos[0] += self.end_socket.node.grNode.pos().x()
             end_pos[1] += self.end_socket.node.grNode.pos().y()
+            if end_group is not None:
+                stub = self._stub_pos(end_group)
+                if stub is not None:
+                    end_pos = stub
             self.grEdge.setDestination(*end_pos)
         else:
             self.grEdge.setDestination(*source_pos)

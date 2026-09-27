@@ -248,18 +248,9 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             global_logger.info(
                 f"📊 Workflow statistics requested - {stats['total_executions']} executions"
             )
-        elif (
-            event.key() == Qt.Key.Key_G
-            and event.modifiers() == Qt.KeyboardModifier.ShiftModifier
-        ):
-            # Shift+G to test global logging
-            global_logger.info(
-                "🌍 Global logging test - this message was sent using global_logger!"
-            )
-            global_logger.debug("🔧 Global debug message")
-            global_logger.warning("⚠️ Global warning message")
-            global_logger.error("❌ Global error message (test)")
-            self.logInfo("📝 Local logging for comparison")
+        # NOTE: Shift+G is intentionally unbound here. The main window uses
+        # it for Ungroup (see NodeEditorWindow.onUngroupSelected), and the
+        # single-letter group shortcuts ignore keystrokes typed into editors.
         else:
             super().keyPressEvent(event)
 

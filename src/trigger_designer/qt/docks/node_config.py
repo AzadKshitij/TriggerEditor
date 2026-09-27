@@ -1,7 +1,11 @@
 import traceback
-from loguru import logger
-from qtpy.QtWidgets import QDockWidget, QVBoxLayout, QWidget, QLayout
 from typing import Any, List, Optional, TYPE_CHECKING
+
+from loguru import logger
+from qtpy.QtWidgets import QDockWidget, QLayout, QLineEdit, QVBoxLayout, QWidget
+
+from trigger_designer.qt.undo.binding import bind
+from trigger_designer.qt.widgets.common.config_widgets import ConfigSection
 
 if TYPE_CHECKING:
     from trigger_designer.qt.node_base import TriggerNode
@@ -18,6 +22,12 @@ class ConfigDock(QDockWidget):
         #: restore replays the selection recorded in the stamp, which for the
         #: pre-edit stamp is whatever was selected when the file was loaded.
         self._current_node = None
+        #: (logic node, slot) for the floating-label sync installed by
+        #: :meth:`_add_label_section`. The slot is a plain Python closure
+        #: owned by the long-lived node, so Qt cannot auto-disconnect it
+        #: when the dock widgets die - it must be disconnected explicitly
+        #: on every rebuild, or stale closures touch deleted editors.
+        self._label_sync = None
         self.initUI()
 
     def currentNode(self) -> Optional[Any]:
@@ -48,6 +58,7 @@ class ConfigDock(QDockWidget):
             longer holds - a renamed field or a changed dtype that appears
             to have ignored the undo.
         """
+        self._disconnect_label_sync()
         if len(nodes) != 1:
             self._current_key = None
             self._current_node = None
@@ -94,6 +105,9 @@ class ConfigDock(QDockWidget):
             try:
                 content.create_layout(self.dock_layout)  # type: ignore
             finally:
+                # Floating-label row above the node's own controls, bound
+                # before the sweep so it is not generically re-bound.
+                self._add_label_section(node, content)
                 # Sweep for controls the node did not register itself, so every
                 # dock control is undoable by default. Done inside the
                 # suspension window so building the panel records nothing.
@@ -107,6 +121,73 @@ class ConfigDock(QDockWidget):
         except Exception as e:
             traceback.print_exc()
             logger.trace(e)
+
+    def _disconnect_label_sync(self) -> None:
+        """Drop the floating-label sync installed by the previous rebuild."""
+        target, slot = self._label_sync or (None, None)
+        self._label_sync = None
+        if target is None or slot is None:
+            return
+        try:
+            target.labelChanged.disconnect(slot)
+        except (RuntimeError, TypeError):
+            pass
+
+    def _add_label_section(self, node: Any, content: Any) -> None:
+        """Floating-label row pinned above the node's own controls.
+
+        Canvas click-to-edit works with no code (the label is a child of
+        the graphics node); this row is the discoverable equivalent. Typing
+        commits through the shared :func:`bind` debounce (~300ms) as one
+        ``"Node label changed"`` undo step per burst, and canvas edits
+        flow back into the row via ``labelChanged``.
+        """
+        logic = getattr(node, "node", node)
+        get_label = getattr(logic, "getNodeLabel", None)
+        set_label = getattr(logic, "setNodeLabel", None)
+        if not callable(get_label) or not callable(set_label):
+            return
+        try:
+            current = get_label() or ""
+        except Exception:
+            return
+
+        section = ConfigSection("Label", info="Floating textbox above the node.")
+        edit = QLineEdit(section)
+        edit.setObjectName("NodeLabelEdit")
+        edit.setPlaceholderText("Node label...")
+        edit.setMinimumHeight(30)
+        edit.setClearButtonEnabled(True)
+        edit.setText(current)
+        section.addWidget(edit)
+        self.dock_layout.insertWidget(0, section)
+
+        bind(
+            content,
+            edit,
+            read=lambda: logic.getNodeLabel() or "",
+            write=lambda value: logic.setNodeLabel(value, store_history=False),
+            text="Node label changed",
+            merge_key=f"node-label-{id(logic)}",
+        )
+
+        def _sync_from_canvas(text: str) -> None:
+            try:
+                if edit.hasFocus() or edit.text() == text:
+                    return
+                edit.setText(text)
+            except RuntimeError:
+                # Editor already deleted (rebuild raced a canvas edit).
+                pass
+
+        try:
+            logic.labelChanged.connect(_sync_from_canvas)
+        except (RuntimeError, TypeError):
+            pass
+        else:
+            # updateConfig disconnects the previous rebuild's slot first,
+            # so at most one sync closure is ever attached to the node.
+            self._label_sync = (logic, _sync_from_canvas)
 
     @staticmethod
     def _node_name(node: "TriggerNode") -> str:
