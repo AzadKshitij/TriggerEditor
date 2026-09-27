@@ -51,6 +51,9 @@
           "modified_time": 1790430354
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
       "op": "input.file_input"
@@ -147,6 +150,9 @@
           "modified_time": 1790430354
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
       "op": "input.file_input"
@@ -223,6 +229,9 @@
           "modified_time": 1790430354
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
       "op": "input.file_input"
@@ -295,6 +304,9 @@
           "modified_time": 1790430354
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
       "op": "input.file_input"
@@ -351,6 +363,9 @@
           "modified_time": 1790430354
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
       "op": "input.file_input"
@@ -399,6 +414,9 @@
           "modified_time": 1790430354
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "input",
       "op": "input.file_input"
@@ -558,6 +576,9 @@
           "column_order": []
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
@@ -629,6 +650,9 @@
           "column_order": []
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
@@ -754,6 +778,9 @@
           "column_order": []
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
@@ -865,6 +892,9 @@
           "column_order": []
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
@@ -944,6 +974,9 @@
           "column_order": []
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
@@ -1007,6 +1040,9 @@
           "column_order": []
         }
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 5,
       "node_type": "preparation",
       "op": "preparation.select"
@@ -1052,6 +1088,9 @@
         "remove_null_rows_from_selected_columns": false,
         "remove_null_columns": false
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 1,
       "node_type": "preparation",
       "op": "preparation.cleansing"
@@ -1099,6 +1138,9 @@
         "remove_null_rows_from_selected_columns": true,
         "remove_null_columns": false
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 1,
       "node_type": "preparation",
       "op": "preparation.cleansing"
@@ -1141,6 +1183,9 @@
         "mode": "expression",
         "expression": "[quantity] >= 1 and [quantity] <= 500"
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "preparation",
       "op": "preparation.filter"
@@ -1183,6 +1228,9 @@
         "mode": "expression",
         "expression": "[unit_price_local] > 0 and \n[unit_price_local] <= 5000"
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "preparation",
       "op": "preparation.filter"
@@ -1225,6 +1273,9 @@
         "mode": "expression",
         "expression": "YEAR([order_ts]) <= 2025"
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "preparation",
       "op": "preparation.filter"
@@ -1276,6 +1327,9 @@
         ],
         "field_selection_initialized": true
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 10,
       "node_type": "preparation",
       "op": "preparation.normalize_columns"
@@ -1315,6 +1369,9 @@
           "order_id"
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 7,
       "node_type": "preparation",
       "op": "preparation.unique"
@@ -1352,6 +1409,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "preparation",
       "op": "preparation.formula"
@@ -1511,6 +1571,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
@@ -1518,8 +1581,8 @@
     {
       "id": 2607119194288,
       "title": "Join",
-      "pos_x": 1240.2343749999995,
-      "pos_y": 92.77343749999997,
+      "pos_x": 1351.1718749999993,
+      "pos_y": 78.71093749999997,
       "inputs": [
         {
           "id": 2607119192048,
@@ -1702,6 +1765,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
@@ -1709,8 +1775,8 @@
     {
       "id": 2607119191728,
       "title": "Join",
-      "pos_x": 1496.5820312499998,
-      "pos_y": 241.6992187499999,
+      "pos_x": 1694.7070312499998,
+      "pos_y": 234.19921874999983,
       "inputs": [
         {
           "id": 2607119189808,
@@ -1909,6 +1975,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
@@ -1916,8 +1985,8 @@
     {
       "id": 2607119123792,
       "title": "Join",
-      "pos_x": 1721.1914062499993,
-      "pos_y": 375.9765624999999,
+      "pos_x": 2049.941406249999,
+      "pos_y": 379.72656249999983,
       "inputs": [
         {
           "id": 2607119126192,
@@ -2128,6 +2197,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
@@ -2135,8 +2207,8 @@
     {
       "id": 2607193616816,
       "title": "Join",
-      "pos_x": 1914.062499999999,
-      "pos_y": 505.3710937499998,
+      "pos_x": 2388.256835937499,
+      "pos_y": 549.0051269531248,
       "inputs": [
         {
           "id": 2607193607536,
@@ -2355,6 +2427,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 2,
       "node_type": "join",
       "op": "join.join"
@@ -2362,8 +2437,8 @@
     {
       "id": 2607196374192,
       "title": "Formula",
-      "pos_x": 2131.2499999999986,
-      "pos_y": 509.99999999999955,
+      "pos_x": 2859.1875,
+      "pos_y": 519.2287597656245,
       "inputs": [
         {
           "id": 2607196385232,
@@ -2416,6 +2491,9 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "preparation",
       "op": "preparation.formula"
@@ -2423,8 +2501,8 @@
     {
       "id": 2607193611536,
       "title": "Formula",
-      "pos_x": 2313.749999999998,
-      "pos_y": 509.99999999999955,
+      "pos_x": 3041.687499999998,
+      "pos_y": 519.2287597656245,
       "inputs": [
         {
           "id": 2607193615216,
@@ -2477,9 +2555,182 @@
           }
         ]
       },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
       "node_code": 3,
       "node_type": "preparation",
       "op": "preparation.formula"
+    },
+    {
+      "id": 2433019852784,
+      "title": "Union",
+      "pos_x": 1172.4999999999993,
+      "pos_y": -76.24999999999999,
+      "inputs": [
+        {
+          "id": 2433019854224,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433019854544,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2433020497584,
+      "title": "Union",
+      "pos_x": 1523.4374999999993,
+      "pos_y": 78.43749999999994,
+      "inputs": [
+        {
+          "id": 2433020499024,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433020499344,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2433832559440,
+      "title": "Union",
+      "pos_x": 1864.3749999999984,
+      "pos_y": 231.24999999999983,
+      "inputs": [
+        {
+          "id": 2433832557040,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433832558480,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2433832553680,
+      "title": "Union",
+      "pos_x": 2209.999999999998,
+      "pos_y": 377.4999999999996,
+      "inputs": [
+        {
+          "id": 2433832556400,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433832556720,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2431667623632,
+      "title": "Union",
+      "pos_x": 2623.580078124998,
+      "pos_y": 513.5234375,
+      "inputs": [
+        {
+          "id": 2431667621552,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2431667623312,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
     }
   ],
   "edges": [
@@ -2487,163 +2738,295 @@
       "id": 2667248192880,
       "edge_type": 5,
       "start": 2667100540912,
-      "end": 2667100703632
+      "end": 2667100703632,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2667099969088,
       "edge_type": 5,
       "start": 2667100646896,
-      "end": 2667100712272
+      "end": 2667100712272,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2667250786896,
       "edge_type": 5,
       "start": 2667100864592,
-      "end": 2667100701712
+      "end": 2667100701712,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2667250908240,
       "edge_type": 5,
       "start": 2667100869232,
-      "end": 2667100877392
+      "end": 2667100877392,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2667251517264,
       "edge_type": 5,
       "start": 2667100542352,
-      "end": 2667248194640
+      "end": 2667248194640,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2667251521104,
       "edge_type": 5,
       "start": 2667100703152,
-      "end": 2667248190320
+      "end": 2667248190320,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2207683796688,
       "edge_type": 5,
       "start": 2667252790640,
-      "end": 2207682771728
+      "end": 2207682771728,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2699499031888,
       "edge_type": 5,
       "start": 2699443890896,
-      "end": 2699443576240
+      "end": 2699443576240,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2699499118928,
       "edge_type": 5,
       "start": 2699443584720,
-      "end": 2699443880656
+      "end": 2699443880656,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2824864691792,
       "edge_type": 5,
       "start": 2667100705712,
-      "end": 2824864148496
+      "end": 2824864148496,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2824864692944,
       "edge_type": 5,
       "start": 2824864148816,
-      "end": 2667252786960
+      "end": 2667252786960,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2259277169616,
       "edge_type": 5,
       "start": 2207682769008,
-      "end": 2699443890576
+      "end": 2699443890576,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2259313318352,
       "edge_type": 5,
       "start": 2699443888496,
-      "end": 2259315346960
+      "end": 2259315346960,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2259283823696,
       "edge_type": 5,
       "start": 2667248190160,
-      "end": 2259284030832
+      "end": 2259284030832,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2606410094544,
       "edge_type": 5,
       "start": 2259315344720,
-      "end": 2607119138192
+      "end": 2607119138192,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2607193357008,
       "edge_type": 5,
       "start": 2667100709552,
-      "end": 2607119138512
+      "end": 2607119138512,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2607193931600,
       "edge_type": 5,
       "start": 2667100873552,
-      "end": 2607119192688
-    },
-    {
-      "id": 2607196022352,
-      "edge_type": 5,
-      "start": 2607119188368,
-      "end": 2607119192048
+      "end": 2607119192688,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2607193465936,
       "edge_type": 5,
       "start": 2667248194320,
-      "end": 2607119189488
-    },
-    {
-      "id": 2607196683984,
-      "edge_type": 5,
-      "start": 2607119192528,
-      "end": 2607119189808
+      "end": 2607119189488,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2607196830032,
       "edge_type": 5,
       "start": 2667100712592,
-      "end": 2607119125232
-    },
-    {
-      "id": 2607197164624,
-      "edge_type": 5,
-      "start": 2607119136592,
-      "end": 2607119126192
-    },
-    {
-      "id": 2607197775696,
-      "edge_type": 5,
-      "start": 2607119127952,
-      "end": 2607193607536
+      "end": 2607119125232,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2607920666320,
       "edge_type": 5,
       "start": 2667248190160,
-      "end": 2607193605296
-    },
-    {
-      "id": 2607198401232,
-      "edge_type": 5,
-      "start": 2607193617136,
-      "end": 2607196385232
+      "end": 2607193605296,
+      "label": "",
+      "input_index": 0
     },
     {
       "id": 2608889654864,
       "edge_type": 5,
       "start": 2607119197008,
-      "end": 2607193615216
+      "end": 2607193615216,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433829996496,
+      "edge_type": 5,
+      "start": 2607119188368,
+      "end": 2433019854224,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433830155856,
+      "edge_type": 5,
+      "start": 2607119188048,
+      "end": 2433019854224,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433829701968,
+      "edge_type": 5,
+      "start": 2433019854544,
+      "end": 2607119192048,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433830968016,
+      "edge_type": 5,
+      "start": 2607119192528,
+      "end": 2433020499024,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433830969296,
+      "edge_type": 5,
+      "start": 2433020499344,
+      "end": 2607119189808,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433832154960,
+      "edge_type": 5,
+      "start": 2607119192208,
+      "end": 2433020499024,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433838033872,
+      "edge_type": 5,
+      "start": 2607119136592,
+      "end": 2433832557040,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433838035152,
+      "edge_type": 5,
+      "start": 2433832558480,
+      "end": 2607119126192,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433830677840,
+      "edge_type": 5,
+      "start": 2607119189328,
+      "end": 2433832557040,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433833552464,
+      "edge_type": 5,
+      "start": 2433832556720,
+      "end": 2607193607536,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433834423120,
+      "edge_type": 5,
+      "start": 2607119127952,
+      "end": 2433832556400,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433834891600,
+      "edge_type": 5,
+      "start": 2607119125872,
+      "end": 2433832556400,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433016283984,
+      "edge_type": 5,
+      "start": 2607193617136,
+      "end": 2431667621552,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433016285264,
+      "edge_type": 5,
+      "start": 2431667623312,
+      "end": 2607196385232,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433029697872,
+      "edge_type": 5,
+      "start": 2607193619376,
+      "end": 2431667621552,
+      "label": "#2",
+      "input_index": 1
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-26T19:09:29Z"
+    "saved_at": "2026-09-27T08:34:07Z"
   }
 }

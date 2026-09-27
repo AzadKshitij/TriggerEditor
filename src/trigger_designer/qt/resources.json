@@ -74,6 +74,10 @@
         "path":"qt/images/node_icons/Join/Append.svg",
         "mode": "rb"
     },
+    "node_union":{
+        "path":"qt/images/node_icons/Join/Union.svg",
+        "mode": "rb"
+    },
 
 
     "node_count":{

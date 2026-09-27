@@ -34,6 +34,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_append",
     },
     {
+        "module_path": "Join.union",
+        "node_code": JoinNodes.UNION,
+        "node_type": NodeTypes.JOIN,
+        "node_title": "Union",
+        "icon": "node_union",
+    },
+    {
         "module_path": "Join.join",
         "node_code": JoinNodes.JOIN,
         "node_type": NodeTypes.JOIN,
