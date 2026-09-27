@@ -18,6 +18,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
     frame_schema,
+    upstream_rename_map,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import (
@@ -67,6 +68,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.selected_columns = []
         self.mapping_pairs = []
         self.output_column_checkboxes = []
+        # When True, columns arriving from upstream are included in the
+        # output automatically. When False they appear unchecked until the
+        # user ticks them. `known_columns` tracks every column seen (same
+        # shape as `selected_columns`) so an explicit uncheck is never
+        # mistaken for a new arrival.
+        self.auto_accept_new_columns = True
+        self.known_columns = []
+        self._auto_accept_action = None
         self.history: SceneHistory = self.node.scene.history
 
         # Live-by-default: coalesce rapid edits into a single recompute.
@@ -133,6 +142,18 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             self._sanitize_mapping_data()
             self._sanitize_selected_columns()
+            try:
+                self._follow_upstream_renames()
+            except (
+                AttributeError,
+                ValueError,
+                RuntimeError,
+                IndexError,
+            ) as follow_error:
+                global_logger.debug(
+                    f"🔄 Join: Could not follow upstream renames: {follow_error}"
+                )
+            self._sync_selected_with_schema()
 
             # Join columns mapping area
             join_mapping_layout = QVBoxLayout()
@@ -241,7 +262,49 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         clear_right.triggered.connect(
             lambda: self._set_output_columns_checked("R", False)
         )
+        menu.addSeparator()
+        self._auto_accept_action = menu.addAction("Auto-add new columns")
+        self._auto_accept_action.setCheckable(True)
+        self._auto_accept_action.setToolTip(
+            "When checked, columns arriving from upstream are included automatically."
+        )
+        self._auto_accept_action.setChecked(
+            bool(getattr(self, "auto_accept_new_columns", True))
+        )
+        self._auto_accept_action.toggled.connect(self._on_auto_accept_toggled)
         button.setMenu(menu)
+
+    def _on_auto_accept_toggled(self, checked: bool) -> None:
+        """Toggle whether newly arrived upstream columns are auto-included."""
+        if self.history.is_restoring_history:
+            return
+        old = bool(getattr(self, "auto_accept_new_columns", True))
+        if old == bool(checked):
+            return
+        old_mapping = [dict(item) for item in self.mapping_data]
+        old_selected = [dict(item) for item in self.selected_columns]
+        self.auto_accept_new_columns = bool(checked)
+        if checked:
+            # Immediately pick up pending arrivals, then recompute.
+            self._sync_selected_with_schema()
+            self.transform_data()
+            self._refresh_open_dock()
+        history_data = {
+            "node": self.node,
+            "old_join_type": self.join_type,
+            "new_join_type": self.join_type,
+            "old_mapping_data": old_mapping,
+            "new_mapping_data": [dict(item) for item in self.mapping_data],
+            "old_selected_columns": old_selected,
+            "new_selected_columns": [dict(item) for item in self.selected_columns],
+            "old_auto_accept": old,
+            "new_auto_accept": bool(checked),
+        }
+        self.history.storeHistory(
+            desc="Auto-Add Changed",
+            data=history_data,
+            setModified=True,
+        )
 
     def _filter_output_columns(self, text: str) -> None:
         """Hide output rows that do not match the search text."""
@@ -307,6 +370,128 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         self.selected_columns = sanitized_columns
 
+    def _follow_upstream_renames(self) -> bool:
+        """Remap stored configs that reference pre-rename upstream names.
+
+        A rename otherwise looks like a drop + add: sanitize would delete
+        the mapping row (breaking the join) and drop the output selection.
+        When a stale name is a key in the upstream node's rename mapping
+        and the new name is live, the stored reference is renamed instead.
+
+        :return: True when anything was remapped.
+        """
+        if self.left_data is None or self.right_data is None:
+            return False
+        try:
+            left_node = self.node.getInput(0)
+            right_node = self.node.getInput(1)
+        except (AttributeError, ValueError, RuntimeError, IndexError):
+            return False
+        left_map = upstream_rename_map(left_node)
+        right_map = upstream_rename_map(right_node)
+        if not left_map and not right_map:
+            return False
+        live_left = set(self._get_frame_schema(self.left_data))
+        live_right = set(self._get_frame_schema(self.right_data))
+        changed = False
+
+        def _remap(side_map: dict, live: set, current: str) -> str:
+            for old, new in side_map.items():
+                if old == current and old not in live and new in live:
+                    return new
+            return current
+
+        for mapping in self.mapping_data:
+            new_left = _remap(left_map, live_left, mapping.get("left_column"))
+            if new_left != mapping.get("left_column"):
+                mapping["left_column"] = new_left
+                changed = True
+            new_right = _remap(right_map, live_right, mapping.get("right_column"))
+            if new_right != mapping.get("right_column"):
+                mapping["right_column"] = new_right
+                changed = True
+        for column in self.selected_columns:
+            name = column.get("name")
+            if column.get("source") == "L":
+                new_name = _remap(left_map, live_left, name)
+            elif column.get("source") == "R":
+                new_name = _remap(right_map, live_right, name)
+            else:
+                continue
+            if new_name != name:
+                column["name"] = new_name
+                changed = True
+        return changed
+
+    def _sync_selected_with_schema(self) -> bool:
+        """Prune stale selections and auto-add new arrivals.
+
+        Stale names are dropped (existing behaviour). Columns in the live
+        schema that were never seen before are appended to
+        ``selected_columns`` when auto-accept is on; explicitly unchecked
+        columns (seen before, stored in ``known_columns``) stay excluded.
+        ``known_columns`` is refreshed to the live schema.
+
+        :return: True when the stored selection changed.
+        """
+        if self.left_data is None or self.right_data is None:
+            return False
+        self._sanitize_mapping_data()
+        self._sanitize_selected_columns()
+        auto_accept = bool(getattr(self, "auto_accept_new_columns", True))
+        known = getattr(self, "known_columns", None)
+        if not isinstance(known, list):
+            known = []
+            self.known_columns = known
+        known_set = {
+            (entry.get("name"), entry.get("source"))
+            for entry in known
+            if isinstance(entry, dict)
+        }
+        live = [
+            {"name": name, "source": "L"}
+            for name in sorted(self._get_frame_schema(self.left_data))
+        ] + [
+            {"name": name, "source": "R"}
+            for name in sorted(self._get_frame_schema(self.right_data))
+        ]
+        live_set = {(entry["name"], entry["source"]) for entry in live}
+        before = list(self.selected_columns)
+        if auto_accept and self.selected_columns and known_set:
+            # Only arrivals newer than the seen-set are added. When nothing
+            # was seen yet (legacy file predating the tracker), the current
+            # selection is taken as deliberate and recorded without adding.
+            selected_set = {
+                (column.get("name"), column.get("source"))
+                for column in self.selected_columns
+            }
+            for entry in live:
+                key = (entry["name"], entry["source"])
+                if key not in known_set and key not in selected_set:
+                    self.selected_columns.append(dict(entry))
+                    selected_set.add(key)
+        # Refresh the seen-set: prune dropped columns, then record what is
+        # currently selected. When auto-accept is on the selection already
+        # holds every live column, so this converges to the live schema;
+        # when off, arrivals stay unknown (pending) while explicit unchecks
+        # stay known (excluded).
+        kept_known = [
+            dict(entry)
+            for entry in known
+            if (entry.get("name"), entry.get("source")) in live_set
+        ]
+        kept_keys = {(entry["name"], entry["source"]) for entry in kept_known}
+        for entry in live if auto_accept else self.selected_columns:
+            if isinstance(entry, dict):
+                key = (entry.get("name"), entry.get("source"))
+            else:
+                continue
+            if key in live_set and key not in kept_keys:
+                kept_known.append({"name": key[0], "source": key[1]})
+                kept_keys.add(key)
+        self.known_columns = kept_known
+        return self.selected_columns != before
+
     def ensure_default_mapping(self) -> None:
         """Guarantee at least one mapping pair once both inputs are present.
 
@@ -352,6 +537,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "new_mapping_data": self.mapping_data.copy(),
             "old_selected_columns": self.selected_columns.copy(),
             "new_selected_columns": self.selected_columns.copy(),
+            "old_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
+            "new_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
         }
 
         self.history.storeHistory(
@@ -455,6 +642,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 "new_mapping_data": self.mapping_data.copy(),
                 "old_selected_columns": self.selected_columns.copy(),
                 "new_selected_columns": self.selected_columns.copy(),
+                "old_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
+                "new_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
             }
 
             self.history.storeHistory(
@@ -492,6 +681,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "new_mapping_data": self.mapping_data.copy(),
             "old_selected_columns": self.selected_columns.copy(),
             "new_selected_columns": self.selected_columns.copy(),
+            "old_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
+            "new_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
         }
 
         self.history.storeHistory(
@@ -656,6 +847,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "new_mapping_data": self.mapping_data.copy(),
             "old_selected_columns": old_selected_columns,
             "new_selected_columns": self.selected_columns.copy(),
+            "old_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
+            "new_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
         }
 
         self.history.storeHistory(
@@ -695,6 +888,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "new_mapping_data": self.mapping_data.copy(),
             "old_selected_columns": old_selected_columns,
             "new_selected_columns": self.selected_columns.copy(),
+            "old_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
+            "new_auto_accept": bool(getattr(self, "auto_accept_new_columns", True)),
         }
 
         self.history.storeHistory(
@@ -705,6 +900,43 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Live-by-default: recompute once edits settle.
         if not self._applying:
             self._apply_timer.start()
+
+    def _rebuild_dock_widgets(self) -> None:
+        """Rebuild mapping rows + output list from the stored model.
+
+        Signal-safe by construction: combos and checkboxes are set before
+        their change signals are connected, so rebuilding never records
+        history or schedules an apply by itself.
+        """
+        for pair in self.mapping_pairs[:]:
+            self.delete_layout(pair["layout"])
+        self.mapping_pairs.clear()
+        for mapping in self.mapping_data:
+            self.add_mapping_row(
+                left_col=mapping["left_column"], right_col=mapping["right_column"]
+            )
+        self.update_output_columns()
+        action = getattr(self, "_auto_accept_action", None)
+        if action is not None:
+            try:
+                checked = bool(getattr(self, "auto_accept_new_columns", True))
+                if action.isChecked() != checked:
+                    action.blockSignals(True)
+                    action.setChecked(checked)
+                    action.blockSignals(False)
+            except RuntimeError:
+                pass
+
+    def _refresh_open_dock(self) -> None:
+        """Repaint an open dock after an upstream-driven config migration."""
+        if not hasattr(self, "mapping_container") or not hasattr(
+            self, "output_columns_list"
+        ):
+            return
+        try:
+            self._rebuild_dock_widgets()
+        except RuntimeError:
+            pass
 
     def _apply_debounced(self) -> None:
         """Debounced live apply, skipped while restoring history or mid-apply."""
@@ -721,42 +953,37 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self._applying = False
 
     def history_stamp_callback(self, history_data, is_undo: bool) -> None:
-        """Callback for undo/redo operations"""
-        node_data = history_data.get("node", None)
-        if node_data != self.node:
+        """Callback for undo/redo operations.
+
+        The scene snapshot has already restored the model before this
+        runs, so the payload's old/new diff must NOT be re-applied here:
+        it describes the edit that produced the applied stamp, and picking
+        its "old" side would step back twice. The only jobs left are
+        re-projecting the widgets and recomputing the outputs from the
+        restored model.
+        """
+        node_data = (
+            history_data.get("node", None) if isinstance(history_data, dict) else None
+        )
+        if node_data is not None and node_data != self.node:
             return
 
         with self.history.restoring(is_undo=is_undo):
-            if is_undo:
-                # Undo operation
-                self.join_type = history_data.get("old_join_type", "inner")
-                self.mapping_data = history_data.get("old_mapping_data", []).copy()
-                self.selected_columns = history_data.get(
-                    "old_selected_columns", []
-                ).copy()
-            else:
-                # Redo operation
-                self.join_type = history_data.get("new_join_type", "inner")
-                self.mapping_data = history_data.get("new_mapping_data", []).copy()
-                self.selected_columns = history_data.get(
-                    "new_selected_columns", []
-                ).copy()
+            # Legacy stamps predate the auto-accept toggle.
+            if not isinstance(getattr(self, "auto_accept_new_columns", True), bool):
+                self.auto_accept_new_columns = True
+            if not isinstance(getattr(self, "known_columns", None), list):
+                self.known_columns = []
 
             # Update UI to reflect changes
-
-            # Clear existing mapping rows
-            for pair in self.mapping_pairs[:]:
-                self.delete_layout(pair["layout"])
-            self.mapping_pairs.clear()
-
-            # Rebuild mapping rows
-            for mapping in self.mapping_data:
-                self.add_mapping_row(
-                    left_col=mapping["left_column"], right_col=mapping["right_column"]
-                )
-
-            # Update output columns
-            self.update_output_columns()
+            try:
+                self._rebuild_dock_widgets()
+            except RuntimeError:
+                pass
+            try:
+                self.transform_data()
+            except (RuntimeError, AttributeError, ValueError) as exc:
+                global_logger.error(f"❌ Join: recompute after restore failed: {exc}")
 
     def transform_data(self):
         """
@@ -774,8 +1001,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"� Join: Processing join with mapping data: {self.mapping_data}"
         )
 
-        self._sanitize_mapping_data()
-        self._sanitize_selected_columns()
+        self._sync_selected_with_schema()
 
         if not self.mapping_data:
             global_logger.warning(
@@ -963,8 +1189,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def get_code(self):
         """Generate Polars LazyFrame join code"""
-        self._sanitize_mapping_data()
-        self._sanitize_selected_columns()
+        self._sync_selected_with_schema()
 
         if not self.mapping_data or self.left_data is None or self.right_data is None:
             global_logger.warning(
@@ -1148,6 +1373,10 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res["mapping_data"] = self.mapping_data
         # Serialize output columns
         res["selected_columns"] = self.selected_columns
+        res["auto_accept_new_columns"] = bool(
+            getattr(self, "auto_accept_new_columns", True)
+        )
+        res["known_columns"] = getattr(self, "known_columns", [])
         return res
 
     def deserialize(self, data, hashmap={}):
@@ -1161,6 +1390,10 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             # Store output columns
             self.selected_columns = data.get("selected_columns", [])
+
+            # Auto-accept toggle + seen-columns cache (legacy files default on).
+            self.auto_accept_new_columns = data.get("auto_accept_new_columns", True)
+            self.known_columns = data.get("known_columns", [])
 
             return True and res
         except Exception as e:
@@ -1220,15 +1453,41 @@ class TriggerNode_Join(TriggerNode):
             self.content.right_data = right_input.get("data")
             self.content.right_variable = right_input.get("variable_name")
 
-            # Both inputs present: ensure at least one mapping pair
-            # (first column of each table) so the node works out of the box.
-            self.content.ensure_default_mapping()
+            # Both inputs present: follow upstream renames first so stored
+            # configs keep working instead of going stale, drop what is
+            # truly gone, and ensure at least one mapping pair for fresh
+            # nodes (first column of each table) so the node works out of
+            # the box.
+            followed = False
+            try:
+                followed = self.content._follow_upstream_renames()
+            except (AttributeError, ValueError, RuntimeError) as follow_error:
+                global_logger.warning(
+                    f"🔄 Join: Could not follow upstream renames: {follow_error}"
+                )
+            self.content._sanitize_mapping_data()
+            if (
+                not self.content.mapping_data
+                and not getattr(self.content, "known_columns", [])
+                and not self.content.selected_columns
+            ):
+                self.content.ensure_default_mapping()
 
             global_logger.info(
                 f"🔄 Join: Processing inputs - Left: {self.content.left_variable}, Right: {self.content.right_variable}"
             )
 
-            if self.content.transform_data() is None:
+            selected_before = list(self.content.selected_columns)
+            mapping_before = list(self.content.mapping_data)
+            transform_result = self.content.transform_data()
+            if (
+                followed
+                or self.content.selected_columns != selected_before
+                or self.content.mapping_data != mapping_before
+            ):
+                self.content._refresh_open_dock()
+
+            if transform_result is None:
                 self.markDirty(True)
                 self.markInvalid(True)
                 self.grNode.setToolTip("No valid join mapping configured")
@@ -1251,7 +1510,10 @@ class TriggerNode_Join(TriggerNode):
                     "variable_name": self.content.r_variable_name,
                 },
             ]
-            self.evalChildren()
+            # NOTE: no evalChildren() here. The base evalImplementation
+            # evaluates children after this returns and the new value is
+            # committed; evaluating them here would hand them the previous
+            # output.
             # Return three outputs in a list
             return self.param
 

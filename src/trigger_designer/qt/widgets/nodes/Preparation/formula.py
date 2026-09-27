@@ -26,6 +26,8 @@ from trigger_designer.qt.widgets.common import (
     NoWheelComboBox,
 )
 from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
+from trigger_designer.qt.helpers import global_logger
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -965,6 +967,10 @@ class FormulaContent(
                 failed = min(errors)
                 raise ValueError(f"Section {failed + 1}: {errors[failed]}")
 
+            # DuckDB rebuilds every column with its native types (an Auto
+            # `THEN 1 ELSE 0` comes back INTEGER -> Int32), which the Select
+            # dropdown cannot represent. Normalise the frame.
+            current_df = normalize_to_supported_dtypes(current_df)
             self.data = current_df.lazy() if was_lazy else current_df
         except Exception as exc:
             self.data = None
@@ -1069,6 +1075,7 @@ class FormulaContent(
         code_lines = [
             "import duckdb",
             "import polars as pl",
+            "from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes",
             "# Initialize DuckDB connection",
             "duck = duckdb.connect(':memory:')",
             "# Convert polars LazyFrame to DataFrame if needed for DuckDB",
@@ -1089,6 +1096,8 @@ class FormulaContent(
 
         code_lines.extend(
             [
+                "# Widen DuckDB-native types into Select-supported dtypes",
+                "df_for_duck = normalize_to_supported_dtypes(df_for_duck)",
                 "# Preserve lazy execution when the incoming value is lazy",
                 (
                     f"{self.variable_name} = df_for_duck.lazy() "
@@ -1169,6 +1178,7 @@ class TriggerNode_Formula(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip(self.content.last_error)
+            global_logger.error(f"Formula node failed: {self.content.last_error}")
             return None
 
         self.markDirty(False)

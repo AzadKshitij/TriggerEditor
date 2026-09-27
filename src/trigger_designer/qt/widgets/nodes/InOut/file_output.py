@@ -100,13 +100,13 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Custom delimiter (for CSV/custom delimited)
         delimiter_layout = QHBoxLayout()
         delimiter_layout.setContentsMargins(0, 0, 0, 0)
-        delimiter_label = QLabel("Delimiter")
+        self.delimiterLabel = QLabel("Delimiter")
         self.delimiterEdit = QLineEdit(self)
         self.delimiterEdit.setText(",")
         self.delimiterEdit.setMinimumHeight(30)
         self.delimiterEdit.setMaximumWidth(50)
         self.delimiterEdit.textChanged.connect(self._on_delimiter_changed)
-        delimiter_layout.addWidget(delimiter_label)
+        delimiter_layout.addWidget(self.delimiterLabel)
         delimiter_layout.addWidget(self.delimiterEdit)
         main_layout.addLayout(delimiter_layout)
 
@@ -171,9 +171,8 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         show_delimiter = self.file_format in ["csv", "custom_delimited"]
         self.delimiterEdit.setVisible(show_delimiter)
-        self.delimiterEdit.parent().layout().itemAt(0).widget().setVisible(
-            show_delimiter
-        )  # Label
+        if hasattr(self, "delimiterLabel") and self.delimiterLabel:
+            self.delimiterLabel.setVisible(show_delimiter)
 
         show_bom = self.file_format in ["csv", "custom_delimited", "json", "ndjson"]
         if hasattr(self, "bomCheckbox") and self.bomCheckbox:
@@ -238,6 +237,9 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         code_lines = []
         var_name = self.incoming_variable
+        # Forward slashes: a raw backslash path breaks the generated success
+        # print below (`\U` reads as a unicode escape and kills compilation).
+        export_path = self.filePath.replace("\\", "/")
 
         # Add safety check for LazyFrame existence and convert to lazy if needed
         code_lines.append(
@@ -270,7 +272,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             options_str = ", " + ", ".join(options) if options else ""
             code_lines.append(
-                f"        {var_name}_lazy.sink_csv({self.filePath!r}{options_str})"
+                f"        {var_name}_lazy.sink_csv({export_path!r}{options_str})"
             )
 
         elif self.file_format == "custom_delimited":
@@ -285,7 +287,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # Custom delimiter: '{delimiter}' with LazyFrame"
             )
             code_lines.append(
-                f"        {var_name}_lazy.sink_csv({self.filePath!r}{options_str})"
+                f"        {var_name}_lazy.sink_csv({export_path!r}{options_str})"
             )
 
         elif self.file_format == "excel":
@@ -294,7 +296,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # Excel requires eager evaluation - collecting LazyFrame"
             )
             code_lines.append(
-                f"        {var_name}_lazy.collect().write_excel({self.filePath!r})"
+                f"        {var_name}_lazy.collect().write_excel({export_path!r})"
             )
 
         elif self.file_format == "parquet":
@@ -303,7 +305,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # Using LazyFrame sink_parquet for zero-copy streaming"
             )
             code_lines.append(
-                f"        {var_name}_lazy.sink_parquet({self.filePath!r}, compression='snappy')"
+                f"        {var_name}_lazy.sink_parquet({export_path!r}, compression='snappy')"
             )
 
         elif self.file_format == "json":
@@ -312,7 +314,7 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"        # JSON requires eager evaluation - collecting LazyFrame"
             )
             code_lines.append(
-                f"        {var_name}_lazy.collect().write_json({self.filePath!r})"
+                f"        {var_name}_lazy.collect().write_json({export_path!r})"
             )
 
         elif self.file_format == "ndjson":
@@ -320,23 +322,23 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             code_lines.append(
                 f"        # Using LazyFrame sink_ndjson for memory-efficient streaming"
             )
-            code_lines.append(f"        {var_name}_lazy.sink_ndjson({self.filePath!r})")
+            code_lines.append(f"        {var_name}_lazy.sink_ndjson({export_path!r})")
 
         elif self.file_format == "ipc":
             # Arrow IPC format with lazy execution
             code_lines.append(
                 f"        # Using LazyFrame sink_ipc for ultra-fast columnar streaming"
             )
-            code_lines.append(f"        {var_name}_lazy.sink_ipc({self.filePath!r})")
+            code_lines.append(f"        {var_name}_lazy.sink_ipc({export_path!r})")
 
         else:
             # Default to CSV with lazy execution
             code_lines.append(f"        # Defaulting to CSV format with LazyFrame")
-            code_lines.append(f"        {var_name}_lazy.sink_csv({self.filePath!r})")
+            code_lines.append(f"        {var_name}_lazy.sink_csv({export_path!r})")
 
         # Add success message (note: we can't easily get row count from LazyFrame without collecting)
         code_lines.append(
-            f"        print(f'[SUCCESS] Successfully saved data to {self.filePath} using LazyFrame')"
+            f"        print(f'[SUCCESS] Successfully saved data to {export_path} using LazyFrame')"
         )
         code_lines.append("    except Exception as e:")
         code_lines.append(f"        print(f'[ERROR] Failed to save file: {{e}}')")

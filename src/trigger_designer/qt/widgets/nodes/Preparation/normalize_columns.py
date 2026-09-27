@@ -287,18 +287,11 @@ class NormalizeColumnsContent(
         self.update_data()
 
     def select_all_columns(self) -> None:
-        for checkbox in self.field_checkboxes.values():
-            checkbox.setChecked(True)
-        self.update_selected_columns()
-        self.update_data()
-        self.evaluate.emit()
+        # One `changed` emission -> one update/evaluate cycle (see cleansing).
+        self.columns_list.set_all_checked(True)
 
     def select_no_columns(self) -> None:
-        for checkbox in self.field_checkboxes.values():
-            checkbox.setChecked(False)
-        self.update_selected_columns()
-        self.update_data()
-        self.evaluate.emit()
+        self.columns_list.set_all_checked(False)
 
     def on_columns_changed(self, *_args) -> None:
         self.update_selected_columns()

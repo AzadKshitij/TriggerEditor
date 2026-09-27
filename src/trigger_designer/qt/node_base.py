@@ -76,6 +76,35 @@ def frame_shape(frame) -> tuple:
         return ("?", width)
 
 
+def upstream_rename_map(upstream_node) -> dict:
+    """Column renames advertised by an upstream node (``{old: new}``).
+
+    Lets a downstream node follow a rename instead of treating it as a
+    drop + add: a config referencing ``old`` can be remapped to ``new``
+    when ``new`` is present in the live upstream schema. Nodes that do
+    not rename report ``{}``.
+    """
+    content = getattr(upstream_node, "content", None)
+    if content is None:
+        return {}
+    # Select stores its renames in ``changes["rename_mapping"]``.
+    changes = getattr(content, "changes", None)
+    if isinstance(changes, dict):
+        mapping = changes.get("rename_mapping")
+        if isinstance(mapping, dict):
+            return {str(old): str(new) for old, new in mapping.items() if new}
+    # Normalize Columns derives its mapping from its rules.
+    current_mapping = getattr(content, "_current_mapping", None)
+    if callable(current_mapping):
+        try:
+            mapping = current_mapping()
+        except Exception:  # noqa: BLE001 - any upstream error means no map
+            return {}
+        if isinstance(mapping, dict):
+            return {str(old): str(new) for old, new in mapping.items() if new}
+    return {}
+
+
 class TriggerGraphicsNode(QDMIconGraphicsNode):
     # Add signal for evaluation requests
 

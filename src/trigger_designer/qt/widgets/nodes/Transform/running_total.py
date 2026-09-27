@@ -25,6 +25,7 @@ from trigger_designer.qt.widgets.common import (
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 from trigger_designer.qt.helpers import global_logger
 
 if TYPE_CHECKING:
@@ -153,6 +154,9 @@ class RunningTotalContent(
                 expressions.append(expression.alias(f"RunTot_{column}"))
 
             self.data = self.incom_data.with_columns(expressions)
+            # cum_sum preserves the input width (Int32 in -> Int32 out), so
+            # normalise the frame into Select-supported dtypes.
+            self.data = normalize_to_supported_dtypes(self.data)
         except Exception as e:
             global_logger.error(
                 f"❌ RunningTotalContent: Error computing running total: {e}"
@@ -194,10 +198,14 @@ class RunningTotalContent(
 
         code_lines = [
             "import polars as pl",
+            "from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes",
             f"{self.variable_name} = {self.incoming_variable}.with_columns([",
         ]
         code_lines.extend(exprs)
         code_lines.append("])")
+        code_lines.append(
+            f"{self.variable_name} = normalize_to_supported_dtypes({self.variable_name})"
+        )
 
         return "\n".join(code_lines) + "\n"
 

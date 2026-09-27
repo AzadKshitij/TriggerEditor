@@ -42,6 +42,7 @@ from trigger_designer.qt.undo.protocol import is_syncing
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 from typing import (
     Optional,
     TYPE_CHECKING,
@@ -112,6 +113,24 @@ PREFIX_MAP = {
     "N_Unique": "Unique_",
     "List": "List_",
 }
+
+#: Arithmetic-only actions (no meaning on text columns).
+ARITHMETIC_ACTIONS = {"Sum", "Mean", "Std", "Var", "Median"}
+
+#: Actions offered for text (String/Categorical) columns.
+TEXT_ACTIONS = [
+    "GroupBy",
+    "Count",
+    "Min",
+    "Max",
+    "First",
+    "Last",
+    "N_Unique",
+    "List",
+]
+
+#: Substrings of ``str(dtype)`` that mark a text column.
+TEXT_DTYPE_HINTS = ("String", "Categorical")
 
 
 def _default_output_name(field: str, action: str) -> str:
@@ -663,6 +682,22 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 pass
             self._building_table = False
 
+    def _allowed_actions_for_field(self, field_name: str) -> list[str]:
+        """Actions applicable to a field's dtype.
+
+        Text columns cannot Sum/Mean/Std/Var/Median in polars, so those are
+        hidden for them instead of failing at apply time.
+        """
+        dtype = ""
+        if self.incom_data is not None:
+            try:
+                dtype = str(frame_schema(self.incom_data).get(field_name, ""))
+            except Exception:
+                dtype = ""
+        if any(hint in dtype for hint in TEXT_DTYPE_HINTS):
+            return list(TEXT_ACTIONS)
+        return list(AGGREGATION_FUNCTIONS)
+
     def _insert_action_row(
         self, field_name: str, action: str, output_name: str
     ) -> None:
@@ -671,10 +706,16 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         field_item = QTableWidgetItem(field_name)
         field_item.setFlags(field_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
         self.actions_table.setItem(row, 0, field_item)
+        allowed = self._allowed_actions_for_field(field_name)
+        if action not in allowed:
+            # Saved/legacy action outside the dtype set: keep it visible so
+            # restoring a file never silently rewrites the model. Apply
+            # will report it via tooltip + logs.
+            allowed = allowed + [action]
         combo = NoWheelComboBox()
-        combo.addItems(AGGREGATION_FUNCTIONS)
+        combo.addItems(allowed)
         combo.setMinimumHeight(30)
-        combo.setCurrentText(action if action in AGGREGATION_FUNCTIONS else "Count")
+        combo.setCurrentText(action)
         combo.currentTextChanged.connect(self._on_action_combo_changed)
         self.actions_table.setCellWidget(row, 1, combo)
         self.actions_table.setItem(row, 2, QTableWidgetItem(output_name))
@@ -816,6 +857,14 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 if agg_expressions:
                     self.data = self.incom_data.select(agg_expressions)
 
+            # Polars aggregations emit dtypes outside the Select dropdown
+            # (len/n_unique -> UInt32; sum/mean preserve narrow inputs).
+            # Normalise the whole frame so downstream nodes only ever see
+            # supported types. Group keys are covered too: they pass through
+            # with their original dtype.
+            if self.data is not None:
+                self.data = normalize_to_supported_dtypes(self.data)
+
             global_logger.info(
                 f"AggregateContent: completed - shape: {frame_shape(self.data)}"
             )
@@ -842,7 +891,10 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if not self.incoming_variable:
             return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
 
-        code_lines = []
+        code_lines = [
+            "import polars as pl",
+            "from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes",
+        ]
         changes = self._normalize_changes(self.changes)
         self.changes = changes
         group_by_columns = changes["group_by_columns"]
@@ -895,6 +947,15 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 code_lines.append("])")
             else:
                 code_lines.append(f"{self.variable_name} = {self.incoming_variable}")
+
+        # Same normalisation as the live path (see apply_groupby): keep
+        # generated runs on Select-supported dtypes. No-op branch is the
+        # bare passthrough above, which needs no normalisation.
+        if agg_expressions:
+            code_lines.append(
+                f"{self.variable_name} = normalize_to_supported_dtypes("
+                f"{self.variable_name})"
+            )
 
         return "\n".join(code_lines) + "\n"
 

@@ -29,6 +29,7 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
     frame_schema,
     frame_shape,
+    upstream_rename_map,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import EmptyStateLabel, IconButton
@@ -40,6 +41,7 @@ from trigger_designer.qt.widgets.select_table_widget import (
     RowData,
 )
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.undo.protocol import is_syncing
 from typing import (
     Optional,
     TYPE_CHECKING,
@@ -47,6 +49,16 @@ from typing import (
 
 if TYPE_CHECKING:
     import polars as pl
+
+
+# Tokens recognised when coercing a column to Boolean. Polars cannot cast
+# Utf8 -> Boolean at all (it raises InvalidOperationError regardless of
+# `strict`), so anything textual needs an explicit token match. Numeric
+# sources fall back to a non-zero test, since `cast(Float64)` renders 1.0 as
+# "1.0" which is not in either token set. Unrecognised values become null,
+# matching the `strict=False` contract the other dtype conversions use.
+_BOOLEAN_TRUE_TOKENS = ("true", "1", "yes", "y", "t", "on")
+_BOOLEAN_FALSE_TOKENS = ("false", "0", "no", "n", "f", "off")
 
 
 class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
@@ -96,7 +108,9 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "selected_columns": [],
             "rename_mapping": {},
             "dtype_mapping": {},
+            "auto_accept_new_columns": True,
         }
+        self._auto_accept_action = None
 
     @property
     def node(self) -> "TriggerNode":
@@ -112,13 +126,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
-            # Initialize table_data if not already present (e.g., from deserialization)
-            if not self.table_data:
-                schema = frame_schema(self.incom_data)
-                self.table_data = [
-                    RowData(True, col, str(schema[col])) for col in schema
-                ]
-
             # Initialize changes if not already present (e.g., from deserialization)
             if not hasattr(self, "changes") or not self.changes:
                 self.changes: dict = {
@@ -127,7 +134,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     ),  # Select all by default
                     "rename_mapping": {},
                     "dtype_mapping": {},
+                    "auto_accept_new_columns": True,
                 }
+
+            # Align rows + mappings with the live upstream schema (e.g. an
+            # Aggregate rename). Preserves choices for surviving columns.
+            self._reconcile_schema()
 
             # Ensure selected_columns has default values if empty
             if not self.changes.get("selected_columns"):
@@ -305,6 +317,87 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             lambda _checked=False: self.bulk_reset_dtypes(selected_only=False)
         )
         menu.addMenu(dtype_menu)
+
+        menu.addSeparator()
+        self._auto_accept_action = menu.addAction("Auto-add new columns")
+        self._auto_accept_action.setCheckable(True)
+        self._auto_accept_action.setToolTip(
+            "When checked, columns arriving from upstream are included automatically."
+        )
+        self._auto_accept_action.setChecked(
+            bool((self.changes or {}).get("auto_accept_new_columns", True))
+        )
+        self._auto_accept_action.toggled.connect(self._on_auto_accept_toggled)
+
+    def _on_auto_accept_toggled(self, checked: bool) -> None:
+        """Toggle whether newly arrived upstream columns are auto-included."""
+        if self.history.is_restoring_history or is_syncing(self):
+            return
+        old = bool((self.changes or {}).get("auto_accept_new_columns", True))
+        if old == bool(checked):
+            return
+        self.changes["auto_accept_new_columns"] = bool(checked)
+        self.push_property_change(
+            ("changes", "auto_accept_new_columns"),
+            old,
+            bool(checked),
+            "Auto-Accept Changed",
+        )
+
+    def _sync_widgets_from_model(self) -> None:
+        """Refresh widget values from the model, preserving widget identity."""
+        action = getattr(self, "_auto_accept_action", None)
+        if action is not None:
+            try:
+                checked = bool(
+                    (self.changes or {}).get("auto_accept_new_columns", True)
+                )
+                if action.isChecked() != checked:
+                    action.setChecked(checked)
+            except RuntimeError:
+                pass
+
+    def apply_upstream_renames(self, rename_map: dict) -> bool:
+        """Follow an upstream rename in place, preserving order and settings.
+
+        A rename otherwise looks like a drop + add to schema diffing: the
+        renamed row jumps to the end and per-column rename/dtype choices
+        keyed by the old name are pruned. When ``old`` is gone from the
+        live schema but ``new`` is present, the row (and its ``changes``
+        keys) is renamed instead.
+
+        :return: True when anything was renamed.
+        """
+        if not rename_map or getattr(self, "incom_data", None) is None:
+            return False
+        try:
+            live = set(frame_schema(self.incom_data))
+        except Exception:  # noqa: BLE001 - any frame error means no follow
+            return False
+        changes = self.changes or {}
+        rows = [row for row in self.table_data if hasattr(row, "text")]
+        present = {row.text for row in rows}
+        renamed_any = False
+        for old, new in rename_map.items():
+            if old in live or new not in live:
+                continue
+            if old not in present or new in present:
+                continue
+            for row in rows:
+                if row.text == old:
+                    row.text = new
+                    renamed_any = True
+            for key in ("selected_columns", "column_order"):
+                values = changes.get(key)
+                if isinstance(values, list):
+                    changes[key] = [new if value == old else value for value in values]
+            for key in ("rename_mapping", "dtype_mapping"):
+                mapping = changes.get(key)
+                if isinstance(mapping, dict) and old in mapping:
+                    mapping[new] = mapping.pop(old)
+        if renamed_any:
+            self.changes = changes
+        return renamed_any
 
     def _bulk_target_rows(self, selected_only: bool) -> list:
         """Rows a bulk action applies to.
@@ -555,11 +648,40 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
         return formats
 
+    def _build_boolean_expr(self, col: str) -> pl.Expr:
+        """Coerce ``col`` to Boolean from any source type.
+
+        Polars has no Utf8 -> Boolean cast, so the Boolean dtype is served by
+        matching normalised text tokens and falling back to a non-zero numeric
+        test. Kept source-agnostic so the live path and the generated code
+        cannot drift apart.
+        """
+        source = pl.col(col)
+        token = (
+            source.cast(pl.String, strict=False).str.to_lowercase().str.strip_chars()
+        )
+        number = source.cast(pl.Float64, strict=False)
+        return (
+            pl.when(token.is_in(_BOOLEAN_TRUE_TOKENS))
+            .then(True)
+            .when(token.is_in(_BOOLEAN_FALSE_TOKENS))
+            .then(False)
+            .when(number.is_not_null() & (number != 0.0))
+            .then(True)
+            .when(number.is_not_null())
+            .then(False)
+            .otherwise(None)
+            .alias(col)
+        )
+
     def _build_dtype_conversion_expr(self, col: str, dtype: str) -> Optional[pl.Expr]:
         """Build a Polars expression that converts a column to the requested dtype."""
         polars_dtype = self._map_dtype_to_polars(dtype)
         if polars_dtype is None:
             return None
+
+        if polars_dtype is pl.Boolean:
+            return self._build_boolean_expr(col)
 
         if polars_dtype not in (pl.Date, pl.Datetime):
             return pl.col(col).cast(polars_dtype, strict=False).alias(col)
@@ -603,6 +725,20 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if polars_dtype is None:
             return None
 
+        if polars_dtype is pl.Boolean:
+            # Mirrors _build_boolean_expr exactly. Keep the two in step.
+            source = f"pl.col({col!r})"
+            token = f"{source}.cast(pl.String, strict=False).str.to_lowercase().str.strip_chars()"
+            number = f"{source}.cast(pl.Float64, strict=False)"
+            return (
+                f"pl.when({token}.is_in({_BOOLEAN_TRUE_TOKENS!r})).then(True)\n"
+                f"    .when({token}.is_in({_BOOLEAN_FALSE_TOKENS!r})).then(False)\n"
+                f"    .when({number}.is_not_null() & ({number} != 0.0)).then(True)\n"
+                f"    .when({number}.is_not_null()).then(False)\n"
+                f"    .otherwise(None)\n"
+                f"    .alias({col!r})"
+            )
+
         if polars_dtype not in (pl.Date, pl.Datetime):
             type_str = self._get_polars_type_string(dtype)
             return f"pl.col('{col}').cast({type_str}, strict=False).alias('{col}')"
@@ -635,11 +771,184 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         joined = ",\n        ".join(expressions)
         return f"pl.coalesce([\n        {joined}\n    ]).alias('{col}')"
 
+    def _reconcile_schema(self) -> bool:
+        """Align rows + mappings with the live upstream schema.
+
+        An upstream rename/add/drop (e.g. from Aggregate) otherwise leaves
+        this node showing stale columns until its dock is rebuilt from
+        scratch. Surviving columns keep their check/rename/dtype choices;
+        new columns arrive checked when auto-accept is on (unchecked
+        otherwise); stale mappings are dropped.
+
+        The user's display order is preserved: surviving rows stay where
+        they are and new columns are appended. In particular a manual
+        move-up/move-down must survive the ``apply_changes`` pass that
+        follows its ``data_processed`` signal.
+
+        :return: True when the row structure changed.
+        """
+        if getattr(self, "incom_data", None) is None:
+            return False
+        try:
+            schema = frame_schema(self.incom_data)
+        except Exception:
+            return False
+        columns = list(schema)
+        if not isinstance(getattr(self, "table_data", None), list):
+            self.table_data = []
+        changes = getattr(self, "changes", None) or {}
+        changes.setdefault("selected_columns", [])
+        changes.setdefault("rename_mapping", {})
+        changes.setdefault("dtype_mapping", {})
+        changes.setdefault("column_order", [])
+        changes.setdefault("auto_accept_new_columns", True)
+        auto_accept = bool(changes.get("auto_accept_new_columns", True))
+        user_dtypes = set(changes.get("dtype_mapping") or {})
+        existing = {row.text: row for row in self.table_data if hasattr(row, "text")}
+        old_texts = [row.text for row in self.table_data if hasattr(row, "text")]
+        old_set = set(old_texts)
+        new_set = set(columns)
+
+        restoring = bool(
+            getattr(getattr(self, "history", None), "is_restoring_history", False)
+        )
+        if restoring:
+            # Undo/redo: the stored order wins over the on-screen order.
+            stored_order = list(changes.get("column_order") or [])
+            if not stored_order:
+                # Legacy stamp without full order: checked first, then rest.
+                selected_set = set(changes.get("selected_columns", []))
+                stored_order = [
+                    col for col in changes.get("selected_columns", []) if col in new_set
+                ]
+                stored_order += [col for col in columns if col not in selected_set]
+            ordered = [col for col in stored_order if col in new_set]
+            for col in columns:
+                if col not in ordered:
+                    ordered.append(col)
+            selected_set = set(changes.get("selected_columns", []))
+            new_rows: list = []
+            for col in ordered:
+                row = existing.get(col)
+                if row is None:
+                    row = RowData(col in selected_set, col, str(schema[col]))
+                elif col not in user_dtypes and row.dtype != str(schema[col]):
+                    row.dtype = str(schema[col])
+                new_rows.append(row)
+            structural = old_texts != ordered
+            # Mutate in place: the live table model holds this same list object.
+            self.table_data[:] = new_rows
+            changes["selected_columns"] = [
+                col for col in changes.get("selected_columns", []) if col in new_set
+            ]
+            changes["column_order"] = ordered
+            changes["rename_mapping"] = {
+                key: value
+                for key, value in changes.get("rename_mapping", {}).items()
+                if key in new_set
+            }
+            changes["dtype_mapping"] = {
+                key: value
+                for key, value in changes.get("dtype_mapping", {}).items()
+                if key in new_set
+            }
+            self.changes = changes
+            return structural
+
+        # Refresh dtypes for surviving columns unless the user overrode them.
+        for row in self.table_data:
+            if (
+                hasattr(row, "text")
+                and row.text in schema
+                and row.text not in user_dtypes
+                and row.dtype != str(schema[row.text])
+            ):
+                row.dtype = str(schema[row.text])
+
+        if old_set == new_set and old_texts:
+            # No columns added or dropped: keep the display order exactly.
+            # Rebuild the checked selection from the rows so an uncheck
+            # cannot be re-added by stale state.
+            changes["selected_columns"] = [
+                row.text for row in self.table_data if getattr(row, "checked", False)
+            ]
+            changes["column_order"] = list(old_texts)
+            changes["rename_mapping"] = {
+                key: value
+                for key, value in changes.get("rename_mapping", {}).items()
+                if key in new_set
+            }
+            changes["dtype_mapping"] = {
+                key: value
+                for key, value in changes.get("dtype_mapping", {}).items()
+                if key in new_set
+            }
+            self.changes = changes
+            return False
+
+        # Columns were added and/or dropped: keep survivors in place,
+        # append genuinely new columns in upstream order. New arrivals are
+        # checked only when auto-accept is on (first build checks all).
+        new_rows = [row for row in self.table_data if row.text in new_set]
+        first_build = not old_texts
+        for col in columns:
+            if col not in existing:
+                new_rows.append(
+                    RowData(bool(auto_accept) or first_build, col, str(schema[col]))
+                )
+        structural = old_texts != [row.text for row in new_rows]
+        # Mutate in place: the live table model holds this same list object.
+        self.table_data[:] = new_rows
+        changes["selected_columns"] = [
+            row.text for row in new_rows if getattr(row, "checked", False)
+        ]
+        changes["column_order"] = [row.text for row in new_rows]
+        changes["rename_mapping"] = {
+            key: value
+            for key, value in changes.get("rename_mapping", {}).items()
+            if key in new_set
+        }
+        changes["dtype_mapping"] = {
+            key: value
+            for key, value in changes.get("dtype_mapping", {}).items()
+            if key in new_set
+        }
+        self.changes = changes
+        return structural
+
+    def _refresh_live_view(self) -> None:
+        """Repaint the open table after a structural schema change.
+
+        Uses a model reset (never a bare layoutChanged, which segfaults with
+        an active selection) and emits no data_processed, so this cannot
+        recurse into handleDataChanged.
+        """
+        widget = getattr(self, "table_widget", None)
+        if widget is None:
+            return
+        try:
+            view = getattr(self, "table_view", None)
+            if view is not None:
+                try:
+                    view.clearSelection()
+                except RuntimeError:
+                    pass
+            widget.beginResetModel()
+            widget.endResetModel()
+        except RuntimeError:
+            pass
+
     def apply_changes(self) -> None:
         """Apply changes from self.changes to self.data"""
         global_logger.debug(
             "📋 SelectContent: Applying column selection and transformation changes"
         )
+
+        # Reconcile first so a renamed upstream column flows through even
+        # while this node's dock is open.
+        structural = self._reconcile_schema()
+        if structural:
+            self._refresh_live_view()
 
         # Ensure we have both incoming data and changes to apply
         if (
@@ -789,11 +1098,17 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
 
         # Store the changes in a serializable format
+        auto_accept = bool((self.changes or {}).get("auto_accept_new_columns", True))
         self.changes = {
             "selected_columns": [],
             "rename_mapping": {},
             "dtype_mapping": {},
-            "column_order": [],  # Add column order tracking
+            "column_order": [
+                row.text
+                for row in getattr(self, "table_data", [])
+                if hasattr(row, "text")
+            ],
+            "auto_accept_new_columns": auto_accept,
         }
 
         # Extract selected columns, their new names and data types
@@ -809,6 +1124,10 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             if data_type:
                 self.changes["dtype_mapping"][column_name] = data_type
+
+        if not self.changes["column_order"]:
+            # No live rows (e.g. headless caller): fall back to checked order.
+            self.changes["column_order"] = list(self.changes["selected_columns"])
 
         return (
             self.changes["selected_columns"],
@@ -908,6 +1227,20 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "dtype_mapping": (
                 self.changes["dtype_mapping"].copy() if hasattr(self, "changes") else {}
             ),
+            "auto_accept_new_columns": (
+                self.changes.get("auto_accept_new_columns", True)
+                if hasattr(self, "changes")
+                else True
+            ),
+            "column_order": (
+                self.changes["column_order"].copy()
+                if hasattr(self, "changes") and "column_order" in self.changes
+                else (
+                    [row.text for row in self.table_data if hasattr(row, "text")]
+                    if hasattr(self, "table_data")
+                    else []
+                )
+            ),
         }
 
         # Process the new changes
@@ -923,6 +1256,10 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     "selected_columns": self.changes["selected_columns"].copy(),
                     "rename_mapping": self.changes["rename_mapping"].copy(),
                     "dtype_mapping": self.changes["dtype_mapping"].copy(),
+                    "auto_accept_new_columns": self.changes.get(
+                        "auto_accept_new_columns", True
+                    ),
+                    "column_order": self.changes["column_order"].copy(),
                 },
             }
 
@@ -942,18 +1279,39 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.evaluate.emit()
 
     def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
-        """Callback for undo/redo operations"""
-        if is_undo:
-            # Undo operation
-            self.changes = history_data["old_changes"]
-        else:
-            # Redo operation
-            self.changes = history_data["new_changes"]
+        """Callback for undo/redo operations.
+
+        The scene snapshot has already restored the model (table rows and
+        ``changes``) before this runs, so the payload's old/new diff must
+        NOT be re-applied here: it describes the edit that produced the
+        applied stamp, and picking its "old" side would step back twice.
+        The only job left is re-running the pipeline and re-projecting
+        the widgets from the restored model.
+        """
+        del history_data, is_undo
+        # Legacy stamps predate the auto-accept toggle.
+        if isinstance(self.changes, dict):
+            self.changes.setdefault("auto_accept_new_columns", True)
 
         # Apply the changes and update the table
         self.apply_changes()
-        if hasattr(self, "table_widget"):
-            self.table_widget.update_from_changes(self.changes)
+        widget = getattr(self, "table_widget", None)
+        if widget is not None:
+            try:
+                # A snapshot restore replaces `table_data` wholesale, which
+                # breaks the list identity the live model edits in place.
+                # Re-point it so later moves/checks mutate `table_data`.
+                if getattr(widget, "_data", None) is not self.table_data:
+                    try:
+                        widget.beginResetModel()
+                        widget._data = self.table_data
+                        widget.endResetModel()
+                    except RuntimeError:
+                        widget._data = self.table_data
+                widget.update_from_changes(self.changes)
+            except RuntimeError:
+                pass
+        self._sync_widgets_from_model()
 
     def _get_polars_type_string(self, dtype_str: str) -> str:
         """Get the string representation for Polars types in code generation"""
@@ -1034,7 +1392,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         res["changes"] = getattr(
             self,
             "changes",
-            {"selected_columns": [], "rename_mapping": {}, "dtype_mapping": {}},
+            {
+                "selected_columns": [],
+                "rename_mapping": {},
+                "dtype_mapping": {},
+                "auto_accept_new_columns": True,
+            },
         )
         return res
 
@@ -1062,8 +1425,15 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             self.changes = data.get(
                 "changes",
-                {"selected_columns": [], "rename_mapping": {}, "dtype_mapping": {}},
+                {
+                    "selected_columns": [],
+                    "rename_mapping": {},
+                    "dtype_mapping": {},
+                    "auto_accept_new_columns": True,
+                },
             )
+            if isinstance(self.changes, dict):
+                self.changes.setdefault("auto_accept_new_columns", True)
 
             # Apply the changes if we have incoming data
             if hasattr(self, "incom_data") and self.incom_data is not None:
@@ -1130,8 +1500,22 @@ class TriggerNode_Select(TriggerNode):
                     self.content.incom_data = input_data
                     self.content.incoming_variable = variable_name
 
+                    # Follow an upstream rename so downstream configs keep
+                    # working instead of going stale.
+                    followed = False
+                    try:
+                        rename_map = upstream_rename_map(input_node)
+                        if rename_map:
+                            followed = self.content.apply_upstream_renames(rename_map)
+                    except (AttributeError, ValueError, RuntimeError) as follow_error:
+                        global_logger.warning(
+                            f"⚠️ SelectNode: Could not follow upstream renames: {follow_error}"
+                        )
+
                     # Apply column selection and transformations
                     self.content.apply_changes()
+                    if followed:
+                        self.content._refresh_live_view()
 
                     # Validate output data
                     if hasattr(self.content, "data") and self.content.data is not None:
@@ -1147,7 +1531,10 @@ class TriggerNode_Select(TriggerNode):
                             }
                         ]
 
-                        self.evalChildren()
+                        # NOTE: no evalChildren() here. The base
+                        # evalImplementation evaluates children after this
+                        # returns and the new value is committed; evaluating
+                        # them here would hand them the previous output.
                         global_logger.info(
                             "✅ SelectNode: Processing completed successfully"
                         )

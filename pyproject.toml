@@ -7,12 +7,20 @@ requires-python = ">=3.13.12,<3.14"
 license = {text = "MIT"}
 authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 
-# Core dependencies organized by category
+# Sync workflow (do NOT use bare `uv sync`): qtpy-nodeeditor is installed
+# from git with --no-deps (see scripts/build.bat) and kept out of the lock,
+# so a sync would prune it and break the GUI. Instead:
+#   uv lock --upgrade-package <name>   # re-resolve into uv.lock
+#   uv pip install --python .venv/Scripts/python.exe <name>==<version>
+# Qt pins (pyqt6*, qtpy) are intentional; nodeeditor's metadata wants newer
+# Qt, which is why it stays out of the lock.
+
+# Core dependencies organized by category 
 dependencies = [
     # Core data processing
-    "polars[pyarrow]==1.33.1",
-    "pandas==2.2.3",
-    "numpy==2.1.3",
+    "polars[pyarrow]==1.44.2",
+    "pandas==2.3.3",
+    "numpy==2.5.3",
     "duckdb>=1.2.1",
     # File handling
     "fastexcel>=0.15.1",
@@ -30,25 +38,25 @@ dependencies = [
     # `uv sync` prunes it - re-run scripts/build.bat (or
     # scripts/sync-nodeeditor.ps1) afterwards.
     # Visualization
-    "matplotlib==3.10.3",
+    "matplotlib==3.11.2",
     "seaborn==0.13.2",
-    "pillow==11.2.1",
+    "pillow==12.3.0",
     # Performance and utilities
-    "numba==0.61.0",
-    "numexpr==2.10.2",
-    "llvmlite==0.44.0",
+    "numba==0.67.0",
+    "numexpr==2.14.2",
+    "llvmlite==0.49.0",
     "psutil>=7.1.0",
     # Logging and CLI
     "loguru==0.7.3",
-    "click==8.1.8",
+    "click==8.5.0",
     "colorama==0.4.6",
     # Standard utilities
-    "packaging==24.2",
+    "packaging==26.3",
     "python-dateutil==2.9.0.post0",
-    "pytz==2024.2",
+    "pytz==2026.4",
     "six==1.17.0",
     "typing-extensions>=4.13.0",
-    "tzdata==2025.1",
+    "tzdata==2026.4",
 ]
 
 [tool.uv]
@@ -69,17 +77,17 @@ target-version = "py313"
 
 [dependency-groups]
 dev = [
-    "autotyping>=24.9.0",
-    "faker>=37.1.0",
-    "pandas-stubs>=2.2.3.250308",
-    "pre-commit",
-    "pyinstaller>=6.12.0",
-    "pytest>=8.3.0",
-    "ruff",
-    "ty",
+    "autotyping==24.9.0",
+    "faker==40.39.0",
+    "pandas-stubs==2.3.3.260113",
+    "pre-commit==4.6.2",
+    "pyinstaller==6.22.3",
+    "pytest==9.1.1",
+    "ruff==0.16.9",
+    "ty==0.0.84",
 ]
 profiling = [
-    "snakeviz>=2.2.0",
-    "py-spy>=0.3.14",
-    "memory-profiler>=0.61.0",
+    "snakeviz==2.2.2",
+    "py-spy==0.4.2",
+    "memory-profiler==0.61.0",
 ]

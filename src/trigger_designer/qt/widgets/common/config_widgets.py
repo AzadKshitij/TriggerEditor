@@ -202,6 +202,22 @@ class ColumnChecklist(QWidget):
         finally:
             self._suspend = False
 
+    def set_all_checked(self, checked: bool) -> None:
+        """Check/uncheck every box, emitting :attr:`changed` exactly once.
+
+        Bulk actions (All/None buttons) must use this instead of looping over
+        :attr:`checkboxes`: each raw ``setChecked`` fires ``changed``, and
+        every handler run re-evaluates the whole downstream workflow, so one
+        click costs N full recomputes on an N-column frame.
+        """
+        self._suspend = True
+        try:
+            for checkbox in self.checkboxes.values():
+                checkbox.setChecked(checked)
+        finally:
+            self._suspend = False
+        self.changed.emit(self.checked())
+
     def checked(self) -> list[str]:
         return [col for col, cb in self.checkboxes.items() if cb.isChecked()]
 

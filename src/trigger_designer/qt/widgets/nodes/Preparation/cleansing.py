@@ -401,19 +401,14 @@ class CleansingContent(
 
     def select_all_fields(self) -> None:
         """Select all fields for cleansing"""
-        for checkbox in self.field_checkboxes.values():
-            checkbox.setChecked(True)
-        self.update_selected_fields()
-        self.process_data()
-        self.evaluate.emit()
+        # One `changed` emission -> one update/process/evaluate cycle. Looping
+        # over the raw checkboxes fires `changed` per box, re-running the
+        # whole downstream workflow once per column.
+        self.fields_list.set_all_checked(True)
 
     def select_no_fields(self) -> None:
         """Deselect all fields for cleansing"""
-        for checkbox in self.field_checkboxes.values():
-            checkbox.setChecked(False)
-        self.update_selected_fields()
-        self.process_data()
-        self.evaluate.emit()
+        self.fields_list.set_all_checked(False)
 
     def on_field_selection_changed(self, *_args) -> None:
         """Handle field selection changes"""

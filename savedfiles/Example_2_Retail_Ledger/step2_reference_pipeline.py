@@ -171,14 +171,19 @@ def enrich(
         }
     )
     enriched = df.merge(customers, on="customer_id", how="left")
+    enriched.to_csv(cfg.reference_file("01 enriched customer_id.csv"), index=False)
     record("01 enriched customer_id", enriched)
     enriched = enriched.merge(products, on="product_id", how="left")
+    enriched.to_csv(cfg.reference_file("02 enriched product_id.csv"), index=False)
     record("02 enriched product_id", enriched)
     enriched = enriched.merge(suppliers, on="supplier_id", how="left")
+    enriched.to_csv(cfg.reference_file("03 enriched supplier_id.csv"), index=False)
     record("03 enriched supplier_id", enriched)
     enriched = enriched.merge(channels, on="channel_id", how="left")
+    enriched.to_csv(cfg.reference_file("04 enriched channel_id.csv"), index=False)
     record("04 enriched channel_id", enriched)
     enriched = enriched.merge(fx, on="currency", how="left")
+    enriched.to_csv(cfg.reference_file("05 enriched currency.csv"), index=False)
     record("05 enriched currency", enriched)
 
     g = enriched["quantity"] * enriched["unit_price_local"]

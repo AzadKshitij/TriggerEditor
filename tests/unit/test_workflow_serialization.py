@@ -51,9 +51,15 @@ class DummyGraphicsNode:
         self.tooltip = tooltip
 
 
+class DummyRsm:
+    def get(self, _key):
+        return None
+
+
 class DummyNode:
     def __init__(self) -> None:
         self.grNode = DummyGraphicsNode()
+        self.rsm = DummyRsm()
         self.invalid = False
 
     def markInvalid(self, value: bool = True) -> None:
@@ -161,10 +167,18 @@ def test_cleansing_content_serializes_full_state() -> None:
 
 def test_join_bulk_output_selection_updates_one_side_only() -> None:
     content = SimpleNamespace()
-    content._get_frame_schema = JoinContent._get_frame_schema.__get__(content, JoinContent)
-    content._get_available_output_columns = JoinContent._get_available_output_columns.__get__(content, JoinContent)
-    content._sync_output_column_checkboxes = JoinContent._sync_output_column_checkboxes.__get__(content, JoinContent)
-    content._set_output_columns_checked = JoinContent._set_output_columns_checked.__get__(content, JoinContent)
+    content._get_frame_schema = JoinContent._get_frame_schema.__get__(
+        content, JoinContent
+    )
+    content._get_available_output_columns = (
+        JoinContent._get_available_output_columns.__get__(content, JoinContent)
+    )
+    content._sync_output_column_checkboxes = (
+        JoinContent._sync_output_column_checkboxes.__get__(content, JoinContent)
+    )
+    content._set_output_columns_checked = (
+        JoinContent._set_output_columns_checked.__get__(content, JoinContent)
+    )
     content.history = DummyHistory()
     content.selected_columns = [{"name": "existing_right", "source": "R"}]
     content.mapping_data = [{"left_column": "id", "right_column": "id"}]
@@ -205,10 +219,18 @@ def test_join_mapping_rows_show_dtype_labels_but_keep_raw_column_names() -> None
     _get_app()
 
     content = SimpleNamespace()
-    content._get_frame_schema = JoinContent._get_frame_schema.__get__(content, JoinContent)
-    content._format_column_label = JoinContent._format_column_label.__get__(content, JoinContent)
-    content._populate_column_combo = JoinContent._populate_column_combo.__get__(content, JoinContent)
-    content._combo_current_column = JoinContent._combo_current_column.__get__(content, JoinContent)
+    content._get_frame_schema = JoinContent._get_frame_schema.__get__(
+        content, JoinContent
+    )
+    content._format_column_label = JoinContent._format_column_label.__get__(
+        content, JoinContent
+    )
+    content._populate_column_combo = JoinContent._populate_column_combo.__get__(
+        content, JoinContent
+    )
+    content._combo_current_column = JoinContent._combo_current_column.__get__(
+        content, JoinContent
+    )
     content.update_mapping_data = lambda *args: None
     content.remove_mapping_row = lambda mapping_pair: None
     content.add_mapping_row = JoinContent.add_mapping_row.__get__(content, JoinContent)

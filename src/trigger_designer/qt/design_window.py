@@ -51,6 +51,23 @@ if TYPE_CHECKING:
 DEBUG = False
 DEBUG_CONTEXT = False
 
+# Header prepended to exported scripts (see TriggerSubWindow.getPyFile).
+# Formula/Cleansing nodes emit `from trigger_designer...` imports, which only
+# resolve inside the app. The standalone script must therefore put this
+# repo's `src/` on sys.path itself, resolved relative to the script location
+# (exported scripts live at the repo root, next to `src/`).
+CHECK_OUTPUT_HEADER = (
+    "import os as _td_os\n"
+    "import sys as _td_sys\n"
+    "if _td_os.path.isdir(\n"
+    '    _td_os.path.join(_td_os.path.dirname(_td_os.path.abspath(__file__)), "src")\n'
+    "):\n"
+    "    _td_sys.path.insert(\n"
+    "        0,\n"
+    '        _td_os.path.join(_td_os.path.dirname(_td_os.path.abspath(__file__)), "src"),\n'
+    "    )\n"
+)
+
 
 class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
     Scene_class = TriggerScene
@@ -591,7 +608,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             raise
 
     def getPyFile(self, sorted_nodes) -> None:
-        code = """"""
+        code = CHECK_OUTPUT_HEADER
         for node in sorted_nodes:
             code += node.get_code()
             # print(code)

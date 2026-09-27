@@ -366,6 +366,24 @@ class SelectTableWidget(QAbstractTableModel):
 
     def update_from_changes(self, changes: dict) -> None:
         """Update model state from changes dictionary"""
+        # Restore display order first so undo/redo of a move repaints.
+        # ``column_order`` holds the full order (checked + unchecked);
+        # legacy stamps only have ``selected_columns`` (checked).
+        order = list(changes.get("column_order") or [])
+        if not order:
+            selected = list(changes.get("selected_columns", []))
+            order = selected + [
+                row.text for row in self._data if row.text not in selected
+            ]
+        if order and [row.text for row in self._data] != order:
+            by_name = {row.text: row for row in self._data}
+            if set(by_name) == set(order):
+                try:
+                    self.beginResetModel()
+                    self._data[:] = [by_name[name] for name in order]
+                    self.endResetModel()
+                except RuntimeError:
+                    pass
         for row in range(len(self._data)):
             row_data: RowData = self._data[row]
             # Update checked state
@@ -572,17 +590,14 @@ class SelectTableWidget(QAbstractTableModel):
     #                     break
     #         self.table.setRowHidden(row, not matches)
 
-    def moveRow(self, source_row: int, target_row: int) -> bool:
-        """Move a row from source to target position
-
-        Args:
-            source_row (int): Current row index
-            target_row (int): Target row index
-        """
+    def _move_data(self, source_row: int, target_row: int) -> bool:
+        """Reorder ``_data`` with proper model notifications, without emitting."""
         if not (
             0 <= source_row < len(self._data) and 0 <= target_row < len(self._data)
         ):
             return False
+        if source_row == target_row:
+            return True
 
         # Adjust target position for moving down
         destination_row = target_row + 1 if source_row < target_row else target_row
@@ -595,12 +610,33 @@ class SelectTableWidget(QAbstractTableModel):
             item = self._data.pop(source_row)
             self._data.insert(target_row, item)
             self.endMoveRows()
-            self.data_processed.emit(self.getData())
             return True
         return False
 
+    def moveRow(self, source_row: int, target_row: int) -> bool:
+        """Move a row from source to target position
+
+        Args:
+            source_row (int): Current row index
+            target_row (int): Target row index
+        """
+        if self._move_data(source_row, target_row):
+            # Single-row moves emit unless the caller is batching a block.
+            if source_row != target_row:
+                self.data_processed.emit(self.getData())
+            return True
+        if 0 <= source_row < len(self._data) and 0 <= target_row < len(self._data):
+            return source_row == target_row
+        return False
+
     def moveSelectedRow(self, direction: str, view: QTableView = None) -> None:
-        """Move selected row up or down
+        """Move selected row(s) up or down, preserving the display order.
+
+        Operates on highlighted rows (``selectedRows``) with a fallback to
+        the current index, mapped through the search proxy to source rows.
+        A contiguous block moves together; a single row swaps with its
+        neighbour. Emits one ``data_processed`` so the Select node records
+        a single history step.
 
         Args:
             direction (str): "up" or "down"
@@ -608,35 +644,105 @@ class SelectTableWidget(QAbstractTableModel):
         """
         logger.debug(f"Moving row {direction}")
 
+        if direction not in ("up", "down"):
+            logger.debug(f"Unknown move direction: {direction}")
+            return
+
         if not view:
             logger.debug("No table view provided")
             return
 
-        # Get current row from the view
-        current_index = view.selectionModel().currentIndex()
-        if not current_index.isValid():
+        try:
+            selection_model = view.selectionModel()
+            model = view.model()
+        except RuntimeError:
+            return
+        if selection_model is None:
+            logger.debug("No selection model")
+            return
+
+        is_proxy = isinstance(model, QSortFilterProxyModel)
+
+        def _to_source(row_index) -> int | None:
+            try:
+                if is_proxy:
+                    row_index = model.mapToSource(row_index)
+                if row_index.isValid() and 0 <= row_index.row() < len(self._data):
+                    return row_index.row()
+            except RuntimeError:
+                return None
+            return None
+
+        source_rows: list[int] = []
+        try:
+            for proxy_index in selection_model.selectedRows():
+                row = _to_source(proxy_index)
+                if row is not None and row not in source_rows:
+                    source_rows.append(row)
+        except RuntimeError:
+            return
+        if not source_rows:
+            try:
+                current_index = selection_model.currentIndex()
+            except RuntimeError:
+                return
+            if current_index.isValid():
+                row = _to_source(current_index)
+                if row is not None:
+                    source_rows.append(row)
+        if not source_rows:
             logger.debug("No row selected")
             return
 
-        # Get the source model index if using proxy model
-        source_index = current_index
-        if isinstance(view.model(), QSortFilterProxyModel):
-            source_index = view.model().mapToSource(current_index)
+        source_rows.sort()
+        if direction == "up" and source_rows[0] == 0:
+            return
+        if direction == "down" and source_rows[-1] == len(self._data) - 1:
+            return
 
-        current_row = source_index.row()
-        target_row = current_row - 1 if direction == "up" else current_row + 1
+        if len(source_rows) == 1:
+            current_row = source_rows[0]
+            target_row = current_row - 1 if direction == "up" else current_row + 1
+            if self._move_data(current_row, target_row):
+                self.data_processed.emit(self.getData())
+                self._restore_move_selection(view, [target_row])
+            return
 
-        if 0 <= target_row < len(self._data):
-            # Move the row
-            if self.moveRow(current_row, target_row):
-                # Update selection to follow the moved row
-                new_index = self.index(target_row, current_index.column())
-                if isinstance(view.model(), QSortFilterProxyModel):
-                    new_index = view.model().mapFromSource(new_index)
-                view.setCurrentIndex(new_index)
-                view.selectionModel().select(
-                    new_index, QItemSelectionModel.Select | QItemSelectionModel.Rows
+        # Block move: step rows in an order that keeps the block intact.
+        ordered = (
+            list(source_rows) if direction == "up" else list(reversed(source_rows))
+        )
+        moved = True
+        for row in ordered:
+            target = row - 1 if direction == "up" else row + 1
+            moved = self._move_data(row, target) and moved
+        if moved:
+            step = -1 if direction == "up" else 1
+            self.data_processed.emit(self.getData())
+            self._restore_move_selection(view, [row + step for row in source_rows])
+
+    def _restore_move_selection(self, view: QTableView, source_rows: list[int]) -> None:
+        """Highlight ``source_rows`` after a move so the selection follows."""
+        try:
+            selection_model = view.selectionModel()
+            model = view.model()
+            is_proxy = isinstance(model, QSortFilterProxyModel)
+            selection_model.clearSelection()
+            for row in source_rows:
+                if not 0 <= row < len(self._data):
+                    continue
+                source_index = self.index(row, 0)
+                proxy_index = (
+                    model.mapFromSource(source_index) if is_proxy else source_index
                 )
+                if proxy_index.isValid():
+                    view.setCurrentIndex(proxy_index)
+                    selection_model.select(
+                        proxy_index,
+                        QItemSelectionModel.Select | QItemSelectionModel.Rows,
+                    )
+        except RuntimeError:
+            pass
 
     def onColumnMoved(
         self, logicalIndex: int, oldVisualIndex: int, newVisualIndex: int

@@ -20,6 +20,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
+from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.widgets.common import (
     ColumnChecklist,
@@ -194,6 +195,10 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     variable_name="Name",
                     value_name="Value",
                 )
+                # Unpivot widens Value to the common supertype of the value
+                # columns, which is often outside the Select dropdown
+                # (e.g. all-UInt32 in -> UInt32 out). Normalise the frame.
+                self.data = normalize_to_supported_dtypes(self.data)
 
                 global_logger.info(
                     f"✅ TransposeContent: Transpose completed - Result shape: {frame_shape(self.data)}"
@@ -217,7 +222,10 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 code.append(f"{self.variable_name} = pl.DataFrame()")
             return "\n".join(code) + "\n"
 
-        code_lines = ["import polars as pl"]
+        code_lines = [
+            "import polars as pl",
+            "from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes",
+        ]
 
         # Column names without collecting (incoming may be lazy).
         code_lines.append(
@@ -261,6 +269,8 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"    variable_name='Name',",
                 f"    value_name='Value'",
                 f")",
+                "# Widen unpivot supertypes into Select-supported dtypes",
+                f"{self.variable_name} = normalize_to_supported_dtypes({self.variable_name})",
             ]
         )
 
