@@ -2437,8 +2437,8 @@
     {
       "id": 2607196374192,
       "title": "Formula",
-      "pos_x": 1829.2192382812514,
-      "pos_y": 175.9060058593751,
+      "pos_x": 1844.4780273437511,
+      "pos_y": 175.90600585937506,
       "inputs": [
         {
           "id": 2607196385232,
@@ -2501,8 +2501,8 @@
     {
       "id": 2607193611536,
       "title": "Formula",
-      "pos_x": 2011.7192382812495,
-      "pos_y": 175.9060058593751,
+      "pos_x": 2026.978027343749,
+      "pos_y": 175.90600585937506,
       "inputs": [
         {
           "id": 2607193615216,
@@ -2733,82 +2733,9 @@
       "op": "join.union"
     },
     {
-      "id": 2074988698416,
-      "title": "GroupBy",
-      "pos_x": 2688.7499999999995,
-      "pos_y": 172.49999999999994,
-      "inputs": [
-        {
-          "id": 2074988542576,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 2074988528496,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "actions_data": [
-          {
-            "field": "order_year_month",
-            "action": "GroupBy",
-            "output_name": "order_year_month"
-          },
-          {
-            "field": "net_revenue_usd",
-            "action": "Sum",
-            "output_name": "revenue_usd"
-          },
-          {
-            "field": "gross_margin_usd",
-            "action": "Sum",
-            "output_name": "margin_usd"
-          },
-          {
-            "field": "order_id",
-            "action": "N_Unique",
-            "output_name": "orders"
-          }
-        ],
-        "changes": {
-          "group_by_columns": [
-            "order_year_month"
-          ],
-          "aggregations": {
-            "net_revenue_usd": {
-              "function": "sum",
-              "alias": "revenue_usd"
-            },
-            "gross_margin_usd": {
-              "function": "sum",
-              "alias": "margin_usd"
-            },
-            "order_id": {
-              "function": "n_unique",
-              "alias": "orders"
-            }
-          }
-        }
-      },
-      "label_text": "Agg1",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "preparation",
-      "op": "preparation.groupby"
-    },
-    {
       "id": 2074988497808,
       "title": "Formula",
-      "pos_x": 2166.2499999999995,
+      "pos_x": 2181.508789062499,
       "pos_y": 173.74999999999994,
       "inputs": [
         {
@@ -2860,8 +2787,8 @@
     {
       "id": 2074988703216,
       "title": "Formula",
-      "pos_x": 2353.7499999999995,
-      "pos_y": 168.74999999999991,
+      "pos_x": 2369.008789062499,
+      "pos_y": 168.74999999999994,
       "inputs": [
         {
           "id": 2074988508528,
@@ -2924,7 +2851,7 @@
     {
       "id": 2073979223760,
       "title": "Formula",
-      "pos_x": 2517.4999999999995,
+      "pos_x": 2532.758789062499,
       "pos_y": 173.74999999999994,
       "inputs": [
         {
@@ -2970,8 +2897,8 @@
     {
       "id": 2075644041232,
       "title": "Sort",
-      "pos_x": 2872.4999999999995,
-      "pos_y": 179.99999999999991,
+      "pos_x": 2967.8674316406245,
+      "pos_y": -332.59994506835926,
       "inputs": [
         {
           "id": 2075644035632,
@@ -3004,6 +2931,1529 @@
       "node_code": 6,
       "node_type": "preparation",
       "op": "preparation.sort"
+    },
+    {
+      "id": 2425882315824,
+      "title": "Aggregate",
+      "pos_x": 2809.9523925781227,
+      "pos_y": -332.59017944335926,
+      "inputs": [
+        {
+          "id": 2425882317584,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2425882317904,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "order_year_month",
+            "action": "GroupBy",
+            "output_name": "order_year_month"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "order_year_month"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2576898522352,
+      "title": "Running Total",
+      "pos_x": 3134.4299316406245,
+      "pos_y": -330.9593200683592,
+      "inputs": [
+        {
+          "id": 2576898508432,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2576898508752,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "sum_columns": [
+          "revenue_usd"
+        ],
+        "group_by_columns": [],
+        "numeric_columns": [
+          "revenue_usd",
+          "margin_usd",
+          "orders"
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "transform",
+      "op": "transform.running_total"
+    },
+    {
+      "id": 2576898093168,
+      "title": "Select",
+      "pos_x": 3306.3049316406245,
+      "pos_y": -330.9593200683592,
+      "inputs": [
+        {
+          "id": 2576898088688,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2574905548368,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "order_year_month",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "revenue_usd",
+            "dtype": "Float64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "margin_usd",
+            "dtype": "Float64",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "orders",
+            "dtype": "UInt32",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "RunTot_revenue_usd",
+            "dtype": "Float64",
+            "rename": "cumulative_revenue_usd"
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "order_year_month",
+            "revenue_usd",
+            "margin_usd",
+            "orders",
+            "RunTot_revenue_usd"
+          ],
+          "rename_mapping": {
+            "RunTot_revenue_usd": "cumulative_revenue_usd"
+          },
+          "dtype_mapping": {
+            "order_year_month": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "UInt32",
+            "RunTot_revenue_usd": "Float64"
+          },
+          "column_order": []
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2576898544400,
+      "title": "File Output",
+      "pos_x": 3563.6291503906236,
+      "pos_y": -539.9436950683591,
+      "inputs": [
+        {
+          "id": 2577497388400,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "monthly_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2576898555280,
+      "title": "Transpose",
+      "pos_x": 3554.3518066406227,
+      "pos_y": -327.0530700683593,
+      "inputs": [
+        {
+          "id": 2576898542800,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2576898549520,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "key_columns": [
+          "order_year_month"
+        ],
+        "data_columns": [
+          "revenue_usd",
+          "margin_usd",
+          "orders"
+        ],
+        "missing_action": "warn"
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "transform",
+      "op": "transform.transpose"
+    },
+    {
+      "id": 2577542549008,
+      "title": "Select",
+      "pos_x": 3728.1799316406227,
+      "pos_y": -327.05307006835926,
+      "inputs": [
+        {
+          "id": 2577542550288,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577542550608,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "order_year_month",
+            "dtype": "String",
+            "rename": ""
+          },
+          {
+            "checked": true,
+            "text": "Name",
+            "dtype": "String",
+            "rename": "metric"
+          },
+          {
+            "checked": true,
+            "text": "Value",
+            "dtype": "Float64",
+            "rename": "value"
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "order_year_month",
+            "Name",
+            "Value"
+          ],
+          "rename_mapping": {
+            "Name": "metric",
+            "Value": "value"
+          },
+          "dtype_mapping": {
+            "order_year_month": "String",
+            "Name": "String",
+            "Value": "Float64"
+          },
+          "column_order": []
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2576898090768,
+      "title": "File Output",
+      "pos_x": 3909.8205566406227,
+      "pos_y": -582.9124450683591,
+      "inputs": [
+        {
+          "id": 2577542553008,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue_long.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "monthly_revenue_long.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577497388560,
+      "title": "Aggregate",
+      "pos_x": 2821.9299316406227,
+      "pos_y": -135.64682006835938,
+      "inputs": [
+        {
+          "id": 2577520393456,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577520393136,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "category",
+            "action": "GroupBy",
+            "output_name": "category"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "category"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577520390736,
+      "title": "Sort",
+      "pos_x": 2995.7580566406236,
+      "pos_y": -131.74057006835938,
+      "inputs": [
+        {
+          "id": 2577520391856,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577520392336,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2576898516432,
+      "title": "File Output",
+      "pos_x": 3226.2268066406227,
+      "pos_y": -127.83432006835943,
+      "inputs": [
+        {
+          "id": 2577516291536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/category_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "category_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577542556688,
+      "title": "Sort",
+      "pos_x": 3001.6174316406236,
+      "pos_y": 61.61880493164051,
+      "inputs": [
+        {
+          "id": 2577497385680,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577497382480,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "region",
+            "order": "Ascending"
+          },
+          {
+            "column": "channel_group",
+            "order": "Ascending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2574905550448,
+      "title": "File Output",
+      "pos_x": 3232.0861816406227,
+      "pos_y": 65.52505493164028,
+      "inputs": [
+        {
+          "id": 2574905552848,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/region_channel_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "region_channel_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2574905553968,
+      "title": "Aggregate",
+      "pos_x": 2827.7893066406236,
+      "pos_y": 57.71255493164051,
+      "inputs": [
+        {
+          "id": 2577546006832,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546009232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "region",
+            "action": "GroupBy",
+            "output_name": "region"
+          },
+          {
+            "field": "channel_group",
+            "action": "GroupBy",
+            "output_name": "channel_group"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "region",
+            "channel_group"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546014352,
+      "title": "File Output",
+      "pos_x": 3249.6643066406227,
+      "pos_y": 225.68130493164017,
+      "inputs": [
+        {
+          "id": 2577546006032,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/segment_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "segment_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577546018512,
+      "title": "Aggregate",
+      "pos_x": 2845.3674316406227,
+      "pos_y": 217.86880493164017,
+      "inputs": [
+        {
+          "id": 2577546014832,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546014512,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "segment",
+            "action": "GroupBy",
+            "output_name": "segment"
+          },
+          {
+            "field": "risk_band",
+            "action": "GroupBy",
+            "output_name": "risk_band"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "segment",
+            "risk_band"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546017872,
+      "title": "Sort",
+      "pos_x": 3019.1955566406227,
+      "pos_y": 221.77505493164017,
+      "inputs": [
+        {
+          "id": 2577546018192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546015312,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "region",
+            "order": "Ascending"
+          },
+          {
+            "column": "risk_band",
+            "order": "Ascending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2577546429616,
+      "title": "Aggregate",
+      "pos_x": 2847.3205566406227,
+      "pos_y": 397.55630493164006,
+      "inputs": [
+        {
+          "id": 2577546443536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546432336,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "customer_id",
+            "action": "GroupBy",
+            "output_name": "customer_id"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "customer_id"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546431376,
+      "title": "File Output",
+      "pos_x": 3511.6174316406227,
+      "pos_y": 394.36880493163994,
+      "inputs": [
+        {
+          "id": 2577546440336,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/top_customers.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "top_customers.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577546444176,
+      "title": "Sort",
+      "pos_x": 3281.1486816406227,
+      "pos_y": 390.46255493163994,
+      "inputs": [
+        {
+          "id": 2577546443056,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546443376,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2577520381936,
+      "title": "Filter",
+      "pos_x": 3050.3674316406245,
+      "pos_y": 403.40005493164085,
+      "inputs": [
+        {
+          "id": 2577546444656,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546431216,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2577598701776,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "revenue_usd",
+        "operation": "Greater Than",
+        "value": "4000",
+        "value2": "",
+        "mode": "builder",
+        "expression": ""
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2577598705776,
+      "title": "File Output",
+      "pos_x": 3503.652343749997,
+      "pos_y": 553.2226562499995,
+      "inputs": [
+        {
+          "id": 2577598697616,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/supplier_performance.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "supplier_performance.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577598707376,
+      "title": "Aggregate",
+      "pos_x": 2839.3554687499977,
+      "pos_y": 556.4101562499995,
+      "inputs": [
+        {
+          "id": 2577598700976,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577599131600,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "supplier_id",
+            "action": "GroupBy",
+            "output_name": "supplier_id"
+          },
+          {
+            "field": "supplier_name",
+            "action": "GroupBy",
+            "output_name": "supplier_name"
+          },
+          {
+            "field": "country",
+            "action": "GroupBy",
+            "output_name": "country"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          },
+          {
+            "field": "lead_time_days",
+            "action": "First",
+            "output_name": "lead_time_days"
+          },
+          {
+            "field": "reliability_score",
+            "action": "First",
+            "output_name": "reliability_score"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "supplier_id",
+            "supplier_name",
+            "country"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            },
+            "lead_time_days": {
+              "function": "first",
+              "alias": "lead_time_days"
+            },
+            "reliability_score": {
+              "function": "first",
+              "alias": "reliability_score"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577599133200,
+      "title": "Sort",
+      "pos_x": 3048.5742187499977,
+      "pos_y": 554.1992187499997,
+      "inputs": [
+        {
+          "id": 2577599130960,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577599129520,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2576898550000,
+      "title": "Formula",
+      "pos_x": 3278.808593749997,
+      "pos_y": 554.1992187499995,
+      "inputs": [
+        {
+          "id": 2577610928080,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577610927760,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "revenue_per_lead_day",
+            "formula_text": "[revenue_usd] / [lead_time_days]",
+            "editor_height": 60,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2577516289456,
+      "title": "File Output",
+      "pos_x": 3504.1406249999964,
+      "pos_y": 710.9374999999995,
+      "inputs": [
+        {
+          "id": 2577599124880,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fx_exposure.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "fx_exposure.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577610916240,
+      "title": "Sort",
+      "pos_x": 3049.062499999998,
+      "pos_y": 711.9140624999995,
+      "inputs": [
+        {
+          "id": 2577610923440,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577610919440,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2577599124080,
+      "title": "Aggregate",
+      "pos_x": 2839.843749999998,
+      "pos_y": 714.1249999999995,
+      "inputs": [
+        {
+          "id": 2577610923120,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577610921040,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "currency",
+            "action": "GroupBy",
+            "output_name": "currency"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          },
+          {
+            "field": "usd_rate",
+            "action": "First",
+            "output_name": "usd_rate"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "currency"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            },
+            "usd_rate": {
+              "function": "first",
+              "alias": "usd_rate"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546008112,
+      "title": "File Output",
+      "pos_x": 3506.296874999998,
+      "pos_y": 869.0,
+      "inputs": [
+        {
+          "id": 2576898509072,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Projects/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fx_exposure.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "fx_exposure.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577504582416,
+      "title": "Aggregate",
+      "pos_x": 3062.3125000000005,
+      "pos_y": 876.8750000000001,
+      "inputs": [
+        {
+          "id": 2577504581136,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577504580816,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "Unique_order_id"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "Sum_net_revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "Sum_gross_margin_usd"
+          },
+          {
+            "field": "is_returned",
+            "action": "Sum",
+            "output_name": "Sum_is_returned"
+          },
+          {
+            "field": "customer_id",
+            "action": "N_Unique",
+            "output_name": "Unique_customer_id"
+          },
+          {
+            "field": "product_id",
+            "action": "N_Unique",
+            "output_name": "Unique_product_id"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [],
+          "aggregations": {
+            "order_id": {
+              "function": "n_unique",
+              "alias": "Unique_order_id"
+            },
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "Sum_net_revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "Sum_gross_margin_usd"
+            },
+            "is_returned": {
+              "function": "sum",
+              "alias": "Sum_is_returned"
+            },
+            "customer_id": {
+              "function": "n_unique",
+              "alias": "Unique_customer_id"
+            },
+            "product_id": {
+              "function": "n_unique",
+              "alias": "Unique_product_id"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577504580496,
+      "title": "Sort",
+      "pos_x": 3271.5312500000005,
+      "pos_y": 874.6640625000001,
+      "inputs": [
+        {
+          "id": 2577504579216,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577504578896,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2577504571056,
+      "title": "Formula",
+      "pos_x": 2859.3749999999995,
+      "pos_y": 884.3749999999999,
+      "inputs": [
+        {
+          "id": 2577504570736,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577504569296,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "",
+            "formula_text": "",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
     }
   ],
   "edges": [
@@ -3320,18 +4770,258 @@
       "input_index": 0
     },
     {
-      "id": 2075001563728,
+      "id": 2426074361040,
       "edge_type": 5,
       "start": 2073979219280,
-      "end": 2074988542576,
+      "end": 2425882317584,
       "label": "",
       "input_index": 0
     },
     {
-      "id": 2075006325584,
+      "id": 2577497573456,
       "edge_type": 5,
-      "start": 2074988528496,
+      "start": 2425882317904,
       "end": 2075644035632,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577497763536,
+      "edge_type": 5,
+      "start": 2075644036112,
+      "end": 2576898508432,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577498768208,
+      "edge_type": 5,
+      "start": 2576898508752,
+      "end": 2576898088688,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577500388560,
+      "edge_type": 5,
+      "start": 2574905548368,
+      "end": 2577497388400,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2576898404176,
+      "edge_type": 5,
+      "start": 2574905548368,
+      "end": 2576898542800,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577542981328,
+      "edge_type": 5,
+      "start": 2576898549520,
+      "end": 2577542550288,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577516033872,
+      "edge_type": 5,
+      "start": 2577542550608,
+      "end": 2577542553008,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577547074000,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577520393456,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577545715792,
+      "edge_type": 5,
+      "start": 2577520393136,
+      "end": 2577520391856,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577575444304,
+      "edge_type": 5,
+      "start": 2577520392336,
+      "end": 2577516291536,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2576897257696,
+      "edge_type": 5,
+      "start": 2577546009232,
+      "end": 2577497385680,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2575552299728,
+      "edge_type": 5,
+      "start": 2577497382480,
+      "end": 2574905552848,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577579155536,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577546006832,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577504914000,
+      "edge_type": 5,
+      "start": 2577546014512,
+      "end": 2577546018192,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577545317120,
+      "edge_type": 5,
+      "start": 2577546015312,
+      "end": 2577546006032,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577597686096,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577546014832,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2576898112784,
+      "edge_type": 5,
+      "start": 2577546443376,
+      "end": 2577546440336,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577602689232,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577546443536,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577605684048,
+      "edge_type": 5,
+      "start": 2577546432336,
+      "end": 2577546444656,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577606106704,
+      "edge_type": 5,
+      "start": 2577546431216,
+      "end": 2577546443056,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577498929232,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577598700976,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577498535376,
+      "edge_type": 5,
+      "start": 2577599131600,
+      "end": 2577599130960,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577518260304,
+      "edge_type": 5,
+      "start": 2577599129520,
+      "end": 2577610928080,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577517577808,
+      "edge_type": 5,
+      "start": 2577610927760,
+      "end": 2577598697616,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577521338960,
+      "edge_type": 5,
+      "start": 2577610921040,
+      "end": 2577610923440,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577544363600,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577610923120,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577546659408,
+      "edge_type": 5,
+      "start": 2577610919440,
+      "end": 2577599124880,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577577331536,
+      "edge_type": 5,
+      "start": 2577504580816,
+      "end": 2577504579216,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2575549083440,
+      "edge_type": 5,
+      "start": 2577504578896,
+      "end": 2576898509072,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577597371216,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577504570736,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577596479952,
+      "edge_type": 5,
+      "start": 2577504569296,
+      "end": 2577504581136,
       "label": "",
       "input_index": 0
     }
@@ -3379,11 +5069,49 @@
           255
         ]
       }
+    },
+    {
+      "id": 2577516296176,
+      "type": "Group",
+      "version": 2,
+      "title": "Enriched",
+      "x": 1824.4780273437511,
+      "y": 118.74999999999991,
+      "w": 848.2807617187482,
+      "h": 197.1560058593752,
+      "collapsed": false,
+      "children": [
+        2073979223760,
+        2074988497808,
+        2607196374192,
+        2074988703216,
+        2607193611536
+      ],
+      "style": {
+        "color": [
+          180,
+          80,
+          80,
+          200
+        ],
+        "title_color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "border_color": [
+          50,
+          50,
+          50,
+          255
+        ]
+      }
     }
   ],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-27T09:56:05Z"
+    "saved_at": "2026-09-27T11:41:22Z"
   }
 }

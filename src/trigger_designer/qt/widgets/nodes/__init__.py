@@ -79,7 +79,7 @@ _LAZY_NODE_SPECS = [
         "module_path": "Preparation.groupby",
         "node_code": PreparationNodes.GROUPBY,
         "node_type": NodeTypes.PREPARATION,
-        "node_title": "GroupBy",
+        "node_title": "Aggregate",
         "icon": "node_groupby",
     },
     {

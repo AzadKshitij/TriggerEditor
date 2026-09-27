@@ -59,6 +59,7 @@ class ConfigDock(QDockWidget):
             to have ignored the undo.
         """
         self._disconnect_label_sync()
+        self._commit_previous_if_leaving(nodes)
         if len(nodes) != 1:
             self._current_key = None
             self._current_node = None
@@ -122,6 +123,34 @@ class ConfigDock(QDockWidget):
             traceback.print_exc()
             logger.trace(e)
 
+    def _commit_previous_if_leaving(self, nodes: List["TriggerNode"]) -> None:
+        """Commit deferred dock edits when leaving the current node.
+
+        Nodes with staged (non-live) edits expose
+        ``commit_pending_dock_edits`` (Aggregate). It runs before the dock
+        widgets are destroyed so the model is already current and only the
+        heavy recompute + evaluate happens here.
+        """
+        current = self._current_node
+        if current is None:
+            return
+        try:
+            leaving = len(nodes) != 1 or nodes[0] is not current
+        except Exception:
+            leaving = True
+        if not leaving:
+            return
+        try:
+            content = getattr(current, "content", None)
+        except Exception:
+            return
+        commit = getattr(content, "commit_pending_dock_edits", None)
+        if callable(commit):
+            try:
+                commit()
+            except Exception as e:
+                logger.trace(e)
+
     def _disconnect_label_sync(self) -> None:
         """Drop the floating-label sync installed by the previous rebuild."""
         target, slot = self._label_sync or (None, None)
@@ -152,7 +181,7 @@ class ConfigDock(QDockWidget):
         except Exception:
             return
 
-        section = ConfigSection("Label", info="Floating textbox above the node.")
+        section = ConfigSection("Label")
         edit = QLineEdit(section)
         edit.setObjectName("NodeLabelEdit")
         edit.setPlaceholderText("Node label...")

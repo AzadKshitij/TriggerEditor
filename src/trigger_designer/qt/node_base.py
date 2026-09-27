@@ -556,6 +556,31 @@ class TriggerNode(Node):
         if callable(refresher):
             refresher([self.grNode])
 
+    def _set_node_tooltip(self, text: str) -> None:
+        """Set the canvas tooltip, tolerating a missing graphics node.
+
+        During file load / deserialization, eval can run on a node whose
+        inputs are not wired yet and whose ``grNode`` is still ``None``.
+        A routine "not connected yet" must not become an AttributeError -
+        and the ``eval()`` handlers below must not crash while handling it.
+        """
+        gr = getattr(self, "grNode", None)
+        if gr is None:
+            return
+        try:
+            gr.setToolTip(text)
+        except RuntimeError:
+            pass
+
+    def _node_tooltip(self) -> str:
+        gr = getattr(self, "grNode", None)
+        if gr is None:
+            return ""
+        try:
+            return gr.toolTip() or ""
+        except RuntimeError:
+            return ""
+
     def evalOperation(self, input1: Any, input2: Any) -> int:
         return 123
 
@@ -570,7 +595,7 @@ class TriggerNode(Node):
             if not input_node:
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self.grNode.setToolTip(f"Input {i} is not connected")
+                self._set_node_tooltip(f"Input {i} is not connected")
                 self._refresh_selected_node_config()
                 return None
 
@@ -578,7 +603,7 @@ class TriggerNode(Node):
             if val is None:
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self.grNode.setToolTip(f"Input {i}: upstream node produced no output")
+                self._set_node_tooltip(f"Input {i}: upstream node produced no output")
                 self._refresh_selected_node_config()
                 return None
 
@@ -588,15 +613,15 @@ class TriggerNode(Node):
         if result is None:
             self.markInvalid()
             self.markDescendantsDirty()
-            if not self.grNode.toolTip():
-                self.grNode.setToolTip("Invalid operation")
+            if not self._node_tooltip():
+                self._set_node_tooltip("Invalid operation")
             self._refresh_selected_node_config()
             return None
 
         self.value = result
         self.markInvalid(False)
         self.markDirty(False)
-        self.grNode.setToolTip("")
+        self._set_node_tooltip("")
         self.evalChildren()
         self._refresh_selected_node_config()
         return self.value
@@ -633,11 +658,11 @@ class TriggerNode(Node):
             return val
         except ValueError as e:
             self.markInvalid()
-            self.grNode.setToolTip(str(e))
+            self._set_node_tooltip(str(e))
             self.markDescendantsDirty()
         except Exception as e:
             self.markInvalid()
-            self.grNode.setToolTip(str(e))
+            self._set_node_tooltip(str(e))
             dumpException(e)
             return None  # Add explicit return for exception case
 
