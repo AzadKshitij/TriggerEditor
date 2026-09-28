@@ -82,7 +82,8 @@ Getting `cogs_usd` right is the example's deliberate trap — see the guide.
 
 ## What the pipeline produces
 
-`step2_reference_pipeline.py` writes 23 files to `reference_output/`:
+`step2_reference_pipeline.py` writes its reports and a CSV snapshot after
+each recorded dataframe stage to `reference_output/`:
 
 **Enriched fact** — `orders_enriched.csv` (35 columns), plus `.parquet` from
 the workflow.
@@ -95,7 +96,9 @@ the workflow.
 
 **Audit trails** — `rejected_quantity`, `rejected_price_outliers`,
 `rejected_future_dates`, `duplicate_orders`, `orphan_customers`,
-`orphan_products`, `data_quality_report` (row count at every cleaning stage).
+`orphan_products`, `data_quality_report` (row count at every cleaning stage),
+plus named snapshots such as `01 raw orders.csv`, `05 quantity gate.csv`,
+and `08 deduplicated orders.csv`.
 
 **Reference data** — `reference_data_union` (all five dimensions stacked),
 `scenario_grid`, `kpi_summary`.

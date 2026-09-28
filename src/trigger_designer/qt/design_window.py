@@ -33,7 +33,7 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.widgets.nodes.unknown import TriggerNode_Unknown
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
-from trigger_designer.qt.performance_scene import TriggerScene
+from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
@@ -301,6 +301,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         for node in self.scene.nodes:
             # if node.__class__.__name__ == "CalcNode_Output":
             node.eval()
+        settle_multi_input_nodes(self.scene)
 
     def onHistoryRestored(self) -> None:
         # Force the Config Dock to rebuild: a restore reverts the selected

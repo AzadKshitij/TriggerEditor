@@ -3254,26 +3254,26 @@
           },
           {
             "target_column": "gross_local",
-            "formula_text": "ROUND([g], 2)",
+            "formula_text": "[g]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "discount_local",
-            "formula_text": "ROUND([gross_local] * [discount_pct], 2)",
+            "formula_text": "[g] * [discount_pct]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "net_local",
-            "formula_text": "ROUND([gross_local] - [discount_local], 2)",
+            "formula_text": "[g] - [discount_local]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "total_local",
-            "formula_text": "ROUND([net_local] + [tax_local] + [shipping_local], 2)",
-            "editor_height": 60,
+            "formula_text": "[net_local] + [tax_local] + [shipping_local]",
+            "editor_height": 65,
             "target_dtype": ""
           }
         ]
@@ -3312,31 +3312,31 @@
         "formula_sections": [
           {
             "target_column": "unit_price_usd",
-            "formula_text": "ROUND([unit_price_local] * [usd_rate], 2)",
+            "formula_text": "[unit_price_local] * [usd_rate]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "net_revenue_usd",
-            "formula_text": "ROUND([net_local] * [usd_rate], 2)",
+            "formula_text": "[net_local] * [usd_rate]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "tax_usd",
-            "formula_text": "ROUND([tax_local] * [usd_rate], 2)",
+            "formula_text": "[tax_local] * [usd_rate]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "shipping_usd",
-            "formula_text": "ROUND([shipping_local] * [usd_rate], 2)",
+            "formula_text": "[shipping_local] * [usd_rate]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "total_usd",
-            "formula_text": "ROUND([total_local] * [usd_rate], 2)",
+            "formula_text": "[total_local] * [usd_rate]",
             "editor_height": 60,
             "target_dtype": ""
           }
@@ -3352,8 +3352,8 @@
     {
       "id": 2433019852784,
       "title": "Union",
-      "pos_x": 914.5962562561026,
-      "pos_y": 1264.9438476562495,
+      "pos_x": 900.5962562561026,
+      "pos_y": 1261.9438476562495,
       "inputs": [
         {
           "id": 2433019854224,
@@ -3546,20 +3546,20 @@
         "formula_sections": [
           {
             "target_column": "cogs_usd",
-            "formula_text": "ROUND([quantity] * [unit_cost], 2)",
+            "formula_text": "[quantity] * [unit_cost]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "gross_margin_usd",
-            "formula_text": "ROUND([net_revenue_usd] - [cogs_usd], 2)",
+            "formula_text": "[net_revenue_usd] - [cogs_usd]",
             "editor_height": 60,
             "target_dtype": ""
           },
           {
             "target_column": "margin_pct",
-            "formula_text": "ROUND(CASE\n    WHEN [net_revenue_usd] IS NULL OR [net_revenue_usd] = 0 THEN NULL\n    ELSE [gross_margin_usd] / [net_revenue_usd]\nEND, 4)",
-            "editor_height": 120,
+            "formula_text": "CASE\n    WHEN [net_revenue_usd] IS NULL OR [net_revenue_usd] = 0 THEN NULL\n    ELSE [gross_margin_usd] / [net_revenue_usd]\nEND",
+            "editor_height": 118,
             "target_dtype": ""
           }
         ]
@@ -3661,27 +3661,15 @@
       "content": {
         "formula_sections": [
           {
-            "target_column": "is_returned",
-            "formula_text": "CASE WHEN LOWER([is_returned]) = 'true' THEN true ELSE false END",
-            "editor_height": 60,
-            "target_dtype": ""
-          },
-          {
             "target_column": "risk_score",
             "formula_text": "(CASE WHEN [is_returned] THEN 2 ELSE 0 END)\n+ (CASE WHEN [status] IN ('refunded', 'cancelled') THEN 2 ELSE 0 END)\n+ (CASE WHEN [net_revenue_usd] > 2000 THEN 1 ELSE 0 END)\n+ (CASE WHEN [margin_pct] < 0.10 THEN 1 ELSE 0 END)\n+ (CASE WHEN [segment] IS NULL THEN 2 ELSE 0 END)\n",
-            "editor_height": 160,
+            "editor_height": 125,
             "target_dtype": ""
           },
           {
             "target_column": "risk_band",
             "formula_text": "CASE\n    WHEN [risk_score] >= 4 THEN 'High'\n    WHEN [risk_score] >= 2 THEN 'Medium'\n    ELSE 'Low'\nEND",
-            "editor_height": 140,
-            "target_dtype": ""
-          },
-          {
-            "target_column": "status_clean",
-            "formula_text": "CASE [status] WHEN 'paid' THEN 'Paid'\n  WHEN 'pending' THEN 'Pending'\n  WHEN 'refunded' THEN 'Refunded'\n  WHEN 'cancelled' THEN 'Cancelled'\n  WHEN 'partially refunded' THEN 'Partially Refunded'\n  ELSE [status] END",
-            "editor_height": 160,
+            "editor_height": 120,
             "target_dtype": ""
           }
         ]
@@ -3696,8 +3684,8 @@
     {
       "id": 2075644041232,
       "title": "Sort",
-      "pos_x": 2941.164550781249,
-      "pos_y": -336.41464233398415,
+      "pos_x": 2967.8674316406245,
+      "pos_y": -332.59994506835926,
       "inputs": [
         {
           "id": 2075644035632,
@@ -3734,8 +3722,8 @@
     {
       "id": 2425882315824,
       "title": "Aggregate",
-      "pos_x": 2783.2495117187473,
-      "pos_y": -336.40487670898415,
+      "pos_x": 2809.9523925781227,
+      "pos_y": -332.59017944335926,
       "inputs": [
         {
           "id": 2425882317584,
@@ -5735,12 +5723,6 @@
             "text": "customer_name",
             "dtype": "String",
             "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "status_clean",
-            "dtype": "String",
-            "rename": ""
           }
         ],
         "changes": {
@@ -5805,8 +5787,7 @@
             "value_band",
             "risk_score",
             "risk_band",
-            "customer_name",
-            "status_clean"
+            "customer_name"
           ],
           "rename_mapping": {},
           "dtype_mapping": {
@@ -5932,8 +5913,7 @@
             "value_band",
             "risk_score",
             "risk_band",
-            "customer_name",
-            "status_clean"
+            "customer_name"
           ],
           "auto_accept_new_columns": true
         }
@@ -6144,8 +6124,8 @@
     {
       "id": 2744854855056,
       "title": "File Output",
-      "pos_x": 1150.1440429687505,
-      "pos_y": 1168.7636718749986,
+      "pos_x": 1128.1713867187502,
+      "pos_y": 1149.2324218749989,
       "inputs": [
         {
           "id": 2744854854416,
@@ -6611,10 +6591,55 @@
       "op": "preparation.select"
     },
     {
+      "id": 1565529555824,
+      "title": "Filter",
+      "pos_x": -984.3749999999993,
+      "pos_y": 15.62499999999999,
+      "inputs": [
+        {
+          "id": 1565529555344,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1565510983888,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1565510982288,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "region",
+        "operation": "Equals",
+        "value": "",
+        "value2": "",
+        "mode": "builder",
+        "expression": ""
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
       "id": 1564690265616,
       "title": "File Output",
-      "pos_x": 930.7861328124989,
-      "pos_y": -341.79687499999955,
+      "pos_x": 971.8017578124989,
+      "pos_y": -326.1718749999996,
       "inputs": [
         {
           "id": 1565216039280,
@@ -6633,1441 +6658,6 @@
         "include_bom": false
       },
       "label_text": "04 dropped null key rows.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000003,
-      "title": "File Output",
-      "pos_x": 245.0,
-      "pos_y": -290.0,
-      "inputs": [
-        {
-          "id": 9000000000002,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_quantity.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "rejected_quantity.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000006,
-      "title": "File Output",
-      "pos_x": 421.0,
-      "pos_y": -290.0,
-      "inputs": [
-        {
-          "id": 9000000000005,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_price_outliers.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "rejected_price_outliers.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000009,
-      "title": "File Output",
-      "pos_x": 590.0,
-      "pos_y": -290.0,
-      "inputs": [
-        {
-          "id": 9000000000008,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_future_dates.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "rejected_future_dates.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000012,
-      "title": "File Output",
-      "pos_x": 786.0,
-      "pos_y": -290.0,
-      "inputs": [
-        {
-          "id": 9000000000011,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/duplicate_orders.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "duplicate_orders.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000015,
-      "title": "File Output",
-      "pos_x": 1149.5758056640623,
-      "pos_y": 1696.7502593994138,
-      "inputs": [
-        {
-          "id": 9000000000014,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_customers.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "orphan_customers.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000018,
-      "title": "File Output",
-      "pos_x": 900.0,
-      "pos_y": 1600.0,
-      "inputs": [
-        {
-          "id": 9000000000017,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_products.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "orphan_products.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000022,
-      "title": "Select",
-      "pos_x": 2669.073486328125,
-      "pos_y": -1258.172607421875,
-      "inputs": [
-        {
-          "id": 9000000000020,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000021,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "table_data": [
-          {
-            "checked": true,
-            "text": "order_id",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "order_ts",
-            "dtype": "Datetime",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "order_year",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "order_month",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "order_year_month",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_id",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "product_id",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "supplier_id",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "channel_id",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "channel_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "channel_group",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "category",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "subcategory",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "brand",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_country",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "region",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "segment",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "loyalty_tier",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "currency",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "usd_rate",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "status",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "status_clean",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "quantity",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "unit_price_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "discount_pct",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "net_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "total_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "net_revenue_usd",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "cogs_usd",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "gross_margin_usd",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "margin_pct",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "value_band",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "risk_score",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "risk_band",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "is_returned",
-            "dtype": "Boolean",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "is_bulk",
-            "dtype": "Boolean",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "country",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_age_band",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_currency",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_email",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "is_digital",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "launch_date",
-            "dtype": "Date",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "lead_time_days",
-            "dtype": "Int64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "payment_method",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "product_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "reliability_score",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "shipping_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "signup_date",
-            "dtype": "Date",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "sku",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "supplier_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "tax_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "unit_cost",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "unit_price",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "currency_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "customer_name",
-            "dtype": "String",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "g",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "gross_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "discount_local",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "unit_price_usd",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "tax_usd",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "shipping_usd",
-            "dtype": "Float64",
-            "rename": ""
-          },
-          {
-            "checked": true,
-            "text": "total_usd",
-            "dtype": "Float64",
-            "rename": ""
-          }
-        ],
-        "changes": {
-          "selected_columns": [
-            "order_id",
-            "order_ts",
-            "order_year",
-            "order_month",
-            "order_year_month",
-            "customer_id",
-            "product_id",
-            "supplier_id",
-            "channel_id",
-            "channel_name",
-            "channel_group",
-            "category",
-            "subcategory",
-            "brand",
-            "customer_country",
-            "region",
-            "segment",
-            "loyalty_tier",
-            "currency",
-            "usd_rate",
-            "status",
-            "status_clean",
-            "quantity",
-            "unit_price_local",
-            "discount_pct",
-            "net_local",
-            "total_local",
-            "net_revenue_usd",
-            "cogs_usd",
-            "gross_margin_usd",
-            "margin_pct",
-            "value_band",
-            "risk_score",
-            "risk_band",
-            "is_returned",
-            "is_bulk",
-            "country",
-            "customer_age_band",
-            "customer_currency",
-            "customer_email",
-            "is_digital",
-            "launch_date",
-            "lead_time_days",
-            "payment_method",
-            "product_name",
-            "reliability_score",
-            "shipping_local",
-            "signup_date",
-            "sku",
-            "supplier_name",
-            "tax_local",
-            "unit_cost",
-            "unit_price",
-            "currency_name",
-            "customer_name",
-            "g",
-            "gross_local",
-            "discount_local",
-            "unit_price_usd",
-            "tax_usd",
-            "shipping_usd",
-            "total_usd"
-          ],
-          "rename_mapping": {},
-          "dtype_mapping": {
-            "order_id": "String",
-            "order_ts": "Datetime",
-            "order_year": "Int64",
-            "order_month": "Int64",
-            "order_year_month": "String",
-            "customer_id": "Int64",
-            "product_id": "Int64",
-            "supplier_id": "Int64",
-            "channel_id": "Int64",
-            "channel_name": "String",
-            "channel_group": "String",
-            "category": "String",
-            "subcategory": "String",
-            "brand": "String",
-            "customer_country": "String",
-            "region": "String",
-            "segment": "String",
-            "loyalty_tier": "String",
-            "currency": "String",
-            "usd_rate": "Float64",
-            "status": "String",
-            "status_clean": "String",
-            "quantity": "Int64",
-            "unit_price_local": "Float64",
-            "discount_pct": "Float64",
-            "net_local": "Float64",
-            "total_local": "Float64",
-            "net_revenue_usd": "Float64",
-            "cogs_usd": "Float64",
-            "gross_margin_usd": "Float64",
-            "margin_pct": "Float64",
-            "value_band": "String",
-            "risk_score": "Int64",
-            "risk_band": "String",
-            "is_returned": "Boolean",
-            "is_bulk": "Boolean"
-          },
-          "column_order": [
-            "order_id",
-            "order_ts",
-            "order_year",
-            "order_month",
-            "order_year_month",
-            "customer_id",
-            "product_id",
-            "supplier_id",
-            "channel_id",
-            "channel_name",
-            "channel_group",
-            "category",
-            "subcategory",
-            "brand",
-            "customer_country",
-            "region",
-            "segment",
-            "loyalty_tier",
-            "currency",
-            "usd_rate",
-            "status",
-            "status_clean",
-            "quantity",
-            "unit_price_local",
-            "discount_pct",
-            "net_local",
-            "total_local",
-            "net_revenue_usd",
-            "cogs_usd",
-            "gross_margin_usd",
-            "margin_pct",
-            "value_band",
-            "risk_score",
-            "risk_band",
-            "is_returned",
-            "is_bulk",
-            "country",
-            "customer_age_band",
-            "customer_currency",
-            "customer_email",
-            "is_digital",
-            "launch_date",
-            "lead_time_days",
-            "payment_method",
-            "product_name",
-            "reliability_score",
-            "shipping_local",
-            "signup_date",
-            "sku",
-            "supplier_name",
-            "tax_local",
-            "unit_cost",
-            "unit_price",
-            "currency_name",
-            "customer_name",
-            "g",
-            "gross_local",
-            "discount_local",
-            "unit_price_usd",
-            "tax_usd",
-            "shipping_usd",
-            "total_usd"
-          ],
-          "auto_accept_new_columns": true
-        }
-      },
-      "label_text": "orders_enriched columns",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 5,
-      "node_type": "preparation",
-      "op": "preparation.select"
-    },
-    {
-      "id": 9000000000025,
-      "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -1258.172607421875,
-      "inputs": [
-        {
-          "id": 9000000000024,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enriched.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "orders_enriched.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000030,
-      "title": "Filter",
-      "pos_x": 2669.073486328125,
-      "pos_y": -1108.172607421875,
-      "inputs": [
-        {
-          "id": 9000000000027,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000028,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        },
-        {
-          "id": 9000000000029,
-          "index": 1,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "column": "segment",
-        "operation": "Equals",
-        "value": "Enterprise",
-        "value2": "",
-        "mode": "builder",
-        "expression": ""
-      },
-      "label_text": "Enterprise Filter",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 2,
-      "node_type": "preparation",
-      "op": "preparation.filter"
-    },
-    {
-      "id": 9000000000033,
-      "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -1108.172607421875,
-      "inputs": [
-        {
-          "id": 9000000000032,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enterprise.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "orders_enterprise.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000038,
-      "title": "Filter",
-      "pos_x": 2669.073486328125,
-      "pos_y": -958.1726074218749,
-      "inputs": [
-        {
-          "id": 9000000000035,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000036,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        },
-        {
-          "id": 9000000000037,
-          "index": 1,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "column": "risk_band",
-        "operation": "Equals",
-        "value": "High",
-        "value2": "",
-        "mode": "builder",
-        "expression": ""
-      },
-      "label_text": "High Risk Filter",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 2,
-      "node_type": "preparation",
-      "op": "preparation.filter"
-    },
-    {
-      "id": 9000000000041,
-      "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -958.1726074218749,
-      "inputs": [
-        {
-          "id": 9000000000040,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_high_risk.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "orders_high_risk.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000046,
-      "title": "Split",
-      "pos_x": 2669.073486328125,
-      "pos_y": -808.1726074218749,
-      "inputs": [
-        {
-          "id": 9000000000043,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000044,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        },
-        {
-          "id": 9000000000045,
-          "index": 1,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "estimation_percent": 80,
-        "random_seed": 42,
-        "is_random": true
-      },
-      "label_text": "Split 80/20",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 8,
-      "node_type": "preparation",
-      "op": "preparation.split"
-    },
-    {
-      "id": 9000000000049,
-      "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -835.2844238281248,
-      "inputs": [
-        {
-          "id": 9000000000048,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_estimation.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "fact_estimation.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000052,
-      "title": "File Output",
-      "pos_x": 3080.517578125,
-      "pos_y": -678.0639648437498,
-      "inputs": [
-        {
-          "id": 9000000000051,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_validation.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "fact_validation.csv",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 4,
-      "node_type": "input",
-      "op": "input.file_output"
-    },
-    {
-      "id": 9000000000056,
-      "title": "Formula",
-      "pos_x": 683.7695312500001,
-      "pos_y": 2128.40625,
-      "inputs": [
-        {
-          "id": 9000000000054,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000055,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "formula_sections": [
-          {
-            "target_column": "source_table",
-            "formula_text": "'customers'",
-            "editor_height": 60,
-            "target_dtype": ""
-          }
-        ]
-      },
-      "label_text": "tag customers",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "preparation",
-      "op": "preparation.formula"
-    },
-    {
-      "id": 9000000000060,
-      "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2300.0,
-      "inputs": [
-        {
-          "id": 9000000000058,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000059,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "formula_sections": [
-          {
-            "target_column": "source_table",
-            "formula_text": "'products'",
-            "editor_height": 60,
-            "target_dtype": ""
-          }
-        ]
-      },
-      "label_text": "tag products",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "preparation",
-      "op": "preparation.formula"
-    },
-    {
-      "id": 9000000000064,
-      "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2450.0,
-      "inputs": [
-        {
-          "id": 9000000000062,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000063,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "formula_sections": [
-          {
-            "target_column": "source_table",
-            "formula_text": "'suppliers'",
-            "editor_height": 60,
-            "target_dtype": ""
-          }
-        ]
-      },
-      "label_text": "tag suppliers",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "preparation",
-      "op": "preparation.formula"
-    },
-    {
-      "id": 9000000000068,
-      "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2600.0,
-      "inputs": [
-        {
-          "id": 9000000000066,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000067,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "formula_sections": [
-          {
-            "target_column": "source_table",
-            "formula_text": "'channels'",
-            "editor_height": 60,
-            "target_dtype": ""
-          }
-        ]
-      },
-      "label_text": "tag channels",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "preparation",
-      "op": "preparation.formula"
-    },
-    {
-      "id": 9000000000072,
-      "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2750.0,
-      "inputs": [
-        {
-          "id": 9000000000070,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000071,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "formula_sections": [
-          {
-            "target_column": "source_table",
-            "formula_text": "'fx_rates'",
-            "editor_height": 60,
-            "target_dtype": ""
-          }
-        ]
-      },
-      "label_text": "tag fx_rates",
-      "label_visible": true,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "preparation",
-      "op": "preparation.formula"
-    },
-    {
-      "id": 9000000000076,
-      "title": "Union",
-      "pos_x": 1050.0,
-      "pos_y": 2225.0,
-      "inputs": [
-        {
-          "id": 9000000000074,
-          "index": 0,
-          "multi_edges": true,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000075,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "mode": "by_name",
-        "column_map": []
-      },
-      "label_text": "",
-      "label_visible": false,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "join",
-      "op": "join.union"
-    },
-    {
-      "id": 9000000000081,
-      "title": "Union",
-      "pos_x": 1400.0,
-      "pos_y": 2340.0,
-      "inputs": [
-        {
-          "id": 9000000000079,
-          "index": 0,
-          "multi_edges": true,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000080,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "mode": "by_name",
-        "column_map": [
-          {
-            "output": "supplier_id",
-            "sources": [
-              "supplier_id",
-              null
-            ]
-          },
-          {
-            "output": "supplier_name",
-            "sources": [
-              "supplier_name",
-              null
-            ]
-          },
-          {
-            "output": "country",
-            "sources": [
-              "country",
-              null
-            ]
-          },
-          {
-            "output": "lead_time_days",
-            "sources": [
-              "lead_time_days",
-              null
-            ]
-          },
-          {
-            "output": "reliability_score",
-            "sources": [
-              "reliability_score",
-              null
-            ]
-          },
-          {
-            "output": "source_table",
-            "sources": [
-              "source_table",
-              null
-            ]
-          }
-        ]
-      },
-      "label_text": "",
-      "label_visible": false,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "join",
-      "op": "join.union"
-    },
-    {
-      "id": 9000000000086,
-      "title": "Union",
-      "pos_x": 1750.0,
-      "pos_y": 2460.0,
-      "inputs": [
-        {
-          "id": 9000000000084,
-          "index": 0,
-          "multi_edges": true,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000085,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "mode": "by_name",
-        "column_map": []
-      },
-      "label_text": "",
-      "label_visible": false,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "join",
-      "op": "join.union"
-    },
-    {
-      "id": 9000000000091,
-      "title": "Union",
-      "pos_x": 2100.0,
-      "pos_y": 2580.0,
-      "inputs": [
-        {
-          "id": 9000000000089,
-          "index": 0,
-          "multi_edges": true,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [
-        {
-          "id": 9000000000090,
-          "index": 0,
-          "multi_edges": true,
-          "position": 5,
-          "socket_type": 3
-        }
-      ],
-      "content": {
-        "mode": "by_name",
-        "column_map": []
-      },
-      "label_text": "",
-      "label_visible": false,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "join",
-      "op": "join.union"
-    },
-    {
-      "id": 9000000000095,
-      "title": "File Output",
-      "pos_x": 2450.0,
-      "pos_y": 2580.0,
-      "inputs": [
-        {
-          "id": 9000000000094,
-          "index": 0,
-          "multi_edges": false,
-          "position": 2,
-          "socket_type": 1
-        }
-      ],
-      "outputs": [],
-      "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/reference_data_union.csv",
-        "file_format": "csv",
-        "delimiter": ",",
-        "use_streaming": true,
-        "include_bom": false
-      },
-      "label_text": "reference_data_union.csv",
       "label_visible": true,
       "label_offset": 10.0,
       "node_code": 4,
@@ -8741,244 +7331,20 @@
       "input_index": 0
     },
     {
-      "id": 1565283961168,
+      "id": 1565177446096,
       "edge_type": 5,
-      "start": 2259315344720,
+      "start": 2667100864592,
+      "end": 1565529555344,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1563163376464,
+      "edge_type": 5,
+      "start": 2207682769008,
       "end": 1565216039280,
       "label": "",
       "input_index": 0
-    },
-    {
-      "id": 9000000000004,
-      "edge_type": 5,
-      "start": 2699443891216,
-      "end": 9000000000002,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000007,
-      "edge_type": 5,
-      "start": 2699443578800,
-      "end": 9000000000005,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000010,
-      "edge_type": 5,
-      "start": 2699443888816,
-      "end": 9000000000008,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000013,
-      "edge_type": 5,
-      "start": 2259315346160,
-      "end": 9000000000011,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000016,
-      "edge_type": 5,
-      "start": 2607119188048,
-      "end": 9000000000014,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000019,
-      "edge_type": 5,
-      "start": 2607119192208,
-      "end": 9000000000017,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000023,
-      "edge_type": 5,
-      "start": 2073979219280,
-      "end": 9000000000020,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000026,
-      "edge_type": 5,
-      "start": 9000000000021,
-      "end": 9000000000024,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000031,
-      "edge_type": 5,
-      "start": 2073979219280,
-      "end": 9000000000027,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000034,
-      "edge_type": 5,
-      "start": 9000000000028,
-      "end": 9000000000032,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000039,
-      "edge_type": 5,
-      "start": 2073979219280,
-      "end": 9000000000035,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000042,
-      "edge_type": 5,
-      "start": 9000000000036,
-      "end": 9000000000040,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000047,
-      "edge_type": 5,
-      "start": 2073979219280,
-      "end": 9000000000043,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000050,
-      "edge_type": 5,
-      "start": 9000000000044,
-      "end": 9000000000048,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000053,
-      "edge_type": 5,
-      "start": 9000000000045,
-      "end": 9000000000051,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000057,
-      "edge_type": 5,
-      "start": 2667100709552,
-      "end": 9000000000054,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000061,
-      "edge_type": 5,
-      "start": 2667100873552,
-      "end": 9000000000058,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000065,
-      "edge_type": 5,
-      "start": 2667248194320,
-      "end": 9000000000062,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000069,
-      "edge_type": 5,
-      "start": 2667100712592,
-      "end": 9000000000066,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000073,
-      "edge_type": 5,
-      "start": 2259284033072,
-      "end": 9000000000070,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000077,
-      "edge_type": 5,
-      "start": 9000000000055,
-      "end": 9000000000074,
-      "label": "#2",
-      "input_index": 1
-    },
-    {
-      "id": 9000000000078,
-      "edge_type": 5,
-      "start": 9000000000059,
-      "end": 9000000000074,
-      "label": "#1",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000087,
-      "edge_type": 5,
-      "start": 9000000000080,
-      "end": 9000000000084,
-      "label": "#2",
-      "input_index": 1
-    },
-    {
-      "id": 9000000000088,
-      "edge_type": 5,
-      "start": 9000000000067,
-      "end": 9000000000084,
-      "label": "#1",
-      "input_index": 0
-    },
-    {
-      "id": 9000000000096,
-      "edge_type": 5,
-      "start": 9000000000090,
-      "end": 9000000000094,
-      "label": "",
-      "input_index": 0
-    },
-    {
-      "id": 2685712947792,
-      "edge_type": 5,
-      "start": 9000000000085,
-      "end": 9000000000089,
-      "label": "#1",
-      "input_index": 0
-    },
-    {
-      "id": 2682703555792,
-      "edge_type": 5,
-      "start": 9000000000071,
-      "end": 9000000000089,
-      "label": "#2",
-      "input_index": 1
-    },
-    {
-      "id": 2682672215632,
-      "edge_type": 5,
-      "start": 9000000000075,
-      "end": 9000000000079,
-      "label": "#1",
-      "input_index": 0
-    },
-    {
-      "id": 2686356468048,
-      "edge_type": 5,
-      "start": 9000000000063,
-      "end": 9000000000079,
-      "label": "#2",
-      "input_index": 1
     }
   ],
   "groups": [
@@ -8988,9 +7354,9 @@
       "version": 2,
       "title": "Joins",
       "x": 640.744693756104,
-      "y": 1118.7636718749986,
+      "y": 1099.2324218749989,
       "w": 1797.216243743897,
-      "h": 880.9470214843759,
+      "h": 900.4782714843757,
       "collapsed": false,
       "children": [
         2607193616816,
@@ -9007,8 +7373,7 @@
         2745368505040,
         2745368494800,
         2744854855056,
-        2824864700000,
-        9000000000015
+        2824864700000
       ],
       "style": {
         "color": [
@@ -9073,6 +7438,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-28T11:13:54Z"
+    "saved_at": "2026-09-28T10:59:07Z"
   }
 }

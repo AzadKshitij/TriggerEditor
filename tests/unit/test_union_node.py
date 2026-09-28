@@ -208,6 +208,77 @@ def test_get_code_executes() -> None:
     assert out.collect().shape == (2, 3)
 
 
+def test_deserialize_then_single_pass_undercounts_chained_union() -> None:
+    """Reproduces the file-load/undo-restore bug: a Union feeding another
+    Union settles with only one of its two inputs after a single eval()
+    pass, and settle_multi_input_nodes() fixes it.
+
+    _wire_union() above does not reproduce this - it calls
+    onEdgeConnectionChanged() immediately per edge, which always reflects
+    the full edge list right away. The real bug only shows up after a
+    Scene.deserialize() round trip, which attaches every edge with no node
+    notification at all (matching a real file load or undo/redo restore).
+    """
+    from nodeeditor.node_edge import Edge
+
+    from trigger_designer.qt.node_base import TriggerNode
+    from trigger_designer.qt.performance_scene import (
+        TriggerScene,
+        settle_multi_input_nodes,
+    )
+    from trigger_designer.qt.widgets.nodes.Join.union import TriggerNode_Union
+
+    class _StubSource(TriggerNode):
+        node_title = "StubSource"
+
+        def evalImplementation(self):
+            self.markDirty(False)
+            self.markInvalid(False)
+            self.value = [
+                {"data": pl.DataFrame({"v": [1]}), "variable_name": self.title}
+            ]
+            return self.value
+
+    # Build src_a, src_b -> u1;  u1, src_c -> u2  in a scratch scene, purely
+    # to get a valid serialized graph (this scratch scene's own dirty state
+    # doesn't matter - it's discarded right after serialize()).
+    scratch = TriggerScene()
+    src_a, src_b, src_c = (
+        _StubSource(scratch, inputs=[], outputs=[3]) for _ in range(3)
+    )
+    u1 = TriggerNode_Union(scratch)
+    u2 = TriggerNode_Union(scratch)
+    for src in (src_a, src_b):
+        edge = Edge(scratch, src.outputs[0], u1.inputs[0])
+        u1.onEdgeConnectionChanged(edge)
+    for sock in (u1.outputs[0], src_c.outputs[0]):
+        edge = Edge(scratch, sock, u2.inputs[0])
+        u2.onEdgeConnectionChanged(edge)
+    u1_id, u2_id = u1.id, u2.id
+    data = scratch.serialize()
+
+    selector = {
+        "Union": TriggerNode_Union,
+        "StubSource": _StubSource,
+    }
+    fresh = TriggerScene()
+    fresh.setNodeClassSelector(lambda node_data: selector[node_data["title"]])
+    assert fresh.deserialize(data) is not False
+
+    fresh_u1 = next(n for n in fresh.nodes if n.id == u1_id)
+    fresh_u2 = next(n for n in fresh.nodes if n.id == u2_id)
+
+    # Pin the bug: one plain eval pass under-counts the downstream Union.
+    for node in fresh.nodes:
+        node.eval()
+    assert len(fresh_u2.content.input_variables) == 1
+
+    # The fix: settling re-derives both Unions correctly.
+    settle_multi_input_nodes(fresh)
+    assert len(fresh_u1.content.input_variables) == 2
+    assert len(fresh_u2.content.input_variables) == 2
+
+
 def test_create_layout_empty_state_and_mode() -> None:
     from trigger_designer.qt.performance_scene import TriggerScene
     from trigger_designer.qt.widgets.nodes.Join.union import TriggerNode_Union
