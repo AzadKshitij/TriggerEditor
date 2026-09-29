@@ -798,15 +798,21 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.f_data = None
             return
         try:
-            if isinstance(self.incom_data, pl.LazyFrame):
-                current_df = self.incom_data.collect()
-                was_lazy = True
-            else:
-                current_df = self.incom_data
-                was_lazy = False
-            prepared = self._prepare_filter_sql(text, list(current_df.columns))
+            # DuckDB can scan a Polars LazyFrame directly (its replacement
+            # scans understand LazyFrame natively) - collecting first would
+            # force the whole upstream lazy chain to materialize on every
+            # keystroke, even though DuckDB re-materializes it anyway.
+            was_lazy = isinstance(self.incom_data, pl.LazyFrame)
+            prepared = self._prepare_filter_sql(
+                text, list(frame_schema(self.incom_data))
+            )
             with duckdb.connect(":memory:") as duck:
-                duck.register("df_filter", current_df)
+                duck.register("df_filter", self.incom_data)
+                # Eager .pl() here, not lazy=True: a lazy result streams
+                # from this connection on collect(), which fails once the
+                # `with` block below has closed it. Materializing now, while
+                # the connection is open, then re-wrapping is what the
+                # original code did too.
                 self.data = duck.execute(
                     f"SELECT * FROM df_filter WHERE {prepared}"
                 ).pl()
@@ -826,10 +832,10 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is None or not (text or "").strip():
             return []
         try:
-            if isinstance(self.incom_data, pl.LazyFrame):
-                sample = self.incom_data.collect().head(0)
-            else:
-                sample = self.incom_data.head(0)
+            # EXPLAIN only needs column names/types, never real rows - build
+            # a zero-row frame from the lazy-safe schema instead of collecting
+            # the whole upstream chain on every keystroke of the editor.
+            sample = pl.DataFrame(schema=frame_schema(self.incom_data))
             prepared = self._prepare_filter_sql(text, list(sample.columns))
             with duckdb.connect(":memory:") as duck:
                 duck.register("df_filter", sample)

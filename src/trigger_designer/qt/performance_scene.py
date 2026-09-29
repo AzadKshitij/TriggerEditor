@@ -119,6 +119,9 @@ class TriggerScene(Scene):
         self._bulk_loading = False
         self._deferred_edge_updates: set[TriggerEdge] = set()
         self.loaded_workflow_metadata: dict[str, object] = {}
+        #: Set by helpers.eval_progress.eval_progress_dialog while a
+        #: progress dialog is driving a load/recompute; None otherwise.
+        self._eval_progress_cb = None
 
     def getEdgeClass(self):
         return TriggerEdge

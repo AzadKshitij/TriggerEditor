@@ -42,6 +42,7 @@
     "card_border": "#3c3c3c",
     "editor_background": "#14171b",
     "error_text": "#ff6b6b",
+    "background_warning": "#5a3e0c",
     
     "spacing_tiny": "1px",
     "spacing_small": "2px",

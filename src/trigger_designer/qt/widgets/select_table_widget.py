@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Optional
 from loguru import logger
-from qtpy.QtGui import QPalette, QPainter, QPen
+from qtpy.QtGui import QColor, QPalette, QPainter, QPen
 from qtpy.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -33,6 +33,8 @@ from qtpy.QtCore import (
 from qtpy.QtCore import Qt, Signal
 import polars as pl
 
+from trigger_designer.qt.resource_manager import ResourceManager
+
 
 @dataclasses.dataclass
 class RowData:
@@ -40,6 +42,7 @@ class RowData:
     text: str = ""
     dtype: str = "object"
     rename: str = ""
+    is_missing: bool = False
 
 
 class SelectTableWidget(QAbstractTableModel):
@@ -135,6 +138,16 @@ class SelectTableWidget(QAbstractTableModel):
             if col == 2:
                 # Return the list of options for the combobox delegate
                 return self._data_types
+        elif role == Qt.ItemDataRole.BackgroundRole and getattr(
+            row_data, "is_missing", False
+        ):
+            color = ResourceManager().get_theme_color("background_warning")
+            color.setAlpha(140)  # let a selection highlight still show through
+            return color
+        elif role == Qt.ItemDataRole.ToolTipRole and getattr(
+            row_data, "is_missing", False
+        ):
+            return "Column not found in the current input"
 
         return QVariant()
 
@@ -386,6 +399,11 @@ class SelectTableWidget(QAbstractTableModel):
                     pass
         for row in range(len(self._data)):
             row_data: RowData = self._data[row]
+            if getattr(row_data, "is_missing", False):
+                # Retained row: selected_columns/rename_mapping are pruned
+                # of missing columns by design, so they must not be used to
+                # overwrite what table_data already holds for it.
+                continue
             # Update checked state
             row_data.checked = row_data.text in changes["selected_columns"]
 
@@ -835,8 +853,15 @@ class ComboBoxDelegate(QStyledItemDelegate):
         opt.currentText = ""
 
         # Cell background first: keeps alternating rows and selection intact.
+        # This delegate builds its own QStyleOptionComboBox rather than
+        # calling initStyleOption(), so option.backgroundBrush is never
+        # populated from the model's BackgroundRole the way it is for the
+        # plain-QStyledItemDelegate columns -- read it explicitly instead.
         painter.save()
-        if option.backgroundBrush.style() != Qt.BrushStyle.NoBrush:
+        role_bg = index.data(Qt.ItemDataRole.BackgroundRole)
+        if role_bg is not None:
+            painter.fillRect(option.rect, QColor(role_bg))
+        elif option.backgroundBrush.style() != Qt.BrushStyle.NoBrush:
             option.backgroundBrush.draw(painter, option.rect)
         else:
             painter.fillRect(option.rect, option.palette.color(QPalette.ColorRole.Base))

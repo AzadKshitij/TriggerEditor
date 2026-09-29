@@ -33,6 +33,7 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.widgets.nodes.unknown import TriggerNode_Unknown
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
+from trigger_designer.qt.helpers.eval_progress import eval_progress_dialog
 from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
@@ -297,11 +298,16 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         return TriggerNode_Unknown
 
     def doEvalOutputs(self) -> None:
-        # eval all output nodes
-        for node in self.scene.nodes:
-            # if node.__class__.__name__ == "CalcNode_Output":
-            node.eval()
-        settle_multi_input_nodes(self.scene)
+        # Every node starts dirty (TriggerNode.__init__), so this first pass
+        # recomputes the whole graph - size the dialog to the full node
+        # count. eval_progress_dialog no-ops below PROGRESS_NODE_THRESHOLD,
+        # so a small workflow loads with no dialog at all.
+        total = len(self.scene.nodes)
+        with eval_progress_dialog(self.scene, self, total, "Loading workflow…"):
+            for node in self.scene.nodes:
+                # if node.__class__.__name__ == "CalcNode_Output":
+                node.eval()
+            settle_multi_input_nodes(self.scene)
 
     def onHistoryRestored(self) -> None:
         # Force the Config Dock to rebuild: a restore reverts the selected
