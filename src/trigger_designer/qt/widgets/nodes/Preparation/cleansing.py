@@ -637,6 +637,14 @@ class CleansingContent(
                 )
 
         code_lines.append(f"{self.variable_name} = cleaner.get_result()")
+        # Preserve lazy execution when the incoming value was lazy, so
+        # Cleansing doesn't permanently downgrade the rest of the chain to
+        # eager (mirrors Filter/Formula's re-lazy after their own
+        # DuckDB/eager round-trip).
+        code_lines.append(
+            f"{self.variable_name} = {self.variable_name}.lazy() "
+            f"if hasattr({self.incoming_variable}, 'collect') else {self.variable_name}"
+        )
 
         return "\n".join(code_lines) + "\n"
 
@@ -681,8 +689,6 @@ class TriggerNode_Cleansing(TriggerNode):
         input_value = input_values[this_socket_index][socket_index]
 
         if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
             # Custom processing logic for the Select node
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
@@ -690,7 +696,6 @@ class TriggerNode_Cleansing(TriggerNode):
             self.param = [
                 {"data": self.content.data, "variable_name": self.content.variable_name}
             ]
-            self.evalChildren()
             return self.param
         # variable = self.content.variable_name
         else:

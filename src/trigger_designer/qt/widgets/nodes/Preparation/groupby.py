@@ -1051,8 +1051,6 @@ class TriggerNode_GroupBy(TriggerNode):
                 input_data = input_value.get("data")
                 variable_name = input_value.get("variable_name", "unknown")
                 if input_data is not None:
-                    self.markDirty(False)
-                    self.markInvalid(False)
                     self.content.incom_data = input_data
                     self.content.incoming_variable = variable_name
                     # Heal in-memory state corrupted by the old list-command
@@ -1085,7 +1083,6 @@ class TriggerNode_GroupBy(TriggerNode):
                                 "variable_name": self.content.variable_name,
                             }
                         ]
-                        self.evalChildren()
                         return self.param
                     else:
                         self.markDirty(True)

@@ -1222,7 +1222,6 @@
         "remove_numbers": false,
         "remove_punctuation": false,
         "selected_fields": [
-          "order_id",
           "customer_id",
           "product_id"
         ],
@@ -1359,7 +1358,7 @@
         }
       ],
       "content": {
-        "column": "order_id",
+        "column": "customer_id",
         "operation": "Equals",
         "value": "",
         "value2": "",
@@ -1583,10 +1582,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -1661,6 +1656,10 @@
           {
             "name": "customer_name",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ],
         "auto_accept_new_columns": true,
@@ -1686,10 +1685,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -1764,6 +1759,10 @@
           {
             "name": "signup_date",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ]
       },
@@ -1868,10 +1867,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -1957,6 +1952,10 @@
           },
           {
             "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
             "source": "L"
           }
         ],
@@ -2007,10 +2006,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -2093,6 +2088,10 @@
           {
             "name": "unit_price",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ]
       },
@@ -2209,10 +2208,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -2302,6 +2297,10 @@
           },
           {
             "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
             "source": "L"
           }
         ],
@@ -2364,10 +2363,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -2454,6 +2449,10 @@
           {
             "name": "supplier_name",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ]
       },
@@ -2578,10 +2577,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -2672,6 +2667,10 @@
           {
             "name": "is_digital",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ],
         "auto_accept_new_columns": true,
@@ -2741,10 +2740,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -2835,6 +2830,10 @@
           {
             "name": "is_digital",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ]
       },
@@ -2971,10 +2970,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -3061,6 +3056,10 @@
           {
             "name": "usd_rate",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ],
         "auto_accept_new_columns": true,
@@ -3142,10 +3141,6 @@
             "source": "L"
           },
           {
-            "name": "order_id",
-            "source": "L"
-          },
-          {
             "name": "order_ts",
             "source": "L"
           },
@@ -3232,6 +3227,10 @@
           {
             "name": "usd_rate",
             "source": "R"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
           }
         ]
       },
@@ -9137,6 +9136,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-29T09:43:41Z"
+    "saved_at": "2026-09-29T11:37:18Z"
   }
 }

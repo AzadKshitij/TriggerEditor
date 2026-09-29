@@ -393,9 +393,6 @@ class TriggerNode_Transpose(TriggerNode):
                         f"📊 TransposeNode: Processing DataFrame with shape {frame_shape(input_data)} for variable '{variable_name}'"
                     )
 
-                    self.markDirty(False)
-                    self.markInvalid(False)
-
                     # Store input data
                     self.content.incom_data = input_data
                     self.content.incoming_variable = variable_name
@@ -417,7 +414,6 @@ class TriggerNode_Transpose(TriggerNode):
                             }
                         ]
 
-                        self.evalChildren()
                         global_logger.info(
                             "✅ TransposeNode: Processing completed successfully"
                         )

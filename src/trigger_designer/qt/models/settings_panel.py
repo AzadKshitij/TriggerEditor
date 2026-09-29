@@ -1,28 +1,73 @@
-from loguru import logger
-from qtpy.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QTabWidget,
-    QPushButton,
-    QLabel,
-    QComboBox,
-    QSpinBox,
-    QCheckBox,
-    QGroupBox,
-    QFormLayout,
-    QWidget,
-    QApplication,
-)
-from qtpy.QtCore import Qt, QSettings
-import orjson as json
 import os
+
+import orjson as json
+from loguru import logger
+from qtpy.QtCore import QSettings
+from qtpy.QtGui import QColor
+from qtpy.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QColorDialog,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QPushButton,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from trigger_designer.qt.node_editor_colors import (
+    DEFAULT_EDGE_COLORS,
+    DEFAULT_SOCKET_COLORS,
+    load_node_editor_colors,
+    save_node_editor_colors,
+)
 from trigger_designer.qt.resource_manager import ResourceManager
-from typing import Optional
+
+
+class ColorPickerButton(QPushButton):
+    """A small swatch button that opens a ``QColorDialog`` on click."""
+
+    def __init__(self, color: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setFixedSize(60, 26)
+        self._color = QColor(color)
+        self.clicked.connect(self._pick_color)
+        self._update_swatch()
+
+    def _update_swatch(self) -> None:
+        self.setText(self._color.name())
+        self.setStyleSheet(
+            f"background-color: {self._color.name()}; "
+            f"color: {'#000000' if self._color.lightness() > 128 else '#ffffff'};"
+        )
+
+    def _pick_color(self) -> None:
+        color = QColorDialog.getColor(
+            self._color,
+            self,
+            "Choose color",
+            QColorDialog.ColorDialogOption.ShowAlphaChannel,
+        )
+        if color.isValid():
+            self.color = color
+
+    @property
+    def color(self) -> QColor:
+        return QColor(self._color)
+
+    @color.setter
+    def color(self, value) -> None:
+        self._color = QColor(value)
+        self._update_swatch()
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.parent = parent
         self.setWindowTitle("Settings")
@@ -74,6 +119,46 @@ class SettingsDialog(QDialog):
 
         tabs.addTab(appearance_tab, "Appearance")
 
+        # Node Editor tab (edge / socket colors)
+        node_editor_tab = QWidget()
+        node_editor_layout = QVBoxLayout()
+        node_editor_tab.setLayout(node_editor_layout)
+
+        saved_colors = load_node_editor_colors(self.settings)
+
+        edge_group = QGroupBox("Edge Colors")
+        edge_layout = QFormLayout()
+        self.edge_color_buttons: dict[str, ColorPickerButton] = {
+            "default": ColorPickerButton(saved_colors["edges"]["default"]),
+            "selected": ColorPickerButton(saved_colors["edges"]["selected"]),
+            "hovered": ColorPickerButton(saved_colors["edges"]["hovered"]),
+            "dragging": ColorPickerButton(saved_colors["edges"]["dragging"]),
+        }
+        edge_layout.addRow("Default:", self.edge_color_buttons["default"])
+        edge_layout.addRow("Selected:", self.edge_color_buttons["selected"])
+        edge_layout.addRow("Hover / Highlight:", self.edge_color_buttons["hovered"])
+        edge_layout.addRow("Dragging:", self.edge_color_buttons["dragging"])
+        edge_group.setLayout(edge_layout)
+        node_editor_layout.addWidget(edge_group)
+
+        socket_group = QGroupBox("Socket Colors")
+        socket_layout = QFormLayout()
+        self.socket_color_buttons: dict[str, ColorPickerButton] = {
+            "outline": ColorPickerButton(saved_colors["sockets"]["outline"]),
+            "highlight": ColorPickerButton(saved_colors["sockets"]["highlight"]),
+        }
+        socket_layout.addRow("Outline:", self.socket_color_buttons["outline"])
+        socket_layout.addRow("Highlight:", self.socket_color_buttons["highlight"])
+        socket_group.setLayout(socket_layout)
+        node_editor_layout.addWidget(socket_group)
+
+        reset_colors_btn = QPushButton("Reset to Defaults")
+        reset_colors_btn.clicked.connect(self._reset_node_editor_colors)
+        node_editor_layout.addWidget(reset_colors_btn)
+
+        node_editor_layout.addStretch()
+        tabs.addTab(node_editor_tab, "Node Editor")
+
         # Buttons
         button_layout = QHBoxLayout()
         save_btn = QPushButton("Save")
@@ -87,6 +172,12 @@ class SettingsDialog(QDialog):
 
         layout.addLayout(button_layout)
 
+    def _reset_node_editor_colors(self) -> None:
+        for key, button in self.edge_color_buttons.items():
+            button.color = DEFAULT_EDGE_COLORS[key]
+        for key, button in self.socket_color_buttons.items():
+            button.color = DEFAULT_SOCKET_COLORS[key]
+
     def load_settings(self):
 
         return {}
@@ -98,6 +189,18 @@ class SettingsDialog(QDialog):
             "show_grid": self.show_grid.isChecked(),
         }
 
+        node_editor_colors = {
+            "edges": {
+                key: button.color.name(QColor.NameFormat.HexArgb)
+                for key, button in self.edge_color_buttons.items()
+            },
+            "sockets": {
+                key: button.color.name(QColor.NameFormat.HexArgb)
+                for key, button in self.socket_color_buttons.items()
+            },
+        }
+        save_node_editor_colors(node_editor_colors, self.settings)
+
         # settings_file = os.path.join(os.path.dirname(
         #     __file__), "../resources/settings.json")
         import sys
@@ -107,7 +210,11 @@ class SettingsDialog(QDialog):
         if getattr(sys, "frozen", False):
             # ponytail: bundle is read-only when installed; persist to user scope
             appdata = os.getenv("APPDATA")
-            base = Path(appdata) / "Trigger Designer" if appdata else Path.home() / ".trigger_designer"
+            base = (
+                Path(appdata) / "Trigger Designer"
+                if appdata
+                else Path.home() / ".trigger_designer"
+            )
             settings_file = base / "settings.json"
 
         os.makedirs(os.path.dirname(settings_file), exist_ok=True)

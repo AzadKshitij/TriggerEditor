@@ -208,14 +208,21 @@ def test_get_code_executes() -> None:
     assert out.collect().shape == (2, 3)
 
 
-def test_deserialize_then_single_pass_undercounts_chained_union() -> None:
-    """Reproduces the file-load/undo-restore bug: a Union feeding another
-    Union settles with only one of its two inputs after a single eval()
-    pass, and settle_multi_input_nodes() fixes it.
+def test_deserialize_then_single_pass_counts_chained_union() -> None:
+    """Regression guard for the file-load/undo-restore bug: a Union feeding
+    another Union used to settle with only one of its two inputs after a
+    single eval() pass, because Union.evalImplementation() called
+    markDirty(False)/evalChildren() before its own self.value was updated,
+    so a reentrant pull during that window saw a "clean" node holding a
+    stale value. That ordering is now fixed (self.value is committed before
+    markDirty(False)/evalChildren() run), so a single pass counts correctly
+    without needing settle_multi_input_nodes() at all; this test confirms
+    that fix and that settle_multi_input_nodes() stays a harmless no-op
+    afterward (see its docstring in performance_scene.py).
 
     _wire_union() above does not reproduce this - it calls
     onEdgeConnectionChanged() immediately per edge, which always reflects
-    the full edge list right away. The real bug only shows up after a
+    the full edge list right away. The original bug only showed up after a
     Scene.deserialize() round trip, which attaches every edge with no node
     notification at all (matching a real file load or undo/redo restore).
     """
@@ -268,12 +275,13 @@ def test_deserialize_then_single_pass_undercounts_chained_union() -> None:
     fresh_u1 = next(n for n in fresh.nodes if n.id == u1_id)
     fresh_u2 = next(n for n in fresh.nodes if n.id == u2_id)
 
-    # Pin the bug: one plain eval pass under-counts the downstream Union.
+    # Fixed: a single plain eval pass already counts both inputs correctly.
     for node in fresh.nodes:
         node.eval()
-    assert len(fresh_u2.content.input_variables) == 1
+    assert len(fresh_u1.content.input_variables) == 2
+    assert len(fresh_u2.content.input_variables) == 2
 
-    # The fix: settling re-derives both Unions correctly.
+    # settle_multi_input_nodes() remains a harmless no-op on already-correct state.
     settle_multi_input_nodes(fresh)
     assert len(fresh_u1.content.input_variables) == 2
     assert len(fresh_u2.content.input_variables) == 2

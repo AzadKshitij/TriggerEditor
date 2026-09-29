@@ -506,9 +506,6 @@ class TriggerNode_Split(TriggerNode):
         input_value = input_values[this_socket_index][socket_index]
 
         if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
-
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
 
@@ -534,7 +531,6 @@ class TriggerNode_Split(TriggerNode):
                 pl.col(split_col) >= pl.col(split_col).max() * threshold
             ).drop(split_col)
 
-            self.evalChildren()
             self.param = [
                 {
                     "data": self.content.estimation_data,

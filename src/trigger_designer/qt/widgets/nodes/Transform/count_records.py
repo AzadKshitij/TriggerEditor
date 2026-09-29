@@ -200,9 +200,6 @@ class TriggerNode_CountRecords(TriggerNode):
                         f"🔢 CountRecordsNode: Processing DataFrame with shape {input_shape} for variable '{variable_name}'"
                     )
 
-                    self.markDirty(False)
-                    self.markInvalid(False)
-
                     # Store input data
                     self.content.incom_data = input_data
                     self.content.incoming_variable = variable_name
@@ -227,7 +224,6 @@ class TriggerNode_CountRecords(TriggerNode):
                             }
                         ]
 
-                        self.evalChildren()
                         global_logger.info(
                             "✅ CountRecordsNode: Processing completed successfully"
                         )

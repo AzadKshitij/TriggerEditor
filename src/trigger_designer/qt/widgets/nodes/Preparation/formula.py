@@ -1213,17 +1213,12 @@ class TriggerNode_Formula(TriggerNode):
             global_logger.error(f"Formula node failed: {self.content.last_error}")
             return None
 
-        self.markDirty(False)
-        self.markInvalid(False)
-        self.grNode.setToolTip("")
-
         self.param = [
             {
                 "data": self.content.data,
                 "variable_name": self.content.variable_name,
             }
         ]
-        self.evalChildren()
         return self.param
 
     def get_code(self) -> str:

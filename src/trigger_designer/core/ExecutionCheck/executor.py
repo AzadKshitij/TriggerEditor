@@ -99,6 +99,10 @@ class NodeExecutor:
     """Enhanced Python code executor with timeout monitoring, memory tracking, and error handling."""
 
     max_missing_dependency_attempts = 5
+    # gc.collect() is expensive (full cyclic GC pass) and buys little per
+    # call since polars/pyarrow objects are refcounted, not cycle-heavy;
+    # run it periodically instead of after every single node execution.
+    gc_collect_interval = 20
 
     def __init__(self, security_config: Optional[SecurityConfig] = None) -> None:
         """Initialize the NodeExecutor.
@@ -114,6 +118,8 @@ class NodeExecutor:
         self._cancel_event = threading.Event()
         self._current_thread: Optional[threading.Thread] = None
         self._missing_dependency_attempts: Dict[str, int] = {}
+        self._process = psutil.Process(os.getpid())
+        self._executions_since_gc = 0
 
     def _seed_base_globals(self) -> None:
         # ponytail: seed once here instead of per-node imports; generated code
@@ -180,8 +186,7 @@ class NodeExecutor:
     def _get_memory_usage(self) -> float:
         """Get current process memory usage in MB."""
         try:
-            process = psutil.Process(os.getpid())
-            return process.memory_info().rss / (1024 * 1024)
+            return self._process.memory_info().rss / (1024 * 1024)
         except Exception:
             return 0.0
 
@@ -293,7 +298,9 @@ class NodeExecutor:
                 result.variables = local_variables.copy()
                 result.success = True
 
-            after_execution = getattr(getattr(node, "content", None), "after_execution", None)
+            after_execution = getattr(
+                getattr(node, "content", None), "after_execution", None
+            )
             if callable(after_execution):
                 try:
                     after_execution(result.variables)
@@ -339,8 +346,13 @@ class NodeExecutor:
             # Clean up thread reference
             self._current_thread = None
 
-            # Force garbage collection to free memory
-            gc.collect()
+            # Periodic garbage collection instead of every node (see
+            # gc_collect_interval) - a full gc.collect() per call was
+            # measured as one of the largest fixed per-node costs.
+            self._executions_since_gc += 1
+            if self._executions_since_gc >= self.gc_collect_interval:
+                gc.collect()
+                self._executions_since_gc = 0
 
         return result
 

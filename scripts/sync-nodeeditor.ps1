@@ -50,7 +50,10 @@ if (-not (Test-Path $dest)) {
     # --no-deps matters: nodeeditor's metadata asks for newer pyqt6/qtpy than
     # this project pins, which is the whole reason it is kept out of the uv
     # lock (see pyproject.toml). Resolving its deps would silently upgrade Qt.
-    & uv pip install --python $python --no-deps $ProjectRoot
+    # --no-build-isolation matters too: nodeeditor's setup.py does `import
+    # nodeeditor` to read __version__, which now imports qtpy (via
+    # node_colors_config) - an isolated build env has no qtpy installed.
+    & uv pip install --python $python --no-deps --no-build-isolation $ProjectRoot
     if ($LASTEXITCODE -ne 0) {
         throw "failed to install nodeeditor from $ProjectRoot"
     }

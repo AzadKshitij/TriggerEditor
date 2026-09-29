@@ -91,8 +91,12 @@ class WorkflowExecutionMixin:
             self._execution_cleanup(success=False)
             return
 
+        # Yield to the event loop so the executed-node pen color repaints
+        # before the next node runs, without the old fixed 100ms-per-node
+        # delay (which added up to whole seconds of pure wait time on
+        # larger workflows).
         QTimer.singleShot(
-            100,
+            0,
             lambda: self._execute_next_node(nodes, current_index + 1, executor),
         )
 

@@ -168,6 +168,10 @@ def main() -> None:
     import trigger_designer.qt.darkstyle_rc  # noqa: F401
     import trigger_designer.resources.icons_rc  # noqa: F401
     from trigger_designer.qt.main_window import TriggerWindow
+    from trigger_designer.qt.node_editor_colors import (
+        apply_node_editor_colors,
+        load_node_editor_colors,
+    )
 
     # Load settings and theme
     settings = QSettings(name_company, name_product)
@@ -177,6 +181,10 @@ def main() -> None:
     if theme_qss:
         app.setStyleSheet(theme_qss)
     app.processEvents()
+
+    # Apply saved edge/socket colors before any workflow scene is created, so
+    # every node/edge/socket is built with the user's colors from the start.
+    apply_node_editor_colors(load_node_editor_colors())
 
     # Create and show main window
     main_window = TriggerWindow(

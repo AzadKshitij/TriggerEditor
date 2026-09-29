@@ -1160,8 +1160,6 @@ class TriggerNode_Filter(TriggerNode):
         input_value = input_values[this_socket_index][socket_index]
 
         if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
             # Custom processing logic for the Filter node
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
@@ -1176,7 +1174,6 @@ class TriggerNode_Filter(TriggerNode):
                     "variable_name": self.content.f_variable_name,
                 },
             ]
-            self.evalChildren()
             return self.param
         else:
             self.markDirty(True)

@@ -136,6 +136,19 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         else:
             dock_layout.addWidget(EmptyStateLabel())
 
+    def _live_selected_columns(self) -> List[str]:
+        """selected_columns filtered to columns present in the current schema.
+
+        A configured column can disappear upstream (e.g. deselected in an
+        earlier Select) while staying in selected_columns, so dedup resumes
+        on it automatically if it reappears -- mirrors Select's missing-
+        column retention instead of crashing on a stale subset.
+        """
+        schema = frame_schema(self.incom_data)
+        if not schema:
+            return self.selected_columns
+        return [col for col in self.selected_columns if col in schema]
+
     def process_data(self) -> None:
         """Build unique and duplicate outputs for the current selection."""
         if self.incom_data is None:
@@ -143,14 +156,15 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.duplicate_data = None
             return
 
-        if not self.selected_columns:
+        live_columns = self._live_selected_columns()
+        if not live_columns:
             self.data = self.incom_data
             self.duplicate_data = self.incom_data.head(0)
             return
 
-        duplicate_expr = pl.struct(self.selected_columns).is_duplicated()
+        duplicate_expr = pl.struct(live_columns).is_duplicated()
         self.data = self.incom_data.unique(
-            subset=self.selected_columns,
+            subset=live_columns,
             maintain_order=True,
         )
         self.duplicate_data = self.incom_data.filter(duplicate_expr)
@@ -382,19 +396,20 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 f"{self.duplicate_variable_name} = pl.DataFrame()\n"
             )
 
-        if not self.selected_columns:
+        live_columns = self._live_selected_columns()
+        if not live_columns:
             return (
                 "import polars as pl\n"
                 f"{self.variable_name} = {self.incoming_variable}\n"
                 f"{self.duplicate_variable_name} = {self.incoming_variable}.head(0)\n"
             )
 
-        columns_list = [f'"{col}"' for col in self.selected_columns]
+        columns_list = [f'"{col}"' for col in live_columns]
         columns_str = "[" + ", ".join(columns_list) + "]"
         duplicate_expr = f"pl.struct({columns_str}).is_duplicated()"
         code_lines = [
             "import polars as pl",
-            f"# Split into unique and duplicate records based on: {', '.join(self.selected_columns)}",
+            f"# Split into unique and duplicate records based on: {', '.join(live_columns)}",
             f"{self.variable_name} = {self.incoming_variable}.unique(subset={columns_str}, maintain_order=True)",
             f"{self.duplicate_variable_name} = {self.incoming_variable}.filter({duplicate_expr})",
         ]
@@ -469,9 +484,6 @@ class TriggerNode_Unique(TriggerNode):
         input_value = input_values[this_socket_index][socket_index]
 
         if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
-
             # Set input data for unique processing
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
@@ -486,7 +498,6 @@ class TriggerNode_Unique(TriggerNode):
                     "variable_name": self.content.duplicate_variable_name,
                 },
             ]
-            self.evalChildren()
             return self.param
         else:
             self.markDirty(True)
