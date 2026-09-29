@@ -8,6 +8,7 @@ from qtpy.QtCore import QTimer
 
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
 
 
 class WorkflowExecutionMixin:
@@ -20,10 +21,20 @@ class WorkflowExecutionMixin:
         self.total_workflow_time: float = 0.0
         self.last_execution_time: float = 0.0
         self.execution_results: Dict[Any, Dict[str, Any]] = {}
+        self._workflow_worker: Union[WorkflowWorker, None] = None
+        self._workflow_sorted_nodes: List[Any] = []
 
     # --- Workflow execution helpers -------------------------------------------------
     def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
-        """Run the current workflow sequentially while updating execution visuals."""
+        """Run the current workflow on a single background thread while
+        updating execution visuals from signals it emits."""
+        if self._workflow_worker is not None and self._workflow_worker.isRunning():
+            # A run is already in flight - the GUI thread stays responsive
+            # for the whole run now, so this guard is reachable in
+            # practice (previously the GUI was blocked, so a second click
+            # couldn't happen).
+            return
+
         if hasattr(self, "run_button"):
             self.run_button.setEnabled(False)
 
@@ -45,37 +56,25 @@ class WorkflowExecutionMixin:
         logger.info("🚀 Starting workflow execution #{}", self.workflow_execution_count)
         print(f"🚀 Starting workflow execution #{self.workflow_execution_count}...")
 
-        self._execute_next_node(sorted_nodes, 0, executor)
-        self.getPyFile(sorted_nodes)
+        self._workflow_sorted_nodes = sorted_nodes
 
-    def _execute_next_node(  # noqa: PLR0913 (matching existing signature)
-        self,
-        nodes: List[Any],
-        current_index: int,
-        executor: NodeExecutor,
-    ) -> None:
-        """Execute nodes sequentially with visual transitions."""
-        if current_index >= len(nodes):
-            QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
-            return
+        worker = WorkflowWorker(sorted_nodes, executor)
+        worker.nodeStarted.connect(self._on_node_started)
+        worker.nodeFinished.connect(self._on_node_finished)
+        worker.nodeErrored.connect(self._on_node_errored)
+        worker.workflowFinished.connect(self._on_workflow_finished)
+        worker.finished.connect(worker.deleteLater)
+        self._workflow_worker = worker
+        worker.start()
 
-        node = nodes[current_index]
-        node_name = getattr(node, "node_title", node.__class__.__name__)
-
+    def _on_node_started(self, node: Any) -> None:
+        """Slot: a node is about to execute (runs on the GUI thread)."""
         node.grNode.setPenExecuting()
         node.grNode.update()
 
-        try:
-            result = executor.execute_node(node)
-        except Exception as exc:  # pragma: no cover - visual/UI side effects
-            error_message = f"Error executing node '{node_name}': {exc}"
-            logger.error(error_message)
-            global_logger.error(error_message)
-            node.markInvalid()
-            node.grNode.setPenError()
-            node.grNode.update()
-            self._execution_cleanup(success=False)
-            return
+    def _on_node_finished(self, node: Any, result: Any) -> None:
+        """Slot: a node finished executing (runs on the GUI thread)."""
+        node_name = getattr(node, "node_title", node.__class__.__name__)
 
         if result.success:
             self.execution_results[node] = result.variables
@@ -88,17 +87,32 @@ class WorkflowExecutionMixin:
             node.markInvalid()
             node.grNode.setPenError()
             node.grNode.update()
-            self._execution_cleanup(success=False)
-            return
 
-        # Yield to the event loop so the executed-node pen color repaints
-        # before the next node runs, without the old fixed 100ms-per-node
-        # delay (which added up to whole seconds of pure wait time on
-        # larger workflows).
-        QTimer.singleShot(
-            0,
-            lambda: self._execute_next_node(nodes, current_index + 1, executor),
-        )
+    def _on_node_errored(self, node: Any, exc: Exception) -> None:
+        """Slot: node raised unexpectedly outside NodeExecutor's own error
+        handling (runs on the GUI thread)."""
+        node_name = getattr(node, "node_title", node.__class__.__name__)
+        error_message = f"Error executing node '{node_name}': {exc}"
+        logger.error(error_message)
+        global_logger.error(error_message)
+        node.markInvalid()
+        node.grNode.setPenError()
+        node.grNode.update()
+
+    def _on_workflow_finished(self, success: bool) -> None:
+        """Slot: the worker thread's run() has returned (runs on the GUI
+        thread, since Qt auto-queues a cross-thread signal emission)."""
+        # Drop our reference now, before the worker's own `finished` signal
+        # (queued right behind this one) triggers deleteLater() - querying
+        # a deleted QThread's isRunning() on the next Run click raises
+        # "wrapped C/C++ object ... has been deleted".
+        self._workflow_worker = None
+        self.getPyFile(self._workflow_sorted_nodes)
+
+        if success:
+            QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
+        else:
+            self._execution_cleanup(success=False)
 
     def _execution_cleanup(self, success: bool = True) -> None:
         """Handle workflow cleanup, statistics, and visual reset."""

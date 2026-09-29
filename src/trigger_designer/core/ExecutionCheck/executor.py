@@ -9,6 +9,7 @@ import io
 import sys
 import time
 import threading
+import queue
 import traceback
 import re
 import psutil
@@ -116,10 +117,32 @@ class NodeExecutor:
         self.stats = ExecutionStats()
         self.execution_history: List[ExecutionResult] = []
         self._cancel_event = threading.Event()
-        self._current_thread: Optional[threading.Thread] = None
+        self._current_task_done: Optional[threading.Event] = None
         self._missing_dependency_attempts: Dict[str, int] = {}
         self._process = psutil.Process(os.getpid())
         self._executions_since_gc = 0
+        # One daemon worker thread reused for every node execution in this
+        # NodeExecutor's lifetime, instead of spawning+joining a fresh OS
+        # thread per node. Kept as a plain daemon thread + queue (rather
+        # than concurrent.futures.ThreadPoolExecutor, whose workers are
+        # deliberately non-daemon) so an abandoned/timed-out node can never
+        # block process exit - matching the old per-node thread's behavior.
+        # A fresh NodeExecutor (and worker) is created per "Run Workflow"
+        # click, so a timed-out task can only ever leak one thread per run.
+        self._node_task_queue: "queue.Queue[Optional[Callable[[], None]]]" = (
+            queue.Queue()
+        )
+        self._node_worker_thread = threading.Thread(
+            target=self._node_worker_loop, daemon=True, name="NodeExecutorWorker"
+        )
+        self._node_worker_thread.start()
+
+    def _node_worker_loop(self) -> None:
+        while True:
+            task = self._node_task_queue.get()
+            if task is None:
+                return
+            task()
 
     def _seed_base_globals(self) -> None:
         # ponytail: seed once here instead of per-node imports; generated code
@@ -193,7 +216,7 @@ class NodeExecutor:
     def _execute_with_timeout(
         self, code: str, local_vars: Dict[str, Any], timeout: float
     ) -> Tuple[bool, Optional[Exception]]:
-        """Execute code with timeout in a separate thread.
+        """Execute code with timeout, on the one pooled worker thread.
 
         Args:
             code: Python code to execute
@@ -204,6 +227,7 @@ class NodeExecutor:
             Tuple of (success, exception_if_any)
         """
         exception_container = [None]
+        done = threading.Event()
 
         def target():
             try:
@@ -214,14 +238,21 @@ class NodeExecutor:
 
             except Exception as e:
                 exception_container[0] = e
+            finally:
+                done.set()
 
-        thread = threading.Thread(target=target, daemon=True)
-        self._current_thread = thread
-        thread.start()
-        thread.join(timeout)
+        self._current_task_done = done
+        self._node_task_queue.put(target)
 
-        if thread.is_alive():
-            # Thread is still running, execution timed out
+        if not done.wait(timeout):
+            # The worker thread is now stuck running `target()` in the
+            # background - same abandon-on-timeout behavior as the old
+            # per-node thread (can't be forcibly killed either way), just
+            # paid once per workflow run instead of once per node. It will
+            # never pick up another task, but nothing submits one: the
+            # caller stops the whole run on any node failure/timeout, and
+            # the next "Run Workflow" click builds a fresh NodeExecutor
+            # (and worker) anyway.
             return False, ExecutionTimeoutError(
                 f"Code execution timed out after {timeout} seconds"
             )
@@ -343,8 +374,8 @@ class NodeExecutor:
             if len(self.execution_history) > 100:
                 self.execution_history.pop(0)
 
-            # Clean up thread reference
-            self._current_thread = None
+            # Clean up task-done-event reference
+            self._current_task_done = None
 
             # Periodic garbage collection instead of every node (see
             # gc_collect_interval) - a full gc.collect() per call was
@@ -400,7 +431,7 @@ class NodeExecutor:
         Returns:
             True if cancellation was attempted, False if no execution running
         """
-        if self._current_thread and self._current_thread.is_alive():
+        if self._current_task_done and not self._current_task_done.is_set():
             self._cancel_event.set()
             return True
         return False

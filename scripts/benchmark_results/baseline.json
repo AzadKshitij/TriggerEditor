@@ -1,0 +1,128 @@
+{
+  "small_2node": {
+    "runs": [
+      {
+        "node_count": 2,
+        "time_to_last_node_s": 0.008524999997462146,
+        "last_execution_time_s": 1.0080602169036865,
+        "rss_delta_mb": 0.71484375,
+        "execution_results_count": 2
+      },
+      {
+        "node_count": 2,
+        "time_to_last_node_s": 0.0027407999987190124,
+        "last_execution_time_s": 1.0036239624023438,
+        "rss_delta_mb": 0.0546875,
+        "execution_results_count": 2
+      },
+      {
+        "node_count": 2,
+        "time_to_last_node_s": 0.004240999998728512,
+        "last_execution_time_s": 1.011977195739746,
+        "rss_delta_mb": 0.03515625,
+        "execution_results_count": 2
+      },
+      {
+        "node_count": 2,
+        "time_to_last_node_s": 0.003534100000251783,
+        "last_execution_time_s": 1.0129659175872803,
+        "rss_delta_mb": 0.04296875,
+        "execution_results_count": 2
+      },
+      {
+        "node_count": 2,
+        "time_to_last_node_s": 0.002991400000610156,
+        "last_execution_time_s": 1.0090045928955078,
+        "rss_delta_mb": 0.0234375,
+        "execution_results_count": 2
+      }
+    ],
+    "avg_time_to_last_node_s": 0.0044064599991543215,
+    "min_time_to_last_node_s": 0.0027407999987190124,
+    "max_time_to_last_node_s": 0.008524999997462146
+  },
+  "medium_14node": {
+    "runs": [
+      {
+        "node_count": 14,
+        "time_to_last_node_s": 0.010831599996890873,
+        "last_execution_time_s": 1.01930832862854,
+        "rss_delta_mb": 0.11328125,
+        "execution_results_count": 14
+      },
+      {
+        "node_count": 14,
+        "time_to_last_node_s": 0.011007400000380585,
+        "last_execution_time_s": 1.0144598484039307,
+        "rss_delta_mb": 0.18359375,
+        "execution_results_count": 14
+      },
+      {
+        "node_count": 14,
+        "time_to_last_node_s": 0.00981329999922309,
+        "last_execution_time_s": 1.0171010494232178,
+        "rss_delta_mb": 0.12109375,
+        "execution_results_count": 14
+      },
+      {
+        "node_count": 14,
+        "time_to_last_node_s": 0.01005299999815179,
+        "last_execution_time_s": 1.0151598453521729,
+        "rss_delta_mb": 0.18359375,
+        "execution_results_count": 14
+      },
+      {
+        "node_count": 14,
+        "time_to_last_node_s": 0.010032300000602845,
+        "last_execution_time_s": 1.0228033065795898,
+        "rss_delta_mb": 0.22265625,
+        "execution_results_count": 14
+      }
+    ],
+    "avg_time_to_last_node_s": 0.010347519999049837,
+    "min_time_to_last_node_s": 0.00981329999922309,
+    "max_time_to_last_node_s": 0.011007400000380585
+  },
+  "large_105node": {
+    "runs": [
+      {
+        "node_count": 105,
+        "time_to_last_node_s": 2.88537659999929,
+        "last_execution_time_s": 3.8894777297973633,
+        "rss_delta_mb": 431.484375,
+        "execution_results_count": 105
+      },
+      {
+        "node_count": 105,
+        "time_to_last_node_s": 3.3699701000005007,
+        "last_execution_time_s": 4.381480693817139,
+        "rss_delta_mb": -411.0390625,
+        "execution_results_count": 105
+      },
+      {
+        "node_count": 105,
+        "time_to_last_node_s": 3.099737399999867,
+        "last_execution_time_s": 4.1102399826049805,
+        "rss_delta_mb": -437.62890625,
+        "execution_results_count": 105
+      },
+      {
+        "node_count": 105,
+        "time_to_last_node_s": 3.325229300000501,
+        "last_execution_time_s": 4.333421230316162,
+        "rss_delta_mb": -2147.171875,
+        "execution_results_count": 105
+      },
+      {
+        "node_count": 105,
+        "time_to_last_node_s": 3.870210999997653,
+        "last_execution_time_s": 4.882550954818726,
+        "rss_delta_mb": 482.7109375,
+        "execution_results_count": 105
+      }
+    ],
+    "avg_time_to_last_node_s": 3.3101048799995625,
+    "min_time_to_last_node_s": 2.88537659999929,
+    "max_time_to_last_node_s": 3.870210999997653
+  }
+}
