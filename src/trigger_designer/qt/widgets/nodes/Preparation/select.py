@@ -492,6 +492,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         for row in rows:
             if row.text in schema:
                 row.dtype = str(schema[row.text])
+                row.date_format = ""
         self._bulk_commit()
 
     def bulk_auto_detect(self, selected_only: bool) -> None:
@@ -514,9 +515,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # own doomed single-column collect against a column that
                 # isn't there.
                 continue
-            inferred = self._infer_column_dtype(row.text, samples.get(row.text))
+            inferred, date_format = self._infer_column_dtype(
+                row.text, samples.get(row.text)
+            )
             if inferred is not None:
                 row.dtype = inferred
+                row.date_format = date_format or ""
         self._bulk_commit()
 
     def _sample_columns(self, columns: list[str]) -> dict[str, list]:
@@ -540,13 +544,21 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _infer_column_dtype(
         self, column: str, sample: Optional[list] = None
-    ) -> Optional[str]:
+    ) -> tuple[Optional[str], Optional[str]]:
         """Infer a display dtype from up to BULK_SAMPLE_ROWS values.
 
         Precedence: Boolean -> Int64 -> Float64 -> Date -> String. Anything
         unparseable (or all-null) stays String. ``sample`` lets callers pass
         an already-collected batch (see ``_sample_columns``); when omitted
         this falls back to collecting just this one column.
+
+        Returns ``(dtype, date_format)``. ``date_format`` is the single
+        strptime pattern that matched every sampled value when ``dtype`` is
+        "Date", else None -- callers (``bulk_auto_detect``) stash it on the
+        row so the cast that actually runs later can try that one format
+        first instead of blindly coalescing across every pattern
+        ``_date_parse_formats``/``_datetime_parse_formats`` knows (see
+        ``_build_dtype_conversion_expr``).
         """
         if sample is None:
             try:
@@ -558,35 +570,35 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     .to_list()
                 )
             except Exception:
-                return None
+                return None, None
         values = [
             value for value in sample if value is not None and str(value).strip() != ""
         ]
         if not values:
-            return "String"
+            return "String", None
         lowered = [str(value).strip().lower() for value in values]
         if all(value in ("true", "false") for value in lowered):
-            return "Boolean"
+            return "Boolean", None
         try:
             for value in values:
                 int(str(value).strip())
-            return "Int64"
+            return "Int64", None
         except (TypeError, ValueError):
             pass
         try:
             for value in values:
                 float(str(value).strip())
-            return "Float64"
+            return "Float64", None
         except (TypeError, ValueError):
             pass
         for fmt in self._date_parse_formats():
             try:
                 for value in values:
                     datetime.strptime(str(value).strip(), fmt)
-                return "Date"
+                return "Date", fmt
             except (TypeError, ValueError, re.error):
                 continue
-        return "String"
+        return "String", None
 
     def _map_dtype_to_polars(self, dtype_str: str) -> Optional[pl.DataType]:
         """Map string data type to Polars data type"""
@@ -734,8 +746,36 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             .alias(col)
         )
 
-    def _build_dtype_conversion_expr(self, col: str, dtype: str) -> Optional[pl.Expr]:
-        """Build a Polars expression that converts a column to the requested dtype."""
+    def _date_format_by_column(self) -> dict[str, str]:
+        """col -> the single strptime format bulk_auto_detect matched for it.
+
+        Only includes columns whose dtype is still "Date" -- the format is
+        cleared (or was never set) the moment dtype changes away from Date
+        by any other writer (bulk_reset_dtypes, the schema-driven refresh in
+        _reconcile_schema, or a manual dropdown pick in
+        SelectTableWidget.setData), so a stale format can never be looked up
+        here for a column no longer configured as Date.
+        """
+        return {
+            row.text: row.date_format
+            for row in getattr(self, "table_data", [])
+            if hasattr(row, "text")
+            and getattr(row, "dtype", "") == "Date"
+            and getattr(row, "date_format", "")
+        }
+
+    def _build_dtype_conversion_expr(
+        self, col: str, dtype: str, date_format: str = ""
+    ) -> Optional[pl.Expr]:
+        """Build a Polars expression that converts a column to the requested dtype.
+
+        ``date_format`` is a single strptime pattern already known to match
+        every sampled value (see ``_infer_column_dtype``/``bulk_auto_detect``).
+        When given, it's tried first with a couple of cheap fallbacks instead
+        of coalescing across every pattern this class knows -- most columns
+        use one consistent format, so the brute-force list below only earns
+        its cost for the (rarer) column that doesn't.
+        """
         polars_dtype = self._map_dtype_to_polars(dtype)
         if polars_dtype is None:
             return None
@@ -749,6 +789,16 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         text_expr = pl.col(col).cast(pl.String, strict=False)
 
         if polars_dtype == pl.Date:
+            if date_format:
+                parse_exprs = [
+                    text_expr.str.strptime(
+                        pl.Date, date_format, strict=False, exact=True
+                    ),
+                    text_expr.str.to_date(strict=False),
+                    pl.col(col).cast(pl.Date, strict=False),
+                ]
+                return pl.coalesce(parse_exprs).alias(col)
+
             parse_exprs: list[pl.Expr] = []
             parse_exprs.extend(
                 text_expr.str.strptime(pl.Date, fmt, strict=False, exact=True)
@@ -779,8 +829,14 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         parse_exprs.append(pl.col(col).cast(pl.Datetime, strict=False))
         return pl.coalesce(parse_exprs).alias(col)
 
-    def _build_dtype_conversion_code(self, col: str, dtype: str) -> Optional[str]:
-        """Build generated code for converting a column to the requested dtype."""
+    def _build_dtype_conversion_code(
+        self, col: str, dtype: str, date_format: str = ""
+    ) -> Optional[str]:
+        """Build generated code for converting a column to the requested dtype.
+
+        ``date_format`` mirrors ``_build_dtype_conversion_expr``'s parameter
+        of the same name -- keep the two in step.
+        """
         polars_dtype = self._map_dtype_to_polars(dtype)
         if polars_dtype is None:
             return None
@@ -806,6 +862,15 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         text_expr = f"pl.col('{col}').cast(pl.String, strict=False)"
 
         if polars_dtype == pl.Date:
+            if date_format:
+                expressions = [
+                    f"{text_expr}.str.strptime(pl.Date, {date_format!r}, strict=False, exact=True)",
+                    f"{text_expr}.str.to_date(strict=False)",
+                    f"pl.col('{col}').cast(pl.Date, strict=False)",
+                ]
+                joined = ",\n        ".join(expressions)
+                return f"pl.coalesce([\n        {joined}\n    ]).alias('{col}')"
+
             expressions = [
                 f"{text_expr}.str.strptime(pl.Date, {fmt!r}, strict=False, exact=True)"
                 for fmt in self._date_parse_formats()
@@ -985,6 +1050,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             row.is_missing = False
             if row.text not in user_dtypes and row.dtype != str(schema[row.text]):
                 row.dtype = str(schema[row.text])
+                row.date_format = ""
 
         if old_set == new_set and old_texts:
             # No columns added or dropped: keep the display order exactly.
@@ -1196,6 +1262,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Apply data type changes if any (only for columns that exist in the data)
         if self.data is not None:
             current_schema = frame_schema(self.data)
+            date_formats = self._date_format_by_column()
             exprs = []
             for col, dtype in self.changes["dtype_mapping"].items():
                 if col not in current_schema:
@@ -1213,7 +1280,9 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 global_logger.debug(
                     f"📋 SelectContent: Converting column '{col}' to type '{dtype}'"
                 )
-                expr = self._build_dtype_conversion_expr(col, dtype)
+                expr = self._build_dtype_conversion_expr(
+                    col, dtype, date_formats.get(col, "")
+                )
                 if expr is None:
                     global_logger.warning(
                         f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}', skipping conversion"
@@ -1520,11 +1589,16 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # chain of Select nodes doesn't keep re-casting -- or, worse,
         # re-running the Date/Datetime strptime/coalesce parse -- on every hop.
         incoming_schema = frame_schema(self.incom_data)
+        date_formats = self._date_format_by_column()
         dtype_expr_codes = [
             expr_code
             for col, dtype in self.changes["dtype_mapping"].items()
             if not self._dtype_matches(incoming_schema.get(col), dtype)
-            and (expr_code := self._build_dtype_conversion_code(col, dtype))
+            and (
+                expr_code := self._build_dtype_conversion_code(
+                    col, dtype, date_formats.get(col, "")
+                )
+            )
         ]
         if dtype_expr_codes:
             joined = ",\n    ".join(dtype_expr_codes)
@@ -1653,6 +1727,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                             dtype=item.get("dtype", "object"),
                             rename=item.get("rename", ""),
                             is_missing=item.get("is_missing", False),
+                            date_format=item.get("date_format", ""),
                         )
                     )
                 else:

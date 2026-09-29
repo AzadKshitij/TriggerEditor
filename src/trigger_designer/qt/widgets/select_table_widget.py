@@ -43,6 +43,7 @@ class RowData:
     dtype: str = "object"
     rename: str = ""
     is_missing: bool = False
+    date_format: str = ""
 
 
 class SelectTableWidget(QAbstractTableModel):
@@ -174,6 +175,10 @@ class SelectTableWidget(QAbstractTableModel):
                 success = True
             elif col == 2:  # Combobox column
                 row_data.dtype = str(value)
+                # A manual pick has no known parse format -- clear any
+                # stale one from a previous auto-detect (see
+                # SelectContent.bulk_auto_detect / _date_format_by_column).
+                row_data.date_format = ""
                 success = True
 
         if success:
