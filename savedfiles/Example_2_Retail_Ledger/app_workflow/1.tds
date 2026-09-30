@@ -451,105 +451,120 @@
             "text": " Order ID ",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Customer_Id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "PRODUCT_ID",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Channel ID",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Order TS",
             "dtype": "Datetime",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Quantity",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Discount Pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "tax_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "shipping_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Status",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Payment Method",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_returned",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -640,28 +655,32 @@
             "text": "channel_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_group",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_digital",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -721,70 +740,80 @@
             "text": "customer_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "email",
             "dtype": "String",
             "rename": "customer_email",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "full_name",
             "dtype": "String",
             "rename": "customer_name",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "signup_date",
             "dtype": "Date",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "country",
             "dtype": "String",
             "rename": "customer_country",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "region",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency",
             "dtype": "String",
             "rename": "customer_currency",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "segment",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "age_band",
             "dtype": "String",
             "rename": "customer_age_band",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "loyalty_tier",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -863,63 +892,72 @@
             "text": "product_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "sku",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "product_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "category",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "subcategory",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "brand",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_cost",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "launch_date",
             "dtype": "Date",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -992,35 +1030,40 @@
             "text": "supplier_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "country",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "lead_time_days",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "reliability_score",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -1084,21 +1127,24 @@
             "text": "currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "usd_rate",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -3703,6 +3749,12 @@
             "formula_text": "CASE [status] WHEN 'paid' THEN 'Paid'\n  WHEN 'pending' THEN 'Pending'\n  WHEN 'refunded' THEN 'Refunded'\n  WHEN 'cancelled' THEN 'Cancelled'\n  WHEN 'partially refunded' THEN 'Partially Refunded'\n  ELSE [status] END",
             "editor_height": 160,
             "target_dtype": ""
+          },
+          {
+            "target_column": "lol",
+            "formula_text": "\" sadda \" [brand]",
+            "editor_height": 120,
+            "target_dtype": ""
           }
         ]
       },
@@ -3895,35 +3947,40 @@
             "text": "order_year_month",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "revenue_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "margin_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "orders",
             "dtype": "UInt32",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "RunTot_revenue_usd",
             "dtype": "Float64",
             "rename": "cumulative_revenue_usd",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -4057,21 +4114,24 @@
             "text": "order_year_month",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Name",
             "dtype": "String",
             "rename": "metric",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Value",
             "dtype": "Float64",
             "rename": "value",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -5277,56 +5337,64 @@
             "text": "clean_orders",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_revenue_usd_raw",
             "dtype": "Float64",
             "rename": "gross_revenue_usd",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "net_revenue_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_margin_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "returned_orders",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "distinct_customers",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "distinct_products",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "high_risk_orders",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -5394,434 +5462,496 @@
             "text": "brand",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "category",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_group",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "country",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_age_band",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_country",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_email",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "discount_pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_digital",
             "dtype": "Boolean",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_returned",
             "dtype": "Boolean",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "launch_date",
             "dtype": "Date",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "lead_time_days",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "loyalty_tier",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_id",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_ts",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "payment_method",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "product_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "product_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "quantity",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "region",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "reliability_score",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "segment",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "shipping_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "signup_date",
             "dtype": "Date",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "sku",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "status",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "subcategory",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "tax_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_cost",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "usd_rate",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "g",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "discount_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "net_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "total_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "net_revenue_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "tax_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "shipping_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "total_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "cogs_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_margin_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "margin_pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_year",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_month",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_year_month",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_bulk",
             "dtype": "Boolean",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "value_band",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "risk_score",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "risk_band",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "status_clean",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -5998,63 +6128,72 @@
             "text": "clean_orders",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_revenue_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "net_revenue_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_margin_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "margin_pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "returned_orders",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "high_risk_orders",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "distinct_customers",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "distinct_products",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -6389,105 +6528,120 @@
             "text": "order_id",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "product_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_ts",
             "dtype": "Datetime(time_unit='us', time_zone=None)",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "quantity",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "discount_pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "tax_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "shipping_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "status",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "payment_method",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_returned",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -6614,14 +6768,16 @@
             "text": "Name",
             "dtype": "String",
             "rename": "metric",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Value",
             "dtype": "Float64",
             "rename": "value",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -6881,434 +7037,496 @@
             "text": "order_id",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_ts",
             "dtype": "Datetime",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_year",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_month",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "order_year_month",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "product_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_id",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "channel_group",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "category",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "subcategory",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "brand",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_country",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "region",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "segment",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "loyalty_tier",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "usd_rate",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "status",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "status_clean",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "quantity",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "discount_pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "net_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "total_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "net_revenue_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "cogs_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_margin_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "margin_pct",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "value_band",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "risk_score",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "risk_band",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_returned",
             "dtype": "Boolean",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_bulk",
             "dtype": "Boolean",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "country",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_age_band",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_currency",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_email",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "is_digital",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "launch_date",
             "dtype": "Date",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "lead_time_days",
             "dtype": "Int64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "payment_method",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "product_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "reliability_score",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "shipping_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "signup_date",
             "dtype": "Date",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "sku",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "supplier_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "tax_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_cost",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "currency_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "customer_name",
             "dtype": "String",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "g",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "gross_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "discount_local",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "unit_price_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "tax_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "shipping_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "total_usd",
             "dtype": "Float64",
             "rename": "",
-            "is_missing": false
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -9136,6 +9354,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-29T13:11:15Z"
+    "saved_at": "2026-09-30T11:25:56Z"
   }
 }

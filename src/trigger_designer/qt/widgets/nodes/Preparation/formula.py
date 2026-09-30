@@ -42,6 +42,7 @@ from trigger_designer.qt.node_base import (
 )
 from trigger_designer.qt.widgets.sql_formula_editor import (
     ERROR_CHECK_DEBOUNCE_MS,
+    SQLFormulaEditor,
     SQLFormulaWidget,
     STRING_LITERAL_RE,
     translate_function_aliases,
@@ -949,7 +950,22 @@ class FormulaContent(
                     else:
                         current_df = duck.execute(query).pl()
                 except Exception as exc:
-                    errors[index] = self._shorten_error(str(exc))
+                    message = self._shorten_error(str(exc))
+                    if "Parser Error:" in str(exc):
+                        # DuckDB parses the generated SELECT (with its own
+                        # AS target alias). Report syntax in the user's
+                        # expression instead of pointing at generated SQL.
+                        syntax_errors = SQLFormulaEditor.validate_sql_syntax(
+                            section["formula_text"]
+                        )
+                        if syntax_errors:
+                            message = syntax_errors[0]["message"]
+                        elif (
+                            " AS " in message
+                            and " AS " not in section["formula_text"].upper()
+                        ):
+                            message = "Invalid formula expression (check quotes and operators)"
+                    errors[index] = message
                     break
         return current_df, available_columns, errors
 
@@ -986,6 +1002,9 @@ class FormulaContent(
         except Exception:
             return []
         if section_index in errors:
+            syntax_errors = SQLFormulaEditor.validate_sql_syntax(formula_text)
+            if syntax_errors and errors[section_index] == syntax_errors[0]["message"]:
+                return syntax_errors
             return [
                 {
                     "message": errors[section_index],

@@ -22,10 +22,6 @@ from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.resource_manager import ResourceManager
-from trigger_designer.qt.helpers.eval_progress import (
-    count_pending_recomputes,
-    eval_progress_dialog,
-)
 from trigger_designer.qt.helpers.content_undo_mixin import (
     _COMPOSITE_ATTR,
     _IMMEDIATE_WIDGET_TYPES,
@@ -738,12 +734,7 @@ class TriggerNode(Node):
 
         self.markDirty()
         self.markDescendantsDirty()
-
-        total = count_pending_recomputes(self)
-        view = self.scene.getView() if hasattr(self.scene, "getView") else None
-        parent = view.window() if view is not None else None
-        with eval_progress_dialog(self.scene, parent, total, "Updating workflow…"):
-            self.eval()
+        self.eval()
 
     def serialize(self) -> OrderedDict:
         res = super().serialize()

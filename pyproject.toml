@@ -22,6 +22,7 @@ dependencies = [
     "pandas==2.3.3",
     "numpy==2.5.3",
     "duckdb>=1.2.1",
+    "sqlglot>=30.20,<31",
     # File handling
     "fastexcel>=0.15.1",
     "openpyxl>=3.1.0",

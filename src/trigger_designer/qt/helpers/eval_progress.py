@@ -1,10 +1,8 @@
-"""Progress feedback for long synchronous graph work (file load, recompute).
+"""Progress feedback for long synchronous workflow loads.
 
-File load and a downstream cascade from a single edit both run on the GUI
-thread with no point where the work yields to the Qt event loop. This module
-does not change that; it makes the wait visible: a modal ``QProgressDialog``
-that is shown *and painted* before the work starts, and re-pumped by
-``TriggerNode.eval()`` around every node it recomputes.
+File loads run on the GUI thread with no point where the work yields to the Qt
+event loop. This module makes the wait visible: a modal ``QProgressDialog``
+shown *and painted* before work starts, then re-pumped by ``TriggerNode.eval()``.
 
 ``eval()`` calls ``scene._eval_progress_cb(node, finished)`` - once with
 ``finished=False`` just before a node computes (so the dialog can name it and
@@ -59,10 +57,10 @@ def eval_progress_dialog(
     """Drive a progress dialog while up to ``total`` nodes recompute.
 
     Pass ``dialog`` to reuse one opened earlier (file load opens it before
-    parsing); otherwise a dialog is created, but only for cascades of at
-    least ``PROGRESS_NODE_THRESHOLD`` nodes so a normal edit never flashes
-    one. ``total`` is an estimate; an upstream error can end the cascade
-    early, which is harmless - the dialog closes when the block exits.
+    parsing). Without one, the helper creates a dialog only above the
+    ``PROGRESS_NODE_THRESHOLD``. Callers use this helper only for workflow
+    loads; interactive edits and history restores evaluate without a dialog.
+    ``total`` is an estimate; an upstream error can end the cascade early.
     """
     if scene is None or (dialog is None and total < PROGRESS_NODE_THRESHOLD):
         yield

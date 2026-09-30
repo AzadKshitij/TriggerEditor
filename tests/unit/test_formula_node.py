@@ -202,7 +202,82 @@ def test_case_missing_end_points_at_case_token() -> None:
     errors = editor.validate_sql_syntax("CASE WHEN [Age] > 30 THEN 'Adult'")
     assert len(errors) == 1
     assert errors[0]["message"] == "CASE statement missing END keyword"
+    assert errors[0]["line"] == 1
+    assert errors[0]["column"] == 0
     assert errors[0]["length"] == 4
+    editor.deleteLater()
+
+
+def test_sqlglot_accepts_multiline_expression_and_formula_quoting() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    for formula in (
+        "COALESCE(\n [Amount With Spaces],\n 0)",
+        "CASE WHEN [amount] > 1 THEN \"it's [fine]\" ELSE 'low' END",
+        "[amount] + (\n 2)",
+        "'it''s [literal]'",
+    ):
+        assert editor.validate_sql_syntax(formula) == [], formula
+    editor.deleteLater()
+
+
+def test_sqlglot_reports_multiline_syntax_position_in_editor() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    errors = editor.validate_sql_syntax("[amount] +\n )")
+    assert errors
+    assert errors[0]["line"] == 2
+    assert errors[0]["column"] == 1
+    editor.deleteLater()
+
+
+def test_incomplete_quotes_do_not_crash_editor() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    for formula, line, column in (
+        ('"', 1, 0),
+        ("'unfinished", 1, 0),
+        ('[amount] +\n "unfinished', 2, 1),
+    ):
+        editor.setPlainText(formula)
+        editor.check_for_errors()
+        assert editor.errors
+        assert editor.errors[0]["line"] == line
+        assert editor.errors[0]["column"] == column
+        assert "Unterminated" in editor.errors[0]["message"]
+    content = _build_formula_content([{"target_column": "result", "formula_text": '"'}])
+    editor.external_validator = lambda text: content.validate_section_text(0, text)
+    editor.setPlainText('"')
+    editor.check_for_errors()
+    assert editor.errors
+    editor.deleteLater()
+
+
+def test_duckdb_success_overrides_sqlglot_diagnostics(monkeypatch) -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    editor.external_validator = lambda text: []
+    monkeypatch.setattr(
+        editor,
+        "validate_sql_syntax",
+        lambda text: [{"message": "Parser disagrees", "line": 1, "column": 0}],
+    )
+    editor.setPlainText("[amount] + 1")
+    editor.check_for_errors()
+    assert editor.errors == []
+    editor.deleteLater()
+
+
+def test_duckdb_parser_failure_uses_sqlglot_error_location() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    content = _build_formula_content(
+        [{"target_column": "result", "formula_text": "[amount] +\n )"}]
+    )
+    editor.external_validator = lambda text: content.validate_section_text(0, text)
+    editor.setPlainText("[amount] +\n )")
+    editor.check_for_errors()
+    assert any(error["line"] == 2 and error["column"] == 1 for error in editor.errors)
     editor.deleteLater()
 
 
@@ -332,6 +407,18 @@ def test_update_data_reports_short_section_error() -> None:
     assert "Candidate bindings" not in content.last_error
     assert "LINE" not in content.last_error
     assert content.section_errors == {0: content.last_error.removeprefix("Section 1: ")}
+
+
+def test_invalid_formula_error_does_not_name_generated_alias() -> None:
+    for text in ('" sadda [category]', '"" sadda [category]'):
+        content = _build_formula_content(
+            [{"target_column": "Lol", "formula_text": text}]
+        )
+        content.update_data()
+        assert content.section_errors[0]
+        assert "AS" not in content.section_errors[0]
+        assert '"Lol"' not in content.section_errors[0]
+        assert "syntax error at or near" not in content.section_errors[0]
 
 
 def test_editor_height_normalized_and_clamped() -> None:

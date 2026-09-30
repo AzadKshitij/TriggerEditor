@@ -886,6 +886,15 @@ wheels = [
 ]
 
 [[package]]
+name = "sqlglot"
+version = "30.20.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/4b/5b7cc5bef933d92646637aa21211901069e2463e32ea095e07a41049632b/sqlglot-30.20.0.tar.gz", hash = "sha256:8210b49131ac80cb3d4135edd3f64a50c95f2046305f4e6978fca59b39c82407", size = 6051245 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/dd/cc/b42e2b2efc612427d0402c37974f0eb69654faf287a95f72960863a7dff1/sqlglot-30.20.0-py3-none-any.whl", hash = "sha256:886fd92eba9bf944dee97164b16760f21576a7f55ef4a9211337903442e8aded", size = 758365 },
+]
+
+[[package]]
 name = "tornado"
 version = "6.5.10"
 source = { registry = "https://pypi.org/simple" }
@@ -932,6 +941,7 @@ dependencies = [
     { name = "qtpy" },
     { name = "seaborn" },
     { name = "six" },
+    { name = "sqlglot" },
     { name = "typing-extensions" },
     { name = "tzdata" },
 ]
@@ -980,6 +990,7 @@ requires-dist = [
     { name = "qtpy", specifier = "==2.4.2" },
     { name = "seaborn", specifier = "==0.13.2" },
     { name = "six", specifier = "==1.17.0" },
+    { name = "sqlglot", specifier = ">=30.20,<31" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "tzdata", specifier = "==2026.4" },
 ]

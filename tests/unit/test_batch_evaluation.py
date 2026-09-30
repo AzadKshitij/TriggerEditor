@@ -1,5 +1,6 @@
 """Batch graph evaluation avoids duplicate cascades without affecting live edits."""
 
+from contextlib import contextmanager
 import os
 import sys
 from pathlib import Path
@@ -64,4 +65,44 @@ def test_batch_flag_restored_on_failure(monkeypatch) -> None:
     with pytest.raises(RuntimeError, match="failed graph walk"):
         window.doEvalOutputs()
     assert not window.scene._batch_evaluating
+    window.close()
+
+
+def test_edit_cascade_never_shows_progress_dialog(monkeypatch) -> None:
+    from trigger_designer.qt.helpers import eval_progress
+
+    window = TriggerSubWindow()
+    source = Source(window.scene)
+    sinks = [Sink(window.scene) for _ in range(8)]
+    for sink in sinks:
+        Edge(window.scene, source.outputs[0], sink.inputs[0])
+    assert eval_progress.count_pending_recomputes(source) >= 8
+
+    def unexpected_dialog(*args, **kwargs):
+        raise AssertionError("Editing should not open a progress dialog")
+
+    monkeypatch.setattr(eval_progress, "make_progress_dialog", unexpected_dialog)
+    source.onInputChanged()
+    assert all(sink.calls == 1 for sink in sinks)
+    window.close()
+
+
+def test_batch_progress_is_only_used_with_explicit_load_dialog(monkeypatch) -> None:
+    from trigger_designer.qt import design_window
+
+    window = TriggerSubWindow()
+    Source(window.scene)
+    calls = []
+
+    @contextmanager
+    def progress(*args, **kwargs):
+        calls.append(kwargs.get("dialog"))
+        yield
+
+    monkeypatch.setattr(design_window, "eval_progress_dialog", progress)
+    window.doEvalOutputs()
+    assert calls == []
+    load_dialog = object()
+    window.doEvalOutputs(dialog=load_dialog)
+    assert calls == [load_dialog]
     window.close()

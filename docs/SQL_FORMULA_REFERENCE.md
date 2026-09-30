@@ -10,7 +10,7 @@ This file documents what the Formula node and SQL formula editor support today.
 - Later sections can reference columns created by earlier sections in the same node.
 - Column references must use square brackets, for example `[Order Date]` or `[Customer Name]`. Anything in `'...'` or `"..."` is a string literal, never a column (`"..."` is auto-converted to `'...'` on commit).
 - String literals may use single or double quotes, for example `'Active'` or `"Active"` (SQL `''`/`""` escapes supported).
-- The editor validates bracketed column names, quotes, parentheses, and `CASE ... END` balance, plus a DuckDB `EXPLAIN` dry-run of each section against a 200-row sample (~800ms after typing stops).
+- The editor uses SQLGlot's DuckDB dialect to locate expression syntax errors (including multiline expressions), validates bracketed column names, and runs a DuckDB `EXPLAIN` dry-run of each section against a 200-row sample (~800ms after typing stops). DuckDB decides whether a formula is valid; SQLGlot diagnostics are advisory.
 
 ## Syntax Highlighting in the Editor
 

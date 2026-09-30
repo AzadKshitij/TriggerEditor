@@ -1,6 +1,6 @@
 from loguru import logger
 from collections import deque
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 import os
 import time
 
@@ -303,14 +303,17 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         return TriggerNode_Unknown
 
     def doEvalOutputs(self, dialog=None) -> None:
-        # Every node starts dirty (TriggerNode.__init__), so this first pass
-        # recomputes the whole graph - size the dialog to the full node
-        # count. Without a `dialog` (undo/redo restore) a small graph gets
-        # none at all.
+        # The workflow loader passes its dialog; history restores and other
+        # evaluations run silently, regardless of graph size.
         total = len(self.scene.nodes)
-        with eval_progress_dialog(
-            self.scene, self, total, "Evaluating workflow…", dialog=dialog
-        ):
+        progress = (
+            eval_progress_dialog(
+                self.scene, self, total, "Evaluating workflow…", dialog=dialog
+            )
+            if dialog is not None
+            else nullcontext()
+        )
+        with progress:
             previous_batch = getattr(self.scene, "_batch_evaluating", False)
             self.scene._batch_evaluating = True
             try:

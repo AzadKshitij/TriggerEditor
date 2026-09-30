@@ -13,6 +13,8 @@ import re
 import time
 from typing import Callable, List, Optional, Dict, Set, Tuple
 
+from sqlglot import parse_one
+from sqlglot.errors import ParseError, TokenError
 from qtpy.QtWidgets import (
     QCompleter,
     QTextEdit,
@@ -43,6 +45,58 @@ STRING_LITERAL_RE = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"")
 
 #: Fixed debounce between typing and validation.
 ERROR_CHECK_DEBOUNCE_MS = 800
+
+
+_FORMULA_TOKEN_RE = re.compile(
+    r"--[^\n]*|/\*.*?\*/|'(?:''|[^'])*'|\"(?:\"\"|[^\"])*\"|\[[^\]\n]*\]",
+    re.DOTALL,
+)
+
+
+def _formula_for_parser(text: str) -> tuple[str, list[int]]:
+    """Adapt formula-only quoting for DuckDB SQLGlot; map offsets to the editor.
+
+    The node executes the original formula after its own normalization. This
+    adapter is only for diagnostics; it never changes the executed SQL.
+    """
+    sql = ["SELECT "]
+    offsets = [-1] * len(sql[0])
+    position = 0
+    for match in _FORMULA_TOKEN_RE.finditer(text):
+        sql.append(text[position : match.start()])
+        offsets.extend(range(position, match.start()))
+        token = match.group()
+        start = match.start()
+        if token.startswith(("[", '"')):
+            # [...] is an identifier; "..." is a string in formula syntax.
+            quote = '"' if token[0] == "[" else "'"
+            sql.append(quote)
+            offsets.append(start)
+            inner = token[1:-1]
+            index = 0
+            while index < len(inner):
+                char = inner[index]
+                source = start + 1 + index
+                if token[0] == '"' and char == '"' and inner[index : index + 2] == '""':
+                    sql.append('"')
+                    offsets.append(source)
+                    index += 2
+                    continue
+                sql.append(char)
+                offsets.append(source)
+                if char == quote:
+                    sql.append(char)  # Escape quote inside a delimited token.
+                    offsets.append(source)
+                index += 1
+            sql.append(quote)
+            offsets.append(match.end() - 1)
+        else:
+            sql.append(token)
+            offsets.extend(range(start, match.end()))
+        position = match.end()
+    sql.append(text[position:])
+    offsets.extend(range(position, len(text)))
+    return "".join(sql), offsets
 
 
 def mask_string_literals(text: str) -> str:
@@ -522,9 +576,9 @@ class SQLFormulaEditor(QTextEdit):
             self.allErrorsDetected.emit([])
             return
 
-        # Basic SQL validation
-        errors = self.validate_sql_syntax(text)
-        self.errors.extend(errors)
+        # SQLGlot supplies locations; DuckDB remains authoritative when the
+        # editor has a live validator (the two parsers need not agree).
+        syntax_errors = self.validate_sql_syntax(text)
 
         # Validate column references
         column_errors = self.validate_column_references(text)
@@ -533,9 +587,25 @@ class SQLFormulaEditor(QTextEdit):
         # External (e.g. DuckDB EXPLAIN) validation
         if self.external_validator is not None:
             try:
-                self.errors.extend(self.external_validator(text) or [])
-            except Exception:
-                pass
+                external_errors = self.external_validator(text) or []
+                if external_errors:
+                    # Binder/type errors are not syntax errors. SQLGlot is
+                    # deliberately advisory, never a veto of DuckDB SQL.
+                    if (
+                        any(
+                            "syntax error" in error.get("message", "").lower()
+                            or "parser error" in error.get("message", "").lower()
+                            for error in external_errors
+                        )
+                        and syntax_errors
+                    ):
+                        self.errors.extend(syntax_errors)
+                    else:
+                        self.errors.extend(external_errors)
+            except Exception:  # noqa: BLE001 - optional host validation must not break editor
+                self.errors.extend(syntax_errors)
+        else:
+            self.errors.extend(syntax_errors)
 
         # Update visual error indicators
         self.update_error_highlights()
@@ -558,77 +628,89 @@ class SQLFormulaEditor(QTextEdit):
             # Clear errors
             self.allErrorsDetected.emit([])
 
-    def validate_sql_syntax(self, text: str) -> List[Dict]:
-        """Basic SQL syntax validation."""
-        errors = []
-        lines = text.split("\n")
-
-        for line_num, line in enumerate(lines, 1):
-            line = line.strip()
-            if not line:
-                continue
-
-            # Check for unmatched single quotes ('' escapes don't count)
-            remainder = STRING_LITERAL_RE.sub("", line)
-            if "'" in remainder:
+    @staticmethod
+    def validate_sql_syntax(text: str) -> list[dict]:
+        """Parse an expression in DuckDB dialect and return editor positions."""
+        if not text.strip():
+            return []
+        sql, offsets = _formula_for_parser(text)
+        try:
+            parse_one(sql, read="duckdb")
+        except TokenError as exc:
+            # Incomplete quotes are routine while typing. TokenError's
+            # start/end describe a context snippet, not the bad token, so
+            # locate the first quote outside complete literals/comments.
+            masked = list(text)
+            for match in _FORMULA_TOKEN_RE.finditer(text):
+                masked[match.start() : match.end()] = " " * len(match.group())
+            quote_offset = next(
+                (i for i, char in enumerate(masked) if char in ("'", '"')),
+                None,
+            )
+            if quote_offset is None:
+                index = max(7, min(exc.start or 7, len(offsets) - 1))
+                quote_offset = max(0, offsets[index])
+            line, column = SQLFormulaEditor._offset_to_line_col(text, quote_offset)
+            return [
+                {
+                    "message": (
+                        "Unterminated string literal"
+                        if masked[quote_offset] in ("'", '"')
+                        else "Invalid SQL token"
+                    ),
+                    "line": line,
+                    "column": column,
+                    "length": 1,
+                }
+            ]
+        except ParseError as exc:
+            errors = []
+            for detail in exc.errors:
+                description = detail.get("description") or "Invalid SQL expression"
+                if description == "Expected END after CASE":
+                    cases = list(
+                        re.finditer(
+                            r"\bCASE\b",
+                            SQLFormulaEditor._mask_strings_and_comments(text),
+                            re.IGNORECASE,
+                        )
+                    )
+                    if cases:
+                        case_line, case_col = SQLFormulaEditor._offset_to_line_col(
+                            text, cases[-1].start()
+                        )
+                        errors.append(
+                            {
+                                "message": "CASE statement missing END keyword",
+                                "line": case_line,
+                                "column": case_col,
+                                "length": 4,
+                            }
+                        )
+                        continue
+                line = max(1, detail.get("line") or 1)
+                column = max(0, (detail.get("col") or 1) - 1)
+                lines = sql.splitlines(keepends=True)
+                processed_offset = sum(map(len, lines[: line - 1])) + column
+                highlight = detail.get("highlight") or ""
+                processed_offset -= max(0, len(highlight) - 1)
+                processed_offset = max(0, min(processed_offset, len(offsets) - 1))
+                original_offset = max(0, offsets[processed_offset])
+                original_line, original_col = SQLFormulaEditor._offset_to_line_col(
+                    text, original_offset
+                )
                 errors.append(
                     {
-                        "message": "Unmatched single quote",
-                        "line": line_num,
-                        "column": line.rfind("'"),
-                        "length": 1,
+                        "message": description,
+                        "line": original_line,
+                        "column": original_col,
+                        "length": max(
+                            1, min(len(highlight), len(text) - original_offset)
+                        ),
                     }
                 )
-
-            # Check for unmatched parentheses
-            paren_count = line.count("(") - line.count(")")
-            if paren_count != 0:
-                if paren_count > 0:
-                    # Find last unmatched opening parenthesis
-                    pos = line.rfind("(")
-                    if pos != -1:
-                        errors.append(
-                            {
-                                "message": "Unmatched opening parenthesis",
-                                "line": line_num,
-                                "column": pos,
-                                "length": 1,
-                            }
-                        )
-                else:
-                    # Find last unmatched closing parenthesis
-                    pos = line.rfind(")")
-                    if pos != -1:
-                        errors.append(
-                            {
-                                "message": "Unmatched closing parenthesis",
-                                "line": line_num,
-                                "column": pos,
-                                "length": 1,
-                            }
-                        )
-
-        # Check CASE/END balance on code (strings and comments masked out).
-        # Each CASE needs a matching END; point at the unmatched CASE token.
-        code = self._mask_strings_and_comments(text)
-        case_starts = [
-            match.start() for match in re.finditer(r"\bCASE\b", code, re.IGNORECASE)
-        ]
-        end_starts = [
-            match.start() for match in re.finditer(r"\bEND\b", code, re.IGNORECASE)
-        ]
-        for start in case_starts[len(end_starts) :]:
-            line_num, column = self._offset_to_line_col(text, start)
-            errors.append(
-                {
-                    "message": "CASE statement missing END keyword",
-                    "line": line_num,
-                    "column": column,
-                    "length": 4,
-                }
-            )
-
-        return errors
+            return errors
+        return []
 
     @staticmethod
     def _mask_strings_and_comments(text: str) -> str:
