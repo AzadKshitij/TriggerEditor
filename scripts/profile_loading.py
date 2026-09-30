@@ -343,39 +343,49 @@ def main() -> None:
         action="store_true",
         help="Benchmark the old unconditional Union pass for A/B comparisons",
     )
+    parser.add_argument(
+        "--repeats",
+        type=int,
+        default=1,
+        help="Repeat in one process to separate cold and warm loads",
+    )
+    parser.add_argument("--label", default="", help="Label written profile artifacts")
     args = parser.parse_args()
+    if args.repeats < 1:
+        parser.error("--repeats must be positive")
     path = (args.file or WORKFLOWS[args.workflow]).resolve()
-    result = run(path, args.cprofile, args.snapshot, args.force_settle)
     output_dir = ROOT / "profiles"
     output_dir.mkdir(exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    name = f"load_{path.stem}_{stamp}"
-    profile = result.pop("profile", None)
-    if profile:
-        prof_path = output_dir / f"{name}.prof"
-        profile.dump_stats(str(prof_path))
-        result["cprofile_file"] = str(prof_path.relative_to(ROOT))
-    json_path = output_dir / f"{name}.json"
-    json_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
-    print(f"{result['workflow']}: {result['nodes']} nodes, {result['edges']} edges")
-    print(f"Load: {result['load_wall_ms']:.0f} ms")
-    for phase, stats in sorted(
-        result["phases"].items(), key=lambda item: item[1]["total_ms"], reverse=True
-    ):
-        print(f"  {phase}: {stats['total_ms']:.0f} ms")
-    for name, counts in result["recomputes_by_pass"].items():
-        print(f"  {name} recomputes: {sum(counts.values())}")
-    print("Dock selection (separate from load):")
-    for phase, stats in result["dock_phases"].items():
-        print(f"  {phase}: {stats['total_ms']:.0f} ms / {stats['calls']} calls")
-    print("Slowest node types (exclusive eval):")
-    for node_type, stats in sorted(
-        result["node_eval_self"].items(),
-        key=lambda item: item[1]["total_ms"],
-        reverse=True,
-    )[:5]:
-        print(f"  {node_type}: {stats['total_ms']:.0f} ms ({stats['calls']} calls)")
-    print(f"Saved: {json_path}")
+    for index in range(args.repeats):
+        result = run(path, args.cprofile, args.snapshot, args.force_settle)
+        name = f"load_{path.stem}_{stamp}_{args.label}_{index + 1}"
+        profile = result.pop("profile", None)
+        if profile:
+            prof_path = output_dir / f"{name}.prof"
+            profile.dump_stats(str(prof_path))
+            result["cprofile_file"] = str(prof_path.relative_to(ROOT))
+        json_path = output_dir / f"{name}.json"
+        json_path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        print(f"{result['workflow']}: {result['nodes']} nodes, {result['edges']} edges")
+        print(f"Load {index + 1}/{args.repeats}: {result['load_wall_ms']:.0f} ms")
+        for phase, stats in sorted(
+            result["phases"].items(), key=lambda item: item[1]["total_ms"], reverse=True
+        ):
+            print(f"  {phase}: {stats['total_ms']:.0f} ms")
+        for phase, counts in result["recomputes_by_pass"].items():
+            print(f"  {phase} recomputes: {sum(counts.values())}")
+        print("Dock selection (separate from load):")
+        for phase, stats in result["dock_phases"].items():
+            print(f"  {phase}: {stats['total_ms']:.0f} ms / {stats['calls']} calls")
+        print("Slowest node types (exclusive eval):")
+        for node_type, stats in sorted(
+            result["node_eval_self"].items(),
+            key=lambda item: item[1]["total_ms"],
+            reverse=True,
+        )[:5]:
+            print(f"  {node_type}: {stats['total_ms']:.0f} ms ({stats['calls']} calls)")
+        print(f"Saved: {json_path}")
 
 
 if __name__ == "__main__":
