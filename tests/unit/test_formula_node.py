@@ -83,6 +83,55 @@ def test_formula_content_applies_multiple_sections_in_order() -> None:
     assert '"amount_band"' in generated_code
 
 
+def test_live_formula_runs_sections_in_one_duckdb_query(monkeypatch) -> None:
+    import duckdb
+
+    content = _build_formula_content(
+        [
+            {"target_column": "double_amount", "formula_text": "[amount] * 2"},
+            {"target_column": "amount_band", "formula_text": "[double_amount] + 1"},
+        ]
+    )
+    original_connect = duckdb.connect
+    statements = []
+
+    class CountingConnection:
+        def __init__(self):
+            self.connection = original_connect(":memory:")
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.connection.close()
+
+        def register(self, *args):
+            return self.connection.register(*args)
+
+        def execute(self, sql):
+            statements.append(sql)
+            return self.connection.execute(sql)
+
+    monkeypatch.setattr(duckdb, "connect", lambda *args: CountingConnection())
+    content.update_data()
+
+    assert content.last_error == ""
+    assert content.data["amount_band"].to_list() == [21, 51]
+    assert len(statements) == 1
+
+
+def test_live_formula_failure_reports_second_section() -> None:
+    content = _build_formula_content(
+        [
+            {"target_column": "double_amount", "formula_text": "[amount] * 2"},
+            {"target_column": "bad", "formula_text": "NOSUCHFUNC([double_amount])"},
+        ]
+    )
+    content.update_data()
+    assert content.last_error.startswith("Section 2:")
+    assert set(content.section_errors) == {1}
+
+
 def test_formula_content_normalizes_sections() -> None:
     content = _build_formula_content([])
 

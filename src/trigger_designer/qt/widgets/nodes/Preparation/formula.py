@@ -897,7 +897,35 @@ class FormulaContent(
         configured: List[Tuple[int, Dict[str, Any]]],
         explain_index: Optional[int] = None,
     ) -> Tuple[pl.DataFrame, List[str], Dict[int, str]]:
-        """Apply configured (index, section) pairs in order.
+        """Apply all sections in one query; fall back for diagnostic errors.
+
+        EXPLAIN still uses the section-by-section path, so validation can
+        report which section failed and execute its predecessors in context.
+        """
+        if explain_index is not None:
+            return self._run_sections_sequential(current_df, configured, explain_index)
+
+        available_columns = list(frame_schema(current_df))
+        query, available_columns = self._build_combined_query(
+            configured, available_columns, "df_for_duck"
+        )
+        with duckdb.connect(":memory:") as duck:
+            duck.register("df_for_duck", current_df)
+            try:
+                result = duck.execute(query).pl()
+            except Exception:  # noqa: BLE001 - fall back for any query/conversion failure
+                # The combined plan cannot identify the first failing section.
+                # Preserve the existing section index and error text contract.
+                return self._run_sections_sequential(current_df, configured)
+        return result, available_columns, {}
+
+    def _run_sections_sequential(
+        self,
+        current_df: pl.DataFrame | pl.LazyFrame,
+        configured: list[tuple[int, dict[str, Any]]],
+        explain_index: int | None = None,
+    ) -> tuple[pl.DataFrame, list[str], dict[int, str]]:
+        """Apply configured (index, section) pairs in order for error reporting.
 
         With explain_index set, that section is EXPLAINed instead of run
         (prior sections still run so later sections validate in context).
@@ -907,7 +935,7 @@ class FormulaContent(
         Returns (frame, available columns, {index: error message}).
         """
         available_columns = list(frame_schema(current_df))
-        errors: Dict[int, str] = {}
+        errors: dict[int, str] = {}
         with duckdb.connect(":memory:") as duck:
             for index, section in configured:
                 relation_name = f"df_step_{index}"
