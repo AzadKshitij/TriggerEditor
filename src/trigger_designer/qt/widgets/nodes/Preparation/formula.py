@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import duckdb
 import polars as pl
+from loguru import logger
 from qtpy.QtCore import Qt, QTimer, Signal
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
@@ -168,6 +169,8 @@ class FormulaContent(
         self.variable_name = f"var_formula_{self.id}"
         self.last_error: str = ""
         self.section_errors: Dict[int, str] = {}
+        self._live_section_errors: Dict[int, str] = {}
+        self._last_logged_error: str = ""
 
     @property
     def node(self) -> "TriggerNode":
@@ -422,6 +425,7 @@ class FormulaContent(
 
         self._clear_layout(self.sections_layout)
         self.section_widgets = []
+        self._live_section_errors.clear()
 
         for index, section in enumerate(self.formula_sections):
             if index > 0:
@@ -479,6 +483,12 @@ class FormulaContent(
             debounce_timer.setInterval(ERROR_CHECK_DEBOUNCE_MS)
             debounce_timer.timeout.connect(partial(self._debounced_commit, index))
             formula_input.textChanged.connect(debounce_timer.start)
+            formula_input.textChanged.connect(
+                partial(self._on_section_text_changed, index)
+            )
+            formula_input.editor.allErrorsDetected.connect(
+                partial(self._on_section_diagnostics, index)
+            )
             formula_input.editingFinished.connect(debounce_timer.stop)
             formula_input.editingFinished.connect(
                 partial(self.commit_formula_text, index)
@@ -529,10 +539,25 @@ class FormulaContent(
                 continue
             try:
                 message = self.section_errors.get(index, "")
+                if index in self._live_section_errors:
+                    live = self._live_section_errors[index]
+                    if live or (
+                        widgets["formula_input"].get_text()
+                        != self.formula_sections[index]["formula_text"]
+                    ):
+                        message = live
                 label.setText(message)
                 label.setVisible(bool(message))
             except RuntimeError:
                 continue
+
+    def _on_section_text_changed(self, section_index: int) -> None:
+        self._live_section_errors[section_index] = ""
+        self._refresh_section_errors()
+
+    def _on_section_diagnostics(self, section_index: int, messages: list[str]) -> None:
+        self._live_section_errors[section_index] = messages[0] if messages else ""
+        self._refresh_section_errors()
 
     def _refresh_section_controls(self) -> None:
         section_count = len(self.formula_sections)
@@ -604,6 +629,7 @@ class FormulaContent(
 
         old_state = self._current_state()
         self.formula_sections.append(self._default_section())
+        self.section_errors.clear()
         self._rebuild_section_widgets()
         self.update_data()
         self.store_history(old_state)
@@ -618,6 +644,7 @@ class FormulaContent(
 
         old_state = self._current_state()
         self.formula_sections.pop(section_index)
+        self.section_errors.clear()
         self._rebuild_section_widgets()
         self.update_data()
         self.store_history(old_state)
@@ -830,6 +857,32 @@ class FormulaContent(
                 first_line = first_line[len(prefix) :].strip()
         return first_line[:160]
 
+    @staticmethod
+    def _diagnose_section_error(exc: Exception, formula_text: str) -> dict:
+        """Return a user-facing diagnostic, never a generated SQL location.
+
+        DuckDB parses SELECT/CTE wrappers, so its parser cursor and snippets
+        cannot be mapped directly to a position in the user's expression.
+        SQLGlot can locate a malformed original expression; if it cannot,
+        report a locationless error instead of underlining the first quote.
+        """
+        if isinstance(exc, duckdb.ParserException):
+            syntax = SQLFormulaEditor.validate_sql_syntax(formula_text)
+            if syntax:
+                return {**syntax[0], "category": "syntax"}
+            return {
+                "message": "Invalid formula expression (check quotes and operators)",
+                "category": "syntax",
+            }
+
+        message = FormulaContent._shorten_error(str(exc))
+        if not message or any(
+            artifact in message
+            for artifact in ("df_step_", "df_for_duck", "SELECT ", ' AS "')
+        ):
+            message = "Unable to evaluate formula expression"
+        return {"message": message, "category": "execution"}
+
     def _section_query(
         self,
         section: Dict[str, Any],
@@ -950,29 +1003,22 @@ class FormulaContent(
                     else:
                         current_df = duck.execute(query).pl()
                 except Exception as exc:
-                    message = self._shorten_error(str(exc))
-                    if "Parser Error:" in str(exc):
-                        # DuckDB parses the generated SELECT (with its own
-                        # AS target alias). Report syntax in the user's
-                        # expression instead of pointing at generated SQL.
-                        syntax_errors = SQLFormulaEditor.validate_sql_syntax(
-                            section["formula_text"]
-                        )
-                        if syntax_errors:
-                            message = syntax_errors[0]["message"]
-                        elif (
-                            " AS " in message
-                            and " AS " not in section["formula_text"].upper()
-                        ):
-                            message = "Invalid formula expression (check quotes and operators)"
-                    errors[index] = message
+                    logger.debug("Formula section {} SQL failed: {}", index + 1, exc)
+                    errors[index] = self._diagnose_section_error(
+                        exc, section["formula_text"]
+                    )["message"]
                     break
         return current_df, available_columns, errors
 
     def validate_section_text(
         self, section_index: int, formula_text: str, sample_n: int = 200
     ) -> List[Dict[str, Any]]:
-        """Dry-run one section's text via EXPLAIN on a sample. Editor errors out."""
+        """Validate through the target section without reading incoming rows.
+
+        Earlier sections are kept as CTEs so column names and types match
+        execution. EXPLAIN binds the actual SELECT, including casts and the
+        generated target alias, on a zero-row copy of the incoming schema.
+        """
         if self.incom_data is None:
             return []
         if not 0 <= section_index < len(self.formula_sections):
@@ -990,27 +1036,35 @@ class FormulaContent(
         if section_index not in [index for index, _ in configured]:
             return []
         try:
-            sample = self.incom_data.head(sample_n)
-            if isinstance(sample, pl.LazyFrame):
-                sample = sample.collect()
-        except Exception:
-            return []
-        try:
-            _, _, errors = self._run_sections(
-                sample, configured, explain_index=section_index
-            )
-        except Exception:
-            return []
-        if section_index in errors:
-            syntax_errors = SQLFormulaEditor.validate_sql_syntax(formula_text)
-            if syntax_errors and errors[section_index] == syntax_errors[0]["message"]:
-                return syntax_errors
+            sample = pl.DataFrame(schema=frame_schema(self.incom_data))
+            with duckdb.connect(":memory:") as duck:
+                duck.register("df_for_duck", sample)
+                for position, (index, section) in enumerate(configured):
+                    query, _ = self._build_combined_query(
+                        configured[: position + 1], list(sample.columns), "df_for_duck"
+                    )
+                    try:
+                        duck.execute(f"EXPLAIN {query}").fetchall()
+                    except Exception as exc:
+                        logger.debug(
+                            "Formula section {} validation failed: {}", index + 1, exc
+                        )
+                        if index != section_index:
+                            return [
+                                {
+                                    "message": f"Fix section {index + 1} before validating this section",
+                                    "category": "dependency",
+                                }
+                            ]
+                        return [self._diagnose_section_error(exc, formula_text)]
+                    if index == section_index:
+                        break
+        except Exception as exc:
+            logger.debug("Formula validation unavailable: {}", exc)
             return [
                 {
-                    "message": errors[section_index],
-                    "line": 1,
-                    "column": 0,
-                    "length": 1,
+                    "message": f"Validation unavailable: {type(exc).__name__}",
+                    "category": "validation",
                 }
             ]
         return []
@@ -1257,9 +1311,13 @@ class TriggerNode_Formula(TriggerNode):
             self.markDirty(True)
             self.markInvalid(True)
             self.grNode.setToolTip(self.content.last_error)
-            global_logger.error(f"Formula node failed: {self.content.last_error}")
+            if self.content._last_logged_error != self.content.last_error:
+                global_logger.error(f"Formula node failed: {self.content.last_error}")
+                self.content._last_logged_error = self.content.last_error
             return None
 
+        self.content._last_logged_error = ""
+        self.grNode.setToolTip("")
         self.param = [
             {
                 "data": self.content.data,

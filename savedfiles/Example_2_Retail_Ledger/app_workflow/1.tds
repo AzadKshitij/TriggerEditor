@@ -3749,12 +3749,6 @@
             "formula_text": "CASE [status] WHEN 'paid' THEN 'Paid'\n  WHEN 'pending' THEN 'Pending'\n  WHEN 'refunded' THEN 'Refunded'\n  WHEN 'cancelled' THEN 'Cancelled'\n  WHEN 'partially refunded' THEN 'Partially Refunded'\n  ELSE [status] END",
             "editor_height": 160,
             "target_dtype": ""
-          },
-          {
-            "target_column": "lol",
-            "formula_text": "\" sadda \" [brand]",
-            "editor_height": 120,
-            "target_dtype": ""
           }
         ]
       },
@@ -9354,6 +9348,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-30T11:25:56Z"
+    "saved_at": "2026-09-30T12:10:18Z"
   }
 }

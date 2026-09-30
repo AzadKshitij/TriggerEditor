@@ -410,7 +410,7 @@ def test_update_data_reports_short_section_error() -> None:
 
 
 def test_invalid_formula_error_does_not_name_generated_alias() -> None:
-    for text in ('" sadda [category]', '"" sadda [category]'):
+    for text in ('" sadda [category]', '"" sadda [category]', '" sadda " [category]'):
         content = _build_formula_content(
             [{"target_column": "Lol", "formula_text": text}]
         )
@@ -419,6 +419,139 @@ def test_invalid_formula_error_does_not_name_generated_alias() -> None:
         assert "AS" not in content.section_errors[0]
         assert '"Lol"' not in content.section_errors[0]
         assert "syntax error at or near" not in content.section_errors[0]
+
+
+def test_closed_string_followed_by_column_requires_operator() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    text = '" sadda " [category]'
+    errors = editor.validate_sql_syntax(text)
+    assert errors
+    assert errors[0]["message"] == "Missing operator before column reference"
+    assert errors[0]["column"] == text.index("[category]")
+    assert errors[0]["length"] == len("[category]")
+    content = _build_formula_content([{"target_column": "Lol", "formula_text": text}])
+    editor.set_column_names(["category"])
+    editor.external_validator = lambda formula: content.validate_section_text(
+        0, formula
+    )
+    editor.setPlainText(text)
+    editor.check_for_errors()
+    assert editor.errors[0]["message"] == errors[0]["message"]
+    assert "AS" not in editor.errors[0]["message"]
+    assert editor.validate_sql_syntax('" sadda " || [category]') == []
+    editor.deleteLater()
+
+
+def test_formula_rejects_top_level_sql_aliases() -> None:
+    for text in ("'text' result", "'text' AS result"):
+        content = _build_formula_content(
+            [{"target_column": "label", "formula_text": text}]
+        )
+        errors = SQLFormulaEditor.validate_sql_syntax(text)
+        assert errors
+        assert errors[0]["column"] == text.index("result")
+        content.update_data()
+        assert content.section_errors[0] == errors[0]["message"]
+
+
+def test_screenshot_error_points_to_unterminated_quote_not_generated_sql() -> None:
+    content = _build_formula_content(
+        [{"target_column": "Lol", "formula_text": '" sadda [brand]'}]
+    )
+    result = content.validate_section_text(0, '" sadda [brand]')
+    assert result[0]["category"] == "syntax"
+    assert result[0]["line"] == 1
+    assert result[0]["column"] == 0
+    assert result[0]["message"] == "Unterminated string literal"
+    content.update_data()
+    assert content.last_error == "Section 1: Unterminated string literal"
+    assert 'AS "Lol"' not in content.last_error
+
+
+def test_schema_only_validation_does_not_collect_lazy_input(monkeypatch) -> None:
+    content = _build_formula_content(
+        [{"target_column": "x", "formula_text": "[amount] * 2"}]
+    )
+    content.incom_data = content.incom_data.lazy()
+
+    def no_collect(*args, **kwargs):
+        raise AssertionError("Editor validation must not collect input rows")
+
+    monkeypatch.setattr(pl.LazyFrame, "collect", no_collect)
+    assert content.validate_section_text(0, "[amount] * 2") == []
+    error = content.validate_section_text(0, "NOSUCHFUNC([amount])")[0]
+    assert error["category"] == "execution"
+    assert "line" not in error
+    assert "NOSUCHFUNC" in error["message"].upper()
+
+
+def test_schema_validation_includes_previous_sections_and_cast() -> None:
+    content = _build_formula_content(
+        [
+            {"target_column": "derived", "formula_text": "[amount] * 2"},
+            {
+                "target_column": "typed",
+                "formula_text": "[derived] + 1",
+                "target_dtype": "Integer",
+            },
+        ]
+    )
+    assert content.validate_section_text(1, "[derived] + 1") == []
+    content.formula_sections[0]["formula_text"] = "NOSUCHFUNC([amount])"
+    errors = content.validate_section_text(1, "[derived] + 1")
+    assert errors == [
+        {
+            "message": "Fix section 1 before validating this section",
+            "category": "dependency",
+        }
+    ]
+
+
+def test_data_dependent_cast_failure_is_reported_on_execution() -> None:
+    content = _build_formula_content(
+        [
+            {
+                "target_column": "typed",
+                "formula_text": "[category]",
+                "target_dtype": "Integer",
+            }
+        ]
+    )
+    # Binding only checks the query's shape; conversion of actual values
+    # remains the responsibility of the preview/runtime execution path.
+    assert content.validate_section_text(0, "[category]") == []
+    content.update_data()
+    assert content.last_error.startswith("Section 1:")
+    assert content.section_errors[0]
+    assert "df_step_" not in content.section_errors[0]
+    assert "SELECT " not in content.section_errors[0]
+    assert content.data is None
+
+
+def test_locationless_errors_do_not_underline_or_modify_editor_text() -> None:
+    _get_app()
+    editor = SQLFormulaEditor()
+    editor.setPlainText("NOSUCHFUNC([amount])")
+    editor.set_column_names(["amount"])
+    editor.external_validator = lambda _: [
+        {"message": "Unknown function NOSUCHFUNC", "category": "execution"}
+    ]
+    messages = []
+    changes = []
+    editor.allErrorsDetected.connect(messages.append)
+    editor.textChanged.connect(lambda: changes.append(True))
+    editor.check_for_errors()
+    assert messages[-1] == ["Unknown function NOSUCHFUNC"]
+    assert editor.extraSelections() == []
+    assert not changes
+    editor.setPlainText("[amount] + 1")
+    assert editor.errors == []
+    assert messages[-1] == []
+    editor.external_validator = lambda _: []
+    editor.check_for_errors()
+    assert editor.toPlainText() == "[amount] + 1"
+    editor.deleteLater()
 
 
 def test_editor_height_normalized_and_clamped() -> None:

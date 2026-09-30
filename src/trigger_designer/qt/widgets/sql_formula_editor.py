@@ -13,7 +13,7 @@ import re
 import time
 from typing import Callable, List, Optional, Dict, Set, Tuple
 
-from sqlglot import parse_one
+from sqlglot import exp, parse_one
 from sqlglot.errors import ParseError, TokenError
 from qtpy.QtWidgets import (
     QCompleter,
@@ -559,9 +559,17 @@ class SQLFormulaEditor(QTextEdit):
         self.column_names = column_names
         if hasattr(self, "syntax_highlighter"):
             self.syntax_highlighter.update_column_names(column_names)
+        if self.toPlainText().strip():
+            self.error_timer.start(ERROR_CHECK_DEBOUNCE_MS)
 
     def on_text_changed(self):
         """Handle text changes and trigger error checking."""
+        # Do not leave a red underline from the previous expression on newly
+        # typed text while the debounced validator is still pending.
+        if self.errors:
+            self.errors.clear()
+            self.update_error_highlights()
+            self.allErrorsDetected.emit([])
         self.error_timer.stop()
         self.error_timer.start(ERROR_CHECK_DEBOUNCE_MS)
 
@@ -580,32 +588,39 @@ class SQLFormulaEditor(QTextEdit):
         # editor has a live validator (the two parsers need not agree).
         syntax_errors = self.validate_sql_syntax(text)
 
-        # Validate column references
-        column_errors = self.validate_column_references(text)
-        self.errors.extend(column_errors)
-
-        # External (e.g. DuckDB EXPLAIN) validation
+        # DuckDB validates the actual generated query. SQLGlot provides source
+        # positions only when DuckDB also rejects the expression as syntax.
         if self.external_validator is not None:
             try:
                 external_errors = self.external_validator(text) or []
                 if external_errors:
-                    # Binder/type errors are not syntax errors. SQLGlot is
-                    # deliberately advisory, never a veto of DuckDB SQL.
-                    if (
-                        any(
-                            "syntax error" in error.get("message", "").lower()
-                            or "parser error" in error.get("message", "").lower()
-                            for error in external_errors
-                        )
-                        and syntax_errors
-                    ):
-                        self.errors.extend(syntax_errors)
-                    else:
-                        self.errors.extend(external_errors)
-            except Exception:  # noqa: BLE001 - optional host validation must not break editor
-                self.errors.extend(syntax_errors)
+                    self.errors.extend(external_errors)
+            except Exception as exc:  # noqa: BLE001 - host callbacks can fail
+                self.errors.append(
+                    {
+                        "message": f"Validation unavailable: {type(exc).__name__}",
+                        "category": "validation",
+                    }
+                )
         else:
-            self.errors.extend(syntax_errors)
+            self.errors.extend(
+                {**error, "category": "syntax"} for error in syntax_errors
+            )
+
+        # A malformed expression should point at its syntax first, not a
+        # bracketed name inside an unfinished string. Still report genuine
+        # column errors when the expression itself parsed successfully.
+        if not any(error.get("category") == "syntax" for error in self.errors):
+            self.errors.extend(self.validate_column_references(text))
+
+        # Keep the primary host diagnostic first and avoid duplicate messages.
+        seen = set()
+        unique_errors = []
+        for error in self.errors:
+            if error["message"] not in seen:
+                unique_errors.append(error)
+                seen.add(error["message"])
+        self.errors = unique_errors
 
         # Update visual error indicators
         self.update_error_highlights()
@@ -614,13 +629,22 @@ class SQLFormulaEditor(QTextEdit):
         if self.errors:
             # Emit backwards compatible single error signal
             first_error = self.errors[0]
-            self.errorDetected.emit(
-                first_error["message"], first_error["line"], first_error["column"]
-            )
+            if (
+                first_error.get("line") is not None
+                and first_error.get("column") is not None
+            ):
+                self.errorDetected.emit(
+                    first_error["message"], first_error["line"], first_error["column"]
+                )
 
             # Emit all errors signal with formatted messages
             error_messages = [
-                f"Line {error['line']}, Col {error['column']}: {error['message']}"
+                (
+                    f"Line {error['line']}, Col {error['column']}: "
+                    if error.get("line") is not None and error.get("column") is not None
+                    else ""
+                )
+                + error["message"]
                 for error in self.errors
             ]
             self.allErrorsDetected.emit(error_messages)
@@ -635,7 +659,7 @@ class SQLFormulaEditor(QTextEdit):
             return []
         sql, offsets = _formula_for_parser(text)
         try:
-            parse_one(sql, read="duckdb")
+            parsed = parse_one(sql, read="duckdb")
         except TokenError as exc:
             # Incomplete quotes are routine while typing. TokenError's
             # start/end describe a context snippet, not the bad token, so
@@ -710,6 +734,52 @@ class SQLFormulaEditor(QTextEdit):
                     }
                 )
             return errors
+        # The SELECT wrapper lets SQL parsers treat a trailing [column] as
+        # an implicit *alias* of the preceding expression. A Formula section
+        # already supplies its target alias, so this is a missing operator,
+        # not valid formula SQL (DuckDB otherwise blames our generated AS).
+        if isinstance(parsed, exp.Select) and len(parsed.expressions) == 1:
+            projection = parsed.expressions[0]
+            if isinstance(projection, exp.Alias):
+                for match in reversed(list(_FORMULA_TOKEN_RE.finditer(text))):
+                    token = match.group()
+                    if (
+                        token.startswith("[")
+                        and token[1:-1].strip().casefold()
+                        == projection.alias.casefold()
+                        and not text[match.end() :].strip()
+                    ):
+                        line, column = SQLFormulaEditor._offset_to_line_col(
+                            text, match.start()
+                        )
+                        return [
+                            {
+                                "message": "Missing operator before column reference",
+                                "line": line,
+                                "column": column,
+                                "length": len(token),
+                            }
+                        ]
+                # Other explicit or implicit aliases also conflict with the
+                # target column that the Formula node adds to its SELECT.
+                code = SQLFormulaEditor._mask_strings_and_comments(text)
+                alias = re.search(
+                    rf"\b{re.escape(projection.alias)}\b(?=\s*$)",
+                    code,
+                    re.IGNORECASE,
+                )
+                if alias:
+                    line, column = SQLFormulaEditor._offset_to_line_col(
+                        text, alias.start()
+                    )
+                    return [
+                        {
+                            "message": "A formula must be one expression; choose its target column above",
+                            "line": line,
+                            "column": column,
+                            "length": len(alias.group()),
+                        }
+                    ]
         return []
 
     @staticmethod
@@ -759,56 +829,33 @@ class SQLFormulaEditor(QTextEdit):
         return errors
 
     def update_error_highlights(self):
-        """Update the visual error highlights in the editor."""
-        # First, clear all existing error formatting
-        cursor = QTextCursor(self.document())
-        cursor.select(QTextCursor.SelectionType.Document)
-
-        # Create a clean format to clear existing error formatting
-        clean_format = QTextCharFormat()
-        clean_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.NoUnderline)
-        cursor.mergeCharFormat(clean_format)
-
-        # If there are no errors, we're done (everything is cleared)
-        if not self.errors:
-            return
-
-        # Create error format with red underline
-        error_format = QTextCharFormat()
-        error_format.setUnderlineColor(QColor(255, 0, 0))
-        error_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
-
-        # Apply error highlights
+        """Paint source spans without changing the document or undo history."""
+        selections = []
         lines = self.toPlainText().split("\n")
         for error in self.errors:
-            line_index = max(0, min(error["line"] - 1, len(lines) - 1))
-            line_text = lines[line_index] if lines else ""
-            column = max(0, min(error["column"], len(line_text)))
-            length = max(1, min(error.get("length", 1), len(line_text) - column))
-            if not line_text:
+            line = error.get("line")
+            column = error.get("column")
+            if line is None or column is None or not 1 <= line <= len(lines):
                 continue
-            cursor.movePosition(QTextCursor.MoveOperation.Start)
-
-            # Move to the error line
-            for _ in range(line_index):
-                cursor.movePosition(QTextCursor.MoveOperation.Down)
-
-            # Move to the error column
-            cursor.movePosition(
-                QTextCursor.MoveOperation.Right,
-                QTextCursor.MoveMode.MoveAnchor,
-                column,
+            line_text = lines[line - 1]
+            if not 0 <= column < len(line_text):
+                continue
+            length = max(0, min(error.get("length", 1), len(line_text) - column))
+            if not length:
+                continue
+            start = sum(len(item) + 1 for item in lines[: line - 1]) + column
+            selection = QTextEdit.ExtraSelection()
+            selection.format.setUnderlineColor(QColor(255, 0, 0))
+            selection.format.setUnderlineStyle(
+                QTextCharFormat.UnderlineStyle.WaveUnderline
             )
-
-            # Select the error text
-            cursor.movePosition(
-                QTextCursor.MoveOperation.Right,
-                QTextCursor.MoveMode.KeepAnchor,
-                length,
+            selection.cursor = QTextCursor(self.document())
+            selection.cursor.setPosition(start)
+            selection.cursor.setPosition(
+                start + length, QTextCursor.MoveMode.KeepAnchor
             )
-
-            # Apply error format
-            cursor.mergeCharFormat(error_format)
+            selections.append(selection)
+        self.setExtraSelections(selections)
 
     def line_number_area_width(self):
         """Calculate the width needed for the line number area."""

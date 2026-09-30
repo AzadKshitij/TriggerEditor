@@ -69,3 +69,25 @@ def test_structural_change_still_rebuilds() -> None:
     assert len(content.section_widgets) == before + 1
     window.scene.history.controller.undo()
     assert len(content.formula_sections) == before
+
+
+def test_editor_diagnostics_replace_stale_section_error_without_rebuilding() -> None:
+    _parent, _window, content, _host = _make_content()
+    widgets = content.section_widgets[0]
+    editor_widget = widgets["formula_input"]
+    label = widgets["error_label"]
+
+    editor_widget.set_text('" unfinished [a]')
+    editor_widget.editor.check_for_errors()
+    assert "Unterminated string literal" in label.text()
+    assert editor_widget.editor.extraSelections()
+
+    content.commit_formula_text(0)
+    assert content.last_error.startswith("Section 1:")
+    editor_widget.set_text("[a] * 2")
+    assert not label.isVisible()
+    editor_widget.editor.check_for_errors()
+    content.commit_formula_text(0)
+    assert content.last_error == ""
+    assert not label.isVisible()
+    assert content.section_widgets[0]["formula_input"] is editor_widget

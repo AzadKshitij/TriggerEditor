@@ -24,7 +24,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
 )
 from qtpy.QtCore import Qt
-from sql_formula_editor import SQLFormulaWidget
+from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
 
 
 class SQLEditorTestWindow(QMainWindow):
