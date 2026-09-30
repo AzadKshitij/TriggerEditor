@@ -621,6 +621,15 @@ class TriggerNode(Node):
         # Override this method in subclasses to process the input values
         return input_values
 
+    def evalChildren(self) -> None:
+        # During file load/restore the scene walks every node; eager push
+        # evaluation reaches joins before their other parents have settled,
+        # causing repeated invalid/partial recomputes. Pulls from inputs
+        # still run as usual; ordinary interactive edits keep push semantics.
+        if getattr(self.scene, "_batch_evaluating", False):
+            return
+        super().evalChildren()
+
     def evalImplementation(self) -> Any:
         input_values = []
         for i in range(len(self.inputs)):

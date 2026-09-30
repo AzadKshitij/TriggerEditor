@@ -311,10 +311,14 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         with eval_progress_dialog(
             self.scene, self, total, "Evaluating workflow…", dialog=dialog
         ):
-            for node in self.scene.nodes:
-                # if node.__class__.__name__ == "CalcNode_Output":
-                node.eval()
-            settle_multi_input_nodes(self.scene)
+            previous_batch = getattr(self.scene, "_batch_evaluating", False)
+            self.scene._batch_evaluating = True
+            try:
+                for node in self.scene.nodes:
+                    node.eval()
+                settle_multi_input_nodes(self.scene)
+            finally:
+                self.scene._batch_evaluating = previous_batch
 
     def onHistoryRestored(self) -> None:
         # Force the Config Dock to rebuild: a restore reverts the selected
