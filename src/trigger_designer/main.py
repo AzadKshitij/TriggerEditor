@@ -164,6 +164,22 @@ def main() -> None:
     splash.show()
     app.processEvents()
 
+    # Perform first-use Arrow/Pandas initialization outside the GUI thread.
+    # The splash remains responsive; opening a file after startup does not
+    # need to pay this cold import cost in its first Filter/Formula node.
+    def _warm_data_backend() -> None:
+        try:
+            from trigger_designer.core.warmup import warm_duckdb_polars
+
+            warm_duckdb_polars()
+        except Exception as exc:
+            logger.debug(f"Data backend warm-up skipped: {exc}")
+
+    if os.getenv("TRIGGER_DISABLE_DATA_WARMUP") != "1":
+        threading.Thread(
+            target=_warm_data_backend, daemon=True, name="data-warmup"
+        ).start()
+
     # Heavy imports deferred until the splash is visible
     import trigger_designer.qt.darkstyle_rc  # noqa: F401
     import trigger_designer.resources.icons_rc  # noqa: F401

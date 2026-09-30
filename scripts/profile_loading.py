@@ -350,10 +350,21 @@ def main() -> None:
         help="Repeat in one process to separate cold and warm loads",
     )
     parser.add_argument("--label", default="", help="Label written profile artifacts")
+    parser.add_argument(
+        "--prewarm",
+        action="store_true",
+        help="Measure load after first DuckDB/Polars exchange",
+    )
     args = parser.parse_args()
     if args.repeats < 1:
         parser.error("--repeats must be positive")
     path = (args.file or WORKFLOWS[args.workflow]).resolve()
+    if args.prewarm:
+        from trigger_designer.core.warmup import warm_duckdb_polars
+
+        warm_start = time.perf_counter()
+        warm_duckdb_polars()
+        print(f"Prewarm: {(time.perf_counter() - warm_start) * 1000:.0f} ms")
     output_dir = ROOT / "profiles"
     output_dir.mkdir(exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
