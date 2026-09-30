@@ -95,7 +95,9 @@ def snapshot_nodes(nodes) -> dict:
                 data = data.collect()
             if isinstance(data, pl.DataFrame):
                 buffer = io.BytesIO()
-                data.write_ipc(buffer)
+                # GroupBy does not promise row order; compare the same rows
+                # regardless of the hash-table iteration order of a run.
+                data.sort(data.columns).write_ipc(buffer)
                 outputs.append(
                     {
                         "shape": list(data.shape),
@@ -111,7 +113,9 @@ def snapshot_nodes(nodes) -> dict:
     return snapshots
 
 
-def run(path: Path, detailed: bool, snapshot: bool = False) -> dict:
+def run(
+    path: Path, detailed: bool, snapshot: bool = False, force_settle: bool = False
+) -> dict:
     samples: dict[str, list[float]] = defaultdict(list)
     eval_stack: list[list[float]] = []  # [start, nested evalImplementation seconds]
     before_eval_counts: dict[str, int] = {}
@@ -167,6 +171,19 @@ def run(path: Path, detailed: bool, snapshot: bool = False) -> dict:
             )
             start = time.perf_counter()
             try:
+                if force_settle:
+                    from nodeeditor.node_multi_input_node import MultiInputNode
+
+                    collectors = [
+                        node for node in scene.nodes if isinstance(node, MultiInputNode)
+                    ]
+                    for node in collectors:
+                        node.markDirty(True)
+                        node.markDescendantsDirty(True)
+                    if collectors:
+                        for node in scene.nodes:
+                            node.eval()
+                    return None
                 return original_settle(scene)
             finally:
                 samples["union_settle"].append(time.perf_counter() - start)
@@ -321,9 +338,14 @@ def main() -> None:
         action="store_true",
         help="Fingerprint node outputs for correctness comparison",
     )
+    parser.add_argument(
+        "--force-settle",
+        action="store_true",
+        help="Benchmark the old unconditional Union pass for A/B comparisons",
+    )
     args = parser.parse_args()
     path = (args.file or WORKFLOWS[args.workflow]).resolve()
-    result = run(path, args.cprofile, args.snapshot)
+    result = run(path, args.cprofile, args.snapshot, args.force_settle)
     output_dir = ROOT / "profiles"
     output_dir.mkdir(exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")

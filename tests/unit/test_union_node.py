@@ -281,8 +281,14 @@ def test_deserialize_then_single_pass_counts_chained_union() -> None:
     assert len(fresh_u1.content.input_variables) == 2
     assert len(fresh_u2.content.input_variables) == 2
 
-    # settle_multi_input_nodes() remains a harmless no-op on already-correct state.
+    # A complete collector must not run its expensive descendants a second time.
+    from unittest.mock import Mock
+
+    fresh_u1.evalImplementation = Mock(side_effect=AssertionError("u1 recomputed"))
+    fresh_u2.evalImplementation = Mock(side_effect=AssertionError("u2 recomputed"))
     settle_multi_input_nodes(fresh)
+    fresh_u1.evalImplementation.assert_not_called()
+    fresh_u2.evalImplementation.assert_not_called()
     assert len(fresh_u1.content.input_variables) == 2
     assert len(fresh_u2.content.input_variables) == 2
 

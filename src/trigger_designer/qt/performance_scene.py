@@ -156,30 +156,30 @@ class TriggerScene(Scene):
 
 
 def settle_multi_input_nodes(scene: Scene) -> None:
-    """Re-settle Union-style collector nodes after a single doEvalOutputs() pass.
+    """Retry only collectors whose first pass did not settle every edge.
 
-    Scene.deserialize() (file load, undo/redo restore) attaches every edge
-    with no eval/dirty notification, so the first eval() pass afterward can
-    leave a MultiInputNode (Union) undercounting its own connected edges by
-    one: Union.evalImplementation() (and Formula.processInputs(), which it
-    can pull through) calls markDirty(False) and evalChildren() before its
-    own self.value is updated, so a reentrant pull during that window sees
-    a "clean" node holding a stale value. Union's per-edge loop treats a
-    stale/None pull as "this source produced nothing" and still commits
-    a partial result instead of staying dirty for retry.
-
-    A second full eval pass fixes this, but only Union-derived nodes (and
-    whatever they feed downstream) need to redo any real work: every other
-    node is already clean and correct from the first pass, so re-evaluating
-    it here is just a cheap isDirty() cache hit.
+    Union now commits its value before evaluating children, so the old
+    unconditional second pass recalculated complete Union branches for no
+    benefit. Keep a recovery pass for dirty/invalid/incomplete collectors.
     """
     multi_input_nodes = [
         node for node in scene.nodes if isinstance(node, MultiInputNode)
     ]
-    if not multi_input_nodes:
+    incomplete = []
+    for node in multi_input_nodes:
+        try:
+            expected = len(node.getOrderedEdges())
+            actual = len(node.content.input_frames)
+        except (AttributeError, RuntimeError, TypeError):
+            incomplete.append(node)
+            continue
+        if node.isDirty() or node.isInvalid() or actual != expected:
+            incomplete.append(node)
+
+    if not incomplete:
         return
 
-    for node in multi_input_nodes:
+    for node in incomplete:
         node.markDirty(True)
         node.markDescendantsDirty(True)
 
