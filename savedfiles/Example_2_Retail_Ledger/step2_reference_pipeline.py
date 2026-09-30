@@ -34,6 +34,24 @@ def log(message: str) -> None:
     print(f"[reference] {message}", flush=True)
 
 
+TIMINGS: list[tuple[str, float]] = []
+_lap_start = time.perf_counter()
+
+
+def lap(label: str) -> None:
+    """Record the time elapsed since the previous lap under `label`."""
+    global _lap_start
+    now = time.perf_counter()
+    TIMINGS.append((label, now - _lap_start))
+    log(f"  [time] {label:<34} {now - _lap_start:>8.2f}s")
+    _lap_start = now
+
+
+def format_duration(seconds: float) -> str:
+    minutes, secs = divmod(seconds, 60)
+    return f"{int(minutes)}m {secs:.2f}s" if minutes else f"{secs:.2f}s"
+
+
 def record(stage: str, frame: pd.DataFrame) -> None:
     """Record a dataframe stage and export it with its stage name."""
     STAGE_COUNTS[stage] = len(frame)
@@ -413,12 +431,15 @@ def build_reports(enriched: pd.DataFrame) -> None:
 
 def main() -> None:
     cfg.ensure_dirs()
-    started = time.time()
+    global _lap_start
+    started = _lap_start = time.perf_counter()
     log("loading raw CSV ...")
     raw = load_raw()
+    lap("load raw CSV")
 
     log("cleaning the fact table ...")
     orders, rej_qty, rej_price, rej_dates, dups = clean_orders(raw["orders"])
+    lap("clean fact table")
 
     for frame, name in (
         (rej_qty, "rejected_quantity.csv"),
@@ -469,8 +490,11 @@ def main() -> None:
         region_map = {code: region for code, region in cfg.COUNTRIES}
         customers["region"] = customers["country"].map(region_map)
 
+    lap("normalise dimensions")
+
     log("enriching ...")
     enriched = enrich(orders, customers, products, suppliers, channels, fx)
+    lap("enrich")
 
     # Orphans, the same two populations the workflow's Join node isolates.
     enriched[enriched["segment"].isna()].to_csv(
@@ -480,8 +504,11 @@ def main() -> None:
         cfg.reference_file("orphan_products.csv"), index=False
     )
 
+    lap("orphan exports")
+
     log("building reports ...")
     build_reports(enriched)
+    lap("build reports")
 
     # Deterministic 80/20 split, the same split the workflow's Split node makes.
     log("splitting ...")
@@ -567,8 +594,13 @@ def main() -> None:
     master[available].to_csv(cfg.reference_file("orders_enriched.csv"), index=False)
     log(f"  orders_enriched.csv{'':<20} {len(master):>12,} rows")
 
-    elapsed = time.time() - started
-    log(f"done in {elapsed:.1f}s -> {cfg.REFERENCE_OUT}")
+    lap("split, union, final exports")
+
+    elapsed = time.perf_counter() - started
+    log("timing summary:")
+    for label, seconds in TIMINGS:
+        log(f"  {label:<34} {format_duration(seconds):>10} {seconds / elapsed:>6.1%}")
+    log(f"done in {format_duration(elapsed)} -> {cfg.REFERENCE_OUT}")
 
 
 if __name__ == "__main__":

@@ -686,6 +686,7 @@ class TriggerNode(Node):
         if not self.isDirty() and not self.isInvalid():
             logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
+        self._report_eval_progress(finished=False)
         try:
             val = self.evalImplementation()
             return val
@@ -699,22 +700,21 @@ class TriggerNode(Node):
             dumpException(e)
             return None  # Add explicit return for exception case
         finally:
-            self._report_eval_progress()
+            self._report_eval_progress(finished=True)
 
-    def _report_eval_progress(self) -> None:
-        """Tick the active progress dialog, if any (see helpers/eval_progress.py).
+    def _report_eval_progress(self, finished: bool) -> None:
+        """Notify the active progress dialog, if any (helpers/eval_progress.py).
 
-        Only reached when this call actually recomputed (a cache hit returns
-        above before the ``try``), so the dialog advances once per real
-        ``evalImplementation()``, whether it's part of file load's full-graph
-        pass or a single edit's downstream cascade.
+        Called before and after a real recompute only - a cache hit returns
+        above before this - so the dialog can name the node about to run and
+        repaint before a slow step blocks the thread.
         """
         scene = getattr(self, "scene", None)
         callback = (
             getattr(scene, "_eval_progress_cb", None) if scene is not None else None
         )
         if callable(callback):
-            callback()
+            callback(self, finished)
 
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
         # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)

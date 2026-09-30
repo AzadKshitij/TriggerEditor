@@ -1,18 +1,15 @@
-"""Progress feedback for long synchronous graph recomputes.
+"""Progress feedback for long synchronous graph work (file load, recompute).
 
-File load (``doEvalOutputs``) and a downstream cascade from a single edit
-(``TriggerNode.onInputChanged``) both walk the graph via plain recursive
-``eval()``/``evalImplementation()`` calls (see node_base.py) - there is no
-worker thread and no point where the walk yields to the Qt event loop. This
-module does not change that; it only makes the wait visible and keeps the
-window painting while it happens, via the standard Qt idiom for a long
-synchronous operation: a modal ``QProgressDialog`` whose ``setValue`` pumps
-just enough of the event loop to repaint.
+File load and a downstream cascade from a single edit both run on the GUI
+thread with no point where the work yields to the Qt event loop. This module
+does not change that; it makes the wait visible: a modal ``QProgressDialog``
+that is shown *and painted* before the work starts, and re-pumped by
+``TriggerNode.eval()`` around every node it recomputes.
 
-``TriggerNode.eval()`` reports through ``scene._eval_progress_cb`` every time
-it actually recomputes (not on a cached hit), so the same hook drives both
-call sites: :func:`eval_progress_dialog` just sizes the dialog to how many
-nodes are about to recompute and tears the hook down afterwards.
+``eval()`` calls ``scene._eval_progress_cb(node, finished)`` - once with
+``finished=False`` just before a node computes (so the dialog can name it and
+repaint before a slow step blocks the thread) and once with ``finished=True``
+after it. A cache hit never reaches the hook.
 """
 
 from __future__ import annotations
@@ -20,61 +17,91 @@ from __future__ import annotations
 from contextlib import contextmanager
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QProgressDialog, QWidget
+from qtpy.QtWidgets import QApplication, QProgressDialog, QWidget
 
-#: Below this node count, a dialog would only flash and vanish - the
-#: recompute finishes before ``setMinimumDuration`` would even show it.
+#: Below this node count, a cascade dialog would only flash and vanish.
 PROGRESS_NODE_THRESHOLD = 8
 
-#: Matches QProgressDialog's own default; a fast edit never shows the dialog.
-PROGRESS_MINIMUM_DURATION_MS = 300
 
+def make_progress_dialog(
+    parent: QWidget | None, title: str, total: int = 0
+) -> QProgressDialog:
+    """A modal dialog that is visible and painted before this returns.
 
-@contextmanager
-def eval_progress_dialog(scene, parent: QWidget | None, total: int, title: str):
-    """Show a modal progress dialog while up to ``total`` nodes recompute.
-
-    No-op for small graphs/cascades (see ``PROGRESS_NODE_THRESHOLD``) so a
-    normal edit never flashes a dialog. ``total`` is an estimate (the
-    descendant count before the cascade runs); real ticks come from nodes
-    that actually recompute, so the bar can finish short of ``total`` if an
-    upstream error stops the cascade early - harmless, since the dialog just
-    closes once the ``with`` block exits.
+    ``total == 0`` gives the busy (indeterminate) bar, for phases whose size
+    is unknown such as reading and deserializing a file.
     """
-    if scene is None or total < PROGRESS_NODE_THRESHOLD:
-        yield
-        return
-
     dialog = QProgressDialog(title, None, 0, total, parent)
+    dialog.setWindowTitle("Please wait")
     dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-    dialog.setMinimumDuration(PROGRESS_MINIMUM_DURATION_MS)
+    dialog.setMinimumDuration(0)
     dialog.setCancelButton(None)
     dialog.setAutoClose(False)
     dialog.setAutoReset(False)
+    dialog.setValue(0)
+    dialog.show()
+    # A native window's contents only draw after a second pass through the
+    # event loop; one pass leaves a blank frame while the thread is blocked.
+    QApplication.processEvents()
+    dialog.repaint()
+    QApplication.processEvents()
+    return dialog
 
-    progress = {"n": 0}
 
-    def _tick() -> None:
-        progress["n"] += 1
-        dialog.setValue(min(progress["n"], total))
+@contextmanager
+def eval_progress_dialog(
+    scene,
+    parent: QWidget | None,
+    total: int,
+    title: str,
+    dialog: QProgressDialog | None = None,
+):
+    """Drive a progress dialog while up to ``total`` nodes recompute.
+
+    Pass ``dialog`` to reuse one opened earlier (file load opens it before
+    parsing); otherwise a dialog is created, but only for cascades of at
+    least ``PROGRESS_NODE_THRESHOLD`` nodes so a normal edit never flashes
+    one. ``total`` is an estimate; an upstream error can end the cascade
+    early, which is harmless - the dialog closes when the block exits.
+    """
+    if scene is None or (dialog is None and total < PROGRESS_NODE_THRESHOLD):
+        yield
+        return
+
+    owned = dialog is None
+    if dialog is None:
+        dialog = make_progress_dialog(parent, title, total)
+    else:
+        dialog.setLabelText(title)
+        dialog.setMaximum(total)
+        dialog.setValue(0)
+        QApplication.processEvents()
+
+    done = {"n": 0}
+
+    def _hook(node, finished: bool) -> None:
+        if finished:
+            done["n"] += 1
+            dialog.setValue(min(done["n"], total))
+        else:
+            name = getattr(node, "title", None) or type(node).__name__
+            dialog.setLabelText(f"{title}\n{name}")
+            dialog.repaint()
+            QApplication.processEvents()
 
     previous_cb = getattr(scene, "_eval_progress_cb", None)
-    scene._eval_progress_cb = _tick
+    scene._eval_progress_cb = _hook
     try:
         yield
     finally:
         scene._eval_progress_cb = previous_cb
-        dialog.close()
-        dialog.deleteLater()
+        if owned:
+            dialog.close()
+            dialog.deleteLater()
 
 
 def count_pending_recomputes(node) -> int:
-    """``node`` plus every descendant reachable through its outputs.
-
-    Mirrors what ``markDescendantsDirty()`` marks dirty, so it sizes the
-    dialog to (approximately) the number of ``eval()`` calls the cascade
-    from this node is about to trigger.
-    """
+    """``node`` plus every descendant reachable through its outputs."""
     seen = {id(node)}
     stack = list(node.getChildrenNodes())
     count = 1

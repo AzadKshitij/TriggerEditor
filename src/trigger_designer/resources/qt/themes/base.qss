@@ -744,6 +744,11 @@ QProgressBar {{
       color: {text_disabled};
       border-radius: 4px; }}
 
+/* QProgressDialog (file load / recompute; see helpers/eval_progress.py) --- */
+QProgressDialog {{
+  background-color: {background_primary};
+  color: {text_primary}; }}
+
 /* ------------------------------------------------------------------------ */
 /* BUTTONS ---------------------------------------------------------------- */
 /* ------------------------------------------------------------------------ */
