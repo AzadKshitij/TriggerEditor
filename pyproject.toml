@@ -1,3 +1,7 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
 [project]
 name = "TriggerDesigner"
 version = "0.0.1"
@@ -15,7 +19,7 @@ authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 # Qt pins (pyqt6*, qtpy) are intentional; nodeeditor's metadata wants newer
 # Qt, which is why it stays out of the lock.
 
-# Core dependencies organized by category 
+# Core dependencies organized by category
 dependencies = [
     # Core data processing
     "polars[pyarrow]==1.44.2",
@@ -59,8 +63,19 @@ dependencies = [
     "tzdata==2026.4",
 ]
 
+[project.scripts]
+trigger-designer = "trigger_designer.main:main"
+
 [tool.uv]
-package = false
+# Installed (editable) into the venv so the `trigger-designer` console script
+# exists and `uv run trigger-designer` starts the app. Editable, so resource
+# files and the Qt resource modules still resolve from `src/` on disk.
+# Only the *install* is affected - the lockfile still excludes
+# qtpy-nodeeditor, so a sync will not prune it (see the note above).
+package = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/trigger_designer"]
 
 
 [tool.ty.environment]
@@ -73,7 +88,11 @@ include = ["src", "scripts"]
 [tool.ruff]
 line-length = 88
 target-version = "py313"
+src = ["src", "tests"]
 
+[tool.coverage.run]
+source = ["trigger_designer"]
+branch = true
 
 [dependency-groups]
 dev = [

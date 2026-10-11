@@ -1,6 +1,6 @@
 import math
-from loguru import logger
 
+from loguru import logger
 from qtpy.QtCore import QRect, Qt
 from qtpy.QtGui import QColor, QFont, QPainter, QPen, QPixmap
 from qtpy.QtWidgets import QSplashScreen, QWidget
@@ -37,32 +37,39 @@ class Splash:
         if not pixmap:
             logger.error(f"[Splash] Splash screen not found: {self.splash_name}")
             pixmap = QPixmap(960, 540)
-            pixmap.fill(QColor("black"))
+            pixmap.fill(QColor("#06004c"))
         painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
         point_size_scale: float = 1.0
         match painter.font().family():
             case "Segoe UI":
                 point_size_scale = 0.75
 
-        # Copyright
+        # Copyright - white on the dark backdrop, kept low-contrast so it reads
+        # as a footer rather than competing with the wordmark.
         font = painter.font()
-        font.setPointSize(math.floor(22 * point_size_scale))
+        font.setPointSize(math.floor(11 * point_size_scale))
+        font.setWeight(QFont.Weight.Medium)
         painter.setFont(font)
-        pen = QPen(QColor("#9782ff"))
+        pen = QPen(QColor(255, 255, 255, 190))
         painter.setPen(pen)
         painter.drawText(
-            QRect(0, -50, 960, 540),
+            QRect(0, -42, 960, 540),
             int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
             Splash.COPYRIGHT_STR,
         )
         # Version
-        pen = QPen(QColor("#809782ff"))
+        font.setPointSize(math.floor(9 * point_size_scale))
+        font.setWeight(QFont.Weight.Normal)
+        painter.setFont(font)
+        pen = QPen(QColor(255, 255, 255, 120))
         painter.setPen(pen)
         painter.drawText(
-            QRect(0, -25, 960, 540),
+            QRect(0, -20, 960, 540),
             int(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter),
             Splash.VERSION_STR,
         )
+        painter.end()
 
         pixmap.setDevicePixelRatio(self.ratio)
         pixmap = pixmap.scaledToWidth(

@@ -94,6 +94,21 @@ def _log_dir() -> Path:
 def _configure_logging() -> None:
     original_stdout = sys.stdout
     original_stderr = sys.stderr
+
+    # When stdout is redirected (pipe, file, CI) Python falls back to the
+    # ANSI code page instead of the console's UTF-8, and the emoji markers
+    # the debug prints use raise UnicodeEncodeError - killing the app at
+    # startup. Degrade them to escapes rather than crash; a real console
+    # already handles them, so its output is unchanged.
+    for stream in (original_stdout, original_stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(errors="backslashreplace")
+        except (ValueError, OSError):
+            pass
+
     time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_dir = _log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
