@@ -1,184 +1,234 @@
-# TriggerEditor (TriggerDesigner)
+<div align="center">
 
-TriggerEditor (also referenced as TriggerDesigner) is a visual data-processing application with a node-based workflow editor built in Python. It is designed for fast, interactive data cleansing, transformation, preview and exploration using modern data libraries (Polars, DuckDB, Pandas) together with a PyQt6 GUI and a node-editor UI.
+<img src="src/trigger_designer/resources/TriEditorLogo.png" alt="Trigger Designer logo" width="160" />
 
----
+# Trigger Designer
 
-## Key features
+**A visual, node-based data-processing workbench — cleanse, transform, join and
+preview data without writing a pipeline by hand.**
 
-- Node-based visual workflow editor for composing data transformations.
-- Fast data processing using Polars, DuckDB, NumPy and Pandas.
-- File I/O helpers for Excel, CSV, JSON and common formats.
-- Enhanced executor architecture for safe, incremental execution and previews.
-- Global logging plus a docked logging UI (configurable sinks).
-- Example and test scripts to illustrate usage and debugging patterns.
+<img src="docs/assets/screenshot_main.png" alt="Trigger Designer main window: node canvas, node palette, node configuration dock and logging dock" width="100%" />
 
----
+<sub>A workflow loaded in the node canvas, with the Config Dock editing a Cleansing node.</sub>
 
-## Table of contents
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![PyQt6](https://img.shields.io/badge/GUI-PyQt6-41CD52?logo=qt&logoColor=white)](https://www.riverbankcomputing.com/software/pyqt/)
+[![Polars](https://img.shields.io/badge/engine-Polars-CD792C)](https://pola.rs/)
+[![DuckDB](https://img.shields.io/badge/formula-DuckDB-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#license)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-555)](#requirements)
 
-- [Quick start](#quick-start)
-- [Requirements](#requirements)
-- [Install](#install)
-- [Run / Usage](#run--usage)
-- [Testing](#testing)
-- [Project layout](#project-layout)
-- [Development](#development)
-- [Documentation & guides](#documentation--guides)
-- [Contributing](#contributing)
-- [License & contact](#license--contact)
-- [Notes and troubleshooting](#notes-and-troubleshooting)
+</div>
 
 ---
 
-## Quick start
+Trigger Designer (repository name **TriggerEditor**) is a desktop application for
+building data workflows as a graph of nodes. You drop nodes onto a canvas, wire
+their output sockets into the next node's inputs, and the app evaluates the
+pipeline live while you configure each step in a context-sensitive **Config
+Dock**. Workflows are saved as portable `.tds` files.
 
-1. Clone the repo:
+Under the hood every node produces a [Polars](https://pola.rs/) DataFrame, with
+[DuckDB](https://duckdb.org/) powering the SQL-like Formula editor and
+[`qtpy-nodeeditor`](https://github.com/AzadKshitij/qtpy-nodeeditor) providing the
+Qt canvas.
 
-   git clone https://github.com/AzadKshitij/TriggerEditor.git
-   cd TriggerEditor
+## Features
 
-2. Create and activate a Python 3.11 virtual environment:
+- **Visual workflow editor** — drag, wire, label and group nodes on an infinite,
+  zoomable canvas. Cut edges by drawing over them, snap to a socket with `Ctrl`,
+  and undo/redo every edit on a `QUndoStack` timeline.
+- **Live evaluation** — each node evaluates as soon as its inputs are valid, so
+  you see results as you build.
+- **Polars data engine** — fast, columnar, streaming-friendly transformations with
+  a normalised, predictable type system.
+- **SQL-like Formula node** — calculated columns written as DuckDB expressions
+  (`CASE WHEN [Score] > 95 THEN 'pass' ELSE 'fail' END`) with syntax highlighting,
+  autocomplete and real-time error detection.
+- **Broad file support** — read and write CSV, Parquet, Excel (`fastexcel` /
+  `openpyxl`) and JSON, with delimiter, sheet and header controls.
+- **Large-data table viewer** — a lazy-loading, virtualised preview with search,
+  type-aware formatting, memory monitoring and CSV/Excel export.
+- **Interactive charts** — render a frame as a graph in a resizable window
+  (matplotlib / seaborn).
+- **Docked logging** — a global `loguru` logger routes messages to the active
+  window's logging dock; every run also writes a timestamped log file.
+- **First-class Config Dock UX** — icon-first controls, debounced text fields and
+  selection-aware panels, built on a shared design system.
 
-   python -m venv .venv
-   # macOS / Linux
-   source .venv/bin/activate
-   # Windows (PowerShell)
-   .\.venv\Scripts\Activate.ps1
-   # Windows (cmd)
-   .\.venv\Scripts\activate.bat
+## Node palette
 
-3. Upgrade pip and install the package with development dependencies:
+Every node available in the palette, grouped by family. The op id is the stable
+identifier stored in saved workflows; icons live in
+`src/trigger_designer/resources/qt/images/node_icons/`.
 
-   python -m pip install --upgrade pip
-   python -m pip install -e .[dev]
+| | Node | What it does |
+|---|---|---|
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Input/File%20Input.svg" width="28" height="28" /> | **File Input** | Reads a CSV, text or Excel file from disk into the flow. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Input/File%20Output.svg" width="28" height="28" /> | **File Output** | Writes the incoming frame to CSV, Parquet or Excel. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Cleansing.svg" width="28" height="28" /> | **Cleansing** | Trims, cases, replaces empty values and coerces dtypes per column. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Filter.svg" width="28" height="28" /> | **Filter** | Keeps or drops rows with comparison operations (single condition, T/F sockets). |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Formula.svg" width="28" height="28" /> | **Formula** | Creates or edits calculated columns from SQL-like expressions. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Groupby.svg" width="28" height="28" /> | **GroupBy** | Collapses rows by key columns and applies aggregations. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Select.svg" width="28" height="28" /> | **Select** | Keeps, drops, renames and reorders columns, and casts dtypes. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Sort.svg" width="28" height="28" /> | **Sort** | Orders rows by one or more columns, each ascending or descending. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Split.svg" width="28" height="28" /> | **Split** | Splits rows into two outputs, randomly (seeded) or sequentially. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Unique.svg" width="28" height="28" /> | **Unique** | Removes duplicate rows based on selected columns. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Dynamic%20Row%20Generate.svg" width="28" height="28" /> | **Generate Rows** | Builds a grid or series of rows from ranges and literals. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Join.svg" width="28" height="28" /> | **Join** | Full-outer join with L / J / R output sockets for orphans and matches. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Append.svg" width="28" height="28" /> | **Append** | Stacks the right input's rows underneath the left input. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Count.svg" width="28" height="28" /> | **Count Records** | Counts rows, overall or per group, and emits the total. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Running%20Total.svg" width="28" height="28" /> | **Running Total** | Adds a cumulative sum column, optionally per group. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Transpose.svg" width="28" height="28" /> | **Transpose** | Flips the frame so rows become columns and columns become rows. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Report/Graph.svg" width="28" height="28" /> | **Graph** | Renders the incoming data as a chart in its own window. |
 
----
+> Join is always a full outer join; the join *type* is expressed through the three
+> output sockets. See [`docs/NODE_REFERENCE.md`](docs/NODE_REFERENCE.md) for the
+> full inventory and the gotchas behind each node.
 
 ## Requirements
 
-- Python >= 3.11
-- Git (to fetch the node editor git dependency)
-- Build tools (if you plan to build wheels or use pyinstaller)
+- **Python 3.13.12+** (the project pins `>=3.13.12,<3.14`).
+- [**uv**](https://github.com/astral-sh/uv) — the project's package manager.
+- **Git** — `qtpy-nodeeditor` is installed straight from a git source.
 
-Primary runtime dependencies (declared in `pyproject.toml`):
-Polars (with pyarrow), Pandas, NumPy, DuckDB, PyQt6, qtpy, nodeeditor (git), matplotlib, seaborn, pillow, numba, loguru, click, colorama and others. See `pyproject.toml` for exact versions.
+The app targets Windows, macOS and Linux, and needs a working Qt platform plugin
+for your desktop.
 
----
+## Installation
 
-## Install
+```bash
+git clone https://github.com/AzadKshitij/TriggerEditor.git
+cd TriggerEditor
 
-Install via pip in editable mode (recommended for development):
+# Create the virtual environment and install dependencies
+uv sync
+uv run pre-commit install        # optional, enables the git hooks
+```
 
-python -m pip install -e .[dev]
+> **About `qtpy-nodeeditor`.** The node canvas lives in a separate git package
+> that is deliberately kept out of `uv.lock` (its metadata asks for newer Qt
+> versions than this project pins, and its dependencies are installed with
+> `--no-deps`). After a `uv sync`, make sure it is present:
 
-Notes:
-- The project references a git-based node editor source (see `pyproject.toml`). Ensure git is available and reachable when installing dependencies.
-- If you don't need development tools, install just the package dependencies (or create a trimmed requirements list).
+```bash
+uv pip install --no-deps "git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@main"
+```
 
----
+On Windows, [`scripts/build.bat`](scripts/build.bat) performs the same install and
+also packages the app (see [Building a standalone executable](#building-a-standalone-executable)).
 
-## Run / Usage
+## Run
 
-This repository contains multiple scripts and example/test files. There is no single packaged launcher in the repository root; to explore:
+Launch the GUI from the project root:
 
-- Inspect example or demo scripts (filenames beginning with `demo_` / `test_`).
-- Open the `src/` directory to identify the main application or add a CLI/entry point to `pyproject.toml` for launching the GUI.
-- Example test and utility files include:
-  - `demo_enhanced_preview.py` (demo)
-  - `check_output.py`, `Compare.py` (utilities)
-  - Several `test_*` files that exercise logging, preview, and Polars integration.
+```bash
+uv run trigger-designer
+```
 
-If you add a GUI entrypoint (for example `src/trigger_editor/__main__.py` or a console script), you can run the app with `python -m trigger_editor` or configure an entry point in `pyproject.toml`.
+Open a saved workflow directly:
 
----
+```bash
+uv run trigger-designer "savedfiles/0. All Node- Test.tds"
+```
+
+Equivalent entry points:
+
+```bash
+uv run --project . src/trigger_designer/main.py          # run the source entry point
+scripts\run.bat                                          # Windows helper
+```
+
+### Canvas basics
+
+| Action | Shortcut |
+|---|---|
+| Zoom in / out | `Ctrl` + scroll |
+| Pan horizontally | `Shift` + scroll |
+| Select multiple nodes | `Ctrl` + drag (rubber band) |
+| Snap an edge to a socket | hold `Ctrl` while dragging |
+| Remove edges | hold `Ctrl` and draw over them |
+| Group selected nodes / Ungroup / Collapse | `G` / `U` / `C` |
+| Add a floating label | click the text box above a node |
+
+## Building a standalone executable
+
+Windows builds are scripted with PyInstaller:
+
+```powershell
+scripts\build.bat                 # onedir build in dist\TriggerEditor\
+scripts\build.bat -- --portable   # single-file executable
+```
+
+The script refreshes `qtpy-nodeeditor`, smokes-tests the source imports, and
+runs PyInstaller with [`trigger.spec`](trigger.spec). Compile the installer with
+Inno Setup using [`savedfiles/TriggerDesigner_Setup.iss`](savedfiles/TriggerDesigner_Setup.iss).
+
+## Project layout
+
+```
+src/trigger_designer/
+├── main.py                 # application entry point (logging, splash, main window)
+├── core/                   # engine: node configuration, execution, dtype utils
+├── qt/                     # PyQt UI: main window, docks, scene, widgets, undos
+│   ├── widgets/nodes/      # one module per node, grouped by family
+│   └── themes/ + resources/ # QSS themes, themes source and icons
+├── resources/              # app icon, splash, sample assets
+├── docs/                   # in-repo documentation (see below)
+├── scripts/                # build, run and profiling helpers
+├── data/                   # sample CSV data used by tests
+├── savedfiles/             # example .tds workflows and outputs
+└── tests/                  # unit and integration tests
+```
+
+## Documentation
+
+| Document | Contents |
+|---|---|
+| [`docs/NODE_REFERENCE.md`](docs/NODE_REFERENCE.md) | The full palette and each node's behaviour. |
+| [`docs/FORMULA_TOOL_REFERENCE.md`](docs/FORMULA_TOOL_REFERENCE.md) | Formula editor features and usage. |
+| [`docs/SQL_FORMULA_REFERENCE.md`](docs/SQL_FORMULA_REFERENCE.md) | DuckDB SQL formula syntax for calculated columns. |
+| [`docs/ENHANCED_EXECUTOR_GUIDE.md`](docs/ENHANCED_EXECUTOR_GUIDE.md) | The node execution engine (timeouts, sandboxing, metrics). |
+| [`docs/POLARS_TABLE_VIEWER_README.md`](docs/POLARS_TABLE_VIEWER_README.md) | The lazy-loading DataFrame table viewer. |
+| [`docs/LOGGING_DOCK_README.md`](docs/LOGGING_DOCK_README.md) · [`docs/GLOBAL_LOGGING_README.md`](docs/GLOBAL_LOGGING_README.md) | Logging dock and the global logger. |
+| [`docs/LABELS_AND_GROUPS.md`](docs/LABELS_AND_GROUPS.md) | Node labels and visual groups. |
+| [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Config Dock design system and UI conventions. |
+| [`savedfiles/Example_2_Retail_Ledger/NODE_SETUP_GUIDE.md`](savedfiles/Example_2_Retail_Ledger/NODE_SETUP_GUIDE.md) | A worked, node-by-node example workflow. |
 
 ## Testing
 
-Run the test suite with pytest:
+```bash
+uv run --project . pytest tests/
+```
 
-python -m pip install -e .[dev]
-python -m pytest -q
-
-Tests in the repo include:
-- `test_global_logging.py`
-- `test_logging_dock.py`
-- `test_polars_preview.py`
-- Additional tests under `tests/` (when present)
-
----
-
-## Project layout (important files/folders)
-
-- src/ — primary source code (GUI, node editor, execution engine)
-- docs/ — additional docs and design notes
-- examples/ — example flows or scripts
-- tests/ — test suite
-- ENHANCED_EXECUTOR_GUIDE.md — design and usage of the enhanced executor
-- GLOBAL_LOGGING_README.md — global logging system description
-- LOGGING_DOCK_README.md — logging dock usage and internals
-- trigger.spec — packaging/spec file (used by PyInstaller or build process)
-- pyproject.toml — metadata, dependency and tooling configuration
-
----
+Tests live under `tests/unit/` and `tests/integration/`. GUI tests run
+headless by setting `QT_QPA_PLATFORM=offscreen`.
 
 ## Development
 
-- Formatting: black
-- Linting: ruff
-- Type checks: mypy (config in `pyproject.toml`)
-- Packaging/build: the repository uses `pyproject.toml` and supports common tools (pip, build). A `uv` tool configuration is present for fetching the nodeeditor git dependency.
-- To build a standalone executable, pyinstaller is listed in dev-dependencies and can be used with `trigger.spec` (adjust paths as needed).
+- **Format:** `uv run --project . ruff format .`
+- **Lint:** `uv run --project . ruff check .`
+- **Types:** `uv run --project . ty check`
+- **All hooks:** `uv run --project . pre-commit run --all-files`
+- **Profiling:** `scripts/profile_app.py`, `scripts/run_pyspy.bat` (see
+  [`docs/PERFORMANCE_PROFILING_FINDINGS.md`](docs/PERFORMANCE_PROFILING_FINDINGS.md)).
 
-Recommended workflow:
-1. Create a feature branch from main.
-2. Run tests, formatters and linters locally.
-3. Open a PR with descriptive title and changelog.
-
----
-
-## Documentation & guides
-
-Start with the in-repo guides:
-- `ENHANCED_EXECUTOR_GUIDE.md` — enhanced executor design and usage
-- `GLOBAL_LOGGING_README.md` — global logging architecture
-- `LOGGING_DOCK_README.md` — logging dock integration and sinks
-
-Use these for implementation details and to understand execution and logging internals.
-
----
+Before changing UI, read [`AGENTS.md`](AGENTS.md) and
+[`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — Config Dock conventions,
+undo/redo rules and the shared config widgets are enforced there.
 
 ## Contributing
 
-Contributions are welcome. Suggested process:
-1. Fork and branch
-2. Run tests and linters locally
-3. Open a pull request describing the change and rationale
-4. Add tests for bug fixes or new features where applicable
+Contributions are welcome. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the
+development setup and guidelines. In short:
 
-Please follow existing code formatting and typing conventions. If you need help with architecture-level changes (for example the node editor integration or the executor model) open an issue or a design PR first.
+1. Branch off `main`.
+2. Make a focused change and add tests.
+3. Run the formatter, linter and type checker, then `pytest`.
+4. Open a pull request describing the change and its rationale.
 
----
+## License
 
-## License & contact
+Released under the **MIT License**.
 
-This project is licensed under the MIT License. See the LICENSE file for details.
-
-Author / maintainer:
-- Azad Kshitij — azadkshitij08302001@gmail
-
----
-
-## Notes and troubleshooting
-
-- Node editor dependency is referenced as a git source; installations without git or with restricted network access may fail.
-- The GUI depends on PyQt6 — some systems require additional platform packages or Qt runtime components.
-- If installation of binary dependencies (numba, llvmlite, polars, etc.) fails, consider using a platform-appropriate wheel or a Conda environment.
-- If you want, I can:
-  - Add a runnable GUI entrypoint and example flow,
-  - Create a requirements/dev-requirements file,
-  - Or update the README directly in the repo for you.
-
----
-
-Thank you for checking out TriggerEditor — if you'd like, I can commit this README.md to the repository for you now or make adjustments (shorter, more tutorial-style, or adding badges/screenshots).
+Maintainer: **Azad Kshitij** — azadkshitij08302001@gmail.com
