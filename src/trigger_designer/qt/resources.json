@@ -4,7 +4,7 @@
         "mode": "qimg"
     },
     "splash_screen":{
-        "path":"classic.png",
+        "path":"splash.png",
         "mode": "qpixmap"
     },
 
