@@ -869,9 +869,6 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
             self.grNode.setToolTip("Upstream nodes produced no output")
             return None
 
-        self.markDirty(False)
-        self.markInvalid(False)
-
         self.content.input_frames = frames
         self.content.input_variables = variables
         try:
@@ -893,7 +890,11 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
             self.grNode.setToolTip("Union failed")
             return None
 
-        self.evalChildren()
+        # markDirty(False)/markInvalid(False)/evalChildren() all wait until
+        # self.value actually holds the new result: a child pulled earlier
+        # (e.g. by an evalChildren() call above, or by a sibling reentering
+        # this node mid-computation) would otherwise see this node as
+        # "clean" while self.value is still the previous, stale result.
         self.param = [
             {
                 "data": self.content.data,
@@ -907,6 +908,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
             self.grNode.setToolTip("\n".join(self.content.coercion_warnings))
         else:
             self.grNode.setToolTip("")
+        self.evalChildren()
         self._refresh_selected_node_config()
         return self.param
 

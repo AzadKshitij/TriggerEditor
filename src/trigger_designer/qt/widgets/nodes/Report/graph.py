@@ -387,13 +387,10 @@ class TriggerNode_Graph(TriggerNode):
         socket_index = self.getSocketValue(input_node.outputs, self)
         input_value = input_values[this_socket_index][socket_index]
         if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
             # Custom processing logic for the Select node
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
             self.content.update_column_options()
-            self.evalChildren()
             self.param = [
                 {"data": self.content.data, "variable_name": self.content.variable_name}
             ]

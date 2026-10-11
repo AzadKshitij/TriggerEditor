@@ -1,6 +1,7 @@
 from loguru import logger
 from collections import deque
 from contextlib import contextmanager
+import os
 import time
 
 from qtpy.QtGui import (
@@ -13,6 +14,7 @@ from qtpy.QtGui import (
 )
 from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
 from qtpy.QtWidgets import (
+    QApplication,
     QGraphicsView,
     QWidget,
     QPushButton,
@@ -33,7 +35,11 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.widgets.nodes.unknown import TriggerNode_Unknown
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
-from trigger_designer.qt.performance_scene import TriggerScene
+from trigger_designer.qt.helpers.eval_progress import (
+    eval_progress_dialog,
+    make_progress_dialog,
+)
+from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
@@ -296,11 +302,23 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             return TriggerNode_Unknown
         return TriggerNode_Unknown
 
-    def doEvalOutputs(self) -> None:
-        # eval all output nodes
-        for node in self.scene.nodes:
-            # if node.__class__.__name__ == "CalcNode_Output":
-            node.eval()
+    def doEvalOutputs(self, dialog=None) -> None:
+        # Every node starts dirty (TriggerNode.__init__), so this first pass
+        # recomputes the whole graph - size the dialog to the full node
+        # count. Without a `dialog` (undo/redo restore) a small graph gets
+        # none at all.
+        total = len(self.scene.nodes)
+        with eval_progress_dialog(
+            self.scene, self, total, "Evaluating workflow…", dialog=dialog
+        ):
+            previous_batch = getattr(self.scene, "_batch_evaluating", False)
+            self.scene._batch_evaluating = True
+            try:
+                for node in self.scene.nodes:
+                    node.eval()
+                settle_multi_input_nodes(self.scene)
+            finally:
+                self.scene._batch_evaluating = previous_batch
 
     def onHistoryRestored(self) -> None:
         # Force the Config Dock to rebuild: a restore reverts the selected
@@ -365,10 +383,25 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def fileLoad(self, filename: str) -> bool:
         self.logInfo(f"Loading file: {filename}")
+        # Shown and painted before any work: parse, node construction and
+        # validation all block the thread, and previously nothing was on
+        # screen until evaluation began.
+        dialog = make_progress_dialog(
+            self.window(), f"Reading {os.path.basename(filename)}…"
+        )
+        try:
+            return self._load_with_dialog(filename, dialog)
+        finally:
+            dialog.close()
+            dialog.deleteLater()
+
+    def _load_with_dialog(self, filename: str, dialog) -> bool:
         with self._suspend_scene_restore_updates():
             loaded = super().fileLoad(filename)
 
         if loaded:
+            dialog.setLabelText("Validating workflow…")
+            QApplication.processEvents()
             self.validateConnections()
             self.logDebug("File loaded successfully, evaluating outputs...")
             validation_messages = self.validateLoadedWorkflow()
@@ -383,7 +416,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                     ),
                 )
 
-            self.doEvalOutputs()
+            self.doEvalOutputs(dialog=dialog)
             self.logInfo(f"File '{filename}' loaded and initialized successfully")
             return True
 

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
+from nodeeditor.node_multi_input_node import MultiInputNode
 from nodeeditor.node_scene import Scene
 
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
@@ -118,6 +119,9 @@ class TriggerScene(Scene):
         self._bulk_loading = False
         self._deferred_edge_updates: set[TriggerEdge] = set()
         self.loaded_workflow_metadata: dict[str, object] = {}
+        #: Set by helpers.eval_progress.eval_progress_dialog while a
+        #: progress dialog is driving a load/recompute; None otherwise.
+        self._eval_progress_cb = None
 
     def getEdgeClass(self):
         return TriggerEdge
@@ -149,3 +153,35 @@ class TriggerScene(Scene):
             {"schema_version": 0, "app_version": None},
         )
         return super().deserialize(data, hashmap, restore_id, *args, **kwargs)
+
+
+def settle_multi_input_nodes(scene: Scene) -> None:
+    """Retry only collectors whose first pass did not settle every edge.
+
+    Union now commits its value before evaluating children, so the old
+    unconditional second pass recalculated complete Union branches for no
+    benefit. Keep a recovery pass for dirty/invalid/incomplete collectors.
+    """
+    multi_input_nodes = [
+        node for node in scene.nodes if isinstance(node, MultiInputNode)
+    ]
+    incomplete = []
+    for node in multi_input_nodes:
+        try:
+            expected = len(node.getOrderedEdges())
+            actual = len(node.content.input_frames)
+        except (AttributeError, RuntimeError, TypeError):
+            incomplete.append(node)
+            continue
+        if node.isDirty() or node.isInvalid() or actual != expected:
+            incomplete.append(node)
+
+    if not incomplete:
+        return
+
+    for node in incomplete:
+        node.markDirty(True)
+        node.markDescendantsDirty(True)
+
+    for node in scene.nodes:
+        node.eval()

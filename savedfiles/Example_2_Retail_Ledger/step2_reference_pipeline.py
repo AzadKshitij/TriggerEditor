@@ -21,13 +21,11 @@ Usage:
 
 from __future__ import annotations
 
-import datetime as dt
 import time
 
+import config as cfg
 import numpy as np
 import pandas as pd
-
-import config as cfg
 
 STAGE_COUNTS: dict[str, int] = {}
 
@@ -36,8 +34,28 @@ def log(message: str) -> None:
     print(f"[reference] {message}", flush=True)
 
 
+TIMINGS: list[tuple[str, float]] = []
+_lap_start = time.perf_counter()
+
+
+def lap(label: str) -> None:
+    """Record the time elapsed since the previous lap under `label`."""
+    global _lap_start
+    now = time.perf_counter()
+    TIMINGS.append((label, now - _lap_start))
+    log(f"  [time] {label:<34} {now - _lap_start:>8.2f}s")
+    _lap_start = now
+
+
+def format_duration(seconds: float) -> str:
+    minutes, secs = divmod(seconds, 60)
+    return f"{int(minutes)}m {secs:.2f}s" if minutes else f"{secs:.2f}s"
+
+
 def record(stage: str, frame: pd.DataFrame) -> None:
+    """Record a dataframe stage and export it with its stage name."""
     STAGE_COUNTS[stage] = len(frame)
+    frame.to_csv(cfg.reference_file(f"{stage}.csv"), index=False)
     log(f"  {stage:<42} {len(frame):>12,} rows")
 
 
@@ -59,11 +77,9 @@ def load_raw() -> dict[str, pd.DataFrame]:
     ):
         path = cfg.data_file(f"{name}.csv")
         if not path.exists():
-            raise SystemExit(
-                f"Missing {path}. Run step1_generate_data.py first."
-            )
+            raise SystemExit(f"Missing {path}. Run step1_generate_data.py first.")
         raw[name] = pd.read_csv(path, dtype=str, keep_default_na=True)
-        log(f"  loaded {name+'.csv':<20} {raw[name].shape[0]:>12,} rows")
+        log(f"  loaded {name + '.csv':<20} {raw[name].shape[0]:>12,} rows")
     return raw
 
 
@@ -92,9 +108,7 @@ def clean_orders(raw: pd.DataFrame) -> pd.DataFrame:
     for col in ("unit_price_local", "discount_pct", "tax_local", "shipping_local"):
         df[col] = pd.to_numeric(df[col], errors="coerce")
 
-    df["is_returned"] = (
-        df["is_returned"].astype(str).str.strip().str.lower().eq("true")
-    )
+    df["is_returned"] = df["is_returned"].astype(str).str.strip().str.lower().eq("true")
 
     # --- the ambiguity that matters ---------------------------------------
     # No explicit format. pandas infers per element and reads "05-01-2024"
@@ -111,11 +125,15 @@ def clean_orders(raw: pd.DataFrame) -> pd.DataFrame:
     record("03 text normalised", df)
 
     # --- gates ------------------------------------------------------------
-    missing_keys = df["order_id"].isna() | df["customer_id"].isna() | df["product_id"].isna()
+    missing_keys = (
+        df["order_id"].isna() | df["customer_id"].isna() | df["product_id"].isna()
+    )
     df = df[~missing_keys]
     record("04 dropped null key rows", df)
 
-    good_qty = df["quantity"].between(cfg.MIN_QUANTITY, cfg.MAX_QUANTITY, inclusive="both")
+    good_qty = df["quantity"].between(
+        cfg.MIN_QUANTITY, cfg.MAX_QUANTITY, inclusive="both"
+    )
     rejected_quantity = df[~good_qty]
     df = df[good_qty]
     record("05 quantity gate", df)
@@ -139,6 +157,7 @@ def clean_orders(raw: pd.DataFrame) -> pd.DataFrame:
     log(f"  {'08 dedupe removed':<42} {before - len(df):>12,} rows")
     STAGE_COUNTS["08 dedupe removed"] = before - len(df)
     log(f"  {'08b duplicate rows captured':<42} {len(duplicates):>12,} rows")
+    record("08 deduplicated orders", df)
 
     return df, rejected_quantity, rejected_price, rejected_dates, duplicates
 
@@ -171,19 +190,14 @@ def enrich(
         }
     )
     enriched = df.merge(customers, on="customer_id", how="left")
-    enriched.to_csv(cfg.reference_file("01 enriched customer_id.csv"), index=False)
     record("01 enriched customer_id", enriched)
     enriched = enriched.merge(products, on="product_id", how="left")
-    enriched.to_csv(cfg.reference_file("02 enriched product_id.csv"), index=False)
     record("02 enriched product_id", enriched)
     enriched = enriched.merge(suppliers, on="supplier_id", how="left")
-    enriched.to_csv(cfg.reference_file("03 enriched supplier_id.csv"), index=False)
     record("03 enriched supplier_id", enriched)
     enriched = enriched.merge(channels, on="channel_id", how="left")
-    enriched.to_csv(cfg.reference_file("04 enriched channel_id.csv"), index=False)
     record("04 enriched channel_id", enriched)
     enriched = enriched.merge(fx, on="currency", how="left")
-    enriched.to_csv(cfg.reference_file("05 enriched currency.csv"), index=False)
     record("05 enriched currency", enriched)
 
     g = enriched["quantity"] * enriched["unit_price_local"]
@@ -241,9 +255,17 @@ def enrich(
 
     # One rounding pass, at the end, for every money column.
     money_cols = [
-        "gross_local", "discount_local", "net_local", "total_local",
-        "unit_price_usd", "net_revenue_usd", "tax_usd", "shipping_usd",
-        "total_usd", "cogs_usd", "gross_margin_usd",
+        "gross_local",
+        "discount_local",
+        "net_local",
+        "total_local",
+        "unit_price_usd",
+        "net_revenue_usd",
+        "tax_usd",
+        "shipping_usd",
+        "total_usd",
+        "cogs_usd",
+        "gross_margin_usd",
     ]
     enriched[money_cols] = enriched[money_cols].round(2)
     enriched["margin_pct"] = enriched["margin_pct"].round(4)
@@ -260,11 +282,11 @@ def enrich(
 def build_reports(enriched: pd.DataFrame) -> None:
     # Named aggregation. A bare list of (column, func) tuples is a cartesian
     # spec in pandas and silently produces one column per combination.
-    agg = dict(
-        revenue_usd=("net_revenue_usd", "sum"),
-        margin_usd=("gross_margin_usd", "sum"),
-        orders=("order_id", "nunique"),
-    )
+    agg = {
+        "revenue_usd": ("net_revenue_usd", "sum"),
+        "margin_usd": ("gross_margin_usd", "sum"),
+        "orders": ("order_id", "nunique"),
+    }
 
     monthly = (
         enriched.groupby("order_year_month", dropna=False)
@@ -315,14 +337,17 @@ def build_reports(enriched: pd.DataFrame) -> None:
 
     # "Top customers" defined as a revenue threshold rather than a top-N cut.
     # The workflow has no limit node, so the threshold is the shared contract.
-    per_customer = enriched.groupby("customer_id", dropna=False).agg(
-        revenue_usd=("net_revenue_usd", "sum"),
-        orders=("order_id", "nunique"),
-    ).reset_index()
-    top_customers = (
-        per_customer[per_customer["revenue_usd"] > cfg.TOP_CUSTOMER_REVENUE_THRESHOLD]
-        .sort_values("revenue_usd", ascending=False)
+    per_customer = (
+        enriched.groupby("customer_id", dropna=False)
+        .agg(
+            revenue_usd=("net_revenue_usd", "sum"),
+            orders=("order_id", "nunique"),
+        )
+        .reset_index()
     )
+    top_customers = per_customer[
+        per_customer["revenue_usd"] > cfg.TOP_CUSTOMER_REVENUE_THRESHOLD
+    ].sort_values("revenue_usd", ascending=False)
     top_customers.to_csv(cfg.reference_file("top_customers.csv"), index=False)
     log(f"  top_customers.csv{'':<23} {len(top_customers):>12,} rows")
 
@@ -359,9 +384,15 @@ def build_reports(enriched: pd.DataFrame) -> None:
     kpi = pd.DataFrame(
         {
             "metric": [
-                "clean_orders", "gross_revenue_usd", "net_revenue_usd",
-                "gross_margin_usd", "margin_pct", "returned_orders",
-                "high_risk_orders", "distinct_customers", "distinct_products",
+                "clean_orders",
+                "gross_revenue_usd",
+                "net_revenue_usd",
+                "gross_margin_usd",
+                "margin_pct",
+                "returned_orders",
+                "high_risk_orders",
+                "distinct_customers",
+                "distinct_products",
             ],
             "value": [
                 int(enriched["order_id"].nunique()),
@@ -400,12 +431,15 @@ def build_reports(enriched: pd.DataFrame) -> None:
 
 def main() -> None:
     cfg.ensure_dirs()
-    started = time.time()
+    global _lap_start
+    started = _lap_start = time.perf_counter()
     log("loading raw CSV ...")
     raw = load_raw()
+    lap("load raw CSV")
 
     log("cleaning the fact table ...")
     orders, rej_qty, rej_price, rej_dates, dups = clean_orders(raw["orders"])
+    lap("clean fact table")
 
     for frame, name in (
         (rej_qty, "rejected_quantity.csv"),
@@ -425,7 +459,9 @@ def main() -> None:
 
     products["unit_price"] = pd.to_numeric(products["unit_price"], errors="coerce")
     products["unit_cost"] = pd.to_numeric(products["unit_cost"], errors="coerce")
-    suppliers["lead_time_days"] = pd.to_numeric(suppliers["lead_time_days"], errors="coerce")
+    suppliers["lead_time_days"] = pd.to_numeric(
+        suppliers["lead_time_days"], errors="coerce"
+    )
     suppliers["reliability_score"] = pd.to_numeric(
         suppliers["reliability_score"], errors="coerce"
     )
@@ -454,8 +490,11 @@ def main() -> None:
         region_map = {code: region for code, region in cfg.COUNTRIES}
         customers["region"] = customers["country"].map(region_map)
 
+    lap("normalise dimensions")
+
     log("enriching ...")
     enriched = enrich(orders, customers, products, suppliers, channels, fx)
+    lap("enrich")
 
     # Orphans, the same two populations the workflow's Join node isolates.
     enriched[enriched["segment"].isna()].to_csv(
@@ -465,8 +504,11 @@ def main() -> None:
         cfg.reference_file("orphan_products.csv"), index=False
     )
 
+    lap("orphan exports")
+
     log("building reports ...")
     build_reports(enriched)
+    lap("build reports")
 
     # Deterministic 80/20 split, the same split the workflow's Split node makes.
     log("splitting ...")
@@ -474,7 +516,9 @@ def main() -> None:
     cut = int(len(shuffled) * cfg.SPLIT_ESTIMATION_PERCENT / 100)
     shuffled.iloc[:cut].to_csv(cfg.reference_file("fact_estimation.csv"), index=False)
     shuffled.iloc[cut:].to_csv(cfg.reference_file("fact_validation.csv"), index=False)
-    log(f"  fact_estimation.csv / fact_validation.csv  {cut:,} / {len(shuffled)-cut:,}")
+    log(
+        f"  fact_estimation.csv / fact_validation.csv  {cut:,} / {len(shuffled) - cut:,}"
+    )
 
     # Union of every dimension, the equivalent of the workflow's Append node.
     # pd.concat already outer-aligns the columns and fills the gaps with null,
@@ -507,13 +551,42 @@ def main() -> None:
     quality.to_csv(cfg.reference_file("data_quality_report.csv"), index=False)
 
     master_columns = [
-        "order_id", "order_ts", "order_year", "order_month", "order_year_month",
-        "customer_id", "product_id", "supplier_id", "channel_id", "channel_name",
-        "channel_group", "category", "subcategory", "brand", "customer_country", "region",
-        "segment", "loyalty_tier", "currency", "usd_rate", "status", "status_clean",
-        "quantity", "unit_price_local", "discount_pct", "net_local", "total_local",
-        "net_revenue_usd", "cogs_usd", "gross_margin_usd", "margin_pct", "value_band",
-        "risk_score", "risk_band", "is_returned", "is_bulk",
+        "order_id",
+        "order_ts",
+        "order_year",
+        "order_month",
+        "order_year_month",
+        "customer_id",
+        "product_id",
+        "supplier_id",
+        "channel_id",
+        "channel_name",
+        "channel_group",
+        "category",
+        "subcategory",
+        "brand",
+        "customer_country",
+        "region",
+        "segment",
+        "loyalty_tier",
+        "currency",
+        "usd_rate",
+        "status",
+        "status_clean",
+        "quantity",
+        "unit_price_local",
+        "discount_pct",
+        "net_local",
+        "total_local",
+        "net_revenue_usd",
+        "cogs_usd",
+        "gross_margin_usd",
+        "margin_pct",
+        "value_band",
+        "risk_score",
+        "risk_band",
+        "is_returned",
+        "is_bulk",
     ]
     master = enriched.copy()
     master["status_clean"] = master["status"].str.title()
@@ -521,8 +594,13 @@ def main() -> None:
     master[available].to_csv(cfg.reference_file("orders_enriched.csv"), index=False)
     log(f"  orders_enriched.csv{'':<20} {len(master):>12,} rows")
 
-    elapsed = time.time() - started
-    log(f"done in {elapsed:.1f}s -> {cfg.REFERENCE_OUT}")
+    lap("split, union, final exports")
+
+    elapsed = time.perf_counter() - started
+    log("timing summary:")
+    for label, seconds in TIMINGS:
+        log(f"  {label:<34} {format_duration(seconds):>10} {seconds / elapsed:>6.1%}")
+    log(f"done in {format_duration(elapsed)} -> {cfg.REFERENCE_OUT}")
 
 
 if __name__ == "__main__":

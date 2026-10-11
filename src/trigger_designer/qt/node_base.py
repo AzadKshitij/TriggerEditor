@@ -22,6 +22,10 @@ from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.resource_manager import ResourceManager
+from trigger_designer.qt.helpers.eval_progress import (
+    count_pending_recomputes,
+    eval_progress_dialog,
+)
 from trigger_designer.qt.helpers.content_undo_mixin import (
     _COMPOSITE_ATTR,
     _IMMEDIATE_WIDGET_TYPES,
@@ -617,6 +621,15 @@ class TriggerNode(Node):
         # Override this method in subclasses to process the input values
         return input_values
 
+    def evalChildren(self) -> None:
+        # During file load/restore the scene walks every node; eager push
+        # evaluation reaches joins before their other parents have settled,
+        # causing repeated invalid/partial recomputes. Pulls from inputs
+        # still run as usual; ordinary interactive edits keep push semantics.
+        if getattr(self.scene, "_batch_evaluating", False):
+            return
+        super().evalChildren()
+
     def evalImplementation(self) -> Any:
         input_values = []
         for i in range(len(self.inputs)):
@@ -680,8 +693,9 @@ class TriggerNode(Node):
 
     def eval(self, index: Any = None) -> Any:
         if not self.isDirty() and not self.isInvalid():
-            print(" _> returning cached %s value:" % self.__class__.__name__)
+            logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
+        self._report_eval_progress(finished=False)
         try:
             val = self.evalImplementation()
             return val
@@ -694,6 +708,22 @@ class TriggerNode(Node):
             self._set_node_tooltip(str(e))
             dumpException(e)
             return None  # Add explicit return for exception case
+        finally:
+            self._report_eval_progress(finished=True)
+
+    def _report_eval_progress(self, finished: bool) -> None:
+        """Notify the active progress dialog, if any (helpers/eval_progress.py).
+
+        Called before and after a real recompute only - a cache hit returns
+        above before this - so the dialog can name the node about to run and
+        repaint before a slow step blocks the thread.
+        """
+        scene = getattr(self, "scene", None)
+        callback = (
+            getattr(scene, "_eval_progress_cb", None) if scene is not None else None
+        )
+        if callable(callback):
+            callback(self, finished)
 
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
         # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
@@ -708,7 +738,12 @@ class TriggerNode(Node):
 
         self.markDirty()
         self.markDescendantsDirty()
-        self.eval()
+
+        total = count_pending_recomputes(self)
+        view = self.scene.getView() if hasattr(self.scene, "getView") else None
+        parent = view.window() if view is not None else None
+        with eval_progress_dialog(self.scene, parent, total, "Updating workflow…"):
+            self.eval()
 
     def serialize(self) -> OrderedDict:
         res = super().serialize()

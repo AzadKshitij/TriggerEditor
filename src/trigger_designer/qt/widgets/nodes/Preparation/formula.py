@@ -1,6 +1,6 @@
 from functools import partial
 import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
 
 import duckdb
 import polars as pl
@@ -862,20 +862,80 @@ class FormulaContent(
             available_columns = available_columns + [target_column]
         return query, available_columns
 
+    def _build_combined_query(
+        self,
+        configured_sections: List[Tuple[int, Dict[str, Any]]],
+        available_columns: List[str],
+        base_relation: str,
+    ) -> Tuple[str, List[str]]:
+        """Chain every configured section into one statement via CTEs.
+
+        Codegen used to register and execute one query per section, pulling
+        a full intermediate Polars DataFrame across the DuckDB boundary each
+        time. Chaining sections as CTEs of a single statement lets DuckDB
+        plan the whole formula chain at once and only materialize the final
+        result.
+        """
+        ctes: List[str] = []
+        current_relation = base_relation
+        for section_index, section in configured_sections:
+            query, available_columns = self._section_query(
+                section, available_columns, current_relation
+            )
+            step_name = f"df_step_{section_index}"
+            ctes.append(f"{step_name} AS ({query})")
+            current_relation = step_name
+
+        combined_query = (
+            "WITH " + ", ".join(ctes) + f" SELECT * FROM {current_relation}"
+        )
+        return combined_query, available_columns
+
     def _run_sections(
         self,
-        current_df: pl.DataFrame,
+        current_df: Union[pl.DataFrame, pl.LazyFrame],
         configured: List[Tuple[int, Dict[str, Any]]],
         explain_index: Optional[int] = None,
     ) -> Tuple[pl.DataFrame, List[str], Dict[int, str]]:
-        """Apply configured (index, section) pairs in order.
+        """Apply all sections in one query; fall back for diagnostic errors.
+
+        EXPLAIN still uses the section-by-section path, so validation can
+        report which section failed and execute its predecessors in context.
+        """
+        if explain_index is not None:
+            return self._run_sections_sequential(current_df, configured, explain_index)
+
+        available_columns = list(frame_schema(current_df))
+        query, available_columns = self._build_combined_query(
+            configured, available_columns, "df_for_duck"
+        )
+        with duckdb.connect(":memory:") as duck:
+            duck.register("df_for_duck", current_df)
+            try:
+                result = duck.execute(query).pl()
+            except Exception:  # noqa: BLE001 - fall back for any query/conversion failure
+                # The combined plan cannot identify the first failing section.
+                # Preserve the existing section index and error text contract.
+                return self._run_sections_sequential(current_df, configured)
+        return result, available_columns, {}
+
+    def _run_sections_sequential(
+        self,
+        current_df: pl.DataFrame | pl.LazyFrame,
+        configured: list[tuple[int, dict[str, Any]]],
+        explain_index: int | None = None,
+    ) -> tuple[pl.DataFrame, list[str], dict[int, str]]:
+        """Apply configured (index, section) pairs in order for error reporting.
 
         With explain_index set, that section is EXPLAINed instead of run
         (prior sections still run so later sections validate in context).
+        ``current_df`` may still be a LazyFrame on the first call - only
+        ``duck.register`` touches it before the first section's query turns
+        it into a concrete frame for the rest of the loop.
         Returns (frame, available columns, {index: error message}).
         """
-        available_columns = list(current_df.columns)
-        errors: Dict[int, str] = {}
+        available_columns = list(frame_schema(current_df))
+        errors: dict[int, str] = {}
         with duckdb.connect(":memory:") as duck:
             for index, section in configured:
                 relation_name = f"df_step_{index}"
@@ -936,9 +996,13 @@ class FormulaContent(
             ]
         return []
 
-    def _collect_input_data(self) -> tuple[pl.DataFrame, bool]:
+    def _collect_input_data(self) -> tuple[Union[pl.DataFrame, pl.LazyFrame], bool]:
         if isinstance(self.incom_data, pl.LazyFrame):
-            return self.incom_data.collect(), True
+            # DuckDB scans a LazyFrame directly (see filter.py's DuckDB
+            # usage): handing it off lets the first section's query
+            # materialize it, instead of collecting the whole upstream
+            # chain here before any section has even run.
+            return self.incom_data, True
 
         if isinstance(self.incom_data, pl.DataFrame):
             return self.incom_data.clone(), False
@@ -1072,6 +1136,10 @@ class FormulaContent(
         if self.incom_data is not None:
             available_columns.extend(list(frame_schema(self.incom_data)))
 
+        combined_query, _ = self._build_combined_query(
+            configured_sections, available_columns, "df_for_duck"
+        )
+
         code_lines = [
             "import duckdb",
             "import polars as pl",
@@ -1083,29 +1151,21 @@ class FormulaContent(
                 f"df_for_duck = {self.incoming_variable}.collect() "
                 f"if hasattr({self.incoming_variable}, 'collect') else {self.incoming_variable}"
             ),
+            "duck.register('df_for_duck', df_for_duck)",
+            # All configured sections run as one chained query (each
+            # section a CTE), so the formula chain is one DuckDB plan
+            # instead of one intermediate Polars materialization per
+            # section.
+            f"df_for_duck = duck.execute('''{combined_query}''').pl()",
+            "# Widen DuckDB-native types into Select-supported dtypes",
+            "df_for_duck = normalize_to_supported_dtypes(df_for_duck)",
+            "# Preserve lazy execution when the incoming value is lazy",
+            (
+                f"{self.variable_name} = df_for_duck.lazy() "
+                f"if hasattr({self.incoming_variable}, 'collect') else df_for_duck"
+            ),
+            "duck.close()",
         ]
-
-        for section_index, section in configured_sections:
-            relation_name = f"df_step_{section_index}"
-            query, available_columns = self._section_query(
-                section, available_columns, relation_name
-            )
-
-            code_lines.append(f"duck.register('{relation_name}', df_for_duck)")
-            code_lines.append(f"df_for_duck = duck.execute('''{query}''').pl()")
-
-        code_lines.extend(
-            [
-                "# Widen DuckDB-native types into Select-supported dtypes",
-                "df_for_duck = normalize_to_supported_dtypes(df_for_duck)",
-                "# Preserve lazy execution when the incoming value is lazy",
-                (
-                    f"{self.variable_name} = df_for_duck.lazy() "
-                    f"if hasattr({self.incoming_variable}, 'collect') else df_for_duck"
-                ),
-                "duck.close()",
-            ]
-        )
 
         return "\n".join(code_lines) + "\n"
 
@@ -1181,17 +1241,12 @@ class TriggerNode_Formula(TriggerNode):
             global_logger.error(f"Formula node failed: {self.content.last_error}")
             return None
 
-        self.markDirty(False)
-        self.markInvalid(False)
-        self.grNode.setToolTip("")
-
         self.param = [
             {
                 "data": self.content.data,
                 "variable_name": self.content.variable_name,
             }
         ]
-        self.evalChildren()
         return self.param
 
     def get_code(self) -> str:

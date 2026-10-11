@@ -1,0 +1,4811 @@
+{
+  "workflow": "savedfiles/Example_2_Retail_Ledger/app_workflow/1.tds",
+  "nodes": 105,
+  "edges": 113,
+  "startup_ms": {
+    "qt_create": 130.35,
+    "imports_after_qt": 408.55,
+    "window_create": 21.53
+  },
+  "load_wall_ms": 4252.08,
+  "phases": {
+    "scene_deserialize": {
+      "calls": 1,
+      "total_ms": 99.08,
+      "max_ms": 99.08
+    },
+    "base_file_load": {
+      "calls": 1,
+      "total_ms": 137.38,
+      "max_ms": 137.38
+    },
+    "edge_finalization": {
+      "calls": 1,
+      "total_ms": 1.19,
+      "max_ms": 1.19
+    },
+    "connections": {
+      "calls": 1,
+      "total_ms": 0.3,
+      "max_ms": 0.3
+    },
+    "validation": {
+      "calls": 1,
+      "total_ms": 8.17,
+      "max_ms": 8.17
+    },
+    "union_settle": {
+      "calls": 1,
+      "total_ms": 1267.57,
+      "max_ms": 1267.57
+    },
+    "evaluation": {
+      "calls": 1,
+      "total_ms": 3965.54,
+      "max_ms": 3965.54
+    }
+  },
+  "node_init": {
+    "TriggerNode_FileInput": {
+      "calls": 6,
+      "total_ms": 15.98,
+      "max_ms": 13.53
+    },
+    "TriggerNode_Select": {
+      "calls": 14,
+      "total_ms": 8.75,
+      "max_ms": 1.06
+    },
+    "TriggerNode_Cleansing": {
+      "calls": 3,
+      "total_ms": 2.0,
+      "max_ms": 0.82
+    },
+    "TriggerNode_Filter": {
+      "calls": 6,
+      "total_ms": 3.45,
+      "max_ms": 0.8
+    },
+    "TriggerNode_NormalizeColumns": {
+      "calls": 1,
+      "total_ms": 0.63,
+      "max_ms": 0.63
+    },
+    "TriggerNode_Unique": {
+      "calls": 1,
+      "total_ms": 0.51,
+      "max_ms": 0.51
+    },
+    "TriggerNode_Formula": {
+      "calls": 14,
+      "total_ms": 7.33,
+      "max_ms": 0.81
+    },
+    "TriggerNode_Join": {
+      "calls": 5,
+      "total_ms": 3.91,
+      "max_ms": 0.89
+    },
+    "TriggerNode_Union": {
+      "calls": 9,
+      "total_ms": 4.73,
+      "max_ms": 0.77
+    },
+    "TriggerNode_Sort": {
+      "calls": 7,
+      "total_ms": 3.86,
+      "max_ms": 0.75
+    },
+    "TriggerNode_GroupBy": {
+      "calls": 8,
+      "total_ms": 4.67,
+      "max_ms": 1.06
+    },
+    "TriggerNode_RunningTotal": {
+      "calls": 1,
+      "total_ms": 0.62,
+      "max_ms": 0.62
+    },
+    "TriggerNode_FileOutput": {
+      "calls": 27,
+      "total_ms": 12.03,
+      "max_ms": 0.59
+    },
+    "TriggerNode_Transpose": {
+      "calls": 2,
+      "total_ms": 1.08,
+      "max_ms": 0.56
+    },
+    "TriggerNode_Split": {
+      "calls": 1,
+      "total_ms": 0.61,
+      "max_ms": 0.61
+    }
+  },
+  "node_restore": {
+    "TriggerNode_FileInput": {
+      "calls": 6,
+      "total_ms": 1.19,
+      "max_ms": 0.35
+    },
+    "TriggerNode_Select": {
+      "calls": 14,
+      "total_ms": 0.95,
+      "max_ms": 0.19
+    },
+    "TriggerNode_Cleansing": {
+      "calls": 3,
+      "total_ms": 0.38,
+      "max_ms": 0.14
+    },
+    "TriggerNode_Filter": {
+      "calls": 6,
+      "total_ms": 0.42,
+      "max_ms": 0.1
+    },
+    "TriggerNode_NormalizeColumns": {
+      "calls": 1,
+      "total_ms": 0.06,
+      "max_ms": 0.06
+    },
+    "TriggerNode_Unique": {
+      "calls": 1,
+      "total_ms": 0.04,
+      "max_ms": 0.04
+    },
+    "TriggerNode_Formula": {
+      "calls": 14,
+      "total_ms": 0.88,
+      "max_ms": 0.11
+    },
+    "TriggerNode_Join": {
+      "calls": 5,
+      "total_ms": 0.23,
+      "max_ms": 0.06
+    },
+    "TriggerNode_Union": {
+      "calls": 9,
+      "total_ms": 0.35,
+      "max_ms": 0.06
+    },
+    "TriggerNode_Sort": {
+      "calls": 7,
+      "total_ms": 0.3,
+      "max_ms": 0.06
+    },
+    "TriggerNode_GroupBy": {
+      "calls": 8,
+      "total_ms": 0.36,
+      "max_ms": 0.06
+    },
+    "TriggerNode_RunningTotal": {
+      "calls": 1,
+      "total_ms": 0.07,
+      "max_ms": 0.07
+    },
+    "TriggerNode_FileOutput": {
+      "calls": 27,
+      "total_ms": 4.51,
+      "max_ms": 0.24
+    },
+    "TriggerNode_Transpose": {
+      "calls": 2,
+      "total_ms": 0.11,
+      "max_ms": 0.05
+    },
+    "TriggerNode_Split": {
+      "calls": 1,
+      "total_ms": 0.06,
+      "max_ms": 0.06
+    }
+  },
+  "node_eval_inclusive": {
+    "TriggerNode_FileInput": {
+      "calls": 12,
+      "total_ms": 11385.25,
+      "max_ms": 2694.14
+    },
+    "TriggerNode_Select": {
+      "calls": 41,
+      "total_ms": 24649.4,
+      "max_ms": 2661.42
+    },
+    "TriggerNode_Unique": {
+      "calls": 3,
+      "total_ms": 4275.64,
+      "max_ms": 2600.92
+    },
+    "TriggerNode_GroupBy": {
+      "calls": 24,
+      "total_ms": 126.17,
+      "max_ms": 29.37
+    },
+    "TriggerNode_RunningTotal": {
+      "calls": 3,
+      "total_ms": 9.99,
+      "max_ms": 6.47
+    },
+    "TriggerNode_Transpose": {
+      "calls": 6,
+      "total_ms": 8.18,
+      "max_ms": 4.28
+    },
+    "TriggerNode_FileOutput": {
+      "calls": 48,
+      "total_ms": 23.0,
+      "max_ms": 9.18
+    },
+    "TriggerNode_Sort": {
+      "calls": 14,
+      "total_ms": 63.5,
+      "max_ms": 28.53
+    },
+    "TriggerNode_Filter": {
+      "calls": 12,
+      "total_ms": 14024.18,
+      "max_ms": 2596.11
+    },
+    "TriggerNode_Formula": {
+      "calls": 23,
+      "total_ms": 11930.88,
+      "max_ms": 1494.89
+    },
+    "TriggerNode_Split": {
+      "calls": 2,
+      "total_ms": 20.23,
+      "max_ms": 18.87
+    },
+    "TriggerNode_Union": {
+      "calls": 28,
+      "total_ms": 21987.78,
+      "max_ms": 2648.03
+    },
+    "TriggerNode_Join": {
+      "calls": 18,
+      "total_ms": 30638.75,
+      "max_ms": 2660.36
+    },
+    "TriggerNode_Cleansing": {
+      "calls": 6,
+      "total_ms": 14667.11,
+      "max_ms": 2533.47
+    },
+    "TriggerNode_NormalizeColumns": {
+      "calls": 2,
+      "total_ms": 4883.51,
+      "max_ms": 2453.3
+    }
+  },
+  "node_eval_self": {
+    "TriggerNode_FileInput": {
+      "calls": 12,
+      "total_ms": 57.65,
+      "max_ms": 32.72
+    },
+    "TriggerNode_Select": {
+      "calls": 41,
+      "total_ms": 49.95,
+      "max_ms": 14.76
+    },
+    "TriggerNode_Unique": {
+      "calls": 3,
+      "total_ms": 17.32,
+      "max_ms": 12.5
+    },
+    "TriggerNode_GroupBy": {
+      "calls": 24,
+      "total_ms": 13.05,
+      "max_ms": 3.08
+    },
+    "TriggerNode_RunningTotal": {
+      "calls": 3,
+      "total_ms": 1.13,
+      "max_ms": 0.68
+    },
+    "TriggerNode_Transpose": {
+      "calls": 6,
+      "total_ms": 4.29,
+      "max_ms": 2.64
+    },
+    "TriggerNode_FileOutput": {
+      "calls": 48,
+      "total_ms": 23.0,
+      "max_ms": 9.18
+    },
+    "TriggerNode_Sort": {
+      "calls": 14,
+      "total_ms": 6.74,
+      "max_ms": 1.07
+    },
+    "TriggerNode_Filter": {
+      "calls": 12,
+      "total_ms": 701.24,
+      "max_ms": 596.28
+    },
+    "TriggerNode_Formula": {
+      "calls": 23,
+      "total_ms": 2581.97,
+      "max_ms": 262.75
+    },
+    "TriggerNode_Split": {
+      "calls": 2,
+      "total_ms": 2.34,
+      "max_ms": 1.24
+    },
+    "TriggerNode_Union": {
+      "calls": 28,
+      "total_ms": 17.7,
+      "max_ms": 1.34
+    },
+    "TriggerNode_Join": {
+      "calls": 18,
+      "total_ms": 281.82,
+      "max_ms": 36.01
+    },
+    "TriggerNode_Cleansing": {
+      "calls": 6,
+      "total_ms": 199.19,
+      "max_ms": 94.44
+    },
+    "TriggerNode_NormalizeColumns": {
+      "calls": 2,
+      "total_ms": 1.05,
+      "max_ms": 0.69
+    }
+  },
+  "recomputes_by_pass": {
+    "before_eval": {
+      "TriggerNode_FileInput": 6,
+      "TriggerNode_Select": 14,
+      "TriggerNode_Unique": 1,
+      "TriggerNode_GroupBy": 8,
+      "TriggerNode_RunningTotal": 1,
+      "TriggerNode_Transpose": 2
+    },
+    "first": {
+      "TriggerNode_FileInput": 6,
+      "TriggerNode_Select": 20,
+      "TriggerNode_Unique": 2,
+      "TriggerNode_GroupBy": 8,
+      "TriggerNode_RunningTotal": 1,
+      "TriggerNode_Transpose": 2,
+      "TriggerNode_FileOutput": 27,
+      "TriggerNode_Sort": 7,
+      "TriggerNode_Filter": 9,
+      "TriggerNode_Formula": 15,
+      "TriggerNode_Split": 1,
+      "TriggerNode_Union": 19,
+      "TriggerNode_Join": 13,
+      "TriggerNode_Cleansing": 6,
+      "TriggerNode_NormalizeColumns": 2
+    },
+    "union_settle": {
+      "TriggerNode_Select": 7,
+      "TriggerNode_GroupBy": 8,
+      "TriggerNode_RunningTotal": 1,
+      "TriggerNode_Transpose": 2,
+      "TriggerNode_FileOutput": 21,
+      "TriggerNode_Sort": 7,
+      "TriggerNode_Filter": 3,
+      "TriggerNode_Formula": 8,
+      "TriggerNode_Split": 1,
+      "TriggerNode_Union": 9,
+      "TriggerNode_Join": 5
+    }
+  },
+  "dock_phases": {
+    "dock_clear": {
+      "calls": 106,
+      "total_ms": 2.43,
+      "max_ms": 0.06
+    },
+    "dock_layout": {
+      "calls": 105,
+      "total_ms": 422.73,
+      "max_ms": 69.21
+    },
+    "dock_bind": {
+      "calls": 105,
+      "total_ms": 44.27,
+      "max_ms": 4.33
+    }
+  },
+  "dock_selection": {
+    "TriggerNode_FileInput": {
+      "calls": 6,
+      "total_ms": 63.75,
+      "max_ms": 23.71
+    },
+    "TriggerNode_Select": {
+      "calls": 14,
+      "total_ms": 37.5,
+      "max_ms": 9.19
+    },
+    "TriggerNode_Cleansing": {
+      "calls": 3,
+      "total_ms": 99.18,
+      "max_ms": 74.3
+    },
+    "TriggerNode_Filter": {
+      "calls": 6,
+      "total_ms": 26.91,
+      "max_ms": 5.21
+    },
+    "TriggerNode_NormalizeColumns": {
+      "calls": 1,
+      "total_ms": 2.91,
+      "max_ms": 2.91
+    },
+    "TriggerNode_Unique": {
+      "calls": 1,
+      "total_ms": 2.33,
+      "max_ms": 2.33
+    },
+    "TriggerNode_Formula": {
+      "calls": 14,
+      "total_ms": 156.86,
+      "max_ms": 31.81
+    },
+    "TriggerNode_Join": {
+      "calls": 5,
+      "total_ms": 32.97,
+      "max_ms": 7.39
+    },
+    "TriggerNode_Union": {
+      "calls": 9,
+      "total_ms": 8.0,
+      "max_ms": 1.02
+    },
+    "TriggerNode_Sort": {
+      "calls": 7,
+      "total_ms": 28.26,
+      "max_ms": 19.82
+    },
+    "TriggerNode_GroupBy": {
+      "calls": 8,
+      "total_ms": 49.75,
+      "max_ms": 22.57
+    },
+    "TriggerNode_RunningTotal": {
+      "calls": 1,
+      "total_ms": 20.1,
+      "max_ms": 20.1
+    },
+    "TriggerNode_FileOutput": {
+      "calls": 27,
+      "total_ms": 36.66,
+      "max_ms": 2.49
+    },
+    "TriggerNode_Transpose": {
+      "calls": 2,
+      "total_ms": 4.61,
+      "max_ms": 2.56
+    },
+    "TriggerNode_Split": {
+      "calls": 1,
+      "total_ms": 0.91,
+      "max_ms": 0.91
+    }
+  },
+  "output_snapshot": {
+    "2667100539792": {
+      "type": "TriggerNode_FileInput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            8,
+            4
+          ],
+          "schema": {
+            "channel_id": "String",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String"
+          },
+          "sha256": "d23b7c0b8807b19d371111141cc31db791096e6ab481c2dfc053ffdc0eb6e562"
+        }
+      ]
+    },
+    "2667100541712": {
+      "type": "TriggerNode_FileInput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            40800,
+            15
+          ],
+          "schema": {
+            " Order ID ": "String",
+            "Customer_Id": "String",
+            "PRODUCT_ID": "String",
+            "supplier id": "String",
+            "Channel ID": "String",
+            "Currency": "String",
+            "Order TS": "String",
+            "Quantity": "String",
+            "unit_price_local": "String",
+            "Discount Pct": "String",
+            "tax_local": "String",
+            "shipping_local": "String",
+            "Status": "String",
+            "Payment Method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "e4b93f8f4482fa3a0791b79c9843ea84274badc57517661c5844f293d174fa5d"
+        }
+      ]
+    },
+    "2667100549232": {
+      "type": "TriggerNode_FileInput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4000,
+            10
+          ],
+          "schema": {
+            "customer_id": "String",
+            "email": "String",
+            "full_name": "String",
+            "signup_date": "String",
+            "country": "String",
+            "region": "String",
+            "currency": "String",
+            "segment": "String",
+            "age_band": "String",
+            "loyalty_tier": "String"
+          },
+          "sha256": "df2624900ba79fef4bf7b119e24b98ec33680d49d29c60ab459bd7a74ba64838"
+        }
+      ]
+    },
+    "2667100543472": {
+      "type": "TriggerNode_FileInput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            400,
+            9
+          ],
+          "schema": {
+            "product_id": "String",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "String",
+            "unit_cost": "String",
+            "launch_date": "String"
+          },
+          "sha256": "a249c9488b3d53c75702752ab205e85285cbd113446129889d2f6af3244c1c4c"
+        }
+      ]
+    },
+    "2667100647376": {
+      "type": "TriggerNode_FileInput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            5
+          ],
+          "schema": {
+            "supplier_id": "String",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "String",
+            "reliability_score": "String"
+          },
+          "sha256": "7dd72585a9d21a7975e9b391aaf45a0153ded2ad7997e571ef68639797071b91"
+        }
+      ]
+    },
+    "2667100865712": {
+      "type": "TriggerNode_FileInput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            3
+          ],
+          "schema": {
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "String"
+          },
+          "sha256": "0e2e68baaa95c6d41a0f5691f4cebfeb98fa376cc5140e74abc35059bc67397b"
+        }
+      ]
+    },
+    "2667100707312": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            40800,
+            15
+          ],
+          "schema": {
+            " Order ID ": "String",
+            "Customer_Id": "Int64",
+            "PRODUCT_ID": "Int64",
+            "supplier id": "Int64",
+            "Channel ID": "Int64",
+            "Currency": "String",
+            "Order TS": "Datetime(time_unit='us', time_zone=None)",
+            "Quantity": "Int64",
+            "unit_price_local": "Float64",
+            "Discount Pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "Status": "String",
+            "Payment Method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "f08ab90cc7dd852964c58ffd81a4dd5b61566d340bb576af8aee6b37bf80722e"
+        }
+      ]
+    },
+    "2667100716752": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            8,
+            4
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String"
+          },
+          "sha256": "08c5d66cc181565d9a603a276f9548fda9e619c4a362f5de893df10c5d9b7fd1"
+        }
+      ]
+    },
+    "2667100714672": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4000,
+            10
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String"
+          },
+          "sha256": "16cf248e3e6a1deee9b881c77a52983b82e00108e02b506a9cdf7894f2f109cc"
+        }
+      ]
+    },
+    "2667100711312": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            400,
+            9
+          ],
+          "schema": {
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date"
+          },
+          "sha256": "8a9acbc1138a46880e6e063771bf27f6e629f7f55e7958271ae44d1afb247536"
+        }
+      ]
+    },
+    "2667100873712": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            5
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "sha256": "e9d10e3a287d9832505c1e50f948f9e6a239823dd5690e9d04426490918cbe8f"
+        }
+      ]
+    },
+    "2667248191760": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            3
+          ],
+          "schema": {
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64"
+          },
+          "sha256": "2a0a5445f131277de1479776d2135f7c29f7e8b4aafa943e9a4d10f4ce82a7db"
+        }
+      ]
+    },
+    "2667252787280": {
+      "type": "TriggerNode_Cleansing",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            40800,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "84363f9a82096c9ba71cd7c92917ee4f91e01e6632acd60de4a6b5b2eb1780c9"
+        }
+      ]
+    },
+    "2206727594032": {
+      "type": "TriggerNode_Cleansing",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            39822,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "67f6f73094c652c0afff2fb779bc4ef71e63c5bfa05fe07e79956e2cce694bb0"
+        }
+      ]
+    },
+    "2699443889456": {
+      "type": "TriggerNode_Filter",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            39030,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "ddf2978953cd034bb5e81842050fe75510c080fe7815ea89314958a58991f6a0"
+        },
+        {
+          "shape": [
+            792,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "83e1c52b8936f3115cb15f166177f77ac956d6b766c13f0c997bd4d9b671d10d"
+        }
+      ]
+    },
+    "2699443583920": {
+      "type": "TriggerNode_Filter",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            35711,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "2e18e988f191b947c594a8d9cbf38d8c541ff76352aecea40d9bf0bcde8170dd"
+        },
+        {
+          "shape": [
+            3319,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "b1b1b3fbde78499fa0dd773664069a3232b485199f87c610a0798b688eaf1fc2"
+        }
+      ]
+    },
+    "2699443578640": {
+      "type": "TriggerNode_Filter",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            35412,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "8f3d7099d17db9ee3198c0fb32eebe87999923bef1c3f8144c49a960ef6b9b9c"
+        },
+        {
+          "shape": [
+            138,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "c95df31ad38e4aa2f5feaea5554140f557d3419c293dd990bad8a9a0e3d70209"
+        }
+      ]
+    },
+    "2824864141616": {
+      "type": "TriggerNode_NormalizeColumns",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            40800,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "33218ecbfa44d4a38f5fc2efb7b0c082d43350d3a80f61ec1b3b05a7ecf49a01"
+        }
+      ]
+    },
+    "2259315345840": {
+      "type": "TriggerNode_Unique",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "4d05b248cbac630a88f77531312c8f39a22c0bbb02474b9597a7133c647cd83e"
+        },
+        {
+          "shape": [
+            1411,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "d5e8a7727289cc44627c97b9df0c6acf255a62a71b56d3e139c775ecc0aa01db"
+        }
+      ]
+    },
+    "2259284024432": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            3
+          ],
+          "schema": {
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64"
+          },
+          "sha256": "7bbcc12dd14b25fef55c10ec6527d1233ec13bc6051f7103bc6238d0253c43b1"
+        }
+      ]
+    },
+    "2607119136912": {
+      "type": "TriggerNode_Join",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            283,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "e7368e86ee6c262f644935aed7703cbe29aaa19f003f450088a011e6c7a5e947"
+        },
+        {
+          "shape": [
+            34419,
+            24
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "loyalty_tier": "String",
+            "region": "String",
+            "segment": "String",
+            "signup_date": "Date",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "3f0226fabdc58311371d5095b34eb190beba36b2cba746aa4920c3f00b3b03c9"
+        },
+        {
+          "shape": [
+            1,
+            10
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String"
+          },
+          "sha256": "5ef0b42a4cc872b745bf9f0990030ba7114f694f32c0538604e725267b4bab2f"
+        }
+      ]
+    },
+    "2607119194288": {
+      "type": "TriggerNode_Join",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            137,
+            24
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "loyalty_tier": "String",
+            "region": "String",
+            "segment": "String",
+            "signup_date": "Date",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "25346f3912a037e714a82d5e6c4753735000a7c70759f564f986487866eb5bed"
+        },
+        {
+          "shape": [
+            34565,
+            32
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "brand": "String",
+            "category": "String",
+            "launch_date": "Date",
+            "product_name": "String",
+            "sku": "String",
+            "subcategory": "String",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "a87f2ceac2b9720f3ba521383a56e51d4c33a973213a92d23dd3d8dcbf9ad7fb"
+        },
+        {
+          "shape": [
+            0,
+            9
+          ],
+          "schema": {
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date"
+          },
+          "sha256": "32efeff302b3a75c4757aed785444b1e85e57b6f8447a6d337a687dd73bcd467"
+        }
+      ]
+    },
+    "2607119191728": {
+      "type": "TriggerNode_Join",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            0,
+            32
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "brand": "String",
+            "category": "String",
+            "launch_date": "Date",
+            "product_name": "String",
+            "sku": "String",
+            "subcategory": "String",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "a4be641944dc021da7fc2d336eb124d1e81e41481827c89ef82a8960f2fc7f6c"
+        },
+        {
+          "shape": [
+            34702,
+            36
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "supplier_name": "String",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "6eeeb2489e305ed9f7dcc28a5bdab71677d7a537761aa9856e50d97a4b0b3ab2"
+        },
+        {
+          "shape": [
+            0,
+            5
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "sha256": "1917a19a50879e20317f011ffab2ed86a15acf3a2fcef860d292f7872183ad38"
+        }
+      ]
+    },
+    "2607119123792": {
+      "type": "TriggerNode_Join",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            0,
+            36
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "supplier_name": "String",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "22ff5190f4290eedabbac0e69dad2967bfdc3b323bc0dfb1624b4b89c16bfb30"
+        },
+        {
+          "shape": [
+            34702,
+            38
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "channel_group": "String",
+            "channel_name": "String",
+            "is_digital": "String",
+            "order_id": "String"
+          },
+          "sha256": "5f7f6908a8d9ee58e363d8eea1d4ed7f1010d4b7e42dd0aec1d40263d8e93967"
+        },
+        {
+          "shape": [
+            0,
+            4
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String"
+          },
+          "sha256": "5c9b185380343df0635aad2add8b37d6591fa65bcbb99e0b30dae9a2dc30be22"
+        }
+      ]
+    },
+    "2607193616816": {
+      "type": "TriggerNode_Join",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            0,
+            39
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "channel_group": "String",
+            "channel_name": "String",
+            "is_digital": "String",
+            "order_id": "String",
+            "customer_name": "String"
+          },
+          "sha256": "21884dcf06437f8e7983d03569f0af493c2615674ad029aad89b4211e8d617a9"
+        },
+        {
+          "shape": [
+            34702,
+            40
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String"
+          },
+          "sha256": "d571e98fb8059c694a8771d72a49c42934965dca389caeaa9d16e90520cdfc10"
+        },
+        {
+          "shape": [
+            0,
+            3
+          ],
+          "schema": {
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64"
+          },
+          "sha256": "81260f126afd9a42859915bc57018857aa16d07d49ed0547489d68030a705993"
+        }
+      ]
+    },
+    "2607196374192": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            46
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64"
+          },
+          "sha256": "1251ea0dcb990ddf53e2d2084fe4e36f21d48b4dad182c1e123d4ff486a7346c"
+        }
+      ]
+    },
+    "2607193611536": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            51
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64"
+          },
+          "sha256": "ca5990ea5c7b8d51db47052eaf737cfedc1770714129b01ab23734d5c5c9ee07"
+        }
+      ]
+    },
+    "2433019852784": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            24
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "loyalty_tier": "String",
+            "region": "String",
+            "segment": "String",
+            "signup_date": "Date",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "17eaf5faf07f1a7e9e95cd7531720d2ec67c9b7eab68e75e1d6eced8f77b3e3c"
+        }
+      ]
+    },
+    "2433020497584": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            32
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "brand": "String",
+            "category": "String",
+            "launch_date": "Date",
+            "product_name": "String",
+            "sku": "String",
+            "subcategory": "String",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "c8055d399feb341a1a110edade2e1bb08a6405f69715568cb60aa2557fa1e784"
+        }
+      ]
+    },
+    "2433832559440": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            36
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "supplier_name": "String",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "6eeeb2489e305ed9f7dcc28a5bdab71677d7a537761aa9856e50d97a4b0b3ab2"
+        }
+      ]
+    },
+    "2433832553680": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            39
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "channel_group": "String",
+            "channel_name": "String",
+            "is_digital": "String",
+            "order_id": "String",
+            "customer_name": "String"
+          },
+          "sha256": "aeed830a6ab492f673b18ceec9cdd3d1cbb44f295797700bf39c012ad8fe66be"
+        }
+      ]
+    },
+    "2431667623632": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            41
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String"
+          },
+          "sha256": "6cd060c62b90802cc7c6cb3a7c24a45a54fca9721cbb48f6cf277f482cfadf26"
+        }
+      ]
+    },
+    "2074988497808": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            54
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64"
+          },
+          "sha256": "43362f608716414d427355f555395164e942d7c8356676b91597a040d946fe32"
+        }
+      ]
+    },
+    "2074988703216": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            59
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String"
+          },
+          "sha256": "9b90fa3edea134d9dfcb48ae54d45cf0a755056350da45dc5fbc5c83611bfeab"
+        }
+      ]
+    },
+    "2073979223760": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "77b371c6d3e01bde1fb5b7dfb3f77f6f095d4bdd758830594a24db4b151428bb"
+        }
+      ]
+    },
+    "2075644041232": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            24,
+            4
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "70a1b8982ebb14587e871c2fa5e251174ecdf5f0dd0f4312cda6d10b16725f21"
+        }
+      ]
+    },
+    "2425882315824": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            24,
+            4
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "686a5f3339be512309c255805dd5716ea77d0b98261ffd53b75690515ca898ce"
+        }
+      ]
+    },
+    "2576898522352": {
+      "type": "TriggerNode_RunningTotal",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            24,
+            5
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64",
+            "RunTot_revenue_usd": "Float64"
+          },
+          "sha256": "3c268a5dcb89c194956085b55b5785338ebe3143df3464f558acfee00086633c"
+        }
+      ]
+    },
+    "2576898093168": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            24,
+            5
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64",
+            "cumulative_revenue_usd": "Float64"
+          },
+          "sha256": "6454c81122722fda9bdfddcaa960b2e6515bd0d0e2dc94ed415040c401970768"
+        }
+      ]
+    },
+    "2576898544400": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            24,
+            5
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64",
+            "cumulative_revenue_usd": "Float64"
+          },
+          "sha256": "6454c81122722fda9bdfddcaa960b2e6515bd0d0e2dc94ed415040c401970768"
+        }
+      ]
+    },
+    "2576898555280": {
+      "type": "TriggerNode_Transpose",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            72,
+            3
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "Name": "String",
+            "Value": "Float64"
+          },
+          "sha256": "f021e5cd89afd4e34f0bc46a829ebeb75e38b6454a27bd3d459b0be4b0cc155f"
+        }
+      ]
+    },
+    "2577542549008": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            72,
+            3
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "metric": "String",
+            "value": "Float64"
+          },
+          "sha256": "82f382eed428e6ba8d32066e3463c594f0ddbdf9e019c3596a87b196a6450ba0"
+        }
+      ]
+    },
+    "2576898090768": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            72,
+            3
+          ],
+          "schema": {
+            "order_year_month": "String",
+            "metric": "String",
+            "value": "Float64"
+          },
+          "sha256": "82f382eed428e6ba8d32066e3463c594f0ddbdf9e019c3596a87b196a6450ba0"
+        }
+      ]
+    },
+    "2577497388560": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            9,
+            4
+          ],
+          "schema": {
+            "category": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "c5f284e0d8834451ff254af5d4b83ce32acf175c8e9f962f1a396fa1b3fc9376"
+        }
+      ]
+    },
+    "2577520390736": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            9,
+            4
+          ],
+          "schema": {
+            "category": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "975ed13726285578b3b2038a0b56130ba7147c403c01d95cb1dcb3f7b43af375"
+        }
+      ]
+    },
+    "2576898516432": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            9,
+            4
+          ],
+          "schema": {
+            "category": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "975ed13726285578b3b2038a0b56130ba7147c403c01d95cb1dcb3f7b43af375"
+        }
+      ]
+    },
+    "2577542556688": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            21,
+            5
+          ],
+          "schema": {
+            "region": "String",
+            "channel_group": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "46ff225ee7f60571fb5d2c0e464995aa357232fe3a11341e818f99ed3bdc1e66"
+        }
+      ]
+    },
+    "2574905550448": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            21,
+            5
+          ],
+          "schema": {
+            "region": "String",
+            "channel_group": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "46ff225ee7f60571fb5d2c0e464995aa357232fe3a11341e818f99ed3bdc1e66"
+        }
+      ]
+    },
+    "2574905553968": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            21,
+            5
+          ],
+          "schema": {
+            "region": "String",
+            "channel_group": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "129a957548c65259a561d4cf0ec6474bdf6c02061990fc074e2d46bc41b9f8be"
+        }
+      ]
+    },
+    "2577546018512": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            14,
+            5
+          ],
+          "schema": {
+            "segment": "String",
+            "risk_band": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "ea3ae64545a6ea4ce2deec2477e67ce7f0306543f9c507447fb2987fc2075cb6"
+        }
+      ]
+    },
+    "2577546429616": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4234,
+            3
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "revenue_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "95e479b49b88c2efbe863b30270beedcf0390625d55c1ec0d83b5aa326190f4c"
+        }
+      ]
+    },
+    "2577546431376": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            31,
+            3
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "revenue_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "9f817a9170574d9d43978030a5d8100cb83dac52f4030828a067fb60f486bf74"
+        }
+      ]
+    },
+    "2577546444176": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            31,
+            3
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "revenue_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "9f817a9170574d9d43978030a5d8100cb83dac52f4030828a067fb60f486bf74"
+        }
+      ]
+    },
+    "2577520381936": {
+      "type": "TriggerNode_Filter",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            31,
+            3
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "revenue_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "072fa0528fab239d90f63bf77b786bcfa68baf7a1f0f3836d521981397e3e4eb"
+        },
+        {
+          "shape": [
+            4203,
+            3
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "revenue_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "6306f12aec5e4e926fedf96227cbc22457ceb74bdc664af3beef81ccb701624a"
+        }
+      ]
+    },
+    "2577598705776": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            8
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "revenue_per_lead_day": "Float64"
+          },
+          "sha256": "0b08ad60e53fcd78fec1f9e6298833d33b3b98f0716c52d2c8ef31dd5631dd98"
+        }
+      ]
+    },
+    "2577598707376": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            7
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "sha256": "3a3e501feff0c44ea2a9b54fcc0b7d8ba92b0894de0565d495974ea0f4fb5488"
+        }
+      ]
+    },
+    "2577599133200": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            7
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "sha256": "b9308949a4a36e30a0ebe2e19a58c404451445f8f2f9c676118bc930f356d4b0"
+        }
+      ]
+    },
+    "2576898550000": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            8
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "revenue_per_lead_day": "Float64"
+          },
+          "sha256": "0b08ad60e53fcd78fec1f9e6298833d33b3b98f0716c52d2c8ef31dd5631dd98"
+        }
+      ]
+    },
+    "2577516289456": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            4
+          ],
+          "schema": {
+            "currency": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "usd_rate": "Float64"
+          },
+          "sha256": "778d352f196a999cef739d8191ab3f67d961250cd942c4e05684972119a5a888"
+        }
+      ]
+    },
+    "2577610916240": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            4
+          ],
+          "schema": {
+            "currency": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "usd_rate": "Float64"
+          },
+          "sha256": "778d352f196a999cef739d8191ab3f67d961250cd942c4e05684972119a5a888"
+        }
+      ]
+    },
+    "2577599124080": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            4
+          ],
+          "schema": {
+            "currency": "String",
+            "revenue_usd": "Float64",
+            "orders": "Int64",
+            "usd_rate": "Float64"
+          },
+          "sha256": "a1899f30bbe87bf39b255fd9ae77f07fcac640cbc67d9b250c96cbd4de7ba1e6"
+        }
+      ]
+    },
+    "2577546008112": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            9,
+            2
+          ],
+          "schema": {
+            "metric": "String",
+            "value": "Float64"
+          },
+          "sha256": "6ab5d8f2a587735f23da18c8e52951bb48a9e8763a2c3293fcfa695a651b5afe"
+        }
+      ]
+    },
+    "2577504582416": {
+      "type": "TriggerNode_GroupBy",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            1,
+            8
+          ],
+          "schema": {
+            "clean_orders": "Int64",
+            "net_revenue_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "returned_orders": "Int64",
+            "distinct_customers": "Int64",
+            "distinct_products": "Int64",
+            "gross_revenue_usd_raw": "Float64",
+            "high_risk_orders": "Int64"
+          },
+          "sha256": "1c6bf138076f4752e473a6e35f40a112da09af9761ccf62ca098e9f366a926a4"
+        }
+      ]
+    },
+    "2577504571056": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            64
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "Boolean",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_id": "String",
+            "order_ts": "String",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "customer_name": "String",
+            "status_clean": "String",
+            "gross_revenue_usd_raw": "Float64",
+            "is_high_risk": "Int64"
+          },
+          "sha256": "ef3c5ccd12ac05e30eba86f085ae50004e8a809cfe91d37d3d41c8aa2fa0052d"
+        }
+      ]
+    },
+    "2664157223248": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            1,
+            9
+          ],
+          "schema": {
+            "clean_orders": "Int64",
+            "gross_revenue_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "returned_orders": "Int64",
+            "distinct_customers": "Int64",
+            "distinct_products": "Int64",
+            "high_risk_orders": "Int64",
+            "margin_pct": "Float64"
+          },
+          "sha256": "5efdea916e6b635f093855b99c4f4b3d4c175d4563162a2469868c5fbe7b6243"
+        }
+      ]
+    },
+    "2664158011760": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            1,
+            8
+          ],
+          "schema": {
+            "clean_orders": "Int64",
+            "gross_revenue_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "returned_orders": "Int64",
+            "distinct_customers": "Int64",
+            "distinct_products": "Int64",
+            "high_risk_orders": "Int64"
+          },
+          "sha256": "bfe82d47e68d5949021e6a36ad9de1de8703e895a50f95e47246ccba73795171"
+        }
+      ]
+    },
+    "1692279061904": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "Boolean",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_id": "String",
+            "order_ts": "String",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "customer_name": "String",
+            "status_clean": "String"
+          },
+          "sha256": "0485a7d581dcc64a89a7ade8c3e0ddace0903f84938e76af8014b6fdcc4e0d21"
+        }
+      ]
+    },
+    "1866593396176": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            1,
+            9
+          ],
+          "schema": {
+            "clean_orders": "Int64",
+            "gross_revenue_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "returned_orders": "Int64",
+            "high_risk_orders": "Int64",
+            "distinct_customers": "Int64",
+            "distinct_products": "Int64"
+          },
+          "sha256": "7df5d8e7e2b7c71f22c164699757cd9a419645ed09b51fcf6e776e2e80b6ba57"
+        }
+      ]
+    },
+    "1864102966480": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            14,
+            5
+          ],
+          "schema": {
+            "segment": "String",
+            "risk_band": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "f12eeef9c622181d3318e8ee777b2388f9976c55397f2b1a8f8a004d9313e1c0"
+        }
+      ]
+    },
+    "1866593386736": {
+      "type": "TriggerNode_Sort",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            14,
+            5
+          ],
+          "schema": {
+            "segment": "String",
+            "risk_band": "String",
+            "revenue_usd": "Float64",
+            "margin_usd": "Float64",
+            "orders": "Int64"
+          },
+          "sha256": "f12eeef9c622181d3318e8ee777b2388f9976c55397f2b1a8f8a004d9313e1c0"
+        }
+      ]
+    },
+    "2744854855056": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            24
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "loyalty_tier": "String",
+            "region": "String",
+            "segment": "String",
+            "signup_date": "Date",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "17eaf5faf07f1a7e9e95cd7531720d2ec67c9b7eab68e75e1d6eced8f77b3e3c"
+        }
+      ]
+    },
+    "2744854848336": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            32
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "brand": "String",
+            "category": "String",
+            "launch_date": "Date",
+            "product_name": "String",
+            "sku": "String",
+            "subcategory": "String",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "c8055d399feb341a1a110edade2e1bb08a6405f69715568cb60aa2557fa1e784"
+        }
+      ]
+    },
+    "2745368505040": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            36
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "supplier_name": "String",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "6eeeb2489e305ed9f7dcc28a5bdab71677d7a537761aa9856e50d97a4b0b3ab2"
+        }
+      ]
+    },
+    "2745368494800": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            39
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_id": "Int64",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "channel_group": "String",
+            "channel_name": "String",
+            "is_digital": "String",
+            "order_id": "String",
+            "customer_name": "String"
+          },
+          "sha256": "aeed830a6ab492f673b18ceec9cdd3d1cbb44f295797700bf39c012ad8fe66be"
+        }
+      ]
+    },
+    "2824864700000": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            41
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String"
+          },
+          "sha256": "6cd060c62b90802cc7c6cb3a7c24a45a54fca9721cbb48f6cf277f482cfadf26"
+        }
+      ]
+    },
+    "1752844827568": {
+      "type": "TriggerNode_Cleansing",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            40800,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "f07815228a966f66f575f918997c3eacbcaf0ea2d90647c575b4d4109a60097e"
+        }
+      ]
+    },
+    "1757911060144": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "4d05b248cbac630a88f77531312c8f39a22c0bbb02474b9597a7133c647cd83e"
+        }
+      ]
+    },
+    "2907286822320": {
+      "type": "TriggerNode_Transpose",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            9,
+            2
+          ],
+          "schema": {
+            "Name": "String",
+            "Value": "Float64"
+          },
+          "sha256": "c7cd6f1be9fc1efd48e599024b95651612325b4bb3b043bde2dab3b374760f31"
+        }
+      ]
+    },
+    "1561918502416": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            9,
+            2
+          ],
+          "schema": {
+            "metric": "String",
+            "value": "Float64"
+          },
+          "sha256": "6ab5d8f2a587735f23da18c8e52951bb48a9e8763a2c3293fcfa695a651b5afe"
+        }
+      ]
+    },
+    "1564690265616": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "4d05b248cbac630a88f77531312c8f39a22c0bbb02474b9597a7133c647cd83e"
+        }
+      ]
+    },
+    "9000000000003": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            792,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "83e1c52b8936f3115cb15f166177f77ac956d6b766c13f0c997bd4d9b671d10d"
+        }
+      ]
+    },
+    "9000000000006": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            3319,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "b1b1b3fbde78499fa0dd773664069a3232b485199f87c610a0798b688eaf1fc2"
+        }
+      ]
+    },
+    "9000000000009": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            138,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "c95df31ad38e4aa2f5feaea5554140f557d3419c293dd990bad8a9a0e3d70209"
+        }
+      ]
+    },
+    "9000000000012": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            1411,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "d5e8a7727289cc44627c97b9df0c6acf255a62a71b56d3e139c775ecc0aa01db"
+        }
+      ]
+    },
+    "9000000000015": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            283,
+            15
+          ],
+          "schema": {
+            "order_id": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "currency": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "payment_method": "String",
+            "is_returned": "String"
+          },
+          "sha256": "e7368e86ee6c262f644935aed7703cbe29aaa19f003f450088a011e6c7a5e947"
+        }
+      ]
+    },
+    "9000000000018": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            137,
+            24
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "currency": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_returned": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "quantity": "Int64",
+            "shipping_local": "Float64",
+            "status": "String",
+            "supplier_id": "Int64",
+            "tax_local": "Float64",
+            "unit_price_local": "Float64",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "loyalty_tier": "String",
+            "region": "String",
+            "segment": "String",
+            "signup_date": "Date",
+            "customer_name": "String",
+            "order_id": "String"
+          },
+          "sha256": "25346f3912a037e714a82d5e6c4753735000a7c70759f564f986487866eb5bed"
+        }
+      ]
+    },
+    "9000000000022": {
+      "type": "TriggerNode_Select",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            62
+          ],
+          "schema": {
+            "order_id": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "customer_country": "String",
+            "region": "String",
+            "segment": "String",
+            "loyalty_tier": "String",
+            "currency": "String",
+            "usd_rate": "Float64",
+            "status": "String",
+            "status_clean": "String",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "net_revenue_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "is_returned": "Boolean",
+            "is_bulk": "Boolean",
+            "country": "String",
+            "customer_age_band": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "is_digital": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "payment_method": "String",
+            "product_name": "String",
+            "reliability_score": "Float64",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "currency_name": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "unit_price_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64"
+          },
+          "sha256": "3642fe7d8a5bf76c751f3f8c64e916b839c4c03aba7c8e6fcc5ec20c1f202d21"
+        }
+      ]
+    },
+    "9000000000025": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            34702,
+            62
+          ],
+          "schema": {
+            "order_id": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "customer_id": "Int64",
+            "product_id": "Int64",
+            "supplier_id": "Int64",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "customer_country": "String",
+            "region": "String",
+            "segment": "String",
+            "loyalty_tier": "String",
+            "currency": "String",
+            "usd_rate": "Float64",
+            "status": "String",
+            "status_clean": "String",
+            "quantity": "Int64",
+            "unit_price_local": "Float64",
+            "discount_pct": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "net_revenue_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "is_returned": "Boolean",
+            "is_bulk": "Boolean",
+            "country": "String",
+            "customer_age_band": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "is_digital": "String",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "payment_method": "String",
+            "product_name": "String",
+            "reliability_score": "Float64",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "currency_name": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "unit_price_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64"
+          },
+          "sha256": "3642fe7d8a5bf76c751f3f8c64e916b839c4c03aba7c8e6fcc5ec20c1f202d21"
+        }
+      ]
+    },
+    "9000000000030": {
+      "type": "TriggerNode_Filter",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            8173,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "25579e926527efa928207953a22a5c75afc45660bdf2b6e991643d3505e06016"
+        },
+        {
+          "shape": [
+            26246,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "63b0df719a04154bee637224a7c3edef73ba7c22160556d33540fdb2401d8806"
+        }
+      ]
+    },
+    "9000000000033": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            8173,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "25579e926527efa928207953a22a5c75afc45660bdf2b6e991643d3505e06016"
+        }
+      ]
+    },
+    "9000000000038": {
+      "type": "TriggerNode_Filter",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            237,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "f3bb82b72a914ff6a052cf20ed47628fa09e598b744c4f9a081537e17e71ba6c"
+        },
+        {
+          "shape": [
+            34465,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "736f22331a41eb798f6835c39a68f5bc3ebe1994bf8e021506e2aa025afd50df"
+        }
+      ]
+    },
+    "9000000000041": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            237,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "f3bb82b72a914ff6a052cf20ed47628fa09e598b744c4f9a081537e17e71ba6c"
+        }
+      ]
+    },
+    "9000000000046": {
+      "type": "TriggerNode_Split",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            27761,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "835e333ac6c0d781a0394e775b3b44b74786a4d14f3f9c3102cc1732bcc41062"
+        },
+        {
+          "shape": [
+            6941,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "0238ee6e5935b5e540be4fb6f841f1e6ee592e3f5b249de1f79c302ba9bd7deb"
+        }
+      ]
+    },
+    "9000000000049": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            27761,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "835e333ac6c0d781a0394e775b3b44b74786a4d14f3f9c3102cc1732bcc41062"
+        }
+      ]
+    },
+    "9000000000052": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            6941,
+            62
+          ],
+          "schema": {
+            "brand": "String",
+            "category": "String",
+            "channel_group": "String",
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "country": "String",
+            "currency": "String",
+            "customer_age_band": "String",
+            "customer_country": "String",
+            "customer_currency": "String",
+            "customer_email": "String",
+            "customer_id": "Int64",
+            "discount_pct": "Float64",
+            "is_digital": "String",
+            "is_returned": "Boolean",
+            "launch_date": "Date",
+            "lead_time_days": "Int64",
+            "loyalty_tier": "String",
+            "order_ts": "Datetime(time_unit='us', time_zone=None)",
+            "payment_method": "String",
+            "product_id": "Int64",
+            "product_name": "String",
+            "quantity": "Int64",
+            "region": "String",
+            "reliability_score": "Float64",
+            "segment": "String",
+            "shipping_local": "Float64",
+            "signup_date": "Date",
+            "sku": "String",
+            "status": "String",
+            "subcategory": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "tax_local": "Float64",
+            "unit_cost": "Float64",
+            "unit_price": "Float64",
+            "unit_price_local": "Float64",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "order_id": "String",
+            "customer_name": "String",
+            "g": "Float64",
+            "gross_local": "Float64",
+            "discount_local": "Float64",
+            "net_local": "Float64",
+            "total_local": "Float64",
+            "unit_price_usd": "Float64",
+            "net_revenue_usd": "Float64",
+            "tax_usd": "Float64",
+            "shipping_usd": "Float64",
+            "total_usd": "Float64",
+            "cogs_usd": "Float64",
+            "gross_margin_usd": "Float64",
+            "margin_pct": "Float64",
+            "order_year": "Int64",
+            "order_month": "Int64",
+            "order_year_month": "String",
+            "is_bulk": "Boolean",
+            "value_band": "String",
+            "risk_score": "Int64",
+            "risk_band": "String",
+            "status_clean": "String"
+          },
+          "sha256": "0238ee6e5935b5e540be4fb6f841f1e6ee592e3f5b249de1f79c302ba9bd7deb"
+        }
+      ]
+    },
+    "9000000000056": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4000,
+            11
+          ],
+          "schema": {
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String",
+            "source_table": "String"
+          },
+          "sha256": "031c39181340ba8ee34bd0e2b1e5b21772c29de146c08d5c09292f51dab42a43"
+        }
+      ]
+    },
+    "9000000000060": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            400,
+            10
+          ],
+          "schema": {
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date",
+            "source_table": "String"
+          },
+          "sha256": "9d7b195dedf2a1578d0127c28212385c419dd9ee859172f8786487ed31d81dca"
+        }
+      ]
+    },
+    "9000000000064": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            60,
+            6
+          ],
+          "schema": {
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "source_table": "String"
+          },
+          "sha256": "b2f6037c8a1b035e75a9fc2c1b37bd816beb608bb82b7ec249363ba70e6ab616"
+        }
+      ]
+    },
+    "9000000000068": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            8,
+            5
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String",
+            "source_table": "String"
+          },
+          "sha256": "02c4900fccf2fada6385a0a14750a4146d873076f8790f38b319962364a98e48"
+        }
+      ]
+    },
+    "9000000000072": {
+      "type": "TriggerNode_Formula",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            20,
+            4
+          ],
+          "schema": {
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64",
+            "source_table": "String"
+          },
+          "sha256": "0575781c4d2cbbe386023ee994fe187b70ac2ad104f899fb1f86fc01176e1214"
+        }
+      ]
+    },
+    "9000000000076": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4400,
+            20
+          ],
+          "schema": {
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date",
+            "source_table": "String",
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String"
+          },
+          "sha256": "7d90ec2bd669f8486fafddcde811b866b40b65637f71a6cbe3395d1b12ba2d57"
+        }
+      ]
+    },
+    "9000000000081": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4460,
+            25
+          ],
+          "schema": {
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date",
+            "source_table": "String",
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "sha256": "9c3e4a23f38bdf6c8a17bb9fd4f93804f0b370d26f67c89fd47e7634d0e9949c"
+        }
+      ]
+    },
+    "9000000000086": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4468,
+            29
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String",
+            "source_table": "String",
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date",
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "sha256": "0da586c40a2f45913ffcc180bd0a783439358d5704fd45aa75d59cd433b2c2ae"
+        }
+      ]
+    },
+    "9000000000091": {
+      "type": "TriggerNode_Union",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4488,
+            32
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String",
+            "source_table": "String",
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date",
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64"
+          },
+          "sha256": "03a83095ba1af9df035be8081e6acf2e1ed51ef00a1bb7c1bda2105bf0404f16"
+        }
+      ]
+    },
+    "9000000000095": {
+      "type": "TriggerNode_FileOutput",
+      "invalid": false,
+      "outputs": [
+        {
+          "shape": [
+            4488,
+            32
+          ],
+          "schema": {
+            "channel_id": "Int64",
+            "channel_name": "String",
+            "channel_group": "String",
+            "is_digital": "String",
+            "source_table": "String",
+            "product_id": "Int64",
+            "sku": "String",
+            "product_name": "String",
+            "category": "String",
+            "subcategory": "String",
+            "brand": "String",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date",
+            "customer_id": "Int64",
+            "customer_email": "String",
+            "customer_name": "String",
+            "signup_date": "Date",
+            "customer_country": "String",
+            "region": "String",
+            "customer_currency": "String",
+            "segment": "String",
+            "customer_age_band": "String",
+            "loyalty_tier": "String",
+            "supplier_id": "Int64",
+            "supplier_name": "String",
+            "country": "String",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64",
+            "currency": "String",
+            "currency_name": "String",
+            "usd_rate": "Float64"
+          },
+          "sha256": "03a83095ba1af9df035be8081e6acf2e1ed51ef00a1bb7c1bda2105bf0404f16"
+        }
+      ]
+    }
+  }
+}

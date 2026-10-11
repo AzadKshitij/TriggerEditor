@@ -273,9 +273,6 @@ class TriggerNode_RunningTotal(TriggerNode):
             input_value = input_values[0][socket_index]
 
             if input_value:
-                self.markDirty(False)
-                self.markInvalid(False)
-
                 self.content.incom_data = input_value.get("data")
                 self.content.incoming_variable = input_value.get("variable_name")
 
@@ -288,7 +285,6 @@ class TriggerNode_RunningTotal(TriggerNode):
                             "variable_name": self.content.variable_name,
                         }
                     ]
-                    self.evalChildren()
                     return self.param
                 else:
                     self.markDirty(True)

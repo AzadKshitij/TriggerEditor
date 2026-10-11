@@ -212,9 +212,6 @@ class TriggerNode_Append(TriggerNode):
             self.grNode.setToolTip("Both inputs must be connected")
             return None
 
-        self.markDirty(False)
-        self.markInvalid(False)
-
         self.content.left_data = left_input.get("data")
         self.content.left_variable = left_input.get("variable_name")
         self.content.right_data = right_input.get("data")
@@ -244,7 +241,6 @@ class TriggerNode_Append(TriggerNode):
             return None
 
         self.grNode.setToolTip("")
-        self.evalChildren()
         self.param = [
             {
                 "data": self.content.data,

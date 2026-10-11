@@ -40,9 +40,12 @@ if exist "build\trigger" rmdir /s /q "build\trigger"
 
 REM Refresh qtpy-nodeeditor from %QTNODEEDITOR_REF%. --reinstall is what makes
 REM "latest" mean latest: without it uv sees the same requirement spec as already
-REM satisfied and keeps whatever was installed previously.
+REM satisfied and keeps whatever was installed previously. --no-build-isolation
+REM is required since nodeeditor's setup.py does `import nodeeditor` to read
+REM __version__, which now imports qtpy (via node_colors_config) - an isolated
+REM build env has no qtpy installed, so the build fails without this flag.
 echo Installing qtpy-nodeeditor from %QTNODEEDITOR_REF%...
-uv pip install --no-deps --reinstall "%QTNODEEDITOR_URL%"
+uv pip install --no-deps --no-build-isolation --reinstall "%QTNODEEDITOR_URL%"
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: failed to install qtpy-nodeeditor from %QTNODEEDITOR_REF%
     exit /b %ERRORLEVEL%

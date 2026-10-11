@@ -504,14 +504,10 @@ class TriggerNode_DynamicRowBuilder(TriggerNode):
         input_value = input_values[this_socket_index][socket_index]
 
         if input_value:
-            self.markDirty(False)
-            self.markInvalid(False)
-
             self.content.incom_data = input_value.get("data")
             self.content.incoming_variable = input_value.get("variable_name")
 
             self.content.process_data()
-            self.evalChildren()
 
             self.param = [
                 {"data": self.content.data, "variable_name": self.content.variable_name}

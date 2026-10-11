@@ -1,0 +1,7631 @@
+{
+  "id": 2667099552528,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2667100539792,
+      "title": "File Input",
+      "pos_x": -657.004211425781,
+      "pos_y": 474.3601074218746,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2667100540912,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/channels.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "channel_id",
+            "dtype": "String"
+          },
+          {
+            "name": "channel_name",
+            "dtype": "String"
+          },
+          {
+            "name": "channel_group",
+            "dtype": "String"
+          },
+          {
+            "name": "is_digital",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 269,
+          "modified_time": 1790587899
+        }
+      },
+      "label_text": "Cgannels",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2667100541712,
+      "title": "File Input",
+      "pos_x": -680.7288818359374,
+      "pos_y": -117.49499511718741,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2667100646896,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/orders.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": " Order ID ",
+            "dtype": "String"
+          },
+          {
+            "name": "Customer_Id",
+            "dtype": "String"
+          },
+          {
+            "name": "PRODUCT_ID",
+            "dtype": "String"
+          },
+          {
+            "name": "supplier id",
+            "dtype": "String"
+          },
+          {
+            "name": "Channel ID",
+            "dtype": "String"
+          },
+          {
+            "name": "Currency",
+            "dtype": "String"
+          },
+          {
+            "name": "Order TS",
+            "dtype": "String"
+          },
+          {
+            "name": "Quantity",
+            "dtype": "String"
+          },
+          {
+            "name": "unit_price_local",
+            "dtype": "String"
+          },
+          {
+            "name": "Discount Pct",
+            "dtype": "String"
+          },
+          {
+            "name": "tax_local",
+            "dtype": "String"
+          },
+          {
+            "name": "shipping_local",
+            "dtype": "String"
+          },
+          {
+            "name": "Status",
+            "dtype": "String"
+          },
+          {
+            "name": "Payment Method",
+            "dtype": "String"
+          },
+          {
+            "name": "is_returned",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 4451624,
+          "modified_time": 1790587899
+        }
+      },
+      "label_text": "Orders",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2667100549232,
+      "title": "File Input",
+      "pos_x": -669.1921386718749,
+      "pos_y": 32.50500488281253,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2667100864592,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/customers.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "customer_id",
+            "dtype": "String"
+          },
+          {
+            "name": "email",
+            "dtype": "String"
+          },
+          {
+            "name": "full_name",
+            "dtype": "String"
+          },
+          {
+            "name": "signup_date",
+            "dtype": "String"
+          },
+          {
+            "name": "country",
+            "dtype": "String"
+          },
+          {
+            "name": "region",
+            "dtype": "String"
+          },
+          {
+            "name": "currency",
+            "dtype": "String"
+          },
+          {
+            "name": "segment",
+            "dtype": "String"
+          },
+          {
+            "name": "age_band",
+            "dtype": "String"
+          },
+          {
+            "name": "loyalty_tier",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 383745,
+          "modified_time": 1790587899
+        }
+      },
+      "label_text": "Customers",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2667100543472,
+      "title": "File Input",
+      "pos_x": -661.8515624999998,
+      "pos_y": 167.94921875,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2667100869232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/products.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "product_id",
+            "dtype": "String"
+          },
+          {
+            "name": "sku",
+            "dtype": "String"
+          },
+          {
+            "name": "product_name",
+            "dtype": "String"
+          },
+          {
+            "name": "category",
+            "dtype": "String"
+          },
+          {
+            "name": "subcategory",
+            "dtype": "String"
+          },
+          {
+            "name": "brand",
+            "dtype": "String"
+          },
+          {
+            "name": "unit_price",
+            "dtype": "String"
+          },
+          {
+            "name": "unit_cost",
+            "dtype": "String"
+          },
+          {
+            "name": "launch_date",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 35853,
+          "modified_time": 1790587899
+        }
+      },
+      "label_text": "Products",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2667100647376,
+      "title": "File Input",
+      "pos_x": -664.8515624999998,
+      "pos_y": 318.94921875,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2667100542352,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/suppliers.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "supplier_id",
+            "dtype": "String"
+          },
+          {
+            "name": "supplier_name",
+            "dtype": "String"
+          },
+          {
+            "name": "country",
+            "dtype": "String"
+          },
+          {
+            "name": "lead_time_days",
+            "dtype": "String"
+          },
+          {
+            "name": "reliability_score",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 2456,
+          "modified_time": 1790587899
+        }
+      },
+      "label_text": "Suppliers",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2667100865712,
+      "title": "File Input",
+      "pos_x": -654.64453125,
+      "pos_y": 639.73046875,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2667100703152,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/fx_rates.csv",
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "currency",
+            "dtype": "String"
+          },
+          {
+            "name": "currency_name",
+            "dtype": "String"
+          },
+          {
+            "name": "usd_rate",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 515,
+          "modified_time": 1790587899
+        }
+      },
+      "label_text": "FX_Rates",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2667100707312,
+      "title": "Select",
+      "pos_x": -497.2991943359374,
+      "pos_y": -115.28015136718753,
+      "inputs": [
+        {
+          "id": 2667100712272,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667100705712,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": " Order ID ",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Customer_Id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "PRODUCT_ID",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "supplier id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Channel ID",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Currency",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Order TS",
+            "dtype": "Datetime",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Quantity",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_price_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Discount Pct",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "tax_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "shipping_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Status",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Payment Method",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "is_returned",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            " Order ID ",
+            "Customer_Id",
+            "PRODUCT_ID",
+            "supplier id",
+            "Channel ID",
+            "Currency",
+            "Order TS",
+            "Quantity",
+            "unit_price_local",
+            "Discount Pct",
+            "tax_local",
+            "shipping_local",
+            "Status",
+            "Payment Method",
+            "is_returned"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "Customer_Id": "Int64",
+            "PRODUCT_ID": "Int64",
+            "supplier id": "Int64",
+            "Channel ID": "Int64",
+            "Order TS": "Datetime",
+            "Quantity": "Int64",
+            "unit_price_local": "Float64",
+            "Discount Pct": "Float64",
+            "tax_local": "Float64",
+            "shipping_local": "Float64"
+          },
+          "column_order": [
+            " Order ID ",
+            "Customer_Id",
+            "PRODUCT_ID",
+            "supplier id",
+            "Channel ID",
+            "Currency",
+            "Order TS",
+            "Quantity",
+            "unit_price_local",
+            "Discount Pct",
+            "tax_local",
+            "shipping_local",
+            "Status",
+            "Payment Method",
+            "is_returned"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2667100716752,
+      "title": "Select",
+      "pos_x": 792.0589447021482,
+      "pos_y": 490.8103942871089,
+      "inputs": [
+        {
+          "id": 2667100703632,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667100712592,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "channel_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "channel_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "channel_group",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "is_digital",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "channel_id",
+            "channel_name",
+            "channel_group",
+            "is_digital"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "channel_id": "Int64"
+          },
+          "column_order": [
+            "channel_id",
+            "channel_name",
+            "channel_group",
+            "is_digital"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2667100714672,
+      "title": "Select",
+      "pos_x": 738.4567260742181,
+      "pos_y": 20.20263671875003,
+      "inputs": [
+        {
+          "id": 2667100701712,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667100709552,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "customer_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "email",
+            "dtype": "String",
+            "rename": "customer_email",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "full_name",
+            "dtype": "String",
+            "rename": "customer_name",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "signup_date",
+            "dtype": "Date",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "country",
+            "dtype": "String",
+            "rename": "customer_country",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "region",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "currency",
+            "dtype": "String",
+            "rename": "customer_currency",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "segment",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "age_band",
+            "dtype": "String",
+            "rename": "customer_age_band",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "loyalty_tier",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "customer_id",
+            "email",
+            "full_name",
+            "signup_date",
+            "country",
+            "region",
+            "currency",
+            "segment",
+            "age_band",
+            "loyalty_tier"
+          ],
+          "rename_mapping": {
+            "email": "customer_email",
+            "full_name": "customer_name",
+            "country": "customer_country",
+            "currency": "customer_currency",
+            "age_band": "customer_age_band"
+          },
+          "dtype_mapping": {
+            "customer_id": "Int64",
+            "signup_date": "Date"
+          },
+          "column_order": [
+            "customer_id",
+            "email",
+            "full_name",
+            "signup_date",
+            "country",
+            "region",
+            "currency",
+            "segment",
+            "age_band",
+            "loyalty_tier"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2667100711312,
+      "title": "Select",
+      "pos_x": 760.5037689208978,
+      "pos_y": 177.73437499999977,
+      "inputs": [
+        {
+          "id": 2667100877392,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667100873552,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "product_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "sku",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "product_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "category",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "subcategory",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "brand",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_price",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_cost",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "launch_date",
+            "dtype": "Date",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "product_id",
+            "sku",
+            "product_name",
+            "category",
+            "subcategory",
+            "brand",
+            "unit_price",
+            "unit_cost",
+            "launch_date"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "product_id": "Int64",
+            "unit_price": "Float64",
+            "unit_cost": "Float64",
+            "launch_date": "Date"
+          },
+          "column_order": [
+            "product_id",
+            "sku",
+            "product_name",
+            "category",
+            "subcategory",
+            "brand",
+            "unit_price",
+            "unit_cost",
+            "launch_date"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2667100873712,
+      "title": "Select",
+      "pos_x": 758.6154937744138,
+      "pos_y": 353.4317016601561,
+      "inputs": [
+        {
+          "id": 2667248194640,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667248194320,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "supplier_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "supplier_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "country",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "lead_time_days",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "reliability_score",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "supplier_id",
+            "supplier_name",
+            "country",
+            "lead_time_days",
+            "reliability_score"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "supplier_id": "Int64",
+            "lead_time_days": "Int64",
+            "reliability_score": "Float64"
+          },
+          "column_order": [
+            "supplier_id",
+            "supplier_name",
+            "country",
+            "lead_time_days",
+            "reliability_score"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2667248191760,
+      "title": "Select",
+      "pos_x": 507.20214843749943,
+      "pos_y": 635.2539062499999,
+      "inputs": [
+        {
+          "id": 2667248190320,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667248190160,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "currency",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "currency_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "usd_rate",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "currency",
+            "currency_name",
+            "usd_rate"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "usd_rate": "Float64"
+          },
+          "column_order": [
+            "currency",
+            "currency_name",
+            "usd_rate"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2667252787280,
+      "title": "Cleansing",
+      "pos_x": -212.5091552734374,
+      "pos_y": -119.3084716796874,
+      "inputs": [
+        {
+          "id": 2667252786960,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2667252790640,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "replace_null_strings": false,
+        "replace_null_numbers": false,
+        "strip_whitespace": true,
+        "normalize_spaces": true,
+        "remove_all_whitespace": false,
+        "case_modification": "none",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": false,
+        "selected_fields": [
+          "order_id",
+          "customer_id",
+          "product_id",
+          "supplier_id",
+          "channel_id",
+          "currency",
+          "order_ts",
+          "quantity",
+          "unit_price_local",
+          "discount_pct",
+          "tax_local",
+          "shipping_local",
+          "status",
+          "payment_method",
+          "is_returned"
+        ],
+        "field_selection_initialized": true,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": false,
+        "remove_null_columns": false
+      },
+      "label_text": "remove space",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
+    },
+    {
+      "id": 2206727594032,
+      "title": "Cleansing",
+      "pos_x": 94.00939941406226,
+      "pos_y": -119.91882324218741,
+      "inputs": [
+        {
+          "id": 2207682771728,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2207682769008,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "replace_null_strings": false,
+        "replace_null_numbers": false,
+        "strip_whitespace": false,
+        "normalize_spaces": false,
+        "remove_all_whitespace": false,
+        "case_modification": "lower",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": false,
+        "selected_fields": [
+          "order_id",
+          "customer_id",
+          "product_id"
+        ],
+        "field_selection_initialized": true,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": true,
+        "remove_null_columns": false
+      },
+      "label_text": "Remove Null Rows",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
+    },
+    {
+      "id": 2699443889456,
+      "title": "Filter",
+      "pos_x": 245.72814941406205,
+      "pos_y": -115.79284667968753,
+      "inputs": [
+        {
+          "id": 2699443890576,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2699443890896,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2699443891216,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "quantity",
+        "operation": "In Between",
+        "value": "1",
+        "value2": "500",
+        "mode": "builder",
+        "expression": "[quantity] >= 1 AND [quantity] <= 500"
+      },
+      "label_text": "Quantity Filter",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2699443583920,
+      "title": "Filter",
+      "pos_x": 420.61584472656205,
+      "pos_y": -118.69812011718753,
+      "inputs": [
+        {
+          "id": 2699443576240,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2699443584720,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2699443578800,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "order_id",
+        "operation": "Equals",
+        "value": "",
+        "value2": "",
+        "mode": "expression",
+        "expression": "[unit_price_local] > 0 and \n[unit_price_local] <= 5000"
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2699443578640,
+      "title": "Filter",
+      "pos_x": 589.605102539062,
+      "pos_y": -120.09460449218741,
+      "inputs": [
+        {
+          "id": 2699443880656,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2699443888496,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2699443888816,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "order_id",
+        "operation": "Equals",
+        "value": "",
+        "value2": "",
+        "mode": "expression",
+        "expression": "YEAR([order_ts]) <= 2025"
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2824864141616,
+      "title": "Normalize Columns",
+      "pos_x": -355.57556152343733,
+      "pos_y": -117.9656982421874,
+      "inputs": [
+        {
+          "id": 2824864148496,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2824864148816,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "trim_whitespace": true,
+        "spaces_to_underscore": true,
+        "remove_all_whitespace": false,
+        "case_modification": "lower",
+        "selected_columns": [
+          " Order ID ",
+          "Customer_Id",
+          "PRODUCT_ID",
+          "supplier id",
+          "Channel ID",
+          "Currency",
+          "Order TS",
+          "Quantity",
+          "unit_price_local",
+          "Discount Pct",
+          "tax_local",
+          "shipping_local",
+          "Status",
+          "Payment Method",
+          "is_returned"
+        ],
+        "field_selection_initialized": true
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 10,
+      "node_type": "preparation",
+      "op": "preparation.normalize_columns"
+    },
+    {
+      "id": 2259315345840,
+      "title": "Unique",
+      "pos_x": 785.7867431640618,
+      "pos_y": -132.44812011718741,
+      "inputs": [
+        {
+          "id": 2259315346960,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2259315344720,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2259315346160,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "selected_columns": [
+          "order_id"
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 7,
+      "node_type": "preparation",
+      "op": "preparation.unique"
+    },
+    {
+      "id": 2259284024432,
+      "title": "Formula",
+      "pos_x": 784.8836621093753,
+      "pos_y": 646.537568359375,
+      "inputs": [
+        {
+          "id": 2259284030832,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2259284033072,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "currency",
+            "formula_text": "LOWER([currency])",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2607119136912,
+      "title": "Join",
+      "pos_x": 660.744693756104,
+      "pos_y": 1253.2836914062495,
+      "inputs": [
+        {
+          "id": 2607119138192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119138512,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119188048,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119188368,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119188688,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "customer_id",
+            "right_column": "customer_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "R"
+          },
+          {
+            "name": "customer_country",
+            "source": "R"
+          },
+          {
+            "name": "customer_currency",
+            "source": "R"
+          },
+          {
+            "name": "customer_email",
+            "source": "R"
+          },
+          {
+            "name": "customer_id",
+            "source": "R"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "R"
+          },
+          {
+            "name": "region",
+            "source": "R"
+          },
+          {
+            "name": "segment",
+            "source": "R"
+          },
+          {
+            "name": "signup_date",
+            "source": "R"
+          },
+          {
+            "name": "customer_name",
+            "source": "R"
+          }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "R"
+          },
+          {
+            "name": "customer_country",
+            "source": "R"
+          },
+          {
+            "name": "customer_currency",
+            "source": "R"
+          },
+          {
+            "name": "customer_email",
+            "source": "R"
+          },
+          {
+            "name": "customer_id",
+            "source": "R"
+          },
+          {
+            "name": "customer_name",
+            "source": "R"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "R"
+          },
+          {
+            "name": "region",
+            "source": "R"
+          },
+          {
+            "name": "segment",
+            "source": "R"
+          },
+          {
+            "name": "signup_date",
+            "source": "R"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607119194288,
+      "title": "Join",
+      "pos_x": 1033.1353187561026,
+      "pos_y": 1379.650878906249,
+      "inputs": [
+        {
+          "id": 2607119192048,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119192688,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119192208,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119192528,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119191568,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "product_id",
+            "right_column": "product_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "brand",
+            "source": "R"
+          },
+          {
+            "name": "category",
+            "source": "R"
+          },
+          {
+            "name": "launch_date",
+            "source": "R"
+          },
+          {
+            "name": "product_id",
+            "source": "R"
+          },
+          {
+            "name": "product_name",
+            "source": "R"
+          },
+          {
+            "name": "sku",
+            "source": "R"
+          },
+          {
+            "name": "subcategory",
+            "source": "R"
+          },
+          {
+            "name": "unit_cost",
+            "source": "R"
+          },
+          {
+            "name": "unit_price",
+            "source": "R"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "brand",
+            "source": "R"
+          },
+          {
+            "name": "category",
+            "source": "R"
+          },
+          {
+            "name": "launch_date",
+            "source": "R"
+          },
+          {
+            "name": "product_id",
+            "source": "R"
+          },
+          {
+            "name": "product_name",
+            "source": "R"
+          },
+          {
+            "name": "sku",
+            "source": "R"
+          },
+          {
+            "name": "subcategory",
+            "source": "R"
+          },
+          {
+            "name": "unit_cost",
+            "source": "R"
+          },
+          {
+            "name": "unit_price",
+            "source": "R"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607119191728,
+      "title": "Join",
+      "pos_x": 1359.092350006103,
+      "pos_y": 1544.904785156249,
+      "inputs": [
+        {
+          "id": 2607119189808,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119189488,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119189328,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119136592,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119123472,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "supplier_id",
+            "right_column": "supplier_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "R"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "R"
+          },
+          {
+            "name": "reliability_score",
+            "source": "R"
+          },
+          {
+            "name": "supplier_id",
+            "source": "R"
+          },
+          {
+            "name": "supplier_name",
+            "source": "R"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "R"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "R"
+          },
+          {
+            "name": "reliability_score",
+            "source": "R"
+          },
+          {
+            "name": "supplier_id",
+            "source": "R"
+          },
+          {
+            "name": "supplier_name",
+            "source": "R"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607119123792,
+      "title": "Join",
+      "pos_x": 1714.326725006103,
+      "pos_y": 1690.432128906249,
+      "inputs": [
+        {
+          "id": 2607119126192,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607119125232,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119125872,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119127952,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607119132112,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "channel_id",
+            "right_column": "channel_id"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "reliability_score",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "supplier_name",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "channel_group",
+            "source": "R"
+          },
+          {
+            "name": "channel_id",
+            "source": "R"
+          },
+          {
+            "name": "channel_name",
+            "source": "R"
+          },
+          {
+            "name": "is_digital",
+            "source": "R"
+          }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "reliability_score",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "supplier_name",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "channel_group",
+            "source": "R"
+          },
+          {
+            "name": "channel_id",
+            "source": "R"
+          },
+          {
+            "name": "channel_name",
+            "source": "R"
+          },
+          {
+            "name": "is_digital",
+            "source": "R"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607193616816,
+      "title": "Join",
+      "pos_x": 2052.6421546936026,
+      "pos_y": 1859.7106933593745,
+      "inputs": [
+        {
+          "id": 2607193607536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2607193605296,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607193619376,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607193617136,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2607193615856,
+          "index": 2,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "join_type": "inner",
+        "mapping_data": [
+          {
+            "left_column": "currency",
+            "right_column": "currency"
+          }
+        ],
+        "selected_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_group",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "channel_name",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_digital",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "reliability_score",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "supplier_name",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "R"
+          },
+          {
+            "name": "currency_name",
+            "source": "R"
+          },
+          {
+            "name": "usd_rate",
+            "source": "R"
+          }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "brand",
+            "source": "L"
+          },
+          {
+            "name": "category",
+            "source": "L"
+          },
+          {
+            "name": "channel_group",
+            "source": "L"
+          },
+          {
+            "name": "channel_id",
+            "source": "L"
+          },
+          {
+            "name": "channel_name",
+            "source": "L"
+          },
+          {
+            "name": "country",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_age_band",
+            "source": "L"
+          },
+          {
+            "name": "customer_country",
+            "source": "L"
+          },
+          {
+            "name": "customer_currency",
+            "source": "L"
+          },
+          {
+            "name": "customer_email",
+            "source": "L"
+          },
+          {
+            "name": "customer_id",
+            "source": "L"
+          },
+          {
+            "name": "customer_name",
+            "source": "L"
+          },
+          {
+            "name": "discount_pct",
+            "source": "L"
+          },
+          {
+            "name": "is_digital",
+            "source": "L"
+          },
+          {
+            "name": "is_returned",
+            "source": "L"
+          },
+          {
+            "name": "launch_date",
+            "source": "L"
+          },
+          {
+            "name": "lead_time_days",
+            "source": "L"
+          },
+          {
+            "name": "loyalty_tier",
+            "source": "L"
+          },
+          {
+            "name": "order_id",
+            "source": "L"
+          },
+          {
+            "name": "order_ts",
+            "source": "L"
+          },
+          {
+            "name": "payment_method",
+            "source": "L"
+          },
+          {
+            "name": "product_id",
+            "source": "L"
+          },
+          {
+            "name": "product_name",
+            "source": "L"
+          },
+          {
+            "name": "quantity",
+            "source": "L"
+          },
+          {
+            "name": "region",
+            "source": "L"
+          },
+          {
+            "name": "reliability_score",
+            "source": "L"
+          },
+          {
+            "name": "segment",
+            "source": "L"
+          },
+          {
+            "name": "shipping_local",
+            "source": "L"
+          },
+          {
+            "name": "signup_date",
+            "source": "L"
+          },
+          {
+            "name": "sku",
+            "source": "L"
+          },
+          {
+            "name": "status",
+            "source": "L"
+          },
+          {
+            "name": "subcategory",
+            "source": "L"
+          },
+          {
+            "name": "supplier_id",
+            "source": "L"
+          },
+          {
+            "name": "supplier_name",
+            "source": "L"
+          },
+          {
+            "name": "tax_local",
+            "source": "L"
+          },
+          {
+            "name": "unit_cost",
+            "source": "L"
+          },
+          {
+            "name": "unit_price",
+            "source": "L"
+          },
+          {
+            "name": "unit_price_local",
+            "source": "L"
+          },
+          {
+            "name": "currency",
+            "source": "R"
+          },
+          {
+            "name": "currency_name",
+            "source": "R"
+          },
+          {
+            "name": "usd_rate",
+            "source": "R"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "join",
+      "op": "join.join"
+    },
+    {
+      "id": 2607196374192,
+      "title": "Formula",
+      "pos_x": 1844.4780273437511,
+      "pos_y": 175.90600585937506,
+      "inputs": [
+        {
+          "id": 2607196385232,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607119197008,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "g",
+            "formula_text": "[quantity] * [unit_price_local]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "gross_local",
+            "formula_text": "[g]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "discount_local",
+            "formula_text": "[g] * [discount_pct]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "net_local",
+            "formula_text": "[g] - [discount_local]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "total_local",
+            "formula_text": "[net_local] + [tax_local] + [shipping_local]",
+            "editor_height": 65,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "g",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2607193611536,
+      "title": "Formula",
+      "pos_x": 2026.978027343749,
+      "pos_y": 175.90600585937506,
+      "inputs": [
+        {
+          "id": 2607193615216,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2607198105232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "unit_price_usd",
+            "formula_text": "[unit_price_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "net_revenue_usd",
+            "formula_text": "[net_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "tax_usd",
+            "formula_text": "[tax_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "shipping_usd",
+            "formula_text": "[shipping_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "total_usd",
+            "formula_text": "[total_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "usd_rate",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2433019852784,
+      "title": "Union",
+      "pos_x": 900.5962562561026,
+      "pos_y": 1261.9438476562495,
+      "inputs": [
+        {
+          "id": 2433019854224,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433019854544,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2433020497584,
+      "title": "Union",
+      "pos_x": 1208.1353187561026,
+      "pos_y": 1389.143066406249,
+      "inputs": [
+        {
+          "id": 2433020499024,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433020499344,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2433832559440,
+      "title": "Union",
+      "pos_x": 1528.7603187561022,
+      "pos_y": 1541.955566406249,
+      "inputs": [
+        {
+          "id": 2433832557040,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433832558480,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2433832553680,
+      "title": "Union",
+      "pos_x": 1874.385318756102,
+      "pos_y": 1688.205566406249,
+      "inputs": [
+        {
+          "id": 2433832556400,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2433832556720,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2431667623632,
+      "title": "Union",
+      "pos_x": 2287.9653968811017,
+      "pos_y": 1824.229003906249,
+      "inputs": [
+        {
+          "id": 2431667621552,
+          "index": 0,
+          "multi_edges": true,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2431667623312,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "mode": "by_name",
+        "column_map": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "join",
+      "op": "join.union"
+    },
+    {
+      "id": 2074988497808,
+      "title": "Formula",
+      "pos_x": 2181.508789062499,
+      "pos_y": 173.74999999999994,
+      "inputs": [
+        {
+          "id": 2074988502768,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2074988507728,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "cogs_usd",
+            "formula_text": "[quantity] * [unit_cost]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "gross_margin_usd",
+            "formula_text": "[net_revenue_usd] - [cogs_usd]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "margin_pct",
+            "formula_text": "CASE\n    WHEN [net_revenue_usd] IS NULL OR [net_revenue_usd] = 0 THEN NULL\n    ELSE [gross_margin_usd] / [net_revenue_usd]\nEND",
+            "editor_height": 118,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2074988703216,
+      "title": "Formula",
+      "pos_x": 2369.008789062499,
+      "pos_y": 168.74999999999994,
+      "inputs": [
+        {
+          "id": 2074988508528,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2074988531376,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "order_year",
+            "formula_text": "YEAR([order_ts])",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "order_month",
+            "formula_text": "MONTH([order_ts])",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "order_year_month",
+            "formula_text": "STRFTIME([order_ts], '%Y-%m')",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "is_bulk",
+            "formula_text": "[quantity] >= 6",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "value_band",
+            "formula_text": "CASE\n    WHEN [net_revenue_usd] IS NULL THEN NULL\n    WHEN [net_revenue_usd] <= 250  THEN 'Low'\n    WHEN [net_revenue_usd] <= 1000 THEN 'Medium'\n    ELSE 'High'\nEND\n",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "Orders",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2073979223760,
+      "title": "Formula",
+      "pos_x": 2532.758789062499,
+      "pos_y": 173.74999999999994,
+      "inputs": [
+        {
+          "id": 2073979213520,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2073979219280,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "risk_score",
+            "formula_text": "(CASE WHEN [is_returned] THEN 2 ELSE 0 END)\n+ (CASE WHEN [status] IN ('refunded', 'cancelled') THEN 2 ELSE 0 END)\n+ (CASE WHEN [net_revenue_usd] > 2000 THEN 1 ELSE 0 END)\n+ (CASE WHEN [margin_pct] < 0.10 THEN 1 ELSE 0 END)\n+ (CASE WHEN [segment] IS NULL THEN 2 ELSE 0 END)\n",
+            "editor_height": 125,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "risk_band",
+            "formula_text": "CASE\n    WHEN [risk_score] >= 4 THEN 'High'\n    WHEN [risk_score] >= 2 THEN 'Medium'\n    ELSE 'Low'\nEND",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "Risk",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2075644041232,
+      "title": "Sort",
+      "pos_x": 2967.8674316406245,
+      "pos_y": -332.59994506835926,
+      "inputs": [
+        {
+          "id": 2075644035632,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2075644036112,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "order_year_month",
+            "order": "Ascending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2425882315824,
+      "title": "Aggregate",
+      "pos_x": 2809.9523925781227,
+      "pos_y": -332.59017944335926,
+      "inputs": [
+        {
+          "id": 2425882317584,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2425882317904,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "order_year_month",
+            "action": "GroupBy",
+            "output_name": "order_year_month"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "order_year_month"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2576898522352,
+      "title": "Running Total",
+      "pos_x": 3134.4299316406245,
+      "pos_y": -330.9593200683592,
+      "inputs": [
+        {
+          "id": 2576898508432,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2576898508752,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "sum_columns": [
+          "revenue_usd"
+        ],
+        "group_by_columns": [],
+        "numeric_columns": [
+          "revenue_usd",
+          "margin_usd",
+          "orders"
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "transform",
+      "op": "transform.running_total"
+    },
+    {
+      "id": 2576898093168,
+      "title": "Select",
+      "pos_x": 3306.3049316406245,
+      "pos_y": -330.9593200683592,
+      "inputs": [
+        {
+          "id": 2576898088688,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2574905548368,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "order_year_month",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "revenue_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "margin_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "orders",
+            "dtype": "UInt32",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "RunTot_revenue_usd",
+            "dtype": "Float64",
+            "rename": "cumulative_revenue_usd",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "order_year_month",
+            "revenue_usd",
+            "margin_usd",
+            "orders",
+            "RunTot_revenue_usd"
+          ],
+          "rename_mapping": {
+            "RunTot_revenue_usd": "cumulative_revenue_usd"
+          },
+          "dtype_mapping": {
+            "orders": "UInt32"
+          },
+          "column_order": [
+            "order_year_month",
+            "revenue_usd",
+            "margin_usd",
+            "orders",
+            "RunTot_revenue_usd"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2576898544400,
+      "title": "File Output",
+      "pos_x": 3563.6291503906236,
+      "pos_y": -539.9436950683591,
+      "inputs": [
+        {
+          "id": 2577497388400,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "monthly_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2576898555280,
+      "title": "Transpose",
+      "pos_x": 3554.3518066406227,
+      "pos_y": -327.0530700683593,
+      "inputs": [
+        {
+          "id": 2576898542800,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2576898549520,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "key_columns": [
+          "order_year_month"
+        ],
+        "data_columns": [
+          "revenue_usd",
+          "margin_usd",
+          "orders"
+        ],
+        "missing_action": "warn"
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "transform",
+      "op": "transform.transpose"
+    },
+    {
+      "id": 2577542549008,
+      "title": "Select",
+      "pos_x": 3728.1799316406227,
+      "pos_y": -327.05307006835926,
+      "inputs": [
+        {
+          "id": 2577542550288,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577542550608,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "order_year_month",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Name",
+            "dtype": "String",
+            "rename": "metric",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Value",
+            "dtype": "Float64",
+            "rename": "value",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "order_year_month",
+            "Name",
+            "Value"
+          ],
+          "rename_mapping": {
+            "Name": "metric",
+            "Value": "value"
+          },
+          "dtype_mapping": {},
+          "column_order": [
+            "order_year_month",
+            "Name",
+            "Value"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2576898090768,
+      "title": "File Output",
+      "pos_x": 3909.8205566406227,
+      "pos_y": -582.9124450683591,
+      "inputs": [
+        {
+          "id": 2577542553008,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue_long.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "monthly_revenue_long.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577497388560,
+      "title": "Aggregate",
+      "pos_x": 2821.9299316406227,
+      "pos_y": -135.64682006835938,
+      "inputs": [
+        {
+          "id": 2577520393456,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577520393136,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "category",
+            "action": "GroupBy",
+            "output_name": "category"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "category"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577520390736,
+      "title": "Sort",
+      "pos_x": 2995.7580566406236,
+      "pos_y": -131.74057006835938,
+      "inputs": [
+        {
+          "id": 2577520391856,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577520392336,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2576898516432,
+      "title": "File Output",
+      "pos_x": 3226.2268066406227,
+      "pos_y": -127.83432006835943,
+      "inputs": [
+        {
+          "id": 2577516291536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/category_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "category_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577542556688,
+      "title": "Sort",
+      "pos_x": 3001.6174316406236,
+      "pos_y": 61.61880493164051,
+      "inputs": [
+        {
+          "id": 2577497385680,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577497382480,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "region",
+            "order": "Ascending"
+          },
+          {
+            "column": "channel_group",
+            "order": "Ascending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2574905550448,
+      "title": "File Output",
+      "pos_x": 3232.0861816406227,
+      "pos_y": 65.52505493164028,
+      "inputs": [
+        {
+          "id": 2574905552848,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/region_channel_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "region_channel_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2574905553968,
+      "title": "Aggregate",
+      "pos_x": 2827.7893066406236,
+      "pos_y": 57.71255493164051,
+      "inputs": [
+        {
+          "id": 2577546006832,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546009232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "region",
+            "action": "GroupBy",
+            "output_name": "region"
+          },
+          {
+            "field": "channel_group",
+            "action": "GroupBy",
+            "output_name": "channel_group"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "region",
+            "channel_group"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546018512,
+      "title": "Aggregate",
+      "pos_x": 2845.3674316406227,
+      "pos_y": 217.86880493164017,
+      "inputs": [
+        {
+          "id": 2577546014832,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546014512,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "segment",
+            "action": "GroupBy",
+            "output_name": "segment"
+          },
+          {
+            "field": "risk_band",
+            "action": "GroupBy",
+            "output_name": "risk_band"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "margin_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "segment",
+            "risk_band"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "margin_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546429616,
+      "title": "Aggregate",
+      "pos_x": 2847.3205566406227,
+      "pos_y": 397.55630493164006,
+      "inputs": [
+        {
+          "id": 2577546443536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546432336,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "customer_id",
+            "action": "GroupBy",
+            "output_name": "customer_id"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "customer_id"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546431376,
+      "title": "File Output",
+      "pos_x": 3511.6174316406227,
+      "pos_y": 394.36880493163994,
+      "inputs": [
+        {
+          "id": 2577546440336,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/top_customers.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "top_customers.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577546444176,
+      "title": "Sort",
+      "pos_x": 3281.1486816406227,
+      "pos_y": 390.46255493163994,
+      "inputs": [
+        {
+          "id": 2577546443056,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546443376,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2577520381936,
+      "title": "Filter",
+      "pos_x": 3050.3674316406245,
+      "pos_y": 403.40005493164085,
+      "inputs": [
+        {
+          "id": 2577546444656,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577546431216,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2577598701776,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "revenue_usd",
+        "operation": "Greater Than",
+        "value": "4000",
+        "value2": "",
+        "mode": "builder",
+        "expression": ""
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2577598705776,
+      "title": "File Output",
+      "pos_x": 3503.652343749997,
+      "pos_y": 553.2226562499995,
+      "inputs": [
+        {
+          "id": 2577598697616,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/supplier_performance.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "supplier_performance.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577598707376,
+      "title": "Aggregate",
+      "pos_x": 2839.3554687499977,
+      "pos_y": 556.4101562499995,
+      "inputs": [
+        {
+          "id": 2577598700976,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577599131600,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "supplier_id",
+            "action": "GroupBy",
+            "output_name": "supplier_id"
+          },
+          {
+            "field": "supplier_name",
+            "action": "GroupBy",
+            "output_name": "supplier_name"
+          },
+          {
+            "field": "country",
+            "action": "GroupBy",
+            "output_name": "country"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          },
+          {
+            "field": "lead_time_days",
+            "action": "First",
+            "output_name": "lead_time_days"
+          },
+          {
+            "field": "reliability_score",
+            "action": "First",
+            "output_name": "reliability_score"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "supplier_id",
+            "supplier_name",
+            "country"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            },
+            "lead_time_days": {
+              "function": "first",
+              "alias": "lead_time_days"
+            },
+            "reliability_score": {
+              "function": "first",
+              "alias": "reliability_score"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577599133200,
+      "title": "Sort",
+      "pos_x": 3048.5742187499977,
+      "pos_y": 554.1992187499997,
+      "inputs": [
+        {
+          "id": 2577599130960,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577599129520,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2576898550000,
+      "title": "Formula",
+      "pos_x": 3278.808593749997,
+      "pos_y": 554.1992187499995,
+      "inputs": [
+        {
+          "id": 2577610928080,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577610927760,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "revenue_per_lead_day",
+            "formula_text": "[revenue_usd] / [lead_time_days]",
+            "editor_height": 60,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2577516289456,
+      "title": "File Output",
+      "pos_x": 3504.1406249999964,
+      "pos_y": 710.9374999999995,
+      "inputs": [
+        {
+          "id": 2577599124880,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fx_exposure.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "fx_exposure.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577610916240,
+      "title": "Sort",
+      "pos_x": 3049.062499999998,
+      "pos_y": 711.9140624999995,
+      "inputs": [
+        {
+          "id": 2577610923440,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577610919440,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "revenue_usd",
+            "order": "Descending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2577599124080,
+      "title": "Aggregate",
+      "pos_x": 2839.843749999998,
+      "pos_y": 714.1249999999995,
+      "inputs": [
+        {
+          "id": 2577610923120,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577610921040,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "currency",
+            "action": "GroupBy",
+            "output_name": "currency"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "revenue_usd"
+          },
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "orders"
+          },
+          {
+            "field": "usd_rate",
+            "action": "First",
+            "output_name": "usd_rate"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [
+            "currency"
+          ],
+          "aggregations": {
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "revenue_usd"
+            },
+            "order_id": {
+              "function": "n_unique",
+              "alias": "orders"
+            },
+            "usd_rate": {
+              "function": "first",
+              "alias": "usd_rate"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577546008112,
+      "title": "File Output",
+      "pos_x": 3899.109374999999,
+      "pos_y": 907.1250000000002,
+      "inputs": [
+        {
+          "id": 2576898509072,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/kpi_summary.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "kpi_summary.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2577504582416,
+      "title": "Aggregate",
+      "pos_x": 3029.207031250001,
+      "pos_y": 882.6367187500001,
+      "inputs": [
+        {
+          "id": 2577504581136,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577504580816,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "actions_data": [
+          {
+            "field": "order_id",
+            "action": "N_Unique",
+            "output_name": "clean_orders"
+          },
+          {
+            "field": "net_revenue_usd",
+            "action": "Sum",
+            "output_name": "net_revenue_usd"
+          },
+          {
+            "field": "gross_margin_usd",
+            "action": "Sum",
+            "output_name": "gross_margin_usd"
+          },
+          {
+            "field": "is_returned",
+            "action": "Sum",
+            "output_name": "returned_orders"
+          },
+          {
+            "field": "customer_id",
+            "action": "N_Unique",
+            "output_name": "distinct_customers"
+          },
+          {
+            "field": "product_id",
+            "action": "N_Unique",
+            "output_name": "distinct_products"
+          },
+          {
+            "field": "gross_revenue_usd_raw",
+            "action": "Sum",
+            "output_name": "gross_revenue_usd_raw"
+          },
+          {
+            "field": "is_high_risk",
+            "action": "Sum",
+            "output_name": "high_risk_orders"
+          }
+        ],
+        "changes": {
+          "group_by_columns": [],
+          "aggregations": {
+            "order_id": {
+              "function": "n_unique",
+              "alias": "clean_orders"
+            },
+            "net_revenue_usd": {
+              "function": "sum",
+              "alias": "net_revenue_usd"
+            },
+            "gross_margin_usd": {
+              "function": "sum",
+              "alias": "gross_margin_usd"
+            },
+            "is_returned": {
+              "function": "sum",
+              "alias": "returned_orders"
+            },
+            "customer_id": {
+              "function": "n_unique",
+              "alias": "distinct_customers"
+            },
+            "product_id": {
+              "function": "n_unique",
+              "alias": "distinct_products"
+            },
+            "gross_revenue_usd_raw": {
+              "function": "sum",
+              "alias": "gross_revenue_usd_raw"
+            },
+            "is_high_risk": {
+              "function": "sum",
+              "alias": "high_risk_orders"
+            }
+          }
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2577504571056,
+      "title": "Formula",
+      "pos_x": 2859.3749999999995,
+      "pos_y": 884.3749999999999,
+      "inputs": [
+        {
+          "id": 2577504570736,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2577504569296,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "gross_revenue_usd_raw",
+            "formula_text": "[gross_local] * [usd_rate]",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "is_high_risk",
+            "formula_text": "CASE WHEN [risk_band] = 'High' THEN 1 ELSE 0 END",
+            "editor_height": 60,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2664157223248,
+      "title": "Formula",
+      "pos_x": 3227.902343749998,
+      "pos_y": 1083.2148437499998,
+      "inputs": [
+        {
+          "id": 2664157224848,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2664157225648,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula_sections": [
+          {
+            "target_column": "gross_revenue_usd",
+            "formula_text": "ROUND([gross_revenue_usd], 2)",
+            "editor_height": 60,
+            "target_dtype": ""
+          },
+          {
+            "target_column": "margin_pct",
+            "formula_text": "CASE WHEN [net_revenue_usd] = 0 \nTHEN NULL \nELSE ROUND([gross_margin_usd] / [net_revenue_usd], 4) \nEND",
+            "editor_height": 120,
+            "target_dtype": ""
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2664158011760,
+      "title": "Select",
+      "pos_x": 3078.906249999998,
+      "pos_y": 1080.4687499999995,
+      "inputs": [
+        {
+          "id": 2664158013200,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2664158015760,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "clean_orders",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "gross_revenue_usd_raw",
+            "dtype": "Float64",
+            "rename": "gross_revenue_usd",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "net_revenue_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "gross_margin_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "returned_orders",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "distinct_customers",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "distinct_products",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "high_risk_orders",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "clean_orders",
+            "gross_revenue_usd_raw",
+            "net_revenue_usd",
+            "gross_margin_usd",
+            "returned_orders",
+            "distinct_customers",
+            "distinct_products",
+            "high_risk_orders"
+          ],
+          "rename_mapping": {
+            "gross_revenue_usd_raw": "gross_revenue_usd"
+          },
+          "dtype_mapping": {},
+          "column_order": [
+            "clean_orders",
+            "gross_revenue_usd_raw",
+            "net_revenue_usd",
+            "gross_margin_usd",
+            "returned_orders",
+            "distinct_customers",
+            "distinct_products",
+            "high_risk_orders"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 1692279061904,
+      "title": "Select",
+      "pos_x": 2667.236328124998,
+      "pos_y": 878.9062499999993,
+      "inputs": [
+        {
+          "id": 1692279060624,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1692279058384,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "brand",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "category",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "channel_group",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "channel_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "channel_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "country",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "currency",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_age_band",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_country",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_currency",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_email",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "discount_pct",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "is_digital",
+            "dtype": "Boolean",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "is_returned",
+            "dtype": "Boolean",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "launch_date",
+            "dtype": "Date",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "lead_time_days",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "loyalty_tier",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "order_id",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "order_ts",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "payment_method",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "product_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "product_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "quantity",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "region",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "reliability_score",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "segment",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "shipping_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "signup_date",
+            "dtype": "Date",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "sku",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "status",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "subcategory",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "supplier_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "supplier_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "tax_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_cost",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_price",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_price_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "currency_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "usd_rate",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "g",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "gross_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "discount_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "net_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "total_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_price_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "net_revenue_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "tax_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "shipping_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "total_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "cogs_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "gross_margin_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "margin_pct",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "order_year",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "order_month",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "order_year_month",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "is_bulk",
+            "dtype": "Boolean",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "value_band",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "risk_score",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "risk_band",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_name",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "brand",
+            "category",
+            "channel_group",
+            "channel_id",
+            "channel_name",
+            "country",
+            "currency",
+            "customer_age_band",
+            "customer_country",
+            "customer_currency",
+            "customer_email",
+            "customer_id",
+            "discount_pct",
+            "is_digital",
+            "is_returned",
+            "launch_date",
+            "lead_time_days",
+            "loyalty_tier",
+            "order_id",
+            "order_ts",
+            "payment_method",
+            "product_id",
+            "product_name",
+            "quantity",
+            "region",
+            "reliability_score",
+            "segment",
+            "shipping_local",
+            "signup_date",
+            "sku",
+            "status",
+            "subcategory",
+            "supplier_id",
+            "supplier_name",
+            "tax_local",
+            "unit_cost",
+            "unit_price",
+            "unit_price_local",
+            "currency_name",
+            "usd_rate",
+            "g",
+            "gross_local",
+            "discount_local",
+            "net_local",
+            "total_local",
+            "unit_price_usd",
+            "net_revenue_usd",
+            "tax_usd",
+            "shipping_usd",
+            "total_usd",
+            "cogs_usd",
+            "gross_margin_usd",
+            "margin_pct",
+            "order_year",
+            "order_month",
+            "order_year_month",
+            "is_bulk",
+            "value_band",
+            "risk_score",
+            "risk_band",
+            "customer_name"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "is_digital": "Boolean",
+            "is_returned": "Boolean",
+            "order_ts": "String"
+          },
+          "column_order": [
+            "brand",
+            "category",
+            "channel_group",
+            "channel_id",
+            "channel_name",
+            "country",
+            "currency",
+            "customer_age_band",
+            "customer_country",
+            "customer_currency",
+            "customer_email",
+            "customer_id",
+            "discount_pct",
+            "is_digital",
+            "is_returned",
+            "launch_date",
+            "lead_time_days",
+            "loyalty_tier",
+            "order_id",
+            "order_ts",
+            "payment_method",
+            "product_id",
+            "product_name",
+            "quantity",
+            "region",
+            "reliability_score",
+            "segment",
+            "shipping_local",
+            "signup_date",
+            "sku",
+            "status",
+            "subcategory",
+            "supplier_id",
+            "supplier_name",
+            "tax_local",
+            "unit_cost",
+            "unit_price",
+            "unit_price_local",
+            "currency_name",
+            "usd_rate",
+            "g",
+            "gross_local",
+            "discount_local",
+            "net_local",
+            "total_local",
+            "unit_price_usd",
+            "net_revenue_usd",
+            "tax_usd",
+            "shipping_usd",
+            "total_usd",
+            "cogs_usd",
+            "gross_margin_usd",
+            "margin_pct",
+            "order_year",
+            "order_month",
+            "order_year_month",
+            "is_bulk",
+            "value_band",
+            "risk_score",
+            "risk_band",
+            "customer_name"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 1866593396176,
+      "title": "Select",
+      "pos_x": 3358.7499999999995,
+      "pos_y": 928.7499999999998,
+      "inputs": [
+        {
+          "id": 1866593399216,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1866593397936,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "clean_orders",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "gross_revenue_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "net_revenue_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "gross_margin_usd",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "margin_pct",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "returned_orders",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "high_risk_orders",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "distinct_customers",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "distinct_products",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "clean_orders",
+            "gross_revenue_usd",
+            "net_revenue_usd",
+            "gross_margin_usd",
+            "margin_pct",
+            "returned_orders",
+            "high_risk_orders",
+            "distinct_customers",
+            "distinct_products"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {},
+          "column_order": [
+            "clean_orders",
+            "gross_revenue_usd",
+            "net_revenue_usd",
+            "gross_margin_usd",
+            "margin_pct",
+            "returned_orders",
+            "high_risk_orders",
+            "distinct_customers",
+            "distinct_products"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 1864102966480,
+      "title": "File Output",
+      "pos_x": 3488.867187499998,
+      "pos_y": 197.36328124999994,
+      "inputs": [
+        {
+          "id": 1864102966000,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/segment_revenue.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "segment_revenue.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 1866593386736,
+      "title": "Sort",
+      "pos_x": 3031.249999999998,
+      "pos_y": 201.56249999999983,
+      "inputs": [
+        {
+          "id": 1866593398576,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1866593396976,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "sort_data": [
+          {
+            "column": "segment",
+            "order": "Ascending"
+          },
+          {
+            "column": "risk_band",
+            "order": "Ascending"
+          }
+        ]
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2744854855056,
+      "title": "File Output",
+      "pos_x": 1128.1713867187502,
+      "pos_y": 1149.2324218749989,
+      "inputs": [
+        {
+          "id": 2744854854416,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/01 enriched customer_id.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "01 enriched customer_id.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2744854848336,
+      "title": "File Output",
+      "pos_x": 1484.3749999999993,
+      "pos_y": 1339.4531249999995,
+      "inputs": [
+        {
+          "id": 2745368494320,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/02 enriched product_id.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "02 enriched product_id.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2745368505040,
+      "title": "File Output",
+      "pos_x": 1770.3124999999993,
+      "pos_y": 1462.7343749999998,
+      "inputs": [
+        {
+          "id": 2742398207792,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/03 enriched supplier_id.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "03 enriched supplier_id.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2745368494800,
+      "title": "File Output",
+      "pos_x": 2109.3749999999995,
+      "pos_y": 1573.828124999999,
+      "inputs": [
+        {
+          "id": 2742398211152,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 enriched channel_id.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "04 enriched channel_id.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2824864700000,
+      "title": "File Output",
+      "pos_x": 2297.960937500001,
+      "pos_y": 1677.2153320312495,
+      "inputs": [
+        {
+          "id": 2824864700064,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/05 enriched currency.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "05 enriched currency.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 1752844827568,
+      "title": "Cleansing",
+      "pos_x": -64.45312499999994,
+      "pos_y": -119.14062499999989,
+      "inputs": [
+        {
+          "id": 1752844828368,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1752844818768,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "replace_null_strings": false,
+        "replace_null_numbers": false,
+        "strip_whitespace": true,
+        "normalize_spaces": true,
+        "remove_all_whitespace": false,
+        "case_modification": "lower",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": false,
+        "selected_fields": [
+          "order_id",
+          "currency",
+          "status",
+          "payment_method"
+        ],
+        "field_selection_initialized": true,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": false,
+        "remove_null_columns": false
+      },
+      "label_text": "Lower Case",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
+    },
+    {
+      "id": 1757911060144,
+      "title": "Select",
+      "pos_x": 969.2382812499984,
+      "pos_y": -144.0429687499998,
+      "inputs": [
+        {
+          "id": 1757911071344,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1757911062704,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "order_id",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "customer_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "product_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "supplier_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "channel_id",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "currency",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "order_ts",
+            "dtype": "Datetime(time_unit='us', time_zone=None)",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "quantity",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "unit_price_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "discount_pct",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "tax_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "shipping_local",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "status",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "payment_method",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "is_returned",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "order_id",
+            "customer_id",
+            "product_id",
+            "supplier_id",
+            "channel_id",
+            "currency",
+            "order_ts",
+            "quantity",
+            "unit_price_local",
+            "discount_pct",
+            "tax_local",
+            "shipping_local",
+            "status",
+            "payment_method",
+            "is_returned"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {
+            "order_ts": "Datetime(time_unit='us', time_zone=None)"
+          },
+          "column_order": [
+            "order_id",
+            "customer_id",
+            "product_id",
+            "supplier_id",
+            "channel_id",
+            "currency",
+            "order_ts",
+            "quantity",
+            "unit_price_local",
+            "discount_pct",
+            "tax_local",
+            "shipping_local",
+            "status",
+            "payment_method",
+            "is_returned"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2907286822320,
+      "title": "Transpose",
+      "pos_x": 3551.5624999999995,
+      "pos_y": 912.4999999999998,
+      "inputs": [
+        {
+          "id": 2907286823600,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2907286823920,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "key_columns": [],
+        "data_columns": [
+          "clean_orders",
+          "gross_revenue_usd",
+          "net_revenue_usd",
+          "gross_margin_usd",
+          "margin_pct",
+          "returned_orders",
+          "high_risk_orders",
+          "distinct_customers",
+          "distinct_products"
+        ],
+        "missing_action": "warn"
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "transform",
+      "op": "transform.transpose"
+    },
+    {
+      "id": 1561918502416,
+      "title": "Select",
+      "pos_x": 3712.4999999999973,
+      "pos_y": 912.4999999999991,
+      "inputs": [
+        {
+          "id": 1561918503696,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1561918504016,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Name",
+            "dtype": "String",
+            "rename": "metric",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Value",
+            "dtype": "Float64",
+            "rename": "value",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Name",
+            "Value"
+          ],
+          "rename_mapping": {
+            "Name": "metric",
+            "Value": "value"
+          },
+          "dtype_mapping": {},
+          "column_order": [
+            "Name",
+            "Value"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 1565529555824,
+      "title": "Filter",
+      "pos_x": -984.3749999999993,
+      "pos_y": 15.62499999999999,
+      "inputs": [
+        {
+          "id": 1565529555344,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1565510983888,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 1565510982288,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "column": "region",
+        "operation": "Equals",
+        "value": "",
+        "value2": "",
+        "mode": "builder",
+        "expression": ""
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 1564690265616,
+      "title": "File Output",
+      "pos_x": 971.8017578124989,
+      "pos_y": -326.1718749999996,
+      "inputs": [
+        {
+          "id": 1565216039280,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 dropped null key rows.csv",
+        "file_format": "csv",
+        "delimiter": ",",
+        "use_streaming": true,
+        "include_bom": false
+      },
+      "label_text": "04 dropped null key rows.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2667248192880,
+      "edge_type": 5,
+      "start": 2667100540912,
+      "end": 2667100703632,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2667099969088,
+      "edge_type": 5,
+      "start": 2667100646896,
+      "end": 2667100712272,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2667250786896,
+      "edge_type": 5,
+      "start": 2667100864592,
+      "end": 2667100701712,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2667250908240,
+      "edge_type": 5,
+      "start": 2667100869232,
+      "end": 2667100877392,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2667251517264,
+      "edge_type": 5,
+      "start": 2667100542352,
+      "end": 2667248194640,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2667251521104,
+      "edge_type": 5,
+      "start": 2667100703152,
+      "end": 2667248190320,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2699499031888,
+      "edge_type": 5,
+      "start": 2699443890896,
+      "end": 2699443576240,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2699499118928,
+      "edge_type": 5,
+      "start": 2699443584720,
+      "end": 2699443880656,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2824864691792,
+      "edge_type": 5,
+      "start": 2667100705712,
+      "end": 2824864148496,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2824864692944,
+      "edge_type": 5,
+      "start": 2824864148816,
+      "end": 2667252786960,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2259277169616,
+      "edge_type": 5,
+      "start": 2207682769008,
+      "end": 2699443890576,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2259313318352,
+      "edge_type": 5,
+      "start": 2699443888496,
+      "end": 2259315346960,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2259283823696,
+      "edge_type": 5,
+      "start": 2667248190160,
+      "end": 2259284030832,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2607193357008,
+      "edge_type": 5,
+      "start": 2667100709552,
+      "end": 2607119138512,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2607193931600,
+      "edge_type": 5,
+      "start": 2667100873552,
+      "end": 2607119192688,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2607193465936,
+      "edge_type": 5,
+      "start": 2667248194320,
+      "end": 2607119189488,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2608889654864,
+      "edge_type": 5,
+      "start": 2607119197008,
+      "end": 2607193615216,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433829996496,
+      "edge_type": 5,
+      "start": 2607119188368,
+      "end": 2433019854224,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433830155856,
+      "edge_type": 5,
+      "start": 2607119188048,
+      "end": 2433019854224,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433829701968,
+      "edge_type": 5,
+      "start": 2433019854544,
+      "end": 2607119192048,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433830968016,
+      "edge_type": 5,
+      "start": 2607119192528,
+      "end": 2433020499024,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433830969296,
+      "edge_type": 5,
+      "start": 2433020499344,
+      "end": 2607119189808,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433832154960,
+      "edge_type": 5,
+      "start": 2607119192208,
+      "end": 2433020499024,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433838033872,
+      "edge_type": 5,
+      "start": 2607119136592,
+      "end": 2433832557040,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433838035152,
+      "edge_type": 5,
+      "start": 2433832558480,
+      "end": 2607119126192,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433830677840,
+      "edge_type": 5,
+      "start": 2607119189328,
+      "end": 2433832557040,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433833552464,
+      "edge_type": 5,
+      "start": 2433832556720,
+      "end": 2607193607536,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433834423120,
+      "edge_type": 5,
+      "start": 2607119127952,
+      "end": 2433832556400,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433834891600,
+      "edge_type": 5,
+      "start": 2607119125872,
+      "end": 2433832556400,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2433016283984,
+      "edge_type": 5,
+      "start": 2607193617136,
+      "end": 2431667621552,
+      "label": "#1",
+      "input_index": 0
+    },
+    {
+      "id": 2433016285264,
+      "edge_type": 5,
+      "start": 2431667623312,
+      "end": 2607196385232,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2433029697872,
+      "edge_type": 5,
+      "start": 2607193619376,
+      "end": 2431667621552,
+      "label": "#2",
+      "input_index": 1
+    },
+    {
+      "id": 2073981885904,
+      "edge_type": 5,
+      "start": 2607198105232,
+      "end": 2074988502768,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2074999315664,
+      "edge_type": 5,
+      "start": 2074988507728,
+      "end": 2074988508528,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2075001562448,
+      "edge_type": 5,
+      "start": 2074988531376,
+      "end": 2073979213520,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2426074361040,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2425882317584,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577497573456,
+      "edge_type": 5,
+      "start": 2425882317904,
+      "end": 2075644035632,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577497763536,
+      "edge_type": 5,
+      "start": 2075644036112,
+      "end": 2576898508432,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577498768208,
+      "edge_type": 5,
+      "start": 2576898508752,
+      "end": 2576898088688,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577500388560,
+      "edge_type": 5,
+      "start": 2574905548368,
+      "end": 2577497388400,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2576898404176,
+      "edge_type": 5,
+      "start": 2574905548368,
+      "end": 2576898542800,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577542981328,
+      "edge_type": 5,
+      "start": 2576898549520,
+      "end": 2577542550288,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577516033872,
+      "edge_type": 5,
+      "start": 2577542550608,
+      "end": 2577542553008,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577547074000,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577520393456,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577545715792,
+      "edge_type": 5,
+      "start": 2577520393136,
+      "end": 2577520391856,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577575444304,
+      "edge_type": 5,
+      "start": 2577520392336,
+      "end": 2577516291536,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2576897257696,
+      "edge_type": 5,
+      "start": 2577546009232,
+      "end": 2577497385680,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2575552299728,
+      "edge_type": 5,
+      "start": 2577497382480,
+      "end": 2574905552848,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577579155536,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577546006832,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577597686096,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577546014832,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2576898112784,
+      "edge_type": 5,
+      "start": 2577546443376,
+      "end": 2577546440336,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577602689232,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577546443536,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577605684048,
+      "edge_type": 5,
+      "start": 2577546432336,
+      "end": 2577546444656,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577606106704,
+      "edge_type": 5,
+      "start": 2577546431216,
+      "end": 2577546443056,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577498929232,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577598700976,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577498535376,
+      "edge_type": 5,
+      "start": 2577599131600,
+      "end": 2577599130960,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577518260304,
+      "edge_type": 5,
+      "start": 2577599129520,
+      "end": 2577610928080,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577517577808,
+      "edge_type": 5,
+      "start": 2577610927760,
+      "end": 2577598697616,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577521338960,
+      "edge_type": 5,
+      "start": 2577610921040,
+      "end": 2577610923440,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577544363600,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 2577610923120,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577546659408,
+      "edge_type": 5,
+      "start": 2577610919440,
+      "end": 2577599124880,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2577596479952,
+      "edge_type": 5,
+      "start": 2577504569296,
+      "end": 2577504581136,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2660808140368,
+      "edge_type": 5,
+      "start": 2577504580816,
+      "end": 2664158013200,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1692292695504,
+      "edge_type": 5,
+      "start": 2073979219280,
+      "end": 1692279060624,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1692292696784,
+      "edge_type": 5,
+      "start": 1692279058384,
+      "end": 2577504570736,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2310757171920,
+      "edge_type": 5,
+      "start": 2664158015760,
+      "end": 2664157224848,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1864079205584,
+      "edge_type": 5,
+      "start": 2664157225648,
+      "end": 1866593399216,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1870195883856,
+      "edge_type": 5,
+      "start": 2577546014512,
+      "end": 1866593398576,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1870244641360,
+      "edge_type": 5,
+      "start": 1866593396976,
+      "end": 1864102966000,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2745368432848,
+      "edge_type": 5,
+      "start": 2433019854544,
+      "end": 2744854854416,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2745388330832,
+      "edge_type": 5,
+      "start": 2433020499344,
+      "end": 2745368494320,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2745473642192,
+      "edge_type": 5,
+      "start": 2433832558480,
+      "end": 2742398207792,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2745492123728,
+      "edge_type": 5,
+      "start": 2433832556720,
+      "end": 2742398211152,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2824864700128,
+      "edge_type": 5,
+      "start": 2431667623312,
+      "end": 2824864700064,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1756793911760,
+      "edge_type": 5,
+      "start": 2667252790640,
+      "end": 1752844828368,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1756793902416,
+      "edge_type": 5,
+      "start": 1752844818768,
+      "end": 2207682771728,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2607196830032,
+      "edge_type": 5,
+      "start": 2667100712592,
+      "end": 2607119125232,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1756146575568,
+      "edge_type": 5,
+      "start": 2259284033072,
+      "end": 2607193605296,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1758793621840,
+      "edge_type": 5,
+      "start": 2259315344720,
+      "end": 1757911071344,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1758793623120,
+      "edge_type": 5,
+      "start": 1757911062704,
+      "end": 2607119138192,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2907289809488,
+      "edge_type": 5,
+      "start": 1866593397936,
+      "end": 2907286823600,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1565509689552,
+      "edge_type": 5,
+      "start": 2907286823920,
+      "end": 1561918503696,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1565509690832,
+      "edge_type": 5,
+      "start": 1561918504016,
+      "end": 2576898509072,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1565177446096,
+      "edge_type": 5,
+      "start": 2667100864592,
+      "end": 1565529555344,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1563163376464,
+      "edge_type": 5,
+      "start": 2207682769008,
+      "end": 1565216039280,
+      "label": "",
+      "input_index": 0
+    }
+  ],
+  "groups": [
+    {
+      "id": 2074988691696,
+      "type": "Group",
+      "version": 2,
+      "title": "Joins",
+      "x": 640.744693756104,
+      "y": 1099.2324218749989,
+      "w": 1797.216243743897,
+      "h": 900.4782714843757,
+      "collapsed": false,
+      "children": [
+        2607193616816,
+        2433832559440,
+        2607119191728,
+        2433019852784,
+        2607119136912,
+        2433832553680,
+        2431667623632,
+        2607119123792,
+        2433020497584,
+        2607119194288,
+        2744854848336,
+        2745368505040,
+        2745368494800,
+        2744854855056,
+        2824864700000
+      ],
+      "style": {
+        "color": [
+          140,
+          100,
+          180,
+          200
+        ],
+        "title_color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "border_color": [
+          50,
+          50,
+          50,
+          255
+        ]
+      }
+    },
+    {
+      "id": 2577516296176,
+      "type": "Group",
+      "version": 2,
+      "title": "Enriched",
+      "x": 1824.4780273437511,
+      "y": 118.74999999999991,
+      "w": 848.2807617187482,
+      "h": 197.1560058593752,
+      "collapsed": false,
+      "children": [
+        2073979223760,
+        2074988497808,
+        2607196374192,
+        2074988703216,
+        2607193611536
+      ],
+      "style": {
+        "color": [
+          180,
+          80,
+          80,
+          200
+        ],
+        "title_color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "border_color": [
+          50,
+          50,
+          50,
+          255
+        ]
+      }
+    }
+  ],
+  "workflow_metadata": {
+    "schema_version": 2,
+    "app_version": "0.1.0",
+    "saved_at": "2026-09-30T08:42:07Z"
+  }
+}

@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+from loguru import logger as glogger
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import QAction, QDialog
 
-from loguru import logger as glogger
-
 from trigger_designer.qt.models.settings_panel import SettingsDialog
+from trigger_designer.qt.node_editor_colors import (
+    apply_node_editor_colors,
+    load_node_editor_colors,
+    refresh_open_scenes,
+)
 
 
 class MainWindowActionsMixin:
     """Mixin encapsulating action creation and settings management."""
 
-    def createActions(self) -> None:  # noqa: N802 (Qt naming style)
+    def createActions(self) -> None:
         super().createActions()
 
         self.actSettings = QAction(
@@ -77,3 +81,5 @@ class MainWindowActionsMixin:
 
     def loadSettings(self) -> None:
         glogger.debug("Loading settings...")
+        apply_node_editor_colors(load_node_editor_colors())
+        refresh_open_scenes(self)

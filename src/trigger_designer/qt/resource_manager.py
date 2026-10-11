@@ -6,7 +6,7 @@ from typing import Any, Optional
 from loguru import logger
 from PIL import Image, ImageQt
 from qtpy.QtCore import QSettings, Qt
-from qtpy.QtGui import QPixmap, QImage, QPainter
+from qtpy.QtGui import QColor, QPixmap, QImage, QPainter
 from qtpy.QtSvg import QSvgRenderer
 
 import orjson as json
@@ -127,6 +127,33 @@ class ResourceManager:
                 logger.warning(f"Unable to cache runtime theme: {exc}")
 
         return theme_qss
+
+    def get_theme_color(self, key: str, default: str = "#000000") -> QColor:
+        """Resolve one theme token to a QColor, for a data-driven paint.
+
+        For per-row/per-cell colors driven by model state (e.g. a "this row
+        is stale" highlight), QSS can't help -- it has no selector for
+        arbitrary data, only static widget/objectName rules -- so this is
+        the Python-side counterpart: it reads the same theme JSON
+        `load_theme()` formats `base.qss` against, picking dark/light via
+        the same ``QSettings`` key the theme switcher itself writes
+        (``settings_panel.py``), so a per-row color follows the active
+        theme like everything else does.
+        """
+        theme_name = QSettings("Blue Octa", "Trigger Designer").value("theme", "dark")
+        try:
+            with open(
+                ResourceManager._res_folder
+                / "resources/qt/themes"
+                / f"{theme_name}.json",
+                encoding="utf-8",
+                mode="r",
+            ) as f:
+                theme_variables: dict = json.loads(f.read())
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            logger.warning(f"Unable to load theme '{theme_name}' for color lookup: {e}")
+            return QColor(default)
+        return QColor(theme_variables.get(key, default))
 
     @staticmethod
     def get_full_path(id: str) -> Optional[Path]:
