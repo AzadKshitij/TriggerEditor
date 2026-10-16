@@ -556,10 +556,17 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)
 
-    # def closeEvent(self, event: QCloseEvent) -> None:
-    #     for callback in self._close_event_listeners:
-    #         callback(self, event)
-    #     self.logger.clear_context()
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Dispatch the registered close listeners.
+
+        The listeners (e.g. ``TriggerWindow.onSubWndClose``) decide whether
+        the window may close; a listener that ignores the event vetoes the
+        close. This must not call ``super().closeEvent(event)`` afterwards:
+        the event arrives accepted, so the base implementation would undo a
+        listener's ``event.ignore()`` and the close would always succeed.
+        """
+        for callback in list(self._close_event_listeners):
+            callback(self, event)
 
     def onDragEnter(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):

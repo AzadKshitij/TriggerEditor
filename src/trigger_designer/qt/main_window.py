@@ -352,12 +352,17 @@ class TriggerWindow(
                 self.switchLoggingDock(widget)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
+        # Activate the window being closed first so ``maybeSave`` targets the
+        # right document (``findMdiChild`` matches by filename, as upstream).
         existing = self.findMdiChild(widget.filename)
         self.mdiArea.setActiveSubWindow(existing)
 
         if self.maybeSave():
-            event.accept()
-        else:
+            # The close is really happening: drop per-window dock state.
+            self.onDesignWindowClose(widget, event)
+            if event is not None:
+                event.accept()
+        elif event is not None:
             event.ignore()
 
     def findMdiChild(self, filename):
