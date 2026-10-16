@@ -11,8 +11,21 @@ Run this script to test the SQL formula editor with various features:
 import sys
 import os
 
-# Add the parent directory to the path to import the widget
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add the widget directory to the path to import the widget
+sys.path.insert(
+    0,
+    os.path.abspath(
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..",
+            "..",
+            "src",
+            "trigger_designer",
+            "qt",
+            "widgets",
+        )
+    ),
+)
 
 from qtpy.QtWidgets import (
     QApplication,
