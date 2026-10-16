@@ -236,7 +236,6 @@ class FileInputContent(
             show_info=False,  # No info panel to keep it compact
             show_search=False,  # Search not needed for preview
             show_export=False,  # Export not needed in node context
-            show_performance_settings=False,  # Performance settings not needed
         )
         main_layout.addWidget(self.table_viewer, 1)
         dock_layout.addLayout(main_layout)

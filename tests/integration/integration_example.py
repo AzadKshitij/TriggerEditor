@@ -64,9 +64,6 @@ class EnhancedFileInputContent:
         self.polars_table_viewer.chunk_size = 500  # Smaller chunks for preview
         self.polars_table_viewer.cache_size = 2000  # Limited cache for preview
 
-        # Connect memory warning signal
-        self.polars_table_viewer.memoryWarning.connect(self._on_memory_warning)
-
         layout.addWidget(self.polars_table_viewer)
 
         return container
@@ -204,30 +201,6 @@ class EnhancedFileInputContent:
             logger.error(f"Error opening enhanced view: {e}")
             QMessageBox.critical(
                 self, "Error", f"Failed to open enhanced view: {str(e)}"
-            )
-
-    def _on_memory_warning(self, memory_mb: float) -> None:
-        """
-        Handle memory warnings from the table viewer.
-
-        This can trigger automatic optimization or user warnings.
-        """
-        logger.warning(f"Memory warning: {memory_mb:.1f} MB")
-
-        # Update status to show memory warning
-        current_text = self.data_info_label.text()
-        if "⚠️" not in current_text:
-            self.data_info_label.setText(f"{current_text} ⚠️ High Memory")
-
-        # Optionally show user warning for very high memory usage
-        if memory_mb > 1000:  # Over 1GB
-            from qtpy.QtWidgets import QMessageBox
-
-            QMessageBox.warning(
-                self,
-                "High Memory Usage",
-                f"Memory usage is high ({memory_mb:.0f} MB). "
-                f"Consider filtering the data or working with smaller files.",
             )
 
 

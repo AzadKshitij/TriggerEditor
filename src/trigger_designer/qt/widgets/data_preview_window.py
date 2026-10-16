@@ -245,7 +245,6 @@ class DataPreviewWindow(QMainWindow):
                 show_info=True,  # Show information panel
                 show_search=True,
                 show_export=True,
-                show_performance_settings=self.is_lazy_data,
             )
 
             # Ensure the info panel is visible and on top

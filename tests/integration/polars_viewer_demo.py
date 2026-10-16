@@ -187,9 +187,6 @@ class PolarsViewerDemo(QMainWindow):
         self.table_viewer = PolarsTableViewer()
         layout.addWidget(self.table_viewer)
 
-        # Connect signals
-        self.table_viewer.memoryWarning.connect(self._on_memory_warning)
-
     def _load_small_dataset(self):
         """Load a small dataset (1K rows)."""
         self.status_label.setText("Generating small dataset (1K rows)...")
@@ -281,12 +278,6 @@ class PolarsViewerDemo(QMainWindow):
 
         test_timer.timeout.connect(run_test)
         test_timer.start(1000)  # Run test every second
-
-    def _on_memory_warning(self, memory_mb: float):
-        """Handle memory warnings."""
-        self.status_label.setText(
-            f"⚠️ Memory Warning: {memory_mb:.0f} MB - Consider optimization"
-        )
 
 
 def main():

@@ -45,7 +45,6 @@ class TestPolarsTableViewerShortcuts(unittest.TestCase):
             show_info=False,
             show_search=False,
             show_export=False,
-            show_performance_settings=False,
         )
 
         copy_shortcuts = [
@@ -242,6 +241,150 @@ class TestPolarsTableModel(unittest.TestCase):
 
         # Verify cache is cleared
         self.assertEqual(len(model._data_cache), 0)
+
+
+class TestPagingAndSorting(unittest.TestCase):
+    """Paging and model-level sorting behaviour."""
+
+    def _model(self, rows: int = 600, page_size: int = 250) -> PolarsTableModel:
+        df = pl.DataFrame(
+            {"id": range(rows), "label": [f"row_{i}" for i in range(rows)]}
+        )
+        model = PolarsTableModel(df)
+        model.set_page_size(page_size)
+        return model
+
+    def test_page_slice_boundaries(self):
+        model = self._model()  # 600 rows, 250 per page
+        self.assertEqual(model.page_count, 3)
+        self.assertEqual(model.page_offset, 0)
+        self.assertEqual(model.rowCount(), 250)
+
+        model.set_page(1)
+        self.assertEqual(model.page_offset, 250)
+        self.assertEqual(model.rowCount(), 250)
+
+        model.set_page(2)
+        self.assertEqual(model.page_offset, 500)
+        self.assertEqual(model.rowCount(), 100)  # short last page
+
+    def test_page_index_is_clamped(self):
+        model = self._model()
+        model.set_page(99)
+        self.assertEqual(model.page_index, 2)
+
+        model.set_page(-5)
+        self.assertEqual(model.page_index, 0)
+
+    def test_page_count_for_empty_and_short_frames(self):
+        self.assertEqual(PolarsTableModel().page_count, 1)
+        self.assertEqual(PolarsTableModel().rowCount(), 0)
+
+        short = PolarsTableModel(pl.DataFrame({"a": [1, 2]}))
+        self.assertEqual(short.page_count, 1)
+        self.assertEqual(short.rowCount(), 2)
+
+    def test_data_maps_view_rows_to_absolute_rows(self):
+        model = self._model()
+        self.assertEqual(model.data(model.createIndex(0, 0), Qt.DisplayRole), "0")
+
+        model.set_page(2)  # rows 500..599
+        self.assertEqual(model.data(model.createIndex(0, 0), Qt.DisplayRole), "500")
+        self.assertEqual(model.data(model.createIndex(99, 0), Qt.DisplayRole), "599")
+        # Past the last real row of the frame -> nothing to show
+        self.assertIsNone(model.data(model.createIndex(100, 0), Qt.DisplayRole))
+
+    def test_chunk_cache_uses_absolute_offsets(self):
+        df = pl.DataFrame({"id": range(600)})
+        model = PolarsTableModel(df, chunk_size=100)
+        model.set_page(1)  # view row 0 is absolute row 250
+        model.data(model.createIndex(0, 0), Qt.DisplayRole)
+        self.assertIn(200, model._data_cache)  # chunk starting at row 200
+
+    def test_vertical_header_numbers_are_absolute(self):
+        model = self._model()
+        self.assertEqual(model.headerData(0, Qt.Vertical, Qt.DisplayRole), "1")
+
+        model.set_page(2)
+        self.assertEqual(model.headerData(0, Qt.Vertical, Qt.DisplayRole), "501")
+
+    def test_page_size_change_keeps_first_visible_row(self):
+        model = self._model()
+        model.set_page(2)  # offset 500
+        model.set_page_size(100)
+        self.assertEqual(model.page_offset, 500)
+
+    def test_sort_ascending_and_descending(self):
+        model = PolarsTableModel(pl.DataFrame({"n": [3, 1, 2]}))
+
+        model.sort_by(0)
+        self.assertEqual(model.sort_column, 0)
+        self.assertFalse(model.sort_descending)
+        self.assertEqual(
+            [model.data(model.createIndex(r, 0), Qt.DisplayRole) for r in range(3)],
+            ["1", "2", "3"],
+        )
+
+        model.sort_by(0, descending=True)
+        self.assertTrue(model.sort_descending)
+        self.assertEqual(
+            [model.data(model.createIndex(r, 0), Qt.DisplayRole) for r in range(3)],
+            ["3", "2", "1"],
+        )
+
+    def test_sort_puts_nulls_last(self):
+        model = PolarsTableModel(pl.DataFrame({"n": [1, None, 2]}))
+
+        model.sort_by(0)
+        self.assertEqual(
+            [model.data(model.createIndex(r, 0), Qt.DisplayRole) for r in range(3)],
+            ["1", "2", "NULL"],
+        )
+
+        model.sort_by(0, descending=True)
+        self.assertEqual(
+            [model.data(model.createIndex(r, 0), Qt.DisplayRole) for r in range(3)],
+            ["2", "1", "NULL"],
+        )
+
+    def test_sort_resets_paging_and_clears_cache(self):
+        model = self._model()
+        model.set_page(1)
+        model.data(model.createIndex(0, 0), Qt.DisplayRole)
+        self.assertTrue(model._data_cache)
+
+        model.sort_by(0, descending=True)
+        self.assertEqual(model.page_index, 0)
+        self.assertEqual(model._data_cache, {})
+
+    def test_sort_ignores_invalid_column(self):
+        model = self._model(rows=3)
+        model.sort_by(99)
+        self.assertIsNone(model.sort_column)
+
+
+class TestViewerSortingInteraction(unittest.TestCase):
+    """Header clicks drive model-side sorting on the viewer."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.app = QApplication.instance() or QApplication([])
+
+    def test_header_click_toggles_sort_direction(self):
+        viewer = PolarsTableViewer(dataframe=pl.DataFrame({"n": [2, 1, 3]}))
+        try:
+            viewer._on_header_clicked(0)
+            self.assertEqual(viewer.model.sort_column, 0)
+            self.assertFalse(viewer.model.sort_descending)
+            first = viewer.model.data(viewer.model.createIndex(0, 0), Qt.DisplayRole)
+            self.assertEqual(first, "1")
+
+            viewer._on_header_clicked(0)
+            self.assertTrue(viewer.model.sort_descending)
+            first = viewer.model.data(viewer.model.createIndex(0, 0), Qt.DisplayRole)
+            self.assertEqual(first, "3")
+        finally:
+            viewer.close()
 
 
 class TestPerformanceBenchmarks(unittest.TestCase):
