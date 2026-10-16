@@ -249,6 +249,12 @@ class PolarsTableModel(QAbstractTableModel):
 
         row, col = index.row(), index.column()
 
+        # `createIndex` does not validate against the model dimensions, so a
+        # synthetically built index can be out of range. Such a cell has no
+        # data at all - only a genuine load miss (see below) is "loading".
+        if row >= self._total_rows or col >= self._total_columns:
+            return None
+
         if role == Qt.DisplayRole:
             row_data = self._get_cached_data(row)
             if row_data is None:

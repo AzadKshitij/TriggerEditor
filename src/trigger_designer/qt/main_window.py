@@ -133,7 +133,6 @@ class TriggerWindow(
         self.createNodesDock()
         self.createConfigDock()
         self.createLoggingDock()
-        # self.createResultDock()
 
         self.createMenus()
         self.createToolBars()
@@ -149,7 +148,6 @@ class TriggerWindow(
 
         # Initialize global logger with this main window
         global_logger.set_main_window(self)
-        # self.tabifyDockWidget(self.configDock, self.resultDock)
 
     def toggleFullScreen(self):
         if self.isFullScreen():
@@ -310,11 +308,6 @@ class TriggerWindow(
 
     def createToolBars(self) -> None:
         pass
-
-    # Dock Widgets #
-    # def createResultDock(self) -> None:
-    #     self.resultDock = ResultDock(self)
-    #     self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
 
     def createMdiChild(self, child_widget=None):
         nodeeditor = (

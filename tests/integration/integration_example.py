@@ -21,9 +21,7 @@ from loguru import logger
 
 # Import the new widgets
 from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
-from trigger_designer.qt.models.enhanced_data_preview_window import (
-    EnhancedDataPreviewWindow,
-)
+from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 
 
 class EnhancedFileInputContent:
@@ -195,7 +193,7 @@ class EnhancedFileInputContent:
 
         # Create and show enhanced preview window
         try:
-            self.enhanced_window = EnhancedDataPreviewWindow(
+            self.enhanced_window = DataPreviewWindow(
                 current_df,
                 f"File Data: {os.path.basename(self.filePath) if self.filePath else 'Unknown'}",
                 parent=self,

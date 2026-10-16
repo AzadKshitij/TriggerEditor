@@ -85,9 +85,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.rsm: ResourceManager = ResourceManager()
         self._logging_dock: Optional["LoggingDock"] = None
 
-        # self.design_window_id = str(id(self))
-        # self.logger.set_context(self.design_window_id)
-
         self._last_scale: float = 1.0
 
         self.init_workflow_execution()
@@ -158,10 +155,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.fit_button.move(340, 10)
         self.fit_button.clicked.connect(self.fitView)
 
-    # def activateWindow(self) -> None:
-    #     super().activateWindow()
-    #     self.logger.set_context(self.design_window_id)
-
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
         self._last_scale *= zoom_factor
@@ -169,10 +162,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def zoomOut(self) -> None:
         zoom_factor = self.view.zoomOut()
-        print(
-            "🐍 File: TriggerEditor/trigger_sub_window.py | Line: 80 | zoomOut ~ zoom_factor",
-            zoom_factor,
-        )
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 

@@ -60,14 +60,9 @@ app.exec_()
 ### Enhanced Preview Window
 
 ```python
-from trigger_designer.qt.widgets.enhanced_data_preview_window import preview_data
+from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 
-# Quick preview (convenience function)
-preview_window = preview_data(df, "My Dataset")
-
-# Or create window directly for more control
-from trigger_designer.qt.widgets.enhanced_data_preview_window import EnhancedDataPreviewWindow
-window = EnhancedDataPreviewWindow(df, "Enhanced Preview")
+window = DataPreviewWindow(df, "My Dataset")
 window.show()
 ```
 
@@ -211,11 +206,9 @@ PolarsTableViewer (QWidget)
 ├── Export capabilities
 └── Uses PolarsTableModel internally
 
-EnhancedDataPreviewWindow (QMainWindow)
-├── Complete preview application
-├── Tabbed interface with data info
-├── Integrates PolarsTableViewer
-└── Supports various data input formats
+DataPreviewWindow (QMainWindow)
+├── Thin host of the shared DataPreviewPanel
+└── Used by the Alt+click socket preview
 ```
 
 ### Key Components

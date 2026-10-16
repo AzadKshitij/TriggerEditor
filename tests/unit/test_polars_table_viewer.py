@@ -23,9 +23,6 @@ try:
         PolarsTableModel,
         PolarsTableViewer,
     )
-    from trigger_designer.qt.models.enhanced_data_preview_window import (
-        EnhancedDataPreviewWindow,
-    )
     from qtpy.QtWidgets import QApplication
     from qtpy.QtCore import QModelIndex, Qt
     from qtpy.QtGui import QKeySequence, QShortcut
@@ -59,7 +56,10 @@ class TestPolarsTableViewerShortcuts(unittest.TestCase):
 
         self.assertTrue(copy_shortcuts)
         self.assertTrue(
-            all(shortcut.context() == Qt.ShortcutContext.WidgetShortcut for shortcut in copy_shortcuts)
+            all(
+                shortcut.context() == Qt.ShortcutContext.WidgetShortcut
+                for shortcut in copy_shortcuts
+            )
         )
 
         viewer.close()
@@ -488,7 +488,11 @@ class TestEdgeCases(unittest.TestCase):
                 "strings": ["a", "b", "c"],
                 "booleans": [True, False, True],
                 "dates": [date(2020, 1, 1), date(2020, 1, 2), date(2020, 1, 3)],
-                "mixed_nulls": [1, None, "text"],
+                # A genuinely mixed column needs an explicit Object dtype;
+                # Polars' inference rejects mixed values outright.
+                "mixed_nulls": pl.Series(
+                    "mixed_nulls", [1, None, "text"], dtype=pl.Object
+                ),
             }
         )
 

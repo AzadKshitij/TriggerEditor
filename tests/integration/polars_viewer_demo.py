@@ -28,10 +28,7 @@ sys.path.append(r"c:\Users\KASHVINCHANDRASAN\Desktop\Personal\Github\TriggerEdit
 
 try:
     from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
-    from trigger_designer.qt.models.enhanced_data_preview_window import (
-        EnhancedDataPreviewWindow,
-        preview_data,
-    )
+    from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 except ImportError as e:
     print(f"Import error: {e}")
     print("Make sure you're running this from the correct directory")
@@ -237,18 +234,12 @@ class PolarsViewerDemo(QMainWindow):
             self.status_label.setText("Please load a dataset first")
             return
 
-        # Demonstrate different ways to use the preview window
-
-        # Method 1: Using the convenience function
-        preview_window = preview_data(self.current_df, "Polars DataFrame Preview")
-
-        # Method 2: Direct instantiation (commented out to avoid multiple windows)
-        # preview_window = EnhancedDataPreviewWindow(
-        #     self.current_df,
-        #     "Enhanced Data Preview",
-        #     parent=self
-        # )
-        # preview_window.show()
+        # Demonstrate the preview window. Keep a reference so the window
+        # is not garbage-collected while open.
+        self.preview_window = DataPreviewWindow(
+            self.current_df, "Polars DataFrame Preview"
+        )
+        self.preview_window.show()
 
         self.status_label.setText("Preview window opened")
 
