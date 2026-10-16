@@ -36,6 +36,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtCore import (
     QAbstractTableModel,
     QModelIndex,
+    QObject,
     QSettings,
     Qt,
     Signal,
@@ -64,6 +65,7 @@ class PolarsTableModel(QAbstractTableModel):
         dataframe: Optional[pl.DataFrame] = None,
         chunk_size: int = 1000,
         cache_size: int = 5000,
+        parent: QObject | None = None,
     ):
         """
         Initialize the model with a Polars DataFrame.
@@ -73,7 +75,7 @@ class PolarsTableModel(QAbstractTableModel):
             chunk_size: Number of rows to load at once for lazy loading
             cache_size: Maximum number of rows to keep in memory cache
         """
-        super().__init__()
+        super().__init__(parent)
 
         self._dataframe = dataframe if dataframe is not None else pl.DataFrame()
         self.chunk_size = chunk_size
@@ -165,6 +167,11 @@ class PolarsTableModel(QAbstractTableModel):
         if self._total_rows <= 0:
             return 1
         return (self._total_rows + self.page_size - 1) // self.page_size
+
+    @property
+    def total_rows(self) -> int:
+        """Total rows in the frame, across all pages."""
+        return self._total_rows
 
     @property
     def sort_column(self) -> int | None:
@@ -900,9 +907,12 @@ class PolarsTableViewer(QWidget):
         return panel
 
     def _init_model(self):
-        """Initialize the table model."""
+        """Initialize the table model (owned by the view that shows it)."""
         self.model = PolarsTableModel(
-            self.dataframe, chunk_size=self.chunk_size, cache_size=self.cache_size
+            self.dataframe,
+            chunk_size=self.chunk_size,
+            cache_size=self.cache_size,
+            parent=self,
         )
         self.table_view.setModel(self.model)
 
