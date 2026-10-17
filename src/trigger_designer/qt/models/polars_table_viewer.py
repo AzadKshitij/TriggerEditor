@@ -614,44 +614,12 @@ class PolarsTableViewer(QWidget):
 
     def _init_ui(self):
         """Initialize the user interface."""
-        # Create main layout
         main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins to maximize space
 
-        # Create scroll area to contain all content
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-
-        # Create content widget
-        content_widget = QWidget()
-        layout = QVBoxLayout(content_widget)
-
-        # 1. Statistics section at the very top (if enabled)
-        if self.show_info:
-            stats_panel = self._create_stats_panel()
-            layout.addWidget(stats_panel)
-            self.stats_panel = stats_panel
-        else:
-            self.stats_panel = None
-
-        # 2. Combined search and export controls in same row (if enabled)
-        if self.show_controls and (self.show_search or self.show_export):
-            combined_panel = self._create_combined_controls_panel()
-            layout.addWidget(combined_panel)
-            self.combined_panel = combined_panel
-        else:
-            self.combined_panel = None
-            # Initialize widgets as None when not shown
-            self.search_input = None
-            self.column_filter = None
-            self.apply_filter_btn = None
-            self.clear_filter_btn = None
-            self.export_csv_btn = None
-            self.export_excel_btn = None
-
-        # 3. Table view (main content) - takes all available space
+        # The table is built first: a host that hides every control above it
+        # (the Data Preview panel) gets the bare table, not a scroll area
+        # wrapped around a table that already scrolls.
         self.table_view = QTableView()
         # Row striping is painted by the model (Qt.BackgroundRole); view,
         # headers and selection states are themed by base.qss.
@@ -675,7 +643,57 @@ class PolarsTableViewer(QWidget):
         # Enable copy functionality
         self._setup_copy_functionality()
 
-        # Add table with stretch factor to take most of the space
+        show_stats = bool(self.show_info)
+        show_controls = bool(
+            self.show_controls and (self.show_search or self.show_export)
+        )
+
+        if not show_stats and not show_controls:
+            self.stats_panel = None
+            self.combined_panel = None
+            self.search_input = None
+            self.column_filter = None
+            self.apply_filter_btn = None
+            self.clear_filter_btn = None
+            self.export_csv_btn = None
+            self.export_excel_btn = None
+            main_layout.addWidget(self.table_view, 1)
+            return
+
+        # Scroll area to contain the control panels above the table.
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        # Create content widget
+        content_widget = QWidget()
+        layout = QVBoxLayout(content_widget)
+
+        # 1. Statistics section at the very top (if enabled)
+        if show_stats:
+            stats_panel = self._create_stats_panel()
+            layout.addWidget(stats_panel)
+            self.stats_panel = stats_panel
+        else:
+            self.stats_panel = None
+
+        # 2. Combined search and export controls in same row (if enabled)
+        if show_controls:
+            combined_panel = self._create_combined_controls_panel()
+            layout.addWidget(combined_panel)
+            self.combined_panel = combined_panel
+        else:
+            self.combined_panel = None
+            # Initialize widgets as None when not shown
+            self.search_input = None
+            self.column_filter = None
+            self.apply_filter_btn = None
+            self.clear_filter_btn = None
+            self.export_csv_btn = None
+            self.export_excel_btn = None
+
+        # 3. Table view (main content) - takes all available space
         layout.addWidget(self.table_view, 9)  # 90% of space for table
 
         # Set content widget in scroll area

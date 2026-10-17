@@ -1804,24 +1804,66 @@ QComboBox#DataTypeCombo {{
   QComboBox#DataTypeCombo:focus {{
     border: 1px solid {accent_secondary}; }}
 /* Data Preview dock and panel ------------------------------------------- */
-QLabel#PreviewTitleLabel {{
-  color: {text_primary};
-  font-weight: bold; }}
-QLabel#PreviewInfoLabel {{
+/* One strip of chrome over the table: node chip, socket chip, live search,
+   scope, counts, then pin/refresh/options. Chips sit a shade below the
+   strip; the search field is the app's standard field on that shade. */
+QFrame#PreviewStrip {{
+  background-color: {background_secondary};
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+QFrame#PreviewNodeChip, QFrame#PreviewSocketChip, QFrame#PreviewCountsChip {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+QLabel#PreviewNodeLabel {{
+  color: {text_secondary};
+  font-size: 11px; }}
+QLabel#PreviewPinDot {{
+  background-color: {accent_primary};
+  border-radius: 3px; }}
+QLabel#PreviewStatusLabel {{
   color: {text_inactive};
   font-size: 11px; }}
-QLabel#PreviewRangeLabel {{
-  color: {text_inactive}; }}
-QComboBox#PreviewSocketCombo {{
-  background-color: {editor_background};
+QLabel#PreviewLimitedBadge {{
+  background-color: {background_warning};
   color: {text_primary};
-  border: 1px solid {accent_primary};
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 5px; }}
+QLineEdit#PreviewSearchEdit {{
+  background-color: {editor_background};
+  border: 1px solid {border_primary};
   border-radius: 4px;
-  padding: 2px 6px; }}
-  QComboBox#PreviewSocketCombo:hover, QComboBox#PreviewSocketCombo:focus {{
+  color: {text_primary}; }}
+  QLineEdit#PreviewSearchEdit:hover {{
+    border: 1px solid {accent_primary}; }}
+  QLineEdit#PreviewSearchEdit:focus {{
     border: 1px solid {accent_secondary}; }}
+  QLineEdit#PreviewSearchEdit:disabled {{
+    color: {text_disabled}; }}
+QComboBox#PreviewScopeCombo {{
+  background-color: {background_primary};
+  color: {text_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  padding: 0px 4px; }}
+  QComboBox#PreviewScopeCombo:hover {{
+    border: 1px solid {accent_primary}; }}
+  QComboBox#PreviewScopeCombo:focus {{
+    border: 1px solid {accent_secondary}; }}
+  QComboBox#PreviewScopeCombo:disabled {{
+    color: {text_disabled}; }}
+QComboBox#PreviewSocketCombo {{
+  background-color: transparent;
+  color: {text_secondary};
+  border: 0px;
+  padding: 0px 4px; }}
+  QComboBox#PreviewSocketCombo:hover {{
+    color: {text_primary}; }}
   QComboBox#PreviewSocketCombo:disabled {{
     color: {text_disabled}; }}
+  QComboBox#PreviewSocketCombo::drop-down {{
+    border-left: 0px; }}
 /* The pin is a checkable icon button: an objectName selector outranks
    QPushButton:hover, so every state is restated here (§4.5) and the checked
    state comes last, with its own hover, so a pinned button still reacts. */

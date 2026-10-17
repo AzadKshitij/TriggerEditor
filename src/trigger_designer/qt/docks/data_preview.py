@@ -4,7 +4,9 @@ The dock follows the active design window. Selecting a node (or editing one in
 the Config Dock) points the embedded `DataPreviewPanel` at that node's output
 socket; a pin freezes the current node so selection changes stop moving the
 preview, and the options menu exports the loaded frame or opens it in a
-standalone window.
+standalone window. The panel's strip is the dock's only chrome: the dock feeds
+it the node title, the socket list and the pin state, and appends the menu
+items that need the design window.
 
 Per-window state mirrors the LoggingDock: keyed by ``str(id(design_window))``,
 dropped by ``remove_design_window`` when the window closes. Each entry holds
@@ -26,19 +28,13 @@ import weakref
 from typing import Any
 
 from qtpy.QtCore import QTimer
-from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import (
     QDockWidget,
-    QHBoxLayout,
-    QLabel,
-    QMenu,
     QVBoxLayout,
     QWidget,
 )
 
 from trigger_designer.qt.models.preview_sampling import is_previewable
-from trigger_designer.qt.resource_manager import ResourceManager
-from trigger_designer.qt.widgets.common import IconButton, NoWheelComboBox
 from trigger_designer.qt.widgets.data_preview_panel import DataPreviewPanel
 from trigger_designer.qt.widgets.data_preview_window import DataPreviewWindow
 
@@ -67,12 +63,12 @@ class DataPreviewDock(QDockWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(_TITLE, parent)
         self.setObjectName("DataPreviewDock")
-        self.rsm = ResourceManager()
 
         self.current_design_window_id: str | None = None
         self._states: dict[str, dict[str, Any]] = {}
         self._window_ref: weakref.ReferenceType[Any] | None = None
         self._payload: Any = None
+        self._shown_title = ""
         self._pending_eval: tuple[str, Any] | None = None
 
         self._coalesce = QTimer(self)
@@ -83,73 +79,24 @@ class DataPreviewDock(QDockWidget):
         self._build_ui()
 
     def _build_ui(self) -> None:
-        """Header (toolbar tokens) over the preview panel."""
+        """The panel fills the dock; its strip is the only chrome."""
         body = QWidget(self)
         layout = QVBoxLayout(body)
-        layout.setSpacing(2)
-        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        # The panel comes first: the options menu binds to its viewer.
+        # The panel comes first: the options menu it owns is extended below.
         self.panel = DataPreviewPanel(body)
-        self.panel.titleChanged.connect(self._on_title_changed)
-        self.panel.controller.busyChanged.connect(self._on_busy_changed)
-
-        header = QWidget(body)
-        header.setFixedHeight(40)
-        header_layout = QHBoxLayout(header)
-        header_layout.setSpacing(2)
-        header_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.title_label = QLabel(_TITLE, header)
-        self.title_label.setObjectName("PreviewTitleLabel")
-        header_layout.addWidget(self.title_label, 1)
-
-        self.socket_combo = NoWheelComboBox(header)
-        self.socket_combo.setObjectName("PreviewSocketCombo")
-        self.socket_combo.setMinimumHeight(30)
-        self.socket_combo.setToolTip("Output socket")
-        self.socket_combo.setAccessibleName("Output socket")
-        self.socket_combo.setVisible(False)
-        self.socket_combo.currentIndexChanged.connect(self._on_socket_changed)
-        header_layout.addWidget(self.socket_combo)
-
-        self.pin_btn = self._header_button("icon_pin", "Pin this node", header)
-        self.pin_btn.setObjectName("PreviewPinButton")
-        self.pin_btn.setCheckable(True)
-        self.pin_btn.setEnabled(False)
-        self.pin_btn.toggled.connect(self._on_pin_toggled)
-        header_layout.addWidget(self.pin_btn)
-
-        self.refresh_btn = self._header_button(
-            "icon_refresh", "Refresh preview", header
-        )
-        self.refresh_btn.setEnabled(False)
-        self.refresh_btn.clicked.connect(self.panel.refresh)
-        header_layout.addWidget(self.refresh_btn)
-
-        self.options_btn = self._header_button(
-            "icon_options", "Preview options", header
-        )
-        self.options_btn.setObjectName("OptionsButton")
+        self.panel.pinned.connect(self._on_pin_toggled)
+        self.panel.socketChanged.connect(self._on_socket_changed)
         self._build_options_menu()
-        header_layout.addWidget(self.options_btn)
 
-        layout.addWidget(header)
         layout.addWidget(self.panel, 1)
-
         self.setWidget(body)
 
-    def _header_button(self, icon_id: str, tooltip: str, parent: QWidget) -> IconButton:
-        return IconButton.themed(
-            tooltip,
-            rsm_icon=self.rsm.get(icon_id),
-            parent=parent,
-        )
-
     def _build_options_menu(self) -> None:
-        self.options_menu = QMenu(self)
-        self.export_csv_action = self.options_menu.addAction("Export CSV...")
-        self.export_excel_action = self.options_menu.addAction("Export Excel...")
+        """Window actions on the panel's menu (it owns copy and export)."""
+        self.options_menu = self.panel.options_menu
         self.options_menu.addSeparator()
         self.open_window_action = self.options_menu.addAction(
             "Open in standalone window"
@@ -157,12 +104,9 @@ class DataPreviewDock(QDockWidget):
         self.options_menu.addSeparator()
         self.unpin_action = self.options_menu.addAction("Unpin")
 
-        self.export_csv_action.triggered.connect(self.panel.viewer.export_csv)
-        self.export_excel_action.triggered.connect(self.panel.viewer.export_excel)
         self.open_window_action.triggered.connect(self._open_standalone_window)
         self.unpin_action.triggered.connect(self._unpin)
         self.options_menu.aboutToShow.connect(self._sync_menu)
-        self.options_btn.setMenu(self.options_menu)
 
     # -- per-window surface -------------------------------------------------
 
@@ -192,8 +136,9 @@ class DataPreviewDock(QDockWidget):
         self._drop_pending_eval()
         self.setWindowTitle(_TITLE)
         self._payload = None
-        self.panel.set_source(None, title="")
-        self._sync_header(self._new_state(), None)
+        self._shown_title = ""
+        self.panel.set_source(None)
+        self._sync_strip(self._new_state(), None)
 
     # -- design-window hooks (wired by the main window) ---------------------
 
@@ -256,10 +201,7 @@ class DataPreviewDock(QDockWidget):
         if shown is not None:
             self._show_node(design_window, shown)
 
-    # -- header -------------------------------------------------------------
-
-    def _on_title_changed(self, title: str) -> None:
-        self.title_label.setText(f"{_TITLE} - {title}" if title else _TITLE)
+    # -- strip --------------------------------------------------------------
 
     def _on_socket_changed(self, index: int) -> None:
         state = self._current_state()
@@ -278,68 +220,42 @@ class DataPreviewDock(QDockWidget):
         if checked:
             node = state["shown_node"]
             if node is None:
-                self._set_pin_checked(False)
+                self.panel.set_node(None, pinned=False, enabled=False)
                 return
             state["pinned"] = True
             state["pin_node"] = node
-            self._sync_header(state, node)
+            self._sync_strip(state, node)
             return
         state["pinned"] = False
         state["pin_node"] = None
         self._show_node(design_window, self._resolve_node(design_window))
 
     def _unpin(self) -> None:
-        self.pin_btn.setChecked(False)
+        self.panel.pin_btn.setChecked(False)
 
     def _sync_menu(self) -> None:
         has_data = self._payload is not None
-        self.export_csv_action.setEnabled(has_data)
-        self.export_excel_action.setEnabled(has_data)
         self.open_window_action.setEnabled(has_data)
         state = self._current_state()
         self.unpin_action.setEnabled(bool(state is not None and state["pinned"]))
 
-    def _sync_header(self, state: dict[str, Any], node: Any) -> None:
-        labels = self._socket_labels(node)
-        self.socket_combo.setVisible(len(labels) > 1)
-        if labels:
-            self.socket_combo.blockSignals(True)
-            self.socket_combo.clear()
-            self.socket_combo.addItems(labels)
-            self.socket_combo.setCurrentIndex(
-                min(self._socket_index(state, node), len(labels) - 1)
-            )
-            self.socket_combo.blockSignals(False)
-
-        pinned = bool(state["pinned"])
-        self._set_pin_checked(pinned)
-        self.pin_btn.setEnabled(node is not None)
-        icon = self.rsm.get("icon_unpin" if pinned else "icon_pin")
-        if icon is not None:
-            self.pin_btn.setIcon(QIcon(icon))
-        tooltip = "Unpin this node" if pinned else "Pin this node"
-        self.pin_btn.setToolTip(tooltip)
-        self.pin_btn.setAccessibleName(tooltip)
-        self._sync_refresh_enabled()
-
-    def _sync_refresh_enabled(self) -> None:
-        self._set_refresh_enabled(self.panel.controller.busy)
-
-    def _on_busy_changed(self, busy: bool) -> None:
-        self._set_refresh_enabled(busy)
-
-    def _set_refresh_enabled(self, busy: bool) -> None:
-        self.refresh_btn.setEnabled(self._payload is not None and not busy)
-
-    def _set_pin_checked(self, checked: bool) -> None:
-        self.pin_btn.blockSignals(True)
-        self.pin_btn.setChecked(checked)
-        self.pin_btn.blockSignals(False)
+    def _sync_strip(self, state: dict[str, Any], node: Any) -> None:
+        """Feed the panel's strip: the node chip, socket list and pin state."""
+        self._shown_title = self._node_title(node) if node is not None else ""
+        self.panel.set_sockets(
+            self._socket_labels(node), self._socket_index(state, node)
+        )
+        self.panel.set_node(
+            self._shown_title or None,
+            pinned=bool(state["pinned"]),
+            enabled=node is not None,
+        )
 
     def _open_standalone_window(self) -> None:
         if self._payload is None:
             return
-        window = DataPreviewWindow(self._payload, self.title_label.text(), self)
+        title = f"{_TITLE} - {self._shown_title}" if self._shown_title else _TITLE
+        window = DataPreviewWindow(self._payload, title, self)
         window.show()
 
     # -- showing a node -----------------------------------------------------
@@ -350,8 +266,8 @@ class DataPreviewDock(QDockWidget):
         if node is None:
             state["shown_node"] = None
             self._payload = None
-            self.panel.set_source(None, title="")
-            self._sync_header(state, None)
+            self.panel.set_source(None)
+            self._sync_strip(state, None)
             return
 
         if state["shown_node"] is not node:
@@ -361,12 +277,11 @@ class DataPreviewDock(QDockWidget):
         index = self._socket_index(state, node)
         payload = self._payload_for(design_window, node, index)
         self._payload = payload
-        title = self._node_title(node)
         if payload is None:
-            self.panel.set_source(None, title=title, empty_text=_NO_DATA)
+            self.panel.set_source(None, empty_text=_NO_DATA)
         else:
-            self.panel.set_source(payload, title=title)
-        self._sync_header(state, node)
+            self.panel.set_source(payload)
+        self._sync_strip(state, node)
 
     def _payload_for(self, design_window: Any, node: Any, index: int) -> Any:
         """The value on ``node``'s output ``index``, when it can be shown."""
@@ -449,8 +364,8 @@ class DataPreviewDock(QDockWidget):
         state["pin_node"] = None
         state["shown_node"] = None
         self._payload = None
-        self.panel.set_source(None, title="", empty_text=_PIN_LOST)
-        self._sync_header(state, None)
+        self.panel.set_source(None, empty_text=_PIN_LOST)
+        self._sync_strip(state, None)
         return False
 
     # -- small helpers ------------------------------------------------------

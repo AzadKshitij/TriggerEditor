@@ -159,10 +159,11 @@ def test_initial_state_is_blind_and_empty():
     dock, _ = _dock()
 
     assert dock.windowTitle() == "Data Preview"
-    assert dock.title_label.text() == "Data Preview"
-    assert dock.socket_combo.isHidden()
-    assert not dock.pin_btn.isEnabled()
-    assert not dock.refresh_btn.isEnabled()
+    assert dock.panel.node_chip.isHidden()
+    assert dock.panel.socket_chip.isHidden()
+    assert dock.panel.counts_chip.isHidden()
+    assert not dock.panel.pin_btn.isEnabled()
+    assert not dock.panel.refresh_btn.isEnabled()
     assert dock.panel._state_label.text() == "Select a node to preview its output"
 
 
@@ -175,10 +176,10 @@ def test_switch_follows_the_config_dock_node_and_titles_the_dock():
     dock.switch_to_design_window(window)
 
     assert dock.windowTitle() == "Data Preview - Preparation"
-    assert dock.title_label.text() == "Data Preview - Select"
+    assert dock.panel.node_label.text() == "Select"
     assert requested[-1] is node.value[0]["data"]
-    assert dock.pin_btn.isEnabled()
-    assert dock.refresh_btn.isEnabled()
+    assert dock.panel.pin_btn.isEnabled()
+    assert dock.panel.refresh_btn.isEnabled()
 
 
 def test_selection_is_used_when_the_config_dock_is_empty_and_sockets_skipped():
@@ -191,7 +192,7 @@ def test_selection_is_used_when_the_config_dock_is_empty_and_sockets_skipped():
     dock.switch_to_design_window(window)
 
     assert requested[-1] is node.value[0]["data"]
-    assert dock.title_label.text() == "Data Preview - Filter"
+    assert dock.panel.node_label.text() == "Filter"
 
 
 def test_config_dock_graphics_item_is_unwrapped_to_the_node():
@@ -215,7 +216,7 @@ def test_config_dock_graphics_item_is_unwrapped_to_the_node():
     assert dock._resolve_node(window) is node
     assert dock._node_is_shown(window, dock._current_state(), node)
     assert requested[-1] is node.value[0]["data"]
-    assert dock.title_label.text() == "Data Preview - Cleansing"
+    assert dock.panel.node_label.text() == "Cleansing"
 
 
 def test_selection_change_switches_the_preview():
@@ -229,6 +230,7 @@ def test_selection_change_switches_the_preview():
     window.config_dock.node = second
     dock.note_selection_changed(window)
     assert requested[-1] is second.value[0]["data"]
+    assert dock.panel.node_label.text() == "Filter"
 
     window.config_dock.node = None
     _select(window, first)
@@ -249,9 +251,10 @@ def test_clearing_the_selection_blanks_the_panel():
 
     assert len(requested) == before
     assert dock.panel._state_label.text() == "Select a node to preview its output"
-    assert dock.title_label.text() == "Data Preview"
-    assert not dock.pin_btn.isEnabled()
-    assert not dock.refresh_btn.isEnabled()
+    assert dock.panel.node_chip.isHidden()
+    assert dock.panel.socket_chip.isHidden()
+    assert not dock.panel.pin_btn.isEnabled()
+    assert not dock.panel.refresh_btn.isEnabled()
 
 
 def test_pin_freezes_the_node_until_it_is_unpinned():
@@ -263,16 +266,20 @@ def test_pin_freezes_the_node_until_it_is_unpinned():
     _select(window, pinned)
     dock.switch_to_design_window(window)
 
-    dock.pin_btn.setChecked(True)
-    assert dock.pin_btn.isChecked()
+    dock.panel.pin_btn.setChecked(True)
+    assert dock.panel.pin_btn.isChecked()
+    assert not dock.panel._pin_dot.isHidden()
 
     window.config_dock.node = other
     dock.note_selection_changed(window)
     assert requested[-1] is pinned.value[0]["data"]
+    assert dock.panel.node_label.text() == "Select"
 
-    dock.pin_btn.setChecked(False)
-    assert not dock.pin_btn.isChecked()
+    dock.panel.pin_btn.setChecked(False)
+    assert not dock.panel.pin_btn.isChecked()
+    assert dock.panel._pin_dot.isHidden()
     assert requested[-1] is other.value[0]["data"]
+    assert dock.panel.node_label.text() == "Filter"
 
 
 def test_pinned_node_leaving_the_scene_unpins_with_a_note():
@@ -282,7 +289,7 @@ def test_pinned_node_leaving_the_scene_unpins_with_a_note():
     window.config_dock.node = node
     _select(window, node)
     dock.switch_to_design_window(window)
-    dock.pin_btn.setChecked(True)
+    dock.panel.pin_btn.setChecked(True)
     before = len(requested)
 
     window.scene.nodes.remove(node)
@@ -290,7 +297,8 @@ def test_pinned_node_leaving_the_scene_unpins_with_a_note():
     window.selected = []
     dock.note_selection_changed(window)
 
-    assert not dock.pin_btn.isChecked()
+    assert not dock.panel.pin_btn.isChecked()
+    assert dock.panel.node_chip.isHidden()
     assert len(requested) == before
     assert "no longer in the scene" in dock.panel._state_label.text()
 
@@ -317,14 +325,14 @@ def test_pins_are_kept_per_window():
     second_window.config_dock.node = followed
 
     dock.switch_to_design_window(first_window)
-    dock.pin_btn.setChecked(True)
+    dock.panel.pin_btn.setChecked(True)
 
     dock.switch_to_design_window(second_window)
-    assert not dock.pin_btn.isChecked()
+    assert not dock.panel.pin_btn.isChecked()
     assert requested[-1] is followed.value[0]["data"]
 
     dock.switch_to_design_window(first_window)
-    assert dock.pin_btn.isChecked()
+    assert dock.panel.pin_btn.isChecked()
     assert requested[-1] is pinned.value[0]["data"]
 
 
@@ -339,7 +347,7 @@ def test_remove_design_window_clears_only_that_window():
     first_window.config_dock.node = pinned
     second_window.config_dock.node = followed
     dock.switch_to_design_window(first_window)
-    dock.pin_btn.setChecked(True)
+    dock.panel.pin_btn.setChecked(True)
 
     dock.switch_to_design_window(second_window)
     dock.remove_design_window(str(id(second_window)))
@@ -347,10 +355,11 @@ def test_remove_design_window_clears_only_that_window():
     assert str(id(second_window)) not in dock._states
     assert dock.windowTitle() == "Data Preview"
     assert dock.panel._state_label.text() == "Select a node to preview its output"
+    assert dock.panel.node_chip.isHidden()
     assert str(id(first_window)) in dock._states
 
     dock.switch_to_design_window(first_window)
-    assert dock.pin_btn.isChecked()
+    assert dock.panel.pin_btn.isChecked()
     assert requested[-1] is pinned.value[0]["data"]
 
 
@@ -373,15 +382,15 @@ def test_hooks_of_another_window_are_ignored():
 # -- sockets -----------------------------------------------------------------
 
 
-def test_socket_combo_is_hidden_for_a_single_output():
+def test_socket_chip_is_hidden_for_a_single_output():
     dock, _ = _dock()
     window = _Window()
     window.config_dock.node = _node("Select", rows=[2])
 
     dock.switch_to_design_window(window)
 
-    assert dock.socket_combo.isHidden()
-    assert dock.socket_combo.count() == 1
+    assert dock.panel.socket_chip.isHidden()
+    assert dock.panel.socket_combo.count() == 1
 
 
 def test_socket_combo_choice_requests_that_socket():
@@ -391,11 +400,11 @@ def test_socket_combo_choice_requests_that_socket():
     window.config_dock.node = node
     dock.switch_to_design_window(window)
 
-    assert not dock.socket_combo.isHidden()
-    assert [dock.socket_combo.itemText(i) for i in range(3)] == ["L", "J", "R"]
+    assert not dock.panel.socket_chip.isHidden()
+    assert [dock.panel.socket_combo.itemText(i) for i in range(3)] == ["L", "J", "R"]
     assert requested[-1] is node.value[0]["data"]
 
-    dock.socket_combo.setCurrentIndex(2)
+    dock.panel.socket_combo.setCurrentIndex(2)
     assert requested[-1] is node.value[2]["data"]
 
 
@@ -406,13 +415,13 @@ def test_socket_choice_resets_for_another_node():
     other = _node("Filter", rows=[5])
     window.config_dock.node = joined
     dock.switch_to_design_window(window)
-    dock.socket_combo.setCurrentIndex(1)
+    dock.panel.socket_combo.setCurrentIndex(1)
     assert requested[-1] is joined.value[1]["data"]
 
     window.config_dock.node = other
     dock.note_selection_changed(window)
 
-    assert dock.socket_combo.currentIndex() == 0
+    assert dock.panel.socket_combo.currentIndex() == 0
     assert requested[-1] is other.value[0]["data"]
 
 
@@ -428,9 +437,10 @@ def test_no_output_on_the_socket_shows_the_empty_state():
 
     assert requested == []
     assert dock.panel._state_label.text() == "No previewable data on this socket"
-    assert dock.title_label.text() == "Data Preview - Select"
-    assert dock.pin_btn.isEnabled()
-    assert not dock.refresh_btn.isEnabled()
+    # The chip still names the node the dock is following.
+    assert dock.panel.node_label.text() == "Select"
+    assert dock.panel.pin_btn.isEnabled()
+    assert not dock.panel.refresh_btn.isEnabled()
 
 
 def test_non_tabular_output_counts_as_no_data():
@@ -458,7 +468,7 @@ def test_untitled_node_falls_back_to_its_class_name():
 
     dock.switch_to_design_window(window)
 
-    assert dock.title_label.text() == "Data Preview - _Node"
+    assert dock.panel.node_label.text() == "_Node"
 
 
 # -- evaluation and runs -----------------------------------------------------
@@ -491,7 +501,7 @@ def test_eval_of_the_config_dock_node_refreshes_the_pinned_preview():
     window.config_dock.node = pinned
     _select(window, pinned)
     dock.switch_to_design_window(window)
-    dock.pin_btn.setChecked(True)
+    dock.panel.pin_btn.setChecked(True)
 
     window.config_dock.node = edited
     dock.note_node_evaluated(window, edited)
@@ -528,7 +538,7 @@ def test_run_finished_keeps_the_shown_node_when_nothing_is_selected():
     assert requested[-1] is node.value[0]["data"]
 
 
-# -- header controls ---------------------------------------------------------
+# -- strip controls and options menu -----------------------------------------
 
 
 def test_refresh_button_follows_the_busy_signal():
@@ -536,35 +546,71 @@ def test_refresh_button_follows_the_busy_signal():
     window = _Window()
     window.config_dock.node = _node("Select", rows=[2])
     dock.switch_to_design_window(window)
-    assert dock.refresh_btn.isEnabled()
+    assert dock.panel.refresh_btn.isEnabled()
 
-    dock.panel.controller.busyChanged.emit(True)
-    assert not dock.refresh_btn.isEnabled()
+    dock.panel.controller._busy = True
+    dock.panel._on_busy_changed(True)
+    assert not dock.panel.refresh_btn.isEnabled()
 
-    dock.panel.controller.busyChanged.emit(False)
-    assert dock.refresh_btn.isEnabled()
+    dock.panel.controller._busy = False
+    dock.panel._on_busy_changed(False)
+    assert dock.panel.refresh_btn.isEnabled()
+
+
+def test_options_menu_carries_panel_actions_then_window_actions():
+    dock, _ = _dock()
+
+    labels = [
+        action.text()
+        for action in dock.options_menu.actions()
+        if not action.isSeparator()
+    ]
+
+    assert labels[:3] == ["Copy as TSV", "Export CSV...", "Export Excel..."]
+    assert labels[-2:] == ["Open in standalone window", "Unpin"]
 
 
 def test_options_menu_tracks_payload_and_pin():
-    dock, _ = _dock()
+    dock = DataPreviewDock()
     window = _Window()
     window.config_dock.node = _node("Select", rows=[2])
 
     dock.options_menu.aboutToShow.emit()
-    assert not dock.export_csv_action.isEnabled()
+    assert not dock.panel.export_csv_action.isEnabled()
     assert not dock.open_window_action.isEnabled()
     assert not dock.unpin_action.isEnabled()
 
     dock.switch_to_design_window(window)
+    assert _wait_until(lambda: dock.panel._window is not None)
     dock.options_menu.aboutToShow.emit()
-    assert dock.export_csv_action.isEnabled()
-    assert dock.export_excel_action.isEnabled()
+    assert dock.panel.export_csv_action.isEnabled()
+    assert dock.panel.export_excel_action.isEnabled()
     assert dock.open_window_action.isEnabled()
     assert not dock.unpin_action.isEnabled()
 
-    dock.pin_btn.setChecked(True)
+    dock.panel.pin_btn.setChecked(True)
     dock.options_menu.aboutToShow.emit()
     assert dock.unpin_action.isEnabled()
+
+
+def test_unpin_menu_action_releases_the_pin():
+    dock, requested = _dock()
+    window = _Window()
+    pinned = _node("Select", rows=[2])
+    other = _node("Filter", rows=[5])
+    window.config_dock.node = pinned
+    _select(window, pinned)
+    dock.switch_to_design_window(window)
+    dock.panel.pin_btn.setChecked(True)
+
+    window.config_dock.node = other
+    dock.note_selection_changed(window)
+    assert requested[-1] is pinned.value[0]["data"]
+
+    dock.unpin_action.trigger()
+
+    assert not dock.panel.pin_btn.isChecked()
+    assert requested[-1] is other.value[0]["data"]
 
 
 def test_newest_selection_wins_with_a_collect_in_flight():
@@ -583,7 +629,7 @@ def test_newest_selection_wins_with_a_collect_in_flight():
             dock.panel.viewer.model.rowCount() == 5 and not dock.panel.controller.busy
         )
     )
-    assert "5 rows" in dock.panel.info_label.text()
+    assert "5 rows" in dock.panel.status_label.text()
 
 
 def test_switch_re_reads_the_window_state():
@@ -598,7 +644,7 @@ def test_switch_re_reads_the_window_state():
     )
 
     dock.switch_to_design_window(window)
-    assert dock.title_label.text() == "Data Preview - Select"
+    assert dock.panel.node_label.text() == "Select"
     assert _wait_until(
         lambda: (
             dock.panel.viewer.model.rowCount() == 3 and not dock.panel.controller.busy

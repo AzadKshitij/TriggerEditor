@@ -140,6 +140,10 @@
         "path":"qt/images/node_icons/ui/pin_filled.svg",
         "mode": "rb"
     },
+    "icon_search":{
+        "path":"qt/images/node_icons/ui/search.svg",
+        "mode": "rb"
+    },
     "icon_chevron_first":{
         "path":"qt/images/node_icons/ui/chevron_first.svg",
         "mode": "rb"
