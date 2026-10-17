@@ -57,11 +57,29 @@ class _SocketItem:
 
 
 class _ConfigDock:
+    """The real dock keeps the graphics item it was handed, not the node.
+
+    ``ConfigDock.updateConfig`` stores ``nodes[0]`` verbatim and every caller
+    passes graphics items, so ``currentNode()`` returns one. Assigning a bare
+    ``_Node`` here wraps it, so tests exercise that contract.
+    """
+
     def __init__(self) -> None:
-        self.node = None
+        self._item = None
+
+    @property
+    def node(self):
+        return self._item
+
+    @node.setter
+    def node(self, value) -> None:
+        if value is None or isinstance(value, _Item):
+            self._item = value
+        else:
+            self._item = _Item(value)
 
     def currentNode(self):
-        return self.node
+        return self._item
 
 
 class _Scene:
@@ -174,6 +192,30 @@ def test_selection_is_used_when_the_config_dock_is_empty_and_sockets_skipped():
 
     assert requested[-1] is node.value[0]["data"]
     assert dock.title_label.text() == "Data Preview - Filter"
+
+
+def test_config_dock_graphics_item_is_unwrapped_to_the_node():
+    """Regression: a single click arrives as a graphics item, not a node.
+
+    ``ConfigDock`` stores what ``getSelectedItems()`` handed it, so the dock
+    must step through ``.node`` - reading the item directly found no value and
+    blanked the panel with "No previewable data on this socket" until a
+    multi-selection took the fallback path.
+    """
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Cleansing", rows=[6])
+    window.config_dock.node = (
+        node  # the fake stores the graphics item, as the dock does
+    )
+    assert isinstance(window.config_dock.currentNode(), _Item)
+
+    dock.switch_to_design_window(window)
+
+    assert dock._resolve_node(window) is node
+    assert dock._node_is_shown(window, dock._current_state(), node)
+    assert requested[-1] is node.value[0]["data"]
+    assert dock.title_label.text() == "Data Preview - Cleansing"
 
 
 def test_selection_change_switches_the_preview():

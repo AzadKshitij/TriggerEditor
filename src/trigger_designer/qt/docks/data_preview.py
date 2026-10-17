@@ -16,6 +16,10 @@ Payload resolution, in order: the node's ``value`` (one ``{"data",
 ``getSocketData`` (a run writes to ``execution_results``, not ``value``). A
 value the preview cannot render counts as "no output", so the panel shows the
 empty state instead of a collect failure.
+
+Selection reaches this dock as graphics items (``getSelectedItems()``, and the
+Config Dock stores what it is handed), so ``_trigger_node`` steps through
+``.node`` before anything is read off the selection.
 """
 
 import weakref
@@ -42,6 +46,19 @@ _TITLE = "Data Preview"
 _COALESCE_MS = 300
 _NO_DATA = "No previewable data on this socket"
 _PIN_LOST = "Pinned node is no longer in the scene"
+
+
+def _trigger_node(item: Any) -> Any | None:
+    """The TriggerNode behind a nodeeditor graphics item, else ``None``.
+
+    The Config Dock stores the graphics item it was handed - every caller of
+    ``ConfigDock.updateConfig`` passes ``getSelectedItems()``, which yields
+    graphics items - so consumers that need node semantics (a ``value`` to
+    preview, scene membership for a pin) must step through ``.node`` first.
+    A socket graphic has no node and yields ``None``.
+    """
+    node = getattr(item, "node", item)
+    return node if hasattr(node, "outputs") else None
 
 
 class DataPreviewDock(QDockWidget):
@@ -386,7 +403,7 @@ class DataPreviewDock(QDockWidget):
         """The Config Dock's node when set, else the first selected node."""
         config_dock = self._config_dock(design_window)
         if config_dock is not None:
-            node = config_dock.currentNode()
+            node = _trigger_node(config_dock.currentNode())
             if node is not None:
                 return node
         return self._first_selected_node(design_window)
@@ -411,10 +428,8 @@ class DataPreviewDock(QDockWidget):
         except RuntimeError:  # the scene is being torn down
             return None
         for item in items or []:
-            if hasattr(item, "socket"):
-                continue  # a socket graphic, not a node
-            node = getattr(item, "node", item)
-            if hasattr(node, "outputs"):
+            node = _trigger_node(item)
+            if node is not None:
                 return node
         return None
 
@@ -469,7 +484,9 @@ class DataPreviewDock(QDockWidget):
         if node is state["shown_node"]:
             return True
         config_dock = self._config_dock(design_window)
-        return config_dock is not None and node is config_dock.currentNode()
+        return config_dock is not None and node is _trigger_node(
+            config_dock.currentNode()
+        )
 
     def _drop_pending_eval(self) -> None:
         self._coalesce.stop()
