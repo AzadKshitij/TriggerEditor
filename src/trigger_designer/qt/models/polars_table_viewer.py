@@ -41,12 +41,16 @@ from qtpy.QtCore import (
     Qt,
     Signal,
 )
-from qtpy.QtGui import QFont, QColor, QKeySequence
+from qtpy.QtGui import QColor, QKeySequence
 from loguru import logger
 import time
 from datetime import datetime, date
 
 from trigger_designer.qt.resource_manager import ResourceManager
+
+# Label of the "search every column" entry. Shared with hosts that build their
+# own search row (the Data Preview panel) so the wording cannot drift.
+ALL_COLUMNS_LABEL = "All Columns"
 
 
 class PolarsTableModel(QAbstractTableModel):
@@ -485,7 +489,9 @@ class PolarsTableModel(QAbstractTableModel):
                 if 0 <= section < len(self._column_names):
                     col_name = self._column_names[section]
                     col_type = self._column_types.get(col_name, "Unknown")
-                    return f"{col_name}\n({col_type})"
+                    # One line: the dtype sits beside the name so the header
+                    # stays a single row tall (it used to break the line).
+                    return f"{col_name} ({col_type})"
                 return f"Column {section}"
             else:
                 # Absolute row numbers: row 1 of page 2 is still row 251.
@@ -494,12 +500,6 @@ class PolarsTableModel(QAbstractTableModel):
 
         elif role == Qt.TextAlignmentRole:
             return Qt.AlignCenter
-
-        elif role == Qt.FontRole:
-            font = QFont()
-            font.setBold(True)
-            font.setPointSize(12)  # Slightly larger font for headers
-            return font
 
     def get_memory_usage(self) -> Dict[str, Union[int, float]]:
         """
@@ -562,6 +562,7 @@ class PolarsTableViewer(QWidget):
         show_info: bool = True,
         show_search: bool = True,
         show_export: bool = True,
+        row_height: int = 28,
     ):
         """
         Initialize the table viewer.
@@ -573,6 +574,7 @@ class PolarsTableViewer(QWidget):
             show_info: Whether to show the info panel with statistics (default: True)
             show_search: Whether to show search/filter controls (default: True)
             show_export: Whether to show export buttons (default: True)
+            row_height: Height of one data row in pixels (default: 28)
         """
         super().__init__(parent)
 
@@ -584,6 +586,7 @@ class PolarsTableViewer(QWidget):
         self.show_info = show_info
         self.show_search = show_search
         self.show_export = show_export
+        self.row_height = row_height
 
         # Initialize all widget attributes to None first
         self.stats_panel = None
@@ -662,9 +665,7 @@ class PolarsTableViewer(QWidget):
         header.setSectionsClickable(True)
         header.setSortIndicatorShown(True)
         header.setSortIndicator(-1, Qt.AscendingOrder)  # hidden until sorted
-        self.table_view.verticalHeader().setDefaultSectionSize(
-            28
-        )  # Slightly taller rows
+        self.table_view.verticalHeader().setDefaultSectionSize(self.row_height)
         self.table_view.setShowGrid(True)
 
         # Enable virtual scrolling for performance
@@ -870,7 +871,7 @@ class PolarsTableViewer(QWidget):
 
             # Column filter
             self.column_filter = QComboBox()
-            self.column_filter.addItem("All Columns")
+            self.column_filter.addItem(ALL_COLUMNS_LABEL)
             search_layout.addWidget(QLabel("In:"))
             search_layout.addWidget(self.column_filter)
 
@@ -972,7 +973,7 @@ class PolarsTableViewer(QWidget):
         # Update column filter (only if it exists)
         if self.column_filter is not None:
             self.column_filter.clear()
-            self.column_filter.addItem("All Columns")
+            self.column_filter.addItem(ALL_COLUMNS_LABEL)
             if not dataframe.is_empty():
                 for col in dataframe.columns:
                     self.column_filter.addItem(col)
@@ -983,79 +984,90 @@ class PolarsTableViewer(QWidget):
             f"DataFrame loaded: {len(dataframe)} rows, {len(dataframe.columns)} columns"
         )
 
-    def _apply_filter(self):
-        """Apply search filter to the dataframe."""
-        # Check if search widgets are available
-        if self.search_input is None or self.column_filter is None:
-            return
+    def search_columns(self) -> list[str]:
+        """Columns of the loaded frame, for a search-scope picker."""
+        if self.dataframe is None or self.dataframe.is_empty():
+            return []
+        return list(self.dataframe.columns)
 
-        search_text = self.search_input.text().strip()
-        column_name = self.column_filter.currentText()
+    def apply_search(self, text: str, column: str | None = None) -> int:
+        """Filter the loaded frame and return the number of rows kept.
 
-        if not search_text:
-            self._clear_filter()
-            return
+        The filter always runs on the frame the viewer was given, so repeated
+        searches narrow the same source rather than a previous result. Empty
+        ``text`` clears the filter. ``column`` restricts the match to one
+        column; ``None`` searches every string column.
+        """
+        text = (text or "").strip()
+        if not text:
+            self.clear_search()
+            return self.model.total_rows
 
         if self.dataframe is None or self.dataframe.is_empty():
-            return
+            return 0
+
+        if not column or column == ALL_COLUMNS_LABEL:
+            column = None
 
         try:
-            if column_name == "All Columns":
-                # Search in all string columns
-                conditions = []
-                for col in self.dataframe.columns:
-                    if self.dataframe[col].dtype in [pl.Utf8, pl.String]:
-                        conditions.append(
-                            pl.col(col)
-                            .cast(pl.Utf8)
-                            .str.contains(search_text, literal=False, strict=False)
-                            .fill_null(False)
-                        )
-
-                if conditions:
-                    # Combine conditions with OR
-                    combined_condition = conditions[0]
-                    for condition in conditions[1:]:
-                        combined_condition = combined_condition | condition
-
-                    self.filtered_dataframe = self.dataframe.filter(combined_condition)
-                else:
-                    self.filtered_dataframe = pl.DataFrame()
-            else:
-                # Search in specific column
-                if column_name in self.dataframe.columns:
-                    condition = (
-                        pl.col(column_name)
+            if column is not None:
+                if column in self.dataframe.columns:
+                    condition: Any = (
+                        pl.col(column)
                         .cast(pl.Utf8)
-                        .str.contains(search_text, literal=False, strict=False)
+                        .str.contains(text, literal=False, strict=False)
                         .fill_null(False)
                     )
-                    self.filtered_dataframe = self.dataframe.filter(condition)
                 else:
-                    self.filtered_dataframe = pl.DataFrame()
+                    condition = None
+            else:
+                conditions = [
+                    pl.col(col)
+                    .cast(pl.Utf8)
+                    .str.contains(text, literal=False, strict=False)
+                    .fill_null(False)
+                    for col in self.dataframe.columns
+                    if self.dataframe[col].dtype in [pl.Utf8, pl.String]
+                ]
+                condition = conditions[0] if conditions else None
+                for extra in conditions[1:]:
+                    condition = condition | extra
 
-            # Update model with filtered data
-            self.model.set_dataframe(self.filtered_dataframe)
-            self._update_info_display()
-            logger.debug(
-                f"Filter applied: '{search_text}' -> {len(self.filtered_dataframe)} rows"
+            filtered = (
+                self.dataframe.filter(condition)
+                if condition is not None
+                else pl.DataFrame()
             )
+            self.filtered_dataframe = filtered
+            self.model.set_dataframe(filtered)
+            self._update_info_display()
+            logger.debug(f"Filter applied: '{text}' -> {len(filtered)} rows")
+            return len(filtered)
 
         except Exception as e:
             logger.error(f"Error applying filter: {e}")
+            return self.model.total_rows
+
+    def clear_search(self) -> None:
+        """Drop the filter and show the loaded frame again."""
+        self.filtered_dataframe = None
+        if self.dataframe is None:
+            return
+        self.model.set_dataframe(self.dataframe)
+        self._update_info_display()
+        logger.debug("Filter cleared")
+
+    def _apply_filter(self):
+        """Apply the built-in search controls (hosts that show them)."""
+        if self.search_input is None or self.column_filter is None:
+            return
+        self.apply_search(self.search_input.text(), self.column_filter.currentText())
 
     def _clear_filter(self):
-        """Clear the current filter."""
-        # Clear search input only if it exists
+        """Clear the built-in search controls."""
         if self.search_input is not None:
             self.search_input.clear()
-
-        self.filtered_dataframe = None
-
-        if self.dataframe is not None:
-            self.model.set_dataframe(self.dataframe)
-            self._update_info_display()
-            logger.debug("Filter cleared")
+        self.clear_search()
 
     def _update_info_display(self):
         """Update the information display."""
