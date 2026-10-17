@@ -13,12 +13,18 @@ A high-performance, memory-efficient table viewer for Polars DataFrames with adv
 
 ### User Interface Features
 - **Paged View**: fixed page size (100-1000, default 250) with first / previous /
-  next / last controls and a `Rows a-b of n` label
+  next / last controls and a `Rows a-b of n` label; a host that shows the whole
+  frame can set the page size to the frame's row count
+- **One-Line Headers**: each header reads `name (dtype)`, so a column never
+  needs a second header row
+- **Row Height**: `row_height` (default 28) sizes the data rows; the Data
+  Preview panel asks for 24
 - **Sortable Columns**: click a header to sort the whole frame (nulls last); a sort
   resets paging to the first page
-- **Advanced Search & Filtering**: Search across all columns or specific columns
+- **Advanced Search & Filtering**: search across all columns or one column, from
+  the built-in controls or through the programmatic API
 - **Data Type Formatting**: Automatic formatting for dates, numbers, booleans, and nulls
-- **Export Functionality**: Export to CSV and Excel formats
+- **Export Functionality**: Export to CSV and Excel formats, plus a TSV copy
 - **Theme Aware**: header, grid and row tint follow the active light/dark theme
 
 ### Technical Features
@@ -87,6 +93,18 @@ model.sort_by(column=1, descending=True)
 
 # Embed compactly; show_controls / show_info / show_search / show_export can be off
 compact = PolarsTableViewer(df, show_info=False, show_search=False)
+
+# With every control hidden the table is added directly - no scroll area wraps
+# a widget that already scrolls on its own. 24px rows, whole frame as one page:
+bare = PolarsTableViewer(
+    df,
+    show_controls=False,
+    show_info=False,
+    show_search=False,
+    show_export=False,
+    row_height=24,
+)
+bare.model.set_page_size(df.height)
 ```
 
 ### Memory Behaviour
@@ -114,14 +132,25 @@ table_view.setModel(model)
 ### Search and Filtering
 
 ```python
-# Programmatic filtering
+# Programmatic filtering (the built-in controls call these)
+columns = viewer.search_columns()             # column names of the loaded frame
+matched = viewer.apply_search("term")         # all string columns, OR-combined
+matched = viewer.apply_search("term", "name")  # one column; unknown -> nothing
+viewer.clear_search()                         # back to the loaded frame
+
+# "All Columns" scope label, shared with hosts that build their own scope combo
+from trigger_designer.qt.models.polars_table_viewer import ALL_COLUMNS_LABEL
+
+# The built-in controls delegate to the same methods
 viewer.search_input.setText("search_term")
 viewer.column_filter.setCurrentText("specific_column")
 viewer._apply_filter()
-
-# Clear filters
 viewer._clear_filter()
 ```
+
+`apply_search` always filters the frame the viewer last loaded, never the
+filtered result, so repeated searches never narrow each other. A search that
+matches nothing leaves an empty frame on screen; `total_rows` then reads 0.
 
 ### Export Data
 
@@ -181,10 +210,11 @@ PolarsTableModel (QAbstractTableModel)
 └── Owns sorting and paging (set_page, set_page_size, sort_by)
 
 PolarsTableViewer (QWidget)
-├── Main UI container with controls
-├── Search and filtering functionality
+├── Main UI container with controls (each one optional)
+├── One-line `name (dtype)` headers, configurable row height
+├── Search and filtering: search_columns / apply_search / clear_search
 ├── Paging footer (first / previous / next / last, page size, range label)
-├── Export capabilities
+├── Export capabilities (CSV, Excel, TSV copy)
 └── Uses PolarsTableModel internally
 
 DataPreviewWindow (QMainWindow)
