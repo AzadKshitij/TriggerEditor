@@ -74,6 +74,12 @@ def _cleansing_content():
     content._field_selection_initialized = False
     content.incom_data = None
     content.evaluate = _EmitCounter()
+    # The contract under test is "one bulk action -> one `changed` emission ->
+    # one evaluate". The cleansing pipeline is out of scope, and running it on
+    # a __new__-built content reads Qt widgets that were never constructed
+    # (PyQt raises RuntimeError straight out of the attribute lookup, which a
+    # signal handler turns into an abort).
+    content.process_data = lambda: None
     return content
 
 
@@ -109,6 +115,8 @@ def _normalize_content():
     content._field_selection_initialized = False
     content.incom_data = None
     content.evaluate = _EmitCounter()
+    # See _cleansing_content: the pipeline is not what this test is about.
+    content.process_data = lambda: None
     return content
 
 

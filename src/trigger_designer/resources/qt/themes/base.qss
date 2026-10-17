@@ -806,6 +806,25 @@ QPushButton {{
     subcontrol-origin: padding;
     subcontrol-position: bottom right;
     bottom: 4px; }}
+/* Compact bulk toggle ("All" / "None") for the table command row. */
+QPushButton#BulkButton {{
+  background-color: {button_bg};
+  color: {text_secondary};
+  border: 1px solid {button_bg};
+  border-radius: 4px;
+  padding: 0px 4px;
+  font-size: 10px; }}
+  QPushButton#BulkButton:hover {{
+    background-color: {background_hover};
+    border: 1px solid {accent_primary};
+    color: {text_primary}; }}
+  QPushButton#BulkButton:pressed {{
+    background-color: {background_pressed};
+    border: 1px solid {accent_primary}; }}
+  QPushButton#BulkButton:disabled {{
+    background-color: {button_bg};
+    border: 1px solid {button_bg};
+    color: {text_disabled}; }}
 /* Icon buttons: an objectName selector outranks QPushButton:hover, so the
    hover/pressed states have to be restated here or they never apply. */
 QPushButton#IconButton, QPushButton#OptionsButton {{
@@ -846,6 +865,14 @@ QPushButton#TextButton {{
 /* The Options button already carries a sliders glyph; the generic
    QPushButton::menu-indicator would add a second, redundant down arrow. */
 QPushButton#OptionsButton::menu-indicator {{
+  width: 0px;
+  height: 0px;
+  border: none;
+  image: none;
+  subcontrol-origin: padding;
+  subcontrol-position: center; }}
+/* Icon buttons that open a menu already carry the glyph; no second arrow. */
+QPushButton#IconButton::menu-indicator {{
   width: 0px;
   height: 0px;
   border: none;
@@ -1800,7 +1827,10 @@ QComboBox#DataTypeCombo {{
   color: {text_primary};
   border: 1px solid {accent_primary};
   border-radius: 4px;
-  padding: 1px 4px; }}
+  /* The editor is opened inside a 22px table row; a taller minimum would
+     make it overlap the row below. */
+  min-height: 0px;
+  padding: 0px 4px; }}
   QComboBox#DataTypeCombo:focus {{
     border: 1px solid {accent_secondary}; }}
 /* Data Preview dock and panel ------------------------------------------- */
@@ -1920,10 +1950,20 @@ QLabel#JoinSourceHeaderRight {{
   padding: 2px 5px; }}
 QLabel#JoinDtypeLabel {{
   color: {text_inactive}; }}
-/* Formula section cards: borderless, separated by background only */
-QFrame#formulaSectionCard {{
-  background-color: {card_background};
-  border: none; }}
+/* Formula cards: flat card; the header stays in view when folded */
+QFrame#FormulaCard {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+QFrame#FormulaCardHeader {{
+  background-color: transparent;
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+  QFrame#FormulaCardHeader:hover {{
+    background-color: {background_hover}; }}
+QFrame#FormulaCardBody {{
+  background-color: transparent;
+  border: 0px; }}
 QFrame#formulaResizeGrip {{
   background-color: {card_border}; }}
 QFrame#formulaSeparator {{
@@ -1940,3 +1980,188 @@ QTextEdit#formulaEditor {{
   border: 1px solid {card_border};
   selection-background-color: #264f78;
   selection-color: #ffffff; }}
+
+/* Signal config dock -------------------------------------------------------
+   Inspector header, context strip, flat sections and the shared form
+   controls. Every objectName that paints its own fill restates hover,
+   pressed and disabled here: an objectName selector outranks a generic
+   pseudo-state, so the states are invisible without this (§4.5). */
+
+QFrame#InspectorHeader {{
+  background-color: transparent;
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+QFrame#InspectorRail {{
+  background-color: {text_inactive};
+  border: 0px;
+  border-radius: 2px; }}
+  QFrame#InspectorRail[category="input"] {{ background-color: {node_input}; }}
+  QFrame#InspectorRail[category="prepare"] {{ background-color: {node_prepare}; }}
+  QFrame#InspectorRail[category="join"] {{ background-color: {node_join}; }}
+  QFrame#InspectorRail[category="transform"] {{ background-color: {node_transform}; }}
+  QFrame#InspectorRail[category="report"] {{ background-color: {node_report}; }}
+QLabel#InspectorTitle {{
+  color: {text_primary};
+  font-size: 13px;
+  font-weight: 600; }}
+
+QFrame#ContextStrip {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+QLabel#Chip {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  color: {text_secondary};
+  font-size: 10px;
+  padding: 2px 6px; }}
+  QLabel#Chip[tone="accent"] {{
+    color: {accent_secondary};
+    border: 1px solid {accent_primary}; }}
+  QLabel#Chip[tone="muted"] {{ color: {text_inactive}; }}
+QLabel#ContextLabel {{
+  color: {text_inactive};
+  font-size: 10px; }}
+QLabel#StatusBadge {{
+  background-color: transparent;
+  border: 1px solid {border_default};
+  border-radius: 3px;
+  color: {text_secondary};
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 5px; }}
+  QLabel#StatusBadge[tone="success"] {{ color: {success}; border: 1px solid {success}; }}
+  QLabel#StatusBadge[tone="warning"] {{ color: {warning}; border: 1px solid {warning}; }}
+  QLabel#StatusBadge[tone="danger"] {{ color: {danger}; border: 1px solid {danger}; }}
+  QLabel#StatusBadge[tone="info"] {{ color: {info}; border: 1px solid {info}; }}
+
+/* Flat section: overline + hairline, no group-box frame. */
+QFrame#ConfigSection, QFrame#SectionBody {{
+  background-color: transparent;
+  border: 0px; }}
+QFrame#SectionDivider {{
+  background-color: {border_primary};
+  border: 0px; }}
+QFrame#SectionHeader {{
+  background-color: transparent;
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+  QFrame#SectionHeader[collapsible="true"]:hover {{
+    background-color: {background_hover}; }}
+QLabel#SectionTitle {{
+  color: {text_inactive};
+  font-size: 10px;
+  font-weight: 600; }}
+QLabel#SectionCount {{
+  color: {text_disabled};
+  font-size: 10px; }}
+QLabel#SectionChevron {{
+  color: {text_inactive};
+  font-size: 10px; }}
+QLabel#ConfigSectionInfo {{
+  color: {text_inactive};
+  font-size: 10px; }}
+
+/* Form rhythm: label left, control right (FormRow); label above (FormGrid). */
+QLabel#FieldLabel {{
+  color: {text_inactive};
+  font-size: 11px; }}
+QLabel#FieldHint {{
+  color: {text_inactive};
+  font-size: 10px; }}
+QFrame#FieldRow, QFrame#FieldStack {{
+  background-color: transparent;
+  border: 0px; }}
+
+/* Segmented mode switch: one exclusive row of 30px buttons. */
+QWidget#Segmented {{
+  background-color: transparent;
+  border: 0px; }}
+QPushButton#SegmentButton {{
+  background-color: {button_bg};
+  color: {text_secondary};
+  border: 1px solid {button_bg};
+  border-radius: 4px;
+  padding: 0px 10px; }}
+  QPushButton#SegmentButton:hover {{
+    background-color: {background_hover};
+    border: 1px solid {accent_primary};
+    color: {text_primary}; }}
+  QPushButton#SegmentButton:pressed {{
+    background-color: {background_pressed};
+    border: 1px solid {accent_primary}; }}
+  QPushButton#SegmentButton:disabled {{
+    background-color: {button_bg};
+    border: 1px solid {button_bg};
+    color: {text_disabled}; }}
+  QPushButton#SegmentButton:checked {{
+    background-color: {accent_primary};
+    border: 1px solid {accent_primary};
+    color: #ffffff; }}
+  QPushButton#SegmentButton:checked:hover {{
+    background-color: {accent_secondary};
+    border: 1px solid {accent_secondary};
+    color: #ffffff; }}
+
+/* Tables inside the dock follow the section rhythm. */
+QTableView#ColumnTable {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+QTableView#ColumnTable::item {{
+  padding: 1px 4px; }}
+QTableView#ColumnTable QHeaderView::section {{
+  background-color: {background_secondary};
+  color: {text_inactive};
+  border: 0px;
+  border-bottom: 1px solid {border_primary};
+  font-size: 11px;
+  padding: 2px 4px; }}
+
+/* Column checklist: one dense row per column, flush on the section body.
+   ``padding: 0`` because QAbstractScrollArea's 2px padding (plus its 1px
+   border) is counted as a frame, which leaves the viewport 4px shorter than
+   the height the rows asked for - and every list then shows a scrollbar it
+   does not need. */
+QWidget#ColumnChecklist, QWidget#ColumnChecklist QScrollArea {{
+  background-color: transparent;
+  border: 0px;
+  padding: 0px; }}
+QWidget#ColumnChecklist QCheckBox {{
+  padding: 3px 2px;
+  border-radius: 3px; }}
+  QWidget#ColumnChecklist QCheckBox:hover {{
+    background-color: {background_hover}; }}
+
+/* Join output list: same surface as the column tables. */
+QListWidget#JoinOutputList {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+  QListWidget#JoinOutputList::item {{
+    padding: 3px 4px;
+    border-radius: 3px; }}
+  QListWidget#JoinOutputList::item:hover {{
+    background-color: {background_hover}; }}
+  QListWidget#JoinOutputList::item:selected {{
+    background-color: {background_pressed};
+    color: {text_primary}; }}
+
+/* Scrollable node panels sit flush on the dock surface. */
+QWidget#ConfigDockWidget QScrollArea {{
+  background-color: transparent;
+  border: 0px;
+  padding: 0px; }}
+/* The pane's own scroll area (one scrollbar for the whole configuration).
+   Its viewport and content must stay transparent or the scroll frame paints
+   a second surface over the dock background. The list scroll areas inside a
+   node get the same treatment. */
+QWidget#ConfigDockWidget QScrollArea > QWidget#qt_scrollarea_viewport,
+QWidget#ConfigDockContent {{
+  background-color: transparent; }}
+/* Combos that live inside a 22px table cell must not claim the dock's 30px
+   control height; the cell sets their geometry. */
+QComboBox#CellCombo {{
+  min-height: 0px;
+  padding: 0px 2px; }}

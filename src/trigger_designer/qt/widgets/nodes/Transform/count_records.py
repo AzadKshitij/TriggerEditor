@@ -61,10 +61,15 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         global_logger.debug("🔢 CountRecordsContent: Creating layout")
-        message_label = EmptyStateLabel(
-            "No configuration needed. The output socket returns the row count."
+        dock_layout.addWidget(
+            EmptyStateLabel(
+                "No configuration. The output socket carries the row count."
+            )
         )
-        dock_layout.addWidget(message_label)
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        return [("row count", "")], "derived output"
 
     def serialize(self):
         """Serialize the Count Records configuration"""

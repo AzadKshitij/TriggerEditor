@@ -260,6 +260,29 @@ class TriggerChangeHandler(TriggerContentUndoMixin):
     # Registration
     # ------------------------------------------------------------------
 
+    def refresh_dock_context(self) -> None:
+        """Recompute the open dock's context strip from the model.
+
+        The strip is a projection, like every other widget: the dock installs
+        ``_dock_context_refresh`` while it owns this node's layout, and this is
+        a no-op once the dock is gone or the node is destroyed.
+        """
+        # ``__dict__`` rather than ``getattr``: on a widget whose C++ init never
+        # ran (a ``__new__``-built content in tests) or one already deleted,
+        # PyQt's attribute lookup itself raises RuntimeError, outside any
+        # default the two-argument form could fall back to.
+        try:
+            callback = self.__dict__.get("_dock_context_refresh")
+        except RuntimeError:
+            return
+        if callback is None:
+            return
+        try:
+            callback()
+        except RuntimeError:
+            # Widget already deleted (dock rebuilt or node removed).
+            pass
+
     def registerInputWidget(
         self,
         widget: QWidget,

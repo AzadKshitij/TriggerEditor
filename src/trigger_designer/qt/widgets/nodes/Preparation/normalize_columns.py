@@ -34,6 +34,7 @@ from trigger_designer.qt.widgets.common import (
     ColumnChecklist,
     ConfigSection,
     EmptyStateLabel,
+    FormRow,
     NoWheelComboBox,
     TextButton,
 )
@@ -200,6 +201,8 @@ class NormalizeColumnsContent(
             global_logger.error(f"Normalize Columns error: {exc}")
             self.data = None
 
+        self._refresh_normalize_counts()
+
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
@@ -210,11 +213,10 @@ class NormalizeColumnsContent(
 
         main_layout = QVBoxLayout()
         main_layout.setSpacing(2)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
-        rules_group = ConfigSection(
-            "Name Rules", info="Applied in order: trim, whitespace, case."
-        )
+        rules_group = ConfigSection(info="Applied in order: trim, whitespace, case.")
+        self.rules_section = rules_group
         trim_check = QCheckBox("Trim leading and trailing whitespace")
         trim_check.setChecked(self.trim_whitespace)
         trim_check.setToolTip("Remove whitespace at the start and end of names")
@@ -243,17 +245,19 @@ class NormalizeColumnsContent(
         rules_group.addWidget(remove_all_check)
         main_layout.addWidget(rules_group)
 
-        case_group = ConfigSection("Modify Case")
+        case_group = ConfigSection()
+        self.case_section = case_group
         case_combo = NoWheelComboBox()
         case_combo.addItems(CASE_OPTIONS)
         case_combo.setCurrentText(_CASE_TO_DISPLAY.get(self.case_modification, "None"))
         case_combo.setToolTip("Change the capitalization of column names")
         case_combo.setMinimumHeight(30)
         case_combo.currentTextChanged.connect(self.on_case_changed)
-        case_group.addWidget(case_combo)
+        case_group.addWidget(FormRow("Case", case_combo, label_width=64))
         main_layout.addWidget(case_group)
 
-        columns_group = ConfigSection("Columns to Rename")
+        columns_group = ConfigSection("Columns to rename")
+        self.columns_section = columns_group
         buttons_layout = QHBoxLayout()
         buttons_layout.setContentsMargins(0, 0, 0, 0)
         all_button = TextButton("All", "Normalize all columns")
@@ -271,7 +275,6 @@ class NormalizeColumnsContent(
             list(schema),
             initial_checked,
             label_fn=lambda column: f"{column} [{schema[column]}]",
-            max_height=220,
         )
         self.columns_list.changed.connect(self.on_columns_changed)
         self.field_checkboxes = self.columns_list.checkboxes
@@ -283,6 +286,56 @@ class NormalizeColumnsContent(
 
         self.recursively_find_widgets(dock_layout)
         self.update_data()
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        total = len(getattr(self, "field_checkboxes", {}) or {})
+        selected = len(getattr(self, "selected_columns", []) or [])
+        if total:
+            chips.append(
+                (f"{selected} of {total} columns", "accent" if selected else "")
+            )
+        rules = sum(
+            1
+            for flag in (
+                self.trim_whitespace,
+                self.spaces_to_underscore,
+                self.remove_all_whitespace,
+                self.case_modification != "none",
+            )
+            if flag
+        )
+        if rules:
+            chips.append((f"{rules} rule{'s' if rules > 1 else ''}", ""))
+        return chips, ""
+
+    def _refresh_normalize_counts(self) -> None:
+        """Keep section header counts in step with the configuration."""
+        self.refresh_dock_context()
+        section = getattr(self, "rules_section", None)
+        if section is not None:
+            count = sum(
+                1
+                for flag in (
+                    self.trim_whitespace,
+                    self.spaces_to_underscore,
+                    self.remove_all_whitespace,
+                )
+                if flag
+            )
+            section.set_count(f"{count} on" if count else "")
+
+        section = getattr(self, "case_section", None)
+        if section is not None:
+            display = _CASE_TO_DISPLAY.get(self.case_modification, "None")
+            section.set_count("" if display == "None" else display)
+
+        section = getattr(self, "columns_section", None)
+        if section is not None:
+            total = len(getattr(self, "field_checkboxes", {}) or {})
+            selected = len(getattr(self, "selected_columns", []) or [])
+            section.set_count(f"{selected} of {total}" if total else "")
 
     def select_all_columns(self) -> None:
         # One `changed` emission -> one update/evaluate cycle (see cleansing).

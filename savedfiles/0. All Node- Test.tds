@@ -106,8 +106,8 @@
     {
       "id": 2176088581184,
       "title": "Formula",
-      "pos_x": -211.37890625,
-      "pos_y": 82.0517578125,
+      "pos_x": -212.62890625,
+      "pos_y": 92.0517578125,
       "inputs": [
         {
           "id": 2176088580176,
@@ -184,49 +184,65 @@
             "checked": true,
             "text": "Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Seed",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Source",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Country",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Autocomplete Position",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Difficulty",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Hot Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Relevancy Score",
             "dtype": "Float64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -242,16 +258,20 @@
           ],
           "rename_mapping": {},
           "dtype_mapping": {
-            "Keyword": "String",
-            "Seed": "String",
-            "Source": "String",
-            "Country": "String",
-            "Autocomplete Position": "String",
             "Difficulty": "Int64",
-            "Hot Keyword": "String",
             "Relevancy Score": "Float64"
           },
-          "column_order": []
+          "column_order": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "auto_accept_new_columns": true
         }
       },
       "label_text": "",
@@ -386,8 +406,8 @@
     {
       "id": 2176004824160,
       "title": "File Input",
-      "pos_x": -867.9687499999995,
-      "pos_y": 5.468750000000057,
+      "pos_x": -974.7802734374993,
+      "pos_y": 28.35693359375005,
       "inputs": [],
       "outputs": [
         {
@@ -525,6 +545,49 @@
           },
           {
             "name": "Relevancy Score",
+            "source": "R"
+          }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "Count_Hot Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "L"
+          },
+          {
+            "name": "Autocomplete Position",
+            "source": "R"
+          },
+          {
+            "name": "Country",
+            "source": "R"
+          },
+          {
+            "name": "Difficulty",
+            "source": "R"
+          },
+          {
+            "name": "Hot Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "Seed",
+            "source": "R"
+          },
+          {
+            "name": "Source",
             "source": "R"
           }
         ]
@@ -696,49 +759,65 @@
             "checked": true,
             "text": "Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Seed",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Source",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Country",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Autocomplete Position",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Difficulty",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Hot Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Relevancy Score",
             "dtype": "Float64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -754,16 +833,20 @@
           ],
           "rename_mapping": {},
           "dtype_mapping": {
-            "Keyword": "String",
-            "Seed": "String",
-            "Source": "String",
-            "Country": "String",
-            "Autocomplete Position": "String",
             "Difficulty": "Int64",
-            "Hot Keyword": "String",
             "Relevancy Score": "Float64"
           },
-          "column_order": []
+          "column_order": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "auto_accept_new_columns": true
         }
       },
       "label_text": "",
@@ -776,8 +859,8 @@
     {
       "id": 2486268150480,
       "title": "Select",
-      "pos_x": 328.4882812499999,
-      "pos_y": 19.67578125,
+      "pos_x": 530.6672363281248,
+      "pos_y": 343.9250488281249,
       "inputs": [
         {
           "id": 2486268151600,
@@ -802,61 +885,81 @@
             "checked": true,
             "text": "Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Seed",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Source",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Country",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Autocomplete Position",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Difficulty",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Hot Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Relevancy Score",
             "dtype": "Float64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "RunTot_Difficulty",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "RunTot_Relevancy Score",
             "dtype": "Float64",
-            "rename": ""
+            "rename": "",
+            "is_missing": true,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -872,7 +975,20 @@
             "RunTot_Difficulty"
           ],
           "rename_mapping": {},
-          "dtype_mapping": {}
+          "dtype_mapping": {},
+          "auto_accept_new_columns": true,
+          "column_order": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score",
+            "RunTot_Difficulty",
+            "RunTot_Relevancy Score"
+          ]
         }
       },
       "label_text": "",
@@ -911,49 +1027,65 @@
             "checked": true,
             "text": "Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Seed",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Source",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Country",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Autocomplete Position",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Difficulty",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Hot Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Relevancy Score",
             "dtype": "Float64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -969,16 +1101,20 @@
           ],
           "rename_mapping": {},
           "dtype_mapping": {
-            "Keyword": "String",
-            "Seed": "String",
-            "Source": "String",
-            "Country": "String",
             "Autocomplete Position": "Int64",
-            "Difficulty": "String",
-            "Hot Keyword": "String",
             "Relevancy Score": "Float64"
           },
-          "column_order": []
+          "column_order": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "auto_accept_new_columns": true
         }
       },
       "label_text": "",
@@ -1145,7 +1281,73 @@
             "checked": true,
             "text": "Count",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": true,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Source",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Country",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Difficulty",
+            "dtype": "Int64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": true,
+            "text": "Relevancy Score",
+            "dtype": "Float64",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -1160,7 +1362,19 @@
             "Relevancy Score"
           ],
           "rename_mapping": {},
-          "dtype_mapping": {}
+          "dtype_mapping": {},
+          "auto_accept_new_columns": true,
+          "column_order": [
+            "Count",
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ]
         }
       },
       "label_text": "",
@@ -1255,6 +1469,41 @@
             "name": "Source",
             "source": "R"
           }
+        ],
+        "auto_accept_new_columns": true,
+        "known_columns": [
+          {
+            "name": "Autocomplete Position",
+            "source": "L"
+          },
+          {
+            "name": "Keyword",
+            "source": "L"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "L"
+          },
+          {
+            "name": "Source",
+            "source": "L"
+          },
+          {
+            "name": "Autocomplete Position",
+            "source": "R"
+          },
+          {
+            "name": "Keyword",
+            "source": "R"
+          },
+          {
+            "name": "Relevancy Score",
+            "source": "R"
+          },
+          {
+            "name": "Source",
+            "source": "R"
+          }
         ]
       },
       "label_text": "",
@@ -1293,49 +1542,65 @@
             "checked": true,
             "text": "Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Seed",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Source",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Country",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Autocomplete Position",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Difficulty",
             "dtype": "Int64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Hot Keyword",
             "dtype": "String",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           },
           {
             "checked": true,
             "text": "Relevancy Score",
             "dtype": "Float64",
-            "rename": ""
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
           }
         ],
         "changes": {
@@ -1350,7 +1615,18 @@
             "Relevancy Score"
           ],
           "rename_mapping": {},
-          "dtype_mapping": {}
+          "dtype_mapping": {},
+          "auto_accept_new_columns": true,
+          "column_order": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ]
         }
       },
       "label_text": "",
@@ -1547,6 +1823,170 @@
       "node_code": 1,
       "node_type": "join",
       "op": "join.append"
+    },
+    {
+      "id": 1266597367632,
+      "title": "Select",
+      "pos_x": -797.2717285156248,
+      "pos_y": -289.9169921874999,
+      "inputs": [
+        {
+          "id": 1266597368912,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1266597369232,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "table_data": [
+          {
+            "checked": true,
+            "text": "Keyword",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Seed",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Source",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Country",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Autocomplete Position",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Difficulty",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Hot Keyword",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          },
+          {
+            "checked": false,
+            "text": "Relevancy Score",
+            "dtype": "String",
+            "rename": "",
+            "is_missing": false,
+            "date_format": ""
+          }
+        ],
+        "changes": {
+          "selected_columns": [
+            "Keyword"
+          ],
+          "rename_mapping": {},
+          "dtype_mapping": {},
+          "column_order": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 1265987987376,
+      "title": "Cleansing",
+      "pos_x": -659.9426269531249,
+      "pos_y": -396.72851562499983,
+      "inputs": [
+        {
+          "id": 1265987988656,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1265987988976,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "replace_null_strings": true,
+        "replace_null_numbers": true,
+        "strip_whitespace": true,
+        "normalize_spaces": true,
+        "remove_all_whitespace": false,
+        "case_modification": "none",
+        "remove_letters": false,
+        "remove_numbers": false,
+        "remove_punctuation": false,
+        "selected_fields": [
+          "Keyword"
+        ],
+        "field_selection_initialized": true,
+        "remove_null_rows": false,
+        "remove_null_rows_from_selected_columns": false,
+        "remove_null_columns": false
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
     }
   ],
   "edges": [
@@ -1797,12 +2237,28 @@
       "end": 2433015663824,
       "label": "#4",
       "input_index": 3
+    },
+    {
+      "id": 1266597359440,
+      "edge_type": 5,
+      "start": 2176004925488,
+      "end": 1266597368912,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1868308500944,
+      "edge_type": 5,
+      "start": 1266597369232,
+      "end": 1265987988656,
+      "label": "",
+      "input_index": 0
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-09-27T08:26:31Z"
+    "saved_at": "2026-10-17T17:27:47Z"
   }
 }

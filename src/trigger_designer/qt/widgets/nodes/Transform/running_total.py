@@ -104,26 +104,58 @@ class RunningTotalContent(
 
         main_layout = QVBoxLayout()
         main_layout.setSpacing(2)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(0, 0, 0, 0)
 
         self.numeric_columns = self._get_numeric_columns()
 
-        sum_section = ConfigSection("Select Columns for Running Total")
+        sum_section = ConfigSection("Running total columns")
+        self.sum_section = sum_section
         self.sum_list = ColumnChecklist(self.numeric_columns, self.sum_columns)
         self.sum_list.changed.connect(self.on_sum_selection_changed)
         self.sum_checkboxes = self.sum_list.checkboxes
         sum_section.addWidget(self.sum_list)
-        main_layout.addWidget(sum_section)
 
-        group_section = ConfigSection("Group By (Optional)")
+        group_section = ConfigSection(
+            "Group by",
+            "Optional: the total restarts inside each group.",
+        )
+        self.group_section = group_section
         self.group_list = ColumnChecklist(self._get_columns(), self.group_by_columns)
         self.group_list.changed.connect(self.on_group_selection_changed)
         self.group_checkboxes = self.group_list.checkboxes
         group_section.addWidget(self.group_list)
-        main_layout.addWidget(group_section)
 
-        dock_layout.addLayout(main_layout)
+        dock_layout.addWidget(sum_section)
+        # Both lists report the height their rows need (capped), so the sections
+        # hug them and spare pane height stays below.
+        dock_layout.addWidget(group_section)
+        dock_layout.addStretch(1)
+        self._refresh_running_total_counts()
         self.recursively_find_widgets(dock_layout)
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        totals = len(self.sum_columns)
+        if totals:
+            chips.append((f"{totals} total{'s' if totals > 1 else ''}", "accent"))
+        groups = len(self.group_by_columns)
+        if groups:
+            chips.append((f"{groups} group{'s' if groups > 1 else ''}", ""))
+        return chips, ""
+
+    def _refresh_running_total_counts(self) -> None:
+        """Keep section header counts in step with the selection."""
+        self.refresh_dock_context()
+        section = getattr(self, "sum_section", None)
+        if section is not None:
+            total = len(getattr(self, "numeric_columns", []) or [])
+            section.set_count(f"{len(self.sum_columns)} of {total}" if total else "")
+
+        section = getattr(self, "group_section", None)
+        if section is not None:
+            count = len(self.group_by_columns)
+            section.set_count(f"{count} selected" if count else "")
 
     def process_data(self) -> None:
         """Calculate running totals for selected columns using Polars."""
@@ -166,11 +198,13 @@ class RunningTotalContent(
     def on_sum_selection_changed(self, checked: list) -> None:
         """Handle sum columns checkbox changes"""
         self.sum_columns = list(checked)
+        self._refresh_running_total_counts()
         self.evaluate.emit()
 
     def on_group_selection_changed(self, checked: list) -> None:
         """Handle group by columns checkbox changes"""
         self.group_by_columns = list(checked)
+        self._refresh_running_total_counts()
         self.evaluate.emit()
 
     def get_code(self) -> str:

@@ -1,10 +1,11 @@
 from typing import Optional, List, TYPE_CHECKING
 import polars as pl
 from qtpy.QtWidgets import (
-    QWidget,
+    QMenu,
     QVBoxLayout,
+    QWidget,
 )
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QActionGroup, QPixmap
 from qtpy.QtCore import Signal  # noqa: F401
 from trigger_designer.core.node_configuration import (
     register_node,
@@ -26,7 +27,7 @@ from trigger_designer.qt.widgets.common import (
     ColumnChecklist,
     ConfigSection,
     EmptyStateLabel,
-    NoWheelComboBox,
+    IconButton,
 )
 
 if TYPE_CHECKING:
@@ -76,52 +77,94 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
+        # Stale widget from a previous build: the dock deletes its children on
+        # rebuild, so the reference must not survive into ``dock_actions()``.
+        self.action_button = None
         if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
             return
 
         main_layout = QVBoxLayout()
         main_layout.setSpacing(2)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        total_columns = len(frame_schema(self.incom_data))
 
         key_section = ConfigSection(
-            "Select Key Columns (ID Variables)",
-            "These columns will be preserved as identifiers in the transposed result.",
+            "Key columns",
+            "Preserved as identifiers in the transposed result.",
         )
+        self.key_section = key_section
         self.key_list = ColumnChecklist(
             list(frame_schema(self.incom_data)), self.key_columns
         )
         self.key_list.changed.connect(self.on_key_selection_changed)
         self.key_checkboxes = self.key_list.checkboxes
         key_section.addWidget(self.key_list)
-        main_layout.addWidget(key_section)
 
         data_section = ConfigSection(
-            "Select Columns to Transpose (Value Variables)",
-            "These columns will be transposed from columns to rows. Column names become 'Name' values, column data becomes 'Value' values.",
+            "Columns to transpose",
+            "These columns move from columns to rows: names become 'Name', "
+            "data becomes 'Value'.",
         )
+        self.data_section = data_section
         self.data_list = ColumnChecklist(
             list(frame_schema(self.incom_data)), self.data_columns
         )
         self.data_list.changed.connect(self.on_data_selection_changed)
         self.data_checkboxes = self.data_list.checkboxes
         data_section.addWidget(self.data_list)
-        main_layout.addWidget(data_section)
 
-        action_section = ConfigSection(
-            "Missing Columns Handling",
-            "How to handle columns that are selected but don't exist in the input data.",
+        # Missing-column policy: an icon menu mounted on the dock's label row
+        # (ConfigDock mounts ``dock_actions()`` there), so it costs no row of
+        # its own and never spends a whole section on a set-once control.
+        self.action_button = IconButton.themed(
+            f"Missing columns: {self.missing_action}",
+            rsm_icon=self.node.rsm.get("icon_options"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            theme_fallback=None,
         )
-        self.action_combo = NoWheelComboBox()
-        self.action_combo.addItems(["error", "warn", "ignore"])
-        self.action_combo.setMinimumHeight(30)
-        self.action_combo.setCurrentText(self.missing_action)
-        self.action_combo.currentTextChanged.connect(self.on_action_changed)
-        action_section.addWidget(self.action_combo)
-        main_layout.addWidget(action_section)
+        menu = QMenu(self.action_button)
+        policy_group = QActionGroup(menu)
+        policy_group.setExclusive(True)
+        for value in ("error", "warn", "ignore"):
+            action = menu.addAction(value.capitalize())
+            action.setCheckable(True)
+            action.setChecked(value == self.missing_action)
+            action.triggered.connect(
+                lambda _checked=False, v=value: self.on_action_changed(v)
+            )
+            policy_group.addAction(action)
+        self.action_button.setMenu(menu)
 
-        dock_layout.addLayout(main_layout)
+        dock_layout.addWidget(key_section)
+        # Each list reports the height its rows need (capped), so the sections
+        # hug them; spare pane height stays below instead of stretching a short
+        # list into a mostly empty panel.
+        dock_layout.addWidget(data_section)
+        dock_layout.addStretch(1)
+        self._refresh_transpose_counts(total_columns)
         self.recursively_find_widgets(dock_layout)
+
+    def dock_actions(self) -> list:
+        """One obvious action, mounted on the dock's label row."""
+        button = getattr(self, "action_button", None)
+        return [button] if button is not None else []
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        values = len(self.data_columns)
+        if values:
+            chips.append((f"{values} value{'s' if values > 1 else ''}", "accent"))
+        keys = len(self.key_columns)
+        if keys:
+            chips.append((f"{keys} key{'s' if keys > 1 else ''}", ""))
+        return chips, f"{self.missing_action} on missing"
+
+    def _refresh_transpose_counts(self, total_columns: Optional[int] = None) -> None:
+        """Refresh the pane summary; counts are no longer rendered."""
+        self.refresh_dock_context()
 
     def process_data(self) -> None:
         """Transpose selected columns while maintaining key columns using Polars"""
@@ -283,6 +326,7 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"📊 TransposeContent: Key columns updated: {self.key_columns}"
         )
         self.process_data()
+        self._refresh_transpose_counts()
         self.evaluate.emit()
 
     def on_data_selection_changed(self, checked: list) -> None:
@@ -292,15 +336,20 @@ class TransposeContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             f"📊 TransposeContent: Data columns updated: {self.data_columns}"
         )
         self.process_data()
+        self._refresh_transpose_counts()
         self.evaluate.emit()
 
     def on_action_changed(self, value: str) -> None:
         """Handle missing column action changes"""
         self.missing_action = value
+        button = getattr(self, "action_button", None)
+        if button is not None:
+            button.setToolTip(f"Missing columns: {value}")
         global_logger.debug(
             f"📊 TransposeContent: Missing action changed to: {self.missing_action}"
         )
         self.process_data()
+        self._refresh_transpose_counts()
         self.evaluate.emit()
 
     def serialize(self) -> dict:

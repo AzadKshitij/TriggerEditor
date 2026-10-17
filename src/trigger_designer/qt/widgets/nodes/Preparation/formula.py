@@ -14,7 +14,6 @@ from qtpy.QtWidgets import (
     QInputDialog,
     QLabel,
     QMessageBox,
-    QScrollArea,
     QVBoxLayout,
     QWidget,
 )
@@ -130,6 +129,63 @@ class _ResizeGrip(QFrame):
         self._old_state = None
 
 
+class _FormulaCard(QFrame):
+    """Collapsible formula card: the header keeps target + type in view.
+
+    Folding is UI state only - it is never recorded in history; a structural
+    rebuild re-applies the fold from ``FormulaContent._collapsed_sections``.
+    """
+
+    toggled = Signal(bool)
+
+    def __init__(self, parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("FormulaCard")
+        self._collapsed = False
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        self.header = QFrame(self)
+        self.header.setObjectName("FormulaCardHeader")
+        self.header.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.header_layout = QHBoxLayout(self.header)
+        self.header_layout.setContentsMargins(4, 2, 4, 2)
+        self.header_layout.setSpacing(2)
+
+        self.chevron = QLabel("\u25be", self.header)
+        self.chevron.setObjectName("SectionChevron")
+        self.chevron.setFixedWidth(10)
+        self.chevron.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.header_layout.addWidget(self.chevron)
+
+        self.body = QFrame(self)
+        self.body.setObjectName("FormulaCardBody")
+        self.body_layout = QVBoxLayout(self.body)
+        self.body_layout.setContentsMargins(4, 2, 4, 4)
+        self.body_layout.setSpacing(2)
+
+        layout.addWidget(self.header)
+        layout.addWidget(self.body)
+
+        self.header.mousePressEvent = self._on_header_pressed  # type: ignore[method-assign]
+
+    def is_collapsed(self) -> bool:
+        return self._collapsed
+
+    def set_collapsed(self, collapsed: bool) -> None:
+        if collapsed == self._collapsed:
+            return
+        self._collapsed = collapsed
+        self.body.setVisible(not collapsed)
+        self.chevron.setText("\u25b8" if collapsed else "\u25be")
+        self.toggled.emit(collapsed)
+
+    def _on_header_pressed(self, event) -> None:
+        self.set_collapsed(not self._collapsed)
+
+
 class FormulaContent(
     QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
 ):
@@ -157,6 +213,8 @@ class FormulaContent(
         self.formula_sections: List[Dict[str, Any]] = [self._default_section()]
         self.section_widgets: List[Dict[str, Any]] = []
         self.sections_layout: Optional[QVBoxLayout] = None
+        #: Folded formula cards (UI state only, never a history entry).
+        self._collapsed_sections: set[int] = set()
         self.add_section_button: Optional[IconButton] = None
         self.section_count_label: Optional[QLabel] = None
 
@@ -183,6 +241,9 @@ class FormulaContent(
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         """Create the layout for the formula content widget."""
+        # Stale widget from a previous build: the dock deletes its children on
+        # rebuild, so the reference must not survive into ``dock_actions()``.
+        self.add_section_button = None
         if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
             return
@@ -191,36 +252,47 @@ class FormulaContent(
 
         container = QWidget()
         main_layout = QVBoxLayout(container)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(2)
         self.sections_layout = QVBoxLayout()
         self.sections_layout.setSpacing(2)
 
-        controls_layout = QHBoxLayout()
-        controls_layout.setContentsMargins(0, 0, 0, 0)
+        # The add action rides on the dock's label row (ConfigDock mounts
+        # ``dock_actions()`` there), so the cards start right under the label
+        # instead of below a 30px command row of their own.
         self.add_section_button = IconButton.themed(
             "Add formula",
             rsm_icon=self.node.rsm.get("icon_add"),
         )
         self.add_section_button.clicked.connect(self.add_formula_section)
-        self.section_count_label = QLabel("")
-        self.section_count_label.setObjectName("formulaSectionCount")
-
-        controls_layout.addWidget(self.add_section_button)
-        controls_layout.addStretch()
-        controls_layout.addWidget(self.section_count_label)
+        self.section_count_label: Optional[QLabel] = None
 
         main_layout.addLayout(self.sections_layout)
-        main_layout.addLayout(controls_layout)
         main_layout.addStretch()
 
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll_area.setWidget(container)
-        dock_layout.addWidget(scroll_area, 1)
+        dock_layout.addWidget(container, 1)
 
         self._rebuild_section_widgets()
+
+    def dock_actions(self) -> List[QWidget]:
+        """One obvious action, mounted on the dock's label row."""
+        button = getattr(self, "add_section_button", None)
+        return [button] if button is not None else []
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        if self.incom_data is not None:
+            try:
+                columns = list(frame_schema(self.incom_data))
+            except Exception:
+                columns = []
+            if columns:
+                chips.append((f"{len(columns)} columns", ""))
+        filled = len(self._configured_sections())
+        total = len(self.formula_sections)
+        chips.append((f"{filled} of {total} formulas", "accent" if filled else ""))
+        return chips, ""
 
     def _default_section(self) -> Dict[str, Any]:
         return {
@@ -429,12 +501,9 @@ class FormulaContent(
                 separator.setFixedHeight(1)
                 self.sections_layout.addWidget(separator)
 
-            card = QFrame()
-            card.setObjectName("formulaSectionCard")
-
-            card_layout = QVBoxLayout(card)
-            card_layout.setContentsMargins(4, 4, 4, 4)
-            card_layout.setSpacing(2)
+            card = _FormulaCard()
+            header_layout = card.header_layout
+            body_layout = card.body_layout
 
             remove_button = IconButton.themed(
                 "Remove formula",
@@ -442,7 +511,6 @@ class FormulaContent(
             )
             remove_button.clicked.connect(partial(self.remove_formula_section, index))
 
-            target_row = QHBoxLayout()
             target_selector = NoWheelComboBox()
             target_selector.addItems(self._target_items_for_section(index))
             self._set_target_selector_value(target_selector, section["target_column"])
@@ -458,9 +526,10 @@ class FormulaContent(
             dtype_selector.activated.connect(
                 partial(self.handle_dtype_activation, index)
             )
-            target_row.addWidget(target_selector, 1)
-            target_row.addWidget(dtype_selector, 1)
-            target_row.addWidget(remove_button)
+            header_layout.addWidget(target_selector, 1)
+            header_layout.addWidget(dtype_selector, 1)
+            header_layout.addStretch()
+            header_layout.addWidget(remove_button)
 
             formula_input = SQLFormulaWidget()
             formula_input.set_placeholder_text(FORMULA_PLACEHOLDER)
@@ -488,10 +557,12 @@ class FormulaContent(
             error_label.setWordWrap(True)
             error_label.hide()
 
-            card_layout.addLayout(target_row)
-            card_layout.addWidget(formula_input)
-            card_layout.addWidget(_ResizeGrip(self, index, formula_input))
-            card_layout.addWidget(error_label)
+            body_layout.addWidget(formula_input)
+            body_layout.addWidget(_ResizeGrip(self, index, formula_input))
+            body_layout.addWidget(error_label)
+
+            card.set_collapsed(index in self._collapsed_sections)
+            card.toggled.connect(partial(self._on_card_toggled, index))
 
             self.sections_layout.addWidget(card)
             self.section_widgets.append(
@@ -533,16 +604,20 @@ class FormulaContent(
             except RuntimeError:
                 continue
 
+    def _on_card_toggled(self, index: int, collapsed: bool) -> None:
+        """Remember a card fold; UI state only, so no history entry."""
+        if collapsed:
+            self._collapsed_sections.add(index)
+        else:
+            self._collapsed_sections.discard(index)
+
     def _refresh_section_controls(self) -> None:
         section_count = len(self.formula_sections)
 
         if self.add_section_button is not None:
             self.add_section_button.setEnabled(section_count < MAX_FORMULA_SECTIONS)
 
-        if self.section_count_label is not None:
-            self.section_count_label.setText(
-                f"{section_count}/{MAX_FORMULA_SECTIONS} sections"
-            )
+        self.refresh_dock_context()
 
         for index, widgets in enumerate(self.section_widgets):
             widgets["remove_button"].setEnabled(section_count > 1)
@@ -617,6 +692,13 @@ class FormulaContent(
 
         old_state = self._current_state()
         self.formula_sections.pop(section_index)
+        # Folded cards are addressed by index; keep the folds pointing at the
+        # same sections after the shift.
+        self._collapsed_sections = {
+            (i if i < section_index else i - 1)
+            for i in self._collapsed_sections
+            if i != section_index
+        }
         self._rebuild_section_widgets()
         self.update_data()
         self.store_history(old_state)

@@ -154,7 +154,7 @@ def main() -> None:
 
     # Initialize application first so the splash paints before heavy imports
     app = QApplication(sys.argv)
-    app.setStyle("Fusion")
+    # app.setStyle("Fusion")
 
     # Application configuration
     name_company = "Trigger"

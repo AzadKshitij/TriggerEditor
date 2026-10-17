@@ -408,7 +408,7 @@ def test_dtype_state_existing_locked_new_editable() -> None:
     assert content._dtype_state_for_section(1) == ("Float", True)
 
 
-def test_dtype_dropdown_row_and_scroll_area() -> None:
+def test_dtype_dropdown_row_and_pane_owns_scroll_area() -> None:
     _get_app()
     from nodeeditor.node_scene import Scene
     from qtpy.QtWidgets import QScrollArea, QVBoxLayout, QWidget
@@ -425,7 +425,9 @@ def test_dtype_dropdown_row_and_scroll_area() -> None:
     content.create_layout(QVBoxLayout(host))
     widgets = content.section_widgets[0]
     assert [widgets["dtype_selector"].itemText(i) for i in range(9)] == DTYPE_OPTIONS
-    assert host.findChild(QScrollArea) is not None
+    # The Config Dock pane owns the single scrollbar; a node-level scroll area
+    # nested inside it would trap the pointer and stop the pane scrolling.
+    assert host.findChild(QScrollArea) is None
 
     from trigger_designer.qt.widgets.common import NoWheelComboBox
 
@@ -485,17 +487,10 @@ def test_formula_cards_borderless_themed_untitled() -> None:
     ]
     assert len(separators) == 1
 
-    row = None
-    card_layout = content.section_widgets[0]["card"].layout()
-    for i in range(card_layout.count()):
-        child = card_layout.itemAt(i).layout()
-        if child is not None and any(
-            child.itemAt(j).widget() is content.section_widgets[0]["target_selector"]
-            for j in range(child.count())
-        ):
-            row = child
-    assert row is not None
-    assert row.indexOf(content.section_widgets[0]["remove_button"]) >= 0
+    card = content.section_widgets[0]["card"]
+    header_layout = card.header_layout
+    assert header_layout.indexOf(content.section_widgets[0]["target_selector"]) >= 0
+    assert header_layout.indexOf(content.section_widgets[0]["remove_button"]) >= 0
     host.deleteLater()
 
 
@@ -514,9 +509,14 @@ def test_formula_sidebar_uses_compact_spacing() -> None:
     host = QWidget()
     content.create_layout(QVBoxLayout(host))
     assert content.sections_layout.spacing() == 2
-    card_margins = content.section_widgets[0]["card"].layout().contentsMargins()
-    assert (card_margins.left(), card_margins.top()) == (4, 4)
-    assert content.section_widgets[0]["card"].layout().spacing() == 2
+    card = content.section_widgets[0]["card"]
+    # The card itself is flush; the body carries the 4px inset so the header
+    # row and the folding body line up on the same edge.
+    outer = card.layout().contentsMargins()
+    assert (outer.left(), outer.top()) == (0, 0)
+    body = card.body_layout.contentsMargins()
+    assert (body.left(), body.top()) == (4, 2)
+    assert card.body_layout.spacing() == 2
     host.deleteLater()
 
 

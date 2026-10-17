@@ -2,7 +2,6 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QFileDialog,
     QVBoxLayout,
-    QLabel,
     QDialogButtonBox,
     QDialog,
 )
@@ -24,6 +23,7 @@ from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
+    FormRow,
     IconButton,
     NoWheelComboBox,
 )
@@ -185,60 +185,78 @@ class GraphContent(
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(2)
+        # Stale widget from a previous build: the dock deletes its children on
+        # rebuild, so the reference must not survive into ``dock_actions()``.
+        self.open_graph_button = None
+        graph_section = ConfigSection()
+        self.graph_section = graph_section
 
-        graph_section = ConfigSection("Graph Configuration")
-
-        # Graph Type Selection
-        self.graph_type_combo = NoWheelComboBox()
-        self.graph_type_combo.setMinimumHeight(30)
-        self.graph_type_combo.addItems(["line", "bar", "scatter"])
-        self.graph_type_combo.currentTextChanged.connect(self.on_graph_type_changed)
-        graph_section.addWidget(QLabel("Graph type"))
-        graph_section.addWidget(self.graph_type_combo)
-
-        # X Column Selection
-        self.x_column_combo = NoWheelComboBox()
-        self.x_column_combo.setMinimumHeight(30)
-        self.x_column_combo.currentTextChanged.connect(self.on_x_column_changed)
-        graph_section.addWidget(QLabel("X column"))
-        graph_section.addWidget(self.x_column_combo)
-
-        # Y Column Selection
-        self.y_column_combo = NoWheelComboBox()
-        self.y_column_combo.setMinimumHeight(30)
-        self.y_column_combo.currentTextChanged.connect(self.on_y_column_changed)
-        graph_section.addWidget(QLabel("Y column"))
-        graph_section.addWidget(self.y_column_combo)
-
-        # Graph Title Input
-        self.title_edit = QLineEdit()
-        self.title_edit.setMinimumHeight(30)
-        self.title_edit.setPlaceholderText("Chart title")
-        self.title_edit.textChanged.connect(self.on_title_changed)
-        graph_section.addWidget(QLabel("Title"))
-        graph_section.addWidget(self.title_edit)
-
-        main_layout.addWidget(graph_section)
-
-        # Open in new window (icon-only per design system §4)
+        # Open in new window rides on the dock's label row (ConfigDock mounts
+        # ``dock_actions()`` there) instead of spending a 30px row above a
+        # four-field form.
         self.open_graph_button = IconButton.themed(
             "Open graph in new window",
             rsm_icon=self.node.rsm.get("icon_external"),
             theme_fallback="window-new",
         )
         self.open_graph_button.clicked.connect(self.open_graph_in_new_window)
-        main_layout.addWidget(self.open_graph_button)
-        main_layout.addStretch()
 
-        dock_layout.addLayout(main_layout)
+        # Graph Type Selection
+        self.graph_type_combo = NoWheelComboBox()
+        self.graph_type_combo.setMinimumHeight(30)
+        self.graph_type_combo.addItems(["line", "bar", "scatter"])
+        self.graph_type_combo.currentTextChanged.connect(self.on_graph_type_changed)
+        graph_section.addWidget(FormRow("Type", self.graph_type_combo, label_width=72))
+
+        # X Column Selection
+        self.x_column_combo = NoWheelComboBox()
+        self.x_column_combo.setMinimumHeight(30)
+        self.x_column_combo.currentTextChanged.connect(self.on_x_column_changed)
+        graph_section.addWidget(
+            FormRow("X column", self.x_column_combo, label_width=72)
+        )
+
+        # Y Column Selection
+        self.y_column_combo = NoWheelComboBox()
+        self.y_column_combo.setMinimumHeight(30)
+        self.y_column_combo.currentTextChanged.connect(self.on_y_column_changed)
+        graph_section.addWidget(
+            FormRow("Y column", self.y_column_combo, label_width=72)
+        )
+
+        # Graph Title Input
+        self.title_edit = QLineEdit()
+        self.title_edit.setMinimumHeight(30)
+        self.title_edit.setPlaceholderText("Chart title")
+        self.title_edit.textChanged.connect(self.on_title_changed)
+        graph_section.addWidget(FormRow("Title", self.title_edit, label_width=72))
+
+        dock_layout.addWidget(graph_section)
+        dock_layout.addStretch()
 
         self.update_column_options()
         self._update_open_graph_button_visibility()
+        self._refresh_graph_counts()
 
-        # return layout
+    def dock_actions(self) -> list:
+        """One obvious action, mounted on the dock's label row."""
+        button = getattr(self, "open_graph_button", None)
+        return [button] if button is not None else []
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = [(self.graph_type, "accent")]
+        if self.x_column and self.y_column:
+            chips.append((f"{self.x_column} \u2192 {self.y_column}", ""))
+        return chips, self.title
+
+    def _refresh_graph_counts(self) -> None:
+        """Keep the section header count in step with the configuration."""
+        self.refresh_dock_context()
+        section = getattr(self, "graph_section", None)
+        if section is None:
+            return
+        section.set_count(self.graph_type)
 
     def _update_open_graph_button_visibility(self) -> None:
         button = getattr(self, "open_graph_button", None)
@@ -285,6 +303,7 @@ class GraphContent(
 
     def on_graph_type_changed(self, text):
         self.graph_type = text
+        self._refresh_graph_counts()
         # self.plot_graph()
 
     def on_x_column_changed(self, text):

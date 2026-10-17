@@ -2,36 +2,53 @@
     "name": "light",
 
     "background_primary": "#ffffff",
-    "background_secondary": "#f5f5f5",
+    "background_secondary": "#f7f8fa",
     "background_tertiary": "#eeeeee",
-    "background_hover": "#e8e8e8",
-    "background_pressed": "#dadada",
+    "background_hover": "#edf0f3",
+    "background_pressed": "#e1e6eb",
     "background_disabled": "#f0f0f0",
     "background_alternate": "#f9f9f9",
 
     "scroll_background": "#f0f0f0",
 
     "menu_background": "#ffffff",
-    "menu_separator": "#e0e0e0",
+    "menu_separator": "#d6dbe0",
 
     "statusbar_background": "#f5f5f5",
 
     "separator_background": "#e0e0e0",
 
-    "text_primary": "#000000",
-    "text_secondary": "#444444",
-    "text_disabled": "#999999",
-    "text_inactive": "#666666",
+    "text_primary": "#10151a",
+    "text_secondary": "#39434d",
+    "text_disabled": "#9aa5b1",
+    "text_inactive": "#68737f",
+    "text_tertiary": "#68737f",
 
     "accent_primary": "#0078d4",
     "accent_secondary": "#0091ea",
     "accent_tertiary": "#40c4ff",
     "accent_disabled": "#b3e5fc",
 
+    "success": "#2e8b5f",
+    "warning": "#a9751a",
+    "danger": "#c1484d",
+    "info": "#2a7dae",
+    "activity": "#7452b4",
+
+    "node_input": "#b84e47",
+    "node_prepare": "#34875a",
+    "node_join": "#3f6fbf",
+    "node_transform": "#7452b4",
+    "node_report": "#a87c22",
+    "node_selection": "#b26700",
+
     "selection_color": "#000000",
 
-    "border_primary": "#e0e0e0",
-    "border_light": "#f0f0f0",
+    "border_primary": "#e8ebee",
+    "border_subtle": "#e8ebee",
+    "border_default": "#d6dbe0",
+    "border_strong": "#bcc5cd",
+    "border_light": "#bcc5cd",
     "border_dark": "#cccccc",
     "border_accent": "#0078d4",
 
@@ -39,9 +56,9 @@
     "border_radius": "4px",
 
     "card_background": "#ffffff",
-    "card_border": "#cccccc",
-    "editor_background": "#ffffff",
-    "error_text": "#b00020",
+    "card_border": "#d6dbe0",
+    "editor_background": "#f1f3f5",
+    "error_text": "#c1484d",
     "background_warning": "#fff3cd",
 
     "spacing_tiny": "2px",
@@ -55,9 +72,9 @@
     "control_menu_bg": "#232323",
     "control_toolbar_bg": "#2b2b2b",
     
-    "button_bg": "#2b2b2b",
-    "button_hover": "#383838",
-    "button_pressed": "#4b4b4b",
+    "button_bg": "#f7f8fa",
+    "button_hover": "#edf0f3",
+    "button_pressed": "#e1e6eb",
 
     "icon_size_small": "12px",
     "icon_size_medium": "16px",
