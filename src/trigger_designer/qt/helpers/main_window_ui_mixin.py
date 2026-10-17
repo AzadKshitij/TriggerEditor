@@ -4,8 +4,10 @@ import os
 
 from nodeeditor.utils import dumpException
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import QMenu, QMessageBox
 
+from trigger_designer.qt.docks.data_preview import DataPreviewDock
 from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
@@ -108,6 +110,17 @@ class MainWindowMenuMixin:
             logger_action = self.loggingDock.toggleViewAction()
             logger_action.setText("Show Logger")
             self.windowMenu.addAction(logger_action)
+
+        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock is not None:
+            preview_action = self.dataPreviewDock.toggleViewAction()
+            preview_action.setText("Data Preview")
+            preview_action.setShortcut(QKeySequence("Ctrl+Shift+D"))
+            self.windowMenu.addAction(preview_action)
+
+        if hasattr(self, "configDock") and self.configDock is not None:
+            config_action = self.configDock.toggleViewAction()
+            config_action.setText("Node Configuration")
+            self.windowMenu.addAction(config_action)
 
         self.windowMenu.addSeparator()
 
@@ -235,6 +248,12 @@ class MainWindowDockMixin:
         self.loggingDock = LoggingDock(self)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.loggingDock)
 
+    def createDataPreviewDock(self) -> None:
+        """Create the shared preview dock, tabified with the log dock."""
+        self.dataPreviewDock = DataPreviewDock(self)
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dataPreviewDock)
+        self.tabifyDockWidget(self.loggingDock, self.dataPreviewDock)
+
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""
         return getattr(self, "loggingDock", None)
@@ -244,11 +263,18 @@ class MainWindowDockMixin:
         if hasattr(self, "loggingDock") and self.loggingDock:
             self.loggingDock.switch_to_design_window(design_window)
 
+    def switchDataPreviewDock(self, design_window) -> None:
+        """Switch the preview dock to follow a specific design window"""
+        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
+            self.dataPreviewDock.switch_to_design_window(design_window)
+
     def onDesignWindowClose(self, design_window, event) -> None:
-        """Handle design window close event to clean up logs"""
+        """Handle design window close event to clean up logs and previews"""
+        design_window_id = str(id(design_window))
         if hasattr(self, "loggingDock") and self.loggingDock:
-            design_window_id = str(id(design_window))
             self.loggingDock.remove_design_window(design_window_id)
+        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
+            self.dataPreviewDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
         self.statusBar().showMessage("Ready")

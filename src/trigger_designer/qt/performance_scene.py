@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 
 from nodeeditor.node_edge import Edge
@@ -122,9 +123,22 @@ class TriggerScene(Scene):
         #: Set by helpers.eval_progress.eval_progress_dialog while a
         #: progress dialog is driving a load/recompute; None otherwise.
         self._eval_progress_cb = None
+        #: Callbacks run, with the node, after a real recompute. ``Scene`` is
+        #: not a QObject, so this follows the scene's own listener idiom
+        #: (``addItemSelectedListener`` and friends) rather than a signal.
+        self._node_evaluated_listeners: list[Callable[[object], None]] = []
 
     def getEdgeClass(self):
         return TriggerEdge
+
+    def addNodeEvaluatedListener(self, callback: Callable[[object], None]) -> None:
+        """Register ``callback(node)`` for every real node recompute."""
+        self._node_evaluated_listeners.append(callback)
+
+    def notifyNodeEvaluated(self, node: object) -> None:
+        """Run the evaluation listeners for ``node`` (``Node.eval`` calls it)."""
+        for callback in list(self._node_evaluated_listeners):
+            callback(node)
 
     def beginBulkLoad(self) -> None:
         self._bulk_loading = True

@@ -78,6 +78,9 @@ CHECK_OUTPUT_HEADER = (
 class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
     Scene_class = TriggerScene
     itemSelected = Signal(object)
+    #: Emitted when a run published fresh ``execution_results``: preview data
+    #: for a node lives there, not in ``node.value``.
+    executionResultsChanged = Signal()
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)

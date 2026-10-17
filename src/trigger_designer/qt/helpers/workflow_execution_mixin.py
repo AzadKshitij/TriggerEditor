@@ -14,6 +14,11 @@ from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
 class WorkflowExecutionMixin:
     """Mixin providing workflow execution orchestration and statistics tracking."""
 
+    #: ``TriggerSubWindow`` shadows this with a real ``Signal``; this mixin is
+    #: not a QObject (tests instantiate it directly), so announcing the end of
+    #: a run has to stay optional.
+    executionResultsChanged = None
+
     def init_workflow_execution(self) -> None:
         """Initialise workflow execution state tracking."""
         self.workflow_execution_count: int = 0
@@ -113,6 +118,9 @@ class WorkflowExecutionMixin:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
         else:
             self._execution_cleanup(success=False)
+
+        if self.executionResultsChanged is not None:
+            self.executionResultsChanged.emit()
 
     def _execution_cleanup(self, success: bool = True) -> None:
         """Handle workflow cleanup, statistics, and visual reset."""

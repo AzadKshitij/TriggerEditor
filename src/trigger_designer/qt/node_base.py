@@ -710,6 +710,13 @@ class TriggerNode(Node):
             return None  # Add explicit return for exception case
         finally:
             self._report_eval_progress(finished=True)
+            # Scene-level notification so preview surfaces can follow a real
+            # recompute; cached evaluations returned above. ``Scene`` is not a
+            # QObject, so TriggerScene fans this out to its own listeners.
+            scene = getattr(self, "scene", None)
+            notify = getattr(scene, "notifyNodeEvaluated", None)
+            if callable(notify):
+                notify(self)
 
     def _report_eval_progress(self, finished: bool) -> None:
         """Notify the active progress dialog, if any (helpers/eval_progress.py).

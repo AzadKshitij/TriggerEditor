@@ -30,6 +30,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowDockMixin,
     MainWindowMenuMixin,
 )
+from trigger_designer.qt.helpers.preview_dock_state import DataPreviewDockState
 from trigger_designer.qt.helpers import global_logger
 
 
@@ -133,6 +134,7 @@ class TriggerWindow(
         self.createNodesDock()
         self.createConfigDock()
         self.createLoggingDock()
+        self.createDataPreviewDock()
 
         self.createMenus()
         self.createToolBars()
@@ -140,6 +142,7 @@ class TriggerWindow(
         self.updateMenus()
 
         self.readSettings()
+        self._restore_preview_dock_state()
 
         self.setWindowTitle("Trigger Designer")
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
@@ -154,6 +157,19 @@ class TriggerWindow(
             self.showNormal()
         else:
             self.showFullScreen()
+
+    def _restore_preview_dock_state(self) -> None:
+        """Reopen the Data Preview dock if it was open at the last close."""
+        if not DataPreviewDockState().read():
+            return
+        self.dataPreviewDock.show()
+        self.dataPreviewDock.raise_()
+
+    @override
+    def writeSettings(self) -> None:
+        """Persist the base window geometry plus the preview dock state."""
+        super().writeSettings()
+        DataPreviewDockState().write(self.dataPreviewDock.isVisible())
 
     @override
     def onEditPaste(self) -> None:
@@ -332,9 +348,25 @@ class TriggerWindow(
         # Connect the design window to the shared logging dock
         nodeeditor.setLoggingDock(self.getLoggingDock())
 
-        # Switch logging dock to this window if it's the active one
+        # Wire the preview dock: the hooks are installed once per window and
+        # the dock ignores events from windows it does not follow.
+        nodeeditor.scene.addItemSelectedListener(
+            lambda: self.dataPreviewDock.note_selection_changed(nodeeditor)
+        )
+        nodeeditor.scene.addItemsDeselectedListener(
+            lambda: self.dataPreviewDock.note_selection_changed(nodeeditor)
+        )
+        nodeeditor.scene.addNodeEvaluatedListener(
+            lambda node: self.dataPreviewDock.note_node_evaluated(nodeeditor, node)
+        )
+        nodeeditor.executionResultsChanged.connect(
+            lambda: self.dataPreviewDock.note_run_finished(nodeeditor)
+        )
+
+        # Switch the docks to this window if it's the active one
         if self.mdiArea.activeSubWindow() == subwnd:
             self.switchLoggingDock(nodeeditor)
+            self.switchDataPreviewDock(nodeeditor)
 
         # Add a welcome log message for new design window
         nodeeditor.logInfo(
@@ -344,12 +376,13 @@ class TriggerWindow(
         return subwnd
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
-        """Handle sub window activation to switch logging dock context"""
+        """Handle sub window activation to switch the dock contexts"""
         if sub_window:
             widget = sub_window.widget()
             if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
-                # Switch the logging dock to show logs for this window
+                # Switch both docks to show content for this window
                 self.switchLoggingDock(widget)
+                self.switchDataPreviewDock(widget)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         # Activate the window being closed first so ``maybeSave`` targets the
