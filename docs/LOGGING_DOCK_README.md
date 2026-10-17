@@ -18,7 +18,8 @@ The logging dock provides a single, shared logging panel that displays logs for 
 - The logging dock can be docked to any edge of the main window
 - Can be undocked to float as a separate window
 - Can be closed and reopened as needed
-- Supports tabbed docking with other panels
+- Supports tabbed docking with other panels (the Data Preview dock is tabified
+  behind Logs by default)
 
 ### Log Filtering
 - **Log Level Filter**: Filter logs by minimum level (TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -105,6 +106,13 @@ This will:
 1. Create a main window with a new design window
 2. Send test messages at different log levels
 3. Demonstrate the logging dock functionality
+
+## Related docks
+
+The Data Preview dock (`docs/DATA_PREVIEW_DOCK_README.md`) shares this tab stack:
+`MainWindowDockMixin` tabifies it behind Logs, and `Window > Data Preview` (or
+`Ctrl+Shift+D`) brings it to the front. Both docks keep their per-window state
+keyed by `str(id(design_window))` and drop it in `onDesignWindowClose`.
 
 ## Future Enhancements
 

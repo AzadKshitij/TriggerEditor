@@ -171,6 +171,12 @@ Every `setData / move / check / sort` → `data_processed → handleDataChanged 
   `ColumnChecklist`, `IconButton`, `OptionsButton`, `TextButton`, `DataTypeCombo`,
   `JoinSourceLeft`/`JoinSourceRight`, `JoinSourceHeaderLeft`/`Right`, `JoinDtypeLabel`.
   Hooks live in `resources/qt/themes/base.qss` (runtime) and `qss/_style.scss` (source).
+- Dock chrome (shared docks, e.g. `qt/docks/data_preview.py`) adds
+  `PreviewTitleLabel`, `PreviewInfoLabel`, `PreviewRangeLabel`, `PreviewSocketCombo`
+  and `PreviewPinButton`. That is the dock-chrome boundary: §§1-6 and the node-panel
+  objectNames above govern node config docks; shared dock chrome still follows §7 -
+  `objectName` plus `base.qss`/`_style.scss`, hover and pressed restated per
+  `objectName`, no inline QSS.
 - `base.qss` is a `str.format` template: only keys present in
   `resources/qt/themes/*.json` may be used. Available: `background_hover`,
   `background_pressed`, `button_bg`, `accent_primary`/`_secondary`, `card_border`,
