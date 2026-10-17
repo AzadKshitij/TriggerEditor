@@ -1803,6 +1803,50 @@ QComboBox#DataTypeCombo {
   padding: 1px 4px; }
   QComboBox#DataTypeCombo:focus {
     border: 1px solid #6a96d7; }
+/* Data Preview dock and panel ------------------------------------------- */
+QLabel#PreviewTitleLabel {
+  color: #ffffff;
+  font-weight: bold; }
+QLabel#PreviewInfoLabel {
+  color: #999999;
+  font-size: 11px; }
+QLabel#PreviewRangeLabel {
+  color: #999999; }
+QComboBox#PreviewSocketCombo {
+  background-color: #14171b;
+  color: #ffffff;
+  border: 1px solid #5680c2;
+  border-radius: 4px;
+  padding: 2px 6px; }
+  QComboBox#PreviewSocketCombo:hover, QComboBox#PreviewSocketCombo:focus {
+    border: 1px solid #6a96d7; }
+  QComboBox#PreviewSocketCombo:disabled {
+    color: #4a4a4a; }
+/* The pin is a checkable icon button: an objectName selector outranks
+   QPushButton:hover, so every state is restated here (§4.5) and the checked
+   state comes last, with its own hover, so a pinned button still reacts. */
+QPushButton#PreviewPinButton {
+  background-color: #191e21;
+  color: #ffffff;
+  border: 1px solid #191e21;
+  border-radius: 4px;
+  padding: 0px; }
+  QPushButton#PreviewPinButton:hover {
+    background-color: #232323;
+    border: 1px solid #5680c2; }
+  QPushButton#PreviewPinButton:pressed {
+    background-color: #4b4b4b;
+    border: 1px solid #5680c2; }
+  QPushButton#PreviewPinButton:disabled {
+    background-color: #191e21;
+    border: 1px solid #191e21;
+    color: #4a4a4a; }
+  QPushButton#PreviewPinButton:checked {
+    background-color: #5680c2;
+    border: 1px solid #5680c2; }
+  QPushButton#PreviewPinButton:checked:hover {
+    background-color: #6a96d7;
+    border: 1px solid #6a96d7; }
 /* Join output column list: source badges, headers, dtype hints */
 QLabel#JoinSourceLeft {
   background-color: #6a96d7;

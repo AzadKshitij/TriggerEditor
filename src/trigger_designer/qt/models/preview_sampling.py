@@ -23,6 +23,15 @@ def _is_pandas_dataframe(data: Any) -> bool:
     )
 
 
+def is_previewable(data: Any) -> bool:
+    """True when ``collect_preview`` can render ``data``.
+
+    Hosts use this to tell "no data on this socket" apart from "a value the
+    preview cannot show" (a Series, a graph payload) before requesting.
+    """
+    return isinstance(data, (pl.DataFrame, pl.LazyFrame)) or _is_pandas_dataframe(data)
+
+
 @dataclass
 class PreviewWindow:
     """One bounded collect: the frame to show and what the cap did to it.

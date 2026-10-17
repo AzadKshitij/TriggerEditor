@@ -127,5 +127,33 @@
     "icon_options":{
         "path":"qt/images/node_icons/ui/options_sliders.svg",
         "mode": "rb"
+    },
+    "icon_refresh":{
+        "path":"qt/images/node_icons/ui/refresh.svg",
+        "mode": "rb"
+    },
+    "icon_pin":{
+        "path":"qt/images/node_icons/ui/pin.svg",
+        "mode": "rb"
+    },
+    "icon_unpin":{
+        "path":"qt/images/node_icons/ui/pin_filled.svg",
+        "mode": "rb"
+    },
+    "icon_chevron_first":{
+        "path":"qt/images/node_icons/ui/chevron_first.svg",
+        "mode": "rb"
+    },
+    "icon_chevron_prev":{
+        "path":"qt/images/node_icons/ui/chevron_prev.svg",
+        "mode": "rb"
+    },
+    "icon_chevron_next":{
+        "path":"qt/images/node_icons/ui/chevron_next.svg",
+        "mode": "rb"
+    },
+    "icon_chevron_last":{
+        "path":"qt/images/node_icons/ui/chevron_last.svg",
+        "mode": "rb"
     }
 }

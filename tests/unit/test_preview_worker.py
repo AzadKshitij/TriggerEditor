@@ -15,6 +15,7 @@ sys.path.insert(
 import polars as pl
 from qtpy.QtWidgets import QApplication
 
+from trigger_designer.qt.models import preview_worker
 from trigger_designer.qt.models.preview_sampling import (
     PreviewWindow,
     collect_preview,
@@ -158,20 +159,24 @@ def test_truncated_lazy_request_counts_in_the_background():
     assert _wait_until(lambda: previews)
     assert previews[0].limited and previews[0].is_lazy
     assert _wait_until(lambda: counts == [50])
-    # the count worker is reaped, not leaked
-    assert _wait_until(lambda: not controller._count_workers)
+    # every worker is released once its thread stops, not leaked
+    assert _wait_until(lambda: not preview_worker._LIVE_WORKERS)
 
 
 def test_unlimited_lazy_request_never_starts_a_count():
     controller = PreviewRequestController(max_rows=1000)
     previews = []
+    counts = []
     controller.previewReady.connect(previews.append)
+    controller.countReady.connect(counts.append)
 
     controller.request(pl.DataFrame({"n": range(10)}).lazy())
 
     assert _wait_until(lambda: previews)
     assert previews[0].limited is False
-    assert controller._count_workers == []
+    # every worker released and nothing counted: no count worker was started
+    assert _wait_until(lambda: not preview_worker._LIVE_WORKERS)
+    assert counts == []
 
     eager = collect_preview(pl.DataFrame({"n": range(10)}), max_rows=1000)
     assert eager.limited is False

@@ -928,9 +928,9 @@ class PolarsTableViewer(QWidget):
 
         # Export (only if widgets exist)
         if self.export_csv_btn is not None:
-            self.export_csv_btn.clicked.connect(self._export_csv)
+            self.export_csv_btn.clicked.connect(self.export_csv)
         if self.export_excel_btn is not None:
-            self.export_excel_btn.clicked.connect(self._export_excel)
+            self.export_excel_btn.clicked.connect(self.export_excel)
 
         # Header clicks drive model-side sorting (Qt's own sorting stays off).
         self.table_view.horizontalHeader().sectionClicked.connect(
@@ -1085,8 +1085,8 @@ class PolarsTableViewer(QWidget):
 
         self.info_label.setText(info_text)
 
-    def _export_csv(self):
-        """Export current dataframe to CSV."""
+    def export_csv(self) -> None:
+        """Export the loaded frame to CSV (asks for a path first)."""
         try:
             current_df = (
                 self.filtered_dataframe
@@ -1110,8 +1110,8 @@ class PolarsTableViewer(QWidget):
         except Exception as e:
             logger.error(f"CSV export error: {e}")
 
-    def _export_excel(self):
-        """Export current dataframe to Excel."""
+    def export_excel(self) -> None:
+        """Export the loaded frame to Excel (asks for a path first)."""
         try:
             current_df = (
                 self.filtered_dataframe

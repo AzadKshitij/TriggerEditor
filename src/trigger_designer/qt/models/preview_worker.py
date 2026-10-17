@@ -5,7 +5,10 @@ that can block, so both run on their own `QThread` and the panel only ever
 sees finished results through signals. A running Polars scan cannot be
 cancelled, so `PreviewRequestController` never tries: it checks every result
 against the newest request id and drops superseded ones, and while one collect
-is in flight it keeps only the newest pending payload.
+is in flight it keeps only the newest pending payload. Worker signals carry the
+request id themselves and the controller connects its own bound methods, so a
+collect that outlives a closed preview is dropped by Qt instead of being
+delivered into a deleted object.
 """
 
 from functools import partial
@@ -20,12 +23,29 @@ from trigger_designer.qt.models.preview_sampling import (
     collect_preview,
 )
 
+# Qt aborts the process when a QThread is destroyed while still running, and
+# these workers are owned by Python (they have no Qt parent), so a host that
+# tears its panel down mid-collect would take the process with it. Every worker
+# is held here until its thread has stopped, whatever happens to its host.
+_LIVE_WORKERS: set[QThread] = set()
+
+
+def _keep_alive(worker: QThread) -> None:
+    """Hold ``worker`` until its thread stops, then let it go."""
+    _LIVE_WORKERS.add(worker)
+    worker.finished.connect(partial(_release_worker, worker))
+
+
+def _release_worker(worker: QThread) -> None:
+    _LIVE_WORKERS.discard(worker)
+    worker.deleteLater()
+
 
 class PreviewCollectWorker(QThread):
     """Collects a bounded preview of a payload off the GUI thread."""
 
-    finished_ok = Signal(object)  # PreviewWindow
-    failed = Signal(str)  # reason
+    finished_ok = Signal(int, object)  # request id, PreviewWindow
+    failed = Signal(int, str)  # request id, reason
 
     def __init__(
         self,
@@ -50,16 +70,16 @@ class PreviewCollectWorker(QThread):
             )
         except Exception as e:  # noqa: BLE001 - the worker boundary reports failure
             logger.warning(f"Preview collect failed: {e}")
-            self.failed.emit(str(e))
+            self.failed.emit(self.request_id, str(e))
             return
-        self.finished_ok.emit(window)
+        self.finished_ok.emit(self.request_id, window)
 
 
 class PreviewCountWorker(QThread):
     """Counts the rows of a lazy payload on its own thread."""
 
-    finished_ok = Signal(int)  # total rows
-    failed = Signal(str)  # reason
+    finished_ok = Signal(int, int)  # request id, total rows
+    failed = Signal(int, str)  # request id, reason
 
     def __init__(
         self,
@@ -76,9 +96,9 @@ class PreviewCountWorker(QThread):
             count = int(self.payload.select(pl.len()).collect().item())
         except Exception as e:  # noqa: BLE001 - the worker boundary reports failure
             logger.debug(f"Preview count failed: {e}")
-            self.failed.emit(str(e))
+            self.failed.emit(self.request_id, str(e))
             return
-        self.finished_ok.emit(count)
+        self.finished_ok.emit(self.request_id, count)
 
 
 class PreviewRequestController(QObject):
@@ -112,7 +132,6 @@ class PreviewRequestController(QObject):
         self._newest_payload: Any = None
         self._pending: tuple[int, Any] | None = None
         self._collect_worker: PreviewCollectWorker | None = None
-        self._count_workers: list[PreviewCountWorker] = []
         self._busy = False
 
     @property
@@ -138,16 +157,18 @@ class PreviewRequestController(QObject):
         worker = PreviewCollectWorker(
             payload, request_id, self.max_rows, self.max_size_mb
         )
-        worker.finished_ok.connect(partial(self._on_collect_ok, request_id))
-        worker.failed.connect(partial(self._on_collect_failed, request_id))
-        worker.finished.connect(partial(self._reap_collect_worker, worker))
+        _keep_alive(worker)
+        # Bound methods only: Qt disconnects them when this controller dies, so
+        # a collect that outlives its host cannot call into a deleted object.
+        worker.finished_ok.connect(self._on_collect_ok)
+        worker.failed.connect(self._on_collect_failed)
+        worker.finished.connect(self._reap_collect_worker)
         self._collect_worker = worker
         worker.start()
 
-    def _reap_collect_worker(self, worker: PreviewCollectWorker) -> None:
-        if self._collect_worker is worker:
-            self._collect_worker = None
-        worker.deleteLater()
+    def _reap_collect_worker(self) -> None:
+        """Release the collect slot once its thread has stopped."""
+        self._collect_worker = None
         self._start_next_collect()
         self._refresh_busy()
 
@@ -165,16 +186,11 @@ class PreviewRequestController(QObject):
 
     def _start_count(self, request_id: int, payload: Any) -> None:
         worker = PreviewCountWorker(payload, request_id)
-        worker.finished_ok.connect(partial(self._on_count_ok, request_id))
-        worker.failed.connect(partial(self._on_count_failed, request_id))
-        worker.finished.connect(partial(self._reap_count_worker, worker))
-        self._count_workers.append(worker)
+        _keep_alive(worker)
+        # Bound methods for the same reason as the collect worker above.
+        worker.finished_ok.connect(self._on_count_ok)
+        worker.failed.connect(self._on_count_failed)
         worker.start()
-
-    def _reap_count_worker(self, worker: PreviewCountWorker) -> None:
-        if worker in self._count_workers:
-            self._count_workers.remove(worker)
-        worker.deleteLater()
 
     def _on_count_ok(self, request_id: int, count: int) -> None:
         if request_id != self._newest_id:

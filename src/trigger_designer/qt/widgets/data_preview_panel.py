@@ -21,6 +21,7 @@ from qtpy.QtWidgets import (
 from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
 from trigger_designer.qt.models.preview_sampling import PreviewWindow
 from trigger_designer.qt.models.preview_worker import PreviewRequestController
+from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.widgets.common import (
     EmptyStateLabel,
     IconButton,
@@ -47,6 +48,7 @@ class DataPreviewPanel(QWidget):
         max_size_mb: float = 2.0,
     ) -> None:
         super().__init__(parent)
+        self.rsm = ResourceManager()
         self.controller = PreviewRequestController(
             max_rows=max_rows, max_size_mb=max_size_mb, parent=self
         )
@@ -193,24 +195,28 @@ class DataPreviewPanel(QWidget):
 
         self._first_btn = IconButton.themed(
             "First page",
+            rsm_icon=self.rsm.get("icon_chevron_first"),
             qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
             theme_fallback="go-first",
             parent=footer,
         )
         self._prev_btn = IconButton.themed(
             "Previous page",
+            rsm_icon=self.rsm.get("icon_chevron_prev"),
             qss_fallback=":/qss_icons/dark/rc/arrow_left.png",
             theme_fallback="go-previous",
             parent=footer,
         )
         self._next_btn = IconButton.themed(
             "Next page",
+            rsm_icon=self.rsm.get("icon_chevron_next"),
             qss_fallback=":/qss_icons/dark/rc/arrow_right.png",
             theme_fallback="go-next",
             parent=footer,
         )
         self._last_btn = IconButton.themed(
             "Last page",
+            rsm_icon=self.rsm.get("icon_chevron_last"),
             qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
             theme_fallback="go-last",
             parent=footer,

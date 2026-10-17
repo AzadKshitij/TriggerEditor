@@ -2387,3 +2387,68 @@ QComboBox#DataTypeCombo {
         border: 1px solid $COLOR_ACCENT_2;
     }
 }
+
+/* Data Preview dock and panel
+   The pin is a checkable icon button: an objectName selector outranks
+   QPushButton:hover, so every state is restated here and the checked state
+   comes last, with its own hover, so a pinned button still reacts. */
+QLabel#PreviewTitleLabel {
+    color: $COLOR_TEXT_1;
+    font-weight: bold;
+}
+QLabel#PreviewInfoLabel {
+    color: $COLOR_TEXT_3;
+    font-size: 11px;
+}
+QLabel#PreviewRangeLabel {
+    color: $COLOR_TEXT_3;
+}
+QComboBox#PreviewSocketCombo {
+    background-color: $COLOR_BACKGROUND_2;
+    color: $COLOR_TEXT_1;
+    border: 1px solid $COLOR_ACCENT_2;
+    border-radius: $SIZE_BORDER_RADIUS;
+    padding: 2px 6px;
+
+    &:hover,
+    &:focus {
+        border: 1px solid $COLOR_ACCENT_3;
+    }
+
+    &:disabled {
+        color: $COLOR_DISABLED;
+    }
+}
+QPushButton#PreviewPinButton {
+    background-color: $COLOR_BACKGROUND_3;
+    color: $COLOR_TEXT_1;
+    border: 1px solid $COLOR_BACKGROUND_3;
+    border-radius: $SIZE_BORDER_RADIUS;
+    padding: 0px;
+
+    &:hover {
+        background-color: $COLOR_BACKGROUND_4;
+        border: 1px solid $COLOR_ACCENT_2;
+    }
+
+    &:pressed {
+        background-color: $COLOR_BACKGROUND_5;
+        border: 1px solid $COLOR_ACCENT_2;
+    }
+
+    &:disabled {
+        background-color: $COLOR_BACKGROUND_3;
+        border: 1px solid $COLOR_BACKGROUND_3;
+        color: $COLOR_DISABLED;
+    }
+
+    &:checked {
+        background-color: $COLOR_ACCENT_2;
+        border: 1px solid $COLOR_ACCENT_2;
+    }
+
+    &:checked:hover {
+        background-color: $COLOR_ACCENT_3;
+        border: 1px solid $COLOR_ACCENT_3;
+    }
+}
