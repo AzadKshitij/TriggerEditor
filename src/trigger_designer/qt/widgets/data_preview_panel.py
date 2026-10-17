@@ -9,9 +9,11 @@ The frame the controller collected is shown whole as a single page, so there
 is no paging footer - the strip carries what the footer and the old info line
 did. It reads left to right: the node on screen (and whether it is pinned),
 the output socket when the node has more than one, a live search with an
-all-columns scope, the row/column counts, then pin, refresh and the options
-menu. A host that does not track nodes (the standalone window) never fills
-the node, socket or pin parts, and they stay hidden.
+all-columns scope, where the frame came from (the provenance badge:
+``from Run`` or ``evaluated · not run``), the row/column counts, then pin,
+refresh and the options menu. A host that does not track nodes (the
+standalone window) never fills the node, socket or pin parts and passes no
+source, so those and the badge stay hidden.
 """
 
 from typing import Any
@@ -48,6 +50,14 @@ _STRIP_HEIGHT = 36
 _CHIP_HEIGHT = 24
 _ROW_HEIGHT = 24
 _NODE_LABEL_WIDTH = 150
+_SOURCE_LABELS = {"run": "from Run", "value": "evaluated · not run"}
+_SOURCE_TOOLTIPS = {
+    "run": "This frame is the output of the last workflow Run.",
+    "value": (
+        "Computed by the app's live evaluation (file open, an edit), not by "
+        "a workflow Run."
+    ),
+}
 
 
 class DataPreviewPanel(QWidget):
@@ -74,6 +84,7 @@ class DataPreviewPanel(QWidget):
 
         self._payload: Any = None
         self._window: PreviewWindow | None = None
+        self._source: str | None = None
         self._count_pending = False
 
         layout = QVBoxLayout(self)
@@ -122,17 +133,27 @@ class DataPreviewPanel(QWidget):
 
     # -- public API ---------------------------------------------------------
 
-    def set_source(self, payload: Any, empty_text: str | None = None) -> None:
+    def set_source(
+        self,
+        payload: Any,
+        empty_text: str | None = None,
+        source: str | None = None,
+    ) -> None:
         """Point the panel at ``payload`` (DataFrame/LazyFrame or None).
 
         ``empty_text`` overrides the placeholder shown for ``payload=None``,
         so a host can distinguish "nothing selected" from "not tabular".
+        ``source`` is where the frame came from - ``"run"`` or ``"value"`` -
+        and fills the provenance badge; a host that does not know stays
+        silent and the badge hides.
         """
         self._payload = payload
         if payload is None:
             self._forget_data()
             self._show_state(empty_text or _BLANK_STATE)
             return
+        self._source = source
+        self._apply_source_badge()
         if self._window is None:
             self._show_state("Loading...")
         self._sync_refresh_enabled()
@@ -258,6 +279,7 @@ class DataPreviewPanel(QWidget):
         layout.addWidget(self.scope_combo)
 
         layout.addStretch(1)
+        layout.addWidget(self._build_source_badge(strip))
         layout.addWidget(self._build_counts_chip(strip))
 
         self.pin_btn = IconButton.themed(
@@ -358,6 +380,14 @@ class DataPreviewPanel(QWidget):
 
         self.counts_chip.setVisible(False)
         return self.counts_chip
+
+    def _build_source_badge(self, parent: QWidget) -> QLabel:
+        """Where the frame came from; filled by ``set_source(source=...)``."""
+        self.source_badge = QLabel("", parent)
+        self.source_badge.setObjectName("PreviewSourceBadge")
+        self.source_badge.setFixedHeight(_CHIP_HEIGHT)
+        self.source_badge.setVisible(False)
+        return self.source_badge
 
     def _build_options_menu(self) -> None:
         """Panel-owned menu; a dock host appends its own window actions."""
@@ -479,6 +509,7 @@ class DataPreviewPanel(QWidget):
     def _forget_data(self) -> None:
         """Back to "no preview": drop the filter, the scope and the counts."""
         self._window = None
+        self._source = None
         self._count_pending = False
         self._search_timer.stop()
         self.search_edit.blockSignals(True)
@@ -496,7 +527,20 @@ class DataPreviewPanel(QWidget):
         self._state_label.setText(text)
         self._state_label.setVisible(True)
         self._content.setVisible(False)
+        self._apply_source_badge()
 
     def _show_content(self) -> None:
         self._state_label.setVisible(False)
         self._content.setVisible(True)
+        self._apply_source_badge()
+
+    def _apply_source_badge(self) -> None:
+        """Text and tone for the provenance badge; hidden without a table."""
+        key = self._source or ""
+        label = _SOURCE_LABELS.get(key, "")
+        self.source_badge.setText(label)
+        self.source_badge.setToolTip(_SOURCE_TOOLTIPS.get(key, ""))
+        self.source_badge.setProperty("source", key)
+        self.source_badge.style().unpolish(self.source_badge)
+        self.source_badge.style().polish(self.source_badge)
+        self.source_badge.setVisible(bool(label) and not self._content.isHidden())

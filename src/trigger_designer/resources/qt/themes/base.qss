@@ -1805,8 +1805,9 @@ QComboBox#DataTypeCombo {{
     border: 1px solid {accent_secondary}; }}
 /* Data Preview dock and panel ------------------------------------------- */
 /* One strip of chrome over the table: node chip, socket chip, live search,
-   scope, counts, then pin/refresh/options. Chips sit a shade below the
-   strip; the search field is the app's standard field on that shade. */
+   scope, provenance, counts, then pin/refresh/options. Chips sit a shade
+   below the strip; the search field is the app's standard field on that
+   shade. */
 QFrame#PreviewStrip {{
   background-color: {background_secondary};
   border: 0px;
@@ -1830,6 +1831,15 @@ QLabel#PreviewLimitedBadge {{
   border-radius: 3px;
   font-size: 10px;
   padding: 1px 5px; }}
+QLabel#PreviewSourceBadge {{
+  color: {text_inactive};
+  border: 1px solid {border_primary};
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 1px 5px; }}
+  QLabel#PreviewSourceBadge[source="run"] {{
+    color: {success};
+    border: 1px solid {success}; }}
 QLineEdit#PreviewSearchEdit {{
   background-color: {editor_background};
   border: 1px solid {border_primary};

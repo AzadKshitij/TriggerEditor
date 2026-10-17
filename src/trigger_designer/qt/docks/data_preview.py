@@ -13,11 +13,15 @@ dropped by ``remove_design_window`` when the window closes. Each entry holds
 ``pinned``, ``pin_node``, ``socket_index`` and ``shown_node`` - the last one is
 what lets an evaluation refresh the preview only for the node on screen.
 
-Payload resolution, in order: the node's ``value`` (one ``{"data",
-"variable_name"}`` entry per output socket), then the run results through
-``getSocketData`` (a run writes to ``execution_results``, not ``value``). A
-value the preview cannot render counts as "no output", so the panel shows the
-empty state instead of a collect failure.
+Payload resolution, in order: the run results through ``getSocketData`` while
+they are not stale (a run writes to ``execution_results``, not ``value``),
+then the node's ``value`` (one ``{"data", "variable_name"}`` entry per output
+socket). The app evaluates on file open and on every edit, so a node
+recomputed after a run goes back to its fresh ``value`` - the stored run
+frame predates the edit. The store the payload came from travels with it and
+the panel renders it as the provenance badge (``from Run`` vs ``evaluated ·
+not run``). A value the preview cannot render counts as "no output", so the
+panel shows the empty state instead of a collect failure.
 
 Selection reaches this dock as graphics items (``getSelectedItems()``, and the
 Config Dock stores what it is handed), so ``_trigger_node`` steps through
@@ -42,6 +46,8 @@ _TITLE = "Data Preview"
 _COALESCE_MS = 300
 _NO_DATA = "No previewable data on this socket"
 _PIN_LOST = "Pinned node is no longer in the scene"
+_SOURCE_RUN = "run"
+_SOURCE_VALUE = "value"
 
 
 def _trigger_node(item: Any) -> Any | None:
@@ -155,7 +161,16 @@ class DataPreviewDock(QDockWidget):
         self._show_node(design_window, self._resolve_node(design_window))
 
     def note_node_evaluated(self, design_window: Any, node: Any) -> None:
-        """Coalesce a burst of node evaluations into one re-request."""
+        """Coalesce a burst of node evaluations into one re-request.
+
+        A real recompute also makes the node's run frame stale: the run wrote
+        its results before this evaluation, so the preview must prefer the
+        fresh ``value`` again (and say so in the provenance badge). The mark
+        is per window and dropped when the window's next run finishes.
+        """
+        if getattr(design_window, "execution_results", None):
+            marks = self._states.setdefault(str(id(design_window)), self._new_state())
+            marks["stale_run_nodes"].add(node)
         if not self._is_current(design_window):
             return
         state = self._current_state()
@@ -165,7 +180,14 @@ class DataPreviewDock(QDockWidget):
         self._coalesce.start()
 
     def note_run_finished(self, design_window: Any) -> None:
-        """Re-resolve right away: run results live outside ``node.value``."""
+        """Re-resolve right away: run results live outside ``node.value``.
+
+        A finished run supersedes every evaluation that came before it, so
+        the window's stale marks are dropped before the payload is read.
+        """
+        state = self._states.get(str(id(design_window)))
+        if state is not None:
+            state["stale_run_nodes"].clear()
         if not self._is_current(design_window):
             return
         state = self._current_state()
@@ -275,25 +297,47 @@ class DataPreviewDock(QDockWidget):
             state["socket_index"] = 0
         state["shown_node"] = node
         index = self._socket_index(state, node)
-        payload = self._payload_for(design_window, node, index)
+        payload, source = self._payload_for(design_window, node, index)
         self._payload = payload
         if payload is None:
             self.panel.set_source(None, empty_text=_NO_DATA)
         else:
-            self.panel.set_source(payload)
+            self.panel.set_source(payload, source=source)
         self._sync_strip(state, node)
 
-    def _payload_for(self, design_window: Any, node: Any, index: int) -> Any:
-        """The value on ``node``'s output ``index``, when it can be shown."""
+    def _payload_for(
+        self, design_window: Any, node: Any, index: int
+    ) -> tuple[Any, str | None]:
+        """The output on ``node``'s socket ``index`` and where it came from.
+
+        The run frame wins while it is not stale; a node recomputed since the
+        run falls back to its fresh ``value``. A stale run frame is still
+        better than nothing when the value carries no previewable output.
+        """
+        run_payload = self._run_payload(design_window, node, index)
+        if run_payload is not None and not self._run_is_stale(design_window, node):
+            return run_payload, _SOURCE_RUN
+        value_payload = self._value_payload(node, index)
+        if value_payload is not None:
+            return value_payload, _SOURCE_VALUE
+        if run_payload is not None:
+            return run_payload, _SOURCE_RUN
+        return None, None
+
+    @classmethod
+    def _value_payload(cls, node: Any, index: int) -> Any:
+        """The previewable value on ``node``'s output ``index``, else ``None``."""
         entry: Any = getattr(node, "value", None)
         if isinstance(entry, (list, tuple)):
             entry = entry[index] if 0 <= index < len(entry) else None
         elif index != 0:
             entry = None
-        payload = self._unwrap(entry)
-        if payload is not None:
-            return payload
-        return self._run_payload(design_window, node, index)
+        return cls._unwrap(entry)
+
+    def _run_is_stale(self, design_window: Any, node: Any) -> bool:
+        """True when ``node`` was recomputed after the run that stored results."""
+        state = self._states.get(str(id(design_window)))
+        return state is not None and node in state["stale_run_nodes"]
 
     @staticmethod
     def _unwrap(entry: Any) -> Any:
@@ -424,6 +468,7 @@ class DataPreviewDock(QDockWidget):
             "pin_node": None,
             "socket_index": 0,
             "shown_node": None,
+            "stale_run_nodes": set(),
         }
 
     @staticmethod

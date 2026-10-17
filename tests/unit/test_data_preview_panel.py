@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DataPreviewPanel: the strip (node, socket, search, counts), states, refresh."""
+"""DataPreviewPanel: the strip (node, socket, search, provenance, counts)."""
 
 import os
 import sys
@@ -397,3 +397,52 @@ def test_standalone_window_hosts_the_panel():
         assert not panel.pin_btn.isEnabled()
     finally:
         window.close()
+
+
+# -- provenance badge --------------------------------------------------------
+
+
+def test_source_badge_names_a_run_frame():
+    panel = DataPreviewPanel()
+    _stub_requests(panel)
+
+    panel.set_source(_cities(), source="run")
+    panel.controller.previewReady.emit(collect_preview(_cities(), max_rows=1000))
+
+    assert not panel.source_badge.isHidden()
+    assert panel.source_badge.text() == "from Run"
+    assert panel.source_badge.property("source") == "run"
+    assert "Run" in panel.source_badge.toolTip()
+
+
+def test_source_badge_names_an_evaluated_frame():
+    panel = DataPreviewPanel()
+    _stub_requests(panel)
+
+    panel.set_source(_cities(), source="value")
+    panel.controller.previewReady.emit(collect_preview(_cities(), max_rows=1000))
+
+    assert not panel.source_badge.isHidden()
+    assert panel.source_badge.text() == "evaluated · not run"
+    assert panel.source_badge.property("source") == "value"
+
+
+def test_source_badge_hides_without_a_source_or_a_table():
+    panel = DataPreviewPanel()
+    _stub_requests(panel)
+    panel.set_source(_cities(), source="run")
+    panel.controller.previewReady.emit(collect_preview(_cities(), max_rows=1000))
+    assert not panel.source_badge.isHidden()
+
+    panel.set_source(None)
+
+    assert panel.source_badge.isHidden()
+    assert panel.source_badge.text() == ""
+    assert panel._source is None
+
+    # A host that passes no source keeps the badge hidden with a table up.
+    panel.set_source(_cities())
+    panel.controller.previewReady.emit(collect_preview(_cities(), max_rows=1000))
+
+    assert not panel._content.isHidden()
+    assert panel.source_badge.isHidden()

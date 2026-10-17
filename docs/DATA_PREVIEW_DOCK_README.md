@@ -27,6 +27,7 @@ active design window.
 | Socket chip | `PreviewSocketChip` over `PreviewSocketCombo`; shown only for nodes with more than one output. Changing it re-targets the preview (and a pin) to that socket |
 | Search | `PreviewSearchEdit`, live with a 300ms debounce; `Ctrl+F` focuses it. The field is the truth: its text is re-applied whenever a new frame arrives, so switching nodes keeps the query |
 | Scope | `PreviewScopeCombo`: `All Columns` or one column. Resets to `All Columns` when the chosen column is not in the new frame |
+| Provenance | `PreviewSourceBadge`: `from Run` when the frame is the last Run's output for the node; `evaluated · not run` when it comes from the app's own evaluation (file open, an edit). A finished run supersedes earlier evaluations, and a node recomputed afterwards puts its fresh evaluation back on screen until the next run |
 | Counts chip | `PreviewCountsChip` over `PreviewStatusLabel` and `PreviewLimitedBadge`: `shown / collected rows · N cols`, or `collected / total rows · N cols` when the collect was truncated; the tooltip explains the numbers, `counting...` shows while the lazy count runs, and `limited` marks a frame that hit a size cap |
 | Pin | `PreviewPinButton` freezes the current node: selection changes stop moving the preview until it is unpinned |
 | Refresh | Re-collects the shown node/socket; `Ctrl+R` inside the dock does the same. Disabled while a collect is in flight |
@@ -53,12 +54,20 @@ so the dock never touches the viewer's own widgets.
 
 Payload resolution, in order:
 
-1. `node.value[index]`, when it is the `{"data", "variable_name"}` envelope for
-   the chosen output socket. `is_previewable()` in
-   `qt/models/preview_sampling.py` is the single validity rule, and a value it
-   rejects counts as "no output" rather than a collect failure.
-2. `window.getSocketData(node, index)` when a Run stored results - a run writes
-   `execution_results`, not `node.value`.
+1. `window.getSocketData(node, index)` while the node has not been recomputed
+   since the Run - a run writes `execution_results`, not `node.value`. The
+   badge then reads `from Run`.
+2. `node.value[index]`, the `{"data", "variable_name"}` envelope for the chosen
+   output socket. The badge then reads `evaluated · not run`.
+
+`is_previewable()` in `qt/models/preview_sampling.py` is the single validity
+rule for either store; a value it rejects counts as "no output" rather than a
+collect failure. A stale run frame (the node was recomputed after the run)
+still shows when the fresh value has nothing previewable.
+
+The app evaluates the whole graph on file open and re-evaluates on every edit,
+so nodes carry a `value` long before any Run - the badge is what tells the two
+apart.
 
 ## Bounded collect semantics
 
@@ -92,7 +101,8 @@ Payload resolution, in order:
 `Alt+click` a node's output socket opens the same panel in a standalone
 `DataPreviewWindow` (the pre-existing behaviour). `Options > Open in standalone
 window` does the same for the node currently shown in the dock. The standalone
-host only calls `set_source()`: its node chip, socket chip and pin stay hidden.
+host only calls `set_source()`: its node chip, socket chip, pin and provenance
+badge stay hidden.
 
 ## Design-window close now prompts
 
@@ -111,6 +121,10 @@ and `Window > Data Preview` shown:
 - [ ] Click **Cleansing** once: the chip names it, the counts read
       `1,000 / 40,800 rows · 15 cols` with a `limited` badge, and the header
       band shows one-line `order_id (String)` labels.
+- [ ] Before pressing Run the badge reads `evaluated · not run` (the app
+      evaluated the file on open); press **Run** and it flips to `from Run`;
+      edit the node and it goes back to `evaluated · not run` until the next
+      run.
 - [ ] Resize the dock short and tall: the table keeps the space, there is no
       second scrollbar, and rows stay 24px.
 - [ ] Type in the search field: rows narrow about 300ms after the last key,

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""DataPreviewDock: follow / pin / socket choice, per-window state, coalescing."""
+"""DataPreviewDock: follow / pin / socket choice, provenance, per-window state."""
 
 import os
 import sys
@@ -650,3 +650,92 @@ def test_switch_re_reads_the_window_state():
             dock.panel.viewer.model.rowCount() == 3 and not dock.panel.controller.busy
         )
     )
+
+
+# -- provenance ---------------------------------------------------------------
+
+
+def test_run_results_win_over_an_older_evaluation():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+
+    dock.switch_to_design_window(window)
+
+    assert requested[-1] is node.value[0]["data"]
+    assert dock.panel._source == "value"
+
+    window.execution_results = {node: {"var0": _envelope(4)}}
+    dock.note_run_finished(window)
+
+    assert requested[-1] is window.execution_results[node]["var0"]["data"]
+    assert dock.panel._source == "run"
+
+
+def test_an_evaluation_after_a_run_marks_the_run_frame_stale():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+    window.execution_results = {node: {"var0": _envelope(4)}}
+
+    dock.switch_to_design_window(window)
+    assert dock.panel._source == "run"
+
+    node.value = [_envelope(3)]
+    dock.note_node_evaluated(window, node)
+
+    assert _wait_until(lambda: dock.panel._source == "value")
+    assert requested[-1] is node.value[0]["data"]
+
+
+def test_a_finished_run_clears_the_stale_marks():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+
+    dock.switch_to_design_window(window)
+    window.execution_results = {node: {"var0": _envelope(4)}}
+    dock.note_run_finished(window)
+    node.value = [_envelope(3)]
+    dock.note_node_evaluated(window, node)
+    assert _wait_until(lambda: dock.panel._source == "value")
+
+    window.execution_results = {node: {"var0": _envelope(5)}}
+    dock.note_run_finished(window)
+
+    assert requested[-1] is window.execution_results[node]["var0"]["data"]
+    assert dock.panel._source == "run"
+
+
+def test_stale_marks_stay_with_their_window():
+    dock, requested = _dock()
+    first = _Window("First")
+    second = _Window("Second")
+    node_a = _node("Select", rows=[2])
+    node_b = _node("Filter", rows=[3])
+    first.config_dock.node = node_a
+    second.config_dock.node = node_b
+    first.execution_results = {node_a: {"var0": _envelope(4)}}
+    second.execution_results = {node_b: {"var0": _envelope(5)}}
+
+    dock.switch_to_design_window(second)
+
+    assert dock.panel._source == "run"
+    assert requested[-1] is second.execution_results[node_b]["var0"]["data"]
+
+    # Re-evaluating a node of the other window must not touch the frame or
+    # the badge on screen.
+    node_a.value = [_envelope(9)]
+    before = len(requested)
+    dock.note_node_evaluated(first, node_a)
+
+    assert len(requested) == before
+    assert dock.panel._source == "run"
+
+    dock.switch_to_design_window(first)
+
+    assert requested[-1] is node_a.value[0]["data"]
+    assert dock.panel._source == "value"
