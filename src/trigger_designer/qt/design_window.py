@@ -498,6 +498,19 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
 
+    def getUserFriendlyFilename(self) -> str:
+        """Document name without the ``.tds`` suffix.
+
+        The base class adds ``*`` while the document has unsaved edits; split
+        that marker off first so it survives the extension being dropped. The
+        MDI title, the chrome row and the Window menu all read this, so the
+        extension stays out of every one of them.
+        """
+        name = super().getUserFriendlyFilename()
+        modified = name.endswith("*")
+        stem, _ = os.path.splitext(name.removesuffix("*"))
+        return f"{stem}*" if modified else stem
+
     def setLoggingDock(self, logging_dock: "LoggingDock") -> None:
         """Set the logging dock for this design window"""
         self._logging_dock = logging_dock

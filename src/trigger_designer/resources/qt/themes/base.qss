@@ -276,6 +276,55 @@ QMenuBar {{
       margin-bottom: 0px;
       padding-bottom: 0px; }}
 
+/* Window chrome ----------------------------------------------------------
+
+VSCode-style single row: app icon, menu bar, drag area and caption buttons.
+install_window_chrome() keeps the window's real QMenuBar inside #WindowChrome
+(qt/widgets/common/window_chrome.py): the bar drops its own plate here, and
+the caption buttons restate hover/pressed for their objectName.
+
+--------------------------------------------------------------------------- */
+#WindowChrome {{
+  background-color: {background_secondary};
+  border-bottom: 1px solid {border_primary}; }}
+  /* No plate, no border and no focus ring - the row already ends in a
+     hairline, so the bar is a passenger. */
+  #WindowChrome QMenuBar, #WindowChrome QMenuBar:focus {{
+    background: transparent;
+    border: none;
+    padding: 0px; }}
+  #WindowChrome QMenuBar::item {{
+    background: transparent;
+    padding: 6px 8px; }}
+    #WindowChrome QMenuBar::item:selected {{
+      background-color: {background_hover};
+      color: {text_primary};
+      padding: 6px 8px; }}
+    #WindowChrome QMenuBar::item:pressed {{
+      background-color: {background_pressed};
+      color: {text_primary};
+      padding: 6px 8px; }}
+#WindowChromeIcon {{
+  background: transparent; }}
+#WindowChromeTitle {{
+  background: transparent;
+  color: {text_inactive}; }}
+QPushButton#WindowChromeButton {{
+  background-color: transparent;
+  border: none;
+  border-radius: 0px;
+  padding: 0px; }}
+  QPushButton#WindowChromeButton:hover {{
+    background-color: {background_hover};
+    border: none; }}
+  QPushButton#WindowChromeButton:pressed {{
+    background-color: {background_pressed};
+    border: none; }}
+  QPushButton#WindowChromeButton[danger="true"]:hover,
+  QPushButton#WindowChromeButton[danger="true"]:pressed {{
+    background-color: {danger};
+    border: none; }}
+
 /* QMenu ------------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qmenu

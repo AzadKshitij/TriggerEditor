@@ -167,7 +167,7 @@ def test_initial_state_is_blind_and_empty():
     assert dock.panel._state_label.text() == "Select a node to preview its output"
 
 
-def test_switch_follows_the_config_dock_node_and_titles_the_dock():
+def test_switch_follows_the_config_dock_node_without_the_file_name():
     dock, requested = _dock()
     window = _Window("Preparation")
     node = _node("Select", rows=[3])
@@ -175,7 +175,8 @@ def test_switch_follows_the_config_dock_node_and_titles_the_dock():
 
     dock.switch_to_design_window(window)
 
-    assert dock.windowTitle() == "Data Preview - Preparation"
+    # The dock follows the window's node; its file name stays out of the title.
+    assert dock.windowTitle() == "Data Preview"
     assert dock.panel.node_label.text() == "Select"
     assert requested[-1] is node.value[0]["data"]
     assert dock.panel.pin_btn.isEnabled()

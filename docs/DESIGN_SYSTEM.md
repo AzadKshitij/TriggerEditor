@@ -84,7 +84,7 @@ Node colour identifies the **category**, never the state. State lives in the rin
 
 #### Current theme keys → Signal tokens
 
-`base.qss` is a `str.format` template. Every `{token}` must exist in **both** `dark.json` and `light.json`, or startup raises. During migration, keep the existing keys as aliases.
+`base.qss` is a `str.format` template. Every `{token}` must exist in **every** built-in theme, or startup raises. During migration, keep the existing keys as aliases.
 
 | Signal token | Theme JSON key today | Action |
 |---|---|---|
@@ -106,7 +106,7 @@ Node colour identifies the **category**, never the state. State lives in the rin
 | `border.strong` | `border_light` | alias |
 | `danger` | `error_text` | alias |
 | `warning` | `background_warning` | add a foreground token too |
-| `success`, `info`, `activity`, `node.*` | — | add to both JSONs |
+| `success`, `info`, `activity`, `node.*` | — | add to every theme JSON |
 
 ### 0.3 Typography
 
@@ -162,7 +162,7 @@ Node colour identifies the **category**, never the state. State lives in the rin
 
 ```
 QMainWindow
-├─ Menu bar
+├─ Window chrome (32) — app icon, menus, window controls, drag row
 ├─ NodesDock (top, max height 105)
 ├─ ConfigDock (left, min width 300)
 ├─ QMdiArea / node canvas
@@ -170,10 +170,12 @@ QMainWindow
 └─ Status bar (20)
 ```
 
+- The window is frameless (`install_window_chrome`, `qt/widgets/common/window_chrome.py`): the real `QMenuBar`, the centred document title and the caption buttons share the row that used to hold the menu bar alone. The title is centred on the *window*, not on the gap the menus leave: `_balance_title` sizes a spacer before the buttons to cancel the surplus the left group needs. Alt, mnemonics and every shortcut stay native; drag and edge resize go through `startSystemMove` / `startSystemResize`.
 - The Config Dock spans the main work area; the bottom docks span the full width.
 - The preview and logs share one bottom dock area as tabs. The Preview panel owns its own 36px strip; the dock adds no second header.
+- A tabbed dock wears the tab bar as its only chrome: its own title bar (name, float and close buttons) is hidden while it is a tab, and returns when the panel floats. Dragging a tab out of the bar pops that panel out, into a window with a normal frame (`QMainWindow.DockOption.GroupedDragging`, `qt/helpers/dock_chrome.py`). A dock with no tab bar beside it keeps its title bar, the only handle that moves it.
 - The canvas is the only surface that fills remaining space. Everything else is fixed-height chrome.
-- Window and dock titles are context, not decoration: `Node Configuration (Select)`, `Logs - monthly_sales.tds`, `Data Preview`.
+- Window and dock titles label the surface: `Node Configuration (Select)`, `Logs`, `Data Preview`. The document name stays in the MDI window (no `.tds` suffix) and in the chrome row.
 
 ---
 
@@ -187,6 +189,7 @@ QMainWindow
 | Control height | `30` min (`QLineEdit`, `QPushButton`, `QComboBox`) | `select.py:168,175,205` |
 | Icon button | `30x30`, icon `12x12` (`16x16` max for primary) | `select.py:172-180` |
 | Chrome strip | `36` high; chip `24`; search `26`; action `30` | `data_preview_panel.py` |
+| Window chrome | `32` high; caption button `44x32`, icon `12x12`; app icon slot `32`; edge resize zone `5` | `window_chrome.py` |
 | Checkbox column width | `50` (`header.resizeSection(0, 50)`) | `select.py:249` |
 | Scroll threshold | `ColumnChecklist max_height 150-220` | `config_widgets.py:71`, `cleansing.py:173` |
 | Default table row | `28` (`24` for dense read-only previews) | `polars_table_viewer.py` |
@@ -341,9 +344,9 @@ Every `setData / move / check / sort` → `data_processed → handleDataChanged 
 
 - Zero inline `setStyleSheet` in node files and shared dock chrome. Use `objectName` + `resources/qt/themes/base.qss` / `qss/_style.scss`.
 - Required Config Dock objectNames: `ConfigSection`, `ConfigSectionInfo`, `EmptyStateLabel`, `ColumnChecklist`, `IconButton`, `OptionsButton`, `TextButton`, `DataTypeCombo`, `JoinSourceLeft`/`JoinSourceRight`, `JoinSourceHeaderLeft`/`Right`, `JoinDtypeLabel`.
-- Dock chrome objectNames: `PreviewStrip`, `PreviewNodeChip`, `PreviewNodeLabel`, `PreviewPinDot`, `PreviewSocketChip`, `PreviewSocketCombo`, `PreviewSearchEdit`, `PreviewScopeCombo`, `PreviewCountsChip`, `PreviewStatusLabel`, `PreviewLimitedBadge`, `PreviewSourceBadge`, `PreviewPinButton`.
+- Dock chrome objectNames: `PreviewStrip`, `PreviewNodeChip`, `PreviewNodeLabel`, `PreviewPinDot`, `PreviewSocketChip`, `PreviewSocketCombo`, `PreviewSearchEdit`, `PreviewScopeCombo`, `PreviewCountsChip`, `PreviewStatusLabel`, `PreviewLimitedBadge`, `PreviewSourceBadge`, `PreviewPinButton`, `DockTabOnlyTitleBar`.
 - The dock-chrome boundary is explicit: §§1–7 govern node config docks; shared dock chrome follows §7 and the new §§8–14. Both use `objectName` + `base.qss`/`_style.scss`, restate hover/pressed per `objectName`, and use no inline QSS.
-- `base.qss` is a `str.format` template: only keys present in the theme JSONs may be used. The full key set is grouped in `qt/theme_manager.py` (`TOKEN_GROUPS`): **Surfaces, Text, Accent, Status, Borders, Controls, Canvas, Code, Nodes**. `tests/unit/test_theme_tokens.py` asserts every `{token}` exists in both built-in themes and that every colour token is exposed in the editor — run it after editing either file.
+- `base.qss` is a `str.format` template: only keys present in the theme JSONs may be used. The full key set is grouped in `qt/theme_manager.py` (`TOKEN_GROUPS`): **Surfaces, Text, Accent, Status, Borders, Controls, Canvas, Code, Nodes**. `tests/unit/test_theme_tokens.py` asserts every `{token}` exists in every built-in theme (they all define the same key set) and that every colour token is exposed in the editor — run it after editing any theme file.
 - Same rule in `_style.scss`, using the `$COLOR_*` names from `_variable.scss`: `$COLOR_BACKGROUND_1..6`, `$COLOR_TEXT_1..4`, `$COLOR_DISABLED`, `$COLOR_ACCENT_1..4`, `$SIZE_BORDER_RADIUS`, `$BORDER_1..3`.
 - Never hand-edit generated QSS in one place only; keep `base.qss` and `_style.scss` in agreement. The generated `runtime_theme.qss` is gone: `ThemeManager` renders `base.qss` from the active theme at runtime, so there is nothing to regenerate by hand.
 - **Target** hooks to add: `ChromeStrip`, `Chip`, `ChipDot`, `StatusBadge`, `CountsChip`, `PrimaryButton`, `DangerButton`, `DialogSurface`, `MenuSurface`, `TableHeader`, `TableRow`. Add them to both QSS sources and to the objectName registry in §17.
@@ -363,7 +366,7 @@ Never hand a bare `QStyleOptionComboBox` to `drawComplexControl` — with no `pa
   ```
 
   `extends` inherits a parent's tokens; a token missing from a user theme falls back to built-in dark with a warning. `appearance` (`dark`/`light`) drives System mode and the title-bar contrast, not the tokens.
-- Built-ins live in `src/trigger_designer/resources/qt/themes/`; user themes live in `%APPDATA%\Trigger Designer\themes` (env override `TRIGGER_DESIGNER_DATA_DIR`) and shadow a built-in with the same id. `duplicate_theme` is the supported way to fork a built-in; a shadowing theme must not `extends` the id it shadows (that resolves to itself and is reported as circular).
+- Built-ins live in `src/trigger_designer/resources/qt/themes/` (twelve ship: Dark, Light, and the Nord, Dracula, Monokai, Gruvbox Dark, Gruvbox Light, Tokyo Night, Catppuccin Mocha, Catppuccin Latte, Solarized Light and Rose Pine Dawn palettes; every one carries the full token set, and a new built-in is just another JSON file there — discovery is a glob). User themes live in `%APPDATA%\Trigger Designer\themes` (env override `TRIGGER_DESIGNER_DATA_DIR`) and shadow a built-in with the same id. `duplicate_theme` is the supported way to fork a built-in; a shadowing theme must not `extends` the id it shadows (that resolves to itself and is reported as circular).
 - Everything the editor exposes is a **colour** token. Geometry, spacing, control heights and radius are design-system-owned (§§1, 4.1) and intentionally not themeable.
 - Preferences are one INI at `%APPDATA%\Trigger Designer\preferences.ini` (`qt/preferences.py`); the first run migrates the legacy `QSettings` scopes (`Blue Octa/Trigger Designer`, `Trigger/Trigger Designer`, `Trigger/NodeEditor`). Do not add new `QSettings` scopes.
 - Layout is one auto-saved record (`qt/layout_state.py`): `saveGeometry()` plus `saveState(1)` over stable dock objectNames (`NodesDock`, `ConfigDock`, `LoggingDock`, `DataPreviewDock`), with Window ▸ Save Current Layout / Reset Layout. There are no layout presets and no named workspaces.
@@ -562,10 +565,10 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 
 ### Tokens
 
-1. Add the token to **both** `resources/qt/themes/dark.json` and `light.json` (schema 2, under `tokens`), and to the matching `TOKEN_GROUPS` group in `qt/theme_manager.py` so the editor exposes it.
+1. Add the token to **every** built-in theme JSON in `resources/qt/themes/` — `dark.json`, `light.json` and each palette theme (schema 2, under `tokens`) — and to the matching `TOKEN_GROUPS` group in `qt/theme_manager.py` so the editor exposes it.
 2. Add the matching `$COLOR_*` values to `qss/_variable.scss` and the selectors to `qss/_style.scss`.
 3. Add the same selectors to `resources/qt/themes/base.qss`; write `{{` / `}}` for QSS blocks, `{token}` for values.
-4. Run `tests/unit/test_theme_tokens.py` — it collects every `{token}` in `base.qss` and fails if either theme (or the editor's group list) is missing one.
+4. Run `tests/unit/test_theme_tokens.py` — it collects every `{token}` in `base.qss` and fails if any built-in theme (or the editor's group list) is missing one.
 
 ### Python-painted surfaces
 
@@ -578,6 +581,7 @@ Route these through it:
 - canvas grid and background (`apply_theme_to_scene`)
 - log levels and the SQL editor's syntax colours (`apply_theme`)
 - the workspace frame (`TriggerWindow._theme_mdi_background`)
+- the caption glyphs and app icon in the window chrome (`window_chrome.py`)
 
 Missing tokens fall back to the built-in dark value, and a user theme that omits one gets it filled with a warning. No widget should call `QColor("#...")` in a `paint()` method. Edge and socket colours are a **user setting**, not a token (`qt/node_editor_colors.py`).
 
@@ -597,6 +601,8 @@ ICON_SIZE = 12
 
 `IconButton`, `TextButton`, `Chip` and `StatusBadge` use these constants. Do not repeat the numbers in node files.
 
+`qt/widgets/common/window_chrome.py` owns the window row: `CHROME_H = 32`, `CAPTION_BUTTON_W = 44`, `RESIZE_MARGIN = 5`. Pure Qt on purpose: the 5px zone replaces the native border (no 1px hover assist), the frameless window gets no DWM shadow or rounded corners, and Win11's Snap Layouts flyout does not open from the maximize button. Those need Win32 calls and stay out until asked for.
+
 ### ObjectName registry
 
 | objectName | Owner | States to restate |
@@ -608,6 +614,9 @@ ICON_SIZE = 12
 | `ConfigSectionInfo` | shared | — |
 | `ColumnChecklist` | shared | — |
 | `EmptyStateLabel` | shared | — |
+| `WindowChrome` | main window | — |
+| `WindowChromeIcon`, `WindowChromeTitle` | main window | — |
+| `WindowChromeButton` | main window | hover, pressed, `[danger="true"]` tone |
 | `PreviewStrip` → `ChromeStrip` | Preview / shared chrome | — |
 | `PreviewNodeChip` → `ChromeChip` | Preview / shared chrome | — |
 | `PreviewSearchEdit` → `ChromeSearch` | Preview / shared chrome | hover, focus, disabled |
@@ -648,12 +657,13 @@ Target guards still to add:
 ### References
 
 - Preview strip: `qt/widgets/data_preview_panel.py`
+- Window chrome: `qt/widgets/common/window_chrome.py`
 - Preview dock host: `qt/docks/data_preview.py`
 - Config dock host: `qt/docks/node_config.py`
 - Shared widgets: `qt/widgets/common/config_widgets.py`
 - Table: `qt/models/polars_table_viewer.py`, `qt/widgets/select_table_widget.py`
 - Canvas: `qt/node_base.py`, `qt/node_editor_colors.py`
-- Theme: `resources/qt/themes/base.qss`, `resources/qt/themes/dark.json`, `resources/qt/themes/light.json`, `qss/_variable.scss`, `qss/_style.scss`
+- Theme: `resources/qt/themes/` (`base.qss` plus one JSON per built-in theme), `qss/_variable.scss`, `qss/_style.scss`
 - Theme engine: `qt/theme_manager.py`, theme editor `qt/dialogs/theme_editor_dialog.py`, swatches `qt/widgets/common/theme_widgets.py`
 - Preferences: `qt/preferences.py`, dialog `qt/dialogs/preferences_dialog.py`, host window `qt/main_window.py`
 - Layout and session: `qt/layout_state.py`, `qt/helpers/preview_dock_state.py` (legacy migration only)
@@ -684,7 +694,7 @@ Target guards still to add:
 
 ### Phase 1 — tokens and guards
 
-- [ ] Add Signal keys to `dark.json` and `light.json` (schema 2; `TOKEN_GROUPS` in `qt/theme_manager.py` is the authoritative list).
+- [ ] Add Signal keys to every built-in theme JSON (schema 2; `TOKEN_GROUPS` in `qt/theme_manager.py` is the authoritative list).
 - [ ] Route Python-painted colours through `ThemeManager.color()` — `qt/style_tokens.py` turned out to be unnecessary, the manager is the accessor.
 - [ ] Add theme-parity, inline-QSS, accessible-action and `fromTheme` tests.
 

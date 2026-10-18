@@ -11,6 +11,10 @@ from trigger_designer.qt.docks.data_preview import DataPreviewDock
 from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
+from trigger_designer.qt.helpers.dock_chrome import (
+    enable_tab_drag_out,
+    install_tab_only_chrome,
+)
 from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 
 
@@ -262,6 +266,11 @@ class MainWindowDockMixin:
         self.dataPreviewDock.setObjectName("DataPreviewDock")
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dataPreviewDock)
         self.tabifyDockWidget(self.loggingDock, self.dataPreviewDock)
+        # The tab bar is this pair's chrome: each panel hides its own title bar
+        # while it is a tab, and a tab dragged out of the bar pops it out.
+        enable_tab_drag_out(self)
+        install_tab_only_chrome(self.loggingDock)
+        install_tab_only_chrome(self.dataPreviewDock)
 
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""

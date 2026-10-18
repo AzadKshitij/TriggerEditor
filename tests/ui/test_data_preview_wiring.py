@@ -78,7 +78,8 @@ def test_design_window_close_drops_the_followed_state():
     design = _active_design_window(window)
     design.setWindowTitle("Preview Probe")
     window.switchDataPreviewDock(design)
-    assert window.dataPreviewDock.windowTitle() == "Data Preview - Preview Probe"
+    # The dock title stays plain; the document name lives in the MDI window.
+    assert window.dataPreviewDock.windowTitle() == "Data Preview"
 
     window.onDesignWindowClose(design, None)
 

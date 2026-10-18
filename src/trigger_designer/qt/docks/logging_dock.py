@@ -22,6 +22,10 @@ from trigger_designer.qt.theme_manager import get_theme_manager
 if TYPE_CHECKING:
     from trigger_designer.qt.design_window import TriggerSubWindow
 
+#: The dock follows whichever document is active, so its title stays generic:
+#: the file name belongs to the MDI window and the chrome row, not here.
+_TITLE = "Logs"
+
 
 class LogLevel:
     """Log level constants and the theme token each level paints with."""
@@ -70,7 +74,7 @@ class LoggingDock(QDockWidget):
     """Logging dock widget that displays logs for the currently active design window"""
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        super().__init__("Logs", parent)
+        super().__init__(_TITLE, parent)
 
         # Store logs per design window ID
         self.logs_per_window: dict[str, list[LogEntry]] = {}
@@ -339,10 +343,7 @@ class LoggingDock(QDockWidget):
         """Switch the logging dock to show logs for a specific design window"""
         design_window_id = str(id(design_window))
         self.current_design_window_id = design_window_id
-
-        # Update title
-        window_title = design_window.windowTitle() or f"Window {design_window_id}"
-        self.setWindowTitle(f"Logs - {window_title}")
+        self.setWindowTitle(_TITLE)
 
         # Initialize logs for this window if needed
         if design_window_id not in self.logs_per_window:
@@ -368,7 +369,7 @@ class LoggingDock(QDockWidget):
             self.current_design_window_id = None
             self.filtered_logs.clear()
             self.log_display.clear()
-            self.setWindowTitle("Logs")
+            self.setWindowTitle(_TITLE)
             self.last_log_count = 0
             self._filters_dirty = False
             self._display_dirty = False

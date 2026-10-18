@@ -10,6 +10,7 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QApplication,
     QMdiArea,
+    QMenuBar,
     QTableView,
     QWidget,
     QMessageBox,
@@ -38,6 +39,7 @@ from trigger_designer.qt.theme_manager import (
     apply_theme_to_scene,
     get_theme_manager,
 )
+from trigger_designer.qt.widgets.common.window_chrome import install_window_chrome
 
 
 # Enabling edge validators
@@ -145,6 +147,12 @@ class TriggerWindow(
         self.createDataPreviewDock()
 
         self.createMenus()
+
+        # VSCode-style chrome: the menu bar moves into a frameless 32px
+        # window row beside the caption buttons. Installed before
+        # readSettings() so restored geometry already has no native frame.
+        self.window_chrome = install_window_chrome(self)
+
         self.createToolBars()
         self.createStatusBar()
         self.updateMenus()
@@ -170,6 +178,20 @@ class TriggerWindow(
             self.showNormal()
         else:
             self.showFullScreen()
+
+    @override
+    def menuBar(self) -> QMenuBar:
+        """The real menu bar, which lives inside the window chrome now.
+
+        Once ``install_window_chrome()`` gives the menu slot to the chrome,
+        the base implementation would auto-create a *new* empty QMenuBar and
+        swap the chrome out of the window. Every caller (including the
+        qtpy-nodeeditor menu builders) keeps getting the embedded bar.
+        """
+        chrome = getattr(self, "window_chrome", None)
+        if chrome is not None:
+            return chrome.menu_bar()
+        return super().menuBar()
 
     # -- layout / session -------------------------------------------------
     @override
@@ -263,6 +285,10 @@ class TriggerWindow(
             refresh = getattr(preview_dock, "refresh_theme", None)
             if callable(refresh):
                 refresh()
+        # Caption glyphs are painted in Python, so they re-read the tokens.
+        chrome = getattr(self, "window_chrome", None)
+        if chrome is not None:
+            chrome.apply_theme()
 
     @override
     def onEditPaste(self) -> None:
@@ -476,12 +502,17 @@ class TriggerWindow(
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
         """Handle sub window activation to switch the dock contexts"""
+        chrome = getattr(self, "window_chrome", None)
         if sub_window:
             widget = sub_window.widget()
             if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
                 # Switch both docks to show content for this window
                 self.switchLoggingDock(widget)
                 self.switchDataPreviewDock(widget)
+            if chrome is not None:
+                chrome.set_context_title(sub_window.windowTitle())
+        elif chrome is not None:
+            chrome.set_context_title(None)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         # Activate the window being closed first so ``maybeSave`` targets the

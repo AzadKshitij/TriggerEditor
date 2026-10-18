@@ -15,11 +15,13 @@ The logging dock provides a single, shared logging panel that displays logs for 
 - Clean display when switching to windows with no logs (empty state)
 
 ### Docking Capabilities
-- The logging dock can be docked to any edge of the main window
-- Can be undocked to float as a separate window
-- Can be closed and reopened as needed
-- Supports tabbed docking with other panels (the Data Preview dock is tabified
-  behind Logs by default)
+- The logging dock shares the bottom dock area with the Data Preview dock as tabs
+- The tab bar is the pair's chrome: a docked panel hides its own title bar and the
+  float/close buttons that come with it
+- Drag the Logs tab out of the tab bar to pop the panel out into its own window;
+  the popped-out panel gets its title bar back (its window frame moves, resizes
+  and closes it) and re-docks when dragged back over a dock area
+- Can be closed and reopened from Window ▸ Logs
 
 ### Log Filtering
 - **Log Level Filter**: Filter logs by minimum level (TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -64,9 +66,12 @@ The application automatically logs various activities:
 - Error conditions
 
 ### Dock Management
-- **Docking**: Drag the dock's title bar to dock it to different areas
-- **Undocking**: Drag the dock away from the edges to make it float
-- **Closing**: Click the X button on the dock to close it
+- **Undocking**: Drag the *tab* out of the tab bar - the panel pops out and its
+  title bar appears; drag the floating window back over a dock area to dock it
+- **Docking**: Drop a floating panel on an edge, or on the Logs tab bar, to dock
+  or tab it there
+- **Closing**: `Window ▸ Logs` toggles the panel; the close button of a floating
+  panel does the same
 - **Resizing**: Drag the dock borders to resize the logging area
 
 ### Filtering

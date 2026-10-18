@@ -123,7 +123,7 @@ class DataPreviewDock(QDockWidget):
         self._window_ref = self._weak_ref(design_window)
         self._states.setdefault(window_id, self._new_state())
         self._drop_pending_eval()
-        self.setWindowTitle(self._banner_title(design_window))
+        self.setWindowTitle(_TITLE)
 
         state = self._states[window_id]
         if state["pinned"]:
@@ -450,16 +450,6 @@ class DataPreviewDock(QDockWidget):
     def _drop_pending_eval(self) -> None:
         self._coalesce.stop()
         self._pending_eval = None
-
-    def _banner_title(self, design_window: Any) -> str:
-        title = ""
-        getter = getattr(design_window, "windowTitle", None)
-        if callable(getter):
-            try:
-                title = getter() or ""
-            except RuntimeError:
-                title = ""
-        return f"{_TITLE} - {title}" if title else _TITLE
 
     @staticmethod
     def _new_state() -> dict[str, Any]:

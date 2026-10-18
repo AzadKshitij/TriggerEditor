@@ -125,6 +125,9 @@ and `Window > Data Preview` shown:
       evaluated the file on open); press **Run** and it flips to `from Run`;
       edit the node and it goes back to `evaluated · not run` until the next
       run.
+- [ ] Drag the **Logs** tab out of the tab bar: the panel pops out as its own
+      window with a normal frame and title bar; drag it back over the bottom area
+      to dock it again, and its title bar hides once more.
 - [ ] Resize the dock short and tall: the table keeps the space, there is no
       second scrollbar, and rows stay 24px.
 - [ ] Type in the search field: rows narrow about 300ms after the last key,
