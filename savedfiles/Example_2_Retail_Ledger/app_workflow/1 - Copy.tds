@@ -1421,7 +1421,7 @@
     },
     {
       "id": 2824864141616,
-      "title": "Normalize Columns",
+      "title": "Normalize",
       "pos_x": -355.57556152343733,
       "pos_y": -117.9656982421874,
       "inputs": [
@@ -4072,8 +4072,8 @@
     {
       "id": 2577542549008,
       "title": "Select",
-      "pos_x": 5955.903530120845,
-      "pos_y": -125.88739395141602,
+      "pos_x": 5963.227748870845,
+      "pos_y": -138.09442520141602,
       "inputs": [
         {
           "id": 2577542550288,
@@ -6934,6 +6934,44 @@
       "node_code": 1,
       "node_type": "join",
       "op": "join.append"
+    },
+    {
+      "id": 1678024014288,
+      "title": "Graph",
+      "pos_x": 6342.773437499997,
+      "pos_y": -51.269531249999986,
+      "inputs": [
+        {
+          "id": 1681423274928,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1681423275248,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "graph_type": "bar",
+        "x_column": "metric",
+        "y_column": "value",
+        "title": "Graph",
+        "color_column": "value",
+        "aggregation": ""
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "report",
+      "op": "report.graph"
     }
   ],
   "edges": [
@@ -7640,6 +7678,14 @@
       "end": 2108698403024,
       "label": "",
       "input_index": 0
+    },
+    {
+      "id": 1678024382672,
+      "edge_type": 5,
+      "start": 2577542550608,
+      "end": 1681423274928,
+      "label": "",
+      "input_index": 0
     }
   ],
   "groups": [
@@ -7733,6 +7779,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-17T16:16:23Z"
+    "saved_at": "2026-10-18T10:49:53Z"
   }
 }
