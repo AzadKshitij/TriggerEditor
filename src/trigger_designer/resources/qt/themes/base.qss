@@ -1978,8 +1978,8 @@ QTextEdit#formulaEditor {{
   background-color: {editor_background};
   color: {text_primary};
   border: 1px solid {card_border};
-  selection-background-color: #264f78;
-  selection-color: #ffffff; }}
+  selection-background-color: {accent_primary};
+  selection-color: {selection_color}; }}
 
 /* Signal config dock -------------------------------------------------------
    Inspector header, context strip, flat sections and the shared form
@@ -2165,3 +2165,121 @@ QWidget#ConfigDockContent {{
 QComboBox#CellCombo {{
   min-height: 0px;
   padding: 0px 2px; }}
+
+/* Preferences + theme editor ------------------------------------------------
+   Dialogs are the one place text buttons are allowed (§4.3); these reuse the
+   TextButton paint and add a primary and a destructive variant. Every
+   objectName restates hover/pressed: a #name selector outranks the generic
+   QPushButton states (§4.5). */
+
+QDialog#PreferencesDialog, QDialog#ThemeEditorDialog {{
+  background-color: {background_primary}; }}
+
+QPushButton#PrimaryButton {{
+  background-color: {accent_primary};
+  color: {selection_color};
+  border: 1px solid {accent_primary};
+  border-radius: 4px;
+  padding: 4px 12px;
+  min-height: 22px; }}
+  QPushButton#PrimaryButton:hover {{
+    background-color: {accent_secondary};
+    border: 1px solid {accent_secondary}; }}
+  QPushButton#PrimaryButton:pressed {{
+    background-color: {accent_tertiary};
+    border: 1px solid {accent_tertiary}; }}
+  QPushButton#PrimaryButton:disabled {{
+    background-color: {accent_disabled};
+    border: 1px solid {accent_disabled};
+    color: {text_disabled}; }}
+
+QPushButton#DangerButton {{
+  background-color: transparent;
+  color: {danger};
+  border: 1px solid {danger};
+  border-radius: 4px;
+  padding: 4px 10px;
+  min-height: 22px; }}
+  QPushButton#DangerButton:hover {{
+    background-color: {background_hover}; }}
+  QPushButton#DangerButton:pressed {{
+    background-color: {background_pressed}; }}
+  QPushButton#DangerButton:disabled {{
+    color: {text_disabled};
+    border: 1px solid {border_primary}; }}
+
+QListWidget#PreferencesSidebar {{
+  background-color: {background_secondary};
+  border: 0px;
+  border-right: 1px solid {border_primary};
+  padding: 6px 4px;
+  outline: 0; }}
+  QListWidget#PreferencesSidebar::item {{
+    color: {text_secondary};
+    padding: 7px 10px;
+    border-radius: 4px; }}
+  QListWidget#PreferencesSidebar::item:hover {{
+    background-color: {background_hover}; }}
+  QListWidget#PreferencesSidebar::item:selected {{
+    background-color: {background_pressed};
+    color: {text_primary}; }}
+
+QListWidget#ThemeList {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  outline: 0; }}
+  QListWidget#ThemeList::item {{
+    color: {text_secondary};
+    padding: 6px 8px; }}
+  QListWidget#ThemeList::item:hover {{
+    background-color: {background_hover}; }}
+  QListWidget#ThemeList::item:selected {{
+    background-color: {background_pressed};
+    color: {text_primary}; }}
+
+QLineEdit#ColorHexEdit {{
+  background-color: {editor_background};
+  color: {text_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: Consolas, monospace; }}
+  QLineEdit#ColorHexEdit:hover {{
+    border: 1px solid {border_default}; }}
+  QLineEdit#ColorHexEdit:focus {{
+    border: 1px solid {accent_primary}; }}
+
+QScrollArea#ThemeEditorScroll, QScrollArea#ThemeEditorScroll > QWidget#qt_scrollarea_viewport,
+QWidget#ThemeEditorContent {{
+  background-color: transparent; }}
+
+QLabel#ContrastLabel {{
+  color: {text_inactive};
+  font-size: 11px; }}
+  QLabel#ContrastLabel[tone="ok"] {{ color: {success}; }}
+  QLabel#ContrastLabel[tone="warn"] {{ color: {warning}; }}
+
+/* SQL editor: autocomplete popup and the log view share the editor surface. */
+QListView#FormulaCompleterPopup {{
+  background-color: {editor_background};
+  color: {text_secondary};
+  border: 1px solid {border_default};
+  selection-background-color: {accent_primary};
+  selection-color: {selection_color};
+  outline: 0; }}
+  QListView#FormulaCompleterPopup::item {{
+    padding: 2px 6px; }}
+  QListView#FormulaCompleterPopup::item:hover {{
+    background-color: {background_hover}; }}
+  QListView#FormulaCompleterPopup::item:selected {{
+    background-color: {accent_primary};
+    color: {selection_color}; }}
+
+QTextEdit#LogsTextEdit {{
+  background-color: {editor_background};
+  color: {text_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  selection-background-color: {accent_primary};
+  selection-color: {selection_color}; }}

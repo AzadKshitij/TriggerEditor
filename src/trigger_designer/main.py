@@ -12,7 +12,6 @@ from typing import Optional, TextIO
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from loguru import logger
-from qtpy.QtCore import QSettings
 from qtpy.QtGui import QIcon, QGuiApplication, QScreen
 from qtpy.QtWidgets import QApplication
 
@@ -156,11 +155,14 @@ def main() -> None:
     app = QApplication(sys.argv)
     # app.setStyle("Fusion")
 
-    # Application configuration
-    name_company = "Trigger"
+    # Application configuration. The application name is the product name -
+    # the old code set it to "Trigger", which made QStandardPaths and any
+    # default QSettings scope disagree with everything else.
+    name_company = "Blue Octa"
     name_product = "Trigger Designer"
-    app.setApplicationName(name_company)
+    app.setApplicationName(name_product)
     app.setApplicationDisplayName(name_product)
+    app.setOrganizationName(name_company)
 
     # Initialize resource manager and set up application
     resource_manager = ResourceManager()
@@ -204,13 +206,15 @@ def main() -> None:
         load_node_editor_colors,
     )
 
-    # Load settings and theme
-    settings = QSettings(name_company, name_product)
-    logger.debug(f"Available settings keys: {settings.allKeys()}")
+    # Load preferences and apply the saved theme through the single owner.
+    from trigger_designer.qt.theme_manager import ThemeError, get_theme_manager
 
-    theme_qss = resource_manager.load_theme(settings.value("theme", "dark"))
-    if theme_qss:
-        app.setStyleSheet(theme_qss)
+    try:
+        theme = get_theme_manager().apply()
+        logger.debug(f"Applied theme '{theme.name}' ({theme.id})")
+    except ThemeError as exc:
+        logger.error(f"Theme failed to load; continuing with default: {exc}")
+
     app.processEvents()
 
     # Apply saved edge/socket colors before any workflow scene is created, so

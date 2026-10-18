@@ -123,6 +123,10 @@ class MainWindowMenuMixin:
             self.windowMenu.addAction(config_action)
 
         self.windowMenu.addSeparator()
+        self.windowMenu.addAction(self.actSaveLayout)
+        self.windowMenu.addAction(self.actResetLayout)
+
+        self.windowMenu.addSeparator()
 
         self.windowMenu.addAction(self.actClose)
         self.windowMenu.addAction(self.actCloseAll)
@@ -237,20 +241,25 @@ class MainWindowDockMixin:
 
     def createNodesDock(self) -> None:
         self.nodesDock = NodesDock(self)
+        # Stable objectNames are required for QMainWindow.saveState/restoreState.
+        self.nodesDock.setObjectName("NodesDock")
         self.addDockWidget(Qt.TopDockWidgetArea, self.nodesDock)
 
     def createConfigDock(self) -> None:
         self.configDock = ConfigDock(self)
+        self.configDock.setObjectName("ConfigDock")
         self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
 
     def createLoggingDock(self) -> None:
         """Create a single logging dock that shows logs for the active design window"""
         self.loggingDock = LoggingDock(self)
+        self.loggingDock.setObjectName("LoggingDock")
         self.addDockWidget(Qt.BottomDockWidgetArea, self.loggingDock)
 
     def createDataPreviewDock(self) -> None:
         """Create the shared preview dock, tabified with the log dock."""
         self.dataPreviewDock = DataPreviewDock(self)
+        self.dataPreviewDock.setObjectName("DataPreviewDock")
         self.addDockWidget(Qt.BottomDockWidgetArea, self.dataPreviewDock)
         self.tabifyDockWidget(self.loggingDock, self.dataPreviewDock)
 

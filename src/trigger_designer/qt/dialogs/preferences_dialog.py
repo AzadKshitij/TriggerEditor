@@ -1,0 +1,686 @@
+"""Preferences dialog: appearance, layout, editor, node editor colours, general.
+
+Replaces the old tabbed ``SettingsDialog``. Theme selection previews live;
+Cancel restores the theme and accent that were active when the dialog
+opened. Layout, editor and node-colour changes apply immediately, matching
+the live-by-default rule (docs/DESIGN_SYSTEM.md §6).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from loguru import logger
+from qtpy.QtCore import QSize, Qt, QUrl
+from qtpy.QtGui import QDesktopServices
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QDialog,
+    QFileDialog,
+    QHBoxLayout,
+    QInputDialog,
+    QLabel,
+    QListWidget,
+    QListWidgetItem,
+    QMessageBox,
+    QSpinBox,
+    QStackedWidget,
+    QVBoxLayout,
+    QWidget,
+)
+
+from trigger_designer.qt.dialogs.theme_editor_dialog import ThemeEditorDialog
+from trigger_designer.qt.helpers.recent_files import RecentFilesManager
+from trigger_designer.qt.node_editor_colors import (
+    DEFAULT_EDGE_COLORS,
+    DEFAULT_SOCKET_COLORS,
+    apply_node_editor_colors,
+    load_node_editor_colors,
+    refresh_open_scenes,
+    save_node_editor_colors,
+)
+from trigger_designer.qt.preferences import app_data_dir, get_preferences
+from trigger_designer.qt.theme_manager import (
+    SYSTEM_THEME_ID,
+    ThemeError,
+    get_theme_manager,
+    repolish,
+)
+from trigger_designer.qt.widgets.common.config_widgets import (
+    ConfigSection,
+    TextButton,
+)
+from trigger_designer.qt.widgets.common.theme_widgets import (
+    ColorSwatchButton,
+    ThemePreviewWidget,
+)
+
+if TYPE_CHECKING:
+    from trigger_designer.qt.main_window import TriggerWindow
+
+_PAGES = ("Appearance", "Layout", "Editor", "Node Editor", "General")
+
+_ACCENT_PRESETS = (
+    "#5680c2",
+    "#0078d4",
+    "#7c5cbf",
+    "#3f9e63",
+    "#c99a3c",
+    "#e0686c",
+    "#5ba8d6",
+)
+
+
+class PreferencesDialog(QDialog):
+    """One dialog for every user preference."""
+
+    def __init__(self, parent: TriggerWindow | None = None) -> None:
+        super().__init__(parent)
+        self._window: TriggerWindow | None = parent
+        self._prefs = get_preferences()
+        self._manager = get_theme_manager()
+        self._applied_theme = self._manager.requested_theme_id()
+        self._applied_accent = self._manager.requested_accent()
+        self._accent_swatches: list[ColorSwatchButton] = []
+        self._node_swatches: dict[tuple[str, str], ColorSwatchButton] = {}
+
+        self.setObjectName("PreferencesDialog")
+        self.setWindowTitle("Preferences")
+        self.setMinimumSize(660, 520)
+        self._build_ui()
+        self._load_pages()
+
+    # -- construction -----------------------------------------------------
+    def _build_ui(self) -> None:
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        self.sidebar = QListWidget(self)
+        self.sidebar.setObjectName("PreferencesSidebar")
+        self.sidebar.setFixedWidth(168)
+        for page in _PAGES:
+            item = QListWidgetItem(page)
+            item.setData(Qt.ItemDataRole.UserRole, page)
+            self.sidebar.addItem(item)
+        self.sidebar.currentRowChanged.connect(self._on_page_changed)
+        outer.addWidget(self.sidebar)
+
+        right = QVBoxLayout()
+        right.setContentsMargins(10, 8, 10, 8)
+        right.setSpacing(6)
+
+        self.stack = QStackedWidget(self)
+        self.stack.setObjectName("PreferencesPages")
+        self.appearance_page = self._build_appearance_page()
+        self.layout_page = self._build_layout_page()
+        self.editor_page = self._build_editor_page()
+        self.node_editor_page = self._build_node_editor_page()
+        self.general_page = self._build_general_page()
+        for page in (
+            self.appearance_page,
+            self.layout_page,
+            self.editor_page,
+            self.node_editor_page,
+            self.general_page,
+        ):
+            self.stack.addWidget(page)
+        right.addWidget(self.stack, 1)
+
+        footer = QHBoxLayout()
+        footer.setSpacing(6)
+        footer.addStretch(1)
+        cancel = TextButton("Cancel", "Discard unsaved theme changes")
+        cancel.clicked.connect(self.reject)
+        footer.addWidget(cancel)
+        apply_button = TextButton("Apply", "Apply theme changes without closing")
+        apply_button.clicked.connect(self._apply_changes)
+        footer.addWidget(apply_button)
+        ok = TextButton("OK", "Save preferences and close")
+        ok.setObjectName("PrimaryButton")
+        ok.clicked.connect(self.accept)
+        footer.addWidget(ok)
+        right.addLayout(footer)
+
+        outer.addLayout(right, 1)
+        self.sidebar.setCurrentRow(0)
+
+    # -- Appearance -------------------------------------------------------
+    def _build_appearance_page(self) -> QWidget:
+        page = QWidget()
+        page.setObjectName("PreferencesPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        self.preview = ThemePreviewWidget()
+        layout.addWidget(self.preview)
+
+        theme_section = ConfigSection("Theme")
+        self.theme_list = QListWidget(self)
+        self.theme_list.setObjectName("ThemeList")
+        self.theme_list.setFixedHeight(148)
+        self.theme_list.currentItemChanged.connect(self._on_theme_selected)
+        theme_section.addWidget(self.theme_list)
+
+        theme_actions = QHBoxLayout()
+        theme_actions.setSpacing(4)
+        self.customize_button = TextButton(
+            "Customize…", "Duplicate and edit the selected theme"
+        )
+        self.customize_button.clicked.connect(self._customize_theme)
+        theme_actions.addWidget(self.customize_button)
+        import_button = TextButton("Import…", "Import a theme JSON file")
+        import_button.clicked.connect(self._import_theme)
+        theme_actions.addWidget(import_button)
+        self.export_button = TextButton("Export…", "Export the selected theme")
+        self.export_button.clicked.connect(self._export_theme)
+        theme_actions.addWidget(self.export_button)
+        self.delete_button = TextButton("Delete", "Delete the selected user theme")
+        self.delete_button.setObjectName("DangerButton")
+        self.delete_button.clicked.connect(self._delete_theme)
+        theme_actions.addWidget(self.delete_button)
+        theme_actions.addStretch(1)
+        theme_section.addLayout(theme_actions)
+
+        hint = QLabel(
+            "Built-in themes are read-only; Customize makes an editable copy."
+        )
+        hint.setObjectName("FieldHint")
+        theme_section.addWidget(hint)
+        layout.addWidget(theme_section)
+
+        accent_section = ConfigSection("Accent")
+        accent_row = QHBoxLayout()
+        accent_row.setSpacing(4)
+        for preset in _ACCENT_PRESETS:
+            swatch = ColorSwatchButton(
+                preset,
+                swatch_size=QSize(24, 22),
+                object_name="AccentSwatch",
+                open_dialog=False,
+            )
+            swatch.setToolTip(f"Use accent {preset}")
+            swatch.setAccessibleName(f"Accent {preset}")
+            swatch.colorChanged.connect(lambda value: self._set_accent(value))
+            self._accent_swatches.append(swatch)
+            accent_row.addWidget(swatch)
+        self.custom_accent = ColorSwatchButton("#5680c2", object_name="AccentSwatch")
+        self.custom_accent.setToolTip("Choose a custom accent colour")
+        self.custom_accent.setAccessibleName("Custom accent colour")
+        self.custom_accent.colorChanged.connect(lambda value: self._set_accent(value))
+        accent_row.addWidget(self.custom_accent)
+        accent_row.addStretch(1)
+        reset_accent = TextButton("Theme Default", "Use the theme's own accent")
+        reset_accent.clicked.connect(lambda: self._set_accent(""))
+        accent_row.addWidget(reset_accent)
+        accent_section.addLayout(accent_row)
+        layout.addWidget(accent_section)
+        layout.addStretch(1)
+        return page
+
+    # -- Layout -----------------------------------------------------------
+    def _build_layout_page(self) -> QWidget:
+        page = QWidget()
+        page.setObjectName("PreferencesPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        startup = ConfigSection("Startup")
+        self.restore_layout_check = QCheckBox(
+            "Restore window and dock layout on startup"
+        )
+        self.restore_layout_check.toggled.connect(
+            lambda value: self._prefs.set("layout/restore", bool(value))
+        )
+        startup.addWidget(self.restore_layout_check)
+        self.restore_session_check = QCheckBox("Reopen files from the last session")
+        self.restore_session_check.toggled.connect(
+            lambda value: self._prefs.set("layout/session", bool(value))
+        )
+        startup.addWidget(self.restore_session_check)
+        session_hint = QLabel(
+            "The session file list is always kept; it is only reopened when this is on."
+        )
+        session_hint.setObjectName("FieldHint")
+        session_hint.setWordWrap(True)
+        startup.addWidget(session_hint)
+        layout.addWidget(startup)
+
+        saved = ConfigSection("Saved Layout")
+        saved_row = QHBoxLayout()
+        saved_row.setSpacing(4)
+        save_button = TextButton(
+            "Save Current Layout", "Persist the current arrangement"
+        )
+        save_button.clicked.connect(self._save_layout)
+        saved_row.addWidget(save_button)
+        reset_button = TextButton("Reset Layout", "Restore the default arrangement")
+        reset_button.clicked.connect(self._reset_layout)
+        saved_row.addWidget(reset_button)
+        saved_row.addStretch(1)
+        saved.addLayout(saved_row)
+        layout.addWidget(saved)
+        layout.addStretch(1)
+        return page
+
+    # -- Editor -----------------------------------------------------------
+    def _build_editor_page(self) -> QWidget:
+        page = QWidget()
+        page.setObjectName("PreferencesPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        canvas = ConfigSection("Canvas")
+        grid_row = QHBoxLayout()
+        grid_label = QLabel("Grid size")
+        grid_label.setObjectName("FieldLabel")
+        grid_row.addWidget(grid_label)
+        self.grid_size_spin = QSpinBox(self)
+        self.grid_size_spin.setObjectName("GridSizeSpin")
+        self.grid_size_spin.setRange(10, 100)
+        self.grid_size_spin.setSuffix(" px")
+        self.grid_size_spin.valueChanged.connect(self._on_grid_size_changed)
+        grid_row.addWidget(self.grid_size_spin)
+        grid_row.addStretch(1)
+        canvas.addLayout(grid_row)
+
+        self.show_grid_check = QCheckBox("Show grid")
+        self.show_grid_check.toggled.connect(self._on_show_grid_changed)
+        canvas.addWidget(self.show_grid_check)
+        layout.addWidget(canvas)
+        layout.addStretch(1)
+        return page
+
+    # -- Node Editor ------------------------------------------------------
+    def _build_node_editor_page(self) -> QWidget:
+        page = QWidget()
+        page.setObjectName("PreferencesPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        colors = load_node_editor_colors()
+        for group_title, group_key, defaults in (
+            ("Edges", "edges", DEFAULT_EDGE_COLORS),
+            ("Sockets", "sockets", DEFAULT_SOCKET_COLORS),
+        ):
+            section = ConfigSection(group_title)
+            for key, default in defaults.items():
+                row = QHBoxLayout()
+                row.setSpacing(6)
+                label = QLabel(key.replace("_", " ").capitalize())
+                label.setObjectName("FieldLabel")
+                label.setMinimumWidth(120)
+                row.addWidget(label)
+                swatch = ColorSwatchButton(colors[group_key].get(key, default))
+                swatch.setToolTip(f"{group_title[:-1]} {key} colour")
+                swatch.setAccessibleName(f"{group_title[:-1]} {key} colour")
+                swatch.colorChanged.connect(
+                    lambda value, g=group_key, k=key: self._on_node_color_changed(
+                        g, k, value
+                    )
+                )
+                self._node_swatches[(group_key, key)] = swatch
+                row.addWidget(swatch)
+                row.addStretch(1)
+                section.addLayout(row)
+            layout.addWidget(section)
+
+        reset_row = QHBoxLayout()
+        reset_button = TextButton("Reset Node Colours", "Restore the library defaults")
+        reset_button.clicked.connect(self._reset_node_colors)
+        reset_row.addWidget(reset_button)
+        reset_row.addStretch(1)
+        layout.addLayout(reset_row)
+        layout.addStretch(1)
+        return page
+
+    # -- General ----------------------------------------------------------
+    def _build_general_page(self) -> QWidget:
+        page = QWidget()
+        page.setObjectName("PreferencesPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        startup = ConfigSection("General")
+        self.welcome_check = QCheckBox("Show the welcome dialog on startup")
+        self.welcome_check.toggled.connect(self._on_welcome_changed)
+        startup.addWidget(self.welcome_check)
+
+        recent_row = QHBoxLayout()
+        recent_label = QLabel("Recent files")
+        recent_label.setObjectName("FieldLabel")
+        recent_row.addWidget(recent_label)
+        self.recent_limit_spin = QSpinBox(self)
+        self.recent_limit_spin.setObjectName("RecentLimitSpin")
+        self.recent_limit_spin.setRange(1, 50)
+        self.recent_limit_spin.valueChanged.connect(self._on_recent_limit_changed)
+        recent_row.addWidget(self.recent_limit_spin)
+        recent_row.addStretch(1)
+        clear_button = TextButton("Clear Recent Files", "Forget every recent path")
+        clear_button.clicked.connect(self._clear_recents)
+        recent_row.addWidget(clear_button)
+        startup.addLayout(recent_row)
+
+        folder_row = QHBoxLayout()
+        open_folder = TextButton(
+            "Open Preferences Folder",
+            "Open the folder with preferences.ini and user themes",
+        )
+        open_folder.clicked.connect(self._open_data_folder)
+        folder_row.addWidget(open_folder)
+        folder_row.addStretch(1)
+        startup.addLayout(folder_row)
+
+        danger = ConfigSection("Reset")
+        reset_all = TextButton(
+            "Reset All Preferences",
+            "Reset themes, layout, editor and node colours to defaults",
+        )
+        reset_all.setObjectName("DangerButton")
+        reset_all.clicked.connect(self._reset_all)
+        danger.addWidget(reset_all)
+        danger_hint = QLabel("User themes are kept; only preferences are reset.")
+        danger_hint.setObjectName("FieldHint")
+        danger.addWidget(danger_hint)
+        layout.addWidget(startup)
+        layout.addWidget(danger)
+        layout.addStretch(1)
+        return page
+
+    # -- state loading ----------------------------------------------------
+    def _load_pages(self) -> None:
+        self._reload_theme_list(self._manager.requested_theme_id())
+        self.restore_layout_check.setChecked(
+            bool(self._prefs.get("layout/restore", True))
+        )
+        self.restore_session_check.setChecked(
+            bool(self._prefs.get("layout/session", False))
+        )
+        self.grid_size_spin.setValue(int(self._prefs.get("editor/grid_size", 20) or 20))
+        self.show_grid_check.setChecked(bool(self._prefs.get("editor/show_grid", True)))
+        recent = RecentFilesManager()
+        self.welcome_check.setChecked(recent.is_welcome_enabled())
+        self.recent_limit_spin.setValue(recent.max_items)
+
+    def _on_page_changed(self, row: int) -> None:
+        if 0 <= row < self.stack.count():
+            self.stack.setCurrentIndex(row)
+
+    # -- theme list -------------------------------------------------------
+    def _reload_theme_list(self, select_id: str | None = None) -> None:
+        self.theme_list.blockSignals(True)
+        self.theme_list.clear()
+        system_item = QListWidgetItem("System — follow Windows appearance")
+        system_item.setData(Qt.ItemDataRole.UserRole, SYSTEM_THEME_ID)
+        self.theme_list.addItem(system_item)
+        for theme in self._manager.available_themes():
+            label = theme.name
+            label += "  ·  Built-in" if theme.builtin else "  ·  My theme"
+            if theme.error:
+                label += "  ·  Failed to load"
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, theme.id)
+            item.setToolTip(
+                theme.error or f"{theme.name} ({'dark' if theme.is_dark else 'light'})"
+            )
+            self.theme_list.addItem(item)
+        self.theme_list.blockSignals(False)
+        self._select_theme(select_id or self._manager.requested_theme_id())
+
+    def _select_theme(self, theme_id: str) -> None:
+        for index in range(self.theme_list.count()):
+            item = self.theme_list.item(index)
+            if item is not None and item.data(Qt.ItemDataRole.UserRole) == theme_id:
+                self.theme_list.setCurrentItem(item)
+                return
+        self.theme_list.setCurrentRow(1)
+
+    def _selected_theme_id(self) -> str | None:
+        item = self.theme_list.currentItem()
+        if item is None:
+            return None
+        return item.data(Qt.ItemDataRole.UserRole)
+
+    def _on_theme_selected(
+        self, current: QListWidgetItem | None, _previous: QListWidgetItem | None
+    ) -> None:
+        if current is None:
+            return
+        theme_id = current.data(Qt.ItemDataRole.UserRole)
+        try:
+            self._manager.preview(theme_id)
+        except ThemeError as exc:
+            QMessageBox.warning(self, "Theme unavailable", str(exc))
+            return
+        self._refresh_preview()
+        self._update_theme_buttons()
+
+    def _update_theme_buttons(self) -> None:
+        theme_id = self._selected_theme_id()
+        if theme_id is None:
+            return
+        theme = self._manager.theme(theme_id)
+        user_theme = not theme.builtin and theme_id != SYSTEM_THEME_ID
+        self.delete_button.setEnabled(user_theme)
+        self.export_button.setEnabled(theme_id != SYSTEM_THEME_ID)
+        self.customize_button.setEnabled(theme_id != SYSTEM_THEME_ID)
+
+    def _refresh_preview(self) -> None:
+        theme = self._manager.active_theme()
+        self.preview.set_tokens(theme.tokens)
+        accent = self._manager.requested_accent()
+        for swatch in self._accent_swatches:
+            active = bool(accent) and swatch.color_name().lower() == accent.lower()
+            swatch.setProperty("selected", active)
+            repolish(swatch)
+        if accent:
+            self.custom_accent.set_color(accent)
+
+    # -- theme actions ----------------------------------------------------
+    def _customize_theme(self) -> None:
+        theme_id = self._selected_theme_id()
+        if theme_id is None:
+            return
+        theme = self._manager.theme(theme_id)
+        if theme_id == SYSTEM_THEME_ID or theme.builtin:
+            base_id = (
+                ("light" if self._manager.system_appearance() == "light" else "dark")
+                if theme_id == SYSTEM_THEME_ID
+                else theme_id
+            )
+            default_name = f"{self._manager.theme(base_id).name} Custom"
+            name, accepted = QInputDialog.getText(
+                self,
+                "Duplicate Theme",
+                "Name for the editable copy:",
+                text=default_name,
+            )
+            if not accepted or not name.strip():
+                return
+            duplicated = self._manager.duplicate_theme(base_id, name.strip())
+            theme_id = duplicated.id
+        dialog = ThemeEditorDialog(theme_id, self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self._reload_theme_list(theme_id)
+            self._manager.preview(theme_id)
+            self._refresh_preview()
+
+    def _import_theme(self) -> None:
+        path, _filter = QFileDialog.getOpenFileName(
+            self, "Import theme", "", "Theme files (*.json)"
+        )
+        if not path:
+            return
+        try:
+            theme = self._manager.import_theme(path)
+        except (ThemeError, OSError) as exc:
+            logger.error(f"Theme import failed: {exc}")
+            QMessageBox.warning(self, "Import failed", str(exc))
+            return
+        self._reload_theme_list(theme.id)
+        self._manager.preview(theme.id)
+        self._refresh_preview()
+
+    def _export_theme(self) -> None:
+        theme_id = self._selected_theme_id()
+        if theme_id is None or theme_id == SYSTEM_THEME_ID:
+            return
+        theme = self._manager.theme(theme_id)
+        default_path = str(Path.home() / f"{theme.id}.json")
+        path, _filter = QFileDialog.getSaveFileName(
+            self, "Export theme", default_path, "Theme files (*.json)"
+        )
+        if not path:
+            return
+        try:
+            self._manager.export_theme(theme_id, path)
+        except (ThemeError, OSError) as exc:
+            QMessageBox.warning(self, "Export failed", str(exc))
+
+    def _delete_theme(self) -> None:
+        theme_id = self._selected_theme_id()
+        if theme_id is None:
+            return
+        theme = self._manager.theme(theme_id)
+        if theme.builtin or theme_id == SYSTEM_THEME_ID:
+            return
+        answer = QMessageBox.question(
+            self,
+            "Delete theme",
+            f'Delete the user theme "{theme.name}"?\nThis cannot be undone.',
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self._manager.delete_user_theme(theme_id)
+        self._manager.apply()
+        self._reload_theme_list(self._manager.requested_theme_id())
+        self._refresh_preview()
+
+    # -- accent -----------------------------------------------------------
+    def _set_accent(self, value: str) -> None:
+        self._manager.set_accent(value)
+        self.custom_accent.set_color(value or self._manager.token("accent_primary"))
+        self._refresh_preview()
+
+    # -- layout -----------------------------------------------------------
+    def _save_layout(self) -> None:
+        window = self._window
+        if window is not None and hasattr(window, "saveCurrentLayout"):
+            window.saveCurrentLayout()
+
+    def _reset_layout(self) -> None:
+        window = self._window
+        if window is not None and hasattr(window, "resetLayout"):
+            window.resetLayout()
+
+    # -- editor -----------------------------------------------------------
+    def _apply_canvas_settings(self) -> None:
+        window = self._window
+        if window is not None and hasattr(window, "apply_appearance"):
+            window.apply_appearance()
+
+    def _on_grid_size_changed(self, value: int) -> None:
+        self._prefs.set("editor/grid_size", int(value))
+        self._apply_canvas_settings()
+
+    def _on_show_grid_changed(self, value: bool) -> None:
+        self._prefs.set("editor/show_grid", bool(value))
+        self._apply_canvas_settings()
+
+    # -- node colours -----------------------------------------------------
+    def _node_colors(self) -> dict[str, dict[str, str]]:
+        colors = load_node_editor_colors()
+        for (group, key), swatch in self._node_swatches.items():
+            colors[group][key] = swatch.color_name()
+        return colors
+
+    def _on_node_color_changed(self, group: str, key: str, value: str) -> None:
+        self._persist_node_colors()
+
+    def _persist_node_colors(self) -> None:
+        colors = self._node_colors()
+        save_node_editor_colors(colors)
+        apply_node_editor_colors(colors)
+        if self._window is not None:
+            refresh_open_scenes(self._window)
+
+    def _reset_node_colors(self) -> None:
+        for (group, key), swatch in self._node_swatches.items():
+            defaults = (
+                DEFAULT_EDGE_COLORS if group == "edges" else DEFAULT_SOCKET_COLORS
+            )
+            swatch.set_color(defaults[key])
+        self._persist_node_colors()
+
+    # -- general ----------------------------------------------------------
+    def _on_welcome_changed(self, value: bool) -> None:
+        RecentFilesManager().set_welcome_enabled(bool(value))
+
+    def _on_recent_limit_changed(self, value: int) -> None:
+        RecentFilesManager().set_max_items(int(value))
+
+    def _clear_recents(self) -> None:
+        RecentFilesManager().clear()
+        if self._window is not None and hasattr(self._window, "refresh_recent_menu"):
+            self._window.refresh_recent_menu()
+
+    def _open_data_folder(self) -> None:
+        folder = app_data_dir()
+        folder.mkdir(parents=True, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(folder)))
+
+    def _reset_all(self) -> None:
+        answer = QMessageBox.question(
+            self,
+            "Reset all preferences",
+            "Reset themes, layout, editor and node colours to defaults?\n"
+            "User themes are kept.",
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self._prefs.reset()
+        self._manager.invalidate()
+        self._manager.cancel_preview()
+        self._manager.set_accent("", persist=True)
+        apply_node_editor_colors(
+            {"edges": dict(DEFAULT_EDGE_COLORS), "sockets": dict(DEFAULT_SOCKET_COLORS)}
+        )
+        save_node_editor_colors(
+            {"edges": dict(DEFAULT_EDGE_COLORS), "sockets": dict(DEFAULT_SOCKET_COLORS)}
+        )
+        window = self._window
+        if window is not None and hasattr(window, "resetLayout"):
+            window.resetLayout()
+        if window is not None:
+            refresh_open_scenes(window)
+        self._applied_theme = "dark"
+        self._applied_accent = ""
+        self._load_pages()
+        self._reload_theme_list("dark")
+        self._refresh_preview()
+
+    # -- commit / discard -------------------------------------------------
+    def _apply_changes(self) -> None:
+        self._manager.commit_preview()
+        self._applied_theme = self._manager.requested_theme_id()
+        self._applied_accent = self._manager.requested_accent()
+        self._refresh_preview()
+
+    def accept(self) -> None:
+        self._apply_changes()
+        super().accept()
+
+    def reject(self) -> None:
+        # Theme changes only previewed: drop them. Accent is persisted on
+        # change (live), so restore the accent that was active on open.
+        self._manager.cancel_preview()
+        if self._manager.requested_accent() != self._applied_accent:
+            self._manager.set_accent(self._applied_accent)
+        self._manager.apply(persist=False)
+        super().reject()

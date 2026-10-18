@@ -253,6 +253,15 @@ class PolarsTableModel(QAbstractTableModel):
             )
         return self._row_colors
 
+    def refresh_theme(self) -> None:
+        """Drop cached row tints and repaint after a theme change."""
+        self._row_colors = None
+        if self._total_rows <= 0 or self.columnCount() <= 0:
+            return
+        top = self.index(0, 0)
+        bottom = self.index(self._total_rows - 1, self.columnCount() - 1)
+        self.dataChanged.emit(top, bottom, [Qt.ItemDataRole.BackgroundRole])
+
     def _get_chunk_key(self, row: int) -> int:
         """Get the cache key for a given row."""
         return (row // self.chunk_size) * self.chunk_size

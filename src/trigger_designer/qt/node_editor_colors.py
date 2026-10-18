@@ -2,11 +2,12 @@
 
 nodeeditor >=0.7 centralizes edge and socket colors in a process-wide
 ``NodeEditorColorScheme`` singleton (``nodeeditor.node_colors_config``).
-This module is the single owner for reading/writing that scheme to
-QSettings and for pushing a change out to every already-open workflow.
+This module is the single owner for reading/writing that scheme to the
+preferences store and for pushing a change out to every already-open
+workflow.
 
-QSettings scope is ``Blue Octa / Trigger Designer`` to match the settings
-dialog (``qt/models/settings_panel.py``) and recent files.
+Values live in ``preferences.ini`` (see ``qt/preferences.py``); the
+functions still accept an injected ``QSettings`` for tests.
 """
 
 from __future__ import annotations
@@ -16,11 +17,11 @@ from typing import TYPE_CHECKING
 from nodeeditor.node_colors_config import get_color_scheme
 from qtpy.QtCore import QSettings
 
+from trigger_designer.qt.preferences import get_preferences
+
 if TYPE_CHECKING:
     from trigger_designer.qt.main_window import TriggerWindow
 
-ORG_NAME = "Blue Octa"
-APP_NAME = "Trigger Designer"
 SETTINGS_GROUP = "node_editor_colors"
 
 # Mirrors nodeeditor.node_colors_config.EdgeColors / SocketColors defaults.
@@ -49,7 +50,7 @@ def load_node_editor_colors(
 ) -> dict[str, dict[str, str]]:
     """Read saved edge/socket colors, falling back to library defaults."""
     owns_settings = settings is None
-    settings = settings or QSettings(ORG_NAME, APP_NAME)
+    settings = settings or get_preferences().settings
     settings.beginGroup(SETTINGS_GROUP)
     try:
         edges = {
@@ -71,7 +72,7 @@ def save_node_editor_colors(
     colors: dict[str, dict[str, str]], settings: QSettings | None = None
 ) -> None:
     owns_settings = settings is None
-    settings = settings or QSettings(ORG_NAME, APP_NAME)
+    settings = settings or get_preferences().settings
     settings.beginGroup(SETTINGS_GROUP)
     try:
         for key, value in colors["edges"].items():

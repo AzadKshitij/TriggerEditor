@@ -2,6 +2,7 @@ from nodeeditor.node_editor_widget import NodeEditorWidget
 from typing import Callable, Optional, cast
 from typing_extensions import override
 from qtpy.QtGui import (
+    QBrush,
     QIcon,
     QKeySequence,
     QCloseEvent,
@@ -9,6 +10,7 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QApplication,
     QMdiArea,
+    QTableView,
     QWidget,
     QMessageBox,
     QFileDialog,
@@ -30,8 +32,12 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowDockMixin,
     MainWindowMenuMixin,
 )
-from trigger_designer.qt.helpers.preview_dock_state import DataPreviewDockState
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.theme_manager import (
+    apply_theme_to_scene,
+    get_theme_manager,
+)
 
 
 # Enabling edge validators
@@ -91,7 +97,9 @@ class TriggerWindow(
         self.name_product = name_product
 
         self.setObjectName("MainWindow")
-        self.readSettings()
+
+        if not file_path:
+            self._restore_last_session()
 
         self.shortcut = QShortcut(QKeySequence("F11"), self)
         self.shortcut.activated.connect(self.toggleFullScreen)
@@ -142,7 +150,12 @@ class TriggerWindow(
         self.updateMenus()
 
         self.readSettings()
-        self._restore_preview_dock_state()
+        self._theme_mdi_background()
+
+        try:
+            get_theme_manager().themeChanged.connect(self.apply_appearance)
+        except TypeError:  # pragma: no cover - duplicate connection guard
+            pass
 
         self.setWindowTitle("Trigger Designer")
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
@@ -158,18 +171,98 @@ class TriggerWindow(
         else:
             self.showFullScreen()
 
-    def _restore_preview_dock_state(self) -> None:
-        """Reopen the Data Preview dock if it was open at the last close."""
-        if not DataPreviewDockState().read():
-            return
-        self.dataPreviewDock.show()
-        self.dataPreviewDock.raise_()
+    # -- layout / session -------------------------------------------------
+    @override
+    def readSettings(self) -> None:
+        """Restore window geometry and dock state (LayoutState owns policy)."""
+        LayoutState().restore(self)
 
     @override
     def writeSettings(self) -> None:
-        """Persist the base window geometry plus the preview dock state."""
-        super().writeSettings()
-        DataPreviewDockState().write(self.dataPreviewDock.isVisible())
+        """Persist the single auto-saved layout."""
+        LayoutState().save(self)
+
+    def saveCurrentLayout(self) -> None:
+        """Window menu action: write the current geometry + dock state now."""
+        LayoutState().save(self)
+        if self.statusBar() is not None:
+            self.statusBar().showMessage("Layout saved", 3000)
+
+    def resetLayout(self) -> None:
+        """Window menu action: forget the saved layout and restore defaults."""
+        LayoutState().clear()
+        apply_default_layout(self)
+        self.apply_appearance()
+        if self.statusBar() is not None:
+            self.statusBar().showMessage("Layout reset", 3000)
+
+    def _restore_last_session(self) -> None:
+        """Reopen last-session files only when the preference is on."""
+        files, active = LayoutState().session_to_restore()
+        if not files:
+            return
+        for path in files:
+            self.openFile(path)
+        if active:
+            sub = self.findMdiChild(active)
+            if sub is not None:
+                self.mdiArea.setActiveSubWindow(sub)
+
+    def _apply_editor_preferences(self, design_window: TriggerSubWindow) -> None:
+        scene = getattr(design_window, "scene", None)
+        if scene is None:
+            return
+        apply_theme_to_scene(scene)
+        self._theme_node_rings(scene)
+
+    @staticmethod
+    def _theme_node_rings(scene) -> None:
+        for node in getattr(scene, "nodes", []):
+            gr_node = getattr(node, "grNode", None)
+            refresh = getattr(gr_node, "apply_theme", None)
+            if callable(refresh):
+                refresh()
+
+    def _theme_mdi_background(self, manager=None) -> None:
+        """Colour the workspace frame.
+
+        ``QMdiArea`` paints its own ``background`` brush, so a stylesheet rule
+        never reaches it - it has to be set here.
+        """
+        mdi = getattr(self, "mdiArea", None)
+        if mdi is None:
+            return
+        manager = manager or get_theme_manager()
+        mdi.setBackground(QBrush(manager.color("canvas_background", "#0E1115")))
+
+    def apply_appearance(self, _theme: object = None) -> None:
+        """Re-theme every open surface after a theme/accent change."""
+        manager = get_theme_manager()
+        self._theme_mdi_background(manager)
+        for sub in self.mdiArea.subWindowList():
+            widget = sub.widget()
+            scene = getattr(widget, "scene", None)
+            if scene is not None:
+                apply_theme_to_scene(scene, manager)
+                self._theme_node_rings(scene)
+            for view in widget.findChildren(QTableView):
+                model = view.model()
+                refresh = getattr(model, "refresh_theme", None)
+                if callable(refresh):
+                    refresh()
+            # Python-painted children (SQL formula editors) expose apply_theme.
+            for child in widget.findChildren(QWidget):
+                refresh = getattr(child, "apply_theme", None)
+                if callable(refresh):
+                    refresh()
+        logging_dock = getattr(self, "loggingDock", None)
+        if logging_dock is not None and hasattr(logging_dock, "apply_theme"):
+            logging_dock.apply_theme()
+        preview_dock = getattr(self, "dataPreviewDock", None)
+        if preview_dock is not None:
+            refresh = getattr(preview_dock, "refresh_theme", None)
+            if callable(refresh):
+                refresh()
 
     @override
     def onEditPaste(self) -> None:
@@ -191,6 +284,9 @@ class TriggerWindow(
         super().onEditPaste()
 
     def closeEvent(self, event: Optional[QCloseEvent]) -> None:
+        # Capture the session before children close: the window list is the
+        # source of truth for "what was open", and closing clears it.
+        LayoutState().save_session(self)
         self.mdiArea.closeAllSubWindows()
         if self.mdiArea.currentSubWindow() and event is not None:
             event.ignore()
@@ -367,6 +463,9 @@ class TriggerWindow(
         if self.mdiArea.activeSubWindow() == subwnd:
             self.switchLoggingDock(nodeeditor)
             self.switchDataPreviewDock(nodeeditor)
+
+        # Theme the new scene (canvas grid + node state rings) before it paints.
+        self._apply_editor_preferences(nodeeditor)
 
         # Add a welcome log message for new design window
         nodeeditor.logInfo(

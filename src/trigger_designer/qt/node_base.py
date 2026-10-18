@@ -22,6 +22,7 @@ from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.resource_manager import ResourceManager
+from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.helpers.eval_progress import (
     count_pending_recomputes,
     eval_progress_dialog,
@@ -118,20 +119,35 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self, node: "TriggerNode", parent: Optional[QGraphicsItem] = None
     ) -> None:
         super().__init__(node, parent)
+        self._pen_role = "default"
+        self._rebuild_theme_pens()
 
-        self._default_pen = QPen(QColor.fromRgb(0, 0, 0, 0))  # Black color
+    def _pen_from_token(self, token: str, fallback: str) -> QPen:
+        pen = QPen(get_theme_manager().color(token, fallback))
+        pen.setWidth(5)
+        return pen
+
+    def _rebuild_theme_pens(self) -> None:
+        """State rings come from theme tokens, never hardcoded hex."""
+        # Transparent so an idle node draws no ring at all.
+        self._default_pen = QPen(QColor.fromRgb(0, 0, 0, 0))
         self._default_pen.setWidth(5)
-        self._selected_pen = QPen(QColor("#FFFFA637"))
-        self._selected_pen.setWidth(5)
-        self._executing_pen = QPen(QColor("#FF800080"))  # Purple color
-        self._executing_pen.setWidth(5)
-        self._executed_pen = QPen(QColor("#FF008000"))  # Green color
-        self._executed_pen.setWidth(5)
-        self._error_pen = QPen(QColor("#FFFF0000"))  # Red color
-        self._error_pen.setWidth(5)
+        self._selected_pen = self._pen_from_token("node_selection", "#ffa637")
+        self._executing_pen = self._pen_from_token("activity", "#9b7bd4")
+        self._executed_pen = self._pen_from_token("success", "#48a878")
+        self._error_pen = self._pen_from_token("danger", "#e0686c")
+        self._pen = {
+            "default": self._default_pen,
+            "selected": self._selected_pen,
+            "executing": self._executing_pen,
+            "executed": self._executed_pen,
+            "error": self._error_pen,
+        }.get(self._pen_role, self._default_pen)
 
-        self._pen = self._default_pen  # Current pen
-        # self._brush_title = QBrush(QColor(style['brush_color']))
+    def apply_theme(self) -> None:
+        """Re-read state-ring colours after a theme change."""
+        self._rebuild_theme_pens()
+        self.update()
 
     def initSizes(self) -> None:
         super().initSizes()
@@ -182,22 +198,26 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         )
 
     def setPenExecuting(self) -> None:
-        """Set node border to purple while executing"""
+        """Set node border to the running-state token while executing"""
+        self._pen_role = "executing"
         self._pen = self._executing_pen
         self.update()
 
     def setPenExecuted(self) -> None:
-        """Set node border to green after execution"""
+        """Set node border to the success token after execution"""
+        self._pen_role = "executed"
         self._pen = self._executed_pen
         self.update()
 
     def setPenError(self) -> None:
-        """Set node border to red on execution error"""
+        """Set node border to the danger token on execution error"""
+        self._pen_role = "error"
         self._pen = self._error_pen
         self.update()
 
     def resetPen(self) -> None:
-        """Reset to default border color"""
+        """Reset to default (invisible) border"""
+        self._pen_role = "default"
         self._pen = self._default_pen
         self.update()
 

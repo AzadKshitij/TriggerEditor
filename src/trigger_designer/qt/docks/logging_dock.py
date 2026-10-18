@@ -17,19 +17,21 @@ from qtpy.QtCore import Qt, QTimer
 from qtpy.QtGui import QFont, QTextCursor
 from typing import Optional, TYPE_CHECKING
 
+from trigger_designer.qt.theme_manager import get_theme_manager
+
 if TYPE_CHECKING:
     from trigger_designer.qt.design_window import TriggerSubWindow
 
 
 class LogLevel:
-    """Log level constants with colors"""
+    """Log level constants and the theme token each level paints with."""
 
-    TRACE = {"name": "TRACE", "color": "#808080"}  # Gray
-    DEBUG = {"name": "DEBUG", "color": "#00AA00"}  # Green
-    INFO = {"name": "INFO", "color": "#0066CC"}  # Blue
-    WARNING = {"name": "WARNING", "color": "#FF8800"}  # Orange
-    ERROR = {"name": "ERROR", "color": "#CC0000"}  # Red
-    CRITICAL = {"name": "CRITICAL", "color": "#800080"}  # Purple
+    TRACE = {"name": "TRACE", "token": "text_tertiary", "fallback": "#919ba6"}
+    DEBUG = {"name": "DEBUG", "token": "text_inactive", "fallback": "#919ba6"}
+    INFO = {"name": "INFO", "token": "info", "fallback": "#5ba8d6"}
+    WARNING = {"name": "WARNING", "token": "warning", "fallback": "#d9a441"}
+    ERROR = {"name": "ERROR", "token": "danger", "fallback": "#e0686c"}
+    CRITICAL = {"name": "CRITICAL", "token": "danger", "fallback": "#e0686c"}
 
     ALL_LEVELS = [TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL]
 
@@ -44,20 +46,22 @@ class LogEntry:
         self.message = message
         self.timestamp = timestamp or datetime.datetime.now()
 
-    def to_html(self) -> str:
-        """Convert log entry to HTML format"""
-        level_info = next(
-            (l for l in LogLevel.ALL_LEVELS if l["name"] == self.level), LogLevel.INFO
-        )
+    def to_html(
+        self,
+        *,
+        level_color: str = "#5ba8d6",
+        message_color: str = "#c6cdd5",
+        timestamp_color: str = "#919ba6",
+    ) -> str:
+        """Convert log entry to HTML using the active theme's colours."""
         timestamp_str = self.timestamp.strftime("%H:%M:%S.%f")[
             :-3
         ]  # Remove microseconds, keep milliseconds
-
         return (
             f'<div style="margin: 2px 0;">'
-            f'<span style="color: #666; font-family: monospace;">[{timestamp_str}]</span> '
-            f'<span style="color: {level_info["color"]}; font-weight: bold;">{self.level}</span>: '
-            f'<span style="color: #88929f;">{self.message}</span>'
+            f'<span style="color: {timestamp_color}; font-family: monospace;">[{timestamp_str}]</span> '
+            f'<span style="color: {level_color}; font-weight: bold;">{self.level}</span>: '
+            f'<span style="color: {message_color};">{self.message}</span>'
             f"</div>"
         )
 
@@ -126,6 +130,7 @@ class LoggingDock(QDockWidget):
 
         # Log display
         self.log_display = QTextEdit()
+        self.log_display.setObjectName("LogsTextEdit")
         self.log_display.setReadOnly(True)
         self.log_display.setFont(QFont("Consolas", 9))  # Monospace font
         self.log_display.setHtml("")
@@ -216,7 +221,10 @@ class LoggingDock(QDockWidget):
         if entry_priority < current_priority:
             return False
 
-        if self.filter_text and self.filter_text.lower() not in log_entry.message.lower():
+        if (
+            self.filter_text
+            and self.filter_text.lower() not in log_entry.message.lower()
+        ):
             return False
 
         return True
@@ -238,19 +246,29 @@ class LoggingDock(QDockWidget):
         scrollbar = self.log_display.verticalScrollBar()
         was_at_bottom = scrollbar.value() == scrollbar.maximum()
 
+        level_colors = self._level_colors()
+
         # Generate HTML for all filtered logs
         if current_log_count == 0:
             # Clear display if no logs
             self.log_display.clear()
         elif self._full_refresh_required or current_log_count < self.last_log_count:
-            html_content = "".join(log_entry.to_html() for log_entry in self.filtered_logs)
+            html_content = "".join(
+                self._entry_html(log_entry, level_colors)
+                for log_entry in self.filtered_logs
+            )
             self.log_display.setHtml(html_content)
         else:
             new_entries = self.filtered_logs[self.last_log_count :]
             if new_entries:
                 cursor = self.log_display.textCursor()
                 cursor.movePosition(QTextCursor.MoveOperation.End)
-                cursor.insertHtml("".join(log_entry.to_html() for log_entry in new_entries))
+                cursor.insertHtml(
+                    "".join(
+                        self._entry_html(log_entry, level_colors)
+                        for log_entry in new_entries
+                    )
+                )
                 self.log_display.setTextCursor(cursor)
 
             # Restore scroll position or auto-scroll
@@ -262,6 +280,28 @@ class LoggingDock(QDockWidget):
         self.last_log_count = current_log_count
         self._display_dirty = False
         self._full_refresh_required = False
+
+    def _level_colors(self) -> dict[str, str]:
+        """HTML colour per log level, resolved from theme tokens."""
+        manager = get_theme_manager()
+        return {
+            level["name"]: manager.color(level["token"], level["fallback"]).name()
+            for level in LogLevel.ALL_LEVELS
+        }
+
+    def _entry_html(self, entry: LogEntry, level_colors: dict[str, str]) -> str:
+        manager = get_theme_manager()
+        return entry.to_html(
+            level_color=level_colors.get(entry.level, level_colors["INFO"]),
+            message_color=manager.color("text_secondary", "#c6cdd5").name(),
+            timestamp_color=manager.color("text_tertiary", "#919ba6").name(),
+        )
+
+    def apply_theme(self) -> None:
+        """Repaint every entry with the active theme's colours."""
+        self._full_refresh_required = True
+        self._display_dirty = True
+        self.refresh_display()
 
     def on_level_filter_changed(self, level: str) -> None:
         """Handle log level filter change"""

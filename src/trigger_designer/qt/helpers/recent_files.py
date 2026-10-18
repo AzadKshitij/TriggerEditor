@@ -1,12 +1,11 @@
-"""Recent project tracking backed by QSettings.
+"""Recent project tracking backed by the preferences store.
 
 Single owner for the ``recentFiles`` list and the ``show_welcome_dialog``
 flag. Both the File > Open Recent menu and the startup welcome dialog
 read from this manager so they can never drift apart.
 
-QSettings scope is ``Blue Octa / Trigger Designer`` to match the settings
-dialog (``qt/models/settings_panel.py``). ``main.py`` uses a different
-scope for theme only; recents intentionally stay on the Blue Octa scope.
+Values live in ``preferences.ini`` (see ``qt/preferences.py``); the
+constructor still accepts an injected ``QSettings`` for tests.
 """
 
 from __future__ import annotations
@@ -15,8 +14,8 @@ import os
 
 from qtpy.QtCore import QSettings
 
-ORG_NAME = "Blue Octa"
-APP_NAME = "Trigger Designer"
+from trigger_designer.qt.preferences import get_preferences
+
 RECENTS_KEY = "recentFiles"
 WELCOME_KEY = "show_welcome_dialog"
 DEFAULT_MAX_ITEMS = 10
@@ -28,14 +27,27 @@ class RecentFilesManager:
     def __init__(
         self,
         settings: QSettings | None = None,
-        max_items: int = DEFAULT_MAX_ITEMS,
+        max_items: int | None = None,
     ) -> None:
-        self._settings = settings or QSettings(ORG_NAME, APP_NAME)
-        self._max_items = max(1, max_items)
+        self._settings = settings or get_preferences().settings
+        if max_items is None:
+            max_items = int(
+                get_preferences().get("general/recent_limit", DEFAULT_MAX_ITEMS)
+                or DEFAULT_MAX_ITEMS
+            )
+        self._max_items = max(1, min(50, int(max_items)))
 
     @property
     def max_items(self) -> int:
         return self._max_items
+
+    def set_max_items(self, value: int) -> None:
+        """Change the cap and immediately prune the stored list."""
+        self._max_items = max(1, min(50, int(value)))
+        get_preferences().set("general/recent_limit", self._max_items)
+        updated = self.recents()
+        self._settings.setValue(RECENTS_KEY, updated)
+        self._settings.sync()
 
     def recents(self) -> list[str]:
         """Return stored paths, newest first, deduplicated."""

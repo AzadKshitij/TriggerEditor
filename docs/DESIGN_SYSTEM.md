@@ -343,14 +343,32 @@ Every `setData / move / check / sort` → `data_processed → handleDataChanged 
 - Required Config Dock objectNames: `ConfigSection`, `ConfigSectionInfo`, `EmptyStateLabel`, `ColumnChecklist`, `IconButton`, `OptionsButton`, `TextButton`, `DataTypeCombo`, `JoinSourceLeft`/`JoinSourceRight`, `JoinSourceHeaderLeft`/`Right`, `JoinDtypeLabel`.
 - Dock chrome objectNames: `PreviewStrip`, `PreviewNodeChip`, `PreviewNodeLabel`, `PreviewPinDot`, `PreviewSocketChip`, `PreviewSocketCombo`, `PreviewSearchEdit`, `PreviewScopeCombo`, `PreviewCountsChip`, `PreviewStatusLabel`, `PreviewLimitedBadge`, `PreviewSourceBadge`, `PreviewPinButton`.
 - The dock-chrome boundary is explicit: §§1–7 govern node config docks; shared dock chrome follows §7 and the new §§8–14. Both use `objectName` + `base.qss`/`_style.scss`, restate hover/pressed per `objectName`, and use no inline QSS.
-- `base.qss` is a `str.format` template: only keys present in `resources/qt/themes/*.json` may be used. Available today: `background_hover`, `background_pressed`, `button_bg`, `accent_primary`/`_secondary`, `card_border`, `editor_background`, `error_text`, `text_primary`/`secondary`/`inactive`/`disabled`. A missing key raises at startup, so verify after editing.
+- `base.qss` is a `str.format` template: only keys present in the theme JSONs may be used. The full key set is grouped in `qt/theme_manager.py` (`TOKEN_GROUPS`): **Surfaces, Text, Accent, Status, Borders, Controls, Canvas, Code, Nodes**. `tests/unit/test_theme_tokens.py` asserts every `{token}` exists in both built-in themes and that every colour token is exposed in the editor — run it after editing either file.
 - Same rule in `_style.scss`, using the `$COLOR_*` names from `_variable.scss`: `$COLOR_BACKGROUND_1..6`, `$COLOR_TEXT_1..4`, `$COLOR_DISABLED`, `$COLOR_ACCENT_1..4`, `$SIZE_BORDER_RADIUS`, `$BORDER_1..3`.
-- Never hand-edit generated QSS in one place only; keep `base.qss` and `_style.scss` in agreement. `runtime_theme.qss` is generated — do not edit it.
+- Never hand-edit generated QSS in one place only; keep `base.qss` and `_style.scss` in agreement. The generated `runtime_theme.qss` is gone: `ThemeManager` renders `base.qss` from the active theme at runtime, so there is nothing to regenerate by hand.
 - **Target** hooks to add: `ChromeStrip`, `Chip`, `ChipDot`, `StatusBadge`, `CountsChip`, `PrimaryButton`, `DangerButton`, `DialogSurface`, `MenuSurface`, `TableHeader`, `TableRow`. Add them to both QSS sources and to the objectName registry in §17.
 
 ### Custom view delegates
 
 Never hand a bare `QStyleOptionComboBox` to `drawComplexControl` — with no `palette` set, Qt falls back to the application default (light grey in Fusion) and the cell clashes with the themed surface. `ComboBoxDelegate.paint` in `select_table_widget.py` therefore paints from `option.palette`/`option.font` directly. If you add a delegate, copy the palette and font, and keep `setAutoFillBackground(True)` off editors that have a themed `objectName`.
+
+### Themes, user themes and preferences
+
+- `qt/theme_manager.py` is the **only** owner of `QApplication.setStyleSheet()`; every other surface listens to `ThemeManager.themeChanged` (`TriggerWindow.apply_appearance`, `LoggingDock.apply_theme`, `SQLFormulaEditor.apply_theme`, `NodeBase.apply_theme`). Never call `setStyleSheet` on the application or a window directly.
+- Theme files are schema 2 — a flat token dictionary is still read, but new files use:
+
+  ```json
+  {"schema": 2, "id": "dark", "name": "Dark", "appearance": "dark", "extends": null,
+   "tokens": {"background_primary": "#14171b"}}
+  ```
+
+  `extends` inherits a parent's tokens; a token missing from a user theme falls back to built-in dark with a warning. `appearance` (`dark`/`light`) drives System mode and the title-bar contrast, not the tokens.
+- Built-ins live in `src/trigger_designer/resources/qt/themes/`; user themes live in `%APPDATA%\Trigger Designer\themes` (env override `TRIGGER_DESIGNER_DATA_DIR`) and shadow a built-in with the same id. `duplicate_theme` is the supported way to fork a built-in; a shadowing theme must not `extends` the id it shadows (that resolves to itself and is reported as circular).
+- Everything the editor exposes is a **colour** token. Geometry, spacing, control heights and radius are design-system-owned (§§1, 4.1) and intentionally not themeable.
+- Preferences are one INI at `%APPDATA%\Trigger Designer\preferences.ini` (`qt/preferences.py`); the first run migrates the legacy `QSettings` scopes (`Blue Octa/Trigger Designer`, `Trigger/Trigger Designer`, `Trigger/NodeEditor`). Do not add new `QSettings` scopes.
+- Layout is one auto-saved record (`qt/layout_state.py`): `saveGeometry()` plus `saveState(1)` over stable dock objectNames (`NodesDock`, `ConfigDock`, `LoggingDock`, `DataPreviewDock`), with Window ▸ Save Current Layout / Reset Layout. There are no layout presets and no named workspaces.
+- The last session's file list is captured on close but only reopened when `layout/session` is on; it defaults off ("layout on, files off").
+- `QMdiArea` paints its own `background` brush, which no stylesheet rule reaches: `TriggerWindow._theme_mdi_background()` sets it from `canvas_background`.
 
 ---
 
@@ -488,6 +506,8 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 - Edge active/selected: `accent`, 1.8px. No magenta/tan defaults; those are legacy and belong to the old editor skin.
 - Edge hover: lighten one step, do not change width.
 - No animated dashes or particles by default; execution state belongs to the node ring.
+- Canvas and grid colours are tokens — `canvas_background`, `canvas_grid_light`, `canvas_grid_dark` — applied by `apply_theme_to_scene()`; state rings read `node_selection` / `activity` / `success` / `danger` through `NodeBase._pen_role`. Keep paint methods token-driven; a literal `QColor("#...")` in a `paint()` is a bug.
+- The workspace frame behind the sub-windows is `canvas_background` too (`TriggerWindow._theme_mdi_background`), so the graph and the frame read as one surface. Edge and socket colours are user settings, not theme tokens (`qt/node_editor_colors.py`).
 
 ### Canvas chrome
 
@@ -504,6 +524,7 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 - Level is the only colour: `INFO` info, `WARN` warning, `ERROR` danger, `CRITICAL` danger + bold, `DEBUG` tertiary.
 - No card per line. The log pane is one `bg.inset` surface with hairline separators.
 - Auto-scroll is a checkbox in the dock controls, not a footer button.
+- Colours come from the theme (`text_*`, `info`, `warning`, `danger`) via `LoggingDock.apply_theme()` / `LogsTextEdit`; the SQL editor's syntax colours are the `Code` token group (`syntax_*`, `editor_line_number_*`, `editor_current_line`). No hardcoded log or syntax colours.
 
 ### Status bar
 
@@ -541,22 +562,24 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 
 ### Tokens
 
-1. Add the Signal keys to **both** `resources/qt/themes/dark.json` and `light.json`; keep the current keys as aliases during migration.
+1. Add the token to **both** `resources/qt/themes/dark.json` and `light.json` (schema 2, under `tokens`), and to the matching `TOKEN_GROUPS` group in `qt/theme_manager.py` so the editor exposes it.
 2. Add the matching `$COLOR_*` values to `qss/_variable.scss` and the selectors to `qss/_style.scss`.
-3. Add the same selectors to `resources/qt/themes/base.qss`. Do not edit `runtime_theme.qss`.
-4. Verify every `{token}` in `base.qss` exists in both JSONs before starting the app.
+3. Add the same selectors to `resources/qt/themes/base.qss`; write `{{` / `}}` for QSS blocks, `{token}` for values.
+4. Run `tests/unit/test_theme_tokens.py` — it collects every `{token}` in `base.qss` and fails if either theme (or the editor's group list) is missing one.
 
 ### Python-painted surfaces
 
-Create `qt/style_tokens.py` as the single accessor for:
+`qt/theme_manager.py` is the single accessor: `ThemeManager.color(token)` returns a `QColor`, `token()` the raw value, both cached per theme. `ResourceManager.get_theme_color` delegates to it, so older call sites keep working.
+
+Route these through it:
 
 - node category fills and state rings (`node_base.py`)
-- edge and socket colours (`node_editor_colors.py`)
 - table row parity (`polars_table_viewer.py`)
-- canvas grid and background
-- any `QColor` currently hardcoded in a `paint()` method
+- canvas grid and background (`apply_theme_to_scene`)
+- log levels and the SQL editor's syntax colours (`apply_theme`)
+- the workspace frame (`TriggerWindow._theme_mdi_background`)
 
-It should read through `ResourceManager.get_theme_color` and fall back to the dark value only when a theme is missing a key. No widget should call `QColor("#...")` directly.
+Missing tokens fall back to the built-in dark value, and a user theme that omits one gets it filled with a warning. No widget should call `QColor("#...")` in a `paint()` method. Edge and socket colours are a **user setting**, not a token (`qt/node_editor_colors.py`).
 
 ### Shared widget constants
 
@@ -597,16 +620,30 @@ ICON_SIZE = 12
 | `DangerButton` | dialogs | hover, pressed, disabled |
 | `MenuSurface` | menus | — |
 | `DialogSurface` | dialogs | — |
+| `PreferencesDialog`, `ThemeEditorDialog` | preferences / theme editor | — |
+| `PreferencesSidebar`, `PreferencesPages`, `PreferencesPage` | preferences | item hover, selected |
+| `ThemeList`, `ThemePreview` | preferences | item hover, selected |
+| `ThemeEditorScroll`, `ThemeEditorContent` | theme editor | — |
+| `ThemeNameEdit`, `ThemeAppearanceCombo`, `GridSizeSpin`, `RecentLimitSpin` | preferences / theme editor | hover, focus, disabled |
+| `ColorHexEdit`, `ColorSwatch`, `ThemeTokenRow`, `ContrastLabel` | theme editor | hover, focus |
+| `FieldLabel`, `FieldHint`, `SectionTitleText` | preferences / theme editor | — |
+| `LogsTextEdit` | logs | — |
+| `FormulaCompleterPopup` | SQL editor | hover, selected |
 
 ### Guards
 
-Add tests that fail fast:
+Tests that fail fast, all under `tests/` (the shared fixtures live in `tests/conftest.py` and keep the preference store in a temp dir):
 
-- **Theme parity:** parse `base.qss`, collect every `{token}`, assert it exists in both theme JSONs.
+- **Theme parity:** parse `base.qss`, collect every `{token}`, assert it exists in both theme JSONs, and assert every colour token is exposed by `TOKEN_GROUPS` (`test_theme_tokens.py`).
+- **Theme manager:** schema 2, `extends`, missing-token fallback, invalid colours, accent variants, preview/commit/cancel, save/import/export/delete (`test_theme_manager.py`).
+- **Preferences:** defaults, typed coercion, legacy migration, reset (`test_preferences.py`).
+- **Layout:** geometry and dock-state round trip, session gating and filtering, off-screen guard (`test_layout_state.py`).
+
+Target guards still to add:
+
 - **No inline QSS:** no `setStyleSheet` in `qt/widgets/nodes/**` or the shared dock chrome.
 - **Accessible actions:** every `QPushButton` with an empty `text()` has a non-empty `toolTip()` and `accessibleName()`.
 - **No `fromTheme` in nodes:** a grep test for `QIcon.fromTheme` outside the documented fallback helper.
-- **Theme switch smoke:** build the Config Dock, Preview panel and Logs dock in both themes without a missing-key exception.
 
 ### References
 
@@ -617,6 +654,9 @@ Add tests that fail fast:
 - Table: `qt/models/polars_table_viewer.py`, `qt/widgets/select_table_widget.py`
 - Canvas: `qt/node_base.py`, `qt/node_editor_colors.py`
 - Theme: `resources/qt/themes/base.qss`, `resources/qt/themes/dark.json`, `resources/qt/themes/light.json`, `qss/_variable.scss`, `qss/_style.scss`
+- Theme engine: `qt/theme_manager.py`, theme editor `qt/dialogs/theme_editor_dialog.py`, swatches `qt/widgets/common/theme_widgets.py`
+- Preferences: `qt/preferences.py`, dialog `qt/dialogs/preferences_dialog.py`, host window `qt/main_window.py`
+- Layout and session: `qt/layout_state.py`, `qt/helpers/preview_dock_state.py` (legacy migration only)
 - Visual preview: [`design_system_preview.html`](design_system_preview.html)
 
 ---
@@ -644,8 +684,8 @@ Add tests that fail fast:
 
 ### Phase 1 — tokens and guards
 
-- [ ] Add Signal keys to `dark.json` and `light.json`; keep old keys as aliases.
-- [ ] Add `qt/style_tokens.py` and route Python-painted colours through it.
+- [ ] Add Signal keys to `dark.json` and `light.json` (schema 2; `TOKEN_GROUPS` in `qt/theme_manager.py` is the authoritative list).
+- [ ] Route Python-painted colours through `ThemeManager.color()` — `qt/style_tokens.py` turned out to be unnecessary, the manager is the accessor.
 - [ ] Add theme-parity, inline-QSS, accessible-action and `fromTheme` tests.
 
 ### Phase 2 — QSS foundation
