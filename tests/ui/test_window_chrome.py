@@ -42,8 +42,9 @@ class TestWindowChrome(unittest.TestCase):
         _APP.processEvents()
 
     def tearDown(self) -> None:
-        # close() would run TriggerWindow.closeEvent, which ends in
-        # sys.exit(); tear down the way the other UI tests do instead.
+        # close() would run TriggerWindow.closeEvent, which saves the session
+        # and quits the shared QApplication; tear down the way the other UI
+        # tests do instead.
         self.window.hide()
         self.window.deleteLater()
         _APP.processEvents()

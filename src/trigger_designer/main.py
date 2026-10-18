@@ -240,7 +240,33 @@ def main() -> None:
             logger.warning(f"Welcome dialog skipped: {exc}")
 
     logger.info("Trigger Designer started successfully")
-    sys.exit(app.exec())
+
+    exit_code = app.exec()
+
+    # Destroy every top-level window while Qt and PyQt are still fully alive.
+    # Letting the interpreter finalize with live widgets faults inside sip on
+    # Windows (0xC0000005 after the last log line), so run the deferred
+    # deletions here instead. Chart windows go first, in their own pass.
+    from qtpy.QtCore import QCoreApplication, QEvent
+
+    for widget in QApplication.topLevelWidgets():
+        try:
+            dispose = getattr(widget, "dispose", None)
+        except RuntimeError:
+            continue
+        if callable(dispose):
+            try:
+                dispose()
+            except RuntimeError:
+                continue
+    for widget in QApplication.topLevelWidgets():
+        widget.hide()
+        widget.deleteLater()
+    QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    del main_window
+    app.processEvents()
+
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

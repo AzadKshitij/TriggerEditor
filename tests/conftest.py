@@ -176,9 +176,10 @@ class _ImmediateQTimer:
 def _no_leaked_qt_windows(qapp):
     """Delete top-level widgets a test left behind, without close events.
 
-    ``TriggerWindow.closeEvent`` still calls ``sys.exit``, so closing a
-    leaked main window from cleanup would kill pytest; ``deleteLater`` skips
-    the close path and destroys children with the parent.
+    ``TriggerWindow.closeEvent`` saves the session and quits the shared
+    ``QApplication``; sending a real close event to a leaked main window in
+    cleanup would end the loop every other test relies on. ``deleteLater``
+    skips the close path and destroys children with the parent.
     """
     yield
     from qtpy.QtCore import QCoreApplication, QEvent

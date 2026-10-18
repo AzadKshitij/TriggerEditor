@@ -50,7 +50,7 @@ op id is the stable identifier stored in saved workflows
 
 | Node Name | Node Image | Description |
 |---|---|---|
-| Graph | ![Graph](assets/node_icons/graph.png) | Renders the incoming data as a chart in its own resizable window. |
+| Graph | ![Graph](assets/node_icons/graph.png) | Charts the incoming data in a matplotlib window that unlocks after a successful run; passes its input through unchanged. |
 
 ## Internal (not in the palette)
 

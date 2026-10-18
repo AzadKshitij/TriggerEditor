@@ -320,10 +320,12 @@ class TriggerWindow(
             self.writeSettings()
             if event is not None:
                 event.accept()
-            # hacky fix for PyQt 5.14.x
-            import sys
-
-            sys.exit(0)
+            # Quit through the event loop instead of raising SystemExit from
+            # inside a native close callback: that unwinds through Qt's C++
+            # frames and faults (0xC0000005 in sip) on shutdown.
+            app = QApplication.instance()
+            if app is not None:
+                app.quit()
 
     @override
     def getCurrentNodeEditorWidget(self) -> "NodeEditorWidget":

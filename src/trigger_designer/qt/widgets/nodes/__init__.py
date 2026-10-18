@@ -150,6 +150,14 @@ _LAZY_NODE_SPECS = [
 
 _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
 
+#: Helper modules under ``nodes/`` that are not nodes. The sweep below would
+#: import them at startup, pulling matplotlib and the Qt canvas into every
+#: launch; they load with the node that needs them instead.
+_LAZY_HELPER_MODULES = {
+    "Report.chart_view",
+    "Report.chart_window",
+}
+
 modules = []
 base_dir = dirname(__file__)
 
@@ -164,10 +172,12 @@ for spec in _LAZY_NODE_SPECS:
 
 for root, dirs, files in os.walk(base_dir):
     for file in files:
-        if file.endswith(".py") and not file == "__init__.py":
+        if file.endswith(".py") and file != "__init__.py":
             relative_path = os.path.relpath(join(root, file), base_dir)
             module_name = relative_path.replace(os.sep, ".")[:-3]
             if module_name in _LAZY_MODULE_NAMES:
+                continue
+            if module_name in _LAZY_HELPER_MODULES:
                 continue
             modules.append(module_name)
 
