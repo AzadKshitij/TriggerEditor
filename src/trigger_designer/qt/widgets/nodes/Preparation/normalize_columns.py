@@ -1,4 +1,4 @@
-"""Normalize Columns node: deterministic column-name cleanup.
+"""Normalize node: deterministic column-name cleanup.
 
 Rewrites column names (trim whitespace, collapse inner whitespace to
 underscores, change case) without touching row data. Pure rename, so the
@@ -106,7 +106,7 @@ def build_rename_mapping(
 class NormalizeColumnsContent(
     QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
 ):
-    """Content widget for the Normalize Columns node."""
+    """Content widget for the Normalize node."""
 
     evaluate = Signal()
     serialized_state_schema = {
@@ -193,12 +193,12 @@ class NormalizeColumnsContent(
                 self.data = None
                 self.node.markInvalid(True)
                 self.node.grNode.setToolTip(
-                    "Normalize Columns: rules produce duplicate column names"
+                    "Normalize: rules produce duplicate column names"
                 )
                 return
             self.data = self.incom_data.rename(mapping) if mapping else self.incom_data
         except Exception as exc:
-            global_logger.error(f"Normalize Columns error: {exc}")
+            global_logger.error(f"Normalize error: {exc}")
             self.data = None
 
         self._refresh_normalize_counts()
@@ -433,7 +433,7 @@ class NormalizeColumnsContent(
 class TriggerNode_NormalizeColumns(TriggerNode):
     icon = "node_select"
     node_code = PreparationNodes.NORMALIZE_COLUMNS
-    node_title = "Normalize Columns"
+    node_title = "Normalize"
     node_type = NodeTypes.PREPARATION
     content_label_objname = "trigger_node_normalize_columns"
     style = {}

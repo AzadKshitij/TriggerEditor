@@ -484,7 +484,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 class TriggerNode_DynamicRowBuilder(TriggerNode):
     icon = "node_generate_rows"
     node_code = PreparationNodes.DYNAMIC_ROW_BUILDER
-    node_title = "Generate Rows"
+    node_title = "Rows"
     node_type = NodeTypes.PREPARATION
     content_label_objname = "trigger_node_generate_rows"
 

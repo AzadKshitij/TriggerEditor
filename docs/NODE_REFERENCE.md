@@ -32,17 +32,17 @@ op id is the stable identifier stored in saved workflows
 | Sort | ![Sort](assets/node_icons/sort.png) | Orders rows by one or more columns, each ascending or descending. |
 | Split | ![Split](assets/node_icons/split.png) | Splits the data into training and validation datasets for modelling workflows. |
 | Unique | ![Unique](assets/node_icons/unique.png) | Removes duplicate rows based on the selected columns. |
-| Normalize Columns | ![Normalize Columns](assets/node_icons/select.png) | Renames columns deterministically: trim, collapse internal whitespace, then apply a case rule. |
-| Generate Rows | ![Generate Rows](assets/node_icons/dynamic_row_generate.png) | Builds a grid or series of rows from configured patterns, ranges, or literals. |
+| Normalize | ![Normalize](assets/node_icons/select.png) | Renames columns deterministically: trim, collapse internal whitespace, then apply a case rule. |
+| Rows | ![Rows](assets/node_icons/dynamic_row_generate.png) | Builds a grid or series of rows from configured patterns, ranges, or literals. |
 
-> Normalize Columns reuses the Select glyph (`node_select`) until a dedicated
+> Normalize reuses the Select glyph (`node_select`) until a dedicated
 > icon ships; the source file is `node_icons/Preparation/Select.svg`.
 
 ## Transform
 
 | Node Name | Node Image | Description |
 |---|---|---|
-| Count Records | ![Count Records](assets/node_icons/count.png) | Counts rows, overall or per group, and emits the total as a new frame. |
+| Count | ![Count](assets/node_icons/count.png) | Counts rows, overall or per group, and emits the total as a new frame. |
 | Running Total | ![Running Total](assets/node_icons/running_total.png) | Adds a column with a cumulative sum of a numeric column, optionally per group. |
 | Transpose | ![Transpose](assets/node_icons/transpose.png) | Flips the frame so rows become columns and columns become rows. |
 

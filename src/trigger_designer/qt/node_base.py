@@ -98,7 +98,7 @@ def upstream_rename_map(upstream_node) -> dict:
         mapping = changes.get("rename_mapping")
         if isinstance(mapping, dict):
             return {str(old): str(new) for old, new in mapping.items() if new}
-    # Normalize Columns derives its mapping from its rules.
+    # Normalize derives its mapping from its rules.
     current_mapping = getattr(content, "_current_mapping", None)
     if callable(current_mapping):
         try:
@@ -818,6 +818,10 @@ class TriggerNode(Node):
         res = super().deserialize(data, hashmap, restore_id)
         # print("Deserialized CalcNode '%s'" %
         #       self.__class__.__name__, "res:", res)
+        # The file carries the title it was saved with, so a node type that has
+        # since been renamed would come back under its old name. The class owns
+        # the current name (TriggerNode_Unknown keeps the saved one instead).
+        self.title = self.__class__.node_title
         return res
 
     def get_code(self) -> str:

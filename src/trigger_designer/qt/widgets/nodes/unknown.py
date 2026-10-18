@@ -96,6 +96,12 @@ class TriggerNode_Unknown(TriggerNode):
         self, data: dict, hashmap: dict = {}, restore_id: bool = True
     ) -> bool:
         res = super().deserialize(data, hashmap, restore_id)
+        # This type stands in for a node that cannot be resolved, so the name
+        # the file saved is the only name it has: restore what the base class
+        # just replaced with "Unknown".
+        saved_title = data.get("title")
+        if saved_title:
+            self.title = saved_title
         op = data.get("op")
         if not op:
             # Deferred import: this module is imported during registry

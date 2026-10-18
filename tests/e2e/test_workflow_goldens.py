@@ -110,3 +110,14 @@ def test_all_node_workflow_runs_every_node(qtbot, tmp_path, no_modal_dialogs) ->
     run_workflow_and_wait(qtbot, window, timeout_ms=180_000)
     _assert_run_clean(window)
     assert len(window.getAllNodes()) >= 20, "sample workflow shrank unexpectedly"
+
+    # Names come from the node classes, not from the file. This sample was
+    # saved before "Count Records" became "Count", so a load must not bring
+    # the old name back.
+    assert nodes_titled(window, "Count"), "the Count node lost its name"
+    stale = [
+        node.title
+        for node in window.getAllNodes()
+        if node.title != node.__class__.node_title
+    ]
+    assert stale == [], f"nodes kept a name their type no longer uses: {stale}"
