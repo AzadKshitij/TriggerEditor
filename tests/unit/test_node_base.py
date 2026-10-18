@@ -22,7 +22,9 @@ APP = QApplication.instance() or QApplication([])
 
 def test_clear_input_widgets_ignores_deleted_qt_wrappers() -> None:
     handler = TriggerChangeHandler(
-        scene=SimpleNamespace(history=SimpleNamespace(storeHistory=lambda *args, **kwargs: None)),
+        scene=SimpleNamespace(
+            history=SimpleNamespace(storeHistory=lambda *args, **kwargs: None)
+        ),
         node=SimpleNamespace(),
     )
 

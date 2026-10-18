@@ -94,6 +94,25 @@ src = ["src", "tests"]
 source = ["trigger_designer"]
 branch = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Layers are marked automatically from the directory a test lives in
+# (see tests/conftest.py); `--strict-markers` keeps a typo from silently
+# creating an unselectable layer.
+addopts = "-ra --strict-markers"
+qt_api = "pyqt6"
+# A hung test is the failure mode that used to make this suite look slow:
+# one demo ran app.exec_() for ever. Per-test, with a thread dump on expiry.
+timeout = 120
+timeout_method = "thread"
+markers = [
+    "unit: logic tests - no widget layouts, no real windows",
+    "ui: offscreen widget behaviour through pytest-qt",
+    "e2e: checked-in workflow files loaded and run through the real app",
+    "benchmark: memory or wall-clock measurements, skipped without --run-benchmarks",
+    "slow: takes noticeably longer than the layer's typical test",
+]
+
 [dependency-groups]
 dev = [
     "autotyping==24.9.0",
@@ -102,6 +121,9 @@ dev = [
     "pre-commit==4.6.2",
     "pyinstaller==6.22.3",
     "pytest==9.1.1",
+    "pytest-qt==4.5.0",
+    "pytest-timeout==2.4.0",
+    "pytest-xdist==3.8.0",
     "ruff==0.16.9",
     "ty==0.0.84",
 ]

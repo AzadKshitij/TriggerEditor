@@ -144,9 +144,7 @@ def _date_chain():
     parent = QMainWindow()
     window = TriggerSubWindow(parent)
     scene = window.scene
-    stub = _stub_node(
-        scene, pl.DataFrame({"day": ["2024-01-01", "2024-02-15"]}).lazy()
-    )
+    stub = _stub_node(scene, pl.DataFrame({"day": ["2024-01-01", "2024-02-15"]}).lazy())
     up = _select_node(scene)
     Edge(scene, stub.outputs[0], up.inputs[0])
     up.content.changes["dtype_mapping"] = {"day": "Date"}

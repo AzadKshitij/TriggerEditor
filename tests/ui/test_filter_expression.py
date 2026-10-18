@@ -128,13 +128,18 @@ def _set_cursor_position(widget, position: int) -> None:
     widget.setTextCursor(cursor)
 
 
+def _switch_mode(content, label: str) -> None:
+    """Drive the mode switch through its button, as a user would."""
+    content.mode_selector._buttons[label].click()
+
+
 def test_commit_preserves_caret_position() -> None:
-    parent, window, content = _make_content()
+    parent, _window, content = _make_content()
     host = QWidget(parent)
     content.create_layout(QVBoxLayout(host))
 
     # Expression editor: caret mid-text survives a commit + sync round-trip.
-    content.mode_selector.setCurrentText("Expression")
+    _switch_mode(content, "Expression")
     editor = content.expression_input.editor
     content.expression_input.set_text("[order_value] > 100")
     _set_cursor_position(editor, 5)
@@ -143,7 +148,7 @@ def test_commit_preserves_caret_position() -> None:
     assert content.expression == "[order_value] > 100"
 
     # Builder value box: same guarantee through the sync path.
-    content.mode_selector.setCurrentText("Simple")
+    _switch_mode(content, "Simple")
     content.value_input.setText("250")
     content.value_input.setCursorPosition(1)
     content._sync_widgets_from_model()

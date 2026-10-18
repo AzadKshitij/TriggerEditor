@@ -16,6 +16,7 @@ sys.path.insert(
 
 import polars as pl
 import pytest
+from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QMainWindow
 
 from trigger_designer.qt.design_window import TriggerSubWindow
@@ -33,17 +34,29 @@ APP = QApplication.instance() or QApplication([])
 
 
 @pytest.fixture
-def window():
+def main_window():
+    """The MDI main window the subwindow hangs off.
+
+    Kept as its own fixture so it outlives ``window``: the subwindow and the
+    dock are C++ children, and a parent collected by garbage collection would
+    delete them mid-teardown.
+    """
+    parent = QMainWindow()
+    parent.configDock = ConfigDock(parent)
+    yield parent
+    parent.deleteLater()
+    QApplication.sendPostedEvents(parent, QEvent.Type.DeferredDelete)
+
+
+@pytest.fixture
+def window(main_window):
     # Mirror the real hierarchy: the MDI subwindow's parent is the main
     # window, and refreshConfigDock walks parentWidget() looking for
     # configDock.
-    parent = QMainWindow()
-    dock = ConfigDock(parent)
-    parent.configDock = dock
-    win = TriggerSubWindow(parent)
+    win = TriggerSubWindow(main_window)
     yield win
-    win.close()
     win.deleteLater()
+    QApplication.sendPostedEvents(win, QEvent.Type.DeferredDelete)
 
 
 @pytest.fixture

@@ -5,19 +5,15 @@ This script demonstrates the logging dock integration with design windows.
 """
 
 import sys
-import os
 
-# Add the src directory to the Python path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-
-from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import QTimer
+from qtpy.QtWidgets import QApplication
 
 from trigger_designer.qt.main_window import TriggerWindow
 
 
-def test_logging_functionality():
-    """Test the logging dock functionality"""
+def run_logging_demo():
+    """Manual demo (not collected by pytest: it runs the event loop)."""
     app = QApplication(sys.argv)
 
     # Create main window
@@ -95,4 +91,4 @@ def test_logging_functionality():
 
 
 if __name__ == "__main__":
-    sys.exit(test_logging_functionality())
+    sys.exit(run_logging_demo())
