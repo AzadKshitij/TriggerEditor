@@ -6,9 +6,15 @@ Edit / Window / Help keep their actions, shortcuts and Alt mnemonics - Qt routes
 Alt to a visible menu bar wherever it lives (guarded by
 ``tests/ui/test_window_chrome.py``).
 
-Pure Qt, no Win32 calls: dragging and edge resizing are handed to the native
-window manager through ``QWindow.startSystemMove()`` / ``startSystemResize()``,
-so snap, restore-from-maximized and the resize loop behave like a real caption.
+Drawing the caption ourselves costs the window its Windows behaviour: a
+frameless popup gets no snap previews, no Snap Layouts flyout over the maximize
+button, no DWM shadow and no rounded corners. On Windows the row hands those
+jobs back to the system - ``qt/helpers/win_caption.py`` gives the window a real
+frame and answers ``WM_NCCALCSIZE`` / ``WM_NCHITTEST``, so Windows owns
+dragging, resizing, the caption buttons and the system menu while this widget
+keeps drawing them. Everywhere else the Qt path stays: dragging and edge
+resizing go through ``QWindow.startSystemMove()`` / ``startSystemResize()``,
+which is what those platforms offer.
 
 Trap: once a custom widget owns the menu slot, ``QMainWindow.menuBar()`` returns
 a *new* empty bar and swaps the chrome out of the window.
@@ -22,7 +28,7 @@ from collections.abc import Callable
 from typing import ClassVar
 
 from loguru import logger
-from qtpy.QtCore import QEvent, QObject, QPoint, QPointF, QSize, Qt
+from qtpy.QtCore import QEvent, QObject, QPoint, QPointF, QRect, QSize, Qt, QTimer
 from qtpy.QtGui import (
     QColor,
     QFontMetrics,
@@ -43,6 +49,12 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.qt.helpers.win_caption import (
+    CaptionRegions,
+    WinCaption,
+    caption_button_for_code,
+    native_caption_supported,
+)
 from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.widgets.common.config_widgets import ICON_SIZE, IconButton
 
@@ -53,6 +65,8 @@ CAPTION_BUTTON_W = 44
 RESIZE_MARGIN = 5
 #: App-icon slot: the 16px icon plus the gap before the menus.
 _ICON_SLOT_W = 32
+#: How often a lit caption button re-checks where the pointer is, in ms.
+_NATIVE_WATCH_MS = 120
 
 # -- caption glyphs -----------------------------------------------------------
 #
@@ -139,6 +153,31 @@ class CaptionButton(IconButton):
         self.setAccessibleName(tooltip)
         self.apply_theme()
 
+    def set_native_visual(self, *, hovered: bool, pressed: bool) -> None:
+        """Paint the hover/pressed look Windows reported, through base.qss.
+
+        Qt's own ``:hover`` cannot be switched on from a non-client message -
+        the style reads it from a real mouse move, and Windows owns these
+        pixels now - so base.qss restates both states against these two
+        properties and the widget is repolished when they change. ``setDown``
+        is deliberately not used: Windows carries the click out itself and a
+        minimized window never reports the button up, which left the button
+        painted pressed for good.
+        """
+        hovered = bool(hovered)
+        pressed = bool(pressed)
+        if (
+            bool(self.property("nativeHover")) == hovered
+            and bool(self.property("nativePress")) == pressed
+        ):
+            return
+        self.setProperty("nativeHover", hovered)
+        self.setProperty("nativePress", pressed)
+        style = self.style()
+        style.unpolish(self)
+        style.polish(self)
+        self.update()
+
     def apply_theme(self) -> None:
         color = get_theme_manager().color("text_secondary", "#c6cdd5")
         self.setIcon(caption_icon(self._glyph, color))
@@ -206,6 +245,11 @@ class WindowChrome(QWidget):
         self._minimize_button = CaptionButton("minimize", "Minimize", parent=self)
         self._maximize_button = CaptionButton("maximize", "Maximize", parent=self)
         self._close_button = CaptionButton("close", "Close", danger=True, parent=self)
+        self._caption_buttons: dict[str, CaptionButton] = {
+            "minimize": self._minimize_button,
+            "maximize": self._maximize_button,
+            "close": self._close_button,
+        }
         for button in (
             self._minimize_button,
             self._maximize_button,
@@ -224,6 +268,17 @@ class WindowChrome(QWidget):
         #: Kept as an attribute so the filter cannot be collected; its Qt
         #: parent is the window.
         self.resizer: _ResizeEdgeFilter | None = None
+        #: The Win32 caption, attached by install_window_chrome() on Windows:
+        #: it owns the frame styles and the non-client messages.
+        self.caption: WinCaption | None = None
+        #: Caption button Windows currently reports as hovered or pressed. A
+        #: click inside HTMAXBUTTON never reaches Qt, so both looks are driven
+        #: from WM_NCMOUSEMOVE / WM_NCLBUTTONDOWN and painted through the two
+        #: properties base.qss keys on.
+        self._native_hover: CaptionButton | None = None
+        self._native_pressed: CaptionButton | None = None
+        #: Runs while a caption button is lit, to notice the cursor leaving.
+        self._native_watch: QTimer | None = None
 
         self.apply_theme()
         self._refresh_icon()
@@ -235,6 +290,10 @@ class WindowChrome(QWidget):
     def menu_bar(self) -> QMenuBar:
         """The window's real menu bar, now living inside the chrome row."""
         return self._menu_bar
+
+    def window(self) -> QMainWindow:
+        """The window the row belongs to."""
+        return self._window
 
     def set_context_title(self, text: str | None) -> None:
         """Show the active document in the middle (``None`` = window title)."""
@@ -253,6 +312,8 @@ class WindowChrome(QWidget):
         self._refresh_icon()
         # Menu padding is themed: the left group may have changed width.
         self._balance_title()
+        if self.caption is not None:
+            self.caption.apply_theme(get_theme_manager().is_dark())
 
     def _left_group_width(self) -> int:
         """Width of the app icon and the menus, left margin included."""
@@ -321,15 +382,164 @@ class WindowChrome(QWidget):
         else:
             self._window.showMaximized()
 
+    def activate_caption_button(self, name: str) -> None:
+        """Run the action a caption button stands for.
+
+        The native caption claims the press and the release itself, so the
+        click never reaches the ``QPushButton``s and this is where Windows'
+        answer to the release lands. Every button runs what its ``clicked``
+        signal does, so a click through the native path and a click through Qt
+        cannot drift apart.
+        """
+        if name == "minimize":
+            self._window.showMinimized()
+        elif name == "maximize":
+            self.toggle_maximized()
+        elif name == "close":
+            self._window.close()
+
+    # -- native caption (Windows) ---------------------------------------------
+
+    def caption_regions(self) -> CaptionRegions:
+        """The row split the way the native hit test has to see it.
+
+        Logical, client-relative rectangles. The resize ring is not in here:
+        ``hit_test`` derives it from the system's own frame metrics, so only
+        the parts that belong to widgets are named.
+        """
+        window = self._window
+
+        def rect_of(widget: QWidget) -> QRect:
+            return QRect(widget.mapTo(window, QPoint(0, 0)), widget.size())
+
+        # No icon on the window means no system-menu slot: the drag area takes
+        # the space instead.
+        icon = (
+            rect_of(self._icon_label) if self._icon_label.isVisibleTo(self) else QRect()
+        )
+        return CaptionRegions(
+            row=self.geometry(),
+            menu=rect_of(self._menu_bar),
+            icon=icon,
+            buttons={
+                name: rect_of(button) for name, button in self._caption_buttons.items()
+            },
+        )
+
+    def native_event(self, event_type: object, message: object) -> tuple[bool, int]:
+        """Route one native message to the Win32 caption, if it is attached."""
+        caption = self.caption
+        if caption is None:
+            return (False, 0)
+        return caption.native_event(event_type, message)
+
+    def native_hover(self, code: int | None) -> None:
+        """Light up the button Windows says the cursor is over."""
+        button = self._caption_button(code)
+        if button is self._native_hover:
+            return
+        self._native_hover = button
+        self._sync_native_look()
+        self._watch_native_hover()
+
+    def native_press(self, code: int | None) -> None:
+        """Mark the button Windows is about to activate, if any."""
+        button = self._caption_button(code)
+        if button is self._native_pressed:
+            return
+        self._native_pressed = button
+        self._sync_native_look()
+        self._watch_native_hover()
+
+    def clear_native_state(self) -> None:
+        """Drop hover and pressed: the window moved, hid or lost the cursor."""
+        self._stop_native_watch()
+        if self._native_hover is None and self._native_pressed is None:
+            return
+        self._native_hover = None
+        self._native_pressed = None
+        self._sync_native_look()
+
+    def _caption_button(self, code: int | None) -> CaptionButton | None:
+        name = caption_button_for_code(code)
+        return None if name is None else self._caption_buttons[name]
+
+    def _sync_native_look(self) -> None:
+        """Hand the current hover/pressed pair to every button.
+
+        The two are independent - a button stays lit while it is held - and
+        base.qss orders the rules so pressed outranks hover.
+        """
+        for button in self._caption_buttons.values():
+            button.set_native_visual(
+                hovered=button is self._native_hover,
+                pressed=button is self._native_pressed,
+            )
+
+    def _watch_native_hover(self) -> None:
+        """Follow the lit button with a pointer check, while one is lit.
+
+        Windows does not report the cursor leaving the caption (see
+        :meth:`WinCaption.pointer_over_buttons`), so the look is dropped once
+        the pointer is no longer on a button. The check only runs while a
+        button is lit, and the first tick that finds the pointer gone stops it.
+        """
+        if self._native_hover is None and self._native_pressed is None:
+            self._stop_native_watch()
+            return
+        if self.caption is None:  # offscreen, or not Windows
+            return
+        watch = self._native_watch
+        if watch is None:
+            watch = self._native_watch = QTimer(self)
+            watch.setInterval(_NATIVE_WATCH_MS)
+            watch.timeout.connect(self._check_native_hover)
+        if not watch.isActive():
+            watch.start()
+
+    def _stop_native_watch(self) -> None:
+        if self._native_watch is not None:
+            self._native_watch.stop()
+
+    def _check_native_hover(self) -> None:
+        """Drop the lit button once the pointer is no longer on one."""
+        caption = self.caption
+        if caption is not None and caption.pointer_over_buttons():
+            return
+        self.clear_native_state()
+
+    def _attach_caption(self) -> None:
+        """Apply the native frame, if this window has one to apply it to."""
+        caption = self.caption
+        if caption is None:
+            return
+        caption.apply_theme(get_theme_manager().is_dark())
+        caption.attach()
+
     # -- events ---------------------------------------------------------------
 
     def eventFilter(self, obj: object, event: QEvent) -> bool:
-        if obj is self._window and event.type() in (
-            QEvent.Type.WindowStateChange,
-            QEvent.Type.Show,
-        ):
-            self._sync_maximize_button()
-            self._refresh_title()
+        if obj is self._window:
+            # Qt throws the HWND away when window flags change; the frame
+            # styles have to be given to the new one.
+            if event.type() in (QEvent.Type.Show, QEvent.Type.WinIdChange):
+                self._attach_caption()
+            if event.type() in (
+                QEvent.Type.WindowStateChange,
+                QEvent.Type.Show,
+                QEvent.Type.Hide,
+                QEvent.Type.WindowDeactivate,
+            ):
+                # Minimizing from the caption button is carried out by Windows
+                # before the button-up arrives, so the lit button is dropped
+                # here rather than left painted for the rest of the session.
+                self.clear_native_state()
+            if event.type() in (
+                QEvent.Type.WindowStateChange,
+                QEvent.Type.Show,
+            ):
+                self._sync_maximize_button()
+                self._refresh_title()
         return super().eventFilter(obj, event)
 
     def resizeEvent(self, event) -> None:
@@ -475,7 +685,9 @@ class _ResizeEdgeFilter(QObject):
 def install_window_chrome(window: QMainWindow) -> WindowChrome:
     """Give ``window`` the single-row chrome.
 
-    Must run after the menus exist and before the window is first shown.
+    Must run after the menus exist and before the window is first shown. On
+    Windows the row also gets its frame styles here, so the window is already
+    snap-capable by the time it appears.
     """
     menu_bar = window.menuBar()  # the real bar must exist before the swap
     chrome = WindowChrome(window, menu_bar)
@@ -484,5 +696,11 @@ def install_window_chrome(window: QMainWindow) -> WindowChrome:
     # setMenuWidget() explicitly hides the previous menu widget - the real
     # QMenuBar, already reparented into the chrome above.
     menu_bar.show()
-    chrome.resizer = _ResizeEdgeFilter(window, menu_bar)
+    if native_caption_supported():
+        # Windows owns dragging, resizing, the caption buttons and the system
+        # menu from here; the Qt-side edge filter would only fight the native
+        # border over the same pixels.
+        chrome.caption = WinCaption(chrome)
+    else:
+        chrome.resizer = _ResizeEdgeFilter(window, menu_bar)
     return chrome

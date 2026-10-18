@@ -193,6 +193,25 @@ class TriggerWindow(
             return chrome.menu_bar()
         return super().menuBar()
 
+    @override
+    def nativeEvent(self, eventType, message):
+        """Hand the Win32 non-client messages to the chrome.
+
+        The chrome answers ``WM_NCCALCSIZE`` / ``WM_NCHITTEST`` so Windows
+        treats the custom row as a real caption: snap, the Snap Layouts
+        flyout, the native edge cursors and the DWM shadow all come from
+        there. Any platform without that layer (and the offscreen plugin the
+        tests use) gets ``(False, 0)``, which is what the base class returns.
+
+        ``super().nativeEvent(...)`` is deliberately not called: on PyQt6 6.8
+        it re-enters the message it was handed and aborts the process
+        (0xC000041D).
+        """
+        chrome = getattr(self, "window_chrome", None)
+        if chrome is None:
+            return False, 0
+        return chrome.native_event(eventType, message)
+
     # -- layout / session -------------------------------------------------
     @override
     def readSettings(self) -> None:

@@ -1,0 +1,194 @@
+{
+  "config": {
+    "label": "baseline",
+    "nodes": 120,
+    "edges": 119,
+    "repeats": 3,
+    "source": "synthetic",
+    "viewport": [
+      1198,
+      798
+    ],
+    "zoom_out_scale": 0.4123
+  },
+  "metrics": {},
+  "zoomed_out.repaint.viewport": {
+    "steps": 10,
+    "ms_median": 402.953,
+    "ms_per_step": 40.2953,
+    "runs_ms": [
+      374.37,
+      402.953,
+      435.718
+    ],
+    "counters": {
+      "paint.background": 10,
+      "paint.edge": 1190,
+      "paint.node.icon": 1200
+    }
+  },
+  "zoomed_out.render.offscreen": {
+    "steps": 10,
+    "ms_median": 328.679,
+    "ms_per_step": 32.8679,
+    "runs_ms": [
+      320.69,
+      328.679,
+      353.705
+    ],
+    "counters": {
+      "paint.background": 10,
+      "paint.edge": 1190,
+      "paint.node.icon": 1200
+    }
+  },
+  "zoomed_out.pan.middle": {
+    "steps": 40,
+    "ms_median": 1292.305,
+    "ms_per_step": 32.3076,
+    "runs_ms": [
+      1078.109,
+      1292.305,
+      2641.85
+    ],
+    "counters": {
+      "event.mouse_move": 40,
+      "paint.background": 40,
+      "paint.edge": 1331,
+      "paint.node.icon": 1299,
+      "view.socket_scan": 40
+    }
+  },
+  "zoomed_out.zoom.ctrl_wheel": {
+    "steps": 24,
+    "ms_median": 1531.701,
+    "ms_per_step": 63.8209,
+    "runs_ms": [
+      1322.74,
+      1531.701,
+      1818.389
+    ],
+    "counters": {
+      "paint.background": 20,
+      "paint.edge": 0,
+      "paint.node.icon": 0
+    }
+  },
+  "zoomed_out.drag.node": {
+    "steps": 30,
+    "ms_median": 0.009,
+    "ms_per_step": 0.0003,
+    "runs_ms": [
+      0.008,
+      0.009,
+      0.025
+    ],
+    "counters": {}
+  },
+  "zoomed_out.rubber_band.select": {
+    "steps": 30,
+    "ms_median": 837.987,
+    "ms_per_step": 27.9329,
+    "runs_ms": [
+      823.467,
+      837.987,
+      959.686
+    ],
+    "counters": {
+      "event.mouse_move": 30,
+      "paint.background": 31,
+      "view.socket_scan": 30
+    }
+  },
+  "zoomed_out.query.items_600": {
+    "steps": 200,
+    "ms_median": 435.844,
+    "ms_per_step": 2.1792,
+    "runs_ms": [
+      412.454,
+      435.844,
+      440.369
+    ],
+    "counters": {}
+  },
+  "zoomed_in.repaint.viewport": {
+    "steps": 10,
+    "ms_median": 92.469,
+    "ms_per_step": 9.2469,
+    "runs_ms": [
+      84.459,
+      92.469,
+      127.201
+    ],
+    "counters": {
+      "paint.background": 10
+    }
+  },
+  "zoomed_in.render.offscreen": {
+    "steps": 10,
+    "ms_median": 46.323,
+    "ms_per_step": 4.6323,
+    "runs_ms": [
+      45.083,
+      46.323,
+      48.046
+    ],
+    "counters": {
+      "paint.background": 10
+    }
+  },
+  "zoomed_in.pan.middle": {
+    "steps": 40,
+    "ms_median": 645.353,
+    "ms_per_step": 16.1338,
+    "runs_ms": [
+      476.769,
+      645.353,
+      678.521
+    ],
+    "counters": {
+      "event.mouse_move": 40,
+      "paint.background": 40,
+      "view.socket_scan": 40
+    }
+  },
+  "zoomed_in.zoom.ctrl_wheel": {
+    "steps": 24,
+    "ms_median": 608.807,
+    "ms_per_step": 25.367,
+    "runs_ms": [
+      578.431,
+      608.807,
+      706.189
+    ],
+    "counters": {
+      "paint.background": 20
+    }
+  },
+  "zoomed_in.rubber_band.select": {
+    "steps": 30,
+    "ms_median": 556.071,
+    "ms_per_step": 18.5357,
+    "runs_ms": [
+      506.37,
+      556.071,
+      566.107
+    ],
+    "counters": {
+      "event.mouse_move": 30,
+      "paint.background": 31,
+      "view.socket_scan": 30
+    }
+  },
+  "zoomed_in.query.items_600": {
+    "steps": 200,
+    "ms_median": 627.899,
+    "ms_per_step": 3.1395,
+    "runs_ms": [
+      500.337,
+      627.899,
+      980.089
+    ],
+    "counters": {}
+  }
+}

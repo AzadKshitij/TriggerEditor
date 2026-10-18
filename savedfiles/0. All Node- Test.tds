@@ -601,7 +601,7 @@
     },
     {
       "id": 2327088172912,
-      "title": "Count Records",
+      "title": "Count",
       "pos_x": 76.56249999999999,
       "pos_y": -149.99999999999997,
       "inputs": [
@@ -677,7 +677,7 @@
     },
     {
       "id": 2976902487312,
-      "title": "GroupBy",
+      "title": "Aggregate",
       "pos_x": -210.0,
       "pos_y": 218.0,
       "inputs": [
@@ -1987,6 +1987,44 @@
       "node_code": 1,
       "node_type": "preparation",
       "op": "preparation.cleansing"
+    },
+    {
+      "id": 2806270209040,
+      "title": "Graph",
+      "pos_x": -209.8083496093749,
+      "pos_y": -556.9458007812495,
+      "inputs": [
+        {
+          "id": 2806334446544,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2806334446864,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "graph_type": "line",
+        "x_column": "Relevancy Score",
+        "y_column": "Hot Keyword",
+        "title": "",
+        "color_column": "",
+        "aggregation": ""
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "report",
+      "op": "report.graph"
     }
   ],
   "edges": [
@@ -2253,12 +2291,20 @@
       "end": 1265987988656,
       "label": "",
       "input_index": 0
+    },
+    {
+      "id": 2804537932368,
+      "edge_type": 5,
+      "start": 2485739491632,
+      "end": 2806334446544,
+      "label": "",
+      "input_index": 0
     }
   ],
   "groups": [],
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-17T17:27:47Z"
+    "saved_at": "2026-10-18T11:32:48Z"
   }
 }

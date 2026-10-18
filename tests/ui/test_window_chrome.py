@@ -27,6 +27,7 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication, QLabel, QMenu
 
+from trigger_designer.qt.helpers.win_caption import HTCLOSE, HTMAXBUTTON
 from trigger_designer.qt.main_window import TriggerWindow
 from trigger_designer.qt.widgets.common.window_chrome import CHROME_H, CaptionButton
 
@@ -128,6 +129,74 @@ class TestWindowChrome(unittest.TestCase):
         self.assertTrue(self.window.isMinimized())
         self.window.showNormal()
         _APP.processEvents()
+
+    def test_native_hover_and_press_are_style_properties(self) -> None:
+        """Windows owns the caption pixels, so its look arrives as messages.
+
+        Qt's ``:hover`` never sees a non-client move, so base.qss restates the
+        two states against ``nativeHover`` / ``nativePress``. ``setDown`` is
+        deliberately not used: Windows carries the click out itself, and a
+        window minimized from the button never reports the button up.
+        """
+        maximize = self._button("Maximize")
+        close = self._button("Close")
+
+        self.chrome.native_hover(HTMAXBUTTON)
+        self.assertTrue(maximize.property("nativeHover"))
+        self.assertFalse(maximize.isDown())
+
+        self.chrome.native_press(HTMAXBUTTON)
+        self.assertTrue(maximize.property("nativePress"))
+        # Pressed and hovered are independent: the lit button stays lit.
+        self.assertTrue(maximize.property("nativeHover"))
+        self.assertFalse(maximize.isDown())
+
+        self.chrome.native_hover(HTCLOSE)
+        self.assertFalse(maximize.property("nativeHover"))
+        self.assertTrue(close.property("nativeHover"))
+        self.assertTrue(maximize.property("nativePress"))
+
+        self.chrome.native_press(None)
+        self.assertFalse(maximize.property("nativePress"))
+        self.assertTrue(close.property("nativeHover"))
+
+        # A state change - minimize above all - drops the lit button.
+        self.chrome.clear_native_state()
+        for button in (maximize, close):
+            self.assertFalse(button.property("nativeHover"))
+            self.assertFalse(button.property("nativePress"))
+
+    def test_a_lit_button_is_dropped_once_the_pointer_leaves(self) -> None:
+        """Windows never reports the cursor leaving the caption.
+
+        The frame is claimed whole by ``WM_NCCALCSIZE``, so the window has no
+        non-client area to leave and the tracking message never arrives. While
+        a button is lit the chrome asks the caption where the pointer is, and
+        drops the look as soon as it is off the buttons.
+        """
+
+        class _Caption:
+            def __init__(self) -> None:
+                self.over = True
+
+            def pointer_over_buttons(self) -> bool:
+                return self.over
+
+        caption = _Caption()
+        self.chrome.caption = caption  # type: ignore[assignment]
+        maximize = self._button("Maximize")
+
+        self.chrome.native_hover(HTMAXBUTTON)
+        self.assertTrue(self.chrome._native_watch is not None)
+        self.assertTrue(self.chrome._native_watch.isActive())
+        self.chrome._check_native_hover()
+        self.assertTrue(maximize.property("nativeHover"))
+
+        caption.over = False
+        self.chrome._check_native_hover()
+        self.assertFalse(maximize.property("nativeHover"))
+        self.assertFalse(self.chrome._native_watch.isActive())
+        self.chrome.caption = None
 
     def test_double_click_on_the_row_toggles_maximized(self) -> None:
         point = QPoint(self.chrome.width() // 2, CHROME_H // 2)

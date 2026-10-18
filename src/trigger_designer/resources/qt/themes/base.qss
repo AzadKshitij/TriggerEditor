@@ -324,6 +324,16 @@ QPushButton#WindowChromeButton {{
   QPushButton#WindowChromeButton[danger="true"]:pressed {{
     background-color: {danger};
     border: none; }}
+  QPushButton#WindowChromeButton[nativeHover="true"] {{
+    background-color: {background_hover};
+    border: none; }}
+  QPushButton#WindowChromeButton[nativePress="true"] {{
+    background-color: {background_pressed};
+    border: none; }}
+  QPushButton#WindowChromeButton[danger="true"][nativeHover="true"],
+  QPushButton#WindowChromeButton[danger="true"][nativePress="true"] {{
+    background-color: {danger};
+    border: none; }}
 
 /* QMenu ------------------------------------------------------------------
 

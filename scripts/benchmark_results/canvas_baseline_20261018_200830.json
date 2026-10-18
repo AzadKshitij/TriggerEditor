@@ -1,0 +1,229 @@
+{
+  "config": {
+    "label": "baseline",
+    "nodes": 120,
+    "edges": 119,
+    "repeats": 3,
+    "source": "synthetic",
+    "viewport": [
+      1198,
+      798
+    ],
+    "zoom_out_scale": 0.4123
+  },
+  "metrics": {},
+  "zoomed_out.repaint.viewport": {
+    "steps": 10,
+    "ms_median": 377.744,
+    "ms_per_step": 37.7744,
+    "runs_ms": [
+      370.843,
+      377.744,
+      420.602
+    ],
+    "counters": {
+      "paint.background": 10,
+      "paint.edge": 1190,
+      "paint.node.icon": 1200
+    }
+  },
+  "zoomed_out.render.offscreen": {
+    "steps": 10,
+    "ms_median": 288.29,
+    "ms_per_step": 28.829,
+    "runs_ms": [
+      283.368,
+      288.29,
+      315.949
+    ],
+    "counters": {
+      "paint.background": 10,
+      "paint.edge": 1190,
+      "paint.node.icon": 1200
+    }
+  },
+  "zoomed_out.pan.middle": {
+    "steps": 40,
+    "ms_median": 1390.068,
+    "ms_per_step": 34.7517,
+    "runs_ms": [
+      1373.408,
+      1390.068,
+      1398.881
+    ],
+    "counters": {
+      "event.mouse_move": 40,
+      "paint.background": 40,
+      "paint.edge": 3805,
+      "paint.node.icon": 3743,
+      "view.socket_scan": 40
+    }
+  },
+  "zoomed_out.zoom.ctrl_wheel": {
+    "steps": 24,
+    "ms_median": 1017.87,
+    "ms_per_step": 42.4112,
+    "runs_ms": [
+      1009.227,
+      1017.87,
+      1026.256
+    ],
+    "counters": {
+      "paint.background": 20,
+      "paint.edge": 3,
+      "paint.node.icon": 2
+    }
+  },
+  "zoomed_out.drag.node": {
+    "steps": 30,
+    "ms_median": 1315.843,
+    "ms_per_step": 43.8614,
+    "runs_ms": [
+      1295.062,
+      1315.843,
+      1323.873
+    ],
+    "counters": {
+      "event.mouse_move": 30,
+      "paint.background": 31,
+      "paint.edge": 3689,
+      "paint.node.icon": 3720,
+      "view.socket_scan": 30
+    }
+  },
+  "zoomed_out.rubber_band.select": {
+    "steps": 30,
+    "ms_median": 2189.936,
+    "ms_per_step": 72.9979,
+    "runs_ms": [
+      1799.859,
+      2189.936,
+      2599.275
+    ],
+    "counters": {
+      "event.mouse_move": 30,
+      "paint.background": 31,
+      "paint.edge": 3689,
+      "paint.node.icon": 3720,
+      "view.socket_scan": 30
+    }
+  },
+  "zoomed_out.query.items_600": {
+    "steps": 200,
+    "ms_median": 514.619,
+    "ms_per_step": 2.5731,
+    "runs_ms": [
+      470.639,
+      514.619,
+      546.932
+    ],
+    "counters": {}
+  },
+  "zoomed_in.repaint.viewport": {
+    "steps": 10,
+    "ms_median": 148.66,
+    "ms_per_step": 14.866,
+    "runs_ms": [
+      147.764,
+      148.66,
+      157.805
+    ],
+    "counters": {
+      "paint.background": 10,
+      "paint.edge": 380,
+      "paint.node.icon": 360
+    }
+  },
+  "zoomed_in.render.offscreen": {
+    "steps": 10,
+    "ms_median": 114.861,
+    "ms_per_step": 11.4861,
+    "runs_ms": [
+      103.88,
+      114.861,
+      136.253
+    ],
+    "counters": {
+      "paint.background": 10,
+      "paint.edge": 380,
+      "paint.node.icon": 360
+    }
+  },
+  "zoomed_in.pan.middle": {
+    "steps": 40,
+    "ms_median": 700.651,
+    "ms_per_step": 17.5163,
+    "runs_ms": [
+      690.414,
+      700.651,
+      701.979
+    ],
+    "counters": {
+      "event.mouse_move": 40,
+      "paint.background": 40,
+      "paint.edge": 1331,
+      "paint.node.icon": 1129,
+      "view.socket_scan": 40
+    }
+  },
+  "zoomed_in.zoom.ctrl_wheel": {
+    "steps": 24,
+    "ms_median": 505.644,
+    "ms_per_step": 21.0685,
+    "runs_ms": [
+      493.182,
+      505.644,
+      513.571
+    ],
+    "counters": {
+      "paint.background": 20,
+      "paint.edge": 6,
+      "paint.node.icon": 10
+    }
+  },
+  "zoomed_in.drag.node": {
+    "steps": 30,
+    "ms_median": 656.905,
+    "ms_per_step": 21.8968,
+    "runs_ms": [
+      637.877,
+      656.905,
+      662.735
+    ],
+    "counters": {
+      "event.mouse_move": 30,
+      "paint.background": 31,
+      "paint.edge": 1023,
+      "paint.node.icon": 806,
+      "view.socket_scan": 30
+    }
+  },
+  "zoomed_in.rubber_band.select": {
+    "steps": 30,
+    "ms_median": 741.008,
+    "ms_per_step": 24.7003,
+    "runs_ms": [
+      740.342,
+      741.008,
+      796.997
+    ],
+    "counters": {
+      "event.mouse_move": 30,
+      "paint.background": 31,
+      "paint.edge": 806,
+      "paint.node.icon": 775,
+      "view.socket_scan": 30
+    }
+  },
+  "zoomed_in.query.items_600": {
+    "steps": 200,
+    "ms_median": 627.673,
+    "ms_per_step": 3.1384,
+    "runs_ms": [
+      483.189,
+      627.673,
+      696.461
+    ],
+    "counters": {}
+  }
+}

@@ -6938,8 +6938,8 @@
     {
       "id": 1678024014288,
       "title": "Graph",
-      "pos_x": 6342.773437499997,
-      "pos_y": -51.269531249999986,
+      "pos_x": 6338.762268066403,
+      "pos_y": -115.03790283203125,
       "inputs": [
         {
           "id": 1681423274928,
@@ -6963,7 +6963,7 @@
         "x_column": "metric",
         "y_column": "value",
         "title": "Graph",
-        "color_column": "value",
+        "color_column": "",
         "aggregation": ""
       },
       "label_text": "",
@@ -7779,6 +7779,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-18T10:49:53Z"
+    "saved_at": "2026-10-18T14:47:50Z"
   }
 }

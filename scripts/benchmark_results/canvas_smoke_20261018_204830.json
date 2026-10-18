@@ -1,0 +1,196 @@
+{
+  "config": {
+    "label": "smoke",
+    "nodes": 8,
+    "edges": 7,
+    "repeats": 1,
+    "source": "synthetic",
+    "viewport": [
+      1198,
+      798
+    ],
+    "zoom_out_scale": 1.2563
+  },
+  "metrics": {
+    "zoomed_out.repaint.viewport": {
+      "steps": 10,
+      "ms_median": 59.919,
+      "ms_per_step": 5.9919,
+      "runs_ms": [
+        59.919
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 70,
+        "paint.node.icon": 80
+      }
+    },
+    "zoomed_out.render.offscreen": {
+      "steps": 10,
+      "ms_median": 50.394,
+      "ms_per_step": 5.0394,
+      "runs_ms": [
+        50.394
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 70,
+        "paint.node.icon": 80
+      }
+    },
+    "zoomed_out.pan.middle": {
+      "steps": 6,
+      "ms_median": 55.97,
+      "ms_per_step": 9.3283,
+      "runs_ms": [
+        55.97
+      ],
+      "counters": {
+        "event.mouse_move": 6,
+        "paint.background": 6,
+        "paint.edge": 42,
+        "paint.node.icon": 48
+      }
+    },
+    "zoomed_out.zoom.ctrl_wheel": {
+      "steps": 12,
+      "ms_median": 78.958,
+      "ms_per_step": 6.5799,
+      "runs_ms": [
+        78.958
+      ],
+      "counters": {
+        "paint.background": 12,
+        "paint.edge": 1,
+        "paint.node.icon": 3
+      }
+    },
+    "zoomed_out.drag.node": {
+      "steps": 6,
+      "ms_median": 28.675,
+      "ms_per_step": 4.7792,
+      "runs_ms": [
+        28.675
+      ],
+      "counters": {
+        "event.mouse_move": 6,
+        "paint.background": 7,
+        "paint.edge": 28,
+        "paint.node.icon": 21
+      }
+    },
+    "zoomed_out.rubber_band.select": {
+      "steps": 6,
+      "ms_median": 52.955,
+      "ms_per_step": 8.8259,
+      "runs_ms": [
+        52.955
+      ],
+      "counters": {
+        "event.mouse_move": 6,
+        "paint.background": 7,
+        "paint.edge": 40,
+        "paint.node.icon": 41
+      }
+    },
+    "zoomed_out.query.items_600": {
+      "steps": 6,
+      "ms_median": 3.48,
+      "ms_per_step": 0.58,
+      "runs_ms": [
+        3.48
+      ],
+      "counters": {}
+    },
+    "zoomed_in.repaint.viewport": {
+      "steps": 10,
+      "ms_median": 52.088,
+      "ms_per_step": 5.2088,
+      "runs_ms": [
+        52.088
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 70,
+        "paint.node.icon": 80
+      }
+    },
+    "zoomed_in.render.offscreen": {
+      "steps": 10,
+      "ms_median": 32.746,
+      "ms_per_step": 3.2746,
+      "runs_ms": [
+        32.746
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 70,
+        "paint.node.icon": 80
+      }
+    },
+    "zoomed_in.pan.middle": {
+      "steps": 6,
+      "ms_median": 31.726,
+      "ms_per_step": 5.2877,
+      "runs_ms": [
+        31.726
+      ],
+      "counters": {
+        "event.mouse_move": 6,
+        "paint.background": 6,
+        "paint.edge": 42,
+        "paint.node.icon": 48
+      }
+    },
+    "zoomed_in.zoom.ctrl_wheel": {
+      "steps": 12,
+      "ms_median": 74.245,
+      "ms_per_step": 6.1871,
+      "runs_ms": [
+        74.245
+      ],
+      "counters": {
+        "paint.background": 12,
+        "paint.edge": 1,
+        "paint.node.icon": 1
+      }
+    },
+    "zoomed_in.drag.node": {
+      "steps": 6,
+      "ms_median": 14.616,
+      "ms_per_step": 2.4359,
+      "runs_ms": [
+        14.616
+      ],
+      "counters": {
+        "event.mouse_move": 6,
+        "paint.background": 7,
+        "paint.edge": 28,
+        "paint.node.icon": 21
+      }
+    },
+    "zoomed_in.rubber_band.select": {
+      "steps": 6,
+      "ms_median": 46.749,
+      "ms_per_step": 7.7915,
+      "runs_ms": [
+        46.749
+      ],
+      "counters": {
+        "event.mouse_move": 6,
+        "paint.background": 7,
+        "paint.edge": 40,
+        "paint.node.icon": 41
+      }
+    },
+    "zoomed_in.query.items_600": {
+      "steps": 6,
+      "ms_median": 1.812,
+      "ms_per_step": 0.302,
+      "runs_ms": [
+        1.812
+      ],
+      "counters": {}
+    }
+  }
+}
