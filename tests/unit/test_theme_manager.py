@@ -235,6 +235,19 @@ def test_available_themes_lists_builtins_and_user(theme_manager: ThemeManager) -
     assert {"dark", "light", "mine"} <= ids
 
 
+def test_apply_without_persist_switches_only_for_the_session(
+    theme_manager: ThemeManager,
+) -> None:
+    """An id passed to apply() must be applied even when not remembered."""
+    assert theme_manager.requested_theme_id() == "dark"
+
+    theme = theme_manager.apply("light")
+
+    assert theme.id == "light"
+    assert theme_manager.active_theme().id == "light"
+    assert theme_manager.requested_theme_id() == "dark"
+
+
 def test_workspace_frame_follows_theme(theme_manager: ThemeManager) -> None:
     """QMdiArea paints its own brush, so the window must re-theme it."""
     from trigger_designer.qt.main_window import TriggerWindow

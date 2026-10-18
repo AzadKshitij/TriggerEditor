@@ -1,8 +1,8 @@
 """Theme-token parity guard.
 
 ``base.qss`` is a ``str.format`` template: every ``{token}`` it names must
-exist in both built-in theme JSONs, and both themes must define the same
-tokens, or a theme switch or startup silently changes meaning. This test
+exist in every built-in theme JSON, and all built-in themes must define the
+same tokens, or a theme switch or startup silently changes meaning. This test
 fails fast on a missing or mismatched key instead of leaving it to a runtime
 crash (docs/DESIGN_SYSTEM.md §17).
 
@@ -49,13 +49,18 @@ def _theme_tokens(name: str) -> dict:
     }
 
 
+def _builtin_theme_names() -> list[str]:
+    """Every built-in theme is a JSON file next to ``base.qss``."""
+    return sorted(path.stem for path in THEMES_DIR.glob("*.json"))
+
+
 def test_base_qss_uses_at_least_one_token() -> None:
     assert _qss_tokens(), (
         "base.qss parsed as having no {tokens} - regex or file changed"
     )
 
 
-@pytest.mark.parametrize("theme_name", ["dark", "light"])
+@pytest.mark.parametrize("theme_name", _builtin_theme_names())
 def test_theme_uses_new_schema(theme_name: str) -> None:
     data = _theme_data(theme_name)
     assert data.get("id") == theme_name
@@ -64,28 +69,32 @@ def test_theme_uses_new_schema(theme_name: str) -> None:
     assert isinstance(data.get("tokens"), dict) and data["tokens"]
 
 
-@pytest.mark.parametrize("theme_name", ["dark", "light"])
+@pytest.mark.parametrize("theme_name", _builtin_theme_names())
 def test_every_qss_token_exists_in_theme(theme_name: str) -> None:
     missing = sorted(_qss_tokens() - set(_theme_tokens(theme_name)))
     assert not missing, f"{theme_name}.json is missing keys used by base.qss: {missing}"
 
 
 def test_theme_key_parity() -> None:
-    dark = set(_theme_tokens("dark"))
-    light = set(_theme_tokens("light"))
-    assert dark == light, (
-        "dark.json and light.json must define the same keys; "
-        f"dark-only={sorted(dark - light)} light-only={sorted(light - dark)}"
+    reference = set(_theme_tokens("dark"))
+    mismatched = {}
+    for name in _builtin_theme_names():
+        keys = set(_theme_tokens(name))
+        if keys != reference:
+            mismatched[name] = sorted(keys ^ reference)
+    assert not mismatched, (
+        "every built-in theme must define the same keys as dark.json; "
+        f"mismatched={mismatched}"
     )
 
 
-# ``#rgb``/``#rrggbb``/``#aarrggbb`` token values, the form both built-ins use.
+# ``#rgb``/``#rrggbb``/``#aarrggbb`` token values, the form the built-ins use.
 _HEX_VALUE_RE = re.compile(
     r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$"
 )
 
 
-@pytest.mark.parametrize("theme_name", ["dark", "light"])
+@pytest.mark.parametrize("theme_name", _builtin_theme_names())
 def test_every_colour_token_is_editor_exposed(theme_name: str) -> None:
     """Every painted colour is editable, and no editor row is empty."""
     from trigger_designer.qt.theme_manager import COLOR_KEYS

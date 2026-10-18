@@ -606,9 +606,12 @@ class ThemeManager(QObject):
     def apply(self, theme_id: str | None = None, *, persist: bool = False) -> Theme:
         """Apply a theme now; optionally remember it as the user's choice."""
         if theme_id is not None:
-            self._preview_id = None
             if persist:
                 self._prefs.set("appearance/theme", theme_id)
+                self._preview_id = None
+            else:
+                # Session-only switch: the stored choice survives a restart.
+                self._preview_id = theme_id
         theme = self.active_theme()
         if self._app is not None:
             self._app.setStyleSheet(self.stylesheet(theme))
