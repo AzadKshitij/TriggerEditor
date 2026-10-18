@@ -28,12 +28,20 @@ class CachedGraphicsEdge(QDMGraphicsEdge):
         return calculator
 
     def setSource(self, x: float, y: float) -> None:
-        super().setSource(x, y)
+        # Invalidate first: the base setter adopts the recomputed path, and it
+        # must not adopt the cache from the previous position.
         self._invalidate_cached_path()
+        super().setSource(x, y)
 
     def setDestination(self, x: float, y: float) -> None:
-        super().setDestination(x, y)
         self._invalidate_cached_path()
+        super().setDestination(x, y)
+
+    def setPositions(self, source, destination) -> None:
+        # A node move sets both ends; invalidate once and let the base setter
+        # adopt the recomputed path once.
+        self._invalidate_cached_path()
+        super().setPositions(source, destination)
 
     def calcPath(self):
         if self._path_dirty or self._cached_path is None:
@@ -90,7 +98,6 @@ class TriggerEdge(Edge):
             stub = self._stub_pos(start_group)
             if stub is not None:
                 source_pos = stub
-        self.grEdge.setSource(*source_pos)
 
         if self.end_socket is not None:
             end_pos = self.end_socket.getSocketPosition()
@@ -100,9 +107,13 @@ class TriggerEdge(Edge):
                 stub = self._stub_pos(end_group)
                 if stub is not None:
                     end_pos = stub
-            self.grEdge.setDestination(*end_pos)
         else:
-            self.grEdge.setDestination(*source_pos)
+            end_pos = source_pos
+
+        # Both ends at once: the graphics edge adopts the recomputed path once
+        # instead of once per end, which halves the route calculations behind a
+        # node move.
+        self.grEdge.setPositions(source_pos, end_pos)
 
         if getattr(self.scene, "_bulk_loading", False):
             self.scene._deferred_edge_updates.add(self)

@@ -34,6 +34,15 @@ $Files = @(
     'node_scene.py'
     'node_content_widget.py'
     'node_editor_window.py'
+    # canvas interactivity (pan/zoom/drag) performance work
+    'node_graphics_view.py'
+    'node_graphics_scene.py'
+    'node_graphics_node.py'
+    'node_icon_graphics_node.py'
+    'node_icon_content_widget.py'
+    'node_graphics_edge.py'
+    'node_graphics_socket.py'
+    'node_node.py'
 )
 
 $dest = Join-Path $PSScriptRoot '..\.venv\Lib\site-packages\nodeeditor'
