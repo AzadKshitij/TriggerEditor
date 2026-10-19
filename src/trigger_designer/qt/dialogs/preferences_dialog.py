@@ -41,6 +41,8 @@ from trigger_designer.qt.node_editor_colors import (
     save_node_editor_colors,
 )
 from trigger_designer.qt.preferences import app_data_dir, get_preferences
+from trigger_designer.qt.render_settings import ELEMENTS as RENDER_ELEMENTS
+from trigger_designer.qt.render_settings import MODES as RENDER_MODES
 from trigger_designer.qt.theme_manager import (
     SYSTEM_THEME_ID,
     ThemeError,
@@ -49,6 +51,7 @@ from trigger_designer.qt.theme_manager import (
 )
 from trigger_designer.qt.widgets.common.config_widgets import (
     ConfigSection,
+    NoWheelComboBox,
     TextButton,
 )
 from trigger_designer.qt.widgets.common.theme_widgets import (
@@ -292,6 +295,52 @@ class PreferencesDialog(QDialog):
         self.show_grid_check.toggled.connect(self._on_show_grid_changed)
         canvas.addWidget(self.show_grid_check)
         layout.addWidget(canvas)
+
+        rendering = ConfigSection("Rendering")
+        threshold_row = QHBoxLayout()
+        threshold_row.setSpacing(6)
+        threshold_label = QLabel("Simplify below")
+        threshold_label.setObjectName("FieldLabel")
+        threshold_label.setMinimumWidth(120)
+        threshold_row.addWidget(threshold_label)
+        self.render_detail_spin = QSpinBox(self)
+        self.render_detail_spin.setObjectName("RenderDetailSpin")
+        self.render_detail_spin.setRange(0, 100)
+        self.render_detail_spin.setSuffix(" %")
+        self.render_detail_spin.setToolTip(
+            "Below this zoom the canvas drops the parts of a node it can spare. "
+            "0 % keeps every node fully drawn."
+        )
+        self.render_detail_spin.valueChanged.connect(self._on_render_threshold_changed)
+        threshold_row.addWidget(self.render_detail_spin)
+        threshold_row.addStretch(1)
+        rendering.addLayout(threshold_row)
+
+        self.render_detail_combos: dict[str, NoWheelComboBox] = {}
+        for key, title in RENDER_ELEMENTS:
+            row = QHBoxLayout()
+            row.setSpacing(6)
+            label = QLabel(title)
+            label.setObjectName("FieldLabel")
+            label.setMinimumWidth(120)
+            row.addWidget(label)
+            combo = NoWheelComboBox(self)
+            combo.setObjectName(f"RenderDetail{key.capitalize()}Combo")
+            combo.setToolTip(
+                f"{title}: Always draws it at every zoom, Never hides it at "
+                "every zoom, and Auto follows the zoom threshold."
+            )
+            for mode in RENDER_MODES:
+                combo.addItem(mode.capitalize(), mode)
+            combo.currentIndexChanged.connect(
+                lambda _index, k=key: self._on_render_mode_changed(k)
+            )
+            row.addWidget(combo)
+            row.addStretch(1)
+            rendering.addLayout(row)
+            self.render_detail_combos[key] = combo
+
+        layout.addWidget(rendering)
         layout.addStretch(1)
         return page
 
@@ -404,6 +453,7 @@ class PreferencesDialog(QDialog):
         )
         self.grid_size_spin.setValue(int(self._prefs.get("editor/grid_size", 20) or 20))
         self.show_grid_check.setChecked(bool(self._prefs.get("editor/show_grid", True)))
+        self._load_render_settings()
         recent = RecentFilesManager()
         self.welcome_check.setChecked(recent.is_welcome_enabled())
         self.recent_limit_spin.setValue(recent.max_items)
@@ -592,6 +642,39 @@ class PreferencesDialog(QDialog):
     def _on_show_grid_changed(self, value: bool) -> None:
         self._prefs.set("editor/show_grid", bool(value))
         self._apply_canvas_settings()
+
+    # -- rendering --------------------------------------------------------
+    def _load_render_settings(self) -> None:
+        """Fill the rendering controls without writing the values back."""
+        self.render_detail_spin.blockSignals(True)
+        self.render_detail_spin.setValue(
+            int(self._prefs.get("editor/render_detail_threshold", 50) or 50)
+        )
+        self.render_detail_spin.blockSignals(False)
+        for key, combo in self.render_detail_combos.items():
+            # No fallback: the defaults live in the preference store, and the
+            # label's default is not "auto" like the others.
+            mode = str(self._prefs.get(f"editor/render_detail_{key}") or "auto")
+            index = combo.findData(mode)
+            combo.blockSignals(True)
+            combo.setCurrentIndex(index if index >= 0 else combo.findData("auto"))
+            combo.blockSignals(False)
+
+    def _on_render_threshold_changed(self, value: int) -> None:
+        self._prefs.set("editor/render_detail_threshold", int(value))
+        self._apply_render_settings()
+
+    def _on_render_mode_changed(self, key: str) -> None:
+        combo = self.render_detail_combos.get(key)
+        mode = combo.currentData() if combo is not None else None
+        if mode:
+            self._prefs.set(f"editor/render_detail_{key}", str(mode))
+        self._apply_render_settings()
+
+    def _apply_render_settings(self) -> None:
+        window = self._window
+        if window is not None and hasattr(window, "apply_render_settings"):
+            window.apply_render_settings()
 
     # -- node colours -----------------------------------------------------
     def _node_colors(self) -> dict[str, dict[str, str]]:

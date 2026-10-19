@@ -1,3 +1,5 @@
+from collections.abc import Mapping
+
 from qtpy.QtGui import QPixmap, QColor, QPen, QPainter, QPainterPath
 from qtpy.QtWidgets import (
     QScrollArea,
@@ -215,6 +217,9 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self.edge_padding = 0
         self.title_horizontal_padding = 8
         self.title_vertical_padding = 10
+        #: Whether the status badge may be drawn. The scene resolves the
+        #: user's choice into this flag (see ``render_settings``).
+        self._badge_visible = True
         # Derived geometry: drop anything cached against the previous size.
         self._bounding_rect = None
         self._shape_path = None
@@ -241,16 +246,21 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
             painter.setPen(self._pen)
             painter.drawPath(self.shape())
 
-        # At low zoom the scene hides every node's content widget, because
-        # rendering a proxy widget per node is what a zoomed-out frame is spent
-        # on. The node's whole look is the icon pixmap that widget holds, so one
-        # scaled blit keeps the graph readable for a fraction of the cost.
-        if not getattr(self, "_detail_visible", True):
+        # The card is the expensive half of a node: rendering a proxy widget
+        # per node is what a zoomed-out frame is spent on. The node's whole
+        # look is the icon pixmap that widget holds, so one scaled blit keeps
+        # the graph readable for a fraction of the cost. Which of the two is
+        # drawn is the user's call (see ``render_settings``).
+        if not getattr(self, "_content_visible", True):
             self._paintLowDetail(painter)
-            return
+        else:
+            # Draw node content
+            super().paint(painter, option, widget)
 
-        # Draw node content
-        super().paint(painter, option, widget)
+        # The status badge is drawn on top of either, so it can outlive the
+        # card and still tell a finished node from a broken one.
+        if not getattr(self, "_badge_visible", True):
+            return
 
         offset = 24.0
         if self.node.isDirty():
@@ -311,6 +321,17 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
         painter.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
         painter.restore()
+
+    def setDetailState(self, state: Mapping[str, bool]) -> None:
+        """Keep the status badge under the user's own control.
+
+        The scene resolves the detail policy into one on/off map per element
+        and hands it to every node. The card, the label and the sockets are
+        the library's own; the status badge is painted here, so this node
+        picks its flag out of the same map.
+        """
+        self._badge_visible = bool(state.get("badge", True))
+        super().setDetailState(state)
 
     def setPenExecuting(self) -> None:
         """Set node border to the running-state token while executing"""

@@ -44,6 +44,11 @@ DEFAULTS: dict[str, Any] = {
     "layout/session": False,
     "editor/grid_size": 20,
     "editor/show_grid": True,
+    "editor/render_detail_threshold": 50,
+    "editor/render_detail_card": "auto",
+    "editor/render_detail_sockets": "auto",
+    "editor/render_detail_label": "always",
+    "editor/render_detail_indicator": "auto",
 }
 
 _MISSING = object()

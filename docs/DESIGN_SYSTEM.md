@@ -369,6 +369,7 @@ Never hand a bare `QStyleOptionComboBox` to `drawComplexControl` — with no `pa
 - Built-ins live in `src/trigger_designer/resources/qt/themes/` (twelve ship: Dark, Light, and the Nord, Dracula, Monokai, Gruvbox Dark, Gruvbox Light, Tokyo Night, Catppuccin Mocha, Catppuccin Latte, Solarized Light and Rose Pine Dawn palettes; every one carries the full token set, and a new built-in is just another JSON file there — discovery is a glob). User themes live in `%APPDATA%\Trigger Designer\themes` (env override `TRIGGER_DESIGNER_DATA_DIR`) and shadow a built-in with the same id. `duplicate_theme` is the supported way to fork a built-in; a shadowing theme must not `extends` the id it shadows (that resolves to itself and is reported as circular).
 - Everything the editor exposes is a **colour** token. Geometry, spacing, control heights and radius are design-system-owned (§§1, 4.1) and intentionally not themeable.
 - Preferences are one INI at `%APPDATA%\Trigger Designer\preferences.ini` (`qt/preferences.py`); the first run migrates the legacy `QSettings` scopes (`Blue Octa/Trigger Designer`, `Trigger/Trigger Designer`, `Trigger/NodeEditor`). Do not add new `QSettings` scopes.
+- The canvas rendering settings live in the same INI under `editor/render_detail_*` and are applied by `qt/render_settings.py`: one threshold (`render_detail_threshold`, a percentage of full size) plus a mode per element (`render_detail_card`, `_sockets`, `_label`, `_indicator`), each `always`, `auto` or `never`. The scene owns the policy (`QDMGraphicsScene.set_detail_policy`) and resolves it into one on/off map per element; the status indicator is painted by this application, so it is registered as the `badge` element.
 - Layout is one auto-saved record (`qt/layout_state.py`): `saveGeometry()` plus `saveState(1)` over stable dock objectNames (`NodesDock`, `ConfigDock`, `LoggingDock`, `DataPreviewDock`), with Window ▸ Save Current Layout / Reset Layout. There are no layout presets and no named workspaces.
 - The last session's file list is captured on close but only reopened when `layout/session` is on; it defaults off ("layout on, files off").
 - `QMdiArea` paints its own `background` brush, which no stylesheet rule reaches: `TriggerWindow._theme_mdi_background()` sets it from `canvas_background`.
@@ -633,7 +634,8 @@ ICON_SIZE = 12
 | `PreferencesSidebar`, `PreferencesPages`, `PreferencesPage` | preferences | item hover, selected |
 | `ThemeList`, `ThemePreview` | preferences | item hover, selected |
 | `ThemeEditorScroll`, `ThemeEditorContent` | theme editor | — |
-| `ThemeNameEdit`, `ThemeAppearanceCombo`, `GridSizeSpin`, `RecentLimitSpin` | preferences / theme editor | hover, focus, disabled |
+| `ThemeNameEdit`, `ThemeAppearanceCombo`, `GridSizeSpin`, `RecentLimitSpin`, `RenderDetailSpin` | preferences / theme editor | hover, focus, disabled |
+| `RenderDetailCardCombo`, `RenderDetailSocketsCombo`, `RenderDetailLabelCombo`, `RenderDetailIndicatorCombo` | preferences | hover, focus, disabled |
 | `ColorHexEdit`, `ColorSwatch`, `ThemeTokenRow`, `ContrastLabel` | theme editor | hover, focus |
 | `FieldLabel`, `FieldHint`, `SectionTitleText` | preferences / theme editor | — |
 | `LogsTextEdit` | logs | — |

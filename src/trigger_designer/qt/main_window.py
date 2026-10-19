@@ -35,6 +35,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
 )
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.theme_manager import (
     apply_theme_to_scene,
     get_theme_manager,
@@ -254,7 +255,20 @@ class TriggerWindow(
         if scene is None:
             return
         apply_theme_to_scene(scene)
+        apply_render_settings_to_scene(scene)
         self._theme_node_rings(scene)
+
+    def apply_render_settings(self) -> None:
+        """Push the user's canvas rendering choices into every open scene.
+
+        Each sub-window owns its own graphics scene, so the settings have to
+        be handed to all of them.
+        """
+        for sub in self.mdiArea.subWindowList():
+            widget = sub.widget()
+            scene = getattr(widget, "scene", None)
+            if scene is not None:
+                apply_render_settings_to_scene(scene)
 
     @staticmethod
     def _theme_node_rings(scene) -> None:

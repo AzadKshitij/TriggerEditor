@@ -40,6 +40,7 @@ from trigger_designer.qt.helpers.eval_progress import (
     make_progress_dialog,
 )
 from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
+from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
@@ -105,6 +106,9 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
         self.scene.addItemSelectedListener(self.onItemSelected)
         self.scene.grScene.socketClicked.connect(self.onSocketClicked)
+        # The canvas rendering settings belong to the scene, so they are applied
+        # here rather than by whoever opens the window.
+        apply_render_settings_to_scene(self.scene)
         self._close_event_listeners: list[Callable] = []
         self._refreshing_config_dock = False
         # self.setAttribute(Qt.WA_DeleteOnClose)

@@ -19,6 +19,11 @@ def test_defaults_when_file_missing(tmp_path) -> None:
     assert prefs.get("layout/session") is False
     assert prefs.get("editor/grid_size") == 20
     assert prefs.get("editor/show_grid") is True
+    assert prefs.get("editor/render_detail_threshold") == 50
+    assert prefs.get("editor/render_detail_card") == "auto"
+    assert prefs.get("editor/render_detail_sockets") == "auto"
+    assert prefs.get("editor/render_detail_label") == "always"
+    assert prefs.get("editor/render_detail_indicator") == "auto"
     assert prefs.get("general/schema_version") == SCHEMA_VERSION
     assert prefs.path.exists()
 
