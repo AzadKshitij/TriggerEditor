@@ -134,6 +134,48 @@ def test_workflow_worker_records_successful_results() -> None:
     assert window.cleanup_calls == []
 
 
+def test_workflow_worker_prunes_results_to_declared_outputs() -> None:
+    import polars as pl
+
+    window = DummyWindow()
+    node = FakeNode("Select", DummyGraphicsNode())
+    node.param = [{"data": None, "variable_name": "out"}]
+    node.value = [{"data": None, "variable_name": "out"}]
+    frame = pl.DataFrame({"x": [1]})
+
+    executor = SimpleNamespace(
+        execute_node=lambda current_node: SimpleNamespace(
+            success=True,
+            variables={"out": 1, "df_for_duck": frame, "pl": pl},
+        )
+    )
+
+    _run_worker_synchronously(window, [node], executor)
+
+    # Only the declared output survives; the temp frame and module do not.
+    assert window.execution_results[node] == {"out": 1}
+
+
+def test_workflow_worker_keeps_previewable_frames_without_declarations() -> None:
+    import polars as pl
+
+    window = DummyWindow()
+    node = FakeNode("Legacy", DummyGraphicsNode())
+    frame = pl.DataFrame({"x": [1]})
+
+    executor = SimpleNamespace(
+        execute_node=lambda current_node: SimpleNamespace(
+            success=True,
+            variables={"temp": 5, "result": frame, "pl": pl},
+        )
+    )
+
+    _run_worker_synchronously(window, [node], executor)
+
+    # No declared outputs: keep the previewable frame, drop the scratch value.
+    assert window.execution_results[node] == {"result": frame}
+
+
 def test_workflow_worker_reports_unexpected_exceptions() -> None:
     messages = []
     original_global_logger = workflow_module.global_logger
@@ -161,6 +203,8 @@ def test_workflow_worker_reports_unexpected_exceptions() -> None:
 def main() -> None:
     test_workflow_worker_logs_failed_results_to_global_logger()
     test_workflow_worker_records_successful_results()
+    test_workflow_worker_prunes_results_to_declared_outputs()
+    test_workflow_worker_keeps_previewable_frames_without_declarations()
     test_workflow_worker_reports_unexpected_exceptions()
     print("ok")
 

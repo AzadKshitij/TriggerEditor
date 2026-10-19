@@ -126,6 +126,29 @@ analysis = Analysis(
     optimize=1,
 )
 
+
+def _is_qt_bloat(entry) -> bool:
+    """True for Qt translation files and the QtPdf module.
+
+    None of these are imported by the app (no QtPdf/QtPrintSupport/QtWebEngine/
+    QtQml anywhere under ``src``), but PyInstaller's Qt hook collects them
+    anyway: ~6 MB of ``.qm`` and ~5 MB of ``Qt6Pdf.dll`` in a real build.
+    Filtering the collected TOC is more robust than reaching into the hook.
+    """
+    for index in (0, 1):  # (dest, src) - check both, dest paths vary per OS
+        if index >= len(entry):
+            continue
+        path = str(entry[index]).replace("\\", "/").lower()
+        if "/translations/" in path and path.endswith(".qm"):
+            return True
+        if path.rsplit("/", 1)[-1] in {"qt6pdf.dll", "qt6pdfwidgets.dll", "qpdf.dll"}:
+            return True
+    return False
+
+
+analysis.datas = [entry for entry in analysis.datas if not _is_qt_bloat(entry)]
+analysis.binaries = [entry for entry in analysis.binaries if not _is_qt_bloat(entry)]
+
 # Python bytecode archive
 pyz = PYZ(analysis.pure)
 

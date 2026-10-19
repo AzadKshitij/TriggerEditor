@@ -41,6 +41,48 @@ def test_stylesheet_formats_without_placeholders(theme_manager: ThemeManager) ->
     assert "background_primary" not in qss
 
 
+def test_base_qss_is_read_once_per_manager(
+    theme_manager: ThemeManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Preview/apply rebuilds the stylesheet often; the file is read once."""
+    reads: list[Path] = []
+    real_read_text = Path.read_text
+
+    def counting_read_text(self: Path, *args, **kwargs):
+        if self.name == "base.qss":
+            reads.append(self)
+        return real_read_text(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", counting_read_text)
+
+    theme_manager.stylesheet_for("dark")
+    theme_manager.stylesheet_for("light")
+
+    assert len(reads) == 1
+
+
+def test_fallback_tokens_are_cached(
+    theme_manager: ThemeManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # Warm the theme and the fallback tokens (both read dark.json today).
+    theme = theme_manager.theme("dark")
+
+    reads: list[Path] = []
+    real_read_data = theme_manager._read_data
+
+    def counting_read_data(path: Path):
+        reads.append(Path(path))
+        return real_read_data(path)
+
+    monkeypatch.setattr(theme_manager, "_read_data", counting_read_data)
+
+    theme_manager.stylesheet(theme)
+    theme_manager.stylesheet(theme)
+
+    # Two stylesheet builds must not re-read the default token file.
+    assert sum(path.name == "dark.json" for path in reads) == 0
+
+
 def test_unknown_theme_falls_back_to_dark(theme_manager: ThemeManager) -> None:
     theme = theme_manager.theme("nope")
     assert theme.error

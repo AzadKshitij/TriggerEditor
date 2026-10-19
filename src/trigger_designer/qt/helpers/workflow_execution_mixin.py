@@ -82,7 +82,9 @@ class WorkflowExecutionMixin:
         node_name = getattr(node, "node_title", node.__class__.__name__)
 
         if result.success:
-            self.execution_results[node] = result.variables
+            self.execution_results[node] = self._prune_node_results(
+                node, result.variables
+            )
             node.grNode.setPenExecuted()
             node.grNode.update()
         else:
@@ -201,22 +203,31 @@ class WorkflowExecutionMixin:
         logger.info("📊 Workflow statistics reset")
         print("📊 Workflow execution statistics have been reset")
 
-    def _get_output_variable_names(self, node: Any) -> list[str]:
-        """Infer output variable names for a node from the latest execution."""
-        node_results = self.execution_results.get(node, {})
+    def _declared_output_variable_names(self, node: Any) -> list[str]:
+        """Output variable names a node declares, in socket order.
+
+        Reads ``node.param`` (what the node stored after its last eval), the
+        evaluated ``node.value`` output list, then the content's own
+        ``variable_name`` / ``*_variable_name`` / ``*_var`` attributes. Unlike
+        :meth:`_get_output_variable_names` this does not need the run results,
+        so it can also drive pruning.
+        """
         variable_names: list[str] = []
+
+        def add(name: Any) -> None:
+            if isinstance(name, str) and name and name not in variable_names:
+                variable_names.append(name)
 
         if hasattr(node, "param"):
             for socket_data in getattr(node, "param", []) or []:
-                if not isinstance(socket_data, dict):
-                    continue
-                var_name = socket_data.get("variable_name")
-                if (
-                    isinstance(var_name, str)
-                    and var_name in node_results
-                    and var_name not in variable_names
-                ):
-                    variable_names.append(var_name)
+                if isinstance(socket_data, dict):
+                    add(socket_data.get("variable_name"))
+
+        value = getattr(node, "value", None)
+        if isinstance(value, list):
+            for entry in value:
+                if isinstance(entry, dict):
+                    add(entry.get("variable_name"))
 
         content = getattr(node, "content", None)
         if content is not None:
@@ -224,19 +235,53 @@ class WorkflowExecutionMixin:
                 if not isinstance(attr_value, str) or attr_name == "incoming_variable":
                     continue
 
-                is_output_name = (
-                    attr_name == "variable_name"
-                    or attr_name.endswith("_variable_name")
-                    or attr_name.endswith("_var")
+                is_output_name = attr_name == "variable_name" or attr_name.endswith(
+                    ("_variable_name", "_var")
                 )
-                if (
-                    is_output_name
-                    and attr_value in node_results
-                    and attr_value not in variable_names
-                ):
-                    variable_names.append(attr_value)
+                if is_output_name:
+                    add(attr_value)
 
         return variable_names
+
+    def _prune_node_results(
+        self, node: Any, variables: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Keep only a node's declared outputs from its run namespace.
+
+        ``result.variables`` is the whole executed namespace, so it also holds
+        temporary frames (``df_for_duck``), imported modules and closed DuckDB
+        handles. ``execution_results`` only feeds socket lookups and the Data
+        Preview, so keep the declared outputs and drop the rest. A node that
+        declares nothing (older content) falls back to the previewable frames,
+        and to the full namespace only when even that finds nothing.
+        """
+        declared = self._declared_output_variable_names(node)
+        pruned = {name: variables[name] for name in declared if name in variables}
+        if pruned:
+            return pruned
+
+        previewable = {
+            name: value
+            for name, value in variables.items()
+            if self._is_previewable_value(value)
+        }
+        return previewable or variables
+
+    @staticmethod
+    def _is_previewable_value(value: Any) -> bool:
+        """True for the values the Data Preview can render."""
+        from trigger_designer.qt.models.preview_sampling import is_previewable
+
+        return is_previewable(value)
+
+    def _get_output_variable_names(self, node: Any) -> list[str]:
+        """Output variable names for a node, restricted to stored results."""
+        node_results = self.execution_results.get(node, {})
+        return [
+            name
+            for name in self._declared_output_variable_names(node)
+            if name in node_results
+        ]
 
     def getSocketData(self, node: Any, socket_index: int) -> Any:  # noqa: N802
         """Return the execution result bound to a socket after workflow run."""

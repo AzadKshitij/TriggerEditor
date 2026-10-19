@@ -244,6 +244,10 @@ class ThemeManager(QObject):
         self._preview_id: str | None = None
         self._cache: dict[str, Theme] = {}
         self._color_cache: dict[tuple[str, str], QColor] = {}
+        # ``base.qss`` and the default theme's tokens are read-only at runtime,
+        # so read them once per manager instead of on every stylesheet build.
+        self._qss_text: str | None = None
+        self._fallback_cache: dict[str, Any] | None = None
         self._active_key: tuple[str, str] | None = None
         self._active_cached: Theme | None = None
         self._system_following = False
@@ -345,11 +349,24 @@ class ThemeManager(QObject):
         return clean
 
     def _fallback_tokens(self) -> dict[str, Any]:
-        path = self._builtin_dir / f"{DEFAULT_THEME_ID}.json"
-        try:
-            return self._extract_tokens(self._read_data(path))
-        except ThemeError:
-            return {}
+        if self._fallback_cache is None:
+            path = self._builtin_dir / f"{DEFAULT_THEME_ID}.json"
+            try:
+                self._fallback_cache = self._extract_tokens(self._read_data(path))
+            except ThemeError:
+                self._fallback_cache = {}
+        # A copy: callers may fold these into a theme's own token map.
+        return dict(self._fallback_cache)
+
+    def _base_qss(self) -> str:
+        """The ``base.qss`` template text, read once per manager."""
+        if self._qss_text is None:
+            qss_path = self._builtin_dir / "base.qss"
+            try:
+                self._qss_text = qss_path.read_text(encoding="utf-8")
+            except OSError as exc:
+                raise ThemeError(f"Unable to read base.qss: {exc}") from exc
+        return self._qss_text
 
     def theme(self, theme_id: str, *, force: bool = False) -> Theme:
         """A raw theme (no accent override) by id, with fallback on error."""
@@ -436,6 +453,9 @@ class ThemeManager(QObject):
             self._cache.pop(theme_id, None)
         else:
             self._cache.clear()
+        # The default theme's tokens back the fallback fill; drop them too so a
+        # changed file is re-read. ``base.qss`` ships fixed, so it stays cached.
+        self._fallback_cache = None
         self._color_cache.clear()
         self._active_cached = None
 
@@ -589,11 +609,7 @@ class ThemeManager(QObject):
     # -- stylesheet + application ----------------------------------------
     def stylesheet(self, theme: Theme | None = None) -> str:
         theme = theme or self.active_theme()
-        qss_path = self._builtin_dir / "base.qss"
-        try:
-            qss = qss_path.read_text(encoding="utf-8")
-        except OSError as exc:
-            raise ThemeError(f"Unable to read base.qss: {exc}") from exc
+        qss = self._base_qss()
         tokens = dict(self._fallback_tokens())
         tokens.update(theme.tokens)
         try:

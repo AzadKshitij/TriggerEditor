@@ -1089,7 +1089,11 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 coalesce=True,  # Coalesce join columns to avoid duplicates
             )
 
-            global_logger.debug(f"🔄 Join: Join operation completed successfully")
+            global_logger.debug("🔄 Join: Join operation completed successfully")
+
+            # Resolve the joined schema once: reading ``LazyFrame.columns``
+            # re-resolves the schema on every access and logs a warning.
+            result_columns = result.collect_schema().names()
 
             # Filter columns based on selected_columns
             if self.selected_columns:
@@ -1100,7 +1104,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         # For left columns, use original name if it's a join key or add suffix if renamed
                         if col_name in left_cols:
                             selected_cols.append(col_name)
-                        elif f"{col_name}{left_suffix}" in result.columns:
+                        elif f"{col_name}{left_suffix}" in result_columns:
                             selected_cols.append(f"{col_name}{left_suffix}")
                         else:
                             selected_cols.append(col_name)
@@ -1108,14 +1112,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         # For right columns, use original name if it's a join key or suffixed name
                         if col_name in right_cols:
                             selected_cols.append(col_name)
-                        elif f"{col_name}{right_suffix}" in result.columns:
+                        elif f"{col_name}{right_suffix}" in result_columns:
                             selected_cols.append(f"{col_name}{right_suffix}")
                         else:
                             selected_cols.append(col_name)
 
                 # Coalescing drops a right key column when key names differ;
                 # its left counterpart holds the same values for matched rows.
-                result_cols = set(result.columns)
+                result_cols = set(result_columns)
                 fixed_cols = []
                 for column in selected_cols:
                     if column not in result_cols and column in right_cols:
@@ -1127,7 +1131,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 selected_cols = [
                     column
                     for index, column in enumerate(selected_cols)
-                    if column in result.columns and column not in selected_cols[:index]
+                    if column in result_columns and column not in selected_cols[:index]
                 ]
             # (self.data is assigned below after the single collect.)
 
@@ -1147,14 +1151,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.data = collected.filter(both_condition).select(selected_cols)
             else:
                 non_indicator_cols = [
-                    col for col in result.columns if not col.startswith("__")
+                    col for col in result_columns if not col.startswith("__")
                 ]
                 self.data = collected.filter(both_condition).select(non_indicator_cols)
 
             # Left-only data
             left_final_cols = [
                 col
-                for col in result.columns
+                for col in result_columns
                 if col in left_columns
                 or (
                     col.endswith(left_suffix)
@@ -1169,7 +1173,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Right-only data
             right_final_cols = [
                 col
-                for col in result.columns
+                for col in result_columns
                 if col in right_columns
                 or (
                     col.endswith(right_suffix)
@@ -1181,7 +1185,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             ]
             # Reattach coalesced-away right keys via their left counterparts
             # (full join fills them with the right key values).
-            result_cols = set(result.columns)
+            result_cols = set(result_columns)
             for l_key, r_key in zip(left_cols, right_cols):
                 if (
                     r_key not in result_cols
