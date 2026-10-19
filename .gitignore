@@ -285,3 +285,7 @@ savedfiles/Example_2_Retail_Ledger/reference_output/
 savedfiles/Example_2_Retail_Ledger/data/
 savedfiles/Example_2_Retail_Ledger/app_output/
 docs/assets/node_icons/*.png
+
+# Scratch directories created by manual smoke runs.
+_probe_data/
+_smoke_data/

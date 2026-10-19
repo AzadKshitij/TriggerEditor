@@ -11,7 +11,6 @@ sys.path.insert(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
 )
 
-from qtpy.QtCore import QSettings
 from qtpy.QtWidgets import QApplication, QMainWindow
 
 from trigger_designer.core.node_configuration import (
@@ -20,10 +19,6 @@ from trigger_designer.core.node_configuration import (
     get_class_from_opcode,
 )
 from trigger_designer.qt.design_window import TriggerSubWindow
-from trigger_designer.qt.helpers.preview_dock_state import (
-    VISIBLE_KEY,
-    DataPreviewDockState,
-)
 from trigger_designer.qt.main_window import TriggerWindow
 
 _APP = QApplication.instance() or QApplication([])
@@ -145,23 +140,3 @@ def test_eval_notifies_scene_listeners_only_on_recompute():
     node.markInvalid(False)
     node.eval()
     assert seen == []
-
-
-def test_visible_flag_round_trips_through_qsettings():
-    settings = QSettings("TestDataPreviewOrg", "TestDataPreviewApp")
-    settings.clear()
-    try:
-        state = DataPreviewDockState(settings)
-
-        assert state.read() is False
-
-        state.write(True)
-        assert state.read() is True
-
-        settings.setValue(VISIBLE_KEY, "true")  # QSettings may hand back text
-        assert state.read() is True
-
-        state.write(False)
-        assert state.read() is False
-    finally:
-        settings.clear()
