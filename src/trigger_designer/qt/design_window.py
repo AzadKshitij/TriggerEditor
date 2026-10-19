@@ -295,18 +295,28 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         return TriggerNode_Unknown
 
     def doEvalOutputs(self, dialog=None) -> None:
+        # Evaluate in dependency order so every node pulls settled inputs
+        # instead of cascading eval() calls through the creation-order walk.
+        # A cyclic graph cannot be sorted; fall back to creation order rather
+        # than failing the load, matching the previous behaviour.
+        try:
+            ordered_nodes = self.topologicalSort(self.getNodeConnections())
+        except Exception as exc:  # noqa: BLE001 - load must not fail on a bad graph
+            self.logWarning(f"Could not sort workflow nodes for evaluation: {exc}")
+            ordered_nodes = list(self.scene.nodes)
+
         # Every node starts dirty (TriggerNode.__init__), so this first pass
         # recomputes the whole graph - size the dialog to the full node
         # count. Without a `dialog` (undo/redo restore) a small graph gets
         # none at all.
-        total = len(self.scene.nodes)
+        total = len(ordered_nodes)
         with eval_progress_dialog(
             self.scene, self, total, "Evaluating workflow…", dialog=dialog
         ):
             previous_batch = getattr(self.scene, "_batch_evaluating", False)
             self.scene._batch_evaluating = True
             try:
-                for node in self.scene.nodes:
+                for node in ordered_nodes:
                     node.eval()
                 settle_multi_input_nodes(self.scene)
             finally:

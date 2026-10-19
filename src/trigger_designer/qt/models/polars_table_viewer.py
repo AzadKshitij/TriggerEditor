@@ -89,6 +89,12 @@ class PolarsTableModel(QAbstractTableModel):
         self._data_cache: Dict[int, Tuple[pl.DataFrame, int]] = {}
         self._cache_access_times: Dict[int, float] = {}
 
+        # Row cache - absolute row -> row tuple. ``data()`` is called once per
+        # cell, and each miss copies the whole row out of the chunk; keying on
+        # the absolute row turns a page render into one copy per row instead of
+        # one per cell. Bounded by ``_row_cache_limit``.
+        self._row_cache: dict[int, tuple[Any, ...]] = {}
+
         # Paging: the view shows one page at a time; the chunk cache below
         # stays keyed by absolute rows.
         self.page_size = 250
@@ -138,8 +144,7 @@ class PolarsTableModel(QAbstractTableModel):
         """
         self.beginResetModel()
         self._dataframe = dataframe
-        self._data_cache.clear()
-        self._cache_access_times.clear()
+        self._clear_caches()
         self.page_index = 0
         self._sort_column = None
         self._sort_descending = False
@@ -194,6 +199,7 @@ class PolarsTableModel(QAbstractTableModel):
             return
         self.beginResetModel()
         self.page_index = index
+        self._row_cache.clear()
         self.endResetModel()
 
     def set_page_size(self, size: int) -> None:
@@ -204,6 +210,7 @@ class PolarsTableModel(QAbstractTableModel):
         self.beginResetModel()
         self.page_size = size
         self.page_index = first_row // size
+        self._row_cache.clear()
         self.endResetModel()
 
     def sort_by(self, column: int, descending: bool = False) -> None:
@@ -230,8 +237,7 @@ class PolarsTableModel(QAbstractTableModel):
 
         self.beginResetModel()
         self._dataframe = sorted_frame
-        self._data_cache.clear()
-        self._cache_access_times.clear()
+        self._clear_caches()
         self.page_index = 0
         self._sort_column = column
         self._sort_descending = descending
@@ -265,6 +271,26 @@ class PolarsTableModel(QAbstractTableModel):
     def _get_chunk_key(self, row: int) -> int:
         """Get the cache key for a given row."""
         return (row // self.chunk_size) * self.chunk_size
+
+    def _clear_caches(self) -> None:
+        """Drop the chunk and row caches; call when the frame changes.
+
+        Paging and page-size changes keep the frame, so callers there only
+        need to drop the row cache (see ``_row_cache.clear()``).
+        """
+        self._data_cache.clear()
+        self._cache_access_times.clear()
+        self._row_cache.clear()
+
+    @property
+    def _row_cache_limit(self) -> int:
+        """Cap the row cache at roughly one page, with a small margin.
+
+        A repaint asks for at most ``page_size`` distinct rows, so this is
+        never hit during normal scrolling; it exists only to stop a caller
+        that walks the whole frame from growing the cache unbounded.
+        """
+        return max(64, self.page_size + 16)
 
     def _load_chunk(self, start_row: int) -> pl.DataFrame:
         """
@@ -328,6 +354,10 @@ class PolarsTableModel(QAbstractTableModel):
         if absolute_row >= self._total_rows:
             return None
 
+        cached_row = self._row_cache.get(absolute_row)
+        if cached_row is not None:
+            return cached_row
+
         chunk_key = self._get_chunk_key(absolute_row)
         current_time = time.time()
 
@@ -350,7 +380,11 @@ class PolarsTableModel(QAbstractTableModel):
             row_in_chunk = absolute_row - chunk_key
 
             if 0 <= row_in_chunk < chunk_length:
-                return chunk_data.row(row_in_chunk)
+                row_data = chunk_data.row(row_in_chunk)
+                if len(self._row_cache) >= self._row_cache_limit:
+                    self._row_cache.clear()
+                self._row_cache[absolute_row] = row_data
+                return row_data
 
         return None
 
@@ -1206,8 +1240,7 @@ class PolarsTableViewer(QWidget):
 
     def refresh(self):
         """Refresh the view and clear caches."""
-        self.model._data_cache.clear()
-        self.model._cache_access_times.clear()
+        self.model._clear_caches()
         self.model.beginResetModel()
         self.model.endResetModel()
         self._update_info_display()

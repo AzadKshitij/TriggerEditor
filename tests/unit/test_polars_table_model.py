@@ -411,3 +411,77 @@ class TestEdgeCases(unittest.TestCase):
                 index = model.createIndex(row, col)
                 data = model.data(index, Qt.DisplayRole)
                 self.assertIsNotNone(data)  # Should always return something
+
+
+class TestRowCache(unittest.TestCase):
+    """Per-row caching behind ``data()``'s per-cell calls."""
+
+    def _model(self, rows: int = 600, page_size: int = 250) -> PolarsTableModel:
+        df = pl.DataFrame(
+            {"id": range(rows), "label": [f"row_{i}" for i in range(rows)]}
+        )
+        model = PolarsTableModel(df)
+        model.set_page_size(page_size)
+        return model
+
+    def test_repeated_access_reuses_the_same_row(self):
+        model = self._model()
+        # ``row()`` builds a fresh tuple every call; identity proves the cache.
+        first = model._get_cached_data(0)
+        second = model._get_cached_data(0)
+        self.assertIs(first, second)
+        self.assertEqual(first, (0, "row_0"))
+
+    def test_cache_holds_each_row_once(self):
+        model = self._model(rows=600, page_size=10)
+        for row in range(model.rowCount()):
+            for col in range(model.columnCount()):
+                model.data(model.createIndex(row, col), Qt.DisplayRole)
+        self.assertEqual(len(model._row_cache), model.rowCount())
+
+    def test_cache_is_bounded(self):
+        # Walk more rows than the cache holds; the limit keeps it bounded.
+        model = self._model(rows=5000, page_size=10)
+        for row in range(5000):
+            model._get_cached_data(row)
+        self.assertLessEqual(len(model._row_cache), model._row_cache_limit)
+
+    def test_values_survive_after_chunk_eviction(self):
+        model = PolarsTableModel(
+            pl.DataFrame({"id": range(600)}), chunk_size=100, cache_size=200
+        )
+        self.assertEqual(model._get_cached_data(0), (0,))
+        # Chunk 0 gets evicted as later chunks are read; the row cache copy
+        # must keep serving the original value.
+        for row in range(100, 600, 100):
+            model._get_cached_data(row)
+        self.assertEqual(model._get_cached_data(0), (0,))
+
+    def test_page_change_clears_rows(self):
+        model = self._model()
+        model.data(model.createIndex(0, 0), Qt.DisplayRole)
+        self.assertTrue(model._row_cache)
+        model.set_page(1)
+        self.assertEqual(model._row_cache, {})
+
+    def test_page_size_change_clears_rows(self):
+        model = self._model()
+        model.data(model.createIndex(0, 0), Qt.DisplayRole)
+        self.assertTrue(model._row_cache)
+        model.set_page_size(100)
+        self.assertEqual(model._row_cache, {})
+
+    def test_sort_clears_rows(self):
+        model = self._model(rows=5)
+        model.data(model.createIndex(0, 0), Qt.DisplayRole)
+        self.assertTrue(model._row_cache)
+        model.sort_by(0, descending=True)
+        self.assertEqual(model._row_cache, {})
+        self.assertEqual(model.data(model.createIndex(0, 0), Qt.DisplayRole), "4")
+
+    def test_dataframe_update_clears_rows(self):
+        model = self._model(rows=5)
+        model.data(model.createIndex(0, 0), Qt.DisplayRole)
+        self.assertTrue(model._row_cache)
+        model.set_dataframe(pl.DataFrame({"x": [1, 2]}))
+        self.assertEqual(model._row_cache, {})

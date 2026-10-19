@@ -854,6 +854,13 @@ class TriggerNode(Node):
     #         return val
 
     def eval(self, index: Any = None) -> Any:
+        scene = getattr(self, "scene", None)
+        if scene is not None and getattr(scene, "_bulk_loading", False):
+            # A node constructed mid-load has no file path or column config
+            # yet, so a constructor-time eval would compute from empty inputs
+            # and be recomputed anyway once deserialization finishes. Leave it
+            # dirty; doEvalOutputs runs the single post-load pass.
+            return self.value
         if not self.isDirty() and not self.isInvalid():
             logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
