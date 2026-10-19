@@ -782,6 +782,27 @@ def reset_theme_manager_instance() -> None:
     _instance = None
 
 
+def _set_grid_colour(gr_scene: Any, colour: QColor, *, light: bool) -> None:
+    """Set one grid colour on ``gr_scene`` without tripping the vendored print.
+
+    ``QDMGraphicsScene.setGridColorLight`` writes a debug emoji to stdout.
+    A windowed build has no stdout, so the write raises - and the failure
+    used to abort the whole canvas theming, which meant the grid size and
+    the visibility never reached the canvas either. The setter's own
+    effect is small enough to apply directly; the public setter is used
+    when the internals are not what we expect.
+    """
+    colour_attr = "_color_light" if light else "_color_dark"
+    pen_attr = "_pen_light" if light else "_pen_dark"
+    pen = getattr(gr_scene, pen_attr, None)
+    if pen is None or not hasattr(gr_scene, colour_attr):
+        setter = gr_scene.setGridColorLight if light else gr_scene.setGridColorDark
+        setter(colour)
+        return
+    setattr(gr_scene, colour_attr, colour)
+    pen.setColor(colour)
+
+
 def apply_theme_to_scene(scene: Any, manager: ThemeManager | None = None) -> None:
     """Colour a ``TriggerScene`` canvas/grid from the active theme + prefs."""
     manager = manager or get_theme_manager()
@@ -792,15 +813,27 @@ def apply_theme_to_scene(scene: Any, manager: ThemeManager | None = None) -> Non
     light = manager.color("canvas_grid_light", "#17FFFFFF")
     dark = manager.color("canvas_grid_dark", "#26FFFFFF")
     prefs = manager.preferences
+
+    # The user's grid settings first, and on their own: they are what the
+    # preferences dialog promises, and they must not be lost to a failure
+    # in the painting below.
     try:
-        gr_scene.setBackgroundColor(background)
-        gr_scene.setGridColorLight(light)
-        gr_scene.setGridColorDark(dark)
         gr_scene.gridSize = int(prefs.get("editor/grid_size", 20) or 20)
         gr_scene.showGrid = bool(prefs.get("editor/show_grid", True))
+    except Exception as exc:  # noqa: BLE001 - defensive
+        logger.warning(f"Unable to apply the grid settings: {exc}")
+
+    try:
+        gr_scene.setBackgroundColor(background)
+        _set_grid_colour(gr_scene, light, light=True)
+        _set_grid_colour(gr_scene, dark, light=False)
+    except Exception as exc:  # noqa: BLE001 - defensive
+        logger.warning(f"Unable to theme the canvas: {exc}")
+
+    try:
         gr_scene.update()
     except Exception as exc:  # noqa: BLE001 - defensive
-        logger.warning(f"Unable to theme canvas: {exc}")
+        logger.warning(f"Unable to repaint the canvas: {exc}")
 
 
 def repolish(widget: QWidget | None) -> None:
