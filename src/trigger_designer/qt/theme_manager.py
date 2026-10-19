@@ -633,6 +633,7 @@ class ThemeManager(QObject):
             self._app.setStyleSheet(self.stylesheet(theme))
         self._color_cache.clear()
         self._active_cached = None
+        self._invalidate_icon_cache()
         self.themeChanged.emit(theme)
         return theme
 
@@ -644,8 +645,23 @@ class ThemeManager(QObject):
         if self._app is not None:
             self._app.setStyleSheet(self.stylesheet(theme))
         self._color_cache.clear()
+        self._invalidate_icon_cache()
         self.themeChanged.emit(theme)
         return theme
+
+    @staticmethod
+    def _invalidate_icon_cache() -> None:
+        """Drop the cached pixmaps of the theme-tinted glyphs.
+
+        The resource manager caches rendered pixmaps by id, so a theme
+        switch has to clear them or every already-built button keeps the
+        glyph it was painted with.
+        """
+        from trigger_designer.qt import theme_icons
+        from trigger_designer.qt.resource_manager import ResourceManager
+
+        theme_icons.clear_cache()
+        ResourceManager._cache.clear()
 
     def commit_preview(self) -> Theme:
         if self._preview_id is not None:

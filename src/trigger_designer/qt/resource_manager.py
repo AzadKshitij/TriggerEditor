@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from loguru import logger
 from PIL import Image, ImageQt
@@ -23,6 +23,10 @@ def _bundle_base() -> Path:
 class ResourceManager:
     _map: dict = {}
     _cache: dict[str, Any] = {}
+    #: Maps a rendered pixmap's cache key to the resource id it came from, so
+    #: a widget that was handed a pixmap can ask which resource it was and
+    #: re-resolve it after a theme switch.
+    _id_by_key: ClassVar[dict[int, str]] = {}
     _initialized: bool = False
     _res_folder: Path = _bundle_base()
 
@@ -120,6 +124,10 @@ class ResourceManager:
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 
+        The monochrome ``ui/`` glyphs are re-rendered for the active theme
+        (see :mod:`trigger_designer.qt.theme_icons`); node icons and the
+        app chrome are returned untouched.
+
         Args:
             id (str): The name of the resource.
 
@@ -166,7 +174,9 @@ class ResourceManager:
                     renderer.render(painter)
                     painter.end()
 
+                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
+                    ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
                 elif res and res.get("mode") == "pil":
                     data = Image.open(file_path)
@@ -181,13 +191,42 @@ class ResourceManager:
                     data = Image.open(file_path)
                     qim = ImageQt.ImageQt(data)
                     pixmap = QPixmap.fromImage(qim)
+                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
+                    ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
             except FileNotFoundError:
                 logger.error(
                     f"[ResourceManager][ERROR]: Could not find resource: {file_path}"
                 )
                 return QImage()
+
+    @staticmethod
+    def resource_id_for(pixmap: QPixmap) -> str | None:
+        """The resource id a rendered ``pixmap`` came from, if known.
+
+        A widget that was handed a pixmap (rather than an id) uses this to
+        find its way back to the resource, so it can re-resolve the icon
+        after a theme switch.
+        """
+        if pixmap is None or pixmap.isNull():
+            return None
+        return ResourceManager._id_by_key.get(pixmap.cacheKey())
+
+    @staticmethod
+    def _themed(id: str, res: dict, file_path: Path, pixmap: QPixmap) -> QPixmap:
+        """Re-render a monochrome glyph for the active theme.
+
+        Node icons carry their type in their colour, so only the ``ui/``
+        glyph set is re-rendered. Everything else - including the app icon
+        and the splash - is returned as loaded.
+        """
+        from trigger_designer.qt import theme_icons
+
+        path = res.get("path", "")
+        if not theme_icons.is_themable(id, path):
+            return pixmap
+        return theme_icons.themed_pixmap(id, file_path, pixmap)
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)

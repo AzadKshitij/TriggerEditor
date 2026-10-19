@@ -310,6 +310,12 @@ class TriggerWindow(
                 refresh = getattr(child, "apply_theme", None)
                 if callable(refresh):
                     refresh()
+        # Icon buttons hold a rendered pixmap; the monochrome ui/ glyphs are
+        # re-rendered per theme, so they have to be re-resolved too.
+        for child in self.findChildren(QWidget):
+            refresh = getattr(child, "apply_theme", None)
+            if callable(refresh):
+                refresh()
         logging_dock = getattr(self, "loggingDock", None)
         if logging_dock is not None and hasattr(logging_dock, "apply_theme"):
             logging_dock.apply_theme()

@@ -144,6 +144,22 @@
         "path":"qt/images/node_icons/ui/search.svg",
         "mode": "rb"
     },
+    "icon_run_play":{
+        "path":"qt/images/node_icons/ui/play.svg",
+        "mode": "rb"
+    },
+    "icon_zoom_in":{
+        "path":"qt/images/node_icons/ui/zoom_in.svg",
+        "mode": "rb"
+    },
+    "icon_zoom_out":{
+        "path":"qt/images/node_icons/ui/zoom_out.svg",
+        "mode": "rb"
+    },
+    "icon_zoom_fit":{
+        "path":"qt/images/node_icons/ui/zoom_fit.svg",
+        "mode": "rb"
+    },
     "icon_chevron_first":{
         "path":"qt/images/node_icons/ui/chevron_first.svg",
         "mode": "rb"

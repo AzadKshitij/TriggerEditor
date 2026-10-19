@@ -40,6 +40,20 @@ ICON_SIZE = 12
 SECTION_GAP = 4
 
 
+def _resource_id_for(pixmap: QPixmap) -> str | None:
+    """The ResourceManager id a rendered pixmap came from, if known.
+
+    Imported lazily: the widgets in this module are imported by every node,
+    and the resource manager pulls in the theme stack.
+    """
+    try:
+        from trigger_designer.qt.resource_manager import ResourceManager
+
+        return ResourceManager.resource_id_for(pixmap)
+    except Exception:  # noqa: BLE001 - a missing id is not fatal
+        return None
+
+
 class IconButton(QPushButton):
     """Icon-only button: 30x30, 12px icon, tooltip + accessible name required.
 
@@ -61,12 +75,32 @@ class IconButton(QPushButton):
         self.setAccessibleName(tooltip)
         self.setFixedSize(QSize(30, 30))
         self.setIconSize(QSize(ICON_SIZE, ICON_SIZE))
+        #: The resource id the icon was loaded from, when it came from the
+        #: ResourceManager. Used to re-resolve the icon after a theme switch.
+        self._resource_id: str | None = None
         if isinstance(icon, QIcon):
             self.setIcon(icon)
         elif isinstance(icon, QPixmap):
             self.setIcon(QIcon(icon))
+            self._resource_id = _resource_id_for(icon)
         elif isinstance(icon, str):
             self.setIcon(QIcon(icon))
+
+    def apply_theme(self) -> None:
+        """Re-resolve the icon after a theme change.
+
+        The monochrome ``ui/`` glyphs are re-rendered for the active theme
+        (see :mod:`trigger_designer.qt.theme_icons`). A button that was
+        built before the switch still holds the old pixmap, so it has to
+        ask the resource manager for the icon again.
+        """
+        if not self._resource_id:
+            return
+        from trigger_designer.qt.resource_manager import ResourceManager
+
+        pixmap = ResourceManager().get(self._resource_id)
+        if isinstance(pixmap, QPixmap) and not pixmap.isNull():
+            self.setIcon(QIcon(pixmap))
 
     @classmethod
     def themed(
@@ -78,9 +112,12 @@ class IconButton(QPushButton):
         parent: QWidget | None = None,
     ) -> "IconButton":
         """Build an IconButton trying rsm -> :/qss_icons -> fromTheme."""
-        icon: QIcon | None = None
+        icon: QIcon | QPixmap | None = None
         if isinstance(rsm_icon, QPixmap):
-            icon = QIcon(rsm_icon)
+            # The pixmap is kept as it is: the resource it was rendered from
+            # is what lets ``apply_theme`` resolve it again after a theme
+            # switch. Wrapping it in a QIcon here would lose that.
+            icon = rsm_icon
         elif isinstance(rsm_icon, QIcon) and not rsm_icon.isNull():
             icon = rsm_icon
         if icon is None and qss_fallback:
