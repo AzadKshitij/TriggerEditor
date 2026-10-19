@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
     QMenuBar,
     QTableView,
     QWidget,
-    QMessageBox,
     QFileDialog,
     QMdiSubWindow,
     QTabWidget,
@@ -477,13 +476,9 @@ class TriggerWindow(
             self.onFileOpen()
 
     def about(self) -> None:
-        QMessageBox.about(
-            self,
-            "About Calculator NodeEditor Example",
-            "The <b>Calculator NodeEditor</b> example demonstrates how to write multiple "
-            "document interface applications using PyQt5 and NodeEditor. For more information visit: "
-            "<a href='https://www.blenderfreak.com/'>www.BlenderFreak.com</a>",
-        )
+        from trigger_designer.qt.dialogs.about_dialog import AboutDialog
+
+        AboutDialog(self).exec()
 
     def createToolBars(self) -> None:
         pass

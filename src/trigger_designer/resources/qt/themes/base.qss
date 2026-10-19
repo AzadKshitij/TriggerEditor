@@ -1879,6 +1879,17 @@ QLabel#ConfigSectionInfo {{
   margin: 2px; }}
 QLabel#EmptyStateLabel {{
   color: {text_inactive}; }}
+/* About dialog: the app identity sits above the details table. */
+QLabel#AboutTitle {{
+  color: {text_primary};
+  font-size: 15px;
+  font-weight: 600; }}
+QLabel#AboutDescription {{
+  color: {text_secondary}; }}
+QLabel#AboutLink {{
+  color: {accent_primary}; }}
+QLabel#AboutLink:hover {{
+  color: {accent_secondary}; }}
 /* Data type editor inside the Select table: match the dock theme instead of
    the bare Fusion combo colours. */
 QComboBox#DataTypeCombo {{
