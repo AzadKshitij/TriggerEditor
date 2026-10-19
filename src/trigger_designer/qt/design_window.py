@@ -226,8 +226,12 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         - Shift+A: Show node context menu
         - Shift+P: Print separator
         - Ctrl+Shift+R: Reset workflow statistics
-        - Ctrl+Shift+S: Show workflow statistics
+        - Ctrl+Shift+T: Show workflow statistics
         - Shift+G: Test global logging functionality
+
+        Ctrl+Shift+T rather than Ctrl+Shift+S: Save As owns Ctrl+Shift+S
+        (the vendored ``actSaveAs``), and the Data Preview dock owns
+        Ctrl+Shift+D.
         """
         # Check for Shift+A
         if (
@@ -254,34 +258,46 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             # Ctrl+Shift+R to reset workflow statistics
             self.reset_workflow_statistics()
         elif (
-            event.key() == Qt.Key.Key_S
+            event.key() == Qt.Key.Key_T
             and event.modifiers()
             == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
         ):
-            # Ctrl+Shift+S to show workflow statistics
-            stats = self.get_workflow_statistics()
-            print(f"\n{'=' * 50}")
-            print(f"📊 WORKFLOW STATISTICS")
-            print(f"{'=' * 50}")
-            print(f"Total executions: {stats['total_executions']}")
-            print(f"Total time: {stats['total_time']:.3f} seconds")
-            print(f"Average time: {stats['average_execution_time']:.3f} seconds")
-            print(f"{'=' * 50}\n")
-            logger.info(
-                f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
-                f"Total time: {stats['total_time']:.3f}s, "
-                f"Average: {stats['average_execution_time']:.3f}s"
-            )
-
-            # Example of global logging usage
-            global_logger.info(
-                f"📊 Workflow statistics requested - {stats['total_executions']} executions"
-            )
+            # Ctrl+Shift+T to show workflow statistics
+            self.show_workflow_statistics()
         # NOTE: Shift+G is intentionally unbound here. The main window uses
         # it for Ungroup (see NodeEditorWindow.onUngroupSelected), and the
         # single-letter group shortcuts ignore keystrokes typed into editors.
         else:
             super().keyPressEvent(event)
+
+    def show_workflow_statistics(self) -> None:
+        """Report the run statistics in the Logging dock.
+
+        The numbers go to the dock rather than the console: a windowed
+        build has no console to print to, and the Logging dock is where
+        the rest of the app's output already lives.
+        """
+        stats = self.get_workflow_statistics()
+        total = stats["total_executions"]
+        total_time = stats["total_time"]
+        average = stats["average_execution_time"]
+
+        self.logInfo(
+            "WORKFLOW STATISTICS — "
+            f"{total} run(s), {total_time:.3f}s total, {average:.3f}s average"
+        )
+        global_logger.info(
+            f"Workflow statistics requested - {total} executions, "
+            f"{total_time:.3f}s total, {average:.3f}s average"
+        )
+        window = self.window()
+        status_bar = getattr(window, "statusBar", None)
+        if callable(status_bar):
+            status = status_bar()
+            if status is not None:
+                status.showMessage(
+                    f"Workflow: {total} run(s), {total_time:.3f}s total", 5000
+                )
 
     def onItemSelected(self) -> None:
         # print(f'node: {self.scene._last_selected_items}')

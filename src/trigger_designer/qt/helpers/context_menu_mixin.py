@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import time
 from typing import Any, Dict, Optional
 
@@ -22,6 +23,11 @@ from trigger_designer.core.node_configuration import (
     get_class_from_opcode,
 )
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
+
+#: Show the cache-invalidation actions in the node context menu. They are
+#: for working on the app itself, so they stay out of the everyday menu
+#: unless the environment asks for them.
+SHOW_DEV_ACTIONS = os.environ.get("TRIGGER_DEV_ACTIONS") == "1"
 
 
 class ContextMenuMixin:
@@ -126,7 +132,7 @@ class ContextMenuMixin:
             debug_context = getattr(self, "DEBUG_CONTEXT", False)
 
             if debug_context:
-                print(item)
+                logger.debug(f"CONTEXT ITEM: {item}")
 
             if isinstance(item, QGraphicsProxyWidget):
                 item = item.widget()
@@ -225,14 +231,21 @@ class ContextMenuMixin:
     def handleNodeContextMenu(self, event: QContextMenuEvent) -> None:
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
         if debug_context:
-            print("CONTEXT: NODE")
+            logger.debug("CONTEXT: NODE")
         context_menu = QMenu(self)
-        markDirtyAct = context_menu.addAction("Mark Dirty")
-        markDirtyDescendantsAct = context_menu.addAction("Mark Descendant Dirty")
-        markInvalidAct = context_menu.addAction("Mark Invalid")
-        unmarkInvalidAct = context_menu.addAction("Unmark Invalid")
-        evalAct = context_menu.addAction("Eval")
-        context_menu.addSeparator()
+
+        # The cache-invalidation actions are for working on the app itself,
+        # not for using it. They stay out of the everyday menu unless
+        # TRIGGER_DEV_ACTIONS=1 asks for them.
+        markDirtyAct = markDirtyDescendantsAct = None
+        markInvalidAct = unmarkInvalidAct = evalAct = None
+        if SHOW_DEV_ACTIONS:
+            markDirtyAct = context_menu.addAction("Mark Dirty")
+            markDirtyDescendantsAct = context_menu.addAction("Mark Descendant Dirty")
+            markInvalidAct = context_menu.addAction("Mark Invalid")
+            unmarkInvalidAct = context_menu.addAction("Unmark Invalid")
+            evalAct = context_menu.addAction("Eval")
+            context_menu.addSeparator()
 
         item = self.scene.getItemAt(event.pos())
         if isinstance(item, QGraphicsProxyWidget):
@@ -266,20 +279,25 @@ class ContextMenuMixin:
         action = context_menu.exec(self.mapToGlobal(event.pos()))
 
         if debug_context:
-            print("got item:", clicked_node)
+            logger.debug(f"CONTEXT: node {clicked_node}")
 
-        if clicked_node and action == markDirtyAct:
-            clicked_node.markDirty()
-        if clicked_node and action == markDirtyDescendantsAct:
-            clicked_node.markDescendantsDirty()
-        if clicked_node and action == markInvalidAct:
-            clicked_node.markInvalid()
-        if clicked_node and action == unmarkInvalidAct:
-            clicked_node.markInvalid(False)
-        if clicked_node and action == evalAct:
-            value = clicked_node.eval()
-            if debug_context:
-                print("EVALUATED:", value)
+        # ``action`` is None when the menu is dismissed, and so are the
+        # developer actions when they are hidden - without this guard a
+        # dismissed menu would compare equal to them and mark the node
+        # dirty behind the user's back.
+        if action is not None:
+            if clicked_node and action == markDirtyAct:
+                clicked_node.markDirty()
+            if clicked_node and action == markDirtyDescendantsAct:
+                clicked_node.markDescendantsDirty()
+            if clicked_node and action == markInvalidAct:
+                clicked_node.markInvalid()
+            if clicked_node and action == unmarkInvalidAct:
+                clicked_node.markInvalid(False)
+            if clicked_node and action == evalAct:
+                value = clicked_node.eval()
+                if debug_context:
+                    logger.debug(f"EVALUATED: {value}")
 
         if candidates and action == setLabelAct:
             self.prompt_node_label(candidates)
@@ -300,7 +318,7 @@ class ContextMenuMixin:
     def handleEdgeContextMenu(self, event: QContextMenuEvent) -> None:
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
         if debug_context:
-            print("CONTEXT: EDGE")
+            logger.debug("CONTEXT: EDGE")
         context_menu = QMenu(self)
         bezierAct = context_menu.addAction("Bezier Edge")
         directAct = context_menu.addAction("Direct Edge")
@@ -320,19 +338,18 @@ class ContextMenuMixin:
     def handleNewNodeContextMenu(self, event: QContextMenuEvent) -> None:
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
         if debug_context:
-            print("CONTEXT: EMPTY SPACE")
+            logger.debug("CONTEXT: EMPTY SPACE")
         self.showNodeContextMenu(event.pos())
 
     def showNodeContextMenu(self, position) -> None:  # noqa: N802
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
         if debug_context:
-            print("CONTEXT: EMPTY SPACE")
+            logger.debug("CONTEXT: NODE LIST")
         context_menu = self.initNodesContextMenu()
         action = context_menu.exec_(self.mapToGlobal(position))
 
         if action is not None and action.data():
             try:
-                print("Action was triggered!")
                 self.selected_action_data = action.data()
                 self.add_node_to_scene()
             except Exception as exc:
