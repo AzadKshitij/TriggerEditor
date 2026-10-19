@@ -5,7 +5,7 @@ import os
 from nodeeditor.utils import dumpException
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QMenu, QMessageBox
+from qtpy.QtWidgets import QLabel, QMenu, QMessageBox
 
 from trigger_designer.qt.docks.data_preview import DataPreviewDock
 from trigger_designer.qt.docks.logging_dock import LoggingDock
@@ -295,4 +295,45 @@ class MainWindowDockMixin:
             self.dataPreviewDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
+        """Build the status bar with the scene-position readout.
+
+        The base class builds the same permanent label and connects it to
+        ``self.nodeeditor.view`` - but this app makes the MDI area the
+        central widget, so that attribute does not exist. The readout is
+        wired to the *active* sub-window's view instead, and re-wired
+        whenever the active sub-window changes.
+        """
         self.statusBar().showMessage("Ready")
+        self.status_mouse_pos = QLabel("")
+        self.statusBar().addPermanentWidget(self.status_mouse_pos)
+        self._status_view = None
+        self.connectStatusScene(self.getCurrentNodeEditorWidget())
+
+    def connectStatusScene(self, widget) -> None:
+        """Point the scene-position readout at ``widget``'s canvas.
+
+        Disconnects the previous view first: the MDI area keeps every
+        opened workflow alive, so two views would otherwise both report a
+        position and the last one to move would win. A window that is not
+        a canvas clears the readout, because the coordinates of the last
+        canvas describe a window that is no longer in front.
+        """
+        previous = getattr(self, "_status_view", None)
+        if previous is not None:
+            try:
+                previous.scenePosChanged.disconnect(self.onScenePosChanged)
+            except (TypeError, RuntimeError):
+                # The view is already gone (its sub-window was closed).
+                pass
+            self._status_view = None
+
+        view = getattr(widget, "view", None) if widget is not None else None
+        if view is None:
+            self.status_mouse_pos.setText("")
+            return
+        try:
+            view.scenePosChanged.connect(self.onScenePosChanged)
+        except (TypeError, RuntimeError):
+            self.status_mouse_pos.setText("")
+            return
+        self._status_view = view
