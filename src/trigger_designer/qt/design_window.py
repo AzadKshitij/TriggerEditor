@@ -5,7 +5,6 @@ import os
 import time
 
 from qtpy.QtGui import (
-    QIcon,
     QPixmap,
     QDropEvent,
     QCloseEvent,
@@ -17,7 +16,6 @@ from qtpy.QtWidgets import (
     QApplication,
     QGraphicsView,
     QWidget,
-    QPushButton,
     QMessageBox,
 )
 
@@ -44,6 +42,7 @@ from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
@@ -130,36 +129,46 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             preview_window.show()
 
     def addButtons(self) -> None:
+        """Build the canvas overlay: run, zoom in, zoom out, fit view.
+
+        Icon-only buttons per docs/DESIGN_SYSTEM.md §4: 30x30 with a 12px
+        icon, a mandatory tooltip and accessible name. The glyphs come from
+        the ResourceManager - a desktop theme icon renders blank on Windows.
+        """
         # Run button
-        self.run_button = QPushButton("", self)
-        self.run_button.setIcon(QIcon.fromTheme("media-playback-start"))
-        self.run_button.setToolTip("Run Workflow")
-        self.run_button.setFixedSize(100, 30)
+        self.run_button = IconButton.themed(
+            "Run workflow",
+            rsm_icon=self.rsm.get("icon_run_play"),
+            parent=self,
+        )
         self.run_button.move(10, 10)
         self.run_button.clicked.connect(self.run_workflow)
 
         # Zoom In button
-        self.zoom_in_button = QPushButton("", self)
-        self.zoom_in_button.setIcon(QIcon.fromTheme("zoom-in"))
-        self.zoom_in_button.setToolTip("Zoom In")
-        self.zoom_in_button.setFixedSize(100, 30)
-        self.zoom_in_button.move(120, 10)
+        self.zoom_in_button = IconButton.themed(
+            "Zoom in",
+            rsm_icon=self.rsm.get("icon_zoom_in"),
+            parent=self,
+        )
+        self.zoom_in_button.move(46, 10)
         self.zoom_in_button.clicked.connect(self.zoomIn)
 
         # Zoom Out button
-        self.zoom_out_button = QPushButton("", self)
-        self.zoom_out_button.setIcon(QIcon.fromTheme("zoom-out"))
-        self.zoom_out_button.setToolTip("Zoom Out")
-        self.zoom_out_button.setFixedSize(100, 30)
-        self.zoom_out_button.move(230, 10)
+        self.zoom_out_button = IconButton.themed(
+            "Zoom out",
+            rsm_icon=self.rsm.get("icon_zoom_out"),
+            parent=self,
+        )
+        self.zoom_out_button.move(82, 10)
         self.zoom_out_button.clicked.connect(self.zoomOut)
 
         # Fit View button
-        self.fit_button = QPushButton("", self)
-        self.fit_button.setIcon(QIcon.fromTheme("zoom-original"))
-        self.fit_button.setToolTip("Fit View")
-        self.fit_button.setFixedSize(100, 30)
-        self.fit_button.move(340, 10)
+        self.fit_button = IconButton.themed(
+            "Fit view",
+            rsm_icon=self.rsm.get("icon_zoom_fit"),
+            parent=self,
+        )
+        self.fit_button.move(118, 10)
         self.fit_button.clicked.connect(self.fitView)
 
     def zoomIn(self) -> None:
@@ -178,8 +187,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             return
         start_time = time.time()
 
-        try:
-            # Calculate the bounding rectangle of all nodes
+        try:  # Calculate the bounding rectangle of all nodes
             rect = None
             for node in nodes:
                 if rect is None:
@@ -203,8 +211,10 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             self.view.zoom = self._last_scale * 10
             self.view.centerOn(rect.center())
 
-            print(f"⌚ Fit View Time: {time.time() - start_time:.4f}s")
-            print(f"Current scale: {self._last_scale}")
+            logger.debug(
+                f"Fit view took {time.time() - start_time:.4f}s "
+                f"at scale {self._last_scale:.3f}"
+            )
 
         except Exception as e:
             dumpException(e)
