@@ -304,7 +304,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
-        print(f"getNodeClassFromData: {data}")
+        logger.debug(f"getNodeClassFromData: {data}")
         # v2+: stable op id — immune to enum renumbering/reordering.
         if "op" in data:
             try:
@@ -646,11 +646,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
 
             if DEBUG:
-                print(
-                    "GOT DROP: [%d] '%s'" % (node_code, node_type),
-                    "mouse:",
+                logger.debug(
+                    "GOT DROP: [%d] '%s' mouse: %s scene: %s",
+                    node_code,
+                    node_type,
                     mouse_position,
-                    "scene:",
                     scene_position,
                 )
 

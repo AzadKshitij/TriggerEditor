@@ -13,6 +13,7 @@ import re
 import time
 from typing import Callable, List, Optional, Dict, Set, Tuple
 
+from loguru import logger
 from qtpy.QtWidgets import (
     QCompleter,
     QTextEdit,
@@ -407,7 +408,7 @@ class SQLFormulaEditor(QTextEdit):
             if hasattr(self, "cursorPositionChanged"):
                 self.cursorPositionChanged.connect(self.highlight_current_line)
         except AttributeError as e:
-            print(f"Warning: Could not connect line number signals: {e}")
+            logger.warning(f"Could not connect line number signals: {e}")
 
         self.update_line_number_area_width(0)
         self.highlight_current_line()

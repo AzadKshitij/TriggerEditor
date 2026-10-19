@@ -1,3 +1,4 @@
+from loguru import logger
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from typing import Callable, Optional, cast
 from typing_extensions import override
@@ -118,7 +119,7 @@ class TriggerWindow(
         self.rsm = ResourceManager()
 
         if DEBUG:
-            print("Registered nodes:")
+            logger.debug("Registered nodes:")
 
         self.mdiArea = QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)

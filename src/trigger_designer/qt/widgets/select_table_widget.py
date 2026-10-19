@@ -170,7 +170,7 @@ class SelectTableWidget(QAbstractTableModel):
             # Handle checkbox state change
             check_state = int(value)
             row_data.checked = check_state == Qt.CheckState.Checked.value
-            print(
+            logger.debug(
                 f"Checkbox at row {row} set to {row_data.checked}, value: {check_state}"
             )
             success = True
@@ -262,12 +262,12 @@ class SelectTableWidget(QAbstractTableModel):
                     ],
                 )
 
-                print(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
+                logger.debug(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
                 return True
             else:
-                print("Failed to begin row move operation.")
+                logger.warning("Failed to begin row move operation.")
                 return False
-        print("Invalid row indices for swapping.")
+        logger.warning("Invalid row indices for swapping.")
         return False
 
     def setupOptionsMenu(self, button: QPushButton, view: QTableView) -> None:
@@ -362,8 +362,6 @@ class SelectTableWidget(QAbstractTableModel):
             # Column name (non-editable)
             column_name_item = QTableWidgetItem(column_name)
             column_name_item.setFlags(column_name_item.flags() ^ ~Qt.ItemIsEditable)
-            print(f"Column name: {column_name} -----")
-            print(column_name_item.text())
             self.table.setItem(i, 1, column_name_item)
 
             # Dropdown for data_type

@@ -29,6 +29,20 @@ class WorkflowExecutionMixin:
         self._workflow_worker: Union[WorkflowWorker, None] = None
         self._workflow_sorted_nodes: List[Any] = []
 
+    def _log_to_dock(self, message: str) -> None:
+        """Report a message in the Logging dock.
+
+        The dock is the console replacement: a windowed build has no
+        terminal to print to, so the run summary and the "no results"
+        warnings have to go where the user can read them. Tests drive this
+        mixin directly, without a dock, so the call is optional.
+        """
+        log_info = getattr(self, "logInfo", None)
+        if callable(log_info):
+            log_info(message)
+        else:
+            logger.info(message)
+
     # --- Workflow execution helpers -------------------------------------------------
     def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
         """Run the current workflow on a single background thread while
@@ -59,7 +73,9 @@ class WorkflowExecutionMixin:
         self.workflow_execution_count += 1
 
         logger.info("🚀 Starting workflow execution #{}", self.workflow_execution_count)
-        print(f"🚀 Starting workflow execution #{self.workflow_execution_count}...")
+        self._log_to_dock(
+            f"🚀 Starting workflow execution #{self.workflow_execution_count}..."
+        )
 
         self._workflow_sorted_nodes = sorted_nodes
 
@@ -151,22 +167,20 @@ class WorkflowExecutionMixin:
         logger.info("📈 Average execution time: {:.3f} seconds", average_execution)
         logger.info("🕒 Total workflow time: {:.3f} seconds", self.total_workflow_time)
 
-        print(f"\n{'=' * 60}")
-        print("🎯 WORKFLOW EXECUTION SUMMARY")
-        print(f"{'=' * 60}")
-        print(
-            f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}"
+        summary = (
+            f"🎯 WORKFLOW EXECUTION SUMMARY — "
+            f"execution #{self.workflow_execution_count}, "
+            f"{status_icon} {status_text}"
         )
-
-        print(f"⏱️  This execution: {current_execution_time:.3f} seconds")
+        self._log_to_dock(summary)
+        self._log_to_dock(f"⏱️  This execution: {current_execution_time:.3f} seconds")
         global_logger.info(f"⏱️  This execution: {current_execution_time:.3f} seconds")
-        print(f"📊 Total runs: {self.workflow_execution_count}")
-        print(f"📈 Average time: {average_execution:.3f} seconds")
-        print(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
+        self._log_to_dock(f"📊 Total runs: {self.workflow_execution_count}")
+        self._log_to_dock(f"📈 Average time: {average_execution:.3f} seconds")
+        self._log_to_dock(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
         if not success:
-            print("⚠️  Execution failed - check logs for details")
+            self._log_to_dock("⚠️  Execution failed - check logs for details")
             global_logger.error("Workflow execution failed - check logs for details")
-        print(f"{'=' * 60}\n")
 
         for node in self.getAllNodes():
             if node.isInvalid():
@@ -201,7 +215,7 @@ class WorkflowExecutionMixin:
         self.last_execution_time = 0.0
         self.execution_results.clear()
         logger.info("📊 Workflow statistics reset")
-        print("📊 Workflow execution statistics have been reset")
+        self._log_to_dock("📊 Workflow execution statistics have been reset")
 
     def _declared_output_variable_names(self, node: Any) -> list[str]:
         """Output variable names a node declares, in socket order.
@@ -286,11 +300,11 @@ class WorkflowExecutionMixin:
     def getSocketData(self, node: Any, socket_index: int) -> Any:  # noqa: N802
         """Return the execution result bound to a socket after workflow run."""
         if not self.execution_results:
-            print("No execution results available. Run the workflow first.")
+            self._log_to_dock("No execution results available. Run the workflow first.")
             return None
 
         if node not in self.execution_results:
-            print(f"No results found for node {node}")
+            self._log_to_dock(f"No results found for node {node}")
             return None
 
         node_results = self.execution_results[node]
@@ -302,6 +316,8 @@ class WorkflowExecutionMixin:
         if socket_index == 0 and len(node_results) == 1:
             return next(iter(node_results.values()))
 
-        print(f"No socket data found for node {node} at socket index {socket_index}")
+        self._log_to_dock(
+            f"No socket data found for node {node} at socket index {socket_index}"
+        )
 
         return None
