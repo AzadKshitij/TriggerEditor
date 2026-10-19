@@ -16,13 +16,11 @@ options = parser.parse_args()
 
 # Platform-specific configuration
 system = platform.system()
-app_name = "TriggerEditor" if system == "Windows" else "TriggerEditor"
+app_name = "TriggerEditor"
 
 # Icon configuration
 icon_path = None
-if system == "Windows":
-    icon_path = "src/trigger_designer/resources/TriEditorLogo.ico"
-elif system == "Darwin":
+if system in {"Windows", "Darwin"}:
     icon_path = "src/trigger_designer/resources/TriEditorLogo.ico"
 
 # Verify icon exists
@@ -42,15 +40,26 @@ analysis = Analysis(
     # Binary files
     binaries=[],
     
-    # Data files to include
-    datas=[("src/trigger_designer", "trigger_designer")],
+    # Data files to include.
+    #
+    # Do not copy the whole package: it contains developer-only material
+    # (`.opencode/`, examples, qss sources, generated rc modules) that bloats
+    # the bundle by ~65 MB. Only the files read at runtime belong here.
+    datas=[
+        ("src/trigger_designer/qt/resources.json", "trigger_designer/qt"),
+        ("src/trigger_designer/resources/qt", "trigger_designer/resources/qt"),
+        ("src/trigger_designer/resources/Icon.ico", "trigger_designer/resources"),
+        ("src/trigger_designer/resources/splash.png", "trigger_designer/resources"),
+    ],
     
     # Hidden imports (modules PyInstaller might miss)
     hiddenimports=[
         # Core data processing
-        "pandas",
         "numpy",
         "polars",
+        # Polars imports pyarrow lazily; DuckDB's register() needs it for
+        # Polars -> Arrow conversion, so PyInstaller must not miss it.
+        "pyarrow",
         "duckdb",
         "fastexcel",
         "openpyxl",
@@ -68,7 +77,6 @@ analysis = Analysis(
         "matplotlib",
         "matplotlib.backends.backend_qtagg",
         "matplotlib.backends.backend_qt5agg",
-        "seaborn",
 
         # Other dependencies
         "loguru",
@@ -80,7 +88,11 @@ analysis = Analysis(
     hookspath=[],
     hooksconfig={},
 
-    # Modules to exclude (startup + size: never imported at runtime)
+    # Modules to exclude (startup + size: never imported at runtime).
+    # pandas/numba/llvmlite/numexpr/seaborn are not application dependencies.
+    # pandas remains in the dev group for tests, so it can be installed in the
+    # build venv without being bundled. pyarrow stays: DuckDB's register() uses
+    # it for the Polars -> Arrow conversion behind Formula/Filter.
     excludes=[
         "tkinter",
         "unittest",
@@ -93,7 +105,12 @@ analysis = Analysis(
         "matplotlib.testing",
         "numpy.tests",
         "numpy.f2py",
+        "pandas",
         "pandas.tests",
+        "numba",
+        "llvmlite",
+        "numexpr",
+        "seaborn",
         "PIL.ImageTk",
     ],
 
