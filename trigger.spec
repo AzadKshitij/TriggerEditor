@@ -29,6 +29,27 @@ if icon_path and not Path(icon_path).exists():
     icon_path = None
 
 
+# Node modules cannot be reached by import analysis: ``nodes/__init__.py``
+# registers each one as a lazy reference and ``LazyNodeReference.load()``
+# imports it by string, so PyInstaller never sees them - nor the modules they
+# import (``helpers.state_mixin``, ``widgets.select_table_widget``, ...).
+# Their subpackages (InOut, Join, Preparation, ...) are PEP 420 namespace
+# packages, which ``collect_submodules`` cannot enumerate, so list the sources
+# explicitly. Hidden imports make the analysis walk the dependency tree; the
+# data entries keep the tree resolvable on disk for the runtime string import
+# and the ``os.walk`` sweep in ``nodes/__init__.py``.
+_nodes_dir = Path("src/trigger_designer/qt/widgets/nodes")
+node_module_datas = []
+node_hiddenimports = []
+for _path in sorted(_nodes_dir.rglob("*.py")):
+    node_module_datas.append(
+        (str(_path), _path.parent.relative_to("src").as_posix())
+    )
+    _parts = _path.relative_to("src").with_suffix("").parts
+    if _parts[-1] == "__init__":
+        _parts = _parts[:-1]
+    node_hiddenimports.append(".".join(_parts))
+
 # Analysis configuration
 analysis = Analysis(
     # Entry point
@@ -44,13 +65,15 @@ analysis = Analysis(
     #
     # Do not copy the whole package: it contains developer-only material
     # (`.opencode/`, examples, qss sources, generated rc modules) that bloats
-    # the bundle by ~65 MB. Only the files read at runtime belong here.
+    # the bundle by ~65 MB. Only the files read at runtime belong here, plus
+    # the node sources listed above.
     datas=[
         ("src/trigger_designer/qt/resources.json", "trigger_designer/qt"),
         ("src/trigger_designer/resources/qt", "trigger_designer/resources/qt"),
         ("src/trigger_designer/resources/Icon.ico", "trigger_designer/resources"),
         ("src/trigger_designer/resources/splash.png", "trigger_designer/resources"),
-    ],
+    ]
+    + node_module_datas,
     
     # Hidden imports (modules PyInstaller might miss)
     hiddenimports=[
@@ -82,7 +105,8 @@ analysis = Analysis(
         "loguru",
         "psutil",
         "orjson",
-    ],
+    ]
+    + node_hiddenimports,
 
     # PyInstaller hooks
     hookspath=[],
