@@ -1,0 +1,102 @@
+{
+    "schema": 2,
+    "id": "tokyo-night",
+    "name": "Tokyo Night",
+    "appearance": "dark",
+    "tokens": {
+        "background_primary": "#1a1b26",
+        "background_secondary": "#1f2335",
+        "background_tertiary": "#24283b",
+        "background_hover": "#2a2f45",
+        "background_pressed": "#343b57",
+        "background_disabled": "#1a1b26",
+        "background_alternate": "#1a1b26",
+
+        "scroll_background": "#5e647d",
+
+        "menu_background": "#24283b",
+        "menu_separator": "#292e42",
+
+        "statusbar_background": "#1e2132",
+
+        "separator_background": "#1f2230",
+
+        "text_primary": "#c0caf5",
+        "text_secondary": "#a9b1d6",
+        "text_disabled": "#565f89",
+        "text_inactive": "#7b85ac",
+        "text_tertiary": "#7b85ac",
+
+        "accent_primary": "#7aa2f7",
+        "accent_secondary": "#8eb0f8",
+        "accent_tertiary": "#6e92de",
+        "accent_disabled": "#688ad2",
+
+        "success": "#9ece6a",
+        "warning": "#e0af68",
+        "danger": "#f7768e",
+        "info": "#7dcfff",
+        "activity": "#bb9af7",
+
+        "node_input": "#f7768e",
+        "node_prepare": "#9ece6a",
+        "node_join": "#7aa2f7",
+        "node_transform": "#bb9af7",
+        "node_report": "#e0af68",
+        "node_selection": "#ff9e64",
+
+        "selection_color": "#ffffff",
+
+        "border_primary": "#1f2335",
+        "border_subtle": "#1f2335",
+        "border_default": "#292e42",
+        "border_strong": "#3b4261",
+        "border_light": "#3b4261",
+        "border_dark": "#16161e",
+        "border_accent": "#7aa2f7",
+
+        "border_width": "1px",
+        "border_radius": "4px",
+
+        "card_background": "#1a1b26",
+        "card_border": "#292e42",
+        "editor_background": "#16161e",
+        "error_text": "#f7768e",
+        "background_warning": "#40352c",
+
+        "canvas_background": "#13141c",
+        "canvas_grid_light": "#17ffffff",
+        "canvas_grid_dark": "#26ffffff",
+
+        "editor_line_number_background": "#222229",
+        "editor_line_number_text": "#7b85ac",
+        "editor_current_line": "#242a3c",
+        "syntax_keyword": "#bb9af7",
+        "syntax_string": "#9ece6a",
+        "syntax_number": "#ff9e64",
+        "syntax_column": "#7dcfff",
+        "syntax_function": "#7aa2f7",
+        "syntax_operator": "#89ddff",
+        "syntax_comment": "#565f89",
+
+        "spacing_tiny": "1px",
+        "spacing_small": "2px",
+        "spacing_medium": "4px",
+        "spacing_large": "8px",
+        "spacing_xlarge": "12px",
+
+        "control_scrollbar_bg": "#5e647d",
+        "control_scrollbar_handle": "#3b4261",
+        "control_menu_bg": "#24283b",
+        "control_toolbar_bg": "#1f2335",
+
+        "button_bg": "#1f2335",
+        "button_hover": "#2a2f45",
+        "button_pressed": "#343b57",
+
+        "icon_size_small": "8px",
+        "icon_size_medium": "12px",
+        "icon_size_large": "14px",
+        "icon_opacity": 230
+    }
+}

@@ -24,6 +24,7 @@ from trigger_designer.qt.node_base import (
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import (
+    ConfigSection,
     EmptyStateLabel,
     IconButton,
     NoWheelComboBox,
@@ -106,18 +107,24 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             column_names = list(frame_schema(self.incom_data))
         except Exception:
             # If we can't get columns, show error via themed info label
-            error_label = QLabel("Error: Unable to read column information")
+            error_label = QLabel("Unable to read column information")
             error_label.setObjectName("ConfigSectionInfo")
             error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             error_label.setWordWrap(True)
             dock_layout.addWidget(error_label)
             return dock_layout
 
-        main_layout = QVBoxLayout()
-        main_layout.setSpacing(2)
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        self.sort_section = ConfigSection("Sort keys")
+        add_btn = IconButton.themed(
+            "Add sort key",
+            rsm_icon=self.node.rsm.get("icon_add"),
+        )
+        add_btn.clicked.connect(self.add_sort_row)
+        self.sort_section.add_header_action(add_btn)
+
         self.sort_layout = QVBoxLayout()
         self.sort_layout.setSpacing(2)
+        self.sort_section.addLayout(self.sort_layout)
 
         # Create rows based on saved sort_data or add initial row if none exists
         if self.sort_data:
@@ -128,20 +135,40 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Add default first row if no saved data
             self.add_sort_row()
 
-        # Add row for the add button (icon-only per design system §4)
-        add_btn = IconButton.themed(
-            "Add sort key",
-            rsm_icon=self.node.rsm.get("icon_add"),
-        )
-        add_btn.clicked.connect(self.add_sort_row)
-
-        main_layout.addLayout(self.sort_layout)
-        main_layout.addWidget(add_btn)
-        main_layout.addStretch()
-
-        dock_layout.addLayout(main_layout)
+        dock_layout.addWidget(self.sort_section)
+        self._refresh_sort_count()
         self.recursively_find_widgets(dock_layout)
         return dock_layout
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        columns: list[str] = []
+        try:
+            if self.incom_data is not None:
+                columns = list(frame_schema(self.incom_data))
+        except Exception:
+            columns = []
+        if columns:
+            chips.append((f"{len(columns)} columns", ""))
+        keys = len(self.sort_data)
+        if keys:
+            chips.append((f"{keys} {'key' if keys == 1 else 'keys'}", "accent"))
+        return chips, ""
+
+    def _refresh_sort_count(self) -> None:
+        """Keep the section header count in step with the key list."""
+        self.refresh_dock_context()
+        section = getattr(self, "sort_section", None)
+        if section is None:
+            return
+        keys = len(self.sort_data)
+        if keys == 1:
+            section.set_count("1 key")
+        elif keys:
+            section.set_count(f"{keys} keys")
+        else:
+            section.set_count("")
 
     def add_sort_row(self, restore_data: Optional[Dict[str, str]] = None) -> None:
         """
@@ -210,6 +237,7 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.sort_data.append(new_sort_item)
 
         self.sort_layout.addLayout(row_layout)
+        self._refresh_sort_count()
 
         if not restore_data and not self.history.is_restoring_history:
             new_state = {"sort_data": [item.copy() for item in self.sort_data]}
@@ -304,6 +332,8 @@ class SortContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         for row in self.row_widgets.values():
             if row["index"] > row_index:
                 row["index"] -= 1
+
+        self._refresh_sort_count()
 
         # Store new state after removal
         new_state = {"sort_data": [item.copy() for item in self.sort_data]}

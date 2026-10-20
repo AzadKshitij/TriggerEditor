@@ -1,0 +1,102 @@
+{
+    "schema": 2,
+    "id": "nord",
+    "name": "Nord",
+    "appearance": "dark",
+    "tokens": {
+        "background_primary": "#2e3440",
+        "background_secondary": "#3b4252",
+        "background_tertiary": "#434c5e",
+        "background_hover": "#4c566a",
+        "background_pressed": "#576070",
+        "background_disabled": "#2e3440",
+        "background_alternate": "#2e3440",
+
+        "scroll_background": "#6c7485",
+
+        "menu_background": "#434c5e",
+        "menu_separator": "#434c5e",
+
+        "statusbar_background": "#383f4e",
+
+        "separator_background": "#353c4a",
+
+        "text_primary": "#eceff4",
+        "text_secondary": "#d8dee9",
+        "text_disabled": "#616e88",
+        "text_inactive": "#8b98ac",
+        "text_tertiary": "#8b98ac",
+
+        "accent_primary": "#88c0d0",
+        "accent_secondary": "#9ac9d7",
+        "accent_tertiary": "#7aadbb",
+        "accent_disabled": "#74a3b1",
+
+        "success": "#a3be8c",
+        "warning": "#ebcb8b",
+        "danger": "#bf616a",
+        "info": "#81a1c1",
+        "activity": "#b48ead",
+
+        "node_input": "#bf616a",
+        "node_prepare": "#a3be8c",
+        "node_join": "#81a1c1",
+        "node_transform": "#b48ead",
+        "node_report": "#ebcb8b",
+        "node_selection": "#d08770",
+
+        "selection_color": "#ffffff",
+
+        "border_primary": "#3b4252",
+        "border_subtle": "#3b4252",
+        "border_default": "#434c5e",
+        "border_strong": "#4c566a",
+        "border_light": "#4c566a",
+        "border_dark": "#242933",
+        "border_accent": "#88c0d0",
+
+        "border_width": "1px",
+        "border_radius": "4px",
+
+        "card_background": "#2e3440",
+        "card_border": "#434c5e",
+        "editor_background": "#2b303b",
+        "error_text": "#bf616a",
+        "background_warning": "#4d4940",
+
+        "canvas_background": "#272c36",
+        "canvas_grid_light": "#17ffffff",
+        "canvas_grid_dark": "#26ffffff",
+
+        "editor_line_number_background": "#363a45",
+        "editor_line_number_text": "#8b98ac",
+        "editor_current_line": "#384450",
+        "syntax_keyword": "#81a1c1",
+        "syntax_string": "#a3be8c",
+        "syntax_number": "#b48ead",
+        "syntax_column": "#8fbcbb",
+        "syntax_function": "#88c0d0",
+        "syntax_operator": "#d8dee9",
+        "syntax_comment": "#616e88",
+
+        "spacing_tiny": "1px",
+        "spacing_small": "2px",
+        "spacing_medium": "4px",
+        "spacing_large": "8px",
+        "spacing_xlarge": "12px",
+
+        "control_scrollbar_bg": "#6c7485",
+        "control_scrollbar_handle": "#4c566a",
+        "control_menu_bg": "#434c5e",
+        "control_toolbar_bg": "#3b4252",
+
+        "button_bg": "#3b4252",
+        "button_hover": "#4c566a",
+        "button_pressed": "#576070",
+
+        "icon_size_small": "8px",
+        "icon_size_medium": "12px",
+        "icon_size_large": "14px",
+        "icon_opacity": 230
+    }
+}

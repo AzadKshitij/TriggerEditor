@@ -30,14 +30,14 @@ import config as cfg
 # Files the workflow produces that the pandas script does not, and why.
 EXPECTED_EXTRA = {
     "orders_enriched.parquet": "the same enriched fact, written as parquet",
-    "kpi_fact_rowcount.csv": "Count Records node output (single count column)",
+    "kpi_fact_rowcount.csv": "Count node output (single count column)",
 }
 
 # Reports the pandas script produces that have no node equivalent.
 SCRIPT_ONLY = {
     "kpi_summary.csv": "assembled row-by-row in Python; no metric-table node exists",
     "data_quality_report.csv": "the script's own stage log; not a data report",
-    "scenario_grid.csv": "labelled cross-product; Generate Rows only emits a bare counter",
+    "scenario_grid.csv": "labelled cross-product; Rows only emits a bare counter",
 }
 
 # Reports where a row-count difference is expected and explained, with the

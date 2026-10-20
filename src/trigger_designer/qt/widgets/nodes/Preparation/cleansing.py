@@ -13,11 +13,10 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QCheckBox,
     QHBoxLayout,
-    QScrollArea,
     QSizePolicy,
 )
 from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Qt, Signal
+from qtpy.QtCore import Signal
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     register_node,
@@ -160,22 +159,18 @@ class CleansingContent(
 
             schema = self._get_schema()
 
-            # Create a scroll area for the entire configuration
-            scroll_area = QScrollArea()
-            scroll_area.setWidgetResizable(True)
-            scroll_area.setHorizontalScrollBarPolicy(
-                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-            )
-            scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-
-            # Create the main widget that will be inside the scroll area
+            # The pane owns the only scrollbar (see ConfigDock.initUI): the
+            # sections stack and grow, and "Node Configuration" scrolls when
+            # the whole stack is taller than the pane. A second scroll area
+            # here would trap the pointer in a nested one.
             main_widget = QWidget()
             main_layout = QVBoxLayout(main_widget)
             main_layout.setSpacing(2)
-            main_layout.setContentsMargins(5, 5, 5, 5)
+            main_layout.setContentsMargins(0, 0, 2, 0)
 
             # Field Selection Group - TOP PRIORITY, 50% of space with scrollbar
-            fields_group = ConfigSection("Select Fields to Cleanse")
+            fields_group = ConfigSection("Cleanse fields")
+            self.fields_section = fields_group
 
             # All/None buttons (text: paired bulk actions, design system §4.3)
             buttons_layout = QHBoxLayout()
@@ -198,7 +193,6 @@ class CleansingContent(
                 list(schema),
                 initial_checked,
                 label_fn=lambda column: f"{column} [{schema[column]}]",
-                max_height=220,
             )
             for column, checkbox in self.fields_list.checkboxes.items():
                 checkbox.setToolTip(f"Column type: {schema[column]}")
@@ -206,14 +200,13 @@ class CleansingContent(
             self.field_checkboxes = self.fields_list.checkboxes
             fields_group.addWidget(self.fields_list)
 
-            # Set size policy for fields group to fixed 500px height
-            fields_group.setSizePolicy(
-                QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding
-            )
-            fields_group.setMinimumHeight(220)
+            # No fixed size on the section: the checklist reports the height
+            # its rows need (capped), so a one-column frame is one row tall
+            # and the section grows with the schema.
 
             # Remove Null Data Group
-            null_data_group = ConfigSection("Remove Null Data")
+            null_data_group = ConfigSection("Remove null data")
+            self.null_section = null_data_group
 
             # Remove Null Rows
             remove_null_rows_check = QCheckBox("Remove Null Rows")
@@ -261,7 +254,8 @@ class CleansingContent(
             )
 
             # Replace Nulls Group
-            replace_nulls_group = ConfigSection("Replace Nulls")
+            replace_nulls_group = ConfigSection("Replace nulls")
+            self.replace_section = replace_nulls_group
 
             # Replace with Blanks (String Fields) - default checked
             replace_blanks_check = QCheckBox("Replace with Blanks (String Fields)")
@@ -289,8 +283,12 @@ class CleansingContent(
                 QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum
             )
 
-            # Character Removal Group
-            char_group = ConfigSection("Remove Unwanted Characters")
+            # Character Removal Group - the one long rule stack, so it folds.
+            char_group = ConfigSection(
+                "Remove unwanted characters",
+                collapsible=True,
+            )
+            self.char_section = char_group
 
             # Whitespace options
             whitespace_check = QCheckBox("Leading and Trailing Whitespace")
@@ -356,7 +354,8 @@ class CleansingContent(
             )
 
             # Case Modification Group
-            case_group = ConfigSection("Modify Case")
+            case_group = ConfigSection("Modify case")
+            self.case_section = case_group
 
             case_combo = NoWheelComboBox()
             case_combo.addItems(["None", "Upper Case", "Lower Case", "Title Case"])
@@ -376,21 +375,14 @@ class CleansingContent(
             # Fields selection takes up to 500px or required space (whichever is smaller)
             # Other groups take only the minimum space they require
             main_layout.addWidget(fields_group)
-            main_layout.addSpacing(5)
             main_layout.addWidget(null_data_group)
-            main_layout.addSpacing(5)
             main_layout.addWidget(replace_nulls_group)
-            main_layout.addSpacing(5)
             main_layout.addWidget(char_group)
-            main_layout.addSpacing(5)
             main_layout.addWidget(case_group)
             main_layout.addStretch()  # Push everything to the top
 
-            # Set the main widget to the scroll area
-            scroll_area.setWidget(main_widget)
-
-            # Add the scroll area to the dock layout
-            dock_layout.addWidget(scroll_area)
+            # Add the section stack to the dock layout
+            dock_layout.addWidget(main_widget)
 
             self.update_selected_fields()
             self.process_data()
@@ -398,6 +390,81 @@ class CleansingContent(
             dock_layout.addWidget(EmptyStateLabel())
 
         # return layout
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        total = len(getattr(self, "field_checkboxes", {}) or {})
+        selected = len(getattr(self, "selected_fields", []) or [])
+        if total:
+            chips.append(
+                (f"{selected} of {total} fields", "accent" if selected else "")
+            )
+        rules = sum(
+            1
+            for flag in (
+                self.remove_null_rows,
+                self.remove_null_rows_from_selected_columns,
+                self.remove_null_columns,
+                self.replace_null_strings,
+                self.replace_null_numbers,
+                self.strip_whitespace,
+                self.normalize_spaces,
+                self.remove_all_whitespace,
+                self.remove_letters,
+                self.remove_numbers,
+                self.remove_punctuation,
+                self.case_modification != "none",
+            )
+            if flag
+        )
+        if rules:
+            chips.append((f"{rules} rules", ""))
+        return chips, ""
+
+    def _refresh_cleansing_counts(self) -> None:
+        """Keep section header counts in step with the configuration."""
+        self.refresh_dock_context()
+
+        def tally(*flags: bool) -> int:
+            return sum(1 for flag in flags if flag)
+
+        section = getattr(self, "fields_section", None)
+        if section is not None:
+            total = len(getattr(self, "field_checkboxes", {}) or {})
+            selected = len(getattr(self, "selected_fields", []) or [])
+            section.set_count(f"{selected} of {total}" if total else "")
+
+        section = getattr(self, "null_section", None)
+        if section is not None:
+            count = tally(
+                self.remove_null_rows,
+                self.remove_null_rows_from_selected_columns,
+                self.remove_null_columns,
+            )
+            section.set_count(f"{count} on" if count else "")
+
+        section = getattr(self, "replace_section", None)
+        if section is not None:
+            count = tally(self.replace_null_strings, self.replace_null_numbers)
+            section.set_count(f"{count} on" if count else "")
+
+        section = getattr(self, "char_section", None)
+        if section is not None:
+            count = tally(
+                self.strip_whitespace,
+                self.normalize_spaces,
+                self.remove_all_whitespace,
+                self.remove_letters,
+                self.remove_numbers,
+                self.remove_punctuation,
+            )
+            section.set_count(f"{count} on" if count else "")
+
+        section = getattr(self, "case_section", None)
+        if section is not None:
+            display = self._get_case_display_value()
+            section.set_count("" if display == "None" else display)
 
     def select_all_fields(self) -> None:
         """Select all fields for cleansing"""
@@ -568,6 +635,8 @@ class CleansingContent(
 
             self.data = cleaner.get_result()
             self.cleansing_stats = cleaner.get_stats()
+
+        self._refresh_cleansing_counts()
 
     def get_code(self) -> str:
         if not self.incoming_variable:

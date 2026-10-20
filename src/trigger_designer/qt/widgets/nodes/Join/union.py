@@ -59,6 +59,7 @@ from trigger_designer.qt.undo.protocol import is_syncing
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
     EmptyStateLabel,
+    FormRow,
     IconButton,
     NoWheelComboBox,
 )
@@ -323,7 +324,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self._order_row_layouts = []
 
         main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(5, 5, 5, 5)
+        main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(2)
         self._main_layout = main_layout
 
@@ -336,6 +337,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         main_layout.addStretch()
         dock_layout.addLayout(main_layout)
+        self._refresh_union_counts()
         # NOTE: no recursively_find_widgets here. Every section below is
         # marked _undo_composite and commits explicitly, so the Config Dock
         # sweep must skip these children - binding them too would record
@@ -348,12 +350,10 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def _build_mode_section(self, main_layout: QVBoxLayout) -> None:
         section = ConfigSection(
-            "Union Mode", info="How columns from the inputs are aligned."
+            "Union mode", info="How columns from the inputs are aligned."
         )
         self._mark_composite(section)
-        row = QHBoxLayout()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(QLabel("Mode"))
+        self._mode_section = section
         self.mode_combo = NoWheelComboBox()
         # Populate before connecting: no signal may fire during build.
         self.mode_combo.addItems(
@@ -367,19 +367,53 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
         self.mode_combo.setCurrentText(MODES.get(self.mode, MODES["by_name"]))
         self.mode_combo.currentTextChanged.connect(self._on_mode_changed)
-        row.addWidget(self.mode_combo, 1)
-        section.addLayout(row)
+        section.addWidget(FormRow("Mode", self.mode_combo, label_width=64))
         main_layout.addWidget(section)
 
     def _build_order_section(self, main_layout: QVBoxLayout) -> None:
         section = ConfigSection(
-            "Input Order",
+            "Input order",
             info="Rows stack #1 first. Reorder with Up/Down or reconnect edges.",
         )
         self._mark_composite(section)
         self._order_section = section
         self._refresh_order_rows()
         main_layout.addWidget(section)
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = [
+            (self.mode.replace("_", " "), "accent"),
+        ]
+        inputs = len(getattr(self, "input_frames", []) or [])
+        if inputs:
+            chips.append((f"{inputs} input{'s' if inputs > 1 else ''}", ""))
+        outputs = len(getattr(self, "column_map", []) or [])
+        if outputs:
+            chips.append((f"{outputs} output{'s' if outputs > 1 else ''}", ""))
+        return chips, ""
+
+    def _refresh_union_counts(self) -> None:
+        """Keep section header counts in step with the model."""
+        self.refresh_dock_context()
+        section = getattr(self, "_mode_section", None)
+        if section is not None:
+            section.set_count(self.mode.replace("_", " "))
+        section = getattr(self, "_order_section", None)
+        if section is not None:
+            try:
+                inputs = len(self.node.getOrderedEdges())
+            except (AttributeError, RuntimeError):
+                inputs = 0
+            section.set_count(
+                f"{inputs} input{'s' if inputs > 1 else ''}" if inputs else ""
+            )
+        section = getattr(self, "_mapping_section", None)
+        if section is not None:
+            outputs = len(getattr(self, "column_map", []) or [])
+            section.set_count(
+                f"{outputs} output{'s' if outputs > 1 else ''}" if outputs else ""
+            )
 
     def _ordered_edge_labels(self) -> List[str]:
         try:
@@ -438,6 +472,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             row.addWidget(down_btn)
             section.addLayout(row)
             self._order_row_layouts.append(row)
+        self._refresh_union_counts()
 
     def _build_mapping_section(self, main_layout: QVBoxLayout) -> None:
         section = ConfigSection(
@@ -524,6 +559,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         section.addLayout(add_row)
         if self._main_layout is not None:
             self._main_layout.insertWidget(index, section)
+        self._refresh_union_counts()
 
     def _add_mapping_row(self, section: ConfigSection, row: Dict[str, Any]) -> None:
         layout = QHBoxLayout()
@@ -585,6 +621,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.push_property_change(
             ("mode",), old_mode, new_mode, "Union Mode Changed", rebuild=True
         )
+        self._refresh_union_counts()
 
     def _move_input(self, edge: Any, position: int) -> None:
         if self._guarded():
@@ -641,6 +678,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
         self.column_map = new
         self.push_list_change(("column_map",), old, new, "Union Columns Mapped")
+        self._refresh_union_counts()
 
     def _unique_output_name(self, base: str = "New_Column") -> str:
         taken = {str(r.get("output") or "") for r in self.column_map}
@@ -717,11 +755,13 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self._mapping_section.setVisible(self.mode == "manual")
             except RuntimeError:
                 self._mapping_section = None
+        self._refresh_union_counts()
 
     def _rebuild_widgets(self) -> None:
         try:
             self._refresh_order_rows()
             self._refresh_mapping_section()
+            self._refresh_union_counts()
         except RuntimeError:
             self._order_section = None
             self._mapping_section = None

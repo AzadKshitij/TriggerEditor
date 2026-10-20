@@ -7,6 +7,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
 )
+from trigger_designer.qt.widgets.common import EmptyStateLabel
 
 # NOTE: intentionally NOT registered in any opcode registry and NOT in
 # _LAZY_NODE_SPECS, so it never appears in the palette. The loader
@@ -22,14 +23,22 @@ class UnknownContent(QDMNodeIconContentWidget):
         super().__init__(node, parent)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> QVBoxLayout:
+        dock_layout.addWidget(EmptyStateLabel("This node type is unavailable."))
+
         label = QLabel(
-            f"Unknown node type:\n{self.missing_op}\n\n"
+            f"{self.missing_op}\n\n"
             "Its saved settings are kept and will be written back on save. "
             "Install the providing node or replace this node."
         )
+        label.setObjectName("ConfigSectionInfo")
         label.setWordWrap(True)
         dock_layout.addWidget(label)
+        dock_layout.addStretch()
         return dock_layout
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        return [("unresolved", "accent")], self.missing_op
 
     def serialize(self) -> Dict[str, Any]:
         res = super().serialize()
@@ -83,8 +92,16 @@ class TriggerNode_Unknown(TriggerNode):
         res["op"] = self.missing_op
         return res
 
-    def deserialize(self, data: dict, hashmap: dict = {}, restore_id: bool = True) -> bool:
+    def deserialize(
+        self, data: dict, hashmap: dict = {}, restore_id: bool = True
+    ) -> bool:
         res = super().deserialize(data, hashmap, restore_id)
+        # This type stands in for a node that cannot be resolved, so the name
+        # the file saved is the only name it has: restore what the base class
+        # just replaced with "Unknown".
+        saved_title = data.get("title")
+        if saved_title:
+            self.title = saved_title
         op = data.get("op")
         if not op:
             # Deferred import: this module is imported during registry

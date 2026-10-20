@@ -14,6 +14,11 @@ from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
 class WorkflowExecutionMixin:
     """Mixin providing workflow execution orchestration and statistics tracking."""
 
+    #: ``TriggerSubWindow`` shadows this with a real ``Signal``; this mixin is
+    #: not a QObject (tests instantiate it directly), so announcing the end of
+    #: a run has to stay optional.
+    executionResultsChanged = None
+
     def init_workflow_execution(self) -> None:
         """Initialise workflow execution state tracking."""
         self.workflow_execution_count: int = 0
@@ -23,6 +28,20 @@ class WorkflowExecutionMixin:
         self.execution_results: Dict[Any, Dict[str, Any]] = {}
         self._workflow_worker: Union[WorkflowWorker, None] = None
         self._workflow_sorted_nodes: List[Any] = []
+
+    def _log_to_dock(self, message: str) -> None:
+        """Report a message in the Logging dock.
+
+        The dock is the console replacement: a windowed build has no
+        terminal to print to, so the run summary and the "no results"
+        warnings have to go where the user can read them. Tests drive this
+        mixin directly, without a dock, so the call is optional.
+        """
+        log_info = getattr(self, "logInfo", None)
+        if callable(log_info):
+            log_info(message)
+        else:
+            logger.info(message)
 
     # --- Workflow execution helpers -------------------------------------------------
     def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
@@ -54,7 +73,9 @@ class WorkflowExecutionMixin:
         self.workflow_execution_count += 1
 
         logger.info("🚀 Starting workflow execution #{}", self.workflow_execution_count)
-        print(f"🚀 Starting workflow execution #{self.workflow_execution_count}...")
+        self._log_to_dock(
+            f"🚀 Starting workflow execution #{self.workflow_execution_count}..."
+        )
 
         self._workflow_sorted_nodes = sorted_nodes
 
@@ -77,7 +98,9 @@ class WorkflowExecutionMixin:
         node_name = getattr(node, "node_title", node.__class__.__name__)
 
         if result.success:
-            self.execution_results[node] = result.variables
+            self.execution_results[node] = self._prune_node_results(
+                node, result.variables
+            )
             node.grNode.setPenExecuted()
             node.grNode.update()
         else:
@@ -114,6 +137,9 @@ class WorkflowExecutionMixin:
         else:
             self._execution_cleanup(success=False)
 
+        if self.executionResultsChanged is not None:
+            self.executionResultsChanged.emit()
+
     def _execution_cleanup(self, success: bool = True) -> None:
         """Handle workflow cleanup, statistics, and visual reset."""
         workflow_end_time = time.time()
@@ -141,22 +167,20 @@ class WorkflowExecutionMixin:
         logger.info("📈 Average execution time: {:.3f} seconds", average_execution)
         logger.info("🕒 Total workflow time: {:.3f} seconds", self.total_workflow_time)
 
-        print(f"\n{'=' * 60}")
-        print("🎯 WORKFLOW EXECUTION SUMMARY")
-        print(f"{'=' * 60}")
-        print(
-            f"Execution #{self.workflow_execution_count} - {status_icon} {status_text}"
+        summary = (
+            f"🎯 WORKFLOW EXECUTION SUMMARY — "
+            f"execution #{self.workflow_execution_count}, "
+            f"{status_icon} {status_text}"
         )
-
-        print(f"⏱️  This execution: {current_execution_time:.3f} seconds")
+        self._log_to_dock(summary)
+        self._log_to_dock(f"⏱️  This execution: {current_execution_time:.3f} seconds")
         global_logger.info(f"⏱️  This execution: {current_execution_time:.3f} seconds")
-        print(f"📊 Total runs: {self.workflow_execution_count}")
-        print(f"📈 Average time: {average_execution:.3f} seconds")
-        print(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
+        self._log_to_dock(f"📊 Total runs: {self.workflow_execution_count}")
+        self._log_to_dock(f"📈 Average time: {average_execution:.3f} seconds")
+        self._log_to_dock(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
         if not success:
-            print("⚠️  Execution failed - check logs for details")
+            self._log_to_dock("⚠️  Execution failed - check logs for details")
             global_logger.error("Workflow execution failed - check logs for details")
-        print(f"{'=' * 60}\n")
 
         for node in self.getAllNodes():
             if node.isInvalid():
@@ -191,24 +215,33 @@ class WorkflowExecutionMixin:
         self.last_execution_time = 0.0
         self.execution_results.clear()
         logger.info("📊 Workflow statistics reset")
-        print("📊 Workflow execution statistics have been reset")
+        self._log_to_dock("📊 Workflow execution statistics have been reset")
 
-    def _get_output_variable_names(self, node: Any) -> list[str]:
-        """Infer output variable names for a node from the latest execution."""
-        node_results = self.execution_results.get(node, {})
+    def _declared_output_variable_names(self, node: Any) -> list[str]:
+        """Output variable names a node declares, in socket order.
+
+        Reads ``node.param`` (what the node stored after its last eval), the
+        evaluated ``node.value`` output list, then the content's own
+        ``variable_name`` / ``*_variable_name`` / ``*_var`` attributes. Unlike
+        :meth:`_get_output_variable_names` this does not need the run results,
+        so it can also drive pruning.
+        """
         variable_names: list[str] = []
+
+        def add(name: Any) -> None:
+            if isinstance(name, str) and name and name not in variable_names:
+                variable_names.append(name)
 
         if hasattr(node, "param"):
             for socket_data in getattr(node, "param", []) or []:
-                if not isinstance(socket_data, dict):
-                    continue
-                var_name = socket_data.get("variable_name")
-                if (
-                    isinstance(var_name, str)
-                    and var_name in node_results
-                    and var_name not in variable_names
-                ):
-                    variable_names.append(var_name)
+                if isinstance(socket_data, dict):
+                    add(socket_data.get("variable_name"))
+
+        value = getattr(node, "value", None)
+        if isinstance(value, list):
+            for entry in value:
+                if isinstance(entry, dict):
+                    add(entry.get("variable_name"))
 
         content = getattr(node, "content", None)
         if content is not None:
@@ -216,28 +249,62 @@ class WorkflowExecutionMixin:
                 if not isinstance(attr_value, str) or attr_name == "incoming_variable":
                     continue
 
-                is_output_name = (
-                    attr_name == "variable_name"
-                    or attr_name.endswith("_variable_name")
-                    or attr_name.endswith("_var")
+                is_output_name = attr_name == "variable_name" or attr_name.endswith(
+                    ("_variable_name", "_var")
                 )
-                if (
-                    is_output_name
-                    and attr_value in node_results
-                    and attr_value not in variable_names
-                ):
-                    variable_names.append(attr_value)
+                if is_output_name:
+                    add(attr_value)
 
         return variable_names
+
+    def _prune_node_results(
+        self, node: Any, variables: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Keep only a node's declared outputs from its run namespace.
+
+        ``result.variables`` is the whole executed namespace, so it also holds
+        temporary frames (``df_for_duck``), imported modules and closed DuckDB
+        handles. ``execution_results`` only feeds socket lookups and the Data
+        Preview, so keep the declared outputs and drop the rest. A node that
+        declares nothing (older content) falls back to the previewable frames,
+        and to the full namespace only when even that finds nothing.
+        """
+        declared = self._declared_output_variable_names(node)
+        pruned = {name: variables[name] for name in declared if name in variables}
+        if pruned:
+            return pruned
+
+        previewable = {
+            name: value
+            for name, value in variables.items()
+            if self._is_previewable_value(value)
+        }
+        return previewable or variables
+
+    @staticmethod
+    def _is_previewable_value(value: Any) -> bool:
+        """True for the values the Data Preview can render."""
+        from trigger_designer.qt.models.preview_sampling import is_previewable
+
+        return is_previewable(value)
+
+    def _get_output_variable_names(self, node: Any) -> list[str]:
+        """Output variable names for a node, restricted to stored results."""
+        node_results = self.execution_results.get(node, {})
+        return [
+            name
+            for name in self._declared_output_variable_names(node)
+            if name in node_results
+        ]
 
     def getSocketData(self, node: Any, socket_index: int) -> Any:  # noqa: N802
         """Return the execution result bound to a socket after workflow run."""
         if not self.execution_results:
-            print("No execution results available. Run the workflow first.")
+            self._log_to_dock("No execution results available. Run the workflow first.")
             return None
 
         if node not in self.execution_results:
-            print(f"No results found for node {node}")
+            self._log_to_dock(f"No results found for node {node}")
             return None
 
         node_results = self.execution_results[node]
@@ -249,6 +316,8 @@ class WorkflowExecutionMixin:
         if socket_index == 0 and len(node_results) == 1:
             return next(iter(node_results.values()))
 
-        print(f"No socket data found for node {node} at socket index {socket_index}")
+        self._log_to_dock(
+            f"No socket data found for node {node} at socket index {socket_index}"
+        )
 
         return None

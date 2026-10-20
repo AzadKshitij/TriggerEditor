@@ -196,9 +196,7 @@ def _row(text, checked, dtype):
 
 
 def test_undo_redo_round_trip_after_dtype_edit():
-    _parent, window, node = _evaluated_select(
-        pl.DataFrame({"id": ["1", "2"]}).lazy()
-    )
+    _parent, window, node = _evaluated_select(pl.DataFrame({"id": ["1", "2"]}).lazy())
     content = node.content
     history = window.scene.history
 

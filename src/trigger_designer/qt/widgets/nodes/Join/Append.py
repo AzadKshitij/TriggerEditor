@@ -5,8 +5,6 @@ from polars._typing import ConcatMethod
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import Signal
 from qtpy.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
     QLayout,
     QVBoxLayout,
     QWidget,
@@ -23,6 +21,7 @@ from nodeeditor.utils import dumpException
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
     EmptyStateLabel,
+    FormRow,
     NoWheelComboBox,
 )
 
@@ -83,10 +82,9 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         main_layout.setContentsMargins(5, 5, 5, 5)
         main_layout.setSpacing(2)
 
-        config_group = ConfigSection("Append Configuration")
-        row = QHBoxLayout()
-        row.setContentsMargins(0, 0, 0, 0)
-        row.addWidget(QLabel("How"))
+        config_group = ConfigSection()
+        self.append_section = config_group
+
         self.how_combo = NoWheelComboBox()
         self.how_combo.addItems(["diagonal_relaxed", "diagonal", "vertical"])
         self.how_combo.setMinimumHeight(30)
@@ -98,19 +96,29 @@ class AppendContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
         self.how_combo.setCurrentText(self.how)
         self.how_combo.currentTextChanged.connect(self._on_how_changed)
-        row.addWidget(self.how_combo)
-        row.addStretch()
-        config_group.addLayout(row)
+        config_group.addWidget(FormRow("Mode", self.how_combo, label_width=64))
 
-        main_layout.addWidget(config_group)
-        main_layout.addStretch()
-
-        dock_layout.addLayout(main_layout)
+        dock_layout.addWidget(config_group)
+        dock_layout.addStretch()
+        self._refresh_append_counts()
         self.recursively_find_widgets(dock_layout)
         return dock_layout
 
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = [(self.how, "accent")]
+        return chips, "rows stacked, left then right"
+
+    def _refresh_append_counts(self) -> None:
+        """Keep the section header count in step with the mode."""
+        self.refresh_dock_context()
+        section = getattr(self, "append_section", None)
+        if section is not None:
+            section.set_count(self.how)
+
     def _on_how_changed(self, text: str) -> None:
         self.how = text
+        self._refresh_append_counts()
         self.evaluate.emit()
 
     def concat(self, left: Any, right: Any) -> Any:

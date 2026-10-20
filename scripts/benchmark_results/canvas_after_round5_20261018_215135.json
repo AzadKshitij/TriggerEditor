@@ -1,0 +1,245 @@
+{
+  "config": {
+    "label": "after_round5",
+    "nodes": 120,
+    "edges": 119,
+    "repeats": 5,
+    "source": "synthetic",
+    "viewport": [
+      1198,
+      798
+    ],
+    "zoom_out_scale": 0.4123
+  },
+  "metrics": {
+    "zoomed_out.repaint.viewport": {
+      "steps": 10,
+      "ms_median": 118.017,
+      "ms_per_step": 11.8017,
+      "runs_ms": [
+        114.672,
+        115.357,
+        118.017,
+        118.044,
+        119.849
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 1190
+      }
+    },
+    "zoomed_out.render.offscreen": {
+      "steps": 10,
+      "ms_median": 93.667,
+      "ms_per_step": 9.3667,
+      "runs_ms": [
+        91.721,
+        92.943,
+        93.667,
+        97.915,
+        102.366
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 1190
+      }
+    },
+    "zoomed_out.pan.middle": {
+      "steps": 60,
+      "ms_median": 644.299,
+      "ms_per_step": 10.7383,
+      "runs_ms": [
+        621.566,
+        634.787,
+        644.299,
+        664.351,
+        716.387
+      ],
+      "counters": {
+        "event.mouse_move": 60,
+        "paint.background": 60,
+        "paint.edge": 4728
+      }
+    },
+    "zoomed_out.zoom.ctrl_wheel": {
+      "steps": 24,
+      "ms_median": 182.135,
+      "ms_per_step": 7.589,
+      "runs_ms": [
+        156.655,
+        157.892,
+        182.135,
+        183.842,
+        191.29
+      ],
+      "counters": {
+        "paint.background": 20
+      }
+    },
+    "zoomed_out.drag.node": {
+      "steps": 45,
+      "ms_median": 282.977,
+      "ms_per_step": 6.2884,
+      "runs_ms": [
+        267.042,
+        268.08,
+        282.977,
+        288.184,
+        316.139
+      ],
+      "counters": {
+        "event.mouse_move": 45,
+        "paint.background": 45,
+        "paint.edge": 629
+      }
+    },
+    "zoomed_out.rubber_band.select": {
+      "steps": 45,
+      "ms_median": 528.45,
+      "ms_per_step": 11.7433,
+      "runs_ms": [
+        520.036,
+        527.371,
+        528.45,
+        585.415,
+        652.191
+      ],
+      "counters": {
+        "event.mouse_move": 45,
+        "paint.background": 46,
+        "paint.edge": 2756
+      }
+    },
+    "zoomed_out.query.items_600": {
+      "steps": 200,
+      "ms_median": 227.462,
+      "ms_per_step": 1.1373,
+      "runs_ms": [
+        216.472,
+        223.048,
+        227.462,
+        234.123,
+        243.152
+      ],
+      "counters": {}
+    },
+    "zoomed_in.repaint.viewport": {
+      "steps": 10,
+      "ms_median": 99.013,
+      "ms_per_step": 9.9013,
+      "runs_ms": [
+        95.186,
+        97.349,
+        99.013,
+        101.05,
+        101.676
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 350,
+        "paint.node.icon": 300
+      }
+    },
+    "zoomed_in.render.offscreen": {
+      "steps": 10,
+      "ms_median": 90.192,
+      "ms_per_step": 9.0192,
+      "runs_ms": [
+        88.849,
+        89.136,
+        90.192,
+        91.741,
+        92.899
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 350,
+        "paint.node.icon": 300
+      }
+    },
+    "zoomed_in.pan.middle": {
+      "steps": 60,
+      "ms_median": 661.255,
+      "ms_per_step": 11.0209,
+      "runs_ms": [
+        652.718,
+        657.911,
+        661.255,
+        782.026,
+        782.174
+      ],
+      "counters": {
+        "event.mouse_move": 60,
+        "paint.background": 60,
+        "paint.edge": 1827,
+        "paint.node.icon": 1669
+      }
+    },
+    "zoomed_in.zoom.ctrl_wheel": {
+      "steps": 24,
+      "ms_median": 159.483,
+      "ms_per_step": 6.6451,
+      "runs_ms": [
+        155.14,
+        156.813,
+        159.483,
+        164.597,
+        164.722
+      ],
+      "counters": {
+        "paint.background": 20,
+        "paint.edge": 23,
+        "paint.node.icon": 19
+      }
+    },
+    "zoomed_in.drag.node": {
+      "steps": 45,
+      "ms_median": 445.09,
+      "ms_per_step": 9.8909,
+      "runs_ms": [
+        365.264,
+        439.859,
+        445.09,
+        471.871,
+        532.769
+      ],
+      "counters": {
+        "event.mouse_move": 45,
+        "paint.background": 45,
+        "paint.edge": 765,
+        "paint.node.icon": 495
+      }
+    },
+    "zoomed_in.rubber_band.select": {
+      "steps": 45,
+      "ms_median": 699.814,
+      "ms_per_step": 15.5514,
+      "runs_ms": [
+        679.148,
+        692.72,
+        699.814,
+        708.292,
+        806.731
+      ],
+      "counters": {
+        "event.mouse_move": 45,
+        "paint.background": 46,
+        "paint.edge": 1147,
+        "paint.node.icon": 699
+      }
+    },
+    "zoomed_in.query.items_600": {
+      "steps": 200,
+      "ms_median": 521.788,
+      "ms_per_step": 2.6089,
+      "runs_ms": [
+        510.792,
+        511.044,
+        521.788,
+        548.938,
+        582.127
+      ],
+      "counters": {}
+    }
+  }
+}

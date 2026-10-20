@@ -1,0 +1,742 @@
+#!/usr/bin/env python3
+"""DataPreviewDock: follow / pin / socket choice, provenance, per-window state."""
+
+import os
+import sys
+import time
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+
+sys.path.insert(
+    0,
+    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
+)
+
+import polars as pl
+from qtpy.QtWidgets import QApplication
+
+from trigger_designer.qt.docks.data_preview import DataPreviewDock
+
+_APP = QApplication.instance() or QApplication([])
+
+
+# -- stand-ins for the design window -----------------------------------------
+
+
+class _GraphicsSocket:
+    """nodeeditor's socket graphic: it holds the label the node passed."""
+
+    def __init__(self, text: str = "") -> None:
+        self._text = text
+
+
+class _Socket:
+    def __init__(self, text: str = "") -> None:
+        self.grSocket = _GraphicsSocket(text)
+
+
+class _Node:
+    def __init__(
+        self, title: str, labels: list[str] | None = None, values: list | None = None
+    ) -> None:
+        self.title = title
+        self.outputs = [_Socket(label) for label in (labels or [""])]
+        self.value = values
+
+
+class _Item:
+    """A graphics item: nodes are reached through it, sockets stop there."""
+
+    def __init__(self, node: _Node) -> None:
+        self.node = node
+
+
+class _SocketItem:
+    def __init__(self) -> None:
+        self.socket = object()
+
+
+class _ConfigDock:
+    """The real dock keeps the graphics item it was handed, not the node.
+
+    ``ConfigDock.updateConfig`` stores ``nodes[0]`` verbatim and every caller
+    passes graphics items, so ``currentNode()`` returns one. Assigning a bare
+    ``_Node`` here wraps it, so tests exercise that contract.
+    """
+
+    def __init__(self) -> None:
+        self._item = None
+
+    @property
+    def node(self):
+        return self._item
+
+    @node.setter
+    def node(self, value) -> None:
+        if value is None or isinstance(value, _Item):
+            self._item = value
+        else:
+            self._item = _Item(value)
+
+    def currentNode(self):
+        return self._item
+
+
+class _Scene:
+    def __init__(self) -> None:
+        self.nodes: list = []
+
+
+class _Window:
+    """A TriggerSubWindow with just the surface the dock touches."""
+
+    def __init__(self, title: str = "Design 1") -> None:
+        self._title = title
+        self.config_dock = _ConfigDock()
+        self.scene = _Scene()
+        self.execution_results: dict = {}
+        self.selected: list = []
+
+    def windowTitle(self) -> str:
+        return self._title
+
+    def _find_config_dock(self) -> _ConfigDock:
+        return self.config_dock
+
+    def getSelectedItems(self) -> list:
+        return self.selected
+
+    def getSocketData(self, node: _Node, index: int):
+        return self.execution_results.get(node, {}).get(f"var{index}")
+
+
+def _envelope(rows: int, column: str = "n") -> dict:
+    return {"data": pl.DataFrame({column: range(rows)}), "variable_name": column}
+
+
+def _node(title: str, labels: list[str] | None = None, rows: list[int] | None = None):
+    values = [_envelope(count) for count in rows] if rows is not None else None
+    return _Node(title, labels, values)
+
+
+def _select(window: _Window, node: _Node) -> None:
+    """Select ``node`` in the window and register it in its scene."""
+    window.selected = [_Item(node)]
+    if node not in window.scene.nodes:
+        window.scene.nodes.append(node)
+
+
+# -- helpers -----------------------------------------------------------------
+
+
+def _stub_requests(panel) -> list:
+    """Keep set_source/refresh thread-free; records the requested payloads."""
+    requested: list = []
+    panel.controller.request = requested.append
+    return requested
+
+
+def _dock() -> tuple[DataPreviewDock, list]:
+    dock = DataPreviewDock()
+    return dock, _stub_requests(dock.panel)
+
+
+def _wait_until(predicate, timeout_ms: int = 10_000) -> bool:
+    deadline = time.monotonic() + timeout_ms / 1000
+    while time.monotonic() < deadline:
+        QApplication.processEvents()
+        if predicate():
+            return True
+        time.sleep(0.01)
+    QApplication.processEvents()
+    return predicate()
+
+
+# -- follow / pin ------------------------------------------------------------
+
+
+def test_initial_state_is_blind_and_empty():
+    dock, _ = _dock()
+
+    assert dock.windowTitle() == "Data Preview"
+    assert dock.panel.node_chip.isHidden()
+    assert dock.panel.socket_chip.isHidden()
+    assert dock.panel.counts_chip.isHidden()
+    assert not dock.panel.pin_btn.isEnabled()
+    assert not dock.panel.refresh_btn.isEnabled()
+    assert dock.panel._state_label.text() == "Select a node to preview its output"
+
+
+def test_switch_follows_the_config_dock_node_without_the_file_name():
+    dock, requested = _dock()
+    window = _Window("Preparation")
+    node = _node("Select", rows=[3])
+    window.config_dock.node = node
+
+    dock.switch_to_design_window(window)
+
+    # The dock follows the window's node; its file name stays out of the title.
+    assert dock.windowTitle() == "Data Preview"
+    assert dock.panel.node_label.text() == "Select"
+    assert requested[-1] is node.value[0]["data"]
+    assert dock.panel.pin_btn.isEnabled()
+    assert dock.panel.refresh_btn.isEnabled()
+
+
+def test_selection_is_used_when_the_config_dock_is_empty_and_sockets_skipped():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Filter", rows=[4])
+    window.selected = [_SocketItem(), _Item(node)]
+    window.scene.nodes.append(node)
+
+    dock.switch_to_design_window(window)
+
+    assert requested[-1] is node.value[0]["data"]
+    assert dock.panel.node_label.text() == "Filter"
+
+
+def test_config_dock_graphics_item_is_unwrapped_to_the_node():
+    """Regression: a single click arrives as a graphics item, not a node.
+
+    ``ConfigDock`` stores what ``getSelectedItems()`` handed it, so the dock
+    must step through ``.node`` - reading the item directly found no value and
+    blanked the panel with "No previewable data on this socket" until a
+    multi-selection took the fallback path.
+    """
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Cleansing", rows=[6])
+    window.config_dock.node = (
+        node  # the fake stores the graphics item, as the dock does
+    )
+    assert isinstance(window.config_dock.currentNode(), _Item)
+
+    dock.switch_to_design_window(window)
+
+    assert dock._resolve_node(window) is node
+    assert dock._node_is_shown(window, dock._current_state(), node)
+    assert requested[-1] is node.value[0]["data"]
+    assert dock.panel.node_label.text() == "Cleansing"
+
+
+def test_selection_change_switches_the_preview():
+    dock, requested = _dock()
+    window = _Window()
+    first = _node("Select", rows=[2])
+    second = _node("Filter", rows=[5])
+    window.config_dock.node = first
+    dock.switch_to_design_window(window)
+
+    window.config_dock.node = second
+    dock.note_selection_changed(window)
+    assert requested[-1] is second.value[0]["data"]
+    assert dock.panel.node_label.text() == "Filter"
+
+    window.config_dock.node = None
+    _select(window, first)
+    dock.note_selection_changed(window)
+    assert requested[-1] is first.value[0]["data"]
+
+
+def test_clearing_the_selection_blanks_the_panel():
+    dock, requested = _dock()
+    window = _Window()
+    window.config_dock.node = _node("Select", rows=[2])
+    dock.switch_to_design_window(window)
+    before = len(requested)
+
+    window.config_dock.node = None
+    window.selected = []
+    dock.note_selection_changed(window)
+
+    assert len(requested) == before
+    assert dock.panel._state_label.text() == "Select a node to preview its output"
+    assert dock.panel.node_chip.isHidden()
+    assert dock.panel.socket_chip.isHidden()
+    assert not dock.panel.pin_btn.isEnabled()
+    assert not dock.panel.refresh_btn.isEnabled()
+
+
+def test_pin_freezes_the_node_until_it_is_unpinned():
+    dock, requested = _dock()
+    window = _Window()
+    pinned = _node("Select", rows=[2])
+    other = _node("Filter", rows=[5])
+    window.config_dock.node = pinned
+    _select(window, pinned)
+    dock.switch_to_design_window(window)
+
+    dock.panel.pin_btn.setChecked(True)
+    assert dock.panel.pin_btn.isChecked()
+    assert not dock.panel._pin_dot.isHidden()
+
+    window.config_dock.node = other
+    dock.note_selection_changed(window)
+    assert requested[-1] is pinned.value[0]["data"]
+    assert dock.panel.node_label.text() == "Select"
+
+    dock.panel.pin_btn.setChecked(False)
+    assert not dock.panel.pin_btn.isChecked()
+    assert dock.panel._pin_dot.isHidden()
+    assert requested[-1] is other.value[0]["data"]
+    assert dock.panel.node_label.text() == "Filter"
+
+
+def test_pinned_node_leaving_the_scene_unpins_with_a_note():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+    _select(window, node)
+    dock.switch_to_design_window(window)
+    dock.panel.pin_btn.setChecked(True)
+    before = len(requested)
+
+    window.scene.nodes.remove(node)
+    window.config_dock.node = None
+    window.selected = []
+    dock.note_selection_changed(window)
+
+    assert not dock.panel.pin_btn.isChecked()
+    assert dock.panel.node_chip.isHidden()
+    assert len(requested) == before
+    assert "no longer in the scene" in dock.panel._state_label.text()
+
+    # The next selection follows again.
+    other = _node("Filter", rows=[5])
+    _select(window, other)
+    window.config_dock.node = other
+    dock.note_selection_changed(window)
+    assert requested[-1] is other.value[0]["data"]
+
+
+# -- per-window state --------------------------------------------------------
+
+
+def test_pins_are_kept_per_window():
+    dock, requested = _dock()
+    first_window = _Window("First")
+    second_window = _Window("Second")
+    pinned = _node("Select", rows=[2])
+    followed = _node("Filter", rows=[9])
+    _select(first_window, pinned)
+    _select(second_window, followed)
+    first_window.config_dock.node = pinned
+    second_window.config_dock.node = followed
+
+    dock.switch_to_design_window(first_window)
+    dock.panel.pin_btn.setChecked(True)
+
+    dock.switch_to_design_window(second_window)
+    assert not dock.panel.pin_btn.isChecked()
+    assert requested[-1] is followed.value[0]["data"]
+
+    dock.switch_to_design_window(first_window)
+    assert dock.panel.pin_btn.isChecked()
+    assert requested[-1] is pinned.value[0]["data"]
+
+
+def test_remove_design_window_clears_only_that_window():
+    dock, requested = _dock()
+    first_window = _Window("First")
+    second_window = _Window("Second")
+    pinned = _node("Select", rows=[2])
+    followed = _node("Filter", rows=[9])
+    _select(first_window, pinned)
+    _select(second_window, followed)
+    first_window.config_dock.node = pinned
+    second_window.config_dock.node = followed
+    dock.switch_to_design_window(first_window)
+    dock.panel.pin_btn.setChecked(True)
+
+    dock.switch_to_design_window(second_window)
+    dock.remove_design_window(str(id(second_window)))
+
+    assert str(id(second_window)) not in dock._states
+    assert dock.windowTitle() == "Data Preview"
+    assert dock.panel._state_label.text() == "Select a node to preview its output"
+    assert dock.panel.node_chip.isHidden()
+    assert str(id(first_window)) in dock._states
+
+    dock.switch_to_design_window(first_window)
+    assert dock.panel.pin_btn.isChecked()
+    assert requested[-1] is pinned.value[0]["data"]
+
+
+def test_hooks_of_another_window_are_ignored():
+    dock, requested = _dock()
+    current = _Window("Current")
+    other = _Window("Other")
+    current.config_dock.node = _node("Select", rows=[2])
+    other.config_dock.node = _node("Filter", rows=[7])
+    dock.switch_to_design_window(current)
+    before = len(requested)
+
+    dock.note_selection_changed(other)
+    dock.note_node_evaluated(other, other.config_dock.node)
+    dock.note_run_finished(other)
+
+    assert len(requested) == before
+
+
+# -- sockets -----------------------------------------------------------------
+
+
+def test_socket_chip_is_hidden_for_a_single_output():
+    dock, _ = _dock()
+    window = _Window()
+    window.config_dock.node = _node("Select", rows=[2])
+
+    dock.switch_to_design_window(window)
+
+    assert dock.panel.socket_chip.isHidden()
+    assert dock.panel.socket_combo.count() == 1
+
+
+def test_socket_combo_choice_requests_that_socket():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Join", labels=["L", "J", "R"], rows=[1, 2, 3])
+    window.config_dock.node = node
+    dock.switch_to_design_window(window)
+
+    assert not dock.panel.socket_chip.isHidden()
+    assert [dock.panel.socket_combo.itemText(i) for i in range(3)] == ["L", "J", "R"]
+    assert requested[-1] is node.value[0]["data"]
+
+    dock.panel.socket_combo.setCurrentIndex(2)
+    assert requested[-1] is node.value[2]["data"]
+
+
+def test_socket_choice_resets_for_another_node():
+    dock, requested = _dock()
+    window = _Window()
+    joined = _node("Join", labels=["L", "J"], rows=[1, 2])
+    other = _node("Filter", rows=[5])
+    window.config_dock.node = joined
+    dock.switch_to_design_window(window)
+    dock.panel.socket_combo.setCurrentIndex(1)
+    assert requested[-1] is joined.value[1]["data"]
+
+    window.config_dock.node = other
+    dock.note_selection_changed(window)
+
+    assert dock.panel.socket_combo.currentIndex() == 0
+    assert requested[-1] is other.value[0]["data"]
+
+
+# -- empty and failure states ------------------------------------------------
+
+
+def test_no_output_on_the_socket_shows_the_empty_state():
+    dock, requested = _dock()
+    window = _Window()
+    window.config_dock.node = _node("Select")
+
+    dock.switch_to_design_window(window)
+
+    assert requested == []
+    assert dock.panel._state_label.text() == "No previewable data on this socket"
+    # The chip still names the node the dock is following.
+    assert dock.panel.node_label.text() == "Select"
+    assert dock.panel.pin_btn.isEnabled()
+    assert not dock.panel.refresh_btn.isEnabled()
+
+
+def test_non_tabular_output_counts_as_no_data():
+    dock, _ = _dock()
+    window = _Window()
+    window.config_dock.node = _Node("Graph", [""], [{"data": pl.Series([1, 2])}])
+
+    dock.switch_to_design_window(window)
+
+    assert dock.panel._state_label.text() == "No previewable data on this socket"
+
+
+def test_collect_failure_is_reported_by_the_panel():
+    dock, _ = _dock()
+
+    dock.panel.controller.failed.emit("boom")
+
+    assert dock.panel._state_label.text() == "Preview failed: boom"
+
+
+def test_untitled_node_falls_back_to_its_class_name():
+    dock, _ = _dock()
+    window = _Window()
+    window.config_dock.node = _Node("", None, None)
+
+    dock.switch_to_design_window(window)
+
+    assert dock.panel.node_label.text() == "_Node"
+
+
+# -- evaluation and runs -----------------------------------------------------
+
+
+def test_eval_refresh_is_coalesced_and_only_for_the_shown_node():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+    dock.switch_to_design_window(window)
+    assert len(requested) == 1
+
+    for _ in range(3):
+        dock.note_node_evaluated(window, node)
+    assert _wait_until(lambda: len(requested) == 2)
+    assert len(requested) == 2
+    assert requested[-1] is node.value[0]["data"]
+
+    other = _node("Filter", rows=[5])
+    dock.note_node_evaluated(window, other)
+    assert not _wait_until(lambda: len(requested) > 2, timeout_ms=400)
+
+
+def test_eval_of_the_config_dock_node_refreshes_the_pinned_preview():
+    dock, requested = _dock()
+    window = _Window()
+    pinned = _node("Select", rows=[2])
+    edited = _node("Filter", rows=[5])
+    window.config_dock.node = pinned
+    _select(window, pinned)
+    dock.switch_to_design_window(window)
+    dock.panel.pin_btn.setChecked(True)
+
+    window.config_dock.node = edited
+    dock.note_node_evaluated(window, edited)
+
+    assert _wait_until(lambda: len(requested) == 2)
+    assert requested[-1] is pinned.value[0]["data"]
+
+
+def test_run_finished_pulls_results_from_the_run_store():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select")
+    window.config_dock.node = node
+    dock.switch_to_design_window(window)
+    assert requested == []
+
+    window.execution_results = {node: {"var0": _envelope(4)}}
+    dock.note_run_finished(window)
+
+    assert requested[-1] is window.execution_results[node]["var0"]["data"]
+
+
+def test_run_finished_keeps_the_shown_node_when_nothing_is_selected():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+    dock.switch_to_design_window(window)
+
+    window.config_dock.node = None
+    window.selected = []
+    dock.note_run_finished(window)
+
+    assert requested[-1] is node.value[0]["data"]
+
+
+# -- strip controls and options menu -----------------------------------------
+
+
+def test_refresh_button_follows_the_busy_signal():
+    dock, _ = _dock()
+    window = _Window()
+    window.config_dock.node = _node("Select", rows=[2])
+    dock.switch_to_design_window(window)
+    assert dock.panel.refresh_btn.isEnabled()
+
+    dock.panel.controller._busy = True
+    dock.panel._on_busy_changed(True)
+    assert not dock.panel.refresh_btn.isEnabled()
+
+    dock.panel.controller._busy = False
+    dock.panel._on_busy_changed(False)
+    assert dock.panel.refresh_btn.isEnabled()
+
+
+def test_options_menu_carries_panel_actions_then_window_actions():
+    dock, _ = _dock()
+
+    labels = [
+        action.text()
+        for action in dock.options_menu.actions()
+        if not action.isSeparator()
+    ]
+
+    assert labels[:3] == ["Copy as TSV", "Export CSV...", "Export Excel..."]
+    assert labels[-2:] == ["Open in standalone window", "Unpin"]
+
+
+def test_options_menu_tracks_payload_and_pin():
+    dock = DataPreviewDock()
+    window = _Window()
+    window.config_dock.node = _node("Select", rows=[2])
+
+    dock.options_menu.aboutToShow.emit()
+    assert not dock.panel.export_csv_action.isEnabled()
+    assert not dock.open_window_action.isEnabled()
+    assert not dock.unpin_action.isEnabled()
+
+    dock.switch_to_design_window(window)
+    assert _wait_until(lambda: dock.panel._window is not None)
+    dock.options_menu.aboutToShow.emit()
+    assert dock.panel.export_csv_action.isEnabled()
+    assert dock.panel.export_excel_action.isEnabled()
+    assert dock.open_window_action.isEnabled()
+    assert not dock.unpin_action.isEnabled()
+
+    dock.panel.pin_btn.setChecked(True)
+    dock.options_menu.aboutToShow.emit()
+    assert dock.unpin_action.isEnabled()
+
+
+def test_unpin_menu_action_releases_the_pin():
+    dock, requested = _dock()
+    window = _Window()
+    pinned = _node("Select", rows=[2])
+    other = _node("Filter", rows=[5])
+    window.config_dock.node = pinned
+    _select(window, pinned)
+    dock.switch_to_design_window(window)
+    dock.panel.pin_btn.setChecked(True)
+
+    window.config_dock.node = other
+    dock.note_selection_changed(window)
+    assert requested[-1] is pinned.value[0]["data"]
+
+    dock.unpin_action.trigger()
+
+    assert not dock.panel.pin_btn.isChecked()
+    assert requested[-1] is other.value[0]["data"]
+
+
+def test_newest_selection_wins_with_a_collect_in_flight():
+    dock = DataPreviewDock()
+    window = _Window("Live")
+    first = _node("Select", rows=[2])
+    second = _node("Filter", rows=[5])
+    window.config_dock.node = first
+
+    dock.switch_to_design_window(window)
+    window.config_dock.node = second
+    dock.note_selection_changed(window)
+
+    assert _wait_until(
+        lambda: (
+            dock.panel.viewer.model.rowCount() == 5 and not dock.panel.controller.busy
+        )
+    )
+    assert "5 rows" in dock.panel.status_label.text()
+
+
+def test_switch_re_reads_the_window_state():
+    dock = DataPreviewDock()
+    window = _Window("Live")
+    window.config_dock.node = _node("Select", rows=[3])
+    dock.switch_to_design_window(window)
+    assert _wait_until(
+        lambda: (
+            dock.panel.viewer.model.rowCount() == 3 and not dock.panel.controller.busy
+        )
+    )
+
+    dock.switch_to_design_window(window)
+    assert dock.panel.node_label.text() == "Select"
+    assert _wait_until(
+        lambda: (
+            dock.panel.viewer.model.rowCount() == 3 and not dock.panel.controller.busy
+        )
+    )
+
+
+# -- provenance ---------------------------------------------------------------
+
+
+def test_run_results_win_over_an_older_evaluation():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+
+    dock.switch_to_design_window(window)
+
+    assert requested[-1] is node.value[0]["data"]
+    assert dock.panel._source == "value"
+
+    window.execution_results = {node: {"var0": _envelope(4)}}
+    dock.note_run_finished(window)
+
+    assert requested[-1] is window.execution_results[node]["var0"]["data"]
+    assert dock.panel._source == "run"
+
+
+def test_an_evaluation_after_a_run_marks_the_run_frame_stale():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+    window.execution_results = {node: {"var0": _envelope(4)}}
+
+    dock.switch_to_design_window(window)
+    assert dock.panel._source == "run"
+
+    node.value = [_envelope(3)]
+    dock.note_node_evaluated(window, node)
+
+    assert _wait_until(lambda: dock.panel._source == "value")
+    assert requested[-1] is node.value[0]["data"]
+
+
+def test_a_finished_run_clears_the_stale_marks():
+    dock, requested = _dock()
+    window = _Window()
+    node = _node("Select", rows=[2])
+    window.config_dock.node = node
+
+    dock.switch_to_design_window(window)
+    window.execution_results = {node: {"var0": _envelope(4)}}
+    dock.note_run_finished(window)
+    node.value = [_envelope(3)]
+    dock.note_node_evaluated(window, node)
+    assert _wait_until(lambda: dock.panel._source == "value")
+
+    window.execution_results = {node: {"var0": _envelope(5)}}
+    dock.note_run_finished(window)
+
+    assert requested[-1] is window.execution_results[node]["var0"]["data"]
+    assert dock.panel._source == "run"
+
+
+def test_stale_marks_stay_with_their_window():
+    dock, requested = _dock()
+    first = _Window("First")
+    second = _Window("Second")
+    node_a = _node("Select", rows=[2])
+    node_b = _node("Filter", rows=[3])
+    first.config_dock.node = node_a
+    second.config_dock.node = node_b
+    first.execution_results = {node_a: {"var0": _envelope(4)}}
+    second.execution_results = {node_b: {"var0": _envelope(5)}}
+
+    dock.switch_to_design_window(second)
+
+    assert dock.panel._source == "run"
+    assert requested[-1] is second.execution_results[node_b]["var0"]["data"]
+
+    # Re-evaluating a node of the other window must not touch the frame or
+    # the badge on screen.
+    node_a.value = [_envelope(9)]
+    before = len(requested)
+    dock.note_node_evaluated(first, node_a)
+
+    assert len(requested) == before
+    assert dock.panel._source == "run"
+
+    dock.switch_to_design_window(first)
+
+    assert requested[-1] is node_a.value[0]["data"]
+    assert dock.panel._source == "value"

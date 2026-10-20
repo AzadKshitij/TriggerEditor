@@ -5,7 +5,6 @@ import os
 import time
 
 from qtpy.QtGui import (
-    QIcon,
     QPixmap,
     QDropEvent,
     QCloseEvent,
@@ -17,7 +16,6 @@ from qtpy.QtWidgets import (
     QApplication,
     QGraphicsView,
     QWidget,
-    QPushButton,
     QMessageBox,
 )
 
@@ -40,9 +38,11 @@ from trigger_designer.qt.helpers.eval_progress import (
     make_progress_dialog,
 )
 from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
+from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
 
@@ -78,15 +78,15 @@ CHECK_OUTPUT_HEADER = (
 class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
     Scene_class = TriggerScene
     itemSelected = Signal(object)
+    #: Emitted when a run published fresh ``execution_results``: preview data
+    #: for a node lives there, not in ``node.value``.
+    executionResultsChanged = Signal()
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)
         # self.initUI()
         self.rsm: ResourceManager = ResourceManager()
         self._logging_dock: Optional["LoggingDock"] = None
-
-        # self.design_window_id = str(id(self))
-        # self.logger.set_context(self.design_window_id)
 
         self._last_scale: float = 1.0
 
@@ -105,6 +105,9 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
         self.scene.addItemSelectedListener(self.onItemSelected)
         self.scene.grScene.socketClicked.connect(self.onSocketClicked)
+        # The canvas rendering settings belong to the scene, so they are applied
+        # here rather than by whoever opens the window.
+        apply_render_settings_to_scene(self.scene)
         self._close_event_listeners: list[Callable] = []
         self._refreshing_config_dock = False
         # self.setAttribute(Qt.WA_DeleteOnClose)
@@ -126,41 +129,47 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             preview_window.show()
 
     def addButtons(self) -> None:
+        """Build the canvas overlay: run, zoom in, zoom out, fit view.
+
+        Icon-only buttons per docs/DESIGN_SYSTEM.md §4: 30x30 with a 12px
+        icon, a mandatory tooltip and accessible name. The glyphs come from
+        the ResourceManager - a desktop theme icon renders blank on Windows.
+        """
         # Run button
-        self.run_button = QPushButton("", self)
-        self.run_button.setIcon(QIcon.fromTheme("media-playback-start"))
-        self.run_button.setToolTip("Run Workflow")
-        self.run_button.setFixedSize(100, 30)
+        self.run_button = IconButton.themed(
+            "Run workflow",
+            rsm_icon=self.rsm.get("icon_run_play"),
+            parent=self,
+        )
         self.run_button.move(10, 10)
         self.run_button.clicked.connect(self.run_workflow)
 
         # Zoom In button
-        self.zoom_in_button = QPushButton("", self)
-        self.zoom_in_button.setIcon(QIcon.fromTheme("zoom-in"))
-        self.zoom_in_button.setToolTip("Zoom In")
-        self.zoom_in_button.setFixedSize(100, 30)
-        self.zoom_in_button.move(120, 10)
+        self.zoom_in_button = IconButton.themed(
+            "Zoom in",
+            rsm_icon=self.rsm.get("icon_zoom_in"),
+            parent=self,
+        )
+        self.zoom_in_button.move(46, 10)
         self.zoom_in_button.clicked.connect(self.zoomIn)
 
         # Zoom Out button
-        self.zoom_out_button = QPushButton("", self)
-        self.zoom_out_button.setIcon(QIcon.fromTheme("zoom-out"))
-        self.zoom_out_button.setToolTip("Zoom Out")
-        self.zoom_out_button.setFixedSize(100, 30)
-        self.zoom_out_button.move(230, 10)
+        self.zoom_out_button = IconButton.themed(
+            "Zoom out",
+            rsm_icon=self.rsm.get("icon_zoom_out"),
+            parent=self,
+        )
+        self.zoom_out_button.move(82, 10)
         self.zoom_out_button.clicked.connect(self.zoomOut)
 
         # Fit View button
-        self.fit_button = QPushButton("", self)
-        self.fit_button.setIcon(QIcon.fromTheme("zoom-original"))
-        self.fit_button.setToolTip("Fit View")
-        self.fit_button.setFixedSize(100, 30)
-        self.fit_button.move(340, 10)
+        self.fit_button = IconButton.themed(
+            "Fit view",
+            rsm_icon=self.rsm.get("icon_zoom_fit"),
+            parent=self,
+        )
+        self.fit_button.move(118, 10)
         self.fit_button.clicked.connect(self.fitView)
-
-    # def activateWindow(self) -> None:
-    #     super().activateWindow()
-    #     self.logger.set_context(self.design_window_id)
 
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
@@ -169,10 +178,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
     def zoomOut(self) -> None:
         zoom_factor = self.view.zoomOut()
-        print(
-            "🐍 File: TriggerEditor/trigger_sub_window.py | Line: 80 | zoomOut ~ zoom_factor",
-            zoom_factor,
-        )
         self._last_scale *= zoom_factor
         self.view.applyZoom(zoom_factor)
 
@@ -182,8 +187,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             return
         start_time = time.time()
 
-        try:
-            # Calculate the bounding rectangle of all nodes
+        try:  # Calculate the bounding rectangle of all nodes
             rect = None
             for node in nodes:
                 if rect is None:
@@ -207,8 +211,10 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             self.view.zoom = self._last_scale * 10
             self.view.centerOn(rect.center())
 
-            print(f"⌚ Fit View Time: {time.time() - start_time:.4f}s")
-            print(f"Current scale: {self._last_scale}")
+            logger.debug(
+                f"Fit view took {time.time() - start_time:.4f}s "
+                f"at scale {self._last_scale:.3f}"
+            )
 
         except Exception as e:
             dumpException(e)
@@ -220,8 +226,12 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         - Shift+A: Show node context menu
         - Shift+P: Print separator
         - Ctrl+Shift+R: Reset workflow statistics
-        - Ctrl+Shift+S: Show workflow statistics
+        - Ctrl+Shift+T: Show workflow statistics
         - Shift+G: Test global logging functionality
+
+        Ctrl+Shift+T rather than Ctrl+Shift+S: Save As owns Ctrl+Shift+S
+        (the vendored ``actSaveAs``), and the Data Preview dock owns
+        Ctrl+Shift+D.
         """
         # Check for Shift+A
         if (
@@ -248,41 +258,53 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             # Ctrl+Shift+R to reset workflow statistics
             self.reset_workflow_statistics()
         elif (
-            event.key() == Qt.Key.Key_S
+            event.key() == Qt.Key.Key_T
             and event.modifiers()
             == Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier
         ):
-            # Ctrl+Shift+S to show workflow statistics
-            stats = self.get_workflow_statistics()
-            print(f"\n{'=' * 50}")
-            print(f"📊 WORKFLOW STATISTICS")
-            print(f"{'=' * 50}")
-            print(f"Total executions: {stats['total_executions']}")
-            print(f"Total time: {stats['total_time']:.3f} seconds")
-            print(f"Average time: {stats['average_execution_time']:.3f} seconds")
-            print(f"{'=' * 50}\n")
-            logger.info(
-                f"📊 Workflow statistics - Executions: {stats['total_executions']}, "
-                f"Total time: {stats['total_time']:.3f}s, "
-                f"Average: {stats['average_execution_time']:.3f}s"
-            )
-
-            # Example of global logging usage
-            global_logger.info(
-                f"📊 Workflow statistics requested - {stats['total_executions']} executions"
-            )
+            # Ctrl+Shift+T to show workflow statistics
+            self.show_workflow_statistics()
         # NOTE: Shift+G is intentionally unbound here. The main window uses
         # it for Ungroup (see NodeEditorWindow.onUngroupSelected), and the
         # single-letter group shortcuts ignore keystrokes typed into editors.
         else:
             super().keyPressEvent(event)
 
+    def show_workflow_statistics(self) -> None:
+        """Report the run statistics in the Logging dock.
+
+        The numbers go to the dock rather than the console: a windowed
+        build has no console to print to, and the Logging dock is where
+        the rest of the app's output already lives.
+        """
+        stats = self.get_workflow_statistics()
+        total = stats["total_executions"]
+        total_time = stats["total_time"]
+        average = stats["average_execution_time"]
+
+        self.logInfo(
+            "WORKFLOW STATISTICS — "
+            f"{total} run(s), {total_time:.3f}s total, {average:.3f}s average"
+        )
+        global_logger.info(
+            f"Workflow statistics requested - {total} executions, "
+            f"{total_time:.3f}s total, {average:.3f}s average"
+        )
+        window = self.window()
+        status_bar = getattr(window, "statusBar", None)
+        if callable(status_bar):
+            status = status_bar()
+            if status is not None:
+                status.showMessage(
+                    f"Workflow: {total} run(s), {total_time:.3f}s total", 5000
+                )
+
     def onItemSelected(self) -> None:
         # print(f'node: {self.scene._last_selected_items}')
         self.itemSelected.emit(self.scene._last_selected_items)
 
     def getNodeClassFromData(self, data):
-        print(f"getNodeClassFromData: {data}")
+        logger.debug(f"getNodeClassFromData: {data}")
         # v2+: stable op id — immune to enum renumbering/reordering.
         if "op" in data:
             try:
@@ -303,18 +325,28 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         return TriggerNode_Unknown
 
     def doEvalOutputs(self, dialog=None) -> None:
+        # Evaluate in dependency order so every node pulls settled inputs
+        # instead of cascading eval() calls through the creation-order walk.
+        # A cyclic graph cannot be sorted; fall back to creation order rather
+        # than failing the load, matching the previous behaviour.
+        try:
+            ordered_nodes = self.topologicalSort(self.getNodeConnections())
+        except Exception as exc:  # noqa: BLE001 - load must not fail on a bad graph
+            self.logWarning(f"Could not sort workflow nodes for evaluation: {exc}")
+            ordered_nodes = list(self.scene.nodes)
+
         # Every node starts dirty (TriggerNode.__init__), so this first pass
         # recomputes the whole graph - size the dialog to the full node
         # count. Without a `dialog` (undo/redo restore) a small graph gets
         # none at all.
-        total = len(self.scene.nodes)
+        total = len(ordered_nodes)
         with eval_progress_dialog(
             self.scene, self, total, "Evaluating workflow…", dialog=dialog
         ):
             previous_batch = getattr(self.scene, "_batch_evaluating", False)
             self.scene._batch_evaluating = True
             try:
-                for node in self.scene.nodes:
+                for node in ordered_nodes:
                     node.eval()
                 settle_multi_input_nodes(self.scene)
             finally:
@@ -506,6 +538,19 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
 
+    def getUserFriendlyFilename(self) -> str:
+        """Document name without the ``.tds`` suffix.
+
+        The base class adds ``*`` while the document has unsaved edits; split
+        that marker off first so it survives the extension being dropped. The
+        MDI title, the chrome row and the Window menu all read this, so the
+        extension stays out of every one of them.
+        """
+        name = super().getUserFriendlyFilename()
+        modified = name.endswith("*")
+        stem, _ = os.path.splitext(name.removesuffix("*"))
+        return f"{stem}*" if modified else stem
+
     def setLoggingDock(self, logging_dock: "LoggingDock") -> None:
         """Set the logging dock for this design window"""
         self._logging_dock = logging_dock
@@ -567,10 +612,17 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def addCloseEventListener(self, callback) -> None:
         self._close_event_listeners.append(callback)
 
-    # def closeEvent(self, event: QCloseEvent) -> None:
-    #     for callback in self._close_event_listeners:
-    #         callback(self, event)
-    #     self.logger.clear_context()
+    def closeEvent(self, event: QCloseEvent) -> None:
+        """Dispatch the registered close listeners.
+
+        The listeners (e.g. ``TriggerWindow.onSubWndClose``) decide whether
+        the window may close; a listener that ignores the event vetoes the
+        close. This must not call ``super().closeEvent(event)`` afterwards:
+        the event arrives accepted, so the base implementation would undo a
+        listener's ``event.ignore()`` and the close would always succeed.
+        """
+        for callback in list(self._close_event_listeners):
+            callback(self, event)
 
     def onDragEnter(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
@@ -594,11 +646,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             scene_position = self.scene.grScene.views()[0].mapToScene(mouse_position)
 
             if DEBUG:
-                print(
-                    "GOT DROP: [%d] '%s'" % (node_code, node_type),
-                    "mouse:",
+                logger.debug(
+                    "GOT DROP: [%d] '%s' mouse: %s scene: %s",
+                    node_code,
+                    node_type,
                     mouse_position,
-                    "scene:",
                     scene_position,
                 )
 

@@ -4,7 +4,7 @@ from loguru import logger as glogger
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import QAction, QDialog
 
-from trigger_designer.qt.models.settings_panel import SettingsDialog
+from trigger_designer.qt.dialogs.preferences_dialog import PreferencesDialog
 from trigger_designer.qt.node_editor_colors import (
     apply_node_editor_colors,
     load_node_editor_colors,
@@ -23,6 +23,20 @@ class MainWindowActionsMixin:
             self,
             statusTip="Open settings dialog",
             triggered=self.showSettings,
+        )
+
+        self.actSaveLayout = QAction(
+            "&Save Current Layout",
+            self,
+            statusTip="Persist the current window and dock arrangement",
+            triggered=self.saveCurrentLayout,
+        )
+
+        self.actResetLayout = QAction(
+            "&Reset Layout",
+            self,
+            statusTip="Restore the default window and dock arrangement",
+            triggered=self.resetLayout,
         )
 
         self.actClose = QAction(
@@ -75,7 +89,7 @@ class MainWindowActionsMixin:
         )
 
     def showSettings(self) -> None:
-        dialog = SettingsDialog(self)
+        dialog = PreferencesDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.loadSettings()
 
@@ -83,3 +97,7 @@ class MainWindowActionsMixin:
         glogger.debug("Loading settings...")
         apply_node_editor_colors(load_node_editor_colors())
         refresh_open_scenes(self)
+        # One signal covers canvas, node rings, tables, logs and preview.
+        apply_appearance = getattr(self, "apply_appearance", None)
+        if callable(apply_appearance):
+            apply_appearance()

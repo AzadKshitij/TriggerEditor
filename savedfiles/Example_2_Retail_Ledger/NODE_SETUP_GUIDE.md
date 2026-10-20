@@ -260,7 +260,7 @@ Script: capture `duplicated(order_id, keep=False)`, then
 - **D** socket → File Output `duplicate_orders.csv` (all rows of duplicate
   groups via `is_duplicated()` — exactly `keep=False`)
 
-Optionally tee **U** into **Count Records** → File Output
+Optionally tee **U** into **Count** → File Output
 `kpi_fact_rowcount.csv` (single-column `Count` file; the script has no
 equivalent — it is listed under workflow-only outputs).
 
@@ -526,9 +526,9 @@ instead of printing false mismatches.
 
 | File | Why |
 |---|---|
-| `kpi_summary.csv` | Assembled cell-by-cell in Python (9 metric/value rows). No metric-table node exists. `Count Records` covers only the row count, as `kpi_fact_rowcount.csv`. |
+| `kpi_summary.csv` | Assembled cell-by-cell in Python (9 metric/value rows). No metric-table node exists. `Count` covers only the row count, as `kpi_fact_rowcount.csv`. |
 | `data_quality_report.csv` | The script's own stage log, not a data report. |
-| `scenario_grid.csv` | A labelled cross-product (`Base/Upside/Downside × 2024/2025`). Generate Rows emits a bare integer counter — and with an input wired it concatenates horizontally instead — so it cannot build this grid. |
+| `scenario_grid.csv` | A labelled cross-product (`Base/Upside/Downside × 2024/2025`). Rows emits a bare integer counter — and with an input wired it concatenates horizontally instead — so it cannot build this grid. |
 
 ---
 

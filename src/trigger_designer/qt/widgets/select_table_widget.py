@@ -47,6 +47,24 @@ class RowData:
 
 
 class SelectTableWidget(QAbstractTableModel):
+    #: Dtype options offered by the Data Type column. Public so the dock can
+    #: size that column to its longest label instead of shipping a guessed
+    #: width that clips "Categorical" or wastes air on "List".
+    DATA_TYPES = (
+        "String",
+        "Int64",
+        "Float64",
+        "Boolean",
+        "Date",
+        "Datetime",
+        "List",
+        "Struct",
+        "Categorical",
+        "Binary",
+        "Decimal",
+        "Duration",
+    )
+
     # Keep the default Qt signal
     dataChanged = Signal(QModelIndex, QModelIndex, list)
     data_processed = Signal(list)  # Add new signal for processed data
@@ -64,21 +82,8 @@ class SelectTableWidget(QAbstractTableModel):
             "rename_mapping": {},
             "dtype_mapping": {},
         }
-        self._header_labels = ["", "Text Data", "Data Type", "Rename"]
-        self._data_types = [
-            "String",
-            "Int64",
-            "Float64",
-            "Boolean",
-            "Date",
-            "Datetime",
-            "List",
-            "Struct",
-            "Categorical",
-            "Binary",
-            "Decimal",
-            "Duration",
-        ]
+        self._header_labels = ["", "Column", "Data Type", "Rename"]
+        self._data_types = list(self.DATA_TYPES)
 
         # self.initUI()
         # self.populateTable()
@@ -165,7 +170,7 @@ class SelectTableWidget(QAbstractTableModel):
             # Handle checkbox state change
             check_state = int(value)
             row_data.checked = check_state == Qt.CheckState.Checked.value
-            print(
+            logger.debug(
                 f"Checkbox at row {row} set to {row_data.checked}, value: {check_state}"
             )
             success = True
@@ -257,12 +262,12 @@ class SelectTableWidget(QAbstractTableModel):
                     ],
                 )
 
-                print(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
+                logger.debug(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
                 return True
             else:
-                print("Failed to begin row move operation.")
+                logger.warning("Failed to begin row move operation.")
                 return False
-        print("Invalid row indices for swapping.")
+        logger.warning("Invalid row indices for swapping.")
         return False
 
     def setupOptionsMenu(self, button: QPushButton, view: QTableView) -> None:
@@ -357,8 +362,6 @@ class SelectTableWidget(QAbstractTableModel):
             # Column name (non-editable)
             column_name_item = QTableWidgetItem(column_name)
             column_name_item.setFlags(column_name_item.flags() ^ ~Qt.ItemIsEditable)
-            print(f"Column name: {column_name} -----")
-            print(column_name_item.text())
             self.table.setItem(i, 1, column_name_item)
 
             # Dropdown for data_type
@@ -427,6 +430,24 @@ class SelectTableWidget(QAbstractTableModel):
             top_left = self.index(0, 0)
             bottom_right = self.index(len(self._data) - 1, 3)
             self.dataChanged.emit(top_left, bottom_right, [])
+        self.data_processed.emit(self.getData())
+
+    def set_all_checked(self, checked: bool) -> None:
+        """Check or uncheck every row, emitting once.
+
+        One emission keeps undo to a single step and avoids a full
+        downstream recompute per row.
+        """
+        changed = False
+        for row_data in self._data:
+            if row_data.checked != checked:
+                row_data.checked = checked
+                changed = True
+        if not changed or not self._data:
+            return
+        top_left = self.index(0, 0)
+        bottom_right = self.index(len(self._data) - 1, 0)
+        self.dataChanged.emit(top_left, bottom_right, [Qt.ItemDataRole.CheckStateRole])
         self.data_processed.emit(self.getData())
 
     def toggleRowSelection(self, index: QModelIndex, state: bool) -> None:
@@ -830,7 +851,10 @@ class ComboBoxDelegate(QStyledItemDelegate):
     def updateEditorGeometry(self, editor, option, index):
         # Set the geometry of the editor
         if index.column() == 2:
+            # Pin the height to the cell: the dock's 30px control height would
+            # otherwise make the open editor hang over the row below.
             editor.setGeometry(option.rect)
+            editor.setFixedHeight(max(18, option.rect.height()))
         else:
             super().updateEditorGeometry(editor, option, index)
 

@@ -6,8 +6,6 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QFileDialog,
     QVBoxLayout,
-    QHBoxLayout,
-    QLabel,
     QSpinBox,
     QCheckBox,
 )
@@ -21,8 +19,12 @@ from trigger_designer.qt.node_base import (
     frame_schema,
 )
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
-from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer
-from trigger_designer.qt.widgets.common import IconButton, NoWheelComboBox
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    FormRow,
+    IconButton,
+    NoWheelComboBox,
+)
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
 from nodeeditor.utils_no_qt import dumpException
@@ -127,19 +129,15 @@ class FileInputContent(
         super().initUI(icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(2)
+        # Source section: path + browse, the only mandatory input
+        source_section = ConfigSection()
+        self.source_section = source_section
 
-        # File path row: path field + icon-only browse button (design system §1, §4)
-        path_row = QHBoxLayout()
-        path_row.setContentsMargins(0, 0, 0, 0)
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
         self.filePathEdit.setMinimumHeight(30)
         self.filePathEdit.textChanged.connect(self._on_filePathEdit_textChanged)
         self.registerInputWidget(self.filePathEdit)
-        path_row.addWidget(self.filePathEdit, 1)
 
         self.loadButton = IconButton.themed(
             "Browse for file",
@@ -148,61 +146,52 @@ class FileInputContent(
             parent=self,
         )
         self.loadButton.clicked.connect(self.openFileDialog)
-        path_row.addWidget(self.loadButton)
-        main_layout.addLayout(path_row)
 
-        # Settings form layout
-        from qtpy.QtWidgets import QFormLayout
+        # Label and field share one 30px row; the browse button rides along.
+        source_section.addWidget(
+            FormRow("File", self.filePathEdit, label_width=32, action=self.loadButton)
+        )
 
-        # Create a widget to hold the settings form (so we can hide the entire section)
+        # Settings section: which rows show depends on the file type
+        settings_section = ConfigSection()
+        self.settings_section = settings_section
+
+        # Kept as a container so _hide_all_options/_update_ui_visibility can
+        # hide or show every option in one move.
         self.settings_widget = QWidget()
-        settings_form = QFormLayout()
+        settings_form = QVBoxLayout(self.settings_widget)
         settings_form.setContentsMargins(0, 0, 0, 0)
         settings_form.setSpacing(2)
-        self.settings_widget.setLayout(settings_form)
-
-        # Record Limit
-        self.recordLimitSpinBox = QSpinBox(self)
-        self.recordLimitSpinBox.setMinimumHeight(30)
-        self.recordLimitSpinBox.setMinimum(0)
-        self.recordLimitSpinBox.setMaximum(999999999)
-        self.recordLimitSpinBox.setValue(self.record_limit)
-        self.recordLimitSpinBox.setSpecialValueText("No Limit")
-        self.recordLimitSpinBox.valueChanged.connect(self._on_record_limit_changed)
-        self.registerInputWidget(self.recordLimitSpinBox)
-        settings_form.addRow(QLabel("Record Limit:"), self.recordLimitSpinBox)
-        self.record_limit_widget = self.recordLimitSpinBox
 
         # Output Filename as Field
-        self.outputFilenameCheckBox = QCheckBox()
+        self.outputFilenameCheckBox = QCheckBox("Output filename as field")
         self.outputFilenameCheckBox.setChecked(self.output_filename_as_field)
+        self.outputFilenameCheckBox.setToolTip("Add the source file name as a column")
         self.outputFilenameCheckBox.toggled.connect(self._on_output_filename_changed)
         self.registerInputWidget(self.outputFilenameCheckBox)
-        settings_form.addRow(
-            QLabel("Output Filename as Field"), self.outputFilenameCheckBox
-        )
+        settings_form.addWidget(self.outputFilenameCheckBox)
         self.output_filename_widget = self.outputFilenameCheckBox
 
         # Delimiter (for CSV/TXT files)
         self.delimiterEdit = QLineEdit(self)
         self.delimiterEdit.setText(self.delimiter)
         self.delimiterEdit.setMinimumHeight(30)
+        self.delimiterEdit.setMaximumWidth(60)
         self.delimiterEdit.setPlaceholderText("e.g., , ; | \\t")
         self.delimiterEdit.textChanged.connect(self._on_delimiter_changed)
         self.registerInputWidget(self.delimiterEdit)
-        settings_form.addRow(QLabel("Delimiter:"), self.delimiterEdit)
+        self.delimiter_row = FormRow("Delimiter", self.delimiterEdit, label_width=104)
+        settings_form.addWidget(self.delimiter_row)
         self.delimiter_widget = self.delimiterEdit
 
         # First Row Contains Field Names
-        self.firstRowFieldNamesCheckBox = QCheckBox()
+        self.firstRowFieldNamesCheckBox = QCheckBox("First row holds field names")
         self.firstRowFieldNamesCheckBox.setChecked(self.first_row_contains_field_names)
         self.firstRowFieldNamesCheckBox.toggled.connect(
             self._on_first_row_field_names_changed
         )
         self.registerInputWidget(self.firstRowFieldNamesCheckBox)
-        settings_form.addRow(
-            QLabel("First Row Contains Field Names"), self.firstRowFieldNamesCheckBox
-        )
+        settings_form.addWidget(self.firstRowFieldNamesCheckBox)
         self.first_row_widget = self.firstRowFieldNamesCheckBox
 
         # Selected Sheet (for Excel files)
@@ -212,7 +201,10 @@ class FileInputContent(
             self._on_selected_sheet_changed
         )
         self.registerInputWidget(self.selectedSheetCombo)
-        settings_form.addRow(QLabel("Selected Sheet:"), self.selectedSheetCombo)
+        self.selected_sheet_row = FormRow(
+            "Sheet", self.selectedSheetCombo, label_width=104
+        )
+        settings_form.addWidget(self.selected_sheet_row)
         self.selected_sheet_widget = self.selectedSheetCombo
 
         # Start Row (for Excel files)
@@ -223,27 +215,20 @@ class FileInputContent(
         self.startRowSpinBox.setValue(self.start_row)
         self.startRowSpinBox.valueChanged.connect(self._on_start_row_changed)
         self.registerInputWidget(self.startRowSpinBox)
-        settings_form.addRow(QLabel("Start Row:"), self.startRowSpinBox)
+        self.start_row_row = FormRow("Start row", self.startRowSpinBox, label_width=104)
+        settings_form.addWidget(self.start_row_row)
         self.start_row_widget = self.startRowSpinBox
 
-        # Add the settings widget to the main layout
-        main_layout.addWidget(self.settings_widget)
+        settings_section.addWidget(self.settings_widget)
 
-        # Polars table viewer for preview (data-only mode for clean interface)
-        self.table_viewer = PolarsTableViewer(
-            parent=self,
-            show_controls=False,  # No controls needed in file input node
-            show_info=False,  # No info panel to keep it compact
-            show_search=False,  # Search not needed for preview
-            show_export=False,  # Export not needed in node context
-            show_performance_settings=False,  # Performance settings not needed
-        )
-        main_layout.addWidget(self.table_viewer, 1)
-        dock_layout.addLayout(main_layout)
+        dock_layout.addWidget(source_section)
+        dock_layout.addWidget(settings_section)
+        dock_layout.addStretch()
 
-        # Keep reference to tableWidget for backward compatibility
-        # Some methods might still reference self.tableWidget
-        self.tableWidget = self.table_viewer.table_view
+        # No data preview in the dock: the config dock holds configuration
+        # only. Loaded frames stay in ``self.data`` for whoever asks.
+        self.table_viewer = None
+        self.tableWidget = None
 
         # Initially hide all options until a file is selected
         self._hide_all_options()
@@ -251,20 +236,34 @@ class FileInputContent(
             self.filePathEdit.setText(self.filePath)
             file_type = self._auto_detect_file_type(self.filePath)
             self._update_ui_visibility(file_type)
-            if self.data is not None and len(frame_schema(self.data)) > 0:
-                self.table_viewer.set_dataframe(self._preview_frame())
-            else:
+            if self.data is None or not len(frame_schema(self.data)):
                 self.loadFile(self.filePath)
+        self._refresh_file_input_counts()
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the pane tooltip."""
+        chips: list[tuple[str, str]] = []
+        file_type = ""
+        try:
+            if self.filePath:
+                file_type = self._auto_detect_file_type(self.filePath)
+        except Exception:
+            file_type = ""
+        if file_type:
+            chips.append((file_type, "accent"))
+        label = os.path.basename(self.filePath) if self.filePath else ""
+        return chips, label
+
+    def _refresh_file_input_counts(self) -> None:
+        """Refresh the pane summary; counts are no longer rendered."""
+        self.refresh_dock_context()
 
     def _on_filePathEdit_textChanged(self) -> None:
         self.filePath = self.filePathEdit.text()
         if not self.filePath:
             # Hide all options when file path is cleared
             self._hide_all_options()
-        self.evaluate.emit()
-
-    def _on_record_limit_changed(self, value: int) -> None:
-        self.record_limit = value
+        self._refresh_file_input_counts()
         self.evaluate.emit()
 
     def _on_output_filename_changed(self, checked: bool) -> None:
@@ -515,19 +514,23 @@ class FileInputContent(
             self._hide_all_options()
 
     def _hide_all_options(self) -> None:
-        # Hide the entire settings widget when no file is loaded
+        # Hide the entire settings section when no file is loaded
+        section = getattr(self, "settings_section", None)
+        if section is not None:
+            section.setVisible(False)
         if hasattr(self, "settings_widget"):
             self.settings_widget.setVisible(False)
 
     def _update_ui_visibility(self, file_type: str) -> None:
         """Update UI element visibility based on file type"""
-        # Show the settings widget when a file is loaded
+        # Show the settings section when a file is loaded
+        section = getattr(self, "settings_section", None)
+        if section is not None:
+            section.setVisible(True)
         if hasattr(self, "settings_widget"):
             self.settings_widget.setVisible(True)
 
         # Show common options for all file types
-        if hasattr(self, "record_limit_widget"):
-            self.record_limit_widget.setVisible(True)
         if hasattr(self, "output_filename_widget"):
             self.output_filename_widget.setVisible(True)
         if hasattr(self, "first_row_widget"):
@@ -536,43 +539,30 @@ class FileInputContent(
         # Delimiter: only for CSV/TXT
         if hasattr(self, "delimiter_widget"):
             self.delimiter_widget.setVisible(file_type in ["csv", "txt"])
+        delimiter_row = getattr(self, "delimiter_row", None)
+        if delimiter_row is not None:
+            delimiter_row.setVisible(file_type in ["csv", "txt"])
 
-        # Selected Sheet: only for Excel - need to hide both label and widget
+        # Selected Sheet: only for Excel (the FormRow hides label + field)
+        is_excel = file_type == "excel"
         if hasattr(self, "selected_sheet_widget"):
-            is_excel = file_type == "excel"
             self.selected_sheet_widget.setVisible(is_excel)
-            # Also hide the label by finding it in the form layout
-            if hasattr(self, "settings_widget") and self.settings_widget.layout():
-                form_layout = self.settings_widget.layout()
-                for i in range(form_layout.rowCount()):
-                    label_item = form_layout.itemAt(i, form_layout.LabelRole)
-                    field_item = form_layout.itemAt(i, form_layout.FieldRole)
-                    if field_item and field_item.widget() == self.selected_sheet_widget:
-                        if label_item and label_item.widget():
-                            label_item.widget().setVisible(is_excel)
-                        break
+        selected_sheet_row = getattr(self, "selected_sheet_row", None)
+        if selected_sheet_row is not None:
+            selected_sheet_row.setVisible(is_excel)
+        if is_excel and hasattr(self, "selectedSheetCombo"):
+            self.selectedSheetCombo.clear()
+            if self.available_sheets:
+                self.selectedSheetCombo.addItems(self.available_sheets)
+                if self.selected_sheet in self.available_sheets:
+                    self.selectedSheetCombo.setCurrentText(self.selected_sheet)
 
-            if file_type == "excel" and hasattr(self, "selectedSheetCombo"):
-                self.selectedSheetCombo.clear()
-                if self.available_sheets:
-                    self.selectedSheetCombo.addItems(self.available_sheets)
-                    if self.selected_sheet in self.available_sheets:
-                        self.selectedSheetCombo.setCurrentText(self.selected_sheet)
-
-        # Start Row: only for Excel - need to hide both label and widget
+        # Start Row: only for Excel
         if hasattr(self, "start_row_widget"):
-            is_excel = file_type == "excel"
             self.start_row_widget.setVisible(is_excel)
-            # Also hide the label by finding it in the form layout
-            if hasattr(self, "settings_widget") and self.settings_widget.layout():
-                form_layout = self.settings_widget.layout()
-                for i in range(form_layout.rowCount()):
-                    label_item = form_layout.itemAt(i, form_layout.LabelRole)
-                    field_item = form_layout.itemAt(i, form_layout.FieldRole)
-                    if field_item and field_item.widget() == self.start_row_widget:
-                        if label_item and label_item.widget():
-                            label_item.widget().setVisible(is_excel)
-                        break
+        start_row_row = getattr(self, "start_row_row", None)
+        if start_row_row is not None:
+            start_row_row.setVisible(is_excel)
 
     def _read_excel(self, fileName: str, n_rows: Optional[int] = None) -> pl.DataFrame:
         """Read Excel file preview using fastexcel - for preview purposes only"""
@@ -863,8 +853,6 @@ class FileInputContent(
             self.deserialize_content_state(data)
 
             # Update UI elements if they exist
-            if hasattr(self, "recordLimitSpinBox"):
-                self.recordLimitSpinBox.setValue(self.record_limit)
             if hasattr(self, "outputFilenameCheckBox"):
                 self.outputFilenameCheckBox.setChecked(self.output_filename_as_field)
             if hasattr(self, "delimiterEdit"):

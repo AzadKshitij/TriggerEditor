@@ -17,7 +17,7 @@ import os
 import polars as pl
 from datetime import datetime, timedelta
 from contextlib import contextmanager, redirect_stdout, redirect_stderr
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from typing import Any, Optional, Dict, List, Set, Callable, Union, TYPE_CHECKING, Tuple
 from pathlib import Path
@@ -45,6 +45,33 @@ class ExecutionResult:
     lines_executed: int = 0
     warnings: List[str] = field(default_factory=list)
     timestamp: datetime = field(default_factory=datetime.now)
+
+    def without_frames(self) -> "ExecutionResult":
+        """A copy whose ``variables`` describe values instead of holding them.
+
+        The executor keeps the last 100 results for debugging; the frames
+        there duplicate every output of the run and keep temporary frames
+        (``df_for_duck``, closed DuckDB handles) alive. Keep the variable
+        names and a short descriptor, drop the objects.
+        """
+        return replace(
+            self,
+            variables={
+                name: _describe_value(value) for name, value in self.variables.items()
+            },
+        )
+
+
+def _describe_value(value: Any) -> str:
+    """A short, frame-free descriptor of an executed variable."""
+    type_name = type(value).__name__
+    shape = getattr(value, "shape", None)
+    if shape is None:
+        return type_name
+    try:
+        return f"{type_name}{tuple(shape)}"
+    except TypeError:
+        return type_name
 
 
 @dataclass
@@ -369,8 +396,10 @@ class NodeExecutor:
             # Update statistics
             self._update_stats(result)
 
-            # Add to history (keep last 100 executions)
-            self.execution_history.append(result)
+            # Add to history (keep last 100 executions). Store the frame-free
+            # copy: the history is for debugging, and holding the run's frames
+            # here would duplicate every output and keep temp objects alive.
+            self.execution_history.append(result.without_frames())
             if len(self.execution_history) > 100:
                 self.execution_history.pop(0)
 

@@ -42,7 +42,7 @@ def test_op_resolves_to_normalize_columns() -> None:
     cls = get_class_from_opcode(
         PreparationNodes.NORMALIZE_COLUMNS, NodeTypes.PREPARATION
     )
-    assert cls.node_title == "Normalize Columns"
+    assert cls.node_title == "Normalize"
     assert cls.node_type.value + "." + cls.node_code.name.lower() == (
         "preparation.normalize_columns"
     )

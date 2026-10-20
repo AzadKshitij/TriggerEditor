@@ -19,11 +19,22 @@ authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 # Qt pins (pyqt6*, qtpy) are intentional; nodeeditor's metadata wants newer
 # Qt, which is why it stays out of the lock.
 
-# Core dependencies organized by category
+# Core dependencies organized by category.
+#
+# Keep this list to packages the *application* imports. pandas, numba/llvmlite,
+# numexpr and seaborn are intentionally absent: nothing under
+# src/trigger_designer imports them, and PyInstaller excludes them from the
+# bundle. pandas stays in the dev group for the preview tests and scripts.
+#
+# pyarrow is NOT optional: DuckDB registers Polars frames by calling
+# DataFrame.to_arrow(), which imports pyarrow. Dropping it breaks every
+# SQL-backed Formula/Filter evaluation with "No module named 'pyarrow'".
 dependencies = [
     # Core data processing
     "polars[pyarrow]==1.44.2",
-    "pandas==2.3.3",
+    # Pinned to the version the existing builds shipped; the extra above only
+    # says "pyarrow >= 7", so without this the lock would silently jump to 26.
+    "pyarrow==25.0.1",
     "numpy==2.5.3",
     "duckdb>=1.2.1",
     # File handling
@@ -43,12 +54,8 @@ dependencies = [
     # scripts/sync-nodeeditor.ps1) afterwards.
     # Visualization
     "matplotlib==3.11.2",
-    "seaborn==0.13.2",
     "pillow==12.3.0",
     # Performance and utilities
-    "numba==0.67.0",
-    "numexpr==2.14.2",
-    "llvmlite==0.49.0",
     "psutil>=7.1.0",
     # Logging and CLI
     "loguru==0.7.3",
@@ -57,8 +64,6 @@ dependencies = [
     # Standard utilities
     "packaging==26.3",
     "python-dateutil==2.9.0.post0",
-    "pytz==2026.4",
-    "six==1.17.0",
     "typing-extensions>=4.13.0",
     "tzdata==2026.4",
 ]
@@ -94,14 +99,40 @@ src = ["src", "tests"]
 source = ["trigger_designer"]
 branch = true
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Layers are marked automatically from the directory a test lives in
+# (see tests/conftest.py); `--strict-markers` keeps a typo from silently
+# creating an unselectable layer.
+addopts = "-ra --strict-markers"
+qt_api = "pyqt6"
+# A hung test is the failure mode that used to make this suite look slow:
+# one demo ran app.exec_() for ever. Per-test, with a thread dump on expiry.
+timeout = 120
+timeout_method = "thread"
+markers = [
+    "unit: logic tests - no widget layouts, no real windows",
+    "ui: offscreen widget behaviour through pytest-qt",
+    "e2e: checked-in workflow files loaded and run through the real app",
+    "benchmark: memory or wall-clock measurements, skipped without --run-benchmarks",
+    "slow: takes noticeably longer than the layer's typical test",
+]
+
 [dependency-groups]
 dev = [
     "autotyping==24.9.0",
     "faker==40.39.0",
+    # Tests and developer scripts still exercise the pandas preview path;
+    # the application itself does not import pandas, so it is not bundled.
+    "pandas==2.3.3",
     "pandas-stubs==2.3.3.260113",
+    "pkgsizer>=0.1.1",
     "pre-commit==4.6.2",
     "pyinstaller==6.22.3",
     "pytest==9.1.1",
+    "pytest-qt==4.5.0",
+    "pytest-timeout==2.4.0",
+    "pytest-xdist==3.8.0",
     "ruff==0.16.9",
     "ty==0.0.84",
 ]

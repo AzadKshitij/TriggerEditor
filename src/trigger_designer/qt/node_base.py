@@ -1,4 +1,6 @@
-from qtpy.QtGui import QPixmap, QColor, QPen, QPainter
+from collections.abc import Mapping
+
+from qtpy.QtGui import QPixmap, QColor, QPen, QPainter, QPainterPath
 from qtpy.QtWidgets import (
     QScrollArea,
     QWidget,
@@ -22,6 +24,7 @@ from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
 from trigger_designer.qt.resource_manager import ResourceManager
+from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.helpers.eval_progress import (
     count_pending_recomputes,
     eval_progress_dialog,
@@ -97,7 +100,7 @@ def upstream_rename_map(upstream_node) -> dict:
         mapping = changes.get("rename_mapping")
         if isinstance(mapping, dict):
             return {str(old): str(new) for old, new in mapping.items() if new}
-    # Normalize Columns derives its mapping from its rules.
+    # Normalize derives its mapping from its rules.
     current_mapping = getattr(content, "_current_mapping", None)
     if callable(current_mapping):
         try:
@@ -114,24 +117,97 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
     rsm = ResourceManager()
 
+    #: Side of the status badge ``paint`` draws on the node's bottom edge.
+    STATUS_BADGE_SIDE = 24.0
+
+    #: Width of the state ring ``paint`` strokes the body with. Named because the
+    #: declared rectangle has to account for half of it.
+    RING_PEN_WIDTH = 5.0
+
     def __init__(
         self, node: "TriggerNode", parent: Optional[QGraphicsItem] = None
     ) -> None:
+        # Set before super().__init__: Qt may ask for shape() during setup.
+        self._shape_path: QPainterPath | None = None
+        self._bounding_rect: QRectF | None = None
+        self._detail_pixmap: QPixmap | None = None
+        self._detail_pixmap_resolved = False
         super().__init__(node, parent)
+        self._pen_role = "default"
+        self._rebuild_theme_pens()
 
-        self._default_pen = QPen(QColor.fromRgb(0, 0, 0, 0))  # Black color
-        self._default_pen.setWidth(5)
-        self._selected_pen = QPen(QColor("#FFFFA637"))
-        self._selected_pen.setWidth(5)
-        self._executing_pen = QPen(QColor("#FF800080"))  # Purple color
-        self._executing_pen.setWidth(5)
-        self._executed_pen = QPen(QColor("#FF008000"))  # Green color
-        self._executed_pen.setWidth(5)
-        self._error_pen = QPen(QColor("#FFFF0000"))  # Red color
-        self._error_pen.setWidth(5)
+    def bodyRect(self) -> QRectF:
+        """The node body: title, content widget and state ring live here."""
+        return QRectF(0.0, 0.0, self.width, self.height)
 
-        self._pen = self._default_pen  # Current pen
-        # self._brush_title = QBrush(QColor(style['brush_color']))
+    def statusBadgeRect(self) -> QRectF:
+        """Where ``paint`` draws the status badge, centred on the bottom edge."""
+        side = self.STATUS_BADGE_SIDE
+        return QRectF((self.width - side) / 2.0, self.height - side / 2.0, side, side)
+
+    def boundingRect(self) -> QRectF:
+        """The body, the status badge that hangs below it, and the state ring.
+
+        Two things ``paint`` draws reach outside the body: the badge is centred
+        on the bottom edge, so half of it is below, and the state ring strokes
+        the body path with a 5px pen, so half of it is outside every edge. A
+        ``boundingRect`` that stopped at the body was smaller than what the item
+        drew; Qt repaints by the declared rectangle, so what fell outside was
+        never cleared and every frame of a drag left another copy behind - the
+        trail of green check badges and ring fragments under a dragged node.
+        """
+        if self._bounding_rect is None:
+            margin = self.RING_PEN_WIDTH / 2.0 + 1.0
+            rect = self.bodyRect().united(self.statusBadgeRect())
+            self._bounding_rect = rect.adjusted(-margin, -margin, margin, margin)
+        return self._bounding_rect
+
+    def shape(self) -> QPainterPath:
+        """The node's hit/selection shape, built once.
+
+        ``QGraphicsItem``'s default ``shape()`` allocates a fresh
+        ``QPainterPath`` from ``boundingRect()`` on every call, and a rubber-band
+        selection or a full repaint calls it once per node per pass. The
+        geometry never changes after ``initSizes``.
+
+        It is the body, not the bounding rect: the state ring is drawn from this
+        path, and the ring has to follow the node, not the badge.
+        """
+        if self._shape_path is None:
+            path = QPainterPath()
+            path.addRect(self.bodyRect())
+            self._shape_path = path
+        return self._shape_path
+
+    def _pen_from_token(self, token: str, fallback: str) -> QPen:
+        pen = QPen(get_theme_manager().color(token, fallback))
+        pen.setWidthF(self.RING_PEN_WIDTH)
+        return pen
+
+    def _rebuild_theme_pens(self) -> None:
+        """State rings come from theme tokens, never hardcoded hex."""
+        # Transparent so an idle node draws no ring at all.
+        self._default_pen = QPen(QColor.fromRgb(0, 0, 0, 0))
+        self._default_pen.setWidthF(self.RING_PEN_WIDTH)
+
+        self._selected_pen = self._pen_from_token("node_selection", "#ffa637")
+        self._executing_pen = self._pen_from_token("activity", "#9b7bd4")
+        self._executed_pen = self._pen_from_token("success", "#48a878")
+        self._error_pen = self._pen_from_token("danger", "#e0686c")
+        self._pen = {
+            "default": self._default_pen,
+            "selected": self._selected_pen,
+            "executing": self._executing_pen,
+            "executed": self._executed_pen,
+            "error": self._error_pen,
+        }.get(self._pen_role, self._default_pen)
+
+    def apply_theme(self) -> None:
+        """Re-read state-ring colours after a theme change."""
+        self._rebuild_theme_pens()
+        self._detail_pixmap = None
+        self._detail_pixmap_resolved = False
+        self.update()
 
     def initSizes(self) -> None:
         super().initSizes()
@@ -141,6 +217,12 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self.edge_padding = 0
         self.title_horizontal_padding = 8
         self.title_vertical_padding = 10
+        #: Whether the status badge may be drawn. The scene resolves the
+        #: user's choice into this flag (see ``render_settings``).
+        self._badge_visible = True
+        # Derived geometry: drop anything cached against the previous size.
+        self._bounding_rect = None
+        self._shape_path = None
 
     def initAssets(self) -> None:
         super().initAssets()
@@ -156,13 +238,29 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         if painter is None:
             return
 
-        # Draw the border first
-        path_outline = self.shape()  # Get the shape path
-        painter.setPen(self._pen)
-        painter.drawPath(path_outline)
+        # Draw the border first. The default state ring is fully transparent
+        # (an idle node draws none), and painting a transparent 120x120 path
+        # per node per frame is pure cost - skip it unless a state ring is
+        # actually visible.
+        if self._pen.color().alpha() != 0:
+            painter.setPen(self._pen)
+            painter.drawPath(self.shape())
 
-        # Draw node content
-        super().paint(painter, option, widget)
+        # The card is the expensive half of a node: rendering a proxy widget
+        # per node is what a zoomed-out frame is spent on. The node's whole
+        # look is the icon pixmap that widget holds, so one scaled blit keeps
+        # the graph readable for a fraction of the cost. Which of the two is
+        # drawn is the user's call (see ``render_settings``).
+        if not getattr(self, "_content_visible", True):
+            self._paintLowDetail(painter)
+        else:
+            # Draw node content
+            super().paint(painter, option, widget)
+
+        # The status badge is drawn on top of either, so it can outlive the
+        # card and still tell a finished node from a broken one.
+        if not getattr(self, "_badge_visible", True):
+            return
 
         offset = 24.0
         if self.node.isDirty():
@@ -170,34 +268,92 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         if self.node.isInvalid():
             offset = 48.0
 
-        # Calculate the position for bottom center
-        icon_width = 24.0
-        icon_x = (self.width - icon_width) / 2
-        icon_y = self.height - 12  # 5 pixels padding from the bottom
-
+        side = self.STATUS_BADGE_SIDE
         painter.drawImage(
-            QRectF(icon_x, icon_y, 24.0, 24.0),
+            self.statusBadgeRect(),
             self.icons,
-            QRectF(offset, 0, 24.0, 24.0),
+            QRectF(offset, 0, side, side),
         )
 
+    def _detailPixmap(self) -> QPixmap | None:
+        """The pixmap that stands in for this node once the detail is off.
+
+        Cached, because the fallback walks the content widget's children and
+        this runs inside the paint pass.
+        """
+        if not self._detail_pixmap_resolved:
+            self._detail_pixmap_resolved = True
+            pixmap = getattr(getattr(self.node, "content", None), "icon", None)
+            if pixmap is None or pixmap.isNull():
+                pixmap = self._findContentPixmap()
+            self._detail_pixmap = pixmap
+        return self._detail_pixmap
+
+    def _findContentPixmap(self) -> QPixmap | None:
+        """Last resort: the first pixmap a label inside the content widget holds."""
+        gr_content = getattr(self, "grContent", None)
+        widget = gr_content.widget() if gr_content is not None else None
+        if widget is None:
+            return None
+        for label in widget.findChildren(QLabel):
+            pixmap = label.pixmap()
+            if pixmap is not None and not pixmap.isNull():
+                return pixmap
+        return None
+
+    def _paintLowDetail(self, painter: QPainter) -> None:
+        """Draw the zoomed-out stand-in: one unscaled-smooth blit of the node icon."""
+        pixmap = self._detailPixmap()
+        if pixmap is None:
+            return
+
+        ratio = pixmap.devicePixelRatio() or 1.0
+        width = pixmap.width() / ratio
+        height = pixmap.height() / ratio
+        target = QRectF(
+            (self.width - width) / 2.0,
+            (self.height - height) / 2.0,
+            width,
+            height,
+        )
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
+        painter.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
+        painter.restore()
+
+    def setDetailState(self, state: Mapping[str, bool]) -> None:
+        """Keep the status badge under the user's own control.
+
+        The scene resolves the detail policy into one on/off map per element
+        and hands it to every node. The card, the label and the sockets are
+        the library's own; the status badge is painted here, so this node
+        picks its flag out of the same map.
+        """
+        self._badge_visible = bool(state.get("badge", True))
+        super().setDetailState(state)
+
     def setPenExecuting(self) -> None:
-        """Set node border to purple while executing"""
+        """Set node border to the running-state token while executing"""
+        self._pen_role = "executing"
         self._pen = self._executing_pen
         self.update()
 
     def setPenExecuted(self) -> None:
-        """Set node border to green after execution"""
+        """Set node border to the success token after execution"""
+        self._pen_role = "executed"
         self._pen = self._executed_pen
         self.update()
 
     def setPenError(self) -> None:
-        """Set node border to red on execution error"""
+        """Set node border to the danger token on execution error"""
+        self._pen_role = "error"
         self._pen = self._error_pen
         self.update()
 
     def resetPen(self) -> None:
-        """Reset to default border color"""
+        """Reset to default (invisible) border"""
+        self._pen_role = "default"
         self._pen = self._default_pen
         self.update()
 
@@ -215,6 +371,10 @@ class TriggerContent(TriggerContentUndoMixin, QDMNodeIconContentWidget):
     # _node: 'TriggerNode'  # Define the actual storage
 
     def initUI(self, icon: Optional[QPixmap] = None) -> Any:
+        #: Recorded here as well as in the base: nodes that build on
+        #: ``TriggerContent`` override the base's ``initUI``, and the low-zoom
+        #: repaint blits this pixmap instead of rendering the widget.
+        self.icon = icon
         lbl = QLabel(self.node.content_label, self)  # type: ignore
         lbl.setObjectName(self.node.content_label_objname)  # type: ignore
 
@@ -259,6 +419,29 @@ class TriggerChangeHandler(TriggerContentUndoMixin):
     # ------------------------------------------------------------------
     # Registration
     # ------------------------------------------------------------------
+
+    def refresh_dock_context(self) -> None:
+        """Recompute the open dock's context strip from the model.
+
+        The strip is a projection, like every other widget: the dock installs
+        ``_dock_context_refresh`` while it owns this node's layout, and this is
+        a no-op once the dock is gone or the node is destroyed.
+        """
+        # ``__dict__`` rather than ``getattr``: on a widget whose C++ init never
+        # ran (a ``__new__``-built content in tests) or one already deleted,
+        # PyQt's attribute lookup itself raises RuntimeError, outside any
+        # default the two-argument form could fall back to.
+        try:
+            callback = self.__dict__.get("_dock_context_refresh")
+        except RuntimeError:
+            return
+        if callback is None:
+            return
+        try:
+            callback()
+        except RuntimeError:
+            # Widget already deleted (dock rebuilt or node removed).
+            pass
 
     def registerInputWidget(
         self,
@@ -692,6 +875,13 @@ class TriggerNode(Node):
     #         return val
 
     def eval(self, index: Any = None) -> Any:
+        scene = getattr(self, "scene", None)
+        if scene is not None and getattr(scene, "_bulk_loading", False):
+            # A node constructed mid-load has no file path or column config
+            # yet, so a constructor-time eval would compute from empty inputs
+            # and be recomputed anyway once deserialization finishes. Leave it
+            # dirty; doEvalOutputs runs the single post-load pass.
+            return self.value
         if not self.isDirty() and not self.isInvalid():
             logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
@@ -710,6 +900,13 @@ class TriggerNode(Node):
             return None  # Add explicit return for exception case
         finally:
             self._report_eval_progress(finished=True)
+            # Scene-level notification so preview surfaces can follow a real
+            # recompute; cached evaluations returned above. ``Scene`` is not a
+            # QObject, so TriggerScene fans this out to its own listeners.
+            scene = getattr(self, "scene", None)
+            notify = getattr(scene, "notifyNodeEvaluated", None)
+            if callable(notify):
+                notify(self)
 
     def _report_eval_progress(self, finished: bool) -> None:
         """Notify the active progress dialog, if any (helpers/eval_progress.py).
@@ -768,6 +965,10 @@ class TriggerNode(Node):
         res = super().deserialize(data, hashmap, restore_id)
         # print("Deserialized CalcNode '%s'" %
         #       self.__class__.__name__, "res:", res)
+        # The file carries the title it was saved with, so a node type that has
+        # since been renamed would come back under its old name. The class owns
+        # the current name (TriggerNode_Unknown keeps the saved one instead).
+        self.title = self.__class__.node_title
         return res
 
     def get_code(self) -> str:

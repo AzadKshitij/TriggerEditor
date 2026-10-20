@@ -74,10 +74,10 @@ identifier stored in saved workflows; icons live in
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Sort.svg" width="28" height="28" /> | **Sort** | Orders rows by one or more columns, each ascending or descending. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Split.svg" width="28" height="28" /> | **Split** | Splits rows into two outputs, randomly (seeded) or sequentially. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Unique.svg" width="28" height="28" /> | **Unique** | Removes duplicate rows based on selected columns. |
-| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Dynamic%20Row%20Generate.svg" width="28" height="28" /> | **Generate Rows** | Builds a grid or series of rows from ranges and literals. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Dynamic%20Row%20Generate.svg" width="28" height="28" /> | **Rows** | Builds a grid or series of rows from ranges and literals. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Join.svg" width="28" height="28" /> | **Join** | Full-outer join with L / J / R output sockets for orphans and matches. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Append.svg" width="28" height="28" /> | **Append** | Stacks the right input's rows underneath the left input. |
-| <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Count.svg" width="28" height="28" /> | **Count Records** | Counts rows, overall or per group, and emits the total. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Count.svg" width="28" height="28" /> | **Count** | Counts rows, overall or per group, and emits the total. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Running%20Total.svg" width="28" height="28" /> | **Running Total** | Adds a cumulative sum column, optionally per group. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Transpose.svg" width="28" height="28" /> | **Transpose** | Flips the frame so rows become columns and columns become rows. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Report/Graph.svg" width="28" height="28" /> | **Graph** | Renders the incoming data as a chart in its own window. |

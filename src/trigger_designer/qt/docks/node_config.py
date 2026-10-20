@@ -2,10 +2,19 @@ import traceback
 from typing import Any, List, Optional, TYPE_CHECKING
 
 from loguru import logger
-from qtpy.QtWidgets import QDockWidget, QLayout, QLineEdit, QVBoxLayout, QWidget
+from qtpy.QtWidgets import (
+    QDockWidget,
+    QFrame,
+    QHBoxLayout,
+    QLayout,
+    QLineEdit,
+    QScrollArea,
+    QVBoxLayout,
+    QWidget,
+)
 
 from trigger_designer.qt.undo.binding import bind
-from trigger_designer.qt.widgets.common.config_widgets import ConfigSection
+from trigger_designer.qt.widgets.common.config_widgets import FormRow
 
 if TYPE_CHECKING:
     from trigger_designer.qt.node_base import TriggerNode
@@ -28,6 +37,9 @@ class ConfigDock(QDockWidget):
         #: when the dock widgets die - it must be disconnected explicitly
         #: on every rebuild, or stale closures touch deleted editors.
         self._label_sync = None
+        #: Content whose ``dock_context()`` fills the current context strip.
+        #: Used to detach the live-refresh callback when the dock moves on.
+        self._context_owner = None
         self.initUI()
 
     def currentNode(self) -> Optional[Any]:
@@ -38,13 +50,30 @@ class ConfigDock(QDockWidget):
         self.dock_widget = QWidget()
         self.dock_widget.setObjectName("ConfigDockWidget")
         self.dock_widget.setMinimumWidth(300)
-        self.dock_layout = QVBoxLayout()
+
+        outer = QVBoxLayout(self.dock_widget)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+
+        # One scrollbar for the whole pane. A node with more sections than
+        # the pane is tall scrolls here instead of squeezing its column
+        # lists to a few rows (or nesting a second scroll area of its own).
+        self.scroll_area = QScrollArea(self.dock_widget)
+        self.scroll_area.setObjectName("ConfigDockScroll")
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+
+        self.content_widget = QWidget()
+        self.content_widget.setObjectName("ConfigDockContent")
+        self.dock_layout = QVBoxLayout(self.content_widget)
+        self.dock_layout.setContentsMargins(5, 5, 5, 5)
+        self.dock_layout.setSpacing(2)
+        self.scroll_area.setWidget(self.content_widget)
+        outer.addWidget(self.scroll_area)
+
         self.setWidget(self.dock_widget)
         self.setFloating(False)
-        self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-        )
+        self.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
 
     def updateConfig(self, nodes: List["TriggerNode"], force: bool = False) -> None:
         """Show ``nodes`` in the dock.
@@ -59,6 +88,7 @@ class ConfigDock(QDockWidget):
             to have ignored the undo.
         """
         self._disconnect_label_sync()
+        self._detach_context_refresh()
         self._commit_previous_if_leaving(nodes)
         if len(nodes) != 1:
             self._current_key = None
@@ -97,6 +127,15 @@ class ConfigDock(QDockWidget):
             self.setWindowTitle(f"{self.BASE_TITLE} ({self._node_name(node)})")
             self.clear_dock()
             logger.debug("Cleared the dock!!!")
+            # No identity header and no chips row: the pane title names the
+            # node, the canvas shows what it is, and the configuration
+            # summary is one hover away in the tooltip. Both rows cost 66px
+            # above the first table, which is the space this dock needs most.
+            self._context_owner = content
+            content._dock_context_refresh = lambda: self._set_context_tooltip(
+                node, content
+            )
+            self._set_context_tooltip(node, content)
             previous_input_tracking = getattr(content, "_suspend_input_tracking", False)
             previous_node_evaluation = getattr(
                 content, "_suspend_node_evaluation", False
@@ -109,6 +148,10 @@ class ConfigDock(QDockWidget):
                 # Floating-label row above the node's own controls, bound
                 # before the sweep so it is not generically re-bound.
                 self._add_label_section(node, content)
+                # Node actions (add formula, open graph window, transpose
+                # policy) share the label row instead of each owning a 30px
+                # command row of its own.
+                self._mount_dock_actions(content)
                 # Sweep for controls the node did not register itself, so every
                 # dock control is undoable by default. Done inside the
                 # suspension window so building the panel records nothing.
@@ -118,7 +161,6 @@ class ConfigDock(QDockWidget):
                 content._suspend_input_tracking = previous_input_tracking
                 content._suspend_node_evaluation = previous_node_evaluation
 
-            self.dock_widget.setLayout(self.dock_layout)
         except Exception as e:
             traceback.print_exc()
             logger.trace(e)
@@ -162,6 +204,17 @@ class ConfigDock(QDockWidget):
         except (RuntimeError, TypeError):
             pass
 
+    def _detach_context_refresh(self) -> None:
+        """Stop the previous node refreshing a strip that no longer exists."""
+        owner = self._context_owner
+        self._context_owner = None
+        if owner is None:
+            return
+        try:
+            owner.__dict__.pop("_dock_context_refresh", None)
+        except AttributeError:
+            pass
+
     def _add_label_section(self, node: Any, content: Any) -> None:
         """Floating-label row pinned above the node's own controls.
 
@@ -181,15 +234,24 @@ class ConfigDock(QDockWidget):
         except Exception:
             return
 
-        section = ConfigSection("Label")
-        edit = QLineEdit(section)
+        edit = QLineEdit()
         edit.setObjectName("NodeLabelEdit")
         edit.setPlaceholderText("Node label...")
         edit.setMinimumHeight(30)
         edit.setClearButtonEnabled(True)
         edit.setText(current)
-        section.addWidget(edit)
-        self.dock_layout.insertWidget(0, section)
+        # One 30px row ("Label: ____ [actions]"), not a captioned section:
+        # the caption and the field on separate lines cost 42px for a rarely
+        # used input, and the trailing slot lets a node put its one obvious
+        # action there instead of spending another 30px row on it.
+        self._label_actions_layout = QHBoxLayout()
+        self._label_actions_layout.setContentsMargins(0, 0, 0, 0)
+        self._label_actions_layout.setSpacing(0)
+        self._label_actions_layout.addStretch(0)
+        actions_widget = QWidget()
+        actions_widget.setLayout(self._label_actions_layout)
+        row = FormRow("Label", edit, label_width=40, action=actions_widget)
+        self.dock_layout.insertWidget(0, row)
 
         bind(
             content,
@@ -218,6 +280,43 @@ class ConfigDock(QDockWidget):
             # so at most one sync closure is ever attached to the node.
             self._label_sync = (logic, _sync_from_canvas)
 
+    def _mount_dock_actions(self, content: Any) -> None:
+        """Move a node's own trailing action into the label row.
+
+        A node that has exactly one obvious action (add a formula section,
+        open the graph in a window, pick the transpose missing-column policy)
+        exposes it through ``dock_actions()``. It then rides on the label row
+        instead of claiming a 30px row of its own, which on a short pane is
+        the row the first table needed.
+        """
+        provider = getattr(content, "dock_actions", None)
+        slot = getattr(self, "_label_actions_layout", None)
+        if not callable(provider) or slot is None:
+            return
+        try:
+            actions = list(provider() or [])
+        except Exception as e:
+            logger.trace(e)
+            return
+        for widget in actions:
+            if widget is None:
+                continue
+            try:
+                # A live action is created parentless for this rebuild; one
+                # that still has a parent belongs to the dock generation that
+                # was just cleared and would be deleted under us.
+                if widget.parent() is not None:
+                    continue
+            except RuntimeError:
+                # Already deleted by the previous rebuild.
+                continue
+            # Drop the stretch the slot starts with: the actions sit right
+            # after the label field, not pinned to the far edge.
+            try:
+                slot.insertWidget(slot.count() - 1, widget)
+            except RuntimeError:
+                continue
+
     @staticmethod
     def _node_name(node: "TriggerNode") -> str:
         """Best-effort display name for a selected (graphics) node."""
@@ -229,7 +328,55 @@ class ConfigDock(QDockWidget):
                     return name.strip()
         return type(inner if inner is not None else node).__name__
 
+    @staticmethod
+    def _context_summary(content: Any) -> str:
+        """One-line configuration summary from the node's ``dock_context()``.
+
+        The hook returns ``(chips, label)`` - chips are ``(text, tone)``
+        pairs - or a dict with the same keys. Configuration and schema only:
+        no evaluated results. This used to be a 26px chip strip above every
+        table; it now reads in the pane's tooltip, where it costs nothing.
+        """
+        provider = getattr(content, "dock_context", None)
+        if not callable(provider):
+            return ""
+        try:
+            data = provider()
+        except Exception as e:
+            logger.trace(e)
+            return ""
+        chips: Any = ()
+        label = ""
+        if isinstance(data, dict):
+            chips = data.get("chips", ())
+            label = data.get("label", "")
+        elif isinstance(data, (tuple, list)) and len(data) == 2:
+            chips, label = data
+        elif data:
+            chips = data
+        parts: list[str] = []
+        try:
+            for chip in chips or ():
+                text = chip[0] if isinstance(chip, (tuple, list)) else chip
+                if text:
+                    parts.append(str(text))
+        except (TypeError, ValueError) as e:
+            logger.trace(e)
+        if label:
+            parts.append(str(label))
+        return " · ".join(parts)
+
+    def _set_context_tooltip(self, node: Any, content: Any) -> None:
+        """Put the node's configuration summary on the pane's tooltip."""
+        name = self._node_name(node)
+        summary = self._context_summary(content)
+        self.setToolTip(f"{name} — {summary}" if summary else name)
+
     def clear_dock(self) -> None:
+        # The label row (and the layout that holds its trailing actions) dies
+        # with the rest; drop the stale reference so a rebuild cannot mount a
+        # node action on a deleted widget.
+        self._label_actions_layout = None
         while self.dock_layout.count():
             item = self.dock_layout.takeAt(0)
             if item.widget():

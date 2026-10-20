@@ -1,0 +1,102 @@
+{
+    "schema": 2,
+    "id": "rose-pine-dawn",
+    "name": "Rose Pine Dawn",
+    "appearance": "light",
+    "tokens": {
+        "background_primary": "#faf4ed",
+        "background_secondary": "#f4ede8",
+        "background_tertiary": "#f2e9e1",
+        "background_hover": "#eadfd6",
+        "background_pressed": "#dfdad9",
+        "background_disabled": "#ebe5df",
+        "background_alternate": "#f5efe8",
+
+        "scroll_background": "#f0e8e0",
+
+        "menu_background": "#faf4ed",
+        "menu_separator": "#e4d5cb",
+
+        "statusbar_background": "#f5eee9",
+
+        "separator_background": "#efe4dc",
+
+        "text_primary": "#575279",
+        "text_secondary": "#797593",
+        "text_disabled": "#b0aabe",
+        "text_inactive": "#9893a5",
+        "text_tertiary": "#9893a5",
+
+        "accent_primary": "#907aa9",
+        "accent_secondary": "#a18eb6",
+        "accent_tertiary": "#826e98",
+        "accent_disabled": "#dacfd9",
+
+        "success": "#56949f",
+        "warning": "#ea9d34",
+        "danger": "#b4637a",
+        "info": "#286983",
+        "activity": "#d7827e",
+
+        "node_input": "#b4637a",
+        "node_prepare": "#56949f",
+        "node_join": "#286983",
+        "node_transform": "#907aa9",
+        "node_report": "#ea9d34",
+        "node_selection": "#d7827e",
+
+        "selection_color": "#000000",
+
+        "border_primary": "#f2e9e1",
+        "border_subtle": "#f2e9e1",
+        "border_default": "#e4d5cb",
+        "border_strong": "#d3c4ba",
+        "border_light": "#d3c4ba",
+        "border_dark": "#cecacd",
+        "border_accent": "#907aa9",
+
+        "border_width": "1px",
+        "border_radius": "4px",
+
+        "card_background": "#faf4ed",
+        "card_border": "#e4d5cb",
+        "editor_background": "#f2e9e1",
+        "error_text": "#b4637a",
+        "background_warning": "#f7e4cc",
+
+        "canvas_background": "#f1e7de",
+        "canvas_grid_light": "#0d000000",
+        "canvas_grid_dark": "#17000000",
+
+        "editor_line_number_background": "#ebe2da",
+        "editor_line_number_text": "#9893a5",
+        "editor_current_line": "#e8dedb",
+        "syntax_keyword": "#286983",
+        "syntax_string": "#ea9d34",
+        "syntax_number": "#d7827e",
+        "syntax_column": "#56949f",
+        "syntax_function": "#907aa9",
+        "syntax_operator": "#797593",
+        "syntax_comment": "#9893a5",
+
+        "spacing_tiny": "2px",
+        "spacing_small": "4px",
+        "spacing_medium": "8px",
+        "spacing_large": "12px",
+        "spacing_xlarge": "16px",
+
+        "control_scrollbar_bg": "#f0e8e0",
+        "control_scrollbar_handle": "#d3c4ba",
+        "control_menu_bg": "#faf4ed",
+        "control_toolbar_bg": "#f4ede8",
+
+        "button_bg": "#f4ede8",
+        "button_hover": "#eadfd6",
+        "button_pressed": "#dfdad9",
+
+        "icon_size_small": "12px",
+        "icon_size_medium": "16px",
+        "icon_size_large": "24px",
+        "icon_opacity": 1.0
+    }
+}

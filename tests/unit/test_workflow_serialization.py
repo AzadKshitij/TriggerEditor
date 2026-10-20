@@ -5,6 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 from types import SimpleNamespace
+from typing import ClassVar
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -15,15 +16,12 @@ sys.path.insert(
 SRC_PATH = sys.path[0]
 
 import polars as pl
-from qtpy.QtWidgets import QApplication
-from qtpy.QtWidgets import QVBoxLayout
+from qtpy.QtWidgets import QApplication, QVBoxLayout
 
-from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.widgets.nodes.InOut.file_input import FileInputContent
 from trigger_designer.qt.widgets.nodes.Join.join import JoinContent
 from trigger_designer.qt.widgets.nodes.Preparation.cleansing import CleansingContent
-
 
 APP = QApplication.instance() or QApplication([])
 
@@ -33,7 +31,7 @@ def _get_app() -> QApplication:
 
 
 class DummySerializableContent(SerializableContentMixin):
-    serialized_state_schema = {
+    serialized_state_schema: ClassVar[dict] = {
         "formula": {"attr": "formula_text", "default": ""},
         "config": {"default": {"enabled": False, "mode": "safe"}},
     }
@@ -71,7 +69,7 @@ class DummyHistory:
         self.is_restoring_history = False
         self.entries = []
 
-    def storeHistory(self, **kwargs) -> None:  # noqa: N802 (Qt naming style)
+    def storeHistory(self, **kwargs) -> None:
         self.entries.append(kwargs)
 
 
@@ -80,10 +78,10 @@ class DummyCheckbox:
         self.checked_states = []
         self.blocked_states = []
 
-    def blockSignals(self, value: bool) -> None:  # noqa: N802 (Qt naming style)
+    def blockSignals(self, value: bool) -> None:
         self.blocked_states.append(value)
 
-    def setChecked(self, value: bool) -> None:  # noqa: N802 (Qt naming style)
+    def setChecked(self, value: bool) -> None:
         self.checked_states.append(value)
 
 
@@ -178,6 +176,12 @@ def test_join_bulk_output_selection_updates_one_side_only() -> None:
     )
     content._set_output_columns_checked = (
         JoinContent._set_output_columns_checked.__get__(content, JoinContent)
+    )
+    # The bulk toggle ends by refreshing the section counts; the fake has no
+    # dock sections, only the call itself has to be reachable.
+    content.refresh_dock_context = lambda: None
+    content._refresh_join_counts = JoinContent._refresh_join_counts.__get__(
+        content, JoinContent
     )
     content.history = DummyHistory()
     content.selected_columns = [{"name": "existing_right", "source": "R"}]
