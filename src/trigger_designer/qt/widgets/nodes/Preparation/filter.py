@@ -21,7 +21,13 @@ from trigger_designer.qt.node_base import (
 from nodeeditor.node_content_widget import QDMNodeContentWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.undo.protocol import is_syncing
-from trigger_designer.qt.widgets.common import EmptyStateLabel, NoWheelComboBox
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    EmptyStateLabel,
+    FormRow,
+    NoWheelComboBox,
+    SegmentedControl,
+)
 from trigger_designer.qt.widgets.sql_formula_editor import (
     SQLFormulaWidget,
     STRING_LITERAL_RE,
@@ -136,94 +142,96 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
             return
-        else:
-            main_layout = QVBoxLayout()
-            main_layout.setSpacing(2)
-            main_layout.setContentsMargins(5, 5, 5, 5)
 
-            # Filter mode selector (Simple builder vs SQL expression)
-            self.mode_selector = NoWheelComboBox()
-            self.mode_selector.setObjectName("filterModeSelector")
-            self.mode_selector.addItems(FILTER_MODES)
-            self.mode_selector.setCurrentText(
-                "Expression" if self.mode == FILTER_MODE_EXPRESSION else "Simple"
-            )
-            self.mode_selector.setToolTip(
-                "Simple builds one column condition; Expression filters rows "
-                "with a SQL WHERE clause (no new columns)"
-            )
-            self.mode_selector.setMinimumHeight(30)
-            main_layout.addWidget(self.mode_selector)
+        # Mode: two exclusive states, one segmented row above the sections.
+        self.mode_selector = SegmentedControl(["Simple", "Expression"])
+        self.mode_selector.set_value(
+            "Expression" if self.mode == FILTER_MODE_EXPRESSION else "Simple"
+        )
+        self.mode_selector.setToolTip(
+            "Simple builds one column condition; Expression filters rows "
+            "with a SQL WHERE clause (no new columns)"
+        )
+        self.mode_selector.changed.connect(self.on_mode_changed)
 
-            # Column selector combobox
-            self.column_selector = NoWheelComboBox()
-            self.column_selector.setObjectName("columnSelector")
-            self.column_selector.setMinimumWidth(100)
-            self.column_selector.setMinimumHeight(30)
+        # Builder section: column / operation / value(s)
+        condition = ConfigSection()
+        self.condition_section = condition
 
-            # Operation selector combobox
-            self.operation_selector = NoWheelComboBox()
-            self.operation_selector.setObjectName("operationSelector")
-            self.operation_selector.setMinimumHeight(30)
-            # Operations will be populated dynamically based on selected column type
+        self.column_selector = NoWheelComboBox()
+        self.column_selector.setObjectName("columnSelector")
+        self.column_selector.setMinimumHeight(30)
 
-            # Value input line edits (value2 is the max bound for In Between)
-            self.value_input = QLineEdit()
-            self.value_input.setObjectName("valueInput")
-            self.value_input.setPlaceholderText("Enter filter value...")
-            self.value_input.setMinimumHeight(30)
+        self.operation_selector = NoWheelComboBox()
+        self.operation_selector.setObjectName("operationSelector")
+        self.operation_selector.setMinimumHeight(30)
+        # Operations are populated dynamically from the selected column type
 
-            self.value2_input = QLineEdit()
-            self.value2_input.setObjectName("value2Input")
-            self.value2_input.setPlaceholderText("Enter max value...")
-            self.value2_input.setMinimumHeight(30)
+        self.value_input = QLineEdit()
+        self.value_input.setObjectName("valueInput")
+        self.value_input.setPlaceholderText("Enter filter value...")
+        self.value_input.setMinimumHeight(30)
 
-            # SQL expression editor (expression mode only)
-            self.expression_input = SQLFormulaWidget()
-            self.expression_input.set_placeholder_text(EXPRESSION_PLACEHOLDER)
-            self.expression_input.set_available_columns(
-                list(frame_schema(self.incom_data))
-            )
-            self.expression_input.set_validate_callback(self.validate_expression)
-            self.expression_input.setMinimumHeight(120)
-            self._expression_debounce = QTimer(self.expression_input)
-            self._expression_debounce.setSingleShot(True)
-            self._expression_debounce.setInterval(_EXPRESSION_DEBOUNCE_MS)
-            self._expression_debounce.timeout.connect(self._debounced_commit_expression)
+        self.value2_input = QLineEdit()
+        self.value2_input.setObjectName("value2Input")
+        self.value2_input.setPlaceholderText("Enter max value...")
+        self.value2_input.setMinimumHeight(30)
 
-            # Initialize default values after creating widgets
-            # self.column = self.column_selector.currentText()
-            # self.operation = self.operation_selector.currentText()
-            # self.value = self.value_input.text()
+        condition.addWidget(FormRow("Column", self.column_selector, label_width=88))
+        condition.addWidget(
+            FormRow("Operation", self.operation_selector, label_width=88)
+        )
+        condition.addWidget(FormRow("Value", self.value_input, label_width=88))
+        condition.addWidget(FormRow("Max value", self.value2_input, label_width=88))
 
-            self.update_columns()
+        # Expression section: a SQL WHERE clause over [bracketed] columns
+        expression = ConfigSection()
+        self.expression_section = expression
+        self.expression_input = SQLFormulaWidget()
+        self.expression_input.set_placeholder_text(EXPRESSION_PLACEHOLDER)
+        self.expression_input.set_available_columns(list(frame_schema(self.incom_data)))
+        self.expression_input.set_validate_callback(self.validate_expression)
+        self.expression_input.setMinimumHeight(120)
+        expression.addWidget(self.expression_input)
 
-            # Add widgets to filter layout
-            main_layout.addWidget(self.column_selector)
-            main_layout.addWidget(self.operation_selector)
-            main_layout.addWidget(self.value_input)
-            main_layout.addWidget(self.value2_input)
-            main_layout.addWidget(self.expression_input)
+        self._expression_debounce = QTimer(self.expression_input)
+        self._expression_debounce.setSingleShot(True)
+        self._expression_debounce.setInterval(_EXPRESSION_DEBOUNCE_MS)
+        self._expression_debounce.timeout.connect(self._debounced_commit_expression)
 
-            main_layout.addStretch()
+        # Initialize default values after creating widgets
+        self.update_columns()
 
-            dock_layout.addLayout(main_layout)
+        dock_layout.addWidget(self.mode_selector)
+        dock_layout.addWidget(condition)
+        dock_layout.addWidget(expression)
+        dock_layout.addStretch()
 
-            self.recursively_find_widgets(dock_layout)
+        self.recursively_find_widgets(dock_layout)
 
-            # Connect signals (inside data guard — widgets exist only here)
-            self.mode_selector.currentTextChanged.connect(self.on_mode_changed)
-            self.column_selector.currentTextChanged.connect(self.on_column_changed)
-            self.operation_selector.currentTextChanged.connect(self.on_filter_changed)
-            self.value_input.textChanged.connect(self.on_filter_changed)
-            self.value2_input.textChanged.connect(self.on_filter_changed)
-            self.expression_input.textChanged.connect(self._expression_debounce.start)
-            self.expression_input.editingFinished.connect(
-                self._expression_debounce.stop
-            )
-            self.expression_input.editingFinished.connect(self.commit_expression)
+        # Connect signals (inside data guard - widgets exist only here)
+        self.column_selector.currentTextChanged.connect(self.on_column_changed)
+        self.operation_selector.currentTextChanged.connect(self.on_filter_changed)
+        self.value_input.textChanged.connect(self.on_filter_changed)
+        self.value2_input.textChanged.connect(self.on_filter_changed)
+        self.expression_input.textChanged.connect(self._expression_debounce.start)
+        self.expression_input.editingFinished.connect(self._expression_debounce.stop)
+        self.expression_input.editingFinished.connect(self.commit_expression)
 
-            self._apply_mode_visibility()
+        self._apply_mode_visibility()
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        if self.mode == FILTER_MODE_EXPRESSION:
+            expression_chips: list[tuple[str, str]] = [("Expression", "accent")]
+            if self.expression:
+                expression_chips.append(("WHERE clause set", ""))
+            return expression_chips, ""
+        chips: list[tuple[str, str]] = [("Simple", "accent")]
+        if self.column:
+            operation = self.operation or ""
+            chips.append((f"{self.column} {operation}".strip(), ""))
+        return chips, ""
 
     def _get_column_type_category(self, column_name: str) -> str:
         """
@@ -488,7 +496,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             if hasattr(self, "mode"):
                 self.mode_selector.blockSignals(True)
-                self.mode_selector.setCurrentText(
+                self.mode_selector.set_value(
                     "Expression" if self.mode == FILTER_MODE_EXPRESSION else "Simple"
                 )
                 self.mode_selector.blockSignals(False)
@@ -505,16 +513,16 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self._apply_mode_visibility()
 
     def _apply_mode_visibility(self) -> None:
-        """Show builder widgets or the expression editor, never both."""
+        """Show the builder fields or the expression editor, never both."""
         try:
             is_expression = self.mode == FILTER_MODE_EXPRESSION
-            self.column_selector.setVisible(not is_expression)
-            self.operation_selector.setVisible(not is_expression)
-            self.value_input.setVisible(not is_expression)
+            if hasattr(self, "condition_section"):
+                self.condition_section.setVisible(not is_expression)
+            if hasattr(self, "expression_section"):
+                self.expression_section.setVisible(is_expression)
             self.value2_input.setVisible(
                 not is_expression and self.operation == "In Between"
             )
-            self.expression_input.setVisible(is_expression)
         except RuntimeError:
             pass
 
@@ -528,7 +536,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         """
         try:
             if hasattr(self, "mode_selector"):
-                self.mode_selector.setCurrentText(
+                self.mode_selector.set_value(
                     "Expression" if self.mode == FILTER_MODE_EXPRESSION else "Simple"
                 )
             if hasattr(self, "column_selector") and self.column:
@@ -570,6 +578,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             setModified=True,
         )
         self._apply_mode_visibility()
+        self.refresh_dock_context()
         self.evaluate.emit()
         self.update_data()
 
@@ -638,6 +647,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
 
         self._apply_mode_visibility()
+        self.refresh_dock_context()
         self.evaluate.emit()
         self.update_data()
 

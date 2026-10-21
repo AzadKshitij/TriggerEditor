@@ -96,45 +96,75 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         Args:
             dock_layout: The layout to add components to
         """
-        if self.incom_data is not None:
-            # Main configuration group (design system defaults: spacing 2)
-            config_group = ConfigSection(
-                "Unique Configuration",
-                "Select columns to determine uniqueness:",
-            )
-
-            # Toolbar: search + icon-only select/deselect (design system §4)
-            toolbar_layout = QHBoxLayout()
-            toolbar_layout.setContentsMargins(0, 0, 0, 0)
-            self.search_bar = QLineEdit()
-            self.search_bar.setPlaceholderText("Type to filter columns...")
-            self.search_bar.setClearButtonEnabled(True)
-            self.search_bar.setMinimumHeight(30)
-            self.search_bar.textChanged.connect(self._filter_columns)
-            toolbar_layout.addWidget(self.search_bar)
-
-            select_all_btn = TextButton("All", "Select all visible columns")
-            deselect_all_btn = TextButton("None", "Deselect all visible columns")
-            select_all_btn.clicked.connect(self._select_all_columns)
-            deselect_all_btn.clicked.connect(self._deselect_all_columns)
-            toolbar_layout.addWidget(select_all_btn)
-            toolbar_layout.addWidget(deselect_all_btn)
-            config_group.addLayout(toolbar_layout)
-
-            # Column selection list - takes all remaining vertical space
-            self.column_list = ColumnChecklist(max_height=220)
-            self.column_list.changed.connect(self._on_checklist_changed)
-
-            self._update_column_list()
-            config_group.layout().addWidget(
-                self.column_list, 1
-            )  # Give it stretch factor 1 to take available space
-
-            dock_layout.addWidget(config_group, 1)  # Take all available vertical space
-
-            self.recursively_find_widgets(dock_layout)
-        else:
+        if self.incom_data is None:
             dock_layout.addWidget(EmptyStateLabel())
+            return
+
+        # One flat section: search, bulk toggles, checklist.
+        config_group = ConfigSection(
+            "Unique columns",
+            "Rows are de-duplicated on the checked columns; with none "
+            "checked every row is kept.",
+        )
+        self.unique_section = config_group
+
+        # Toolbar: search + the paired All/None bulk toggles (design system §4.3)
+        toolbar_layout = QHBoxLayout()
+        toolbar_layout.setContentsMargins(0, 0, 0, 0)
+        toolbar_layout.setSpacing(2)
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText("Type to filter columns...")
+        self.search_bar.setClearButtonEnabled(True)
+        self.search_bar.setMinimumHeight(30)
+        self.search_bar.textChanged.connect(self._filter_columns)
+        toolbar_layout.addWidget(self.search_bar)
+
+        select_all_btn = TextButton("All", "Select all visible columns")
+        deselect_all_btn = TextButton("None", "Deselect all visible columns")
+        select_all_btn.clicked.connect(self._select_all_columns)
+        deselect_all_btn.clicked.connect(self._deselect_all_columns)
+        toolbar_layout.addWidget(select_all_btn)
+        toolbar_layout.addWidget(deselect_all_btn)
+        config_group.addLayout(toolbar_layout)
+
+        # Column selection list - as tall as its rows need, capped; the rows
+        # scroll inside it rather than the pane growing with the schema.
+        self.column_list = ColumnChecklist()
+        self.column_list.changed.connect(self._on_checklist_changed)
+
+        self._update_column_list()
+        config_group.addWidget(self.column_list)
+
+        # The section hugs the checklist; spare pane height stays below it
+        # instead of stretching a short list into a mostly empty panel.
+        dock_layout.addWidget(config_group)
+        dock_layout.addStretch(1)
+        self._refresh_unique_count()
+
+        self.recursively_find_widgets(dock_layout)
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        total = len(getattr(self, "all_columns", []) or [])
+        if total:
+            chips.append((f"{total} columns", ""))
+        selected = len(self.selected_columns)
+        if selected:
+            chips.append((f"{selected} selected", "accent"))
+        return chips, ""
+
+    def _refresh_unique_count(self) -> None:
+        """Keep the section header count in step with the selection."""
+        self.refresh_dock_context()
+        section = getattr(self, "unique_section", None)
+        if section is None:
+            return
+        total = len(getattr(self, "all_columns", []) or [])
+        if not total:
+            section.set_count("")
+            return
+        section.set_count(f"{len(self.selected_columns)} of {total}")
 
     def _live_selected_columns(self) -> List[str]:
         """selected_columns filtered to columns present in the current schema.
@@ -203,6 +233,7 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self._visible_columns = list(columns)
         checked = [col for col in columns if col in self.selected_columns]
         self.column_list.setColumns(columns, checked)
+        self._refresh_unique_count()
 
     @Slot(str)
     def _filter_columns(self, search_text: str) -> None:
@@ -252,6 +283,8 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.process_data()
                 self.evaluate.emit()
 
+            self._refresh_unique_count()
+
     def _deselect_all_columns(self) -> None:
         """Deselect all currently visible columns."""
         if not hasattr(self, "column_list") or self.column_list is None:
@@ -278,6 +311,8 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self._store_selection_history(old_selected, "Deselect All Visible")
                 self.process_data()
                 self.evaluate.emit()
+
+            self._refresh_unique_count()
 
     def _on_checklist_changed(self, checked: List[str]) -> None:
         """Handle checkbox changes with history tracking."""
@@ -309,6 +344,8 @@ class UniqueContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             )
             self.process_data()
             self.evaluate.emit()
+
+        self._refresh_unique_count()
 
     def _store_selection_history(
         self, old_selected: List[str], description: str

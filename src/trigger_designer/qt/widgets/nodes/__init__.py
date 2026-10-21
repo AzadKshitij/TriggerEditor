@@ -58,7 +58,7 @@ _LAZY_NODE_SPECS = [
         "module_path": "Preparation.dynamic_row_builder",
         "node_code": PreparationNodes.DYNAMIC_ROW_BUILDER,
         "node_type": NodeTypes.PREPARATION,
-        "node_title": "Generate Rows",
+        "node_title": "Rows",
         "icon": "node_generate_rows",
     },
     {
@@ -114,7 +114,7 @@ _LAZY_NODE_SPECS = [
         "module_path": "Preparation.normalize_columns",
         "node_code": PreparationNodes.NORMALIZE_COLUMNS,
         "node_type": NodeTypes.PREPARATION,
-        "node_title": "Normalize Columns",
+        "node_title": "Normalize",
         # Reuses the Select glyph until a dedicated icon ships.
         "icon": "node_select",
     },
@@ -129,7 +129,7 @@ _LAZY_NODE_SPECS = [
         "module_path": "Transform.count_records",
         "node_code": TransformNodes.COUNT_RECORDS,
         "node_type": NodeTypes.TRANSFORM,
-        "node_title": "Count Records",
+        "node_title": "Count",
         "icon": "node_count",
     },
     {
@@ -150,6 +150,14 @@ _LAZY_NODE_SPECS = [
 
 _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
 
+#: Helper modules under ``nodes/`` that are not nodes. The sweep below would
+#: import them at startup, pulling matplotlib and the Qt canvas into every
+#: launch; they load with the node that needs them instead.
+_LAZY_HELPER_MODULES = {
+    "Report.chart_view",
+    "Report.chart_window",
+}
+
 modules = []
 base_dir = dirname(__file__)
 
@@ -164,10 +172,12 @@ for spec in _LAZY_NODE_SPECS:
 
 for root, dirs, files in os.walk(base_dir):
     for file in files:
-        if file.endswith(".py") and not file == "__init__.py":
+        if file.endswith(".py") and file != "__init__.py":
             relative_path = os.path.relpath(join(root, file), base_dir)
             module_name = relative_path.replace(os.sep, ".")[:-3]
             if module_name in _LAZY_MODULE_NAMES:
+                continue
+            if module_name in _LAZY_HELPER_MODULES:
                 continue
             modules.append(module_name)
 

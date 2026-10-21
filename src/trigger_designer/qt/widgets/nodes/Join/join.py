@@ -22,6 +22,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import (
+    ConfigSection,
     EmptyStateLabel,
     IconButton,
     NoWheelComboBox,
@@ -155,40 +156,30 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 )
             self._sync_selected_with_schema()
 
-            # Join columns mapping area
-            join_mapping_layout = QVBoxLayout()
-            join_mapping_layout.setContentsMargins(0, 0, 0, 0)
-            join_mapping_layout.setSpacing(2)
-            join_mapping_label = QLabel("Join column mapping")
-            join_mapping_label.setObjectName("ConfigSectionInfo")
-            join_mapping_layout.addWidget(join_mapping_label)
+            # Join column mapping
+            mapping_section = ConfigSection("Join columns")
+            self.mapping_section = mapping_section
 
-            # Container for mapping rows
-            self.mapping_container = QVBoxLayout()
-            self.mapping_container.setContentsMargins(0, 0, 0, 0)
-            self.mapping_container.setSpacing(2)
-            self.mapping_pairs = []
-
-            # Add button for new mapping (icon-only per design system §4)
             add_mapping_button = IconButton.themed(
                 "Add mapping",
                 rsm_icon=self.node.rsm.get("icon_add"),
             )
             add_mapping_button.clicked.connect(self.add_mapping_row)
+            mapping_section.add_header_action(add_mapping_button)
 
-            join_mapping_layout.addLayout(self.mapping_container)
-            join_mapping_layout.addWidget(add_mapping_button)
+            self.mapping_container = QVBoxLayout()
+            self.mapping_container.setContentsMargins(0, 0, 0, 0)
+            self.mapping_container.setSpacing(2)
+            self.mapping_pairs = []
+            mapping_section.addLayout(self.mapping_container)
 
-            # Output columns group: toolbar with search + bulk options menu
-            output_layout = QVBoxLayout()
-            output_layout.setContentsMargins(0, 0, 0, 0)
-            output_layout.setSpacing(2)
-            output_label = QLabel("Output columns")
-            output_label.setObjectName("ConfigSectionInfo")
-            output_layout.addWidget(output_label)
+            # Output columns: search + bulk options menu, then the checklist
+            output_section = ConfigSection("Output columns")
+            self.output_section = output_section
 
+            # One 30px command row: search + the bulk options menu.
             output_toolbar = QWidget()
-            output_toolbar.setFixedHeight(40)
+            output_toolbar.setFixedHeight(30)
             output_controls_layout = QHBoxLayout(output_toolbar)
             output_controls_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -208,32 +199,19 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.output_options_btn.setObjectName("OptionsButton")
             self._build_output_options_menu(self.output_options_btn)
             output_controls_layout.addWidget(self.output_options_btn)
+            output_section.addWidget(output_toolbar)
 
             self.output_columns_list = QListWidget()
             self.output_columns_list.setObjectName("JoinOutputList")
-            output_layout.addWidget(output_toolbar)
-            output_layout.addWidget(self.output_columns_list, 1)
+            # A column list keeps a usable number of rows on a short pane; the
+            # dock scrolls as a whole instead of collapsing the list.
+            self.output_columns_list.setMinimumHeight(160)
+            output_section.addWidget(self.output_columns_list, 1)
 
-            # Main layout assembly
-            main_layout = QVBoxLayout()
-            main_layout.setContentsMargins(5, 5, 5, 5)
-            main_layout.setSpacing(2)
-            main_layout.addLayout(join_mapping_layout)
-            main_layout.addLayout(output_layout, 1)
+            dock_layout.addWidget(mapping_section)
+            dock_layout.addWidget(output_section, 1)
 
-            # Evaluate (icon-only); edits also apply live via the debounced timer
-            self.eval_button = IconButton.themed(
-                "Evaluate join now",
-                rsm_icon=self.node.rsm.get("icon_apply"),
-                qss_fallback=":/qss_icons/dark/rc/checkbox_checked.png",
-                theme_fallback="emblem-ok",
-            )
-            self.eval_button.clicked.connect(self.transform_data)
-            main_layout.addWidget(self.eval_button)
-
-            dock_layout.addLayout(main_layout)
-            # Update UI after layout is created
-
+            # Update UI after layout is created; edits apply live (debounced).
             self.load_saved_data()
             self.update_output_columns()
 
@@ -650,6 +628,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 desc="Removed mapping row", data=history_data, setModified=True
             )
 
+            self._refresh_join_counts()
+
     def update_mapping_data(self) -> None:
         """Update mapping data when UI changes"""
 
@@ -688,6 +668,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.history.storeHistory(
             desc="Join mapping updated", data=history_data, setModified=True
         )
+        self._refresh_join_counts()
         # Live-by-default: recompute once edits settle.
         if not self._applying:
             self._apply_timer.start()
@@ -743,6 +724,41 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     self.selected_columns,
                     str(right_schema[col]),
                 )
+            self._refresh_join_counts()
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = []
+        pairs = len(self.mapping_data)
+        chips.append(
+            (
+                f"{pairs} {'pair' if pairs == 1 else 'pairs'}",
+                "accent" if pairs else "",
+            )
+        )
+        boxes = getattr(self, "output_column_checkboxes", []) or []
+        if boxes:
+            checked = sum(1 for entry in boxes if entry["checkbox"].isChecked())
+            chips.append((f"{checked} of {len(boxes)} outputs", ""))
+        # The join is inner, always - the mapping is the only control.
+        return chips, "inner join"
+
+    def _refresh_join_counts(self) -> None:
+        """Keep the section header counts in step with the model."""
+        self.refresh_dock_context()
+        section = getattr(self, "mapping_section", None)
+        if section is not None:
+            pairs = len(self.mapping_data)
+            if not pairs:
+                section.set_count("")
+            else:
+                section.set_count(f"{pairs} pair" if pairs == 1 else f"{pairs} pairs")
+        section = getattr(self, "output_section", None)
+        if section is not None:
+            boxes = getattr(self, "output_column_checkboxes", []) or []
+            if boxes:
+                checked = sum(1 for entry in boxes if entry["checkbox"].isChecked())
+                section.set_count(f"{checked} of {len(boxes)}")
 
     def _add_output_column_item(
         self,
@@ -859,6 +875,8 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             setModified=True,
         )
 
+        self._refresh_join_counts()
+
     def _on_output_checkbox_changed(self, checkbox) -> None:
         """Handle checkbox state changes"""
         if self.history.is_restoring_history:
@@ -897,6 +915,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             data=history_data,
             setModified=True,
         )
+        self._refresh_join_counts()
         # Live-by-default: recompute once edits settle.
         if not self._applying:
             self._apply_timer.start()
@@ -1070,7 +1089,11 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 coalesce=True,  # Coalesce join columns to avoid duplicates
             )
 
-            global_logger.debug(f"🔄 Join: Join operation completed successfully")
+            global_logger.debug("🔄 Join: Join operation completed successfully")
+
+            # Resolve the joined schema once: reading ``LazyFrame.columns``
+            # re-resolves the schema on every access and logs a warning.
+            result_columns = result.collect_schema().names()
 
             # Filter columns based on selected_columns
             if self.selected_columns:
@@ -1081,7 +1104,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         # For left columns, use original name if it's a join key or add suffix if renamed
                         if col_name in left_cols:
                             selected_cols.append(col_name)
-                        elif f"{col_name}{left_suffix}" in result.columns:
+                        elif f"{col_name}{left_suffix}" in result_columns:
                             selected_cols.append(f"{col_name}{left_suffix}")
                         else:
                             selected_cols.append(col_name)
@@ -1089,14 +1112,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                         # For right columns, use original name if it's a join key or suffixed name
                         if col_name in right_cols:
                             selected_cols.append(col_name)
-                        elif f"{col_name}{right_suffix}" in result.columns:
+                        elif f"{col_name}{right_suffix}" in result_columns:
                             selected_cols.append(f"{col_name}{right_suffix}")
                         else:
                             selected_cols.append(col_name)
 
                 # Coalescing drops a right key column when key names differ;
                 # its left counterpart holds the same values for matched rows.
-                result_cols = set(result.columns)
+                result_cols = set(result_columns)
                 fixed_cols = []
                 for column in selected_cols:
                     if column not in result_cols and column in right_cols:
@@ -1108,7 +1131,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 selected_cols = [
                     column
                     for index, column in enumerate(selected_cols)
-                    if column in result.columns and column not in selected_cols[:index]
+                    if column in result_columns and column not in selected_cols[:index]
                 ]
             # (self.data is assigned below after the single collect.)
 
@@ -1128,14 +1151,14 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.data = collected.filter(both_condition).select(selected_cols)
             else:
                 non_indicator_cols = [
-                    col for col in result.columns if not col.startswith("__")
+                    col for col in result_columns if not col.startswith("__")
                 ]
                 self.data = collected.filter(both_condition).select(non_indicator_cols)
 
             # Left-only data
             left_final_cols = [
                 col
-                for col in result.columns
+                for col in result_columns
                 if col in left_columns
                 or (
                     col.endswith(left_suffix)
@@ -1150,7 +1173,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Right-only data
             right_final_cols = [
                 col
-                for col in result.columns
+                for col in result_columns
                 if col in right_columns
                 or (
                     col.endswith(right_suffix)
@@ -1162,7 +1185,7 @@ class JoinContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             ]
             # Reattach coalesced-away right keys via their left counterparts
             # (full join fills them with the right key values).
-            result_cols = set(result.columns)
+            result_cols = set(result_columns)
             for l_key, r_key in zip(left_cols, right_cols):
                 if (
                     r_key not in result_cols

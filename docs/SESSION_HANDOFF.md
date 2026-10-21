@@ -162,7 +162,6 @@ should check parent dir).
 - DynamicRowBuilder **datetime increment widget** is a QDateTimeEdit where a
   seconds-spinner belongs (`timedelta(seconds=<datetime>)` TypeErrors; node
   goes invalid — no regression, was already broken).
-- Graph `plt.show()` blocks headless Run (pops window per Run).
 - `Join/union.py`, `Join/find_replace.py`, `Documentation/comment.py` are
   0-byte stubs (Union registered in enum but unimplemented).
 - `run.bat :COMP` points at a stale absolute path on another machine.

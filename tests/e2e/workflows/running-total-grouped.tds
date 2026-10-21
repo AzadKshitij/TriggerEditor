@@ -1,0 +1,129 @@
+{
+  "id": 2100000000001,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2100000000010,
+      "title": "File Input",
+      "pos_x": -300.0,
+      "pos_y": -100.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2100000000011,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "check.csv"
+      },
+      "node_code": 4,
+      "node_type": "input"
+    },
+    {
+      "id": 2100000000020,
+      "title": "Formula",
+      "pos_x": -50.0,
+      "pos_y": -100.0,
+      "inputs": [
+        {
+          "id": 2100000000021,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2100000000022,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "formula": "TRY_CAST([Relevancy Score] AS DOUBLE)",
+        "target_column": "RelevancyNum"
+      },
+      "op_code": 3,
+      "op_type": "PREPARATION"
+    },
+    {
+      "id": 2100000000030,
+      "title": "Running Total",
+      "pos_x": 200.0,
+      "pos_y": -100.0,
+      "inputs": [
+        {
+          "id": 2100000000031,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2100000000032,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "sum_columns": ["RelevancyNum"],
+        "group_by_columns": ["Difficulty"]
+      },
+      "node_code": 3,
+      "node_type": "transform"
+    },
+    {
+      "id": 2100000000040,
+      "title": "File Output",
+      "pos_x": 440.0,
+      "pos_y": -100.0,
+      "inputs": [
+        {
+          "id": 2100000000041,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "filePath": "running_total.csv"
+      },
+      "op_code": 5,
+      "op_type": "INPUT"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2100000000101,
+      "edge_type": 5,
+      "start": 2100000000011,
+      "end": 2100000000021
+    },
+    {
+      "id": 2100000000102,
+      "edge_type": 5,
+      "start": 2100000000022,
+      "end": 2100000000031
+    },
+    {
+      "id": 2100000000103,
+      "edge_type": 5,
+      "start": 2100000000032,
+      "end": 2100000000041
+    }
+  ]
+}

@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QTableView,
     QHBoxLayout,
+    QHeaderView,
     QStyledItemDelegate,
     QMenu,
     QInputDialog,
@@ -32,7 +33,12 @@ from trigger_designer.qt.node_base import (
     upstream_rename_map,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import EmptyStateLabel, IconButton
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    EmptyStateLabel,
+    IconButton,
+    TextButton,
+)
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.qt.widgets.select_table_widget import (
@@ -145,11 +151,15 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             if not self.changes.get("selected_columns"):
                 self.changes["selected_columns"] = list(frame_schema(self.incom_data))
 
-            # Create toolbar layout with fixed height
+            # Columns section: toolbar (search / move / options) + table.
+            # No title: a table of columns with a search box is self-evident.
+            columns_section = ConfigSection("")
+            self.columns_section = columns_section
+
             toolbar_widget = QWidget()
             toolbar_layout = QHBoxLayout(toolbar_widget)
             toolbar_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
-            toolbar_widget.setFixedHeight(40)  # Set fixed height for toolbar
+            toolbar_widget.setFixedHeight(40)  # One command row, controls are 30px
 
             # Search box
             self.search_input = QLineEdit()
@@ -158,6 +168,18 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Set minimum height for search input
             self.search_input.setMinimumHeight(30)
             toolbar_layout.addWidget(self.search_input)
+
+            # Bulk check/uncheck: two 30px text buttons, the one place the
+            # design system allows text next to the search field.
+            self.all_btn = TextButton("All", "Select every column", toolbar_widget)
+            self.none_btn = TextButton("None", "Deselect every column", toolbar_widget)
+            for button in (self.all_btn, self.none_btn):
+                button.setObjectName("BulkButton")
+                button.setFixedWidth(32)
+            self.all_btn.clicked.connect(self.select_all_columns)
+            self.none_btn.clicked.connect(self.select_no_columns)
+            toolbar_layout.addWidget(self.all_btn)
+            toolbar_layout.addWidget(self.none_btn)
 
             # Move buttons (icon-only, 30x30/12px per design system §4)
             self.up_btn = IconButton.themed(
@@ -191,8 +213,8 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
             toolbar_layout.addWidget(self.options_btn)
 
-            # Add toolbar to main layout
-            dock_layout.addWidget(toolbar_widget)
+            # Add toolbar to the section
+            columns_section.addWidget(toolbar_widget)
 
             self.table_widget = SelectTableWidget(
                 data=self.table_data, changes=self.changes, parent=self
@@ -207,7 +229,12 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.proxy_model.setFilterKeyColumn(-1)  # Filter on all columns
 
             self.table_view = QTableView()
+            self.table_view.setObjectName("ColumnTable")
             self.table_view.setModel(self.proxy_model)
+            # 22px rows: the grid is the point of this dock, so it gets the
+            # density of a data tool, not a settings form.
+            self.table_view.verticalHeader().setDefaultSectionSize(22)
+            self.table_view.horizontalHeader().setFixedHeight(20)
             # self.table_view.setModel(self.table_widget)
 
             # Set the custom delegate for the 'Option' column (index 2)
@@ -226,9 +253,25 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 QTableView.SelectionBehavior.SelectRows
             )
 
-            # Set stretch factors for columns
+            # Column widths: checkbox pinned, dtype pinned to the widest of
+            # its handful of short options, the two text columns share the
+            # rest. Left at Qt's default, the dtype column took 100px of the
+            # pane and the rename column was the one that clipped.
             header = self.table_view.horizontalHeader()
-            header.resizeSection(0, 50)  # Checkbox column
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            header.resizeSection(0, 40)  # Checkbox column
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+            metrics = self.table_view.fontMetrics()
+            dtype_width = max(
+                metrics.horizontalAdvance(name) for name in SelectTableWidget.DATA_TYPES
+            )
+            header.resizeSection(2, dtype_width + 30)  # pad + arrow air
+            header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+
+            # Keep a usable number of rows on a short pane: the dock scrolls
+            # as a whole rather than squeezing the grid down to two rows.
+            self.table_view.setMinimumHeight(220)
 
             # Connect signals
             self.setup_connections()
@@ -236,11 +279,47 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # Connect to the new data_processed signal instead
             self.table_widget.data_processed.connect(self.handleDataChanged)
 
-            dock_layout.addWidget(self.table_view, 1)
+            columns_section.addWidget(self.table_view, 1)
+            dock_layout.addWidget(columns_section, 1)
+            self._refresh_select_counts()
         else:
             dock_layout.addWidget(EmptyStateLabel())
 
         # return layout
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        changes = getattr(self, "changes", None) or {}
+        selected = changes.get("selected_columns") or []
+        renames = changes.get("rename_mapping") or {}
+        dtypes = changes.get("dtype_mapping") or {}
+        chips: list[tuple[str, str]] = []
+        total = len(getattr(self, "table_data", []) or [])
+        if total:
+            chips.append(
+                (f"{len(selected)} of {total} columns", "accent" if selected else "")
+            )
+        if renames:
+            chips.append((f"{len(renames)} renamed", ""))
+        if dtypes:
+            chips.append((f"{len(dtypes)} retyped", ""))
+        return chips, ""
+
+    def _refresh_select_counts(self) -> None:
+        """Refresh the pane summary; counts are no longer rendered."""
+        self.refresh_dock_context()
+
+    def select_all_columns(self) -> None:
+        """Check every column in one undoable step."""
+        widget = getattr(self, "table_widget", None)
+        if widget is not None:
+            widget.set_all_checked(True)
+
+    def select_no_columns(self) -> None:
+        """Deselect every column in one undoable step."""
+        widget = getattr(self, "table_widget", None)
+        if widget is not None:
+            widget.set_all_checked(False)
 
     def setup_connections(self) -> None:
         # Search functionality
@@ -1492,6 +1571,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # Process the new changes
         self.process_data_changes(data_)
         self.apply_changes()
+        self._refresh_select_counts()
 
         # Store history only if there are actual changes
         if old_changes != self.changes:

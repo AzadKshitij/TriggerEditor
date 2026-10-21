@@ -5,8 +5,6 @@ from qtpy.QtWidgets import (
     QLineEdit,
     QFileDialog,
     QVBoxLayout,
-    QLabel,
-    QHBoxLayout,
     QCheckBox,
 )
 from qtpy.QtGui import QPixmap
@@ -18,7 +16,12 @@ from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import IconButton, NoWheelComboBox
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    FormRow,
+    IconButton,
+    NoWheelComboBox,
+)
 
 from nodeeditor.utils import dumpException
 from typing import Optional, Union
@@ -59,22 +62,16 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         super().initUI(icon_)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(2)
+        # Destination section: path + browse, the only mandatory choice
+        destination = ConfigSection()
+        self.destination_section = destination
 
-        # File path row: path field + icon-only browse button (design system §1, §4)
-        path_row = QHBoxLayout()
-        path_row.setContentsMargins(0, 0, 0, 0)
         self.filePathEdit = QLineEdit(self)
         self.filePathEdit.setPlaceholderText("Enter file path")
         self.filePathEdit.setMinimumHeight(30)
         self.filePathEdit.textChanged.connect(self._on_filePathEdit_textChanged)
         self.registerInputWidget(self.filePathEdit)
-        path_row.addWidget(self.filePathEdit, 1)
-        main_layout.addLayout(path_row)
 
-        # Save/browse button (icon-only)
         self.saveButton = IconButton.themed(
             "Browse for save location",
             rsm_icon=self.node.rsm.get("icon_save"),
@@ -83,54 +80,59 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         )
         self.saveButton.clicked.connect(self.openFileDialog)
 
-        # File format selection
-        format_layout = QHBoxLayout()
-        format_layout.setContentsMargins(0, 0, 0, 0)
-        format_label = QLabel("Format")
+        # Label and field share one 30px row; the browse button rides along.
+        destination.addWidget(
+            FormRow("File", self.filePathEdit, label_width=32, action=self.saveButton)
+        )
+
+        # Format section: format, delimiter and write options
+        options = ConfigSection()
+        self.format_section = options
+
         self.formatCombo = NoWheelComboBox(self)
         self.formatCombo.setMinimumHeight(30)
         self.formatCombo.addItems(
             ["csv", "excel", "parquet", "json", "ndjson", "ipc", "custom_delimited"]
         )
         self.formatCombo.currentTextChanged.connect(self._on_format_changed)
-        format_layout.addWidget(format_label)
-        format_layout.addWidget(self.formatCombo, 1)
-        main_layout.addLayout(format_layout)
+        options.addWidget(FormRow("Format", self.formatCombo, label_width=88))
 
         # Custom delimiter (for CSV/custom delimited)
-        delimiter_layout = QHBoxLayout()
-        delimiter_layout.setContentsMargins(0, 0, 0, 0)
-        self.delimiterLabel = QLabel("Delimiter")
         self.delimiterEdit = QLineEdit(self)
         self.delimiterEdit.setText(",")
         self.delimiterEdit.setMinimumHeight(30)
-        self.delimiterEdit.setMaximumWidth(50)
+        self.delimiterEdit.setMaximumWidth(60)
         self.delimiterEdit.textChanged.connect(self._on_delimiter_changed)
-        delimiter_layout.addWidget(self.delimiterLabel)
-        delimiter_layout.addWidget(self.delimiterEdit)
-        main_layout.addLayout(delimiter_layout)
+        self.delimiter_row = FormRow("Delimiter", self.delimiterEdit, label_width=88)
+        options.addWidget(self.delimiter_row)
 
         # Streaming option
         self.streamingCheckbox = QCheckBox("Use streaming (memory optimized)")
         self.streamingCheckbox.setChecked(True)
         self.streamingCheckbox.toggled.connect(self._on_streaming_changed)
-        main_layout.addWidget(self.streamingCheckbox)
+        options.addWidget(self.streamingCheckbox)
 
-        # BOM option
-        self.bomCheckbox = QCheckBox("Include BOM (for UTF-8)")
-        self.bomCheckbox.toggled.connect(self._on_bom_changed)
-        main_layout.addWidget(self.bomCheckbox)
-
-        main_layout.addWidget(self.saveButton)
-        main_layout.addStretch()
+        dock_layout.addWidget(destination)
+        dock_layout.addWidget(options)
+        dock_layout.addStretch()
 
         if self.filePath:
             self.filePathEdit.setText(self.filePath)
-
-        dock_layout.addLayout(main_layout)
+        self._refresh_file_output_counts()
 
         # Set initial visibility
         self._update_ui_visibility()
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the pane tooltip."""
+        chips: list[tuple[str, str]] = [(self.file_format, "accent")]
+        chips.append(("streaming" if self.use_streaming else "in memory", ""))
+        label = os.path.basename(self.filePath) if self.filePath else ""
+        return chips, label
+
+    def _refresh_file_output_counts(self) -> None:
+        """Refresh the pane summary; counts are no longer rendered."""
+        self.refresh_dock_context()
 
     def _on_filePathEdit_textChanged(self) -> None:
         self.filePath = self.filePathEdit.text()
@@ -149,19 +151,20 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.formatCombo.setCurrentText("ndjson")
             elif ext == "ipc":
                 self.formatCombo.setCurrentText("ipc")
+        self._refresh_file_output_counts()
 
     def _on_format_changed(self, format_type: str) -> None:
         self.file_format = format_type
         self._update_ui_visibility()
+        self._refresh_file_output_counts()
 
     def _on_delimiter_changed(self) -> None:
         self.delimiter = self.delimiterEdit.text() or ","
+        self._refresh_file_output_counts()
 
     def _on_streaming_changed(self, checked: bool) -> None:
         self.use_streaming = checked
-
-    def _on_bom_changed(self, checked: bool) -> None:
-        self.include_bom = checked
+        self._refresh_file_output_counts()
 
     def _update_ui_visibility(self) -> None:
         """Update UI element visibility based on selected format"""
@@ -171,12 +174,9 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
         show_delimiter = self.file_format in ["csv", "custom_delimited"]
         self.delimiterEdit.setVisible(show_delimiter)
-        if hasattr(self, "delimiterLabel") and self.delimiterLabel:
-            self.delimiterLabel.setVisible(show_delimiter)
-
-        show_bom = self.file_format in ["csv", "custom_delimited", "json", "ndjson"]
-        if hasattr(self, "bomCheckbox") and self.bomCheckbox:
-            self.bomCheckbox.setVisible(show_bom)
+        row = getattr(self, "delimiter_row", None)
+        if row is not None:
+            row.setVisible(show_delimiter)
 
     def check_file_path(self) -> bool:
         if not self.filePath:
@@ -377,8 +377,6 @@ class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.delimiterEdit.setText(self.delimiter)
             if hasattr(self, "streamingCheckbox") and self.streamingCheckbox:
                 self.streamingCheckbox.setChecked(self.use_streaming)
-            if hasattr(self, "bomCheckbox") and self.bomCheckbox:
-                self.bomCheckbox.setChecked(self.include_bom)
 
             # Update UI visibility
             if hasattr(self, "_update_ui_visibility"):

@@ -1,7 +1,9 @@
+from loguru import logger
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from typing import Callable, Optional, cast
 from typing_extensions import override
 from qtpy.QtGui import (
+    QBrush,
     QIcon,
     QKeySequence,
     QCloseEvent,
@@ -9,8 +11,9 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QApplication,
     QMdiArea,
+    QMenuBar,
+    QTableView,
     QWidget,
-    QMessageBox,
     QFileDialog,
     QMdiSubWindow,
     QTabWidget,
@@ -31,6 +34,13 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowMenuMixin,
 )
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.render_settings import apply_render_settings_to_scene
+from trigger_designer.qt.theme_manager import (
+    apply_theme_to_scene,
+    get_theme_manager,
+)
+from trigger_designer.qt.widgets.common.window_chrome import install_window_chrome
 
 
 # Enabling edge validators
@@ -90,7 +100,9 @@ class TriggerWindow(
         self.name_product = name_product
 
         self.setObjectName("MainWindow")
-        self.readSettings()
+
+        if not file_path:
+            self._restore_last_session()
 
         self.shortcut = QShortcut(QKeySequence("F11"), self)
         self.shortcut.activated.connect(self.toggleFullScreen)
@@ -107,7 +119,7 @@ class TriggerWindow(
         self.rsm = ResourceManager()
 
         if DEBUG:
-            print("Registered nodes:")
+            logger.debug("Registered nodes:")
 
         self.mdiArea = QMdiArea()
         self.mdiArea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
@@ -133,14 +145,26 @@ class TriggerWindow(
         self.createNodesDock()
         self.createConfigDock()
         self.createLoggingDock()
-        # self.createResultDock()
+        self.createDataPreviewDock()
 
         self.createMenus()
+
+        # VSCode-style chrome: the menu bar moves into a frameless 32px
+        # window row beside the caption buttons. Installed before
+        # readSettings() so restored geometry already has no native frame.
+        self.window_chrome = install_window_chrome(self)
+
         self.createToolBars()
         self.createStatusBar()
         self.updateMenus()
 
         self.readSettings()
+        self._theme_mdi_background()
+
+        try:
+            get_theme_manager().themeChanged.connect(self.apply_appearance)
+        except TypeError:  # pragma: no cover - duplicate connection guard
+            pass
 
         self.setWindowTitle("Trigger Designer")
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
@@ -149,13 +173,161 @@ class TriggerWindow(
 
         # Initialize global logger with this main window
         global_logger.set_main_window(self)
-        # self.tabifyDockWidget(self.configDock, self.resultDock)
 
     def toggleFullScreen(self):
         if self.isFullScreen():
             self.showNormal()
         else:
             self.showFullScreen()
+
+    @override
+    def menuBar(self) -> QMenuBar:
+        """The real menu bar, which lives inside the window chrome now.
+
+        Once ``install_window_chrome()`` gives the menu slot to the chrome,
+        the base implementation would auto-create a *new* empty QMenuBar and
+        swap the chrome out of the window. Every caller (including the
+        qtpy-nodeeditor menu builders) keeps getting the embedded bar.
+        """
+        chrome = getattr(self, "window_chrome", None)
+        if chrome is not None:
+            return chrome.menu_bar()
+        return super().menuBar()
+
+    @override
+    def nativeEvent(self, eventType, message):
+        """Hand the Win32 non-client messages to the chrome.
+
+        The chrome answers ``WM_NCCALCSIZE`` / ``WM_NCHITTEST`` so Windows
+        treats the custom row as a real caption: snap, the Snap Layouts
+        flyout, the native edge cursors and the DWM shadow all come from
+        there. Any platform without that layer (and the offscreen plugin the
+        tests use) gets ``(False, 0)``, which is what the base class returns.
+
+        ``super().nativeEvent(...)`` is deliberately not called: on PyQt6 6.8
+        it re-enters the message it was handed and aborts the process
+        (0xC000041D).
+        """
+        chrome = getattr(self, "window_chrome", None)
+        if chrome is None:
+            return False, 0
+        return chrome.native_event(eventType, message)
+
+    # -- layout / session -------------------------------------------------
+    @override
+    def readSettings(self) -> None:
+        """Restore window geometry and dock state (LayoutState owns policy)."""
+        LayoutState().restore(self)
+
+    @override
+    def writeSettings(self) -> None:
+        """Persist the single auto-saved layout."""
+        LayoutState().save(self)
+
+    def saveCurrentLayout(self) -> None:
+        """Window menu action: write the current geometry + dock state now."""
+        LayoutState().save(self)
+        if self.statusBar() is not None:
+            self.statusBar().showMessage("Layout saved", 3000)
+
+    def resetLayout(self) -> None:
+        """Window menu action: forget the saved layout and restore defaults."""
+        LayoutState().clear()
+        apply_default_layout(self)
+        self.apply_appearance()
+        if self.statusBar() is not None:
+            self.statusBar().showMessage("Layout reset", 3000)
+
+    def _restore_last_session(self) -> None:
+        """Reopen last-session files only when the preference is on."""
+        files, active = LayoutState().session_to_restore()
+        if not files:
+            return
+        for path in files:
+            self.openFile(path)
+        if active:
+            sub = self.findMdiChild(active)
+            if sub is not None:
+                self.mdiArea.setActiveSubWindow(sub)
+
+    def _apply_editor_preferences(self, design_window: TriggerSubWindow) -> None:
+        scene = getattr(design_window, "scene", None)
+        if scene is None:
+            return
+        apply_theme_to_scene(scene)
+        apply_render_settings_to_scene(scene)
+        self._theme_node_rings(scene)
+
+    def apply_render_settings(self) -> None:
+        """Push the user's canvas rendering choices into every open scene.
+
+        Each sub-window owns its own graphics scene, so the settings have to
+        be handed to all of them.
+        """
+        for sub in self.mdiArea.subWindowList():
+            widget = sub.widget()
+            scene = getattr(widget, "scene", None)
+            if scene is not None:
+                apply_render_settings_to_scene(scene)
+
+    @staticmethod
+    def _theme_node_rings(scene) -> None:
+        for node in getattr(scene, "nodes", []):
+            gr_node = getattr(node, "grNode", None)
+            refresh = getattr(gr_node, "apply_theme", None)
+            if callable(refresh):
+                refresh()
+
+    def _theme_mdi_background(self, manager=None) -> None:
+        """Colour the workspace frame.
+
+        ``QMdiArea`` paints its own ``background`` brush, so a stylesheet rule
+        never reaches it - it has to be set here.
+        """
+        mdi = getattr(self, "mdiArea", None)
+        if mdi is None:
+            return
+        manager = manager or get_theme_manager()
+        mdi.setBackground(QBrush(manager.color("canvas_background", "#0E1115")))
+
+    def apply_appearance(self, _theme: object = None) -> None:
+        """Re-theme every open surface after a theme/accent change."""
+        manager = get_theme_manager()
+        self._theme_mdi_background(manager)
+        for sub in self.mdiArea.subWindowList():
+            widget = sub.widget()
+            scene = getattr(widget, "scene", None)
+            if scene is not None:
+                apply_theme_to_scene(scene, manager)
+                self._theme_node_rings(scene)
+            for view in widget.findChildren(QTableView):
+                model = view.model()
+                refresh = getattr(model, "refresh_theme", None)
+                if callable(refresh):
+                    refresh()
+            # Python-painted children (SQL formula editors) expose apply_theme.
+            for child in widget.findChildren(QWidget):
+                refresh = getattr(child, "apply_theme", None)
+                if callable(refresh):
+                    refresh()
+        # Icon buttons hold a rendered pixmap; the monochrome ui/ glyphs are
+        # re-rendered per theme, so they have to be re-resolved too.
+        for child in self.findChildren(QWidget):
+            refresh = getattr(child, "apply_theme", None)
+            if callable(refresh):
+                refresh()
+        logging_dock = getattr(self, "loggingDock", None)
+        if logging_dock is not None and hasattr(logging_dock, "apply_theme"):
+            logging_dock.apply_theme()
+        preview_dock = getattr(self, "dataPreviewDock", None)
+        if preview_dock is not None:
+            refresh = getattr(preview_dock, "refresh_theme", None)
+            if callable(refresh):
+                refresh()
+        # Caption glyphs are painted in Python, so they re-read the tokens.
+        chrome = getattr(self, "window_chrome", None)
+        if chrome is not None:
+            chrome.apply_theme()
 
     @override
     def onEditPaste(self) -> None:
@@ -177,6 +349,9 @@ class TriggerWindow(
         super().onEditPaste()
 
     def closeEvent(self, event: Optional[QCloseEvent]) -> None:
+        # Capture the session before children close: the window list is the
+        # source of truth for "what was open", and closing clears it.
+        LayoutState().save_session(self)
         self.mdiArea.closeAllSubWindows()
         if self.mdiArea.currentSubWindow() and event is not None:
             event.ignore()
@@ -184,10 +359,12 @@ class TriggerWindow(
             self.writeSettings()
             if event is not None:
                 event.accept()
-            # hacky fix for PyQt 5.14.x
-            import sys
-
-            sys.exit(0)
+            # Quit through the event loop instead of raising SystemExit from
+            # inside a native close callback: that unwinds through Qt's C++
+            # frames and faults (0xC0000005 in sip) on shutdown.
+            app = QApplication.instance()
+            if app is not None:
+                app.quit()
 
     @override
     def getCurrentNodeEditorWidget(self) -> "NodeEditorWidget":
@@ -300,21 +477,12 @@ class TriggerWindow(
             self.onFileOpen()
 
     def about(self) -> None:
-        QMessageBox.about(
-            self,
-            "About Calculator NodeEditor Example",
-            "The <b>Calculator NodeEditor</b> example demonstrates how to write multiple "
-            "document interface applications using PyQt5 and NodeEditor. For more information visit: "
-            "<a href='https://www.blenderfreak.com/'>www.BlenderFreak.com</a>",
-        )
+        from trigger_designer.qt.dialogs.about_dialog import AboutDialog
+
+        AboutDialog(self).exec()
 
     def createToolBars(self) -> None:
         pass
-
-    # Dock Widgets #
-    # def createResultDock(self) -> None:
-    #     self.resultDock = ResultDock(self)
-    #     self.addDockWidget(Qt.BottomDockWidgetArea, self.resultDock)
 
     def createMdiChild(self, child_widget=None):
         nodeeditor = (
@@ -339,9 +507,28 @@ class TriggerWindow(
         # Connect the design window to the shared logging dock
         nodeeditor.setLoggingDock(self.getLoggingDock())
 
-        # Switch logging dock to this window if it's the active one
+        # Wire the preview dock: the hooks are installed once per window and
+        # the dock ignores events from windows it does not follow.
+        nodeeditor.scene.addItemSelectedListener(
+            lambda: self.dataPreviewDock.note_selection_changed(nodeeditor)
+        )
+        nodeeditor.scene.addItemsDeselectedListener(
+            lambda: self.dataPreviewDock.note_selection_changed(nodeeditor)
+        )
+        nodeeditor.scene.addNodeEvaluatedListener(
+            lambda node: self.dataPreviewDock.note_node_evaluated(nodeeditor, node)
+        )
+        nodeeditor.executionResultsChanged.connect(
+            lambda: self.dataPreviewDock.note_run_finished(nodeeditor)
+        )
+
+        # Switch the docks to this window if it's the active one
         if self.mdiArea.activeSubWindow() == subwnd:
             self.switchLoggingDock(nodeeditor)
+            self.switchDataPreviewDock(nodeeditor)
+
+        # Theme the new scene (canvas grid + node state rings) before it paints.
+        self._apply_editor_preferences(nodeeditor)
 
         # Add a welcome log message for new design window
         nodeeditor.logInfo(
@@ -351,20 +538,36 @@ class TriggerWindow(
         return subwnd
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
-        """Handle sub window activation to switch logging dock context"""
+        """Handle sub window activation to switch the dock contexts"""
+        chrome = getattr(self, "window_chrome", None)
         if sub_window:
             widget = sub_window.widget()
             if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
-                # Switch the logging dock to show logs for this window
+                # Switch both docks to show content for this window
                 self.switchLoggingDock(widget)
+                self.switchDataPreviewDock(widget)
+            # The status bar reports the cursor position of the canvas the
+            # user is looking at.
+            self.connectStatusScene(widget)
+            if chrome is not None:
+                chrome.set_context_title(sub_window.windowTitle())
+        else:
+            self.connectStatusScene(None)
+            if chrome is not None:
+                chrome.set_context_title(None)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
+        # Activate the window being closed first so ``maybeSave`` targets the
+        # right document (``findMdiChild`` matches by filename, as upstream).
         existing = self.findMdiChild(widget.filename)
         self.mdiArea.setActiveSubWindow(existing)
 
         if self.maybeSave():
-            event.accept()
-        else:
+            # The close is really happening: drop per-window dock state.
+            self.onDesignWindowClose(widget, event)
+            if event is not None:
+                event.accept()
+        elif event is not None:
             event.ignore()
 
     def findMdiChild(self, filename):

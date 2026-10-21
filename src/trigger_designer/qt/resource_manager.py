@@ -1,11 +1,10 @@
-import os
 import sys
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, ClassVar, Optional
 
 from loguru import logger
 from PIL import Image, ImageQt
-from qtpy.QtCore import QSettings, Qt
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QColor, QPixmap, QImage, QPainter
 from qtpy.QtSvg import QSvgRenderer
 
@@ -21,18 +20,13 @@ def _bundle_base() -> Path:
     return Path(__file__).parents[1]
 
 
-def _writable_dir() -> Path:
-    if getattr(sys, "frozen", False):
-        appdata = os.getenv("APPDATA")
-        if appdata:
-            return Path(appdata) / "Trigger Designer"
-        return Path.home() / ".trigger_designer"
-    return _bundle_base()
-
-
 class ResourceManager:
     _map: dict = {}
     _cache: dict[str, Any] = {}
+    #: Maps a rendered pixmap's cache key to the resource id it came from, so
+    #: a widget that was handed a pixmap can ask which resource it was and
+    #: re-resolve it after a theme switch.
+    _id_by_key: ClassVar[dict[int, str]] = {}
     _initialized: bool = False
     _res_folder: Path = _bundle_base()
 
@@ -59,101 +53,30 @@ class ResourceManager:
             #     f"{self.__class__.__name__} Resources: {ResourceManager._map.items()}")
 
     def load_theme(self, theme_file: str = "dark") -> str:
-        """To load theme.json file.
+        """Deprecated: build QSS for a theme id.
 
-        Args:
-            theme_file (str): Theme file name.
-
-        Raises:
-            AttributeError: _description_
-
-        Returns:
-            str: will return theme in qss format.
+        Kept so older call sites keep working; new code uses
+        ``ThemeManager`` directly. Applying the stylesheet is the
+        ThemeManager's job, not this class's.
         """
-        print(
-            "🐍 File: qt/resource_manager.py:43 | load_resource_map ~ theme_file",
-            theme_file,
-        )
+        from trigger_designer.qt.theme_manager import get_theme_manager
 
         try:
-            with open(
-                ResourceManager._res_folder
-                / "resources/qt/themes"
-                / f"{theme_file}.json",
-                encoding="utf-8",
-                mode="r",
-            ) as f:
-                print(
-                    "🐍 File: qt/resource_manager.py:57 | load_theme ~ theme_file",
-                    theme_file,
-                )
-                # Read file content as string first
-                content = f.read()
-                theme_variables: dict = json.loads(content)
-
-            with open(
-                ResourceManager._res_folder / "resources/qt/themes" / f"base.qss",
-                encoding="utf-8",
-                mode="r",
-            ) as f:
-                theme_qss = f.read()
-
-            if theme_qss and theme_variables:
-                theme_qss = theme_qss.format(**theme_variables)
-        except FileNotFoundError:
-            print("Error: File not found.")
-        except json.JSONDecodeError:
-            print("Error: Invalid JSON format in file.")
-
-        except Exception as e:
-            logger.error(e)
-
-        # Save this theme to a file (best-effort: bundle may be read-only)
-        try:
-            with open(
-                str(
-                    ResourceManager._res_folder
-                    / "resources/qt/themes/runtime_theme.qss"
-                ),
-                "w",
-            ) as f:
-                f.write(theme_qss)
-        except OSError:
-            try:
-                fallback = _writable_dir() / "runtime_theme.qss"
-                fallback.parent.mkdir(parents=True, exist_ok=True)
-                fallback.write_text(theme_qss)
-            except OSError as exc:
-                logger.warning(f"Unable to cache runtime theme: {exc}")
-
-        return theme_qss
+            return get_theme_manager().stylesheet_for(theme_file)
+        except Exception as exc:
+            logger.error(f"Unable to build theme '{theme_file}': {exc}")
+            return ""
 
     def get_theme_color(self, key: str, default: str = "#000000") -> QColor:
         """Resolve one theme token to a QColor, for a data-driven paint.
 
-        For per-row/per-cell colors driven by model state (e.g. a "this row
-        is stale" highlight), QSS can't help -- it has no selector for
-        arbitrary data, only static widget/objectName rules -- so this is
-        the Python-side counterpart: it reads the same theme JSON
-        `load_theme()` formats `base.qss` against, picking dark/light via
-        the same ``QSettings`` key the theme switcher itself writes
-        (``settings_panel.py``), so a per-row color follows the active
-        theme like everything else does.
+        Defers to the ThemeManager so per-row/per-cell colours follow the
+        active theme (accent override included) instead of re-reading a
+        second QSettings scope.
         """
-        theme_name = QSettings("Blue Octa", "Trigger Designer").value("theme", "dark")
-        try:
-            with open(
-                ResourceManager._res_folder
-                / "resources/qt/themes"
-                / f"{theme_name}.json",
-                encoding="utf-8",
-                mode="r",
-            ) as f:
-                theme_variables: dict = json.loads(f.read())
-        except (FileNotFoundError, json.JSONDecodeError) as e:
-            logger.warning(f"Unable to load theme '{theme_name}' for color lookup: {e}")
-            return QColor(default)
-        return QColor(theme_variables.get(key, default))
+        from trigger_designer.qt.theme_manager import get_theme_manager
+
+        return get_theme_manager().color(key, default)
 
     @staticmethod
     def get_full_path(id: str) -> Optional[Path]:
@@ -201,6 +124,10 @@ class ResourceManager:
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 
+        The monochrome ``ui/`` glyphs are re-rendered for the active theme
+        (see :mod:`trigger_designer.qt.theme_icons`); node icons and the
+        app chrome are returned untouched.
+
         Args:
             id (str): The name of the resource.
 
@@ -247,7 +174,9 @@ class ResourceManager:
                     renderer.render(painter)
                     painter.end()
 
+                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
+                    ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
                 elif res and res.get("mode") == "pil":
                     data = Image.open(file_path)
@@ -262,13 +191,42 @@ class ResourceManager:
                     data = Image.open(file_path)
                     qim = ImageQt.ImageQt(data)
                     pixmap = QPixmap.fromImage(qim)
+                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
+                    ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
             except FileNotFoundError:
                 logger.error(
                     f"[ResourceManager][ERROR]: Could not find resource: {file_path}"
                 )
                 return QImage()
+
+    @staticmethod
+    def resource_id_for(pixmap: QPixmap) -> str | None:
+        """The resource id a rendered ``pixmap`` came from, if known.
+
+        A widget that was handed a pixmap (rather than an id) uses this to
+        find its way back to the resource, so it can re-resolve the icon
+        after a theme switch.
+        """
+        if pixmap is None or pixmap.isNull():
+            return None
+        return ResourceManager._id_by_key.get(pixmap.cacheKey())
+
+    @staticmethod
+    def _themed(id: str, res: dict, file_path: Path, pixmap: QPixmap) -> QPixmap:
+        """Re-render a monochrome glyph for the active theme.
+
+        Node icons carry their type in their colour, so only the ``ui/``
+        glyph set is re-rendered. Everything else - including the app icon
+        and the splash - is returned as loaded.
+        """
+        from trigger_designer.qt import theme_icons
+
+        path = res.get("path", "")
+        if not theme_icons.is_themable(id, path):
+            return pixmap
+        return theme_icons.themed_pixmap(id, file_path, pixmap)
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)

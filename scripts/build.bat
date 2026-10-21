@@ -9,12 +9,15 @@ REM upgrade the Qt versions this project pins (pyqt6==6.8.0, qtpy==2.4.2). That
 REM is also why --no-deps is used below - resolving its dependencies silently
 REM upgrades Qt.
 REM
-REM The ref is a branch, so a build picks up the latest nodeeditor. Set
-REM QTNODEEDITOR_REF to a commit SHA for a reproducible build, e.g.
-REM   set QTNODEEDITOR_REF=62583622e73404e5337956463f48ad63d3f41c89
+REM The source is a local clone by default, because the canvas work in it is
+REM not published yet: installing from @main would silently drop the repaint
+REM and level-of-detail commits, and the build would ship a canvas that renders
+REM differently from the one you develop against. Set QTNODEEDITOR_SOURCE to
+REM the clone, or QTNODEEDITOR_URL to a git URL to build against a published
+REM ref instead.
 REM ---------------------------------------------------------------------------
-if "%QTNODEEDITOR_REF%"=="" set "QTNODEEDITOR_REF=main"
-set "QTNODEEDITOR_URL=git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@%QTNODEEDITOR_REF%"
+if "%QTNODEEDITOR_SOURCE%"=="" set "QTNODEEDITOR_SOURCE=C:\Projects\qtpy-nodeeditor"
+if "%QTNODEEDITOR_URL%"=="" set "QTNODEEDITOR_URL=%QTNODEEDITOR_SOURCE%"
 
 REM Navigate to project root
 cd /d "%~dp0.."
@@ -38,16 +41,16 @@ if not exist "trigger.spec" (
 REM Clean previous incremental build (keeps dist/*.exe until new build passes)
 if exist "build\trigger" rmdir /s /q "build\trigger"
 
-REM Refresh qtpy-nodeeditor from %QTNODEEDITOR_REF%. --reinstall is what makes
+REM Refresh qtpy-nodeeditor from %QTNODEEDITOR_URL%. --reinstall is what makes
 REM "latest" mean latest: without it uv sees the same requirement spec as already
 REM satisfied and keeps whatever was installed previously. --no-build-isolation
 REM is required since nodeeditor's setup.py does `import nodeeditor` to read
 REM __version__, which now imports qtpy (via node_colors_config) - an isolated
 REM build env has no qtpy installed, so the build fails without this flag.
-echo Installing qtpy-nodeeditor from %QTNODEEDITOR_REF%...
+echo Installing qtpy-nodeeditor from %QTNODEEDITOR_URL%...
 uv pip install --no-deps --no-build-isolation --reinstall "%QTNODEEDITOR_URL%"
 if %ERRORLEVEL% NEQ 0 (
-    echo ERROR: failed to install qtpy-nodeeditor from %QTNODEEDITOR_REF%
+    echo ERROR: failed to install qtpy-nodeeditor from %QTNODEEDITOR_URL%
     exit /b %ERRORLEVEL%
 )
 

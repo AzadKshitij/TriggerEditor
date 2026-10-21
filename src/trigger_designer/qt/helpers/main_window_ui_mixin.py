@@ -4,11 +4,17 @@ import os
 
 from nodeeditor.utils import dumpException
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QMenu, QMessageBox
+from qtpy.QtGui import QKeySequence
+from qtpy.QtWidgets import QLabel, QMenu, QMessageBox
 
+from trigger_designer.qt.docks.data_preview import DataPreviewDock
 from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
+from trigger_designer.qt.helpers.dock_chrome import (
+    enable_tab_drag_out,
+    install_tab_only_chrome,
+)
 from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 
 
@@ -108,6 +114,21 @@ class MainWindowMenuMixin:
             logger_action = self.loggingDock.toggleViewAction()
             logger_action.setText("Show Logger")
             self.windowMenu.addAction(logger_action)
+
+        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock is not None:
+            preview_action = self.dataPreviewDock.toggleViewAction()
+            preview_action.setText("Data Preview")
+            preview_action.setShortcut(QKeySequence("Ctrl+Shift+D"))
+            self.windowMenu.addAction(preview_action)
+
+        if hasattr(self, "configDock") and self.configDock is not None:
+            config_action = self.configDock.toggleViewAction()
+            config_action.setText("Node Configuration")
+            self.windowMenu.addAction(config_action)
+
+        self.windowMenu.addSeparator()
+        self.windowMenu.addAction(self.actSaveLayout)
+        self.windowMenu.addAction(self.actResetLayout)
 
         self.windowMenu.addSeparator()
 
@@ -224,16 +245,32 @@ class MainWindowDockMixin:
 
     def createNodesDock(self) -> None:
         self.nodesDock = NodesDock(self)
+        # Stable objectNames are required for QMainWindow.saveState/restoreState.
+        self.nodesDock.setObjectName("NodesDock")
         self.addDockWidget(Qt.TopDockWidgetArea, self.nodesDock)
 
     def createConfigDock(self) -> None:
         self.configDock = ConfigDock(self)
+        self.configDock.setObjectName("ConfigDock")
         self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
 
     def createLoggingDock(self) -> None:
         """Create a single logging dock that shows logs for the active design window"""
         self.loggingDock = LoggingDock(self)
+        self.loggingDock.setObjectName("LoggingDock")
         self.addDockWidget(Qt.BottomDockWidgetArea, self.loggingDock)
+
+    def createDataPreviewDock(self) -> None:
+        """Create the shared preview dock, tabified with the log dock."""
+        self.dataPreviewDock = DataPreviewDock(self)
+        self.dataPreviewDock.setObjectName("DataPreviewDock")
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.dataPreviewDock)
+        self.tabifyDockWidget(self.loggingDock, self.dataPreviewDock)
+        # The tab bar is this pair's chrome: each panel hides its own title bar
+        # while it is a tab, and a tab dragged out of the bar pops it out.
+        enable_tab_drag_out(self)
+        install_tab_only_chrome(self.loggingDock)
+        install_tab_only_chrome(self.dataPreviewDock)
 
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""
@@ -244,11 +281,59 @@ class MainWindowDockMixin:
         if hasattr(self, "loggingDock") and self.loggingDock:
             self.loggingDock.switch_to_design_window(design_window)
 
+    def switchDataPreviewDock(self, design_window) -> None:
+        """Switch the preview dock to follow a specific design window"""
+        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
+            self.dataPreviewDock.switch_to_design_window(design_window)
+
     def onDesignWindowClose(self, design_window, event) -> None:
-        """Handle design window close event to clean up logs"""
+        """Handle design window close event to clean up logs and previews"""
+        design_window_id = str(id(design_window))
         if hasattr(self, "loggingDock") and self.loggingDock:
-            design_window_id = str(id(design_window))
             self.loggingDock.remove_design_window(design_window_id)
+        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
+            self.dataPreviewDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
+        """Build the status bar with the scene-position readout.
+
+        The base class builds the same permanent label and connects it to
+        ``self.nodeeditor.view`` - but this app makes the MDI area the
+        central widget, so that attribute does not exist. The readout is
+        wired to the *active* sub-window's view instead, and re-wired
+        whenever the active sub-window changes.
+        """
         self.statusBar().showMessage("Ready")
+        self.status_mouse_pos = QLabel("")
+        self.statusBar().addPermanentWidget(self.status_mouse_pos)
+        self._status_view = None
+        self.connectStatusScene(self.getCurrentNodeEditorWidget())
+
+    def connectStatusScene(self, widget) -> None:
+        """Point the scene-position readout at ``widget``'s canvas.
+
+        Disconnects the previous view first: the MDI area keeps every
+        opened workflow alive, so two views would otherwise both report a
+        position and the last one to move would win. A window that is not
+        a canvas clears the readout, because the coordinates of the last
+        canvas describe a window that is no longer in front.
+        """
+        previous = getattr(self, "_status_view", None)
+        if previous is not None:
+            try:
+                previous.scenePosChanged.disconnect(self.onScenePosChanged)
+            except (TypeError, RuntimeError):
+                # The view is already gone (its sub-window was closed).
+                pass
+            self._status_view = None
+
+        view = getattr(widget, "view", None) if widget is not None else None
+        if view is None:
+            self.status_mouse_pos.setText("")
+            return
+        try:
+            view.scenePosChanged.connect(self.onScenePosChanged)
+        except (TypeError, RuntimeError):
+            self.status_mouse_pos.setText("")
+            return
+        self._status_view = view

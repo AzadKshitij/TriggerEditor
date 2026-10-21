@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import datetime
 
 from nodeeditor.node_edge import Edge
@@ -27,12 +28,20 @@ class CachedGraphicsEdge(QDMGraphicsEdge):
         return calculator
 
     def setSource(self, x: float, y: float) -> None:
-        super().setSource(x, y)
+        # Invalidate first: the base setter adopts the recomputed path, and it
+        # must not adopt the cache from the previous position.
         self._invalidate_cached_path()
+        super().setSource(x, y)
 
     def setDestination(self, x: float, y: float) -> None:
-        super().setDestination(x, y)
         self._invalidate_cached_path()
+        super().setDestination(x, y)
+
+    def setPositions(self, source, destination) -> None:
+        # A node move sets both ends; invalidate once and let the base setter
+        # adopt the recomputed path once.
+        self._invalidate_cached_path()
+        super().setPositions(source, destination)
 
     def calcPath(self):
         if self._path_dirty or self._cached_path is None:
@@ -89,7 +98,6 @@ class TriggerEdge(Edge):
             stub = self._stub_pos(start_group)
             if stub is not None:
                 source_pos = stub
-        self.grEdge.setSource(*source_pos)
 
         if self.end_socket is not None:
             end_pos = self.end_socket.getSocketPosition()
@@ -99,9 +107,13 @@ class TriggerEdge(Edge):
                 stub = self._stub_pos(end_group)
                 if stub is not None:
                     end_pos = stub
-            self.grEdge.setDestination(*end_pos)
         else:
-            self.grEdge.setDestination(*source_pos)
+            end_pos = source_pos
+
+        # Both ends at once: the graphics edge adopts the recomputed path once
+        # instead of once per end, which halves the route calculations behind a
+        # node move.
+        self.grEdge.setPositions(source_pos, end_pos)
 
         if getattr(self.scene, "_bulk_loading", False):
             self.scene._deferred_edge_updates.add(self)
@@ -122,9 +134,22 @@ class TriggerScene(Scene):
         #: Set by helpers.eval_progress.eval_progress_dialog while a
         #: progress dialog is driving a load/recompute; None otherwise.
         self._eval_progress_cb = None
+        #: Callbacks run, with the node, after a real recompute. ``Scene`` is
+        #: not a QObject, so this follows the scene's own listener idiom
+        #: (``addItemSelectedListener`` and friends) rather than a signal.
+        self._node_evaluated_listeners: list[Callable[[object], None]] = []
 
     def getEdgeClass(self):
         return TriggerEdge
+
+    def addNodeEvaluatedListener(self, callback: Callable[[object], None]) -> None:
+        """Register ``callback(node)`` for every real node recompute."""
+        self._node_evaluated_listeners.append(callback)
+
+    def notifyNodeEvaluated(self, node: object) -> None:
+        """Run the evaluation listeners for ``node`` (``Node.eval`` calls it)."""
+        for callback in list(self._node_evaluated_listeners):
+            callback(node)
 
     def beginBulkLoad(self) -> None:
         self._bulk_loading = True

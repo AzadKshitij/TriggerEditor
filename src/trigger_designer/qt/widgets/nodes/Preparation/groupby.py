@@ -5,15 +5,10 @@ from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QFrame,
-    QScrollArea,
     QSizePolicy,
     QTableWidget,
     QTableWidgetItem,
     QHeaderView,
-    QSplitter,
 )
 from qtpy.QtGui import QPixmap
 from qtpy.QtCore import (
@@ -226,9 +221,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.cached_actions_data: list = []
 
         # Dock widgets (rebuilt on every selection)
-        self.fields_table: Optional[QTableWidget] = None
         self.actions_table: Optional[QTableWidget] = None
-        self.search_input: Optional[QLineEdit] = None
         self._building_table = False
 
     @property
@@ -277,146 +270,72 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 except Exception:
                     pass
 
-            main_widget = QWidget()
-            main_layout = QVBoxLayout(main_widget)
-            main_layout.setContentsMargins(5, 5, 5, 5)
-            main_layout.setSpacing(2)
+            # One table, Alteryx Summarize style: pick a field in the command
+            # row, then set its Action to GroupBy or an aggregation in the
+            # grid. The schema table that used to sit above this one spent
+            # half the pane doing what a 30px picker now does.
+            command = QWidget()
+            command_layout = QHBoxLayout(command)
+            command_layout.setContentsMargins(0, 0, 0, 0)
+            command_layout.setSpacing(2)
+            command.setFixedHeight(30)
 
-            # Fields toolbar: search only (H40, margins 0 per design system)
-            toolbar_widget = QWidget()
-            toolbar_layout = QHBoxLayout(toolbar_widget)
-            toolbar_layout.setContentsMargins(0, 0, 0, 0)
-            toolbar_widget.setFixedHeight(40)
-            self.search_input = QLineEdit()
-            self.search_input.setPlaceholderText("Search fields...")
-            self.search_input.setClearButtonEnabled(True)
-            self.search_input.setMinimumHeight(30)
-            self.search_input.textChanged.connect(self._filter_fields)
-            toolbar_layout.addWidget(self.search_input)
+            self.field_picker = NoWheelComboBox()
+            self.field_picker.setMinimumHeight(30)
+            try:
+                self.field_picker.addItems(list(frame_schema(self.incom_data)))
+            except Exception:
+                pass
+            self.field_picker.setToolTip("Field to add as a group key or measure")
+            command_layout.addWidget(self.field_picker, 1)
 
-            # Fields section
-            fields_widget = QWidget()
-            fields_layout = QVBoxLayout(fields_widget)
-            fields_layout.setContentsMargins(0, 0, 0, 0)
-            fields_layout.setSpacing(2)
-            fields_label = QLabel("Fields")
-            fields_label.setObjectName("ConfigSectionInfo")
-            fields_layout.addWidget(fields_label)
-            fields_layout.addWidget(toolbar_widget)
-            self.create_fields_table()
-            fields_layout.addWidget(self.fields_table)
-            fields_widget.setMinimumHeight(200)
-
-            # + button between Fields and Actions (centered, icon-only)
-            add_button_widget = QWidget()
-            add_button_layout = QHBoxLayout(add_button_widget)
-            add_button_layout.setContentsMargins(0, 0, 0, 0)
-            add_button_layout.addStretch()
             self.add_btn = IconButton.themed(
-                "Add selected field as group key",
+                "Add field as group key or measure",
                 rsm_icon=self.node.rsm.get("icon_add"),
             )
             self.add_btn.clicked.connect(self.add_selected_field)
-            add_button_layout.addWidget(self.add_btn)
-            add_button_layout.addStretch()
-            add_button_widget.setFixedHeight(40)
+            command_layout.addWidget(self.add_btn)
 
-            # Actions section
-            actions_widget = QWidget()
-            actions_layout = QVBoxLayout(actions_widget)
-            actions_layout.setContentsMargins(0, 0, 0, 0)
-            actions_layout.setSpacing(2)
-            actions_label = QLabel("Actions")
-            actions_label.setObjectName("ConfigSectionInfo")
-            actions_layout.addWidget(actions_label)
-            self.create_actions_table()
-            actions_layout.addWidget(self.actions_table)
-            actions_widget.setMinimumHeight(200)
-
-            # Splitter: Fields | + | Actions so tables stay resizable
-            self.splitter = QSplitter(Qt.Orientation.Vertical)
-            self.splitter.setChildrenCollapsible(False)
-            self.splitter.addWidget(fields_widget)
-            self.splitter.addWidget(add_button_widget)
-            self.splitter.addWidget(actions_widget)
-            self.splitter.setStretchFactor(0, 1)
-            self.splitter.setStretchFactor(1, 0)
-            self.splitter.setStretchFactor(2, 1)
-
-            main_layout.addWidget(self.splitter, 1)
-
-            # Remove-row controls (icon-only); no Apply button: commit on deselect.
-            actions_button_layout = QHBoxLayout()
-            actions_button_layout.setContentsMargins(0, 0, 0, 0)
             self.remove_btn = IconButton.themed(
                 "Remove selected action",
                 rsm_icon=self.node.rsm.get("icon_remove"),
             )
             self.remove_btn.clicked.connect(self.remove_selected_action)
-            actions_button_layout.addWidget(self.remove_btn)
-            actions_button_layout.addStretch()
-            main_layout.addLayout(actions_button_layout)
+            command_layout.addWidget(self.remove_btn)
 
-            # Scroll container: when the dock is shorter than the sections'
-            # minimum heights, the dock itself scrolls instead of pushing
-            # content out of bounds. QScrollArea (not QAbstractScrollArea)
-            # so the undo sweep in iter_dock_widgets still reaches controls.
-            scroll = QScrollArea()
-            scroll.setWidgetResizable(True)
-            scroll.setFrameShape(QFrame.Shape.NoFrame)
-            scroll.setWidget(main_widget)
-            dock_layout.addWidget(scroll, 1)
+            dock_layout.addWidget(command)
+
+            self.create_actions_table()
+            dock_layout.addWidget(self.actions_table, 1)
 
             # Project model -> widgets (no recompute here; deselect commits).
             self._rebuild_widgets()
             self.cached_actions_data = self._actions_data_from_changes(self.changes)
+            self._refresh_groupby_counts()
         else:
             dock_layout.addWidget(EmptyStateLabel())
 
-    def create_fields_table(self) -> None:
-        """Create the fields table showing available columns"""
-        self.fields_table = QTableWidget()
-        self.fields_table.setColumnCount(2)
-        self.fields_table.setHorizontalHeaderLabels(["Field", "Type"])
-        self.fields_table.setAlternatingRowColors(True)
-        self.fields_table.setWordWrap(False)
-        self.fields_table.setVerticalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOn
-        )
-        self.fields_table.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        )
-        self.fields_table.setMinimumHeight(110)
-        self.fields_table.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
-        )
-        self.fields_table.verticalHeader().setVisible(False)
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        changes = self._normalize_changes(getattr(self, "changes", None))
+        chips: list[tuple[str, str]] = []
+        keys = len(changes["group_by_columns"])
+        if keys:
+            chips.append((f"{keys} key{'s' if keys > 1 else ''}", ""))
+        measures = len(changes["aggregations"])
+        if measures:
+            chips.append((f"{measures} measure{'s' if measures > 1 else ''}", "accent"))
+        return chips, ""
 
-        schema = frame_schema(self.incom_data)
-        self.fields_table.setRowCount(len(schema))
-        for row, column in enumerate(schema):
-            field_item = QTableWidgetItem(column)
-            field_item.setFlags(field_item.flags() | Qt.ItemFlag.ItemIsSelectable)
-            self.fields_table.setItem(row, 0, field_item)
-            dtype = str(schema[column])
-            type_item = QTableWidgetItem(dtype)
-            type_item.setFlags(type_item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-            self.fields_table.setItem(row, 1, type_item)
-
-        self.fields_table.setSelectionBehavior(
-            QTableWidget.SelectionBehavior.SelectRows
-        )
-        header = self.fields_table.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        self.fields_table.setColumnWidth(0, 220)
-        self.fields_table.setColumnWidth(1, 140)
-        if self.search_input is not None and self.search_input.text():
-            self._filter_fields(self.search_input.text())
+    def _refresh_groupby_counts(self) -> None:
+        """Refresh the pane summary; counts are no longer rendered."""
+        self.refresh_dock_context()
 
     def create_actions_table(self) -> None:
         """Create the actions table shell; rows come from ``_rebuild_widgets``."""
         self.actions_table = QTableWidget()
+        self.actions_table.setObjectName("ColumnTable")
+        self.actions_table.verticalHeader().setDefaultSectionSize(22)
         self.actions_table.setColumnCount(3)
         self.actions_table.setHorizontalHeaderLabels(
             ["Field", "Action", "Output Field Name"]
@@ -429,7 +348,9 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.actions_table.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAsNeeded
         )
-        self.actions_table.setMinimumHeight(110)
+        # Keep a few action rows visible on a short pane; the dock scrolls as
+        # a whole rather than squeezing the table down to a sliver.
+        self.actions_table.setMinimumHeight(180)
         self.actions_table.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
@@ -442,6 +363,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             QTableWidget.SelectionMode.ExtendedSelection
         )
         header = self.actions_table.horizontalHeader()
+        header.setFixedHeight(20)
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
@@ -449,22 +371,6 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         self.actions_table.setColumnWidth(1, 120)
         self.actions_table.setColumnWidth(2, 240)
         self.actions_table.itemChanged.connect(self._on_alias_edited)
-
-    # ------------------------------------------------------------------
-    # Search
-    # ------------------------------------------------------------------
-
-    def _filter_fields(self, text: str) -> None:
-        if self.fields_table is None:
-            return
-        needle = (text or "").strip().lower()
-        try:
-            for row in range(self.fields_table.rowCount()):
-                item = self.fields_table.item(row, 0)
-                name = item.text().lower() if item else ""
-                self.fields_table.setRowHidden(row, bool(needle and needle not in name))
-        except RuntimeError:
-            pass
 
     # ------------------------------------------------------------------
     # Model helpers (model is the only truth)
@@ -486,6 +392,7 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return False
         self.changes = new
         self.cached_actions_data = self._actions_data_from_changes(new)
+        self._refresh_groupby_counts()
         # NOTE: the model is a dict, so even structural edits travel as a
         # property change (with rebuild=True). push_list_change assumes a
         # list value and would store list(changes) == its key names,
@@ -525,46 +432,32 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     # ------------------------------------------------------------------
 
     def add_selected_field(self) -> None:
-        """Add selected fields to the model, then re-project."""
-        if self._guarded():
+        """Add the picked field to the model, then re-project."""
+        if self._guarded() or self.actions_table is None:
             return
-        if self.fields_table is None:
+        picker = getattr(self, "field_picker", None)
+        if picker is None:
             return
-        try:
-            selected = self.fields_table.selectionModel().selectedRows()
-        except RuntimeError:
+        field_name = picker.currentText().strip()
+        if not field_name:
             return
-        if not selected:
-            return
-        existing = {a["field"] for a in self._current_actions()}
         actions = self._current_actions()
-        added = 0
-        for index in selected:
-            try:
-                row = index.row()
-                item = self.fields_table.item(row, 0)
-            except RuntimeError:
-                continue
-            if item is None:
-                continue
-            field_name = item.text()
-            if field_name in existing:
-                continue
-            actions.append(
-                {
-                    "field": field_name,
-                    "action": "Count",
-                    "output_name": _default_output_name(field_name, "Count"),
-                }
-            )
-            existing.add(field_name)
-            added += 1
-        if added:
-            self._set_model(
-                self._changes_from_actions(actions),
-                "Aggregate Field Added",
-                structural=True,
-            )
+        if any(entry["field"] == field_name for entry in actions):
+            return
+        actions.append(
+            {
+                "field": field_name,
+                # GroupBy first: it is what the node is for. Switch the row's
+                # Action to a measure when you want an aggregation instead.
+                "action": "GroupBy",
+                "output_name": field_name,
+            }
+        )
+        self._set_model(
+            self._changes_from_actions(actions),
+            "Aggregate Field Added",
+            structural=True,
+        )
 
     def remove_selected_action(self) -> None:
         """Remove selected actions from the model, then re-project."""
@@ -713,8 +606,11 @@ class GroupByContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             # will report it via tooltip + logs.
             allowed = allowed + [action]
         combo = NoWheelComboBox()
+        combo.setObjectName("CellCombo")
         combo.addItems(allowed)
-        combo.setMinimumHeight(30)
+        # The action table's rows are 22px; the dock's 30px control height
+        # would make the combo hang over the row below.
+        combo.setMinimumHeight(18)
         combo.setCurrentText(action)
         combo.currentTextChanged.connect(self._on_action_combo_changed)
         self.actions_table.setCellWidget(row, 1, combo)

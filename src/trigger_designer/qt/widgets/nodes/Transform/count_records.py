@@ -33,7 +33,7 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         global_logger.debug(
-            "🔢 CountRecordsContent: Initializing Count Records node content widget"
+            "🔢 CountRecordsContent: Initializing Count node content widget"
         )
         self.node = node
 
@@ -61,25 +61,28 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         global_logger.debug("🔢 CountRecordsContent: Creating layout")
-        message_label = EmptyStateLabel(
-            "No configuration needed. The output socket returns the row count."
+        dock_layout.addWidget(
+            EmptyStateLabel(
+                "No configuration. The output socket carries the row count."
+            )
         )
-        dock_layout.addWidget(message_label)
+
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        return [("row count", "")], "derived output"
 
     def serialize(self):
-        """Serialize the Count Records configuration"""
+        """Serialize the Count configuration"""
         res = super().serialize()
         res["total_records"] = self.total_records
         res["variable_name"] = self.variable_name
         return res
 
     def deserialize(self, data, hashmap={}):
-        """Deserialize the Count Records configuration"""
+        """Deserialize the Count configuration"""
         res = super().deserialize(data, hashmap)
         try:
-            global_logger.debug(
-                "🔢 CountRecordsContent: Deserializing Count Records node"
-            )
+            global_logger.debug("🔢 CountRecordsContent: Deserializing Count node")
 
             self.total_records = data.get("total_records", 0)
             self.variable_name = data.get("variable_name", f"var_count_{self.id}")
@@ -145,12 +148,12 @@ class CountRecordsContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 class TriggerNode_CountRecords(TriggerNode):
     icon = "node_count"
     node_code = TransformNodes.COUNT_RECORDS
-    node_title = "Count Records"
+    node_title = "Count"
     node_type = NodeTypes.TRANSFORM
     content_label_objname = "trigger_node_count_records"
 
     def __init__(self, scene) -> None:
-        global_logger.info("🔧 CountRecordsNode: Initializing Count Records node")
+        global_logger.info("🔧 CountRecordsNode: Initializing Count node")
         super().__init__(scene, inputs=[1], outputs=[1])
         global_logger.debug(
             "🔢 CountRecordsNode: Node created with 1 input and 1 output"

@@ -1,10 +1,9 @@
-from typing import Optional, Any, Callable
+from typing import Optional, Any
 import polars as pl
 from datetime import datetime, timedelta
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QLabel,
     QLineEdit,
     QSpinBox,
     QDateTimeEdit,
@@ -24,7 +23,7 @@ from trigger_designer.qt.node_base import (
 )
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.widgets.common import ConfigSection, NoWheelComboBox
+from trigger_designer.qt.widgets.common import ConfigSection, FormRow, NoWheelComboBox
 from nodeeditor.utils_no_qt import dumpException
 
 
@@ -81,66 +80,72 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         """Create the node's UI layout"""
-        main_layout = QVBoxLayout()
-        main_layout.setSpacing(2)
-        main_layout.setContentsMargins(5, 5, 5, 5)
-
         # Field Configuration
-        field_group = ConfigSection("Field Settings")
+        field_group = ConfigSection()
+        self.field_section = field_group
 
-        # Field name
-        name_label = QLabel("Field Name:")
         self.name_edit = QLineEdit(self.field_name)
+        self.name_edit.setToolTip("Name of the generated column")
         self.name_edit.textChanged.connect(self.on_field_name_changed)
-        field_group.addWidget(name_label)
-        field_group.addWidget(self.name_edit)
+        field_group.addWidget(FormRow("Name", self.name_edit, label_width=88))
 
-        # Field type
-        type_label = QLabel("Field Type:")
         self.type_combo = NoWheelComboBox()
         self.type_combo.addItems(["int", "float", "string", "datetime"])
         self.type_combo.setMinimumHeight(30)
         self.type_combo.setCurrentText(self.field_type)
         self.type_combo.currentTextChanged.connect(self.on_field_type_changed)
-        field_group.addWidget(type_label)
-        field_group.addWidget(self.type_combo)
+        field_group.addWidget(FormRow("Type", self.type_combo, label_width=88))
 
-        main_layout.addWidget(field_group)
+        dock_layout.addWidget(field_group)
 
-        # Value Configuration
-        value_group = ConfigSection("Value Settings")
+        # Value Configuration: start / increment / end
+        value_group = ConfigSection()
+        self.value_section = value_group
 
-        # Initial value
-        initial_label = QLabel("Start Value:")
         self.initial_widget = self.create_value_widget(self.field_type)
         self._restore_widget_value(self.initial_widget, self.initial_value)
-        value_group.addWidget(initial_label)
-        value_group.addWidget(self.initial_widget)
+        self.initial_row = FormRow("Start", self.initial_widget, label_width=88)
+        value_group.addWidget(self.initial_row)
 
-        # Increment value
-        increment_label = QLabel("Increment By:")
         self.increment_widget = self.create_value_widget(self.field_type)
         self._restore_widget_value(self.increment_widget, self.increment_value)
-        value_group.addWidget(increment_label)
-        value_group.addWidget(self.increment_widget)
+        self.increment_row = FormRow("Increment", self.increment_widget, label_width=88)
+        value_group.addWidget(self.increment_row)
 
-        # Max value
-        max_label = QLabel("End Value:")
         self.max_widget = self.create_value_widget(self.field_type)
         self._restore_widget_value(self.max_widget, self.max_value)
-        value_group.addWidget(max_label)
-        value_group.addWidget(self.max_widget)
+        self.max_row = FormRow("End", self.max_widget, label_width=88)
+        value_group.addWidget(self.max_row)
 
-        main_layout.addWidget(value_group)
+        dock_layout.addWidget(value_group)
+        dock_layout.addStretch()
 
-        # Stats display
-        stats_group = ConfigSection("Statistics")
-        self.stats_label = QLabel()
-        self.update_stats()
-        stats_group.addWidget(self.stats_label)
-        main_layout.addWidget(stats_group)
+        self._refresh_dynamic_row_counts()
 
-        dock_layout.addLayout(main_layout)
+    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
+        """Configuration summary for the dock context strip."""
+        chips: list[tuple[str, str]] = [(self.field_type, "accent")]
+        summary = self._range_summary()
+        if summary:
+            chips.append((summary, ""))
+        return chips, ""
+
+    def _range_summary(self) -> str:
+        """Start/step/end in one phrase, when the type has a range."""
+        if self.field_type in ("int", "float"):
+            return f"{self.initial_value} to {self.max_value} by {self.increment_value}"
+        return ""
+
+    def _refresh_dynamic_row_counts(self) -> None:
+        """Keep section header counts in step with the configuration."""
+        self.refresh_dock_context()
+        section = getattr(self, "field_section", None)
+        if section is not None:
+            section.set_count(self.field_name or "")
+
+        section = getattr(self, "value_section", None)
+        if section is not None:
+            section.set_count(self._range_summary())
 
     def create_value_widget(self, field_type: str) -> QWidget:
         """Create appropriate widget based on field type"""
@@ -247,7 +252,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # Create new DataFrame
                 self.data = frame_kind({self.field_name: values})
 
-            self.update_stats()
+            self._refresh_dynamic_row_counts()
 
         except Exception as e:
             global_logger.error(f"Error generating rows: {str(e)}")
@@ -282,20 +287,10 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         else:  # string
             return f"{current}{increment}"
 
-    def update_stats(self) -> None:
-        """Update statistics display"""
-        if self.data is not None and getattr(self, "stats_label", None) is not None:
-            try:
-                total = len(self.data)
-            except TypeError:
-                # LazyFrame: count rows without materializing data.
-                total = self.data.select(pl.len()).collect().item()
-            stats = f"Generated Rows: {total:,}"
-            self.stats_label.setText(stats)
-
     def on_field_name_changed(self, value: str) -> None:
         """Handle field name changes"""
         self.field_name = value
+        self._refresh_dynamic_row_counts()
         self.process_data()
         self.evaluate.emit()
 
@@ -309,14 +304,19 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         new_increment = self.create_value_widget(value)
         new_max = self.create_value_widget(value)
 
-        # Replace old widgets with new ones
+        # Replace old widgets with new ones (the row keeps its label)
         old_initial = self.initial_widget
         old_increment = self.increment_widget
         old_max = self.max_widget
 
-        old_initial.parent().layout().replaceWidget(old_initial, new_initial)
-        old_increment.parent().layout().replaceWidget(old_increment, new_increment)
-        old_max.parent().layout().replaceWidget(old_max, new_max)
+        initial_row = getattr(self, "initial_row", None)
+        if initial_row is not None:
+            try:
+                initial_row.replace_field(new_initial)
+                self.increment_row.replace_field(new_increment)
+                self.max_row.replace_field(new_max)
+            except RuntimeError:
+                pass
 
         # Clean up old widgets
         old_initial.deleteLater()
@@ -348,6 +348,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             self.max_value = "Z"
 
         self.process_data()
+        self._refresh_dynamic_row_counts()
         self.evaluate.emit()
 
     def on_value_changed(self, value: Any) -> None:
@@ -362,6 +363,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         elif sender == self.max_widget:
             self.max_value = self.get_typed_value(sender)
 
+        self._refresh_dynamic_row_counts()
         self.process_data()
         self.evaluate.emit()
 
@@ -482,7 +484,7 @@ class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 class TriggerNode_DynamicRowBuilder(TriggerNode):
     icon = "node_generate_rows"
     node_code = PreparationNodes.DYNAMIC_ROW_BUILDER
-    node_title = "Generate Rows"
+    node_title = "Rows"
     node_type = NodeTypes.PREPARATION
     content_label_objname = "trigger_node_generate_rows"
 

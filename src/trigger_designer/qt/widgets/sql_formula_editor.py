@@ -15,6 +15,7 @@ from typing import Callable, List, Optional, Dict, Set, Tuple
 
 from sqlglot import exp, parse_one
 from sqlglot.errors import ParseError, TokenError
+from loguru import logger
 from qtpy.QtWidgets import (
     QCompleter,
     QTextEdit,
@@ -39,6 +40,8 @@ from qtpy.QtGui import (
     QPen,
     QTextFormat,
 )
+
+from trigger_designer.qt.theme_manager import get_theme_manager
 
 #: Matches '...' and "..." literals, SQL-style ''/"" escapes included.
 STRING_LITERAL_RE = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"")
@@ -283,12 +286,15 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
         self.setup_highlighting_rules()
 
     def setup_highlighting_rules(self):
-        """Set up the syntax highlighting rules."""
+        """Set up the syntax highlighting rules from the active theme."""
         self.highlighting_rules = []
+
+        def token(key: str, fallback: str) -> QColor:
+            return get_theme_manager().color(key, fallback)
 
         # SQL Keywords
         keyword_format = QTextCharFormat()
-        keyword_format.setForeground(QColor(86, 156, 214))  # Blue
+        keyword_format.setForeground(token("syntax_keyword", "#569cd6"))
         keyword_format.setFontWeight(QFont.Weight.Bold)
 
         sql_keywords = SQL_KEYWORDS
@@ -302,33 +308,33 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
 
         # String literals (single quotes)
         string_format = QTextCharFormat()
-        string_format.setForeground(QColor(206, 145, 120))  # Orange
+        string_format.setForeground(token("syntax_string", "#ce9178"))
         string_pattern = QRegularExpression(r"'([^']|'')*'")
         # Double-quoted strings (same rule: only [...] are columns)
         double_string_pattern = QRegularExpression(r'"([^"]|"")*"')
 
         # Numeric literals
         number_format = QTextCharFormat()
-        number_format.setForeground(QColor(181, 206, 168))  # Light green
+        number_format.setForeground(token("syntax_number", "#b5cea8"))
         number_pattern = QRegularExpression(r"\b\d+\.?\d*\b")
         self.highlighting_rules.append((number_pattern, number_format))
 
         # Column names in square brackets (only [...] are columns)
         column_format = QTextCharFormat()
-        column_format.setForeground(QColor(156, 220, 254))  # Light blue
+        column_format.setForeground(token("syntax_column", "#9cdcfe"))
         column_format.setFontWeight(QFont.Weight.Bold)
         column_pattern = QRegularExpression(r"\[[^\]]+\]")
         self.highlighting_rules.append((column_pattern, column_format))
 
         # Functions
         function_format = QTextCharFormat()
-        function_format.setForeground(QColor(220, 220, 170))  # Yellow
+        function_format.setForeground(token("syntax_function", "#dcdca8"))
         function_pattern = QRegularExpression(r"\b\w+(?=\()")
         self.highlighting_rules.append((function_pattern, function_format))
 
         # Operators
         operator_format = QTextCharFormat()
-        operator_format.setForeground(QColor(212, 212, 212))  # Light gray
+        operator_format.setForeground(token("syntax_operator", "#d4d4d4"))
         operator_pattern = QRegularExpression(r"[+\-*/=<>!]+|<=|>=|<>|!=")
         self.highlighting_rules.append((operator_pattern, operator_format))
 
@@ -339,10 +345,15 @@ class SQLSyntaxHighlighter(QSyntaxHighlighter):
 
         # Comments (-- style)
         comment_format = QTextCharFormat()
-        comment_format.setForeground(QColor(106, 153, 85))  # Green
+        comment_format.setForeground(token("syntax_comment", "#6a9955"))
         comment_format.setFontItalic(True)
         comment_pattern = QRegularExpression(r"--[^\r\n]*")
         self.highlighting_rules.append((comment_pattern, comment_format))
+
+    def apply_theme(self) -> None:
+        """Rebuild the rules after a theme change and repaint the document."""
+        self.setup_highlighting_rules()
+        self.rehighlight()
 
     def update_column_names(self, column_names: List[str]):
         """Update the list of available column names for highlighting."""
@@ -451,7 +462,7 @@ class SQLFormulaEditor(QTextEdit):
             if hasattr(self, "cursorPositionChanged"):
                 self.cursorPositionChanged.connect(self.highlight_current_line)
         except AttributeError as e:
-            print(f"Warning: Could not connect line number signals: {e}")
+            logger.warning(f"Could not connect line number signals: {e}")
 
         self.update_line_number_area_width(0)
         self.highlight_current_line()
@@ -461,6 +472,18 @@ class SQLFormulaEditor(QTextEdit):
         self.syntax_highlighter = SQLSyntaxHighlighter(
             self.document(), self.column_names
         )
+
+    def apply_theme(self) -> None:
+        """Re-read theme colours for syntax, gutter and error underlines."""
+        highlighter = getattr(self, "syntax_highlighter", None)
+        if highlighter is not None:
+            highlighter.apply_theme()
+        if hasattr(self, "errors"):
+            self.update_error_highlights()
+        self.highlight_current_line()
+        area = getattr(self, "line_number_area", None)
+        if area is not None:
+            area.update()
 
     def setup_completer(self):
         """Set up VS Code-style autocomplete (functions, keywords, columns)."""
@@ -474,10 +497,8 @@ class SQLFormulaEditor(QTextEdit):
         except AttributeError:
             pass
         self.completer.activated[str].connect(self._insert_completion)
-        self.completer.popup().setStyleSheet(
-            "background-color: #1e1e1e; color: #d4d4d4;"
-            "selection-background-color: #264f78;"
-        )
+        # Colours come from `QListView#FormulaCompleterPopup` in base.qss.
+        self.completer.popup().setObjectName("FormulaCompleterPopup")
 
     def _prefix_at_cursor(self) -> Tuple[str, bool]:
         cursor = self.textCursor()
@@ -831,6 +852,26 @@ class SQLFormulaEditor(QTextEdit):
     def update_error_highlights(self):
         """Paint source spans without changing the document or undo history."""
         selections = []
+        """Update the visual error highlights in the editor."""
+        # First, clear all existing error formatting
+        cursor = QTextCursor(self.document())
+        cursor.select(QTextCursor.SelectionType.Document)
+
+        # Create a clean format to clear existing error formatting
+        clean_format = QTextCharFormat()
+        clean_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.NoUnderline)
+        cursor.mergeCharFormat(clean_format)
+
+        # If there are no errors, we're done (everything is cleared)
+        if not self.errors:
+            return
+
+        # Create error format with a themed wave underline
+        error_format = QTextCharFormat()
+        error_format.setUnderlineColor(get_theme_manager().color("danger", "#e0686c"))
+        error_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
+
+        # Apply error highlights
         lines = self.toPlainText().split("\n")
         for error in self.errors:
             line = error.get("line")
@@ -908,7 +949,11 @@ class SQLFormulaEditor(QTextEdit):
             return
 
         painter = QPainter(self.line_number_area)
-        painter.fillRect(event.rect(), QColor(40, 40, 40))
+        manager = get_theme_manager()
+        painter.fillRect(
+            event.rect(), manager.color("editor_line_number_background", "#171b1f")
+        )
+        number_pen = QPen(manager.color("editor_line_number_text", "#6e7781"))
 
         block = self.firstVisibleBlock()
         block_number = block.blockNumber()
@@ -920,7 +965,7 @@ class SQLFormulaEditor(QTextEdit):
         while block.isValid() and (top <= event.rect().bottom()):
             if block.isVisible() and (bottom >= event.rect().top()):
                 number = str(block_number + 1)
-                painter.setPen(QColor(128, 128, 128))
+                painter.setPen(number_pen)
                 painter.drawText(
                     0,
                     int(top),
@@ -942,7 +987,7 @@ class SQLFormulaEditor(QTextEdit):
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
 
-            line_color = QColor(68, 68, 68).lighter(160)
+            line_color = get_theme_manager().color("editor_current_line", "#232a31")
             selection.format.setBackground(line_color)
             selection.format.setProperty(QTextFormat.Property.FullWidthSelection, True)
             selection.cursor = self.textCursor()
