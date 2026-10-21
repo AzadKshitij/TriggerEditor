@@ -9,8 +9,8 @@ import traceback
 from pathlib import Path
 
 import structlog
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QLabel
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QLabel
 
 from tagstudio.qt.helpers.silent_popen import silent_Popen
 from qtpy.QtWidgets import QWidget
