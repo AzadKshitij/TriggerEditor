@@ -284,6 +284,7 @@ savedfiles/Example_2_Retail_Ledger/*.csv
 savedfiles/Example_2_Retail_Ledger/reference_output/
 savedfiles/Example_2_Retail_Ledger/data/
 savedfiles/Example_2_Retail_Ledger/app_output/
+savedfiles/Input Types Test/
 docs/assets/node_icons/*.png
 /profiles
 
