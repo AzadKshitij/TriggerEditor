@@ -362,6 +362,16 @@ def test_plan_one_input_error_passthrough_and_attribution(tmp_path) -> None:
     assert parse.hint
 
 
+def test_formula_trailing_operator_is_a_syntax_error() -> None:
+    error = translate_exception(
+        "Section 3: Required keyword: 'expression' missing for <class 'sqlglot.expressions.Add'>",
+        ctx=_ctx(),
+    )
+    assert error.code == "TD-EXP-001"
+    assert "ends too early" in error.detail
+    assert "Required keyword" not in error.title
+
+
 def test_rule0_ignores_non_td_codes() -> None:
     class Coded(Exception):
         code = 404

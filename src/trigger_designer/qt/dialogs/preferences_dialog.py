@@ -426,6 +426,34 @@ class PreferencesDialog(QDialog):
         folder_row.addStretch(1)
         startup.addLayout(folder_row)
 
+        errors = ConfigSection("Error messages")
+        self.continue_check = QCheckBox(
+            "Keep running independent branches after a failure"
+        )
+        self.continue_check.toggled.connect(self._on_continue_changed)
+        errors.addWidget(self.continue_check)
+
+        self.redact_check = QCheckBox("Hide data values in error messages")
+        self.redact_check.toggled.connect(self._on_redact_changed)
+        errors.addWidget(self.redact_check)
+
+        self.locate_check = QCheckBox("Find the offending row for conversion errors")
+        self.locate_check.toggled.connect(self._on_locate_changed)
+        errors.addWidget(self.locate_check)
+
+        cap_row = QHBoxLayout()
+        cap_label = QLabel("Row search limit")
+        cap_label.setObjectName("FieldLabel")
+        cap_row.addWidget(cap_label)
+        self.locate_cap_spin = QSpinBox(self)
+        self.locate_cap_spin.setObjectName("LocateRowCapSpin")
+        self.locate_cap_spin.setRange(100_000, 100_000_000)
+        self.locate_cap_spin.setSingleStep(100_000)
+        self.locate_cap_spin.valueChanged.connect(self._on_locate_cap_changed)
+        cap_row.addWidget(self.locate_cap_spin)
+        cap_row.addStretch(1)
+        errors.addLayout(cap_row)
+
         danger = ConfigSection("Reset")
         reset_all = TextButton(
             "Reset All Preferences",
@@ -438,6 +466,7 @@ class PreferencesDialog(QDialog):
         danger_hint.setObjectName("FieldHint")
         danger.addWidget(danger_hint)
         layout.addWidget(startup)
+        layout.addWidget(errors)
         layout.addWidget(danger)
         layout.addStretch(1)
         return page
@@ -457,6 +486,16 @@ class PreferencesDialog(QDialog):
         recent = RecentFilesManager()
         self.welcome_check.setChecked(recent.is_welcome_enabled())
         self.recent_limit_spin.setValue(recent.max_items)
+        self.continue_check.setChecked(
+            bool(self._prefs.get("errors/continue_past_failure", True))
+        )
+        self.redact_check.setChecked(
+            bool(self._prefs.get("errors/redact_values", False))
+        )
+        self.locate_check.setChecked(bool(self._prefs.get("errors/locate_rows", True)))
+        self.locate_cap_spin.setValue(
+            int(self._prefs.get("errors/locate_row_cap", 5_000_000) or 5_000_000)
+        )
 
     def _on_page_changed(self, row: int) -> None:
         if 0 <= row < self.stack.count():
@@ -702,6 +741,18 @@ class PreferencesDialog(QDialog):
         self._persist_node_colors()
 
     # -- general ----------------------------------------------------------
+    def _on_continue_changed(self, value: bool) -> None:
+        self._prefs.set("errors/continue_past_failure", bool(value))
+
+    def _on_redact_changed(self, value: bool) -> None:
+        self._prefs.set("errors/redact_values", bool(value))
+
+    def _on_locate_changed(self, value: bool) -> None:
+        self._prefs.set("errors/locate_rows", bool(value))
+
+    def _on_locate_cap_changed(self, value: int) -> None:
+        self._prefs.set("errors/locate_row_cap", int(value))
+
     def _on_welcome_changed(self, value: bool) -> None:
         RecentFilesManager().set_welcome_enabled(bool(value))
 

@@ -146,6 +146,7 @@ class TriggerWindow(
         self.createConfigDock()
         self.createLoggingDock()
         self.createDataPreviewDock()
+        self.createProblemsDock()
 
         self.createMenus()
 
@@ -324,6 +325,9 @@ class TriggerWindow(
             refresh = getattr(preview_dock, "refresh_theme", None)
             if callable(refresh):
                 refresh()
+        problems_dock = getattr(self, "problemsDock", None)
+        if problems_dock is not None:
+            problems_dock.apply_theme()
         # Caption glyphs are painted in Python, so they re-read the tokens.
         chrome = getattr(self, "window_chrome", None)
         if chrome is not None:
@@ -546,6 +550,7 @@ class TriggerWindow(
                 # Switch both docks to show content for this window
                 self.switchLoggingDock(widget)
                 self.switchDataPreviewDock(widget)
+                self.switchProblemsDock(widget)
             # The status bar reports the cursor position of the canvas the
             # user is looking at.
             self.connectStatusScene(widget)

@@ -741,6 +741,15 @@ def _rule_31(facts, ctx, _m):
     return "TD-EXP-005", {"reason": _reason(facts.text)}
 
 
+def _rule_sqlglot_syntax(facts, ctx, _m):
+    return "TD-EXP-001", {
+        "reason": (
+            "The expression ends too early. Add the missing value after the "
+            "operator."
+        )
+    }
+
+
 def _rule_33(facts, ctx, _m):
     match = re.search(r"name '(?P<var>[^']+)' is not defined", facts.text)
     variable = match.group("var") if match else ""
@@ -966,6 +975,13 @@ def _build_rules() -> tuple[Rule, ...]:
             ("TD-EXP-005",),
             {"InvalidInputException", "ConversionException"},
             _rule_31,
+        ),
+        rule(
+            32,
+            ("TD-EXP-001",),
+            None,
+            _rule_sqlglot_syntax,
+            re.compile(r"Required keyword: 'expression' missing for"),
         ),
         rule(
             33,

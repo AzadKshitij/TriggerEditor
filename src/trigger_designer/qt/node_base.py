@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 
-from qtpy.QtGui import QPixmap, QColor, QPen, QPainter, QPainterPath
+from qtpy.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from qtpy.QtWidgets import (
     QScrollArea,
     QWidget,
@@ -8,7 +8,7 @@ from qtpy.QtWidgets import (
     QStyleOptionGraphicsItem,
     QLayout,
 )
-from qtpy.QtCore import QRectF
+from qtpy.QtCore import QRectF, Qt
 from qtpy.QtWidgets import (
     QLabel,
 )
@@ -23,6 +23,12 @@ from nodeeditor.node_edge import Edge
 from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
+from trigger_designer.core.errors import (
+    ErrorContext,
+    NodeError,
+    make_error,
+    translate_exception,
+)
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.helpers.eval_progress import (
@@ -132,6 +138,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._bounding_rect: QRectF | None = None
         self._detail_pixmap: QPixmap | None = None
         self._detail_pixmap_resolved = False
+        self._error_badge = ""
         super().__init__(node, parent)
         self._pen_role = "default"
         self._rebuild_theme_pens()
@@ -259,21 +266,53 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
         # The status badge is drawn on top of either, so it can outlive the
         # card and still tell a finished node from a broken one.
-        if not getattr(self, "_badge_visible", True):
+        if getattr(self, "_badge_visible", True):
+            offset = 24.0
+            if self.node.isDirty():
+                offset = 0.0
+            if self.node.isInvalid():
+                offset = 48.0
+
+            side = self.STATUS_BADGE_SIDE
+            painter.drawImage(
+                self.statusBadgeRect(),
+                self.icons,
+                QRectF(offset, 0, side, side),
+            )
+
+        # The error badge is independent of the status badge: a hidden status
+        # badge must not hide the reason the node failed.
+        self._paint_error_badge(painter)
+
+    def errorBadgeRect(self) -> QRectF:
+        side = 14.0
+        return QRectF(self.width - 19.0, 5.0, side, side)
+
+    def set_error_badge(self, severity: str) -> None:
+        value = severity if severity in {"error", "warning"} else ""
+        if value == self._error_badge:
             return
+        self._error_badge = value
+        self.update()
 
-        offset = 24.0
-        if self.node.isDirty():
-            offset = 0.0
-        if self.node.isInvalid():
-            offset = 48.0
-
-        side = self.STATUS_BADGE_SIDE
-        painter.drawImage(
-            self.statusBadgeRect(),
-            self.icons,
-            QRectF(offset, 0, side, side),
-        )
+    def _paint_error_badge(self, painter: QPainter) -> None:
+        if not self._error_badge:
+            return
+        manager = get_theme_manager()
+        token = "danger" if self._error_badge == "error" else "warning"
+        fallback = "#e0686c" if token == "danger" else "#d9a441"
+        painter.save()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(manager.color(token, fallback)))
+        rect = self.errorBadgeRect()
+        painter.drawEllipse(rect)
+        font = QFont()
+        font.setBold(True)
+        font.setPixelSize(10)
+        painter.setFont(font)
+        painter.setPen(QPen(QColor(manager.color("text_on_accent", "#ffffff"))))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "!")
+        painter.restore()
 
     def _detailPixmap(self) -> QPixmap | None:
         """The pixmap that stands in for this node once the detail is off.
@@ -797,6 +836,86 @@ class TriggerNode(Node):
         except RuntimeError:
             return ""
 
+    # -- structured error state -------------------------------------------
+    _errors_by_source: dict[str, NodeError] | None = None
+
+    def _errors_dict(self) -> dict[str, NodeError]:
+        if self._errors_by_source is None:
+            self._errors_by_source = {}
+        return self._errors_by_source
+
+    @property
+    def current_error(self) -> NodeError | None:
+        store = self._errors_dict()
+        return store.get("run") or store.get("live")
+
+    def set_error(self, error: NodeError, source: str = "live") -> None:
+        store = self._errors_dict()
+        old = store.get(source)
+        store[source] = error
+        self._apply_error_state()
+        if old is None or old.fingerprint != error.fingerprint:
+            self._log_new_error(error)
+        problems = self._problems_store()
+        if problems is not None and not (error.knock_on and source == "live"):
+            problems.upsert(error, source)
+
+    def clear_error(
+        self, source: str | None = None, *, _seen: set[int] | None = None
+    ) -> None:
+        seen = set() if _seen is None else _seen
+        if id(self) in seen:
+            return
+        seen.add(id(self))
+        store = self._errors_dict()
+        if source is None:
+            removed = list(store)
+            store.clear()
+        else:
+            removed = [source] if store.pop(source, None) is not None else []
+        self._apply_error_state()
+        problems = self._problems_store()
+        if problems is not None:
+            for item in removed:
+                problems.remove(self.id, item)
+        if source in (None, "run"):
+            for child in self.getChildrenNodes():
+                current = getattr(child, "current_error", None)
+                if current is not None and current.knock_on:
+                    child.clear_error("run", _seen=seen)
+
+    def _apply_error_state(self) -> None:
+        error = self.current_error
+        self._set_node_tooltip(error.render_tooltip() if error else "")
+        gr = getattr(self, "grNode", None)
+        if gr is not None:
+            try:
+                gr.set_error_badge(error.severity if error else "")
+            except RuntimeError:
+                pass
+
+    def _problems_store(self):
+        try:
+            view = self.scene.getView() if hasattr(self.scene, "getView") else None
+        except (IndexError, RuntimeError, AttributeError):
+            view = None
+        owner = view.parentWidget() if view is not None else None
+        while owner is not None and not hasattr(owner, "problems"):
+            owner = owner.parentWidget()
+        return getattr(owner, "problems", None)
+
+    def _log_new_error(self, error: NodeError) -> None:
+        try:
+            logger.error(error.render_text(include_technical=True))
+        except Exception:  # noqa: BLE001, S110 - logging must never break eval
+            pass
+        try:
+            from trigger_designer.qt.helpers import global_logger
+
+            global_logger.error(error.render_summary())
+        except Exception:  # noqa: BLE001, S110 - dock may not exist in tests
+            pass
+
     def evalOperation(self, input1: Any, input2: Any) -> int:
         return 123
 
@@ -820,7 +939,14 @@ class TriggerNode(Node):
             if not input_node:
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self._set_node_tooltip(f"Input {i} is not connected")
+                self.set_error(
+                    make_error(
+                        "TD-RUN-005",
+                        ErrorContext.from_node(self, "live"),
+                        input_number=i + 1,
+                    ),
+                    "live",
+                )
                 self._refresh_selected_node_config()
                 return None
 
@@ -828,7 +954,17 @@ class TriggerNode(Node):
             if val is None:
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self._set_node_tooltip(f"Input {i}: upstream node produced no output")
+                upstream = ErrorContext.from_node(input_node, "live")
+                self.set_error(
+                    make_error(
+                        "TD-RUN-003",
+                        ErrorContext.from_node(self, "live"),
+                        culprit_label=upstream.node_label,
+                        culprit_node_id=getattr(input_node, "id", None),
+                        culprit_node_title=upstream.node_label,
+                    ),
+                    "live",
+                )
                 self._refresh_selected_node_config()
                 return None
 
@@ -838,15 +974,23 @@ class TriggerNode(Node):
         if result is None:
             self.markInvalid()
             self.markDescendantsDirty()
-            if not self._node_tooltip():
-                self._set_node_tooltip("Invalid operation")
+            if self.current_error is None:
+                message = self._node_tooltip() or "Invalid operation"
+                self.set_error(
+                    make_error(
+                        "TD-SYS-001",
+                        ErrorContext.from_node(self, "live"),
+                        message=message,
+                    ),
+                    "live",
+                )
             self._refresh_selected_node_config()
             return None
 
         self.value = result
         self.markInvalid(False)
         self.markDirty(False)
-        self._set_node_tooltip("")
+        self.clear_error("live")
         self.evalChildren()
         self._refresh_selected_node_config()
         return self.value
@@ -891,11 +1035,11 @@ class TriggerNode(Node):
             return val
         except ValueError as e:
             self.markInvalid()
-            self._set_node_tooltip(str(e))
+            self.set_error(translate_exception(e, node=self, phase="live"), "live")
             self.markDescendantsDirty()
         except Exception as e:
             self.markInvalid()
-            self._set_node_tooltip(str(e))
+            self.set_error(translate_exception(e, node=self, phase="live"), "live")
             dumpException(e)
             return None  # Add explicit return for exception case
         finally:
@@ -924,6 +1068,7 @@ class TriggerNode(Node):
 
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
         # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
+        self.clear_error("run")
         self.markDirty()
         self.markDescendantsDirty()
         self.eval()
@@ -933,6 +1078,7 @@ class TriggerNode(Node):
         if getattr(content, "_suspend_node_evaluation", False):
             return
 
+        self.clear_error("run")
         self.markDirty()
         self.markDescendantsDirty()
         self.eval()

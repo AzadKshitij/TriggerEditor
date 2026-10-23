@@ -27,7 +27,6 @@ from trigger_designer.qt.widgets.common import (
 )
 from nodeeditor.utils_no_qt import dumpException
 from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
-from trigger_designer.qt.helpers import global_logger
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -629,6 +628,7 @@ class FormulaContent(
     def _on_section_diagnostics(self, section_index: int, messages: list[str]) -> None:
         self._live_section_errors[section_index] = messages[0] if messages else ""
         self._refresh_section_errors()
+
     def _on_card_toggled(self, index: int, collapsed: bool) -> None:
         """Remember a card fold; UI state only, so no history entry."""
         if collapsed:
@@ -1389,16 +1389,21 @@ class TriggerNode_Formula(TriggerNode):
         self.content.update_data()
 
         if self.content.last_error:
+            from trigger_designer.core.errors import translate_exception
+
             self.markDirty(True)
             self.markInvalid(True)
-            self.grNode.setToolTip(self.content.last_error)
-            if self.content._last_logged_error != self.content.last_error:
-                global_logger.error(f"Formula node failed: {self.content.last_error}")
-                self.content._last_logged_error = self.content.last_error
+            error = translate_exception(
+                self.content.last_error, node=self, phase="live"
+            )
+            if self.content.last_error.startswith("Section "):
+                section, _, _rest = self.content.last_error.partition(": ")
+                error = error.with_updates(detail=f"{section}: {error.detail}".strip())
+            self.set_error(error, "live")
             return None
 
         self.content._last_logged_error = ""
-        self.grNode.setToolTip("")
+        self.clear_error("live")
         self.param = [
             {
                 "data": self.content.data,

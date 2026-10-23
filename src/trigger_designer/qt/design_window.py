@@ -42,6 +42,7 @@ from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.problems_store import ProblemsStore
 from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
@@ -91,6 +92,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self._last_scale: float = 1.0
 
         self.init_workflow_execution()
+        self.problems = ProblemsStore(self)
         self.init_context_menu_support()
 
         self.setTitle()
