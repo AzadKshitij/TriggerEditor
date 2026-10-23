@@ -2034,6 +2034,17 @@ QFrame#FormulaCardHeader {{
 QFrame#FormulaCardBody {{
   background-color: transparent;
   border: 0px; }}
+QFrame#RuleCard {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+QFrame#RuleCardHeader {{
+  background-color: transparent;
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+QFrame#RuleCardBody {{
+  background-color: transparent;
+  border: 0px; }}
 QFrame#formulaResizeGrip {{
   background-color: {card_border}; }}
 QFrame#formulaSeparator {{

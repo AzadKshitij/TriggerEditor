@@ -689,6 +689,8 @@ class TriggerNode(Node):
     content_label: str = ""
     content_label_objname: str = "calc_node_bg"
     style: dict[str, str] = {"brush_color": "#000000"}
+    #: Input indexes that may stay unconnected; processInputs receives None.
+    optional_inputs: frozenset = frozenset()
 
     # Explicitly define types for Node classes
     GraphicsNode_class: TriggerGraphicsNode = TriggerGraphicsNode  # type: ignore
@@ -937,6 +939,9 @@ class TriggerNode(Node):
         for i in range(len(self.inputs)):
             input_node = self.getInput(i)
             if not input_node:
+                if i in self.optional_inputs:
+                    input_values.append(None)
+                    continue
                 self.markInvalid()
                 self.markDescendantsDirty()
                 self.set_error(

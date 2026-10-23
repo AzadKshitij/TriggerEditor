@@ -794,6 +794,107 @@ class ColumnChecklist(QWidget):
             self.changed.emit(self.checked())
 
 
+class RuleStack(QWidget):
+    """Ordered cards with move/remove actions and one add button.
+
+    The owner keeps the list; this widget only draws it and emits intents.
+    """
+
+    add_requested = Signal()
+    remove_requested = Signal(int)
+    move_requested = Signal(int, int)
+
+    def __init__(self, add_tooltip: str, rsm=None, parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("RuleStack")
+        self._rsm = rsm
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SECTION_GAP)
+        self._cards_layout = QVBoxLayout()
+        self._cards_layout.setContentsMargins(0, 0, 0, 0)
+        self._cards_layout.setSpacing(SECTION_GAP)
+        layout.addLayout(self._cards_layout)
+
+        add_row = QHBoxLayout()
+        add_row.setContentsMargins(0, 0, 0, 0)
+        add_row.addStretch(1)
+        self.add_button = IconButton.themed(
+            add_tooltip,
+            rsm_icon=self._icon("icon_add"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_right.png",
+            parent=self,
+        )
+        self.add_button.clicked.connect(self.add_requested.emit)
+        add_row.addWidget(self.add_button)
+        layout.addLayout(add_row)
+
+    def _icon(self, name: str):
+        if self._rsm is None:
+            return None
+        try:
+            return self._rsm.get(name)
+        except Exception:  # noqa: BLE001 - icon lookup is advisory
+            return None
+
+    def clear(self) -> None:
+        while self._cards_layout.count():
+            item = self._cards_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                widget.deleteLater()
+
+    def add_card(self, index: int, count: int, body: QWidget) -> None:
+        card = QFrame(self)
+        card.setObjectName("RuleCard")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(4, 2, 4, 4)
+        card_layout.setSpacing(2)
+
+        header = QFrame(card)
+        header.setObjectName("RuleCardHeader")
+        header.setFixedHeight(30)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(2, 0, 2, 0)
+        header_layout.setSpacing(2)
+        title = QLabel(str(index + 1), header)
+        title.setObjectName("FieldLabel")
+        header_layout.addWidget(title, 1)
+
+        up = IconButton.themed(
+            "Move up",
+            rsm_icon=self._icon("icon_move_up"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
+            parent=header,
+        )
+        down = IconButton.themed(
+            "Move down",
+            rsm_icon=self._icon("icon_move_down"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            parent=header,
+        )
+        remove = IconButton.themed(
+            "Remove",
+            rsm_icon=self._icon("icon_remove"),
+            qss_fallback=":/qss_icons/dark/rc/window_close.png",
+            parent=header,
+        )
+        up.setEnabled(index > 0)
+        down.setEnabled(index < count - 1)
+        up.clicked.connect(lambda: self.move_requested.emit(index, -1))
+        down.clicked.connect(lambda: self.move_requested.emit(index, 1))
+        remove.clicked.connect(lambda: self.remove_requested.emit(index))
+        header_layout.addWidget(up)
+        header_layout.addWidget(down)
+        header_layout.addWidget(remove)
+        card_layout.addWidget(header)
+
+        body.setObjectName("RuleCardBody")
+        card_layout.addWidget(body)
+        self._cards_layout.addWidget(card)
+
+
 class EmptyStateLabel(QLabel):
     """Centered gray placeholder for nodes with no incoming data."""
 

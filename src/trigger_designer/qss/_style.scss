@@ -2409,6 +2409,21 @@ QLabel#EmptyStateLabel {
     color: $COLOR_TEXT_3;
 }
 
+QFrame#RuleCard {
+    background-color: $COLOR_BACKGROUND_2;
+    border: 1px solid $COLOR_BACKGROUND_3;
+    border-radius: $SIZE_BORDER_RADIUS;
+}
+QFrame#RuleCardHeader {
+    background-color: transparent;
+    border: 0px;
+    border-bottom: 1px solid $COLOR_BACKGROUND_3;
+}
+QFrame#RuleCardBody {
+    background-color: transparent;
+    border: 0px;
+}
+
 /* Icon / text buttons in the Config Dock.
    An objectName selector outranks QPushButton:hover, so hover and pressed
    have to be restated here or they never apply. The base border is 1px in
