@@ -495,6 +495,7 @@ class TriggerWindow(
         # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
+        nodeeditor.on_run_problems = self.raiseProblemsDock
         nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemSelectedListener(
             lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems())

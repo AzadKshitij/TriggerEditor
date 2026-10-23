@@ -57,10 +57,15 @@ class ProblemsStore(QObject):
             for (node_id, source), error in self._entries.items()
             if source == "run"
         ]
+        run_ids = {
+            node_id
+            for (node_id, source) in self._entries
+            if source == "run" and node_id is not None
+        }
         live = [
             ("live", error)
             for (node_id, source), error in self._entries.items()
-            if source != "run"
+            if source != "run" and node_id not in run_ids
         ]
         return run + live
 

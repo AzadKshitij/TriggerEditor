@@ -304,6 +304,12 @@ class MainWindowDockMixin:
         if hasattr(self, "problemsDock") and self.problemsDock:
             self.problemsDock.switch_to_design_window(design_window)
 
+    def raiseProblemsDock(self) -> None:
+        dock = getattr(self, "problemsDock", None)
+        if dock is not None:
+            dock.show()
+            dock.raise_()
+
     def onDesignWindowClose(self, design_window, event) -> None:
         """Handle design window close event to clean up logs and previews"""
         design_window_id = str(id(design_window))

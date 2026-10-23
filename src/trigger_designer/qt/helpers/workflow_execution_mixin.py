@@ -6,9 +6,13 @@ from typing import Any, Dict, List, Union
 from loguru import logger
 from qtpy.QtCore import QTimer
 
+from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.error_context import build_context, build_enrich_job
+from trigger_designer.qt.helpers.error_enricher import start_enrichment
 from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
+from trigger_designer.qt.preferences import get_preferences
 
 
 class WorkflowExecutionMixin:
@@ -63,8 +67,14 @@ class WorkflowExecutionMixin:
 
         # Reset node visuals and stored results
         self.execution_results.clear()
+        problems = getattr(self, "problems", None)
+        if problems is not None:
+            problems.clear_source("run")
         for node in self.getAllNodes():
             node.markInvalid(False)
+            clear = getattr(node, "clear_error", None)
+            if callable(clear):
+                clear("run")
             node.grNode.resetPen()
             node.grNode.update()
 
@@ -98,10 +108,28 @@ class WorkflowExecutionMixin:
         node_name = getattr(node, "node_title", node.__class__.__name__)
 
         if result.success:
+            clear = getattr(node, "clear_error", None)
+            if callable(clear):
+                clear("run")
             self.execution_results[node] = self._prune_node_results(
                 node, result.variables
             )
             node.grNode.setPenExecuted()
+            node.grNode.update()
+        elif callable(getattr(node, "set_error", None)):
+            logger.debug("Run failed for node {}", node_name)
+            error = translate_exception(
+                getattr(result, "exception", None) or result.error,
+                node=node,
+                phase="run",
+                ctx=build_context(node, self, "run"),
+                redact=bool(get_preferences().get("errors/redact_values", False)),
+                traceback_text=getattr(result, "traceback_text", ""),
+            )
+            node.set_error(error, "run")
+            self._start_error_enrichment(node, error)
+            node.markInvalid()
+            node.grNode.setPenError()
             node.grNode.update()
         else:
             error_message = f"Node execution failed for '{node_name}': {result.error}"
@@ -115,12 +143,62 @@ class WorkflowExecutionMixin:
         """Slot: node raised unexpectedly outside NodeExecutor's own error
         handling (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
-        error_message = f"Error executing node '{node_name}': {exc}"
-        logger.error(error_message)
-        global_logger.error(error_message)
+        if callable(getattr(node, "set_error", None)):
+            logger.debug("Unexpected error for node {}", node_name)
+            error = translate_exception(
+                exc,
+                node=node,
+                phase="run",
+                ctx=build_context(node, self, "run"),
+                redact=bool(get_preferences().get("errors/redact_values", False)),
+            )
+            node.set_error(error, "run")
+            self._start_error_enrichment(node, error)
+        else:
+            error_message = f"Error executing node '{node_name}': {exc}"
+            logger.error(error_message)
+            global_logger.error(error_message)
         node.markInvalid()
         node.grNode.setPenError()
         node.grNode.update()
+
+    def _start_error_enrichment(self, node: Any, error) -> None:
+        try:
+            job = build_enrich_job(node, self, error, "run")
+            start_enrichment(
+                job,
+                lambda result, failed=node: self._apply_enrichment(failed, result),
+                store=getattr(self, "problems", None),
+            )
+        except Exception:  # noqa: BLE001, S110 - enrichment is optional
+            pass
+
+    def _apply_enrichment(self, node: Any, result) -> None:
+        clear = getattr(node, "clear_error", None)
+        if callable(clear):
+            clear("run")
+        culprit_id = getattr(result, "culprit_node_id", None)
+        culprit = None
+        if culprit_id is not None:
+            culprit = next(
+                (
+                    item
+                    for item in self.getAllNodes()
+                    if getattr(item, "id", None) == culprit_id
+                ),
+                None,
+            )
+        if culprit is not None and culprit is not node:
+            culprit_set = getattr(culprit, "set_error", None)
+            if callable(culprit_set):
+                culprit_set(result.root, "run")
+            node_set = getattr(node, "set_error", None)
+            if callable(node_set) and result.knock_on is not None:
+                node_set(result.knock_on, "run")
+        else:
+            node_set = getattr(node, "set_error", None)
+            if callable(node_set):
+                node_set(result.root, "run")
 
     def _on_workflow_finished(self, success: bool) -> None:
         """Slot: the worker thread's run() has returned (runs on the GUI
@@ -136,6 +214,17 @@ class WorkflowExecutionMixin:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
         else:
             self._execution_cleanup(success=False)
+
+        problems = getattr(self, "problems", None)
+        count = problems.count("error", roots_only=True) if problems else 0
+        if count:
+            self._log_to_dock(f"Run finished with {count} problem(s).")
+            raiser = getattr(self, "on_run_problems", None)
+            if callable(raiser):
+                try:
+                    raiser()
+                except Exception:  # noqa: BLE001, S110 - showing a dock must not fail
+                    pass
 
         if self.executionResultsChanged is not None:
             self.executionResultsChanged.emit()

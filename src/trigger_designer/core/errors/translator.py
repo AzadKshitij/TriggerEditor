@@ -678,6 +678,10 @@ def _rule_26(facts, ctx, _m):
 def _syntax_reason(text: str) -> str:
     value = _reason(text)
     low = value.lower()
+    if re.search(r"[+\-*/]\s+AS\b", text, re.IGNORECASE):
+        return (
+            "The expression ends too early. Add the missing value after the operator."
+        )
     if "unterminated quoted string" in low:
         return "A text value is missing its closing quote."
     if "syntax error at end of input" in low:
@@ -744,8 +748,7 @@ def _rule_31(facts, ctx, _m):
 def _rule_sqlglot_syntax(facts, ctx, _m):
     return "TD-EXP-001", {
         "reason": (
-            "The expression ends too early. Add the missing value after the "
-            "operator."
+            "The expression ends too early. Add the missing value after the operator."
         )
     }
 
