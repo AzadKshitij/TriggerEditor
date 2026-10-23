@@ -112,6 +112,10 @@
         "path":"qt/images/node_icons/ui/folder_open.svg",
         "mode": "rb"
     },
+    "icon_files":{
+        "path":"qt/images/node_icons/ui/files.svg",
+        "mode": "rb"
+    },
     "icon_save":{
         "path":"qt/images/node_icons/ui/document_save.svg",
         "mode": "rb"

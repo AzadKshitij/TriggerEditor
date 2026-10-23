@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from collections.abc import Callable
 from datetime import datetime
 
+import orjson
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
 from nodeeditor.node_multi_input_node import MultiInputNode
@@ -61,13 +64,13 @@ class TriggerEdge(Edge):
             return None
         try:
             return finder(node)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
 
     def _stub_pos(self, group) -> list | None:
         try:
             point = group.stubPosFor(self)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
         if point is None:
             return None
@@ -87,7 +90,7 @@ class TriggerEdge(Edge):
             # untouched. expand()/restoreExpandedVisuals() reveals it again.
             try:
                 self.grEdge.hide()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
             return
 
@@ -163,14 +166,56 @@ class TriggerScene(Scene):
         for edge in pending_edges:
             edge.updatePositions()
 
+    #: Set only while ``saveToFile`` runs: the vendored implementation
+    #: serialises BEFORE it sets ``self.filename``, so content that stores a
+    #: path relative to the workflow needs the target during that window.
+    _save_target: str | None = None
+
+    @property
+    def workflow_dir(self) -> str | None:
+        """Folder of the workflow being saved (during a save) or loaded."""
+        target = self._save_target or self.filename
+        return os.path.dirname(os.path.abspath(target)) if target else None
+
     def serialize(self):
         data = super().serialize()
         data["workflow_metadata"] = {
             "schema_version": WORKFLOW_SCHEMA_VERSION,
             "app_version": VERSION,
-            "saved_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "saved_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",  # noqa: DTZ003
         }
         return data
+
+    def saveToFile(self, filename: str) -> None:
+        """Write UTF-8 JSON atomically, making the target visible to serialize.
+
+        The file is only replaced after the whole payload is on disk, so a
+        failure while serialising leaves the previous workflow untouched.
+        """
+        filename = os.fspath(filename)
+        self._save_target = filename
+        tmp_path = None
+        try:
+            payload = orjson.dumps(self.serialize(), option=orjson.OPT_INDENT_2)
+            directory = os.path.dirname(os.path.abspath(filename))
+            fd, tmp_path = tempfile.mkstemp(
+                prefix=".tds-", suffix=".tmp", dir=directory
+            )
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, filename)
+            tmp_path = None
+            self.filename = filename
+            self.has_been_modified = False
+        finally:
+            self._save_target = None
+            if tmp_path is not None:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
 
     def deserialize(self, data, hashmap=None, restore_id: bool = True, *args, **kwargs):
         self.loaded_workflow_metadata = data.get(

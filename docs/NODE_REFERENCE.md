@@ -10,7 +10,7 @@ op id is the stable identifier stored in saved workflows
 
 | Node Name | Node Image | Description |
 |---|---|---|
-| File Input | ![File Input](assets/node_icons/file_input.png) | Reads a CSV, text, or Excel file from disk into the flow as a Polars frame. |
+| File Input | ![File Input](assets/node_icons/file_input.png) | Reads CSV/TXT, Excel (one, all, or chosen sheets), Parquet, JSON, JSON Lines, SQLite, and DuckDB sources. A file may be a single path, a folder, or a glob; matching files are unioned by column name with a per-file source report and an optional filename/sheet column. Database reads are read-only (one table or one SELECT). "Read all columns as text" makes typed sources behave like CSV; CSV itself always arrives as strings. |
 | File Output | ![File Output](assets/node_icons/file_output.png) | Writes the incoming frame to a CSV, Parquet, or Excel file at the configured path. |
 
 ## Join

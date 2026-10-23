@@ -67,6 +67,8 @@ def materialize(case: WorkflowCase, tmp_path: Path) -> MaterializedWorkflow:
         kind = _node_kind(node)
         if kind == "input":
             content[key] = _input_path(case, basename).as_posix()
+            # Relative wins on load; a stale one would override the rewrite.
+            content.pop("filePathRel", None)
         elif kind == "output":
             content[key] = (out_dir / basename).as_posix()
 

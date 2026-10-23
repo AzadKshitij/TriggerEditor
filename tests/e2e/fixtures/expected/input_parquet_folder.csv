@@ -1,0 +1,4 @@
+id,amount,tag,FileName
+1,10.0,,p1.parquet
+2,20.0,,p1.parquet
+3,30.5,x,p2.parquet

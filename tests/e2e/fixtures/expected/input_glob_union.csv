@@ -1,0 +1,4 @@
+id,region,amount,Source
+1,N,10.50,sales_2024-01.csv
+2,S,20.00,sales_2024-01.csv
+3,N,30.25,sales_2024-02.csv
