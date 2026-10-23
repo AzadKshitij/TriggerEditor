@@ -1,0 +1,119 @@
+#!/usr/bin/env python3
+"""The installed nodeeditor exposes the API this app calls.
+
+The canvas is a separate distribution (``nodeeditor-qtpy`` on PyPI, import
+package ``nodeeditor``). When the installed copy is older than the code that
+calls it, the missing attributes raise deep inside Qt and the errors get
+swallowed: edge geometry stops updating, the canvas silently keeps its own
+detail rules, and the symptom surfaces as a handful of unrelated UI test
+failures instead of one obvious mismatch.
+
+So pin the expectation: the attributes below are the ones
+``performance_scene.py``, ``render_settings.py`` and ``node_base.py`` use, and
+this test fails loudly when the installed package does not have them.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+#: ``(module, class, attribute) -> what the app uses it for``.
+REQUIRED_API = {
+    (
+        "nodeeditor.node_graphics_edge",
+        "QDMGraphicsEdge",
+        "setPositions",
+    ): "edge geometry on node move and load",
+    (
+        "nodeeditor.node_graphics_edge",
+        "QDMGraphicsEdge",
+        "setSource",
+    ): "edge geometry fallback",
+    (
+        "nodeeditor.node_graphics_edge",
+        "QDMGraphicsEdge",
+        "setDestination",
+    ): "edge geometry fallback",
+    (
+        "nodeeditor.node_graphics_scene",
+        "QDMGraphicsScene",
+        "set_detail_policy",
+    ): "per-element level-of-detail policy",
+    (
+        "nodeeditor.node_graphics_scene",
+        "QDMGraphicsScene",
+        "detail_enabled",
+    ): "level-of-detail answers per element",
+    (
+        "nodeeditor.node_graphics_scene",
+        "QDMGraphicsScene",
+        "MIN_GRID_SPACING_PX",
+    ): "grid level culling",
+    (
+        "nodeeditor.node_graphics_node",
+        "QDMGraphicsNode",
+        "setDetailState",
+    ): "per-element detail state on a node",
+    (
+        "nodeeditor.node_graphics_node",
+        "QDMGraphicsNode",
+        "syncDetailVisibility",
+    ): "applying the detail state to a node",
+}
+
+
+def _resolve(module_name: str, class_name: str, attribute: str):
+    """Return the attribute, or ``None`` when the module or class lacks it."""
+    try:
+        module = __import__(module_name, fromlist=["__name__"])
+    except ImportError:
+        return None
+    owner = getattr(module, class_name, None)
+    if owner is None:
+        return None
+    return getattr(owner, attribute, None)
+
+
+@pytest.mark.parametrize(
+    ("module_name", "class_name", "attribute"),
+    sorted(REQUIRED_API),
+    ids=[f"{cls}.{attr}" for _, cls, attr in sorted(REQUIRED_API)],
+)
+def test_installed_nodeeditor_has_required_api(
+    module_name: str, class_name: str, attribute: str
+) -> None:
+    assert _resolve(module_name, class_name, attribute) is not None, (
+        f"the installed nodeeditor has no {class_name}.{attribute} "
+        f"(needed for {REQUIRED_API[(module_name, class_name, attribute)]}). "
+        f"Check the nodeeditor-qtpy pin in pyproject.toml and run `uv sync`."
+    )
+
+
+def test_the_scene_carries_a_detail_lod_threshold() -> None:
+    """``detail_lod_threshold`` is per instance, so check a real scene."""
+    from nodeeditor.node_graphics_scene import QDMGraphicsScene
+
+    scene = QDMGraphicsScene(scene=None)
+    assert isinstance(scene.detail_lod_threshold, float)
+
+
+def test_installed_nodeeditor_matches_the_pinned_version() -> None:
+    """The installed distribution is the one the lock pins."""
+    import tomllib
+    from pathlib import Path
+
+    import nodeeditor
+
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    with pyproject.open("rb") as handle:
+        dependencies = tomllib.load(handle)["project"]["dependencies"]
+
+    requirement = next(
+        dep for dep in dependencies if dep.lower().startswith("nodeeditor-qtpy==")
+    )
+    expected = requirement.split("==", 1)[1]
+
+    assert nodeeditor.__version__ == expected, (
+        f"nodeeditor {nodeeditor.__version__} is installed, but pyproject.toml "
+        f"pins {expected}. Run `uv sync` to install the pinned version."
+    )

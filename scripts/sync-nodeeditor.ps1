@@ -1,19 +1,20 @@
 <#
 .SYNOPSIS
-Copy locally-modified qtpy-nodeeditor files into the project venv.
+Overlay a local qtpy-nodeeditor checkout over the installed nodeeditor.
 
 .DESCRIPTION
-scripts/build.bat installs nodeeditor from the upstream `main` branch, so the
-venv only sees what has been committed and pushed. This script is the dev-loop
-shortcut for the window *before* that: edit the sibling checkout, run this, and
-test the change without a commit.
+The venv gets `nodeeditor-qtpy` from PyPI, pinned in pyproject.toml and
+uv.lock. This script is the dev-loop shortcut for the window *before* a canvas
+change is published: edit the sibling checkout, run this, and test the change
+without a commit or a release.
 
-Once the change is pushed, re-run scripts/build.bat (or set QTNODEEDITOR_REF to
-the new SHA) instead - this script will be overwritten by that install.
+It copies the edited files over the installed package, so the two diverge
+until the next `uv sync` (which restores the locked PyPI version) or a new
+release. Re-run scripts/build.bat to build against the published package
+instead.
 
-Note it installs with --no-deps if nodeeditor is missing, because nodeeditor's
-metadata asks for newer pyqt6/qtpy than this project pins. Resolving its deps
-would silently upgrade Qt.
+Note it installs with --no-deps if nodeeditor is missing, because resolving
+nodeeditor's deps would touch the Qt versions this project pins.
 
 Any files you edit upstream should be added to $Files below.
 #>
@@ -27,7 +28,7 @@ $Source = Join-Path $ProjectRoot 'nodeeditor'
 $ErrorActionPreference = 'Stop'
 
 # Files edited in the upstream checkout. The package is installed from a
-# pinned git commit, so anything changed here has to be copied across; keep
+# pinned release, so anything changed here has to be copied across; keep
 # this list in step with the changes.
 $Files = @(
     'node_scene_history.py'
@@ -52,16 +53,13 @@ if (-not (Test-Path $Source)) {
 }
 
 if (-not (Test-Path $dest)) {
-    # `uv sync` prunes nodeeditor because it is absent from the lock. Install
+    # `uv sync` prunes nodeeditor if it is missing from the lock. Install
     # it the same way scripts/build.bat does before copying the edits over.
     Write-Host 'nodeeditor missing from .venv - installing from the local checkout'
     $python = Join-Path $PSScriptRoot '..\.venv\Scripts\python.exe'
-    # --no-deps matters: nodeeditor's metadata asks for newer pyqt6/qtpy than
-    # this project pins, which is the whole reason it is kept out of the uv
-    # lock (see pyproject.toml). Resolving its deps would silently upgrade Qt.
-    # --no-build-isolation matters too: nodeeditor's setup.py does `import
-    # nodeeditor` to read __version__, which now imports qtpy (via
-    # node_colors_config) - an isolated build env has no qtpy installed.
+    # --no-deps keeps uv from touching the pinned Qt versions this project
+    # sets (pyqt6, pyqt6-qt6, pyqt6-sip). nodeeditor's own floor
+    # (qtpy>=2.4.3) is already satisfied by the locked qtpy.
     & uv pip install --python $python --no-deps --no-build-isolation $ProjectRoot
     if ($LASTEXITCODE -ne 0) {
         throw "failed to install nodeeditor from $ProjectRoot"
@@ -84,3 +82,4 @@ if (Test-Path $pycache) {
 }
 
 Write-Host 'nodeeditor in .venv now matches the local checkout.'
+Write-Host 'Run `uv sync --all-groups` to restore the locked PyPI version.'

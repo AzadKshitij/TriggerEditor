@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 5
 requires-python = ">=3.13.12, <3.14"
 
 [[package]]
@@ -332,6 +332,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b2/88/e1907e1ca3488f2d9507ca8b0ae1add7b1cd5d3ca2bc8e5b329382ea2c7b/memory_profiler-0.61.0.tar.gz", hash = "sha256:4e5b73d7864a1d1292fb76a03e82a3e78ef934d06828a698d9dada76da2067b0", size = 35935, upload-time = "2022-11-15T17:57:28.994Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/49/26/aaca612a0634ceede20682e692a6c55e35a94c21ba36b807cc40fe910ae1/memory_profiler-0.61.0-py3-none-any.whl", hash = "sha256:400348e61031e3942ad4d4109d18753b2fb08c2f6fb8290671c5513a34182d84", size = 31803, upload-time = "2022-11-15T17:57:27.031Z" },
+]
+
+[[package]]
+name = "nodeeditor-qtpy"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "orjson" },
+    { name = "qtpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a7/e4/d6446c089da5e7d5485a59746b102c99585d719508d831dd731f87b13a84/nodeeditor_qtpy-0.8.1.tar.gz", hash = "sha256:b97f5d61e6bb4647697d9e9bab033e5ad5513f6aac4ea1d00a34ac86002d30c5", size = 448606, upload-time = "2026-10-21T20:15:03.655Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/68/5e/c3d5c3e94baa6d8f8044cb0ed6aa1aec6297387b8afb9d5ad317b354a1ab/nodeeditor_qtpy-0.8.1-py3-none-any.whl", hash = "sha256:be9cea0755def71a4647e6c3632a0497a006804f160b4cc46f22f46949296f33", size = 125441, upload-time = "2026-10-21T20:15:02.103Z" },
 ]
 
 [[package]]
@@ -851,14 +864,14 @@ wheels = [
 
 [[package]]
 name = "qtpy"
-version = "2.4.2"
+version = "2.4.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "packaging" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e5/10/51e0e50dd1e4a160c54ac0717b8ff11b2063d441e721c2037f61931cf38d/qtpy-2.4.2.tar.gz", hash = "sha256:9d6ec91a587cc1495eaebd23130f7619afa5cdd34a277acb87735b4ad7c65156", size = 66849, upload-time = "2024-11-04T23:14:25.539Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/70/01/392eba83c8e47b946b929d7c46e0f04b35e9671f8bb6fc36b6f7945b4de8/qtpy-2.4.3.tar.gz", hash = "sha256:db744f7832e6d3da90568ba6ccbca3ee2b3b4a890c3d6fbbc63142f6e4cdf5bb", size = 66982, upload-time = "2025-02-11T15:09:25.759Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0a/0c/58a1e48209b0b1220ca2368435573f39ff1fa3577b7eef913f8960c5d429/QtPy-2.4.2-py3-none-any.whl", hash = "sha256:5a696b1dd7a354cb330657da1d17c20c2190c72d4888ba923f8461da67aa1a1c", size = 95155, upload-time = "2024-11-04T23:14:23.817Z" },
+    { url = "https://files.pythonhosted.org/packages/69/76/37c0ccd5ab968a6a438f9c623aeecc84c202ab2fabc6a8fd927580c15b5a/QtPy-2.4.3-py3-none-any.whl", hash = "sha256:72095afe13673e017946cc258b8d5da43314197b741ed2890e563cf384b51aa1", size = 95045, upload-time = "2025-02-11T15:09:24.162Z" },
 ]
 
 [[package]]
@@ -942,9 +955,9 @@ wheels = [
 name = "sqlglot"
 version = "30.20.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5f/4b/5b7cc5bef933d92646637aa21211901069e2463e32ea095e07a41049632b/sqlglot-30.20.0.tar.gz", hash = "sha256:8210b49131ac80cb3d4135edd3f64a50c95f2046305f4e6978fca59b39c82407", size = 6051245 }
+sdist = { url = "https://files.pythonhosted.org/packages/5f/4b/5b7cc5bef933d92646637aa21211901069e2463e32ea095e07a41049632b/sqlglot-30.20.0.tar.gz", hash = "sha256:8210b49131ac80cb3d4135edd3f64a50c95f2046305f4e6978fca59b39c82407", size = 6051245, upload-time = "2026-09-27T16:35:37.059Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/cc/b42e2b2efc612427d0402c37974f0eb69654faf287a95f72960863a7dff1/sqlglot-30.20.0-py3-none-any.whl", hash = "sha256:886fd92eba9bf944dee97164b16760f21576a7f55ef4a9211337903442e8aded", size = 758365 },
+    { url = "https://files.pythonhosted.org/packages/dd/cc/b42e2b2efc612427d0402c37974f0eb69654faf287a95f72960863a7dff1/sqlglot-30.20.0-py3-none-any.whl", hash = "sha256:886fd92eba9bf944dee97164b16760f21576a7f55ef4a9211337903442e8aded", size = 758365, upload-time = "2026-09-27T16:35:35.285Z" },
 ]
 
 [[package]]
@@ -975,6 +988,7 @@ dependencies = [
     { name = "fastexcel" },
     { name = "loguru" },
     { name = "matplotlib" },
+    { name = "nodeeditor-qtpy" },
     { name = "numpy" },
     { name = "openpyxl" },
     { name = "orjson" },
@@ -988,6 +1002,7 @@ dependencies = [
     { name = "pyqt6-sip" },
     { name = "python-dateutil" },
     { name = "qtpy" },
+    { name = "sqlglot" },
     { name = "typing-extensions" },
     { name = "tzdata" },
 ]
@@ -1022,6 +1037,7 @@ requires-dist = [
     { name = "fastexcel", specifier = ">=0.15.1" },
     { name = "loguru", specifier = "==0.7.3" },
     { name = "matplotlib", specifier = "==3.11.2" },
+    { name = "nodeeditor-qtpy", specifier = "==0.8.1" },
     { name = "numpy", specifier = "==2.5.3" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "orjson", specifier = "==3.12.0" },
@@ -1034,7 +1050,8 @@ requires-dist = [
     { name = "pyqt6-qt6", specifier = "==6.8.1" },
     { name = "pyqt6-sip", specifier = "==13.9.1" },
     { name = "python-dateutil", specifier = "==2.9.0.post0" },
-    { name = "qtpy", specifier = "==2.4.2" },
+    { name = "qtpy", specifier = "==2.4.3" },
+    { name = "sqlglot", specifier = ">=30.20,<31" },
     { name = "typing-extensions", specifier = ">=4.13.0" },
     { name = "tzdata", specifier = "==2026.4" },
 ]

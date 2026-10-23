@@ -2,7 +2,8 @@
 
 Verified 2026-10-21 against `main` @ `71b4041` (working tree has uncommitted edits, see BUG-027).
 Environment: Windows 11, `.venv` Python 3.13, Polars 1.44.2, DuckDB 1.5.5, sqlglot 30.20.0, PyQt6 / Qt 6.8.1,
-`qtpy-nodeeditor` git `ee5e8fd` (the installed copy, outside `uv.lock`).
+`nodeeditor-qtpy` 0.8.1 from PyPI (installed by `uv sync`, in `uv.lock`; BUG-007 was fixed on 2026-10-22 —
+the measurements below were taken before that, against git `ee5e8fd` kept outside the lock).
 
 **Method.** Every item below was re-checked by opening the file and, where feasible, reproducing it with a script,
 a pytest-driven probe, or a test invocation. Nothing in the repo was modified except this file. Probe scripts live
@@ -36,7 +37,7 @@ Set `PYTHONUTF8=1` for runs whose stdout is piped, otherwise emoji log lines rai
 | BUG-004 | Run never collects lazy plans when the graph has no sink; broken plans "succeed" | High | Run | Verified | 02, 03, 04, 05 |
 | BUG-005 | Run executes `get_code()` from stale or never-evaluated live state; fallback code emits empty frames silently | High | Run | Verified | 02, 04, 08 |
 | BUG-006 | Excel export is broken: `xlsxwriter` not installed or declared (File Output "excel", Data Preview) | High | I/O dependency | Verified | 05, 06 |
-| BUG-007 | Installed `qtpy-nodeeditor` lacks APIs the repo calls (`setPositions`, detail-LOD); edge updates raise at runtime | High | Environment / canvas | Verified | all UI plans |
+| BUG-007 | Installed `qtpy-nodeeditor` lacked APIs the repo calls (`setPositions`, detail-LOD); edge updates raise at runtime | High | Environment / canvas | **Fixed** (2026-10-22) | all UI plans |
 | BUG-008 | `getSocketValue` resolves only the first matching output socket (two outputs of one node into one node break) | High | Evaluation | Verified | 04, 05, 06 |
 | BUG-009 | Run failures: no node tooltip, exception type lost, "Original traceback" is useless | Medium | Errors | Verified | 03, 02 |
 | BUG-010 | `execute_node` raises `UnboundLocalError` when `get_code()` raises | Medium | Executor | Verified (latent) | 03, 08 |
@@ -47,9 +48,9 @@ Set `PYTHONUTF8=1` for runs whose stdout is piped, otherwise emoji log lines rai
 | BUG-015 | No workflow version check on open; `workflow_metadata` extras are dropped on save | Medium | Persistence | Verified | 02, 08 |
 | BUG-016 | File Output `check_file_path` is never called | Low | I/O node | Verified | 03 |
 | BUG-017 | `scene.serialize()` re-reads the input file on every save and every undo snapshot; `registerInputWidget` records whole-scene snapshots | Medium | Performance / undo | Verified | 01, 02 |
-| BUG-018 | SQL editor erases its own diagnostics (repaint fires `textChanged`) and revalidates every 800 ms forever | Medium | Formula/Filter editor | Verified | 03 |
+| BUG-018 | SQL editor erases its own diagnostics (repaint fires `textChanged`) and revalidates every 800 ms forever | Medium | Formula/Filter editor | **Fixed** (2026-10-22) | 03 |
 | BUG-019 | `exec()` of generated code has no sandbox; `ENHANCED_EXECUTOR_GUIDE.md` documents features that do not exist | Medium | Security / docs | Verified | 08 |
-| BUG-020 | Test-suite health: 20 failed + 7 errors in `tests/ui`; full `pytest` aborts (exit 139) | Medium | Tests | Verified | all |
+| BUG-020 | Test-suite health: 20 failed + 7 errors in `tests/ui`; full `pytest` aborts (exit 139) | Medium | Tests | **Fixed** (2026-10-22) - 793 passed, 0 failed, no abort | all |
 | BUG-021 | Error-translation hazards: Windows `OSError` has `errno=None`; Polars "out of N values" is a batch size | Low | Errors | Verified | 03 |
 | BUG-022 | Stale or incorrect docs (SESSION_HANDOFF, NODE_REFERENCE, README, CONTRIBUTING, AGENTS, placeholders) | Low | Docs | Verified | all |
 | BUG-023 | Empty stub node files and enum members with no node | Low | Registry | Verified | - |
@@ -132,7 +133,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
   exception while serializing or encoding destroys the user's previous save. On Windows the default text encoding is
   cp1252, so a workflow containing any character outside cp1252 (for example `→`, CJK, emoji in a node title, label,
   formula text or path) cannot be saved at all and wipes the existing file.
-* **Status:** Verified (reproduced). The faulty code is in the *installed* `qtpy-nodeeditor`
+* **Status:** Verified (reproduced). The faulty code is in the *installed* `nodeeditor`
   (`.venv/Lib/site-packages/nodeeditor/node_scene.py:621-636`), not in the repo; the repo has no override of `saveToFile`.
   Plan 08 (F10) independently notes the locale-encoding half.
 * **Symptoms:** "Save" appears to fail (or silently does something odd); reopening the file reports an invalid file
@@ -304,7 +305,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-007 - The installed `qtpy-nodeeditor` is older than the repo expects; edge updates raise at runtime
 
 * **Severity:** High. Not only a test problem: production code calls APIs the installed library does not have, and the error is swallowed.
-* **Status:** Verified.
+* **Status:** **Fixed** (2026-10-22). The numbers quoted below were measured before the fix.
 * **Symptoms:** Edge geometry not updated on node move or load (silent `AttributeError` tracebacks on stderr: `AttributeError: 'super' object has no attribute 'setPositions'`
   printed while loading every e2e workflow); the app logs `The installed nodeeditor has no detail policy; the canvas keeps its own rules`.
 * **Root cause:** installed commit `ee5e8fd1c4dfe0585d6fa2209f02347d4e600c59` of `https://github.com/AzadKshitij/qtpy-nodeeditor.git`
@@ -312,6 +313,11 @@ Claims from the task brief that could not be confirmed are in the section "Claim
   `src/trigger_designer/qt/performance_scene.py:44` `super().setPositions(source, destination)` and `:116` `self.grEdge.setPositions(source_pos, end_pos)`;
   `qt/render_settings.py:89-96` uses `detail_lod_threshold`; `qt/node_base.py:254` uses `_content_visible`. The package is intentionally outside `uv.lock`
   (`pyproject.toml:14-20,50-55,101`), so `uv sync` cannot repair it and nothing pins the required ref.
+* **Resolution:** the upstream package was published to PyPI as `nodeeditor-qtpy` 0.8.1 (built from the same commit the repo expects).
+  It is now a normal, pinned dependency — `nodeeditor-qtpy==0.8.1` in `pyproject.toml`, resolved into `uv.lock` — so `uv sync`
+  installs a matching copy and no longer needs the hand-patched git install. `qtpy` was bumped `2.4.2` → `2.4.3` to satisfy
+  the package's own floor. `scripts/build.bat` now runs `uv sync --frozen --all-groups` instead of installing from git.
+  The `setPositions` / detail-LOD calls in `performance_scene.py` and `render_settings.py` need no guards any more.
 * **Reproduce:** `.venv\Scripts\python -m pytest tests/ui/test_edge_geometry.py -q` and `tests/ui/test_labels_groups.py::test_group_collapse_expand_edges`.
 * **Verified output (per file, run separately, today):**
   ```
@@ -520,11 +526,12 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-018 - SQL editor erases its own diagnostics and revalidates every 800 ms forever
 
 * **Severity:** Medium (the user rarely sees a persistent error; DuckDB `EXPLAIN` runs in a loop while any formula editor holds text).
-* **Status:** Verified (mechanism and loop reproduced). This is the confirmed root cause of `test_formula_focus` and the same symptom in three `test_formula_node` tests.
+* **Status:** **Fixed** (2026-10-22). The mechanism below was reproduced first, then the fix was verified: the five failing tests pass and the whole suite runs in one invocation without aborting.
 * **Root cause:** `src/trigger_designer/qt/widgets/sql_formula_editor.py`
   * `:863` `cursor.mergeCharFormat(clean_format)` inside `update_error_highlights()` changes the document's formatting, which makes Qt emit `textChanged` (Qt 6.8.1).
   * `:586-594` `on_text_changed()` -> `if self.errors: self.errors.clear(); ...` and restarts `error_timer` (`ERROR_CHECK_DEBOUNCE_MS = 800`).
   * `:597-647` `check_for_errors()` ends with `update_error_highlights()` (`:647`) -> back to `:863` -> loop.
+* **Resolution:** `update_error_highlights()` now paints the underline with `setExtraSelections` only and never writes to the document. The `mergeCharFormat` clear block was a leftover: commit `2390857` had already moved the error underline from document character formats to extra selections, but left the old clear in place. It was redundant (extra selections fully control the underline) and harmful (it emitted `textChanged`, wiped the diagnostics, and pushed the document onto the undo stack for a change the user never made). The dead `error_format` variable went with it; the live selection now uses the theme's `danger` colour, which is what `078e714` had intended. The selections are also applied unconditionally, so the underline of a fixed error no longer lingers - which is what the `on_text_changed` comment asked for in the first place.
 * **Reproduce** (`tests.ui.test_formula_focus._make_content()` helper, then):
   ```python
   ew.set_text('" unfinished [a]'); ed = ew.editor
@@ -541,8 +548,8 @@ Claims from the task brief that could not be confirmed are in the section "Claim
   ```
   `validate_section_text(0, '" unfinished [a]')` called directly returns the correct `Unterminated string literal` diagnostic, so validation itself is fine.
 * **Failing tests explained:** `tests/ui/test_formula_focus.py::test_editor_diagnostics_replace_stale_section_error_without_rebuilding` (`label.text()` empty), `tests/ui/test_formula_node.py::test_duckdb_parser_failure_uses_sqlglot_error_location` (`assert False`), `::test_closed_string_followed_by_column_requires_operator` (`IndexError`, no errors), `::test_locationless_errors_do_not_underline_or_modify_editor_text` (`assert [] == ['Unknown function NOSUCHFUNC']`). `::test_incomplete_quotes_do_not_crash_editor` aborts the process (see BUG-020).
-* **Recommended fix (S):** in `update_error_highlights` only clear/merge formats when needed and wrap the formatting block in `blocker = QSignalBlocker(self.document())` (or use `self.document().blockSignals(True)`), or compare `isUndoRedoEnabled`/use `setExtraSelections` only (the extra selections already paint the wave underline, the `mergeCharFormat` clear is the culprit). Also stop the timer when no change happened.
-* **Regression test:** `tests/ui/test_formula_editor_loop.py::test_highlighting_does_not_fire_text_changed` (connect a counter to `textChanged`, call `update_error_highlights()`, assert 0) - plus the existing five tests turning green.
+* **Recommended fix (S):** ~~in `update_error_highlights` only clear/merge formats when needed and wrap the formatting block in `blocker = QSignalBlocker(self.document())` ... or use `setExtraSelections` only~~ **done 2026-10-22** - `setExtraSelections` only, see the resolution above.
+* **Regression test:** `tests/ui/test_formula_editor_loop.py` (new, 2026-10-22): `test_highlighting_does_not_fire_text_changed`, `test_highlighting_does_not_change_the_document`, `test_highlighting_does_not_touch_the_undo_stack`, `test_the_errors_survive_a_repaint`, `test_a_fixed_error_leaves_no_underline_behind`. On the old code the file aborts the process (exit -1073741819); with the fix all five pass.
 * **Effort:** S.
 
 ---
@@ -562,42 +569,31 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-020 - Test-suite health: 20 failed + 7 errors in `tests/ui`; full `pytest` aborts
 
 * **Severity:** Medium (the suite cannot gate changes; a crash hides everything after it).
-* **Status:** Verified. Numbers below were re-measured today; all failures are pre-existing (working-tree edits do not touch tests).
-* **Current numbers (layers run separately, `QT_QPA_PLATFORM=offscreen`):**
+* **Status:** **Fixed** (2026-10-22). BUG-007 (the old nodeeditor) and BUG-018 (the editor wiping its own diagnostics) are both fixed. The suite runs green in one invocation and no longer aborts.
+* **Current numbers (`QT_QPA_PLATFORM=offscreen`; re-measured 2026-10-22 after BUG-007 and BUG-018):**
 
   | Layer | Result | Time |
   |---|---|---|
-  | `tests/unit` | **334 passed** (44 warnings) | 13.2 s |
-  | `tests/e2e` | **20 passed** (prints swallowed `AttributeError: 'super' object has no attribute 'setPositions'` tracebacks, BUG-007) | 4.3 s |
-  | `tests/ui` | **403 passed, 20 failed, 7 errors** in one complete run (the brief recorded 404 passed; the difference is one test, not investigated). In one of two whole-layer invocations the process aborted instead (exit 139, `Fatal Python error: Aborted`, top frame `tests/conftest.py:196 _no_leaked_qt_windows` -> `QCoreApplication.sendPostedEvents`) | 29.4 s |
-  | `pytest` (all) | **aborted, exit 139, 3 of 3 runs** at 18.4-18.8 s (about 18-25 % progress), and in a `-v` run in the teardown of `tests/ui/test_formula_node.py::test_duckdb_parser_failure_uses_sqlglot_error_location` (a failing test) | ~18.5 s |
-  | `tests/ui/test_formula_node.py` alone | aborted 2 of 2 today (1 of 2 on the brief's day); `test_formula_focus.py` alone aborted 2 of 2 | - |
+  | `tests/unit` | **344 passed** (44 warnings) - 334 before, plus 10 new in `tests/unit/test_nodeeditor_api.py` | 10.2 s |
+  | `tests/e2e` | **20 passed**, no more swallowed `AttributeError: 'super' object has no attribute 'setPositions'` tracebacks (BUG-007) | 4.1 s |
+  | `tests/ui` | **429 passed, 0 failed, 0 errors** - 424 before, plus 5 new in `tests/ui/test_formula_editor_loop.py` | 26-45 s |
+  | `pytest tests/` (all) | **793 passed, 6 skipped, 0 failed** - the 6 skips are the benchmarks, which need `--run-benchmarks`. 3 of 3 consecutive runs green, no abort | 28-49 s |
 
-  README's "< 20 s full suite" (`tests/README.md`) therefore does not hold in this environment.
-* **Failing / erroring UI tests (27) with error summary and root cause:**
+  README's "< 20 s full suite" (`tests/README.md`) still does not hold in this environment (28-49 s), but the suite no longer aborts.
+* **What was failing, and why it is gone:**
 
-  | Test id | Error summary | Root cause |
-  |---|---|---|
-  | `test_canvas_grid_render.py::test_zoomed_out_background_paints_an_empty_minor_batch` | `AttributeError: 'QDMGraphicsScene' object has no attribute 'MIN_GRID_SPACING_PX'` (`test_canvas_grid_render.py:90`) | BUG-007: installed nodeeditor too old |
-  | `...::test_painting_the_background_never_flips_the_detail_state` | `... no attribute 'DETAIL_LOD_THRESHOLD'` / `setDetailLod` | BUG-007 |
-  | `...::test_detail_lod_hides_sockets_below_half_scale_and_restores_them` | `... no attribute 'setDetailLod'` | BUG-007 |
-  | `...::test_a_zoomed_out_node_still_draws_itself` | `'TriggerGraphicsNode' object has no attribute '_detail_visible'` | BUG-007 (node code expects lib's LOD state) |
-  | `...::test_a_detailed_node_draws_its_content_pass` | `... no attribute 'updateDetailLod'` | BUG-007 |
-  | `...::test_nodes_added_while_zoomed_out_pick_up_the_current_detail_state` | `... no attribute 'setDetailLod'` | BUG-007 |
-  | `test_edge_geometry.py::test_the_declared_rect_covers_the_stroke_each_pen_draws[_pen]`, `[_pen_selected]`, `[_pen_dragging]`, `[_pen_hovered]`, `::test_the_widest_pen_is_the_hovered_one_edge_uses`, `::test_a_moved_edge_declares_its_new_geometry_before_it_paints`, `::test_moving_an_edge_invalidates_the_old_stroke_as_well_as_the_new` (7 errors) | `AttributeError: 'super' object has no attribute 'setPositions'` in fixture setup (`performance_scene.py:44`) | BUG-007 |
-  | `test_labels_groups.py::test_group_collapse_expand_edges` | same `setPositions` (`performance_scene.py:44`) | BUG-007 |
-  | `test_render_settings.py::test_the_settings_reach_the_scene` | `AttributeError: ... no attribute 'detail_lod_threshold'` | BUG-007 |
-  | `...::test_a_socket_set_to_always_survives_the_zoom_out`, `::test_a_label_set_to_always_survives_the_zoom_out`, `::test_a_label_set_to_auto_follows_the_zoom`, `::test_the_card_set_to_never_does_not_draw_the_card`(`'_content_visible'`), `::test_the_threshold_decides_where_the_canvas_simplifies` | `no attribute 'updateDetailLod'` / `'_content_visible'` (`test_render_settings.py:152,168`) | BUG-007 |
-  | `...::test_a_socket_set_to_never_stays_hidden_at_full_zoom`, `::test_the_status_indicator_follows_its_own_mode` | `assert not True` | BUG-007 (state never updated by missing LOD API) - inferred from the same fixtures, not traced individually |
-  | `test_formula_focus.py::test_editor_diagnostics_replace_stale_section_error_without_rebuilding` | `AssertionError: assert 'Unterminated string literal' in ''` (`:82`); also the test that aborts the whole run | BUG-018 (verified) |
-  | `test_formula_node.py::test_duckdb_parser_failure_uses_sqlglot_error_location` | `assert False` (`:280`) | BUG-018 (errors list wiped) |
-  | `test_formula_node.py::test_closed_string_followed_by_column_requires_operator` | `IndexError: list index out of range` (`:440`) | BUG-018 |
-  | `test_formula_node.py::test_locationless_errors_do_not_underline_or_modify_editor_text` | `assert [] == ['Unknown function NOSUCHFUNC']` (`:545`) | BUG-018 |
-  | `test_formula_node.py::test_incomplete_quotes_do_not_crash_editor` | process abort (exit 139) when run alone | same family; abort mechanism below |
+  | Test id | Error summary | Root cause | Status |
+  |---|---|---|---|
+  | `test_canvas_grid_render.py` (6), `test_edge_geometry.py` (7 errors), `test_labels_groups.py` (1), `test_render_settings.py` (8) | `no attribute 'setPositions'` / `'MIN_GRID_SPACING_PX'` / `'detail_lod_threshold'` / `'updateDetailLod'` | BUG-007: installed nodeeditor too old | fixed - `nodeeditor-qtpy` 0.8.1 from PyPI |
+  | `test_formula_focus.py::test_editor_diagnostics_replace_stale_section_error_without_rebuilding` | `AssertionError: assert 'Unterminated string literal' in ''` (`:82`) | BUG-018 | fixed |
+  | `test_formula_node.py::test_duckdb_parser_failure_uses_sqlglot_error_location` | `assert False` (`:280`) | BUG-018 (errors list wiped) | fixed |
+  | `test_formula_node.py::test_closed_string_followed_by_column_requires_operator` | `IndexError: list index out of range` (`:440`) | BUG-018 | fixed |
+  | `test_formula_node.py::test_locationless_errors_do_not_underline_or_modify_editor_text` | `assert [] == ['Unknown function NOSUCHFUNC']` (`:545`) | BUG-018 | fixed |
+  | `test_formula_node.py::test_incomplete_quotes_do_not_crash_editor` | process abort (exit 139) when run alone | BUG-018 | fixed |
 
-* **Abort mechanism (hypothesis, not proven):** the abort always occurs in the teardown of a *failing* Formula UI test (faulthandler top frame `tests/conftest.py:196`, the leaked-window cleanup). Unhandled Python exceptions inside Qt virtual overrides abort PyQt6 processes; failing tests keep traceback-referenced widgets alive into the cleanup. Fixing BUG-018 should remove the trigger; confirm after the fix.
-* **Recommended fix (S-M):** fix BUG-018 and BUG-007; until then keep the baseline list above in CI as `xfail(strict=False)` with the reason, and always run layers separately. Do **not** edit assertions.
-* **Regression test:** CI step that runs `pytest tests/unit tests/e2e tests/ui` as three invocations and compares the failure id list with this document's baseline.
+* **Abort mechanism (confirmed 2026-10-22):** the abort was a side effect of BUG-018, not a separate Qt problem. `update_error_highlights()` wrote character formats into the document, which made Qt emit `textChanged`; the editor's `textChanged` handler cleared the diagnostics, so the failing tests left half-updated documents behind, and the deferred delete in `tests/conftest.py:196` faulted on them. With the highlight repaint no longer touching the document, the abort is gone - the whole suite now completes.
+* **Recommended fix:** done. No `xfail` baseline file is needed; run the suite as one invocation again.
+* **Regression test:** `tests/ui/test_formula_editor_loop.py` (new) pins the invariant that painting the diagnostics does not touch the document; on the old code that file aborts the process, with the fix all five pass.
 * **Effort:** S (baseline file), M (fixes).
 
 ---
@@ -655,7 +651,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-024 - README claims Windows/macOS/Linux; tooling is Windows-only with hard-coded paths
 
 * **Severity:** Low. Status: Verified (code/doc reading).
-* **Evidence:** `README.md:19` platform badge "Windows | macOS | Linux", `:95` "The app targets Windows, macOS and Linux". But `scripts/build.bat:19` (`C:\Projects\qtpy-nodeeditor`), `scripts/sync-nodeeditor.ps1:22` (same), `scripts/run.bat:17,21` (`C:\Projects\TriggerEditor\...` and a developer's home path), `run.bat` (repo root) the same, `pyproject.toml:94` Windows-only briefcase `sources` (`.venv/Lib/site-packages/nodeeditor`, a Windows venv layout), PyInstaller `trigger.spec`, and an Inno Setup script. There is no shell script, no macOS/Linux packaging, and `.venv/Lib/...` does not exist on POSIX (`lib/python3.13/site-packages`).
+* **Evidence:** `README.md:19` platform badge "Windows | macOS | Linux", `:95` "The app targets Windows, macOS and Linux". But `scripts/sync-nodeeditor.ps1:22` (`C:\Projects\qtpy-nodeeditor`; `scripts/build.bat` no longer hard-codes it since the 2026-10-22 move to `nodeeditor-qtpy` from PyPI), `scripts/run.bat:17,21` (`C:\Projects\TriggerEditor\...` and a developer's home path), `run.bat` (repo root) the same, `pyproject.toml:94` Windows-only briefcase `sources` (`.venv/Lib/site-packages/nodeeditor`, a Windows venv layout), PyInstaller `trigger.spec`, and an Inno Setup script. There is no shell script, no macOS/Linux packaging, and `.venv/Lib/...` does not exist on POSIX (`lib/python3.13/site-packages`).
 * **Recommended fix (S docs, M code):** reword README to "developed and packaged on Windows; macOS/Linux untested", or add a `scripts/run.sh` and a cross-platform nodeeditor install step. Replace hard-coded paths with `%~dp0`.
 * **Regression test:** none (docs). **Effort:** S docs. **Affects:** plan 08 (scheduling on Linux hosts).
 
@@ -804,14 +800,14 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 
 Fix before implementing each plan (smallest, riskiest first):
 
-1. **Immediately, before any plan (all S):** BUG-001 (panic as success, 30 min), BUG-010 (one-line `node_name` move), BUG-012 (cycle leaves Run disabled), BUG-018 (SQL editor loop; unblocks 5 tests and probably the suite abort), BUG-013 step 1+2 (`git rm --cached check_output.py`, stop writing into the CWD). Also BUG-002 (save truncation): it is data loss and a 25-line override.
+1. **Immediately, before any plan (all S):** BUG-001 (panic as success, 30 min), BUG-010 (one-line `node_name` move), BUG-012 (cycle leaves Run disabled), BUG-013 step 1+2 (`git rm --cached check_output.py`, stop writing into the CWD). Also BUG-002 (save truncation): it is data loss and a 25-line override. **BUG-018 and BUG-007 were fixed on 2026-10-22** and are off this list.
 2. **Before plan 03 (plain-language errors):** BUG-001, BUG-009 (exception fields + tooltip), BUG-010, BUG-021 handling rules. These are plan 03's own Step 4 and must land together.
 3. **Before plan 02 (audit trail):** BUG-001, BUG-009 (`ExecutionResult.exception`), BUG-005 (re-evaluate on Run), BUG-013 (stable variable names, no CWD write), BUG-015 (carry metadata keys), BUG-017 (pure `serialize()`), BUG-008 only if the recorder uses `getSocketValue` (it must not).
 4. **Before plan 01 (input types):** BUG-003 (`!r` quoting everywhere; plan 01 adds many user strings), BUG-014 (relative paths), BUG-017 (serialize re-read), BUG-011 (Cancel on load) and BUG-002 (non-ASCII names).
 5. **Before plan 06 (workpaper export):** BUG-006 (Excel writer; plan 06 step 1 is exactly this), BUG-008 (Summary and Exceptions from one node), BUG-002.
 6. **Before plans 04 and 05 (audit nodes, data profile):** BUG-001 (heavy Rust code panics), BUG-004 (nodes must collect inside `get_code()`; add the plan-level `collect_schema()` check), BUG-005, BUG-008 (multi-output nodes into one consumer), BUG-006 (profile export).
 7. **Before plan 08 (CLI and scheduling):** BUG-001, BUG-003 + BUG-019 (code policy), BUG-005, BUG-010, BUG-011 (hard cancel needs the subprocess runner), BUG-013, BUG-014, BUG-015, BUG-024, BUG-028.
-8. **Environment:** BUG-007 (pin/reinstall nodeeditor) together with BUG-020 (baseline xfail list) before relying on any UI test as a gate.
+8. **Environment:** resolved on 2026-10-22. BUG-007 (the nodeeditor pin) and BUG-020 (the failing-test baseline and the suite abort) are both fixed, so the UI tests are a usable gate: `pytest tests/` is 793 passed / 6 skipped / 0 failed.
 9. **Last / opportunistic:** BUG-016, BUG-022 to BUG-027.
 
 # Quick wins (under one hour each)
@@ -822,7 +818,7 @@ Fix before implementing each plan (smallest, riskiest first):
 | BUG-001 | `except BaseException` in the exec thread; try/except around `task()` in the worker loop | `executor.py:266`, `:172` |
 | BUG-012 | Compute `sorted_nodes` before disabling the button; do not re-raise the cycle error | `workflow_execution_mixin.py:57-61`, `design_window.py:690-696` |
 | BUG-013 | `git rm --cached check_output.py`; add `encoding="utf-8"` and a path argument to `getPyFile` | `design_window.py:698-706` |
-| BUG-018 | Block document signals around `mergeCharFormat` in `update_error_highlights` | `sql_formula_editor.py:852-863` |
+| BUG-018 | ~~Block document signals around `mergeCharFormat` in `update_error_highlights`~~ **done 2026-10-22:** drop the document write, paint with `setExtraSelections` only | `sql_formula_editor.py:852-899` |
 | BUG-015 | Warn on newer `schema_version`; carry extra `workflow_metadata` keys; replace `utcnow()` | `design_window.py:461-467`, `performance_scene.py:166-173` |
 | BUG-016 | Call `check_file_path()` from the path handler and `processInputs` | `file_output.py:181`, `:409-427` |
 | BUG-006 (interim) | Show a message instead of only `logger.error` when the preview Excel export fails | `polars_table_viewer.py:1195-1208` |

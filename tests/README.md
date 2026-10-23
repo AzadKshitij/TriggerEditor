@@ -15,7 +15,7 @@ only has to live in the right folder.
 ## Commands
 
 ```powershell
-# Everything CI runs (< 20 s on a laptop, no benchmarks)
+# Everything CI runs (no benchmarks; ~30-50 s on a Windows laptop)
 uv run --project . pytest
 
 # One layer at a time

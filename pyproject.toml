@@ -11,14 +11,6 @@ requires-python = ">=3.13.12,<3.14"
 license = {text = "MIT"}
 authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 
-# Sync workflow (do NOT use bare `uv sync`): qtpy-nodeeditor is installed
-# from git with --no-deps (see scripts/build.bat) and kept out of the lock,
-# so a sync would prune it and break the GUI. Instead:
-#   uv lock --upgrade-package <name>   # re-resolve into uv.lock
-#   uv pip install --python .venv/Scripts/python.exe <name>==<version>
-# Qt pins (pyqt6*, qtpy) are intentional; nodeeditor's metadata wants newer
-# Qt, which is why it stays out of the lock.
-
 # Core dependencies organized by category.
 #
 # Keep this list to packages the *application* imports. pandas, numba/llvmlite,
@@ -46,13 +38,11 @@ dependencies = [
     "pyqt6==6.8.0",
     "pyqt6-qt6==6.8.1",
     "pyqt6-sip==13.9.1",
-    "qtpy==2.4.2",
-    # NOTE: qtpy-nodeeditor (git) is installed separately by scripts/build.bat,
-    # which tracks the upstream `main` branch and installs with --no-deps; set
-    # QTNODEEDITOR_REF to a SHA to pin. It must stay out of the uv lock because
-    # its metadata requires newer pyqt6/qtpy than this project pins, and
-    # `uv sync` prunes it - re-run scripts/build.bat (or
-    # scripts/sync-nodeeditor.ps1) afterwards.
+    "qtpy==2.4.3",
+    # Node canvas. Published on PyPI as `nodeeditor-qtpy`; the import package
+    # is `nodeeditor`. No extras needed: the Qt binding (pyqt6) is already a
+    # direct dependency above. qtpy>=2.4.3 is nodeeditor-qtpy's own floor.
+    "nodeeditor-qtpy==0.8.1",
     # Visualization
     "matplotlib==3.11.2",
     "pillow==12.3.0",
@@ -76,8 +66,6 @@ trigger-designer = "trigger_designer.main:main"
 # Installed (editable) into the venv so the `trigger-designer` console script
 # exists and `uv run trigger-designer` starts the app. Editable, so resource
 # files and the Qt resource modules still resolve from `src/` on disk.
-# Only the *install* is affected - the lockfile still excludes
-# qtpy-nodeeditor, so a sync will not prune it (see the note above).
 package = true
 
 [tool.hatch.build.targets.wheel]

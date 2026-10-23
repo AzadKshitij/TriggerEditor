@@ -1,7 +1,7 @@
 # Node labels & groups
 
 Floating single-line labels on nodes and visual node groups. Both are
-implemented by the `qtpy-nodeeditor` package (`Group` in
+implemented by the `nodeeditor-qtpy` package (`Group` in
 `nodeeditor.node_group`, labels on `nodeeditor.node_node.Node`); this app
 only wires them into its menus, Config Dock, edges, and undo.
 

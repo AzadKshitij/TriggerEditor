@@ -187,7 +187,7 @@ class TriggerWindow(
         Once ``install_window_chrome()`` gives the menu slot to the chrome,
         the base implementation would auto-create a *new* empty QMenuBar and
         swap the chrome out of the window. Every caller (including the
-        qtpy-nodeeditor menu builders) keeps getting the embedded bar.
+        nodeeditor menu builders) keeps getting the embedded bar.
         """
         chrome = getattr(self, "window_chrome", None)
         if chrome is not None:

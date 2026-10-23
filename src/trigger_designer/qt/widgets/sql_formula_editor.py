@@ -851,6 +851,19 @@ class SQLFormulaEditor(QTextEdit):
 
     def update_error_highlights(self):
         """Paint source spans without changing the document or undo history."""
+
+        """Paint the error spans on the editor's extra selections.
+        The underline is drawn with ``setExtraSelections`` and never by
+        writing character formats into the document. A format write makes Qt
+        emit ``textChanged``, and this editor's ``textChanged`` handler
+        clears ``self.errors`` - so the diagnostics were wiped between
+        being computed and being shown, and the error label stayed empty.
+        A format write also pushes the document onto the undo stack for a
+        change the user never made.
+
+        The selections are always applied, so the underline of a fixed error
+        does not linger.
+        """
         selections = []
         """Update the visual error highlights in the editor."""
         # First, clear all existing error formatting
@@ -870,6 +883,7 @@ class SQLFormulaEditor(QTextEdit):
         error_format = QTextCharFormat()
         error_format.setUnderlineColor(get_theme_manager().color("danger", "#e0686c"))
         error_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
+        error_color = get_theme_manager().color("danger", "#e0686c")
 
         # Apply error highlights
         lines = self.toPlainText().split("\n")
@@ -886,7 +900,7 @@ class SQLFormulaEditor(QTextEdit):
                 continue
             start = sum(len(item) + 1 for item in lines[: line - 1]) + column
             selection = QTextEdit.ExtraSelection()
-            selection.format.setUnderlineColor(QColor(255, 0, 0))
+            selection.format.setUnderlineColor(error_color)
             selection.format.setUnderlineStyle(
                 QTextCharFormat.UnderlineStyle.WaveUnderline
             )

@@ -29,6 +29,8 @@ Thank you for your interest in contributing! This document provides guidelines f
 uv run --project . pytest tests/
 ```
 
+`tests/benchmarks` is skipped unless `--run-benchmarks` is passed.
+
 ## Code Style
 
 - **Formatter**: Ruff (line length 88)

@@ -30,7 +30,7 @@ Dock**. Workflows are saved as portable `.tds` files.
 
 Under the hood every node produces a [Polars](https://pola.rs/) DataFrame, with
 [DuckDB](https://duckdb.org/) powering the SQL-like Formula editor and
-[`qtpy-nodeeditor`](https://github.com/AzadKshitij/qtpy-nodeeditor) providing the
+[`nodeeditor-qtpy`](https://pypi.org/project/nodeeditor-qtpy/) providing the
 Qt canvas.
 
 ## Features
@@ -90,7 +90,6 @@ identifier stored in saved workflows; icons live in
 
 - **Python 3.13.12+** (the project pins `>=3.13.12,<3.14`).
 - [**uv**](https://github.com/astral-sh/uv) — the project's package manager.
-- **Git** — `qtpy-nodeeditor` is installed straight from a git source.
 
 The app targets Windows, macOS and Linux, and needs a working Qt platform plugin
 for your desktop.
@@ -106,17 +105,14 @@ uv sync
 uv run pre-commit install        # optional, enables the git hooks
 ```
 
-> **About `qtpy-nodeeditor`.** The node canvas lives in a separate git package
-> that is deliberately kept out of `uv.lock` (its metadata asks for newer Qt
-> versions than this project pins, and its dependencies are installed with
-> `--no-deps`). After a `uv sync`, make sure it is present:
+> **About the node canvas.** The canvas is the [`nodeeditor-qtpy`](https://pypi.org/project/nodeeditor-qtpy/)
+> package on PyPI (the import package is `nodeeditor`). It is pinned in
+> `pyproject.toml` and locked in `uv.lock`, so `uv sync` installs it like any
+> other dependency — no extra install step is needed.
 
-```bash
-uv pip install --no-deps "git+https://github.com/AzadKshitij/qtpy-nodeeditor.git@main"
-```
-
-On Windows, [`scripts/build.bat`](scripts/build.bat) performs the same install and
-also packages the app (see [Building a standalone executable](#building-a-standalone-executable)).
+On Windows, [`scripts/build.bat`](scripts/build.bat) syncs the locked
+dependencies and also packages the app (see
+[Building a standalone executable](#building-a-standalone-executable)).
 
 ## Run
 
@@ -160,9 +156,10 @@ scripts\build.bat                 # onedir build in dist\TriggerEditor\
 scripts\build.bat -- --portable   # single-file executable
 ```
 
-The script refreshes `qtpy-nodeeditor`, smokes-tests the source imports, and
-runs PyInstaller with [`trigger.spec`](trigger.spec). Compile the installer with
-Inno Setup using [`savedfiles/TriggerDesigner_Setup.iss`](savedfiles/TriggerDesigner_Setup.iss).
+The script installs the locked dependencies (`uv sync --frozen`), smokes-tests the
+source imports, and runs PyInstaller with [`trigger.spec`](trigger.spec). Compile
+the installer with Inno Setup using
+[`savedfiles/TriggerDesigner_Setup.iss`](savedfiles/TriggerDesigner_Setup.iss).
 
 ## Project layout
 
