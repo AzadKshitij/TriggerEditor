@@ -2453,7 +2453,6 @@ QPushButton#ColumnPicker {
     border-radius: 4px;
     padding: 0px;
     text-align: left;
-    min-height: 30px;
 }
 QPushButton#ColumnPicker:hover {
     background-color: $COLOR_BACKGROUND_4;
@@ -2513,7 +2512,6 @@ QLineEdit#ColumnPickerSearch {
     border: 1px solid $COLOR_BACKGROUND_4;
     border-radius: 4px;
     padding: 0px 6px;
-    min-height: 30px;
 }
 QLineEdit#ColumnPickerSearch:hover {
     border: 1px solid $COLOR_ACCENT_2;

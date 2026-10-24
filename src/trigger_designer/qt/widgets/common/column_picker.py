@@ -713,9 +713,6 @@ class ColumnPicker(QPushButton):
         )
         self._proxy = ColumnPickerFilterProxy(self)
         self._proxy.setSourceModel(self._model)
-        self._layout = QHBoxLayout(self)
-        self._layout.setContentsMargins(6, 0, 6, 0)
-        self._layout.setSpacing(3)
         self.clicked.connect(self.toggle_popup)
         self.setProperty("open", "false")
         self._render()
@@ -854,69 +851,168 @@ class ColumnPicker(QPushButton):
         else:
             self.clear_visible()
 
-    def _render(self) -> None:
-        while self._layout.count():
-            item = self._layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.hide()
-                widget.deleteLater()
+    def display_tokens(self) -> tuple[list[str], int]:
+        """Names shown in the trigger and how many are collapsed."""
         names = self.checked()
-        if not names:
-            placeholder = QLabel(self._placeholder, self)
-            placeholder.setObjectName("ColumnPickerPlaceholder")
-            placeholder.setAttribute(
-                Qt.WidgetAttribute.WA_TransparentForMouseEvents, True
-            )
-            self._layout.addWidget(placeholder, 1)
-        else:
-            visible = names[:1] if self._single else names[:2]
-            max_width = 165 if self._single else 74
-            for name in visible:
-                self._layout.addWidget(self._token(name, max_width))
-            if not self._single and len(names) > len(visible):
-                more = QLabel(f"+{len(names) - len(visible)}", self)
-                more.setObjectName("ColumnPickerMore")
-                more.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-                self._layout.addWidget(more)
-            self._layout.addStretch(1)
-            if not self._single:
-                count = QLabel(str(len(names)), self)
-                count.setObjectName("ColumnPickerCount")
-                count.setFixedHeight(16)
-                count.setAlignment(Qt.AlignmentFlag.AlignCenter)
-                count.setAttribute(
-                    Qt.WidgetAttribute.WA_TransparentForMouseEvents, True
-                )
-                self._layout.addWidget(count)
-        chevron = QLabel("\u25b4" if self._is_open else "\u25be", self)
-        chevron.setObjectName("ColumnPickerChevron")
-        chevron.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        self._layout.addWidget(chevron)
+        if self._single:
+            return names[:1], 0
+        if len(names) <= 2:
+            return names, 0
+        return names[:2], len(names) - 2
+
+    def _render(self) -> None:
+        names = self.checked()
         self.setToolTip(", ".join(names) or self._placeholder)
         self.setAccessibleName(
             f"{self._label}: {len(names)} selected" if names else self._label
         )
+        self.update()
 
-    def _token(self, name: str, max_width: int) -> QLabel:
-        label = QLabel(self)
-        label.setObjectName("ColumnToken")
-        label.setFixedHeight(20)
-        label.setMaximumWidth(max_width)
-        label.setMinimumWidth(0)
-        label.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
-        font = QFont(self.font())
-        font.setPixelSize(10)
-        label.setFont(font)
-        label.setText(
-            QFontMetrics(font).elidedText(
-                name, Qt.TextElideMode.ElideRight, max_width - 4
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        content = QRect(6, 0, max(self.width() - 12, 0), self.height())
+        painter.setClipRect(content)
+
+        theme = get_theme_manager()
+        text = QColor(theme.color("text_secondary", "#C6CDD5"))
+        muted = QColor(theme.color("text_inactive", "#919BA6"))
+        border = QColor(theme.color("border_primary", "#242A30"))
+        fill = QColor(theme.color("background_secondary", "#191E22"))
+        if not self.isEnabled():
+            text = QColor(theme.color("text_disabled", "#5C6672"))
+            muted = text
+
+        token_font = QFont(self.font())
+        token_font.setPixelSize(10)
+        count_font = QFont(self.font())
+        count_font.setPixelSize(9)
+        chevron_font = QFont(self.font())
+        chevron_font.setPixelSize(10)
+        metrics = QFontMetrics(token_font)
+
+        names = self.checked()
+        chevron_w = 9
+        chevron_x = content.right() - chevron_w + 1
+        count_rect: QRect | None = None
+        if names and not self._single:
+            count_w = max(
+                18, QFontMetrics(count_font).horizontalAdvance(str(len(names))) + 10
             )
+            count_rect = QRect(
+                chevron_x - 3 - count_w,
+                (self.height() - 16) // 2,
+                count_w,
+                16,
+            )
+        right_x = count_rect.left() if count_rect is not None else chevron_x
+        token_right = right_x - 3
+
+        if not names:
+            placeholder_font = QFont(self.font())
+            placeholder_font.setPixelSize(11)
+            painter.setFont(placeholder_font)
+            painter.setPen(muted)
+            label = QFontMetrics(placeholder_font).elidedText(
+                self._placeholder,
+                Qt.TextElideMode.ElideRight,
+                max(token_right - content.left(), 10),
+            )
+            painter.drawText(
+                QRect(
+                    content.left(),
+                    0,
+                    max(token_right - content.left(), 10),
+                    self.height(),
+                ),
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                label,
+            )
+        else:
+            visible = names[:1] if self._single else names[:2]
+            overflow = len(names) - len(visible)
+            available = max(token_right - content.left(), 10)
+            more_text = f"+{overflow}" if overflow else ""
+            more_w = (
+                QFontMetrics(token_font).horizontalAdvance(more_text) + 3
+                if overflow
+                else 0
+            )
+            gaps = max(len(visible) - 1, 0) * 3 + (3 if overflow else 0)
+            slots = max(len(visible), 1)
+            slot = max((available - more_w - gaps) // slots, 0)
+            if len(visible) > 1 and slot < 30:
+                visible = visible[:1]
+                overflow = len(names) - 1
+                more_text = f"+{overflow}" if overflow else ""
+                more_w = (
+                    QFontMetrics(token_font).horizontalAdvance(more_text) + 3
+                    if overflow
+                    else 0
+                )
+                gaps = 3 if overflow else 0
+                slot = max(available - more_w - gaps, 0)
+            if slot < 8:
+                visible = []
+                overflow = len(names)
+                more_text = f"+{overflow}" if overflow else ""
+                more_w = (
+                    QFontMetrics(token_font).horizontalAdvance(more_text) + 3
+                    if overflow
+                    else 0
+                )
+
+            x = content.left()
+            for name in visible:
+                natural = min(96, metrics.horizontalAdvance(name) + 10)
+                width = min(natural, max(slot, 8))
+                if x + width > token_right:
+                    width = max(token_right - x, 0)
+                if width < 8:
+                    break
+                rect = QRect(x, (self.height() - 20) // 2, width, 20)
+                painter.setPen(QPen(border, 1))
+                painter.setBrush(fill)
+                painter.drawRoundedRect(rect, 3, 3)
+                painter.setFont(token_font)
+                painter.setPen(text)
+                label = metrics.elidedText(
+                    name, Qt.TextElideMode.ElideRight, max(width - 8, 2)
+                )
+                painter.drawText(
+                    rect.adjusted(4, 0, -4, 0), Qt.AlignmentFlag.AlignCenter, label
+                )
+                x += width + 3
+            if more_text and x + more_w <= token_right + 1:
+                painter.setFont(token_font)
+                painter.setPen(muted)
+                painter.drawText(
+                    QRect(x, 0, max(more_w, 1), self.height()),
+                    Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                    more_text,
+                )
+
+        if count_rect is not None:
+            painter.setPen(QPen(border, 1))
+            painter.setBrush(fill)
+            painter.drawRoundedRect(count_rect, 3, 3)
+            painter.setFont(count_font)
+            painter.setPen(muted)
+            painter.drawText(
+                count_rect,
+                Qt.AlignmentFlag.AlignCenter,
+                str(len(names)),
+            )
+
+        painter.setFont(chevron_font)
+        painter.setPen(muted)
+        painter.drawText(
+            QRect(chevron_x, 0, chevron_w, self.height()),
+            Qt.AlignmentFlag.AlignCenter,
+            "\u25b4" if self._is_open else "\u25be",
         )
-        label.setToolTip(name)
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        return label
+        painter.end()
 
     def keyPressEvent(self, event) -> None:
         if (

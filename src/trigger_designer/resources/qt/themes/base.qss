@@ -2070,8 +2070,7 @@ QPushButton#ColumnPicker {{
   border: 1px solid {card_border};
   border-radius: 4px;
   padding: 0px;
-  text-align: left;
-  min-height: 30px; }}
+  text-align: left; }}
 QPushButton#ColumnPicker:hover {{
   background-color: {background_hover};
   border: 1px solid {accent_primary}; }}
@@ -2118,8 +2117,7 @@ QLineEdit#ColumnPickerSearch {{
   background-color: {editor_background};
   border: 1px solid {card_border};
   border-radius: 4px;
-  padding: 0px 6px;
-  min-height: 30px; }}
+  padding: 0px 6px; }}
 QLineEdit#ColumnPickerSearch:hover {{
   border: 1px solid {accent_primary}; }}
 QLineEdit#ColumnPickerSearch:focus {{

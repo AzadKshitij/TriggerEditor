@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from qtpy.QtWidgets import QLabel
-
 from trigger_designer.qt.widgets.common import ColumnPicker
 
 
@@ -35,14 +33,8 @@ def test_picker_trigger_tokens_and_overflow(qtbot) -> None:
         ("Account", "Customer", "Region", "Amount"),
     )
     qtbot.addWidget(picker)
-    token_labels = [
-        label
-        for label in picker.findChildren(QLabel)
-        if label.objectName() == "ColumnToken"
-    ]
-    assert token_labels[0].text() == "Account"
-    assert {label.toolTip() for label in token_labels} == {"Account", "Customer"}
-    assert any(label.text() == "+2" for label in picker.findChildren(QLabel))
+    assert picker.display_tokens() == (["Account", "Customer"], 2)
+    assert picker.toolTip() == "Account, Customer, Region, Amount"
 
 
 def test_picker_bulk_actions_only_touch_visible_rows(qtbot) -> None:
