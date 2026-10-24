@@ -13,6 +13,7 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.node_base import TriggerNode
+from trigger_designer.qt.widgets.common import ColumnPicker
 
 
 class Source(TriggerNode):
@@ -69,6 +70,13 @@ def test_default_mapping_and_output_rows(qtbot) -> None:
         {"left_column": "id", "right_column": "rid"}
     ]
     assert len(content._mapping_rows) == 1
+    left_picker = content._mapping_rows[0]["left"]
+    right_picker = content._mapping_rows[0]["right"]
+    assert isinstance(left_picker, ColumnPicker)
+    assert isinstance(right_picker, ColumnPicker)
+    assert left_picker.checked() == ["id"]
+    assert right_picker.checked() == ["rid"]
+    assert isinstance(content.output_picker, ColumnPicker)
     left_only, joined, right_only = _outputs(node)
     assert left_only["id"].to_list() == [1]
     assert joined["id"].to_list() == [2]

@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
+    QLabel,
     QVBoxLayout,
     QWidget,
 )
@@ -18,13 +20,14 @@ from trigger_designer.core.shaping import join as core
 from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
 from trigger_designer.qt.node_base import upstream_rename_map
 from trigger_designer.qt.widgets.common import (
-    ColumnChecklist,
+    ColumnPicker,
     ConfigSection,
     EmptyStateLabel,
     IconButton,
-    NoWheelComboBox,
     TextButton,
+    dtype_label,
 )
+from trigger_designer.qt.widgets.common.column_picker import ColumnItem
 
 
 class JoinContent(ShapingContent):
@@ -124,9 +127,11 @@ class JoinContent(ShapingContent):
         output_toolbar.addWidget(none_button)
         output_section.addLayout(output_toolbar)
 
-        self.output_checklist = ColumnChecklist()
-        self.output_checklist.changed.connect(self._on_output_changed)
-        output_section.addWidget(self.output_checklist)
+        self.output_picker = ColumnPicker(
+            [], (), rsm=self.node.rsm, label="Output columns"
+        )
+        self.output_picker.changed.connect(self._on_output_changed)
+        output_section.addWidget(self.output_picker)
         dock_layout.addWidget(output_section)
         dock_layout.addStretch()
 
@@ -178,13 +183,30 @@ class JoinContent(ShapingContent):
     def _snapshot_mapping(self) -> list[dict]:
         rows = []
         for row in self._mapping_rows:
+            left = row["left"].checked()
+            right = row["right"].checked()
             rows.append(
                 {
-                    "left_column": row["left"].currentData() or "",
-                    "right_column": row["right"].currentData() or "",
+                    "left_column": left[0] if left else "",
+                    "right_column": right[0] if right else "",
                 }
             )
         return rows
+
+    def _mapping_picker(self, side: int, value: str, label: str) -> ColumnPicker:
+        schema = self.schema(side)
+        items = [(name, dtype_label(schema[name])) for name in schema]
+        if value and value not in schema:
+            items.append(ColumnItem(value, "", f"{value} (missing)"))
+        picker = ColumnPicker(
+            items,
+            [value] if value else (),
+            single=True,
+            rsm=self.node.rsm,
+            label=label,
+        )
+        picker.changed.connect(lambda _names: self._on_mapping_combo_changed())
+        return picker
 
     def _on_mapping_combo_changed(self) -> None:
         self._commit_mapping(self._snapshot_mapping(), "Join Key Pair Changed")
@@ -196,45 +218,28 @@ class JoinContent(ShapingContent):
             if widget is not None:
                 widget.deleteLater()
         self._mapping_rows = []
-        left_names = list(self.schema(0))
-        right_names = list(self.schema(1))
         for index, entry in enumerate(self.settings.get("mapping_data") or []):
             row = QWidget()
             layout = QHBoxLayout(row)
             layout.setContentsMargins(0, 0, 0, 0)
             layout.setSpacing(2)
-            left = NoWheelComboBox()
-            left.setMinimumHeight(30)
-            for name in left_names:
-                left.addItem(name, name)
-            if entry.get("left_column") not in left_names:
-                left.addItem(
-                    f"{entry.get('left_column')} (missing)",
-                    entry.get("left_column"),
-                )
-            left.setCurrentIndex(max(0, left.findData(entry.get("left_column"))))
-            right = NoWheelComboBox()
-            right.setMinimumHeight(30)
-            for name in right_names:
-                right.addItem(name, name)
-            if entry.get("right_column") not in right_names:
-                right.addItem(
-                    f"{entry.get('right_column')} (missing)",
-                    entry.get("right_column"),
-                )
-            right.setCurrentIndex(max(0, right.findData(entry.get("right_column"))))
-            left.currentIndexChanged.connect(
-                lambda _index: self._on_mapping_combo_changed()
+            left = self._mapping_picker(
+                0, entry.get("left_column") or "", "Left key column"
             )
-            right.currentIndexChanged.connect(
-                lambda _index: self._on_mapping_combo_changed()
+            right = self._mapping_picker(
+                1, entry.get("right_column") or "", "Right key column"
             )
+            arrow = QLabel("\u2192")
+            arrow.setObjectName("FieldHint")
+            arrow.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            arrow.setFixedWidth(16)
             remove = IconButton.themed(
                 "Remove key pair",
                 rsm_icon=self.node.rsm.get("icon_remove"),
             )
             remove.clicked.connect(lambda _=False, i=index: self._remove_pair(i))
             layout.addWidget(left, 1)
+            layout.addWidget(arrow)
             layout.addWidget(right, 1)
             layout.addWidget(remove)
             self.mapping_layout.addWidget(row)
@@ -257,8 +262,15 @@ class JoinContent(ShapingContent):
         return [self._label(entry) for entry in selected]
 
     def _rebuild_output_checklist(self) -> None:
-        labels = [self._label(entry) for entry in self._output_items()]
-        self.output_checklist.setColumns(labels, self._checked_labels())
+        items = [
+            ColumnItem(label, "", label)
+            for label in (self._label(entry) for entry in self._output_items())
+        ]
+        blocked = self.output_picker.blockSignals(True)
+        try:
+            self.output_picker.setColumns(items, self._checked_labels())
+        finally:
+            self.output_picker.blockSignals(blocked)
 
     def _on_output_changed(self, labels: list[str]) -> None:
         selected = []
@@ -272,7 +284,8 @@ class JoinContent(ShapingContent):
         self.set_setting("selected_columns", selected, "Join Output Columns Changed")
 
     def _check_all(self, checked: bool) -> None:
-        self.output_checklist.set_all_checked(checked)
+        labels = [self._label(entry) for entry in self._output_items()]
+        self.output_picker.set_selected(labels if checked else [], emit=True)
 
     def _on_auto_accept(self, checked: bool) -> None:
         self.set_setting(
