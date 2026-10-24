@@ -48,8 +48,16 @@
         }
       ],
       "content": {
-        "formula": "TRY_CAST([Relevancy Score] AS DOUBLE)",
-        "target_column": "RelevancyNum"
+        "settings": {
+          "sections": [
+            {
+              "target_column": "RelevancyNum",
+              "formula_text": "TRY_CAST([Relevancy Score] AS DOUBLE)",
+              "editor_height": 120,
+              "target_dtype": ""
+            }
+          ]
+        }
       },
       "op_code": 3,
       "op_type": "PREPARATION"

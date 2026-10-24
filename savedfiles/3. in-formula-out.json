@@ -27,8 +27,16 @@
                 }
             ],
             "content": {
-                "formula": "CASE \n    WHEN Difficulty > 7 THEN 'High'\n    WHEN Difficulty > 6 THEN 'Medium'\n    ELSE 'Low'\nEND",
-                "target_column": "Category"
+                "settings": {
+                    "sections": [
+                        {
+                            "target_column": "Category",
+                            "formula_text": "CASE \n    WHEN Difficulty > 7 THEN 'High'\n    WHEN Difficulty > 6 THEN 'Medium'\n    ELSE 'Low'\nEND",
+                            "editor_height": 120,
+                            "target_dtype": ""
+                        }
+                    ]
+                }
             },
             "op_code": 3,
             "op_type": "PREPARATION"

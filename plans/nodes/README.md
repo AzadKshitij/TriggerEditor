@@ -1,8 +1,8 @@
 # Legacy node modernization - implementation plans
 
 Status: in progress - Count, Running Total, Sort, Split, Unique, Graph,
-Normalize, Transpose, Filter, Cleansing, Rows and Aggregate are implemented;
-the rest are planned.
+Normalize, Transpose, Filter, Cleansing, Rows, Aggregate and Formula are
+implemented; Append, Join, Union, File Output and File Input are planned.
 Reference migration: Select (`23eadb8`).
 Authoritative architecture: `docs/plan/07-shaping-nodes.md` and
 `docs/plan/08-simplify-node-base.md`.

@@ -1,6 +1,6 @@
 # Formula - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 13 of 18 (Tier 3, arbitrary expressions).
 Read first: `plans/nodes/README.md`.
 
@@ -219,11 +219,12 @@ fixed.
 
 ## 10. Acceptance
 
-- [ ] All formula behavior is in core; the UI only edits settings.
-- [ ] Existing target columns are replaced in place; new columns append.
-- [ ] Section errors name the right section.
-- [ ] Live == generated output.
-- [ ] Old saved formulas load.
+- [x] All formula behavior is in core; the UI only edits settings.
+- [x] Existing target columns are replaced in place; new columns append.
+- [x] Section errors name the right section.
+- [x] Live == generated output.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
 
 ## 11. Do not
 

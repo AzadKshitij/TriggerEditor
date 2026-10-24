@@ -103,23 +103,25 @@ def test_formula_change_round_trips(window, nodes):
     history = window.scene.history
     _reset(history)
 
-    old_sections = [dict(s) for s in formula.content.formula_sections]
-    formula.content.formula_sections = old_sections + [
-        {"target_column": "doubled", "formula_text": "[amount] * 2"}
-    ]
-    formula.content.store_history({"formula_sections": old_sections})
+    old_sections = [dict(s) for s in formula.content.settings["sections"]]
+    formula.content.set_setting(
+        "sections",
+        old_sections + [{"target_column": "doubled", "formula_text": "[amount] * 2"}],
+        "Formula Changed",
+        structural=True,
+    )
 
     assert history.canUndo()
     assert history.currentText() == "Formula Changed"
     assert history.controller.count == 1
 
     history.undo()
-    assert len(formula.content.formula_sections) == len(old_sections)
+    assert len(formula.content.settings["sections"]) == len(old_sections)
     assert history.canRedo()
     assert history.nextText() == "Formula Changed"
 
     history.redo()
-    assert len(formula.content.formula_sections) == len(old_sections) + 1
+    assert len(formula.content.settings["sections"]) == len(old_sections) + 1
     assert not history.canRedo()
 
 
@@ -130,11 +132,13 @@ def test_each_added_section_is_its_own_step(window, nodes):
     before = history.controller.count
 
     for index in range(5):
-        sections = [dict(s) for s in formula.content.formula_sections]
-        formula.content.formula_sections = sections + [
-            {"target_column": f"c{index}", "formula_text": "1"}
-        ]
-        formula.content.store_history({"formula_sections": sections})
+        sections = [dict(s) for s in formula.content.settings["sections"]]
+        formula.content.set_setting(
+            "sections",
+            sections + [{"target_column": f"c{index}", "formula_text": "1"}],
+            "Formula Section Added",
+            structural=True,
+        )
 
     # Five separate clicks are five separate undo steps - only a *burst* of
     # typing collapses.
@@ -242,8 +246,8 @@ def test_dock_is_rebuilt_after_a_restore(window, nodes):
     history.push_edit(
         PropertyChangeCommand(
             formula,
-            ("formula_sections",),
-            formula.content.formula_sections,
+            ("settings", "sections"),
+            formula.content.settings["sections"],
             [{"target_column": "x", "formula_text": "1"}],
             "Formula Changed",
         )
