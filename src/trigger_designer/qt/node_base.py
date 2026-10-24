@@ -29,6 +29,11 @@ from trigger_designer.core.errors import (
     make_error,
     translate_exception,
 )
+from trigger_designer.core.frames import frame_schema as frame_schema
+from trigger_designer.core.frames import frame_shape as frame_shape
+from trigger_designer.qt.helpers.rename_map import (
+    upstream_rename_map as upstream_rename_map,
+)
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.helpers.eval_progress import (
@@ -59,77 +64,6 @@ if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
 
 from loguru import logger
-import polars as pl
-
-
-def frame_schema(frame) -> dict:
-    """Column names and dtypes without collecting (lazy-safe).
-
-    Live data may be a LazyFrame (e.g. downstream of Append/Join) — use
-    this anywhere only names/types are needed instead of `.columns`/`.dtype`.
-    """
-    # ponytail: one shared helper, not per-node isinstance blocks
-    if frame is None:
-        return {}
-    if isinstance(frame, pl.LazyFrame):
-        schema = frame.collect_schema()
-    else:
-        schema = frame.schema
-    return {name: dtype for name, dtype in schema.items()}
-
-
-def frame_shape(frame) -> tuple:
-    """(height, width) for logs; height is "lazy" without collecting."""
-    width = len(frame_schema(frame))
-    if isinstance(frame, pl.LazyFrame):
-        return ("lazy", width)
-    try:
-        return (frame.height, width)
-    except Exception:
-        return ("?", width)
-
-
-def upstream_rename_map(upstream_node) -> dict:
-    """Column renames advertised by an upstream node (``{old: new}``).
-
-    Lets a downstream node follow a rename instead of treating it as a
-    drop + add: a config referencing ``old`` can be remapped to ``new``
-    when ``new`` is present in the live upstream schema. Nodes that do
-    not rename report ``{}``.
-    """
-    content = getattr(upstream_node, "content", None)
-    if content is None:
-        return {}
-    # New Select stores its renames in settings["columns"].
-    settings = getattr(content, "settings", None)
-    if isinstance(settings, dict):
-        columns = settings.get("columns")
-        if isinstance(columns, list):
-            mapping = {
-                str(column.get("name")): str(column.get("rename"))
-                for column in columns
-                if isinstance(column, dict)
-                and column.get("rename")
-                and column.get("rename") != column.get("name")
-            }
-            if mapping:
-                return mapping
-    # Old Select stored its renames in ``changes["rename_mapping"]``.
-    changes = getattr(content, "changes", None)
-    if isinstance(changes, dict):
-        mapping = changes.get("rename_mapping")
-        if isinstance(mapping, dict):
-            return {str(old): str(new) for old, new in mapping.items() if new}
-    # Normalize derives its mapping from its rules.
-    current_mapping = getattr(content, "_current_mapping", None)
-    if callable(current_mapping):
-        try:
-            mapping = current_mapping()
-        except Exception:  # noqa: BLE001 - any upstream error means no map
-            return {}
-        if isinstance(mapping, dict):
-            return {str(old): str(new) for old, new in mapping.items() if new}
-    return {}
 
 
 class TriggerGraphicsNode(QDMIconGraphicsNode):
