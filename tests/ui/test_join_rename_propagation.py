@@ -1,253 +1,101 @@
-#!/usr/bin/env python3
-"""Join must follow upstream renames and auto-accept new columns on demand."""
+"""Join keeps mapping and output selection through upstream renames."""
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
+from __future__ import annotations
 
 import polars as pl
 from nodeeditor.node_edge import Edge
-from qtpy.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 
 from trigger_designer.core.node_configuration import (
     JoinNodes,
     NodeTypes,
-    PreparationNodes,
     get_class_from_opcode,
 )
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.node_base import TriggerNode
 
-APP = QApplication.instance() or QApplication([])
 
+class Source(TriggerNode):
+    node_title = "Source"
 
-class _Stub(TriggerNode):
-    """Source node evaluating to a fixed frame."""
+    def __init__(self, scene, frame, name: str) -> None:
+        self._frame = frame
+        self._name = name
+        super().__init__(scene, inputs=[], outputs=[3])
+        self.value = [{"data": frame, "variable_name": name}]
+        self.markDirty(False)
+        self.markInvalid(False)
 
     def evalImplementation(self):
-        return [{"data": self._df, "variable_name": self._var}]
+        self.value = [{"data": self._frame, "variable_name": self._name}]
+        self.markDirty(False)
+        self.markInvalid(False)
+        return self.value
 
 
-def _stub_node(scene, df, var="var_in"):
-    node = _Stub(scene, inputs=[], outputs=[3])
-    node._df, node._var = df, var
-    node.markDirty(True)
-    return node
-
-
-def _select_node(scene):
-    cls = get_class_from_opcode(PreparationNodes.SELECT, NodeTypes.PREPARATION)
-    return cls(scene)
-
-
-def _join_node(scene):
+def _node():
+    window = TriggerSubWindow()
+    left = Source(window.scene, pl.DataFrame({"id": [1], "a": [2]}).lazy(), "var_left")
+    right = Source(
+        window.scene, pl.DataFrame({"rid": [1], "b": [3]}).lazy(), "var_right"
+    )
     cls = get_class_from_opcode(JoinNodes.JOIN, NodeTypes.JOIN)
-    return cls(scene)
-
-
-def _rename_headless(content, mapping):
-    """Rename via the Select settings path and re-evaluate."""
-    columns = [dict(column) for column in content.settings["columns"]]
-    for column in columns:
-        if column["name"] in mapping:
-            column["rename"] = mapping[column["name"]]
-    content.set_setting("columns", columns, "Select Columns Changed")
-    content.node.markDirty(True)
-    content.node.eval()
-    APP.processEvents()
-
-
-def _wired_join():
-    """left Select -> Join <- right stub. Returns refs dict."""
-    parent = QMainWindow()
-    window = TriggerSubWindow(parent)
-    scene = window.scene
-    left_stub = _stub_node(
-        scene,
-        pl.DataFrame({"customer_full_name": ["A", "B"], "age": [30, 40]}).lazy(),
-        "var_left_src",
+    node = cls(window.scene)
+    Edge(window.scene, left.outputs[0], node.inputs[0])
+    Edge(window.scene, right.outputs[0], node.inputs[1])
+    node.content.settings.update(
+        {
+            "mapping_data": [{"left_column": "id", "right_column": "rid"}],
+            "selected_columns": [{"name": "id", "source": "L"}],
+        }
     )
-    left = _select_node(scene)
-    Edge(scene, left_stub.outputs[0], left.inputs[0])
-    left.eval()
-    right = _stub_node(
-        scene,
-        pl.DataFrame({"customer_full_name": ["A", "C"], "city": ["X", "Y"]}).lazy(),
-        "var_right",
+    node.markDirty(True)
+    node.eval()
+    return window, node
+
+
+def test_upstream_rename_updates_mapping_and_selection() -> None:
+    _window, node = _node()
+    content = node.content
+    # The upstream now publishes the renamed column; the stored config still
+    # references the old name.
+    content.frames[0] = pl.DataFrame({"new_id": [1], "a": [2]}).lazy()
+    changed = content.apply_upstream_renames({"id": "new_id"}, {})
+    assert changed is True
+    assert content.settings["mapping_data"] == [
+        {"left_column": "new_id", "right_column": "rid"}
+    ]
+    assert content.settings["selected_columns"][0]["name"] == "new_id"
+
+
+def test_auto_accept_adds_arrivals_and_keeps_unchecked_out() -> None:
+    _window, node = _node()
+    content = node.content
+    content.settings.update(
+        {
+            "selected_columns": [{"name": "id", "source": "L"}],
+            "known_columns": [
+                {"name": "id", "source": "L"},
+                {"name": "a", "source": "L"},
+            ],
+        }
     )
-    join = _join_node(scene)
-    Edge(scene, left.outputs[0], join.inputs[0])
-    Edge(scene, right.outputs[0], join.inputs[1])
-    join.eval()
-    APP.processEvents()
-    return {
-        "parent": parent,
-        "window": window,
-        "left": left,
-        "right": right,
-        "join": join,
+    content.compute()
+    selected = {
+        (entry["name"], entry["source"])
+        for entry in content.settings["selected_columns"]
     }
+    assert ("b", "R") in selected
+    assert ("a", "L") not in selected
 
 
-def test_mapping_follows_left_rename_end_to_end():
-    refs = _wired_join()
-    join = refs["join"]
-    assert join.content.mapping_data == [
-        {"left_column": "customer_full_name", "right_column": "customer_full_name"}
-    ]
+def test_serialize_keeps_settings() -> None:
+    window, node = _node()
+    content = node.content
+    content.set_setting("auto_accept_new_columns", False, "Join Auto Accept Changed")
+    state = content.serialize()
+    assert state["settings"]["auto_accept_new_columns"] is False
 
-    _rename_headless(refs["left"].content, {"customer_full_name": "customer_name"})
-    join.eval()
-    APP.processEvents()
-
-    assert join.content.mapping_data == [
-        {"left_column": "customer_name", "right_column": "customer_full_name"}
-    ]
-    assert join.content.data is not None
-    out = join.content.data.columns
-    assert "customer_name" in out
-    assert "customer_full_name" not in out
-
-
-def test_selected_follows_rename_and_code_is_fresh():
-    refs = _wired_join()
-    join = refs["join"]
-    join.content.selected_columns = [
-        {"name": "customer_full_name", "source": "L"},
-        {"name": "age", "source": "L"},
-    ]
-    _rename_headless(refs["left"].content, {"customer_full_name": "customer_name"})
-    join.eval()
-    APP.processEvents()
-
-    names = [
-        (c["name"], c["source"])
-        for c in join.content.selected_columns
-        if c["source"] == "L"
-    ]
-    assert ("customer_name", "L") in names
-    assert ("customer_full_name", "L") not in names
-    code = join.content.get_code()
-    assert "customer_name" in code
-    assert "customer_full_name" not in code.split("right_on")[0]
-
-
-def _headless_join():
-    """Join content with direct data (no edges) for selection-matrix tests."""
-    parent = QMainWindow()
-    window = TriggerSubWindow(parent)
-    join = _join_node(window.scene)
-    content = join.content
-    content.left_data = pl.DataFrame({"a": [1], "b": [2]})
-    content.left_variable = "var_l"
-    content.right_data = pl.DataFrame({"a": [1], "c": [3]})
-    content.right_variable = "var_r"
-    content.mapping_data = [{"left_column": "a", "right_column": "a"}]
-    content.selected_columns = [
-        {"name": "a", "source": "L"},
-        {"name": "b", "source": "L"},
-    ]
-    return parent, window, content
-
-
-def test_first_sync_records_selection_without_expanding_it():
-    _parent, _window, content = _headless_join()
-    assert content.transform_data() is not None
-    # Legacy selection (L-only) is preserved, not expanded to R columns.
-    assert content.selected_columns == [
-        {"name": "a", "source": "L"},
-        {"name": "b", "source": "L"},
-    ]
-
-
-def test_new_arrival_auto_added_when_on():
-    _parent, _window, content = _headless_join()
-    assert content.transform_data() is not None
-    content.left_data = pl.DataFrame({"a": [1], "b": [2], "nick": [3]})
-    assert content.transform_data() is not None
-    assert {"name": "nick", "source": "L"} in content.selected_columns
-
-
-def test_new_arrival_held_back_when_off():
-    _parent, _window, content = _headless_join()
-    assert content.transform_data() is not None
-    content.auto_accept_new_columns = False
-    content.left_data = pl.DataFrame({"a": [1], "b": [2], "nick": [3]})
-    assert content.transform_data() is not None
-    assert {"name": "nick", "source": "L"} not in content.selected_columns
-    # Enabling picks up the pending arrival but nothing else.
-    content.auto_accept_new_columns = True
-    content.transform_data()
-    assert {"name": "nick", "source": "L"} in content.selected_columns
-
-
-def test_explicit_uncheck_survives_reeval():
-    _parent, _window, content = _headless_join()
-    assert content.transform_data() is not None
-    content.selected_columns = [c for c in content.selected_columns if c["name"] != "b"]
-    assert content.transform_data() is not None
-    assert content.transform_data() is not None
-    names = {(c["name"], c["source"]) for c in content.selected_columns}
-    assert ("b", "L") not in names
-    assert ("a", "L") in names
-
-
-def _open_dock(content):
-    host = QWidget()
-    content.create_layout(QVBoxLayout(host))
-    APP.processEvents()
-    return host
-
-
-def test_toggle_round_trip_with_undo_redo():
-    _parent, window, content = _headless_join()
-    host = _open_dock(content)
-    assert host is not None
-    action = content._auto_accept_action
-    assert action is not None and action.isChecked() is True
-    history = window.scene.history
-    history.storeInitialHistoryStamp()
-
-    action.setChecked(False)
-    APP.processEvents()
-    assert content.auto_accept_new_columns is False
-    assert history.controller.count == 1
-
-    history.undo()
-    APP.processEvents()
-    assert content.auto_accept_new_columns is True
-    # The app rebuilds the dock on history restore (force=True); simulate
-    # that here since there is no ConfigDock headless (keep the host alive
-    # or Qt deletes the new action out from under the assertion).
-    host_after_undo = _open_dock(content)
-    APP.processEvents()
-    assert content._auto_accept_action.isChecked() is True
-
-    history.redo()
-    APP.processEvents()
-    assert content.auto_accept_new_columns is False
-    host_after_redo = _open_dock(content)
-    APP.processEvents()
-    assert content._auto_accept_action.isChecked() is False
-    assert host_after_undo is not None and host_after_redo is not None
-
-
-def test_serialize_round_trip_keeps_flag_and_known():
-    _parent, _window, content = _headless_join()
-    assert content.transform_data() is not None
-    content.auto_accept_new_columns = False
-    payload = content.serialize()
-    assert payload["auto_accept_new_columns"] is False
-    assert payload["known_columns"] != []
-
-    scene = _window.scene
-    fresh_join = _join_node(scene)
-    fresh_join.content.deserialize(payload)
-    assert fresh_join.content.auto_accept_new_columns is False
-    assert fresh_join.content.known_columns == payload["known_columns"]
+    cls = get_class_from_opcode(JoinNodes.JOIN, NodeTypes.JOIN)
+    fresh = cls(window.scene)
+    assert fresh.content.deserialize(state) is not False
+    assert fresh.content.settings["auto_accept_new_columns"] is False

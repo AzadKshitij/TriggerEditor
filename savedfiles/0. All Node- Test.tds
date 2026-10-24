@@ -530,78 +530,80 @@
         }
       ],
       "content": {
-        "join_type": "inner",
-        "mapping_data": [
-          {
-            "left_column": "Relevancy Score",
-            "right_column": "Relevancy Score"
-          }
-        ],
-        "selected_columns": [
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          }
-        ],
-        "auto_accept_new_columns": true,
-        "known_columns": [
-          {
-            "name": "Count_Hot Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Country",
-            "source": "R"
-          },
-          {
-            "name": "Difficulty",
-            "source": "R"
-          },
-          {
-            "name": "Hot Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Seed",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          }
-        ]
+        "settings": {
+          "join_type": "inner",
+          "mapping_data": [
+            {
+              "left_column": "Relevancy Score",
+              "right_column": "Relevancy Score"
+            }
+          ],
+          "selected_columns": [
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            }
+          ],
+          "auto_accept_new_columns": true,
+          "known_columns": [
+            {
+              "name": "Count_Hot Keyword",
+              "source": "L"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Country",
+              "source": "R"
+            },
+            {
+              "name": "Difficulty",
+              "source": "R"
+            },
+            {
+              "name": "Hot Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            },
+            {
+              "name": "Seed",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1434,82 +1436,84 @@
         }
       ],
       "content": {
-        "join_type": "inner",
-        "mapping_data": [
-          {
-            "left_column": "Relevancy Score",
-            "right_column": "Relevancy Score"
-          }
-        ],
-        "selected_columns": [
-          {
-            "name": "Autocomplete Position",
-            "source": "L"
-          },
-          {
-            "name": "Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Source",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          }
-        ],
-        "auto_accept_new_columns": true,
-        "known_columns": [
-          {
-            "name": "Autocomplete Position",
-            "source": "L"
-          },
-          {
-            "name": "Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Source",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          }
-        ]
+        "settings": {
+          "join_type": "inner",
+          "mapping_data": [
+            {
+              "left_column": "Relevancy Score",
+              "right_column": "Relevancy Score"
+            }
+          ],
+          "selected_columns": [
+            {
+              "name": "Autocomplete Position",
+              "source": "L"
+            },
+            {
+              "name": "Keyword",
+              "source": "L"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Source",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            }
+          ],
+          "auto_accept_new_columns": true,
+          "known_columns": [
+            {
+              "name": "Autocomplete Position",
+              "source": "L"
+            },
+            {
+              "name": "Keyword",
+              "source": "L"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Source",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,

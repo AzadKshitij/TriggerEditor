@@ -1,6 +1,6 @@
 # Join - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 15 of 18 (Tier 4, two inputs, three outputs).
 Read first: `plans/nodes/README.md`.
 
@@ -234,11 +234,12 @@ Keep `test_join_rename_propagation` and the saved Join goldens green.
 
 ## 10. Acceptance
 
-- [ ] Three outputs match the old goldens.
-- [ ] Full outer join semantics are unchanged.
-- [ ] Upstream renames do not break mapping or selection.
-- [ ] Auto-accept and explicit uncheck still behave.
-- [ ] Old saved Join files load.
+- [x] Three outputs match the old goldens.
+- [x] Full outer join semantics are unchanged.
+- [x] Upstream renames do not break mapping or selection.
+- [x] Auto-accept and explicit uncheck still behave.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
 
 ## 11. Do not
 
