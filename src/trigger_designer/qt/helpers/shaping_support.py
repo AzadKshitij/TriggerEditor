@@ -48,6 +48,7 @@ from trigger_designer.qt.widgets.common import (
     NoWheelComboBox,
     RuleStack,
     SegmentedControl,
+    dtype_label,
 )
 
 
@@ -282,6 +283,10 @@ class ShapingContent(
             if _passes(dtype, spec.filter)
         ]
 
+    def _column_items(self, spec: Field) -> list[tuple[str, str]]:
+        schema = self.schema(spec.input)
+        return [(name, dtype_label(schema[name])) for name in self.names(spec)]
+
     def _rows_in(self) -> int:
         total = 0
         for frame in self.frames:
@@ -347,6 +352,8 @@ class ShapingContent(
         value: Any,
         text: str,
         merge_key: str | None = None,
+        *,
+        structural: bool = False,
     ) -> None:
         if is_syncing(self) or self.history.is_restoring_history:
             return
@@ -360,7 +367,7 @@ class ShapingContent(
         self.evaluate.emit()
         push = (
             self.push_list_change
-            if isinstance(value, list)
+            if structural and isinstance(value, list)
             else self.push_property_change
         )
         push(
@@ -465,8 +472,13 @@ class ShapingContent(
         return label
 
     def _make_widget(self, spec: Field, value: Any, commit: Callable) -> QWidget:
-        if spec.kind == "picker":
-            widget = ColumnPicker(self.names(spec), value or ())
+        if spec.kind in ("picker", "columns"):
+            widget = ColumnPicker(
+                self._column_items(spec),
+                value or (),
+                rsm=self.node.rsm,
+                label=spec.label,
+            )
             widget.changed.connect(commit)
             return widget
         if spec.kind == "segment":
@@ -498,27 +510,30 @@ class ShapingContent(
             widget = SuffixEditor("" if value is None else str(value))
             widget.changed.connect(commit)
             return widget
-        if spec.kind in ("combo", "column"):
+        if spec.kind == "column":
+            widget = ColumnPicker(
+                self._column_items(spec),
+                [value] if value else (),
+                "Choose column...",
+                single=True,
+                allow_blank=spec.blank,
+                rsm=self.node.rsm,
+                label=spec.label,
+            )
+            widget.changed.connect(lambda names: commit(names[0] if names else ""))
+            return widget
+        if spec.kind == "combo":
             widget = NoWheelComboBox()
             widget.setMinimumHeight(30)
-            if spec.kind == "column":
-                if spec.blank:
-                    widget.addItem("(none)", "")
-                for name in self.names(spec):
-                    widget.addItem(name, name)
-            else:
-                for item_value, label in spec.options:
-                    widget.addItem(label, item_value)
+            for item_value, label in spec.options:
+                widget.addItem(label, item_value)
             self._set_combo(widget, value if value is not None else "")
             widget.currentIndexChanged.connect(
                 lambda _index, w=widget: commit(w.currentData())
             )
             return widget
-        if spec.kind in ("columns", "choices"):
-            if spec.kind == "columns":
-                options = self.names(spec)
-            else:
-                options = [item_value for item_value, _label in spec.options]
+        if spec.kind == "choices":
+            options = [item_value for item_value, _label in spec.options]
             widget = ColumnChecklist(options, value or ())
             widget.setMinimumHeight(30)
             widget.changed.connect(commit)
@@ -724,6 +739,7 @@ class ShapingContent(
             items,
             f"{self.HISTORY} {spec.label} {verbs[operation]}",
             merge,
+            structural=True,
         )
         if operation != "edit" or arg.rebuild_on_change:
             self._fill_stack(spec, self._stacks[spec.key])
@@ -763,10 +779,20 @@ class ShapingContent(
         value = self.settings.get(spec.key)
         widget.blockSignals(True)
         try:
-            if spec.kind in ("combo", "column"):
+            if spec.kind == "combo":
                 self._set_combo(widget, value if value is not None else "")
-            elif spec.kind == "picker":
-                widget.setColumns(self.names(spec), value or ())
+            elif spec.kind in ("column", "picker", "columns"):
+                items = self._column_items(spec)
+                names = [name for name, _dtype in items]
+                if widget.column_names() != names:
+                    widget.setColumns(
+                        items,
+                        [value] if spec.kind == "column" and value else value or (),
+                    )
+                else:
+                    widget.setChecked(
+                        [value] if spec.kind == "column" and value else value or ()
+                    )
             elif spec.kind == "segment":
                 label = next(
                     (text for option, text in spec.options if option == value),
@@ -778,7 +804,7 @@ class ShapingContent(
                 widget.set_value(value or ())
             elif spec.kind == "suffix":
                 widget.set_value("" if value is None else str(value))
-            elif spec.kind in ("columns", "choices"):
+            elif spec.kind == "choices":
                 widget.setChecked(value or ())
             elif spec.kind == "check":
                 widget.setChecked(bool(value))

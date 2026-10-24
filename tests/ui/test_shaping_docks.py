@@ -16,6 +16,7 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.node_base import TriggerNode
+from trigger_designer.qt.widgets.common import ColumnPicker
 
 
 class Source(TriggerNode):
@@ -85,6 +86,27 @@ def test_record_id_dock_edit_and_undo(qtbot) -> None:
     assert node.content.settings["name"] == "RecordID"
     history.redo()
     assert node.content.settings["name"] == "Item"
+
+
+def test_record_id_group_picker_updates_without_rebuilding_dock(qtbot) -> None:
+    window, node, _dock = _node(
+        qtbot, PreparationNodes.RECORD_ID, NodeTypes.PREPARATION
+    )
+    history = window.scene.history
+    history.storeHistory("Baseline")
+    picker = node.content._widgets["group_by"]
+    assert isinstance(picker, ColumnPicker)
+
+    picker.set_selected(["a"], emit=True)
+    assert node.content.settings["group_by"] == ["a"]
+    assert node.content._widgets["group_by"] is picker
+    assert history.canUndo()
+
+    history.undo()
+    assert node.content.settings["group_by"] == []
+    assert node.content._widgets["group_by"] is picker
+    history.redo()
+    assert node.content.settings["group_by"] == ["a"]
 
 
 def test_select_records_visibility_follows_mode(qtbot) -> None:

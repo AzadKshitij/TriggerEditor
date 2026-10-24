@@ -2451,7 +2451,7 @@ QPushButton#ColumnPicker {
     background-color: $COLOR_BACKGROUND_1;
     border: 1px solid $COLOR_BACKGROUND_4;
     border-radius: 4px;
-    padding: 0px 6px;
+    padding: 0px;
     text-align: left;
     min-height: 30px;
 }
@@ -2469,6 +2469,18 @@ QPushButton#ColumnPicker:focus {
 QPushButton#ColumnPicker:disabled {
     background-color: $COLOR_BACKGROUND_1;
     border: 1px solid $COLOR_BACKGROUND_4;
+}
+QPushButton#ColumnPicker[open="true"] {
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QLabel#ColumnPickerCount {
+    background-color: $COLOR_BACKGROUND_2;
+    border: 1px solid $COLOR_BACKGROUND_4;
+    border-radius: 3px;
+    color: $COLOR_TEXT_3;
+    font-family: "Cascadia Mono", "Consolas";
+    font-size: 9px;
+    padding: 0px 4px;
 }
 QLabel#ColumnToken {
     background-color: $COLOR_BACKGROUND_3;
@@ -2508,6 +2520,61 @@ QLineEdit#ColumnPickerSearch:hover {
 }
 QLineEdit#ColumnPickerSearch:focus {
     border: 1px solid $COLOR_ACCENT_2;
+}
+QFrame#ColumnPickerTray {
+    background-color: $COLOR_BACKGROUND_2;
+    border: 0px;
+    border-bottom: 1px solid $COLOR_BACKGROUND_4;
+}
+QLabel#ColumnPickerTrayLabel {
+    color: $COLOR_TEXT_3;
+    font-size: 9px;
+    font-weight: 600;
+}
+QLabel#ColumnPickerTrayCount {
+    color: $COLOR_TEXT_3;
+    font-family: "Cascadia Mono", "Consolas";
+    font-size: 9px;
+}
+QFrame#ColumnPickerTray QLabel#ColumnToken {
+    background-color: $COLOR_BACKGROUND_1;
+}
+QListView#ColumnPickerList {
+    background-color: $COLOR_BACKGROUND_2;
+    border: 0px;
+    outline: 0px;
+}
+QListView#ColumnPickerList QScrollBar:vertical {
+    background: transparent;
+    width: 8px;
+    margin: 0px;
+    border: 0px;
+}
+QListView#ColumnPickerList QScrollBar::handle:vertical {
+    background-color: $COLOR_BACKGROUND_4;
+    min-height: 24px;
+    border-radius: 4px;
+}
+QListView#ColumnPickerList QScrollBar::add-line:vertical,
+QListView#ColumnPickerList QScrollBar::sub-line:vertical {
+    height: 0px;
+    background: transparent;
+}
+QLabel#ColumnPickerEmpty {
+    color: $COLOR_TEXT_3;
+    font-size: 11px;
+}
+QFrame#ColumnPickerFooter {
+    background-color: $COLOR_BACKGROUND_2;
+    border: 0px;
+    border-top: 1px solid $COLOR_BACKGROUND_4;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+QLabel#ColumnPickerFooterCount {
+    color: $COLOR_TEXT_3;
+    font-family: "Cascadia Mono", "Consolas";
+    font-size: 9px;
 }
 QLabel#ConfigSummary {
     color: $COLOR_TEXT_3;
