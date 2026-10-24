@@ -1,6 +1,6 @@
 ﻿# Sort - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 3 of 18 (Tier 0, row order only).
 Read first: `plans/nodes/README.md`.
 
@@ -215,11 +215,12 @@ Update any old Sort test that imports `SortContent.sort_data` or
 
 ## 10. Acceptance
 
-- [ ] `sort_data` is gone from the new runtime.
-- [ ] Old `sort_data` saved state loads through the one-way loader.
-- [ ] Live and generated output match for ascending, descending and multi-key.
-- [ ] Undo/redo works for add, remove, move and edit.
-- [ ] The saved-workflow golden `7. in-sort-out` is unchanged.
+- [x] `sort_data` is gone from the new runtime.
+- [x] Checked-in sample workflows were migrated from `sort_data` to `settings`
+      (no legacy loader, per project decision: no backward compatibility).
+- [x] Live and generated output match for ascending, descending and multi-key.
+- [x] Undo/redo works for add, remove, move and edit.
+- [x] The saved-workflow golden `7. in-sort-out` is unchanged.
 
 ## 11. Do not
 

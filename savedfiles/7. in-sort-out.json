@@ -48,16 +48,18 @@
                 }
             ],
             "content": {
-                "sort_data": [
-                    {
-                        "column": "Keyword",
-                        "order": "Ascending"
-                    },
-                    {
-                        "column": "Autocomplete Position",
-                        "order": "Descending"
-                    }
-                ]
+                "settings": {
+                    "keys": [
+                        {
+                            "column": "Keyword",
+                            "order": "Ascending"
+                        },
+                        {
+                            "column": "Autocomplete Position",
+                            "order": "Descending"
+                        }
+                    ]
+                }
             },
             "op_code": 5,
             "op_type": "PREPARATION"

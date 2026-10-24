@@ -305,12 +305,14 @@
         }
       ],
       "content": {
-        "sort_data": [
-          {
-            "column": "Keyword",
-            "order": "Ascending"
-          }
-        ]
+        "settings": {
+          "keys": [
+            {
+              "column": "Keyword",
+              "order": "Ascending"
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
