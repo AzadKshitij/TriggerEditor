@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QDockWidget,
     QFrame,
     QHBoxLayout,
+    QLabel,
     QLayout,
     QLineEdit,
     QScrollArea,
@@ -40,6 +41,9 @@ class ConfigDock(QDockWidget):
         #: Content whose ``dock_context()`` fills the current context strip.
         #: Used to detach the live-refresh callback when the dock moves on.
         self._context_owner = None
+        #: Optional one-line configuration summary under the label row.
+        self._summary_label: Optional[QLabel] = None
+        self._summary_text = ""
         self.initUI()
 
     def currentNode(self) -> Optional[Any]:
@@ -148,6 +152,7 @@ class ConfigDock(QDockWidget):
                 # Floating-label row above the node's own controls, bound
                 # before the sweep so it is not generically re-bound.
                 self._add_label_section(node, content)
+                self._add_summary_line()
                 # Node actions (add formula, open graph window, transpose
                 # policy) share the label row instead of each owning a 30px
                 # command row of its own.
@@ -367,16 +372,40 @@ class ConfigDock(QDockWidget):
         return " · ".join(parts)
 
     def _set_context_tooltip(self, node: Any, content: Any) -> None:
-        """Put the node's configuration summary on the pane's tooltip."""
+        """Put the node's configuration summary on the pane and its tooltip."""
         name = self._node_name(node)
         summary = self._context_summary(content)
-        self.setToolTip(f"{name} — {summary}" if summary else name)
+        provider = getattr(content, "dock_summary", None)
+        self._summary_text = ""
+        if callable(provider):
+            try:
+                self._summary_text = str(provider() or "")
+            except Exception as e:  # noqa: BLE001 - the tooltip is advisory
+                logger.trace(e)
+        detail = summary or self._summary_text
+        self.setToolTip(f"{name} — {detail}" if detail else name)
+        if self._summary_label is not None:
+            self._summary_label.setText(self._summary_text)
+            self._summary_label.setVisible(bool(self._summary_text))
+
+    def _add_summary_line(self) -> None:
+        """One 10px configuration line under the label row."""
+        if not self._summary_text:
+            return
+        label = QLabel(self._summary_text, self.content_widget)
+        label.setObjectName("ConfigSummary")
+        label.setWordWrap(True)
+        label.setToolTip(self._summary_text)
+        self.dock_layout.insertWidget(1, label)
+        self._summary_label = label
 
     def clear_dock(self) -> None:
         # The label row (and the layout that holds its trailing actions) dies
         # with the rest; drop the stale reference so a rebuild cannot mount a
         # node action on a deleted widget.
         self._label_actions_layout = None
+        self._summary_label = None
+        self._summary_text = ""
         while self.dock_layout.count():
             item = self.dock_layout.takeAt(0)
             if item.widget():

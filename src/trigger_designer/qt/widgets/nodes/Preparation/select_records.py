@@ -8,9 +8,12 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.core.shaping import select_records as core
 from trigger_designer.qt.helpers.shaping_support import (
     Field,
+    FormSection,
     ShapingContent,
     ShapingNode,
 )
+
+_RANKED = ("largest_n", "smallest_n")
 
 
 class SelectRecordsContent(ShapingContent):
@@ -18,21 +21,27 @@ class SelectRecordsContent(ShapingContent):
     MODULE = "trigger_designer.core.shaping.select_records"
     OUTPUT_KINDS = ("records_sel", "records_rest")
     HISTORY = "Select Records"
+    SUMMARY = "S selected \u00b7 R remaining"
     FORM = (
-        (
-            "",
+        FormSection(
+            "Mode",
             (
                 Field(
                     "mode",
                     "Mode",
-                    "combo",
+                    "segment",
                     options=(
-                        ("first_n", "First N rows"),
-                        ("last_n", "Last N rows"),
-                        ("row_range", "Row range"),
-                        ("largest_n", "Largest N by column"),
-                        ("smallest_n", "Smallest N by column"),
+                        ("first_n", "First"),
+                        ("last_n", "Last"),
+                        ("row_range", "Range"),
+                        ("largest_n", "Large"),
+                        ("smallest_n", "Small"),
                     ),
+                ),
+                Field(
+                    "_mode_hint",
+                    "Only the fields used by the chosen mode appear below.",
+                    "note",
                 ),
                 Field(
                     "n",
@@ -43,20 +52,26 @@ class SelectRecordsContent(ShapingContent):
                     show_if=lambda s: s["mode"] != "row_range",
                 ),
                 Field(
-                    "range_start",
-                    "From row",
-                    "int",
-                    minimum=1,
-                    maximum=100_000_000,
+                    "range",
+                    "",
+                    "pair",
                     show_if=lambda s: s["mode"] == "row_range",
-                ),
-                Field(
-                    "range_end",
-                    "To row",
-                    "int",
-                    minimum=1,
-                    maximum=100_000_000,
-                    show_if=lambda s: s["mode"] == "row_range",
+                    items=(
+                        Field(
+                            "range_start",
+                            "From row",
+                            "int",
+                            minimum=1,
+                            maximum=100_000_000,
+                        ),
+                        Field(
+                            "range_end",
+                            "To row",
+                            "int",
+                            minimum=1,
+                            maximum=100_000_000,
+                        ),
+                    ),
                 ),
                 Field(
                     "by",
@@ -64,23 +79,29 @@ class SelectRecordsContent(ShapingContent):
                     "column",
                     filter="numeric",
                     blank=True,
-                    show_if=lambda s: s["mode"] in ("largest_n", "smallest_n"),
+                    show_if=lambda s: s["mode"] in _RANKED,
                 ),
                 Field(
                     "ties",
                     "Ties",
-                    "combo",
+                    "segment",
                     options=(
-                        ("exact", "Exactly N rows"),
+                        ("exact", "Exact N"),
                         ("include_ties", "Include ties"),
                     ),
-                    show_if=lambda s: s["mode"] in ("largest_n", "smallest_n"),
+                    show_if=lambda s: s["mode"] in _RANKED,
                 ),
                 Field(
                     "group_by",
                     "Per group",
-                    "columns",
+                    "picker",
                     show_if=lambda s: s["mode"] != "row_range",
+                ),
+                Field(
+                    "_range_hint",
+                    "Row range is global and 1-based. Per-group selection does not apply.",
+                    "note",
+                    show_if=lambda s: s["mode"] == "row_range",
                 ),
             ),
         ),

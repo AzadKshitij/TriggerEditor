@@ -10,7 +10,7 @@ from collections.abc import Callable, Iterable
 from typing import Optional
 
 from qtpy.QtCore import QEvent, QSize, Qt, Signal
-from qtpy.QtGui import QIcon, QPixmap
+from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLayout,
+    QLineEdit,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -495,6 +496,9 @@ class SegmentedControl(QWidget):
         options: Iterable[str],
         current: Optional[str] = None,
         parent: Optional[QWidget] = None,
+        *,
+        expanded: bool = False,
+        compact: bool = False,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("Segmented")
@@ -516,10 +520,18 @@ class SegmentedControl(QWidget):
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             button.setChecked(option == self._value)
             button.toggled.connect(self._on_toggled)
+            if expanded:
+                button.setMinimumWidth(0)
+                button.setSizePolicy(
+                    QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+                )
+            if compact:
+                button.setProperty("compact", True)
             self._group.addButton(button)
             self._buttons[option] = button
-            layout.addWidget(button)
-        layout.addStretch(1)
+            layout.addWidget(button, 1 if expanded else 0)
+        if not expanded:
+            layout.addStretch(1)
 
     def value(self) -> str:
         return self._value
@@ -794,20 +806,260 @@ class ColumnChecklist(QWidget):
             self.changed.emit(self.checked())
 
 
+class ColumnPicker(QPushButton):
+    """A 30px field that summarizes selected columns and opens a checklist.
+
+    The popup keeps the full :class:`ColumnChecklist` contract (search, All /
+    None, one change signal). The picker itself owns the selection signal, so
+    the dock registers one composite rather than every checkbox.
+    """
+
+    _undo_composite = True
+
+    changed = Signal(list)
+
+    def __init__(
+        self,
+        columns: Iterable[str] = (),
+        checked: Iterable[str] = (),
+        placeholder: str = "Choose columns...",
+        parent: Optional[QWidget] = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("ColumnPicker")
+        self.setMinimumHeight(CONTROL_H)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(placeholder)
+        self.setAccessibleName(placeholder)
+        self._columns = list(columns)
+        self._checked = [name for name in self._columns if name in set(checked)]
+        self._placeholder = placeholder
+        self._popup: Optional[QFrame] = None
+        self._search: Optional[QLineEdit] = None
+        self._checklist: Optional[ColumnChecklist] = None
+        self._layout = QHBoxLayout(self)
+        self._layout.setContentsMargins(6, 0, 6, 0)
+        self._layout.setSpacing(3)
+        self.clicked.connect(self._show_popup)
+        self._render()
+
+    def setColumns(self, columns: Iterable[str], checked: Iterable[str] = ()) -> None:
+        self._columns = list(columns)
+        allowed = set(self._columns)
+        self._checked = [name for name in checked if name in allowed]
+        if self._checklist is not None:
+            self._checklist.setColumns(self._columns, self._checked)
+        self._render()
+
+    def setChecked(self, checked: Iterable[str]) -> None:
+        allowed = set(self._columns)
+        self._checked = [name for name in checked if name in allowed]
+        if self._checklist is not None:
+            self._checklist.setChecked(self._checked)
+        self._render()
+
+    def checked(self) -> list[str]:
+        return list(self._checked)
+
+    def _render(self) -> None:
+        while self._layout.count():
+            item = self._layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                widget.deleteLater()
+        if not self._checked:
+            label = QLabel(self._placeholder, self)
+            label.setObjectName("ColumnPickerPlaceholder")
+            label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+            self._layout.addWidget(label, 1)
+        else:
+            visible = self._checked[:2]
+            for name in visible:
+                token = QLabel(name, self)
+                token.setObjectName("ColumnToken")
+                token.setToolTip(name)
+                token.setMinimumWidth(0)
+                token.setMaximumWidth(78)
+                token.setSizePolicy(
+                    QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred
+                )
+                token.setAttribute(
+                    Qt.WidgetAttribute.WA_TransparentForMouseEvents, True
+                )
+                self._layout.addWidget(token)
+            extra = len(self._checked) - len(visible)
+            if extra:
+                more = QLabel(f"+{extra}", self)
+                more.setObjectName("ColumnPickerMore")
+                more.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+                self._layout.addWidget(more)
+            self._layout.addStretch(1)
+        chevron = QLabel("\u25be", self)
+        chevron.setObjectName("ColumnPickerChevron")
+        chevron.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._layout.addWidget(chevron)
+        self.setToolTip(", ".join(self._checked) or self._placeholder)
+
+    def _ensure_popup(self) -> None:
+        if self._popup is not None:
+            return
+        popup = QFrame(
+            self,
+            Qt.WindowType.Popup | Qt.WindowType.FramelessWindowHint,
+        )
+        popup.setObjectName("ColumnPickerPopup")
+        popup.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False)
+        layout = QVBoxLayout(popup)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(4)
+
+        toolbar = QHBoxLayout()
+        toolbar.setContentsMargins(0, 0, 0, 0)
+        toolbar.setSpacing(3)
+        search = QLineEdit(popup)
+        search.setObjectName("ColumnPickerSearch")
+        search.setPlaceholderText("Search columns...")
+        search.setClearButtonEnabled(True)
+        search.setMinimumHeight(CONTROL_H)
+        search.textChanged.connect(self._filter)
+        toolbar.addWidget(search, 1)
+        all_button = TextButton("All", "Select every column", popup)
+        none_button = TextButton("None", "Deselect every column", popup)
+        for button in (all_button, none_button):
+            button.setFixedWidth(34)
+        all_button.clicked.connect(lambda: self._set_all(True))
+        none_button.clicked.connect(lambda: self._set_all(False))
+        toolbar.addWidget(all_button)
+        toolbar.addWidget(none_button)
+        layout.addLayout(toolbar)
+
+        checklist = ColumnChecklist(self._columns, self._checked, max_height=220)
+        checklist.changed.connect(self._selection_changed)
+        layout.addWidget(checklist)
+
+        def close_on_escape(event) -> None:
+            if event.key() == Qt.Key.Key_Escape:
+                popup.hide()
+                event.accept()
+                return
+            event.ignore()
+
+        popup.keyPressEvent = close_on_escape  # type: ignore[method-assign]
+        self._popup = popup
+        self._search = search
+        self._checklist = checklist
+
+    def _filter(self, text: str) -> None:
+        if self._checklist is None:
+            return
+        query = text.strip().casefold()
+        for column, checkbox in self._checklist.checkboxes.items():
+            checkbox.setVisible(not query or query in column.casefold())
+
+    def _set_all(self, checked: bool) -> None:
+        if self._checklist is not None:
+            self._checklist.set_all_checked(checked)
+
+    def _selection_changed(self, checked: list) -> None:
+        self._checked = list(checked)
+        self._render()
+        self.changed.emit(list(self._checked))
+
+    def _show_popup(self) -> None:
+        self._ensure_popup()
+        if self._popup is None:
+            return
+        if self._popup.isVisible():
+            self._popup.hide()
+            return
+        width = max(self.width(), 280)
+        self._popup.setFixedWidth(width)
+        self._popup.adjustSize()
+        pos = self.mapToGlobal(self.rect().bottomLeft())
+        x, y = pos.x(), pos.y() + 2
+        try:
+            screen = self.screen().availableGeometry()
+            x = min(max(x, screen.left()), screen.right() - width)
+            y = min(y, screen.bottom() - self._popup.height())
+        except Exception:  # noqa: BLE001, S110 - positioning is best effort
+            pass
+        self._popup.move(x, y)
+        self._popup.show()
+        if self._search is not None:
+            self._search.setFocus()
+
+
+class ElidedLabel(QLabel):
+    """A one-line label that elides instead of widening its parent."""
+
+    def __init__(self, text: str = "", parent: Optional[QWidget] = None) -> None:
+        super().__init__(parent)
+        self._full_text = str(text)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(0)
+        self.setToolTip(self._full_text)
+        super().setText(self._full_text)
+
+    def set_full_text(self, text: str) -> None:
+        self._full_text = str(text)
+        self.setToolTip(self._full_text)
+        super().setText(self._full_text)
+        self.update()
+
+    def full_text(self) -> str:
+        return self._full_text
+
+    def sizeHint(self) -> QSize:
+        hint = super().sizeHint()
+        return QSize(0, hint.height())
+
+    def minimumSizeHint(self) -> QSize:
+        hint = super().minimumSizeHint()
+        return QSize(0, hint.height())
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setPen(self.palette().color(self.foregroundRole()))
+        painter.setFont(self.font())
+        text = self.fontMetrics().elidedText(
+            self._full_text,
+            Qt.TextElideMode.ElideRight,
+            max(self.width(), 0),
+        )
+        painter.drawText(
+            self.rect(),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            text,
+        )
+        painter.end()
+
+
 class RuleStack(QWidget):
-    """Ordered cards with move/remove actions and one add button.
+    """Ordered cards with summary-first headers and one add button.
 
     The owner keeps the list; this widget only draws it and emits intents.
+    A card can collapse to a one-line summary, which is the default for long
+    rule lists. The summary is supplied by the owner and can be refreshed
+    without rebuilding the card.
     """
 
     add_requested = Signal()
     remove_requested = Signal(int)
     move_requested = Signal(int, int)
+    duplicate_requested = Signal(int)
 
     def __init__(self, add_tooltip: str, rsm=None, parent=None) -> None:
         super().__init__(parent)
         self.setObjectName("RuleStack")
         self._rsm = rsm
+        self._cards: list[QFrame] = []
+        self._headers: list[QFrame] = []
+        self._bodies: list[QWidget] = []
+        self._summaries: list[QLabel] = []
+        self._chevrons: list[QLabel] = []
+        self._callbacks: list = []
+        self._collapsed: list[bool] = []
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SECTION_GAP)
@@ -838,6 +1090,9 @@ class RuleStack(QWidget):
             return None
 
     def clear(self) -> None:
+        self._cards, self._headers, self._bodies = [], [], []
+        self._summaries, self._chevrons, self._callbacks = [], [], []
+        self._collapsed = []
         while self._cards_layout.count():
             item = self._cards_layout.takeAt(0)
             widget = item.widget()
@@ -845,7 +1100,17 @@ class RuleStack(QWidget):
                 widget.setParent(None)
                 widget.deleteLater()
 
-    def add_card(self, index: int, count: int, body: QWidget) -> None:
+    def add_card(
+        self,
+        index: int,
+        count: int,
+        body: QWidget,
+        *,
+        summary: str = "",
+        collapsible: bool = False,
+        collapsed: bool = False,
+        on_toggle=None,
+    ) -> QFrame:
         card = QFrame(self)
         card.setObjectName("RuleCard")
         card_layout = QVBoxLayout(card)
@@ -858,9 +1123,25 @@ class RuleStack(QWidget):
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(2, 0, 2, 0)
         header_layout.setSpacing(2)
+
+        chevron = QLabel("", header)
+        chevron.setObjectName("RuleChevron")
+        chevron.setFixedWidth(10)
+        chevron.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if collapsible:
+            header_layout.addWidget(chevron)
+        else:
+            chevron.hide()
+
         title = QLabel(str(index + 1), header)
-        title.setObjectName("FieldLabel")
-        header_layout.addWidget(title, 1)
+        title.setObjectName("RuleNumber")
+        title.setFixedWidth(20)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(title)
+
+        summary_label = ElidedLabel(summary or f"Rule {index + 1}", header)
+        summary_label.setObjectName("RuleSummary")
+        header_layout.addWidget(summary_label, 1)
 
         up = IconButton.themed(
             "Move up",
@@ -874,6 +1155,12 @@ class RuleStack(QWidget):
             qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
             parent=header,
         )
+        duplicate = IconButton.themed(
+            "Duplicate",
+            rsm_icon=self._icon("icon_copy"),
+            qss_fallback=":/qss_icons/dark/rc/window_new.png",
+            parent=header,
+        )
         remove = IconButton.themed(
             "Remove",
             rsm_icon=self._icon("icon_remove"),
@@ -884,15 +1171,80 @@ class RuleStack(QWidget):
         down.setEnabled(index < count - 1)
         up.clicked.connect(lambda: self.move_requested.emit(index, -1))
         down.clicked.connect(lambda: self.move_requested.emit(index, 1))
+        duplicate.clicked.connect(lambda: self.duplicate_requested.emit(index))
         remove.clicked.connect(lambda: self.remove_requested.emit(index))
         header_layout.addWidget(up)
         header_layout.addWidget(down)
+        header_layout.addWidget(duplicate)
         header_layout.addWidget(remove)
-        card_layout.addWidget(header)
 
         body.setObjectName("RuleCardBody")
+        card_layout.addWidget(header)
         card_layout.addWidget(body)
         self._cards_layout.addWidget(card)
+
+        self._cards.append(card)
+        self._headers.append(header)
+        self._bodies.append(body)
+        self._summaries.append(summary_label)
+        self._chevrons.append(chevron)
+        self._callbacks.append(on_toggle)
+        self._collapsed.append(False)
+
+        if collapsible:
+            header.setCursor(Qt.CursorShape.PointingHandCursor)
+            header.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            header.setToolTip("Expand or collapse this card")
+            header.mousePressEvent = (  # type: ignore[method-assign]
+                lambda event, i=index: self._toggle(i)
+            )
+            header.keyPressEvent = (  # type: ignore[method-assign]
+                lambda event, i=index: self._toggle_key(event, i)
+            )
+
+        self._apply_collapsed(index, collapsed and collapsible)
+        return card
+
+    def set_card_summary(self, index: int, text: str) -> None:
+        if 0 <= index < len(self._summaries):
+            label = self._summaries[index]
+            if isinstance(label, ElidedLabel):
+                label.set_full_text(text or f"Rule {index + 1}")
+            else:
+                label.setText(text or f"Rule {index + 1}")
+            label.setToolTip(text)
+
+    def is_collapsed(self, index: int) -> bool:
+        return 0 <= index < len(self._collapsed) and self._collapsed[index]
+
+    def _apply_collapsed(self, index: int, collapsed: bool) -> None:
+        if not (0 <= index < len(self._bodies)):
+            return
+        self._collapsed[index] = bool(collapsed)
+        self._bodies[index].setVisible(not collapsed)
+        self._chevrons[index].setText("\u25b8" if collapsed else "\u25be")
+        self._headers[index].setProperty("collapsed", collapsed)
+        self._headers[index].style().unpolish(self._headers[index])
+        self._headers[index].style().polish(self._headers[index])
+
+    def _toggle(self, index: int) -> None:
+        if not (0 <= index < len(self._bodies)):
+            return
+        collapsed = not self._collapsed[index]
+        self._apply_collapsed(index, collapsed)
+        callback = self._callbacks[index]
+        if callable(callback):
+            callback(not collapsed)
+
+    def _toggle_key(self, event, index: int) -> None:
+        if event.key() in (
+            Qt.Key.Key_Space,
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
+            self._toggle(index)
+            return
+        event.ignore()
 
 
 class EmptyStateLabel(QLabel):

@@ -2423,6 +2423,123 @@ QFrame#RuleCardBody {
     background-color: transparent;
     border: 0px;
 }
+QFrame#RuleCardHeader[collapsed="true"] {
+    border-bottom: 0px;
+}
+QLabel#RuleNumber {
+    min-width: 18px;
+    max-width: 18px;
+    min-height: 18px;
+    max-height: 18px;
+    border: 1px solid $COLOR_BACKGROUND_4;
+    border-radius: 9px;
+    background-color: $COLOR_BACKGROUND_1;
+    color: $COLOR_TEXT_3;
+    font-size: 10px;
+}
+QLabel#RuleSummary {
+    color: $COLOR_TEXT_2;
+    font-size: 11px;
+}
+QLabel#RuleChevron {
+    color: $COLOR_TEXT_3;
+    font-size: 10px;
+}
+
+/* Compact multi-column field: selected tokens, then a popover checklist. */
+QPushButton#ColumnPicker {
+    background-color: $COLOR_BACKGROUND_1;
+    border: 1px solid $COLOR_BACKGROUND_4;
+    border-radius: 4px;
+    padding: 0px 6px;
+    text-align: left;
+    min-height: 30px;
+}
+QPushButton#ColumnPicker:hover {
+    background-color: $COLOR_BACKGROUND_4;
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QPushButton#ColumnPicker:pressed {
+    background-color: $COLOR_BACKGROUND_5;
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QPushButton#ColumnPicker:focus {
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QPushButton#ColumnPicker:disabled {
+    background-color: $COLOR_BACKGROUND_1;
+    border: 1px solid $COLOR_BACKGROUND_4;
+}
+QLabel#ColumnToken {
+    background-color: $COLOR_BACKGROUND_3;
+    border: 1px solid $COLOR_BACKGROUND_4;
+    border-radius: 3px;
+    color: $COLOR_TEXT_2;
+    font-size: 10px;
+    padding: 1px 4px;
+}
+QLabel#ColumnPickerMore {
+    color: $COLOR_TEXT_3;
+    font-family: "Cascadia Mono", "Consolas";
+    font-size: 10px;
+}
+QLabel#ColumnPickerChevron {
+    color: $COLOR_TEXT_3;
+    font-size: 10px;
+}
+QLabel#ColumnPickerPlaceholder {
+    color: $COLOR_TEXT_3;
+    font-size: 11px;
+}
+QFrame#ColumnPickerPopup {
+    background-color: $COLOR_BACKGROUND_2;
+    border: 1px solid $COLOR_BACKGROUND_6;
+    border-radius: 6px;
+}
+QLineEdit#ColumnPickerSearch {
+    background-color: $COLOR_BACKGROUND_1;
+    border: 1px solid $COLOR_BACKGROUND_4;
+    border-radius: 4px;
+    padding: 0px 6px;
+    min-height: 30px;
+}
+QLineEdit#ColumnPickerSearch:hover {
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QLineEdit#ColumnPickerSearch:focus {
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QLabel#ConfigSummary {
+    color: $COLOR_TEXT_3;
+    font-size: 10px;
+    padding: 0px 2px 2px 46px;
+}
+QPushButton#DayToggle {
+    background-color: $COLOR_BACKGROUND_3;
+    border: 1px solid $COLOR_BACKGROUND_3;
+    border-radius: 4px;
+    color: $COLOR_TEXT_2;
+    font-size: 10px;
+    padding: 0px;
+}
+QPushButton#DayToggle:hover {
+    background-color: $COLOR_BACKGROUND_4;
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QPushButton#DayToggle:pressed {
+    background-color: $COLOR_BACKGROUND_5;
+    border: 1px solid $COLOR_ACCENT_2;
+}
+QPushButton#DayToggle:checked {
+    background-color: $COLOR_ACCENT_2;
+    border: 1px solid $COLOR_ACCENT_2;
+    color: #ffffff;
+}
+QPushButton#DayToggle:disabled {
+    background-color: $COLOR_BACKGROUND_3;
+    border: 1px solid $COLOR_BACKGROUND_3;
+    color: $COLOR_TEXT_4;
+}
 
 /* Icon / text buttons in the Config Dock.
    An objectName selector outranks QPushButton:hover, so hover and pressed

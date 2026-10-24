@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 from nodeeditor.node_edge import Edge
-from qtpy.QtWidgets import QLineEdit
+from qtpy.QtWidgets import QLabel, QLineEdit
 
 from trigger_designer.core.node_configuration import (
     JoinNodes,
@@ -87,14 +87,35 @@ def test_record_id_dock_edit_and_undo(qtbot) -> None:
     assert node.content.settings["name"] == "Item"
 
 
-def test_select_records_combo_is_one_step(qtbot) -> None:
+def test_select_records_visibility_follows_mode(qtbot) -> None:
+    _window, node, dock = _node(
+        qtbot, PreparationNodes.SELECT_RECORDS, NodeTypes.PREPARATION
+    )
+    content = node.content
+    assert content._rows["range"].isHidden() is True
+    segment = content._widgets["mode"]
+    segment._buttons["Range"].click()
+    assert content._rows["range"].isHidden() is False
+    assert content._rows["n"].isHidden() is True
+
+    summary = [
+        label
+        for label in dock.findChildren(QLabel)
+        if label.objectName() == "ConfigSummary"
+    ]
+    assert summary
+    assert "2 outputs" in summary[0].text()
+    assert "S selected" in summary[0].text()
+
+
+def test_select_records_mode_is_one_step(qtbot) -> None:
     window, node, _dock = _node(
         qtbot, PreparationNodes.SELECT_RECORDS, NodeTypes.PREPARATION
     )
     history = window.scene.history
     history.storeHistory("Baseline")
-    combo = node.content._widgets["mode"]
-    combo.setCurrentIndex(combo.findData("last_n"))
+    segment = node.content._widgets["mode"]
+    segment._buttons["Last"].click()
     assert node.content.settings["mode"] == "last_n"
     assert history.canUndo()
     history.undo()

@@ -8,9 +8,19 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.core.shaping import find_replace as core
 from trigger_designer.qt.helpers.shaping_support import (
     Field,
+    FormSection,
     ShapingContent,
     ShapingNode,
 )
+
+
+def _find_summary(item: dict) -> str:
+    find = str(item.get("find") or "").strip()
+    replace = str(item.get("replace") or "").strip()
+    mode = "regex" if item.get("mode") == "regex" else "literal"
+    left = find or "Find..."
+    right = replace or "blank"
+    return f"{left} \u2192 {right} \u00b7 {mode}"
 
 
 class FindReplaceContent(ShapingContent):
@@ -18,9 +28,21 @@ class FindReplaceContent(ShapingContent):
     MODULE = "trigger_designer.core.shaping.find_replace"
     OUTPUT_KINDS = ("find_replace",)
     HISTORY = "Find and Replace"
+    SUMMARY = "rows in \u00b7 edited rows out"
     FORM = (
-        ("Columns", (Field("columns", "Columns", "columns", filter="text"),)),
-        (
+        FormSection(
+            "Columns",
+            (
+                Field(
+                    "columns",
+                    "Columns",
+                    "picker",
+                    filter="text",
+                    hint="Text columns only. A numeric column is rejected.",
+                ),
+            ),
+        ),
+        FormSection(
             "Rules",
             (
                 Field(
@@ -28,6 +50,8 @@ class FindReplaceContent(ShapingContent):
                     "Rule",
                     "list",
                     max_items=50,
+                    collapsible=True,
+                    summary=_find_summary,
                     item_default={
                         "find": "",
                         "replace": "",
@@ -37,24 +61,58 @@ class FindReplaceContent(ShapingContent):
                         "enabled": True,
                     },
                     items=(
-                        Field("find", "Find", "text"),
-                        Field("replace", "Replace", "text"),
                         Field(
-                            "mode",
-                            "Mode",
-                            "combo",
-                            options=(("literal", "Literal"), ("regex", "Regex")),
+                            "find_replace",
+                            "",
+                            "pair",
+                            items=(
+                                Field("find", "Find", "text"),
+                                Field("replace", "Replace", "text"),
+                            ),
                         ),
-                        Field("case_sensitive", "Match case", "check"),
-                        Field("whole_cell", "Whole cell", "check"),
-                        Field("enabled", "On", "check"),
+                        Field(
+                            "mode_enabled",
+                            "",
+                            "pair",
+                            items=(
+                                Field(
+                                    "mode",
+                                    "Mode",
+                                    "segment",
+                                    options=(
+                                        ("literal", "Literal"),
+                                        ("regex", "Regex"),
+                                    ),
+                                ),
+                                Field("enabled", "On", "check"),
+                            ),
+                        ),
+                        Field(
+                            "options",
+                            "",
+                            "pair",
+                            items=(
+                                Field("case_sensitive", "Match case", "check"),
+                                Field("whole_cell", "Whole cell", "check"),
+                            ),
+                        ),
                     ),
                 ),
                 Field(
+                    "_rule_order",
+                    "Rules run top to bottom. Each rule sees the previous result.",
+                    "note",
+                ),
+            ),
+        ),
+        FormSection(
+            "Output",
+            (
+                Field(
                     "suffix",
-                    "New column suffix",
-                    "text",
-                    placeholder="blank = replace in place",
+                    "Output",
+                    "suffix",
+                    hint="Keep original writes to a new suffixed column.",
                 ),
             ),
         ),

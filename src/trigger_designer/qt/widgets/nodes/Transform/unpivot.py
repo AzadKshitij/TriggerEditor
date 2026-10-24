@@ -8,6 +8,7 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.core.shaping import reshape as core
 from trigger_designer.qt.helpers.shaping_support import (
     Field,
+    FormSection,
     ShapingContent,
     ShapingNode,
 )
@@ -19,15 +20,38 @@ class UnpivotContent(ShapingContent):
     RUNNER = "run_unpivot"
     OUTPUT_KINDS = ("unpivot",)
     HISTORY = "Unpivot"
+    SUMMARY = "wide to long"
     FORM = (
-        (
-            "",
+        FormSection(
+            "Shape",
             (
-                Field("id_columns", "Keep columns", "columns"),
-                Field("value_columns", "Unpivot columns", "columns"),
-                Field("variable_name", "Name column", "text"),
-                Field("value_name", "Value column", "text"),
-                Field("drop_nulls", "Drop empty values", "check"),
+                Field("id_columns", "Keep", "picker"),
+                Field("value_columns", "Unpivot", "picker"),
+                Field(
+                    "_unpivot_hint",
+                    "Every input row becomes one row per unpivoted column. Keep the identifiers, stack the measures.",
+                    "note",
+                ),
+            ),
+        ),
+        FormSection(
+            "Output columns",
+            (
+                Field(
+                    "output_names",
+                    "",
+                    "pair",
+                    items=(
+                        Field("variable_name", "Name column", "text"),
+                        Field("value_name", "Value column", "text"),
+                    ),
+                ),
+                Field(
+                    "drop_nulls",
+                    "Drop empty values",
+                    "check",
+                    hint="Off keeps null measurements. Mixed types are cast to text.",
+                ),
             ),
         ),
     )

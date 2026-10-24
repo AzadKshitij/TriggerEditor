@@ -17,8 +17,11 @@ from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
+    QHBoxLayout,
+    QLabel,
     QLineEdit,
     QPlainTextEdit,
+    QPushButton,
     QSpinBox,
     QVBoxLayout,
     QWidget,
@@ -35,12 +38,16 @@ from trigger_designer.qt.node_base import (
 )
 from trigger_designer.qt.undo.protocol import is_syncing
 from trigger_designer.qt.widgets.common import (
+    CONTROL_H,
     ColumnChecklist,
+    ColumnPicker,
     ConfigSection,
     EmptyStateLabel,
+    FormGrid,
     FormRow,
     NoWheelComboBox,
     RuleStack,
+    SegmentedControl,
 )
 
 
@@ -63,6 +70,22 @@ class Field:
     items: tuple = ()
     item_default: dict = field(default_factory=dict)
     max_items: int = 50
+    hint: str = ""
+    summary: Callable[[dict], str] | None = None
+    collapsible: bool = False
+    rebuild_on_change: bool = False
+    label_above: bool = False
+
+
+@dataclass(frozen=True)
+class FormSection:
+    """A form section; ``collapsible`` hides genuinely optional controls."""
+
+    title: str = ""
+    fields: tuple = ()
+    info: str = ""
+    collapsible: bool = False
+    collapsed: bool = False
 
 
 def _passes(dtype: pl.DataType, kind: str) -> bool:
@@ -73,6 +96,131 @@ def _passes(dtype: pl.DataType, kind: str) -> bool:
     if kind == "date":
         return dtype == pl.String or dtype == pl.Date or isinstance(dtype, pl.Datetime)
     return True
+
+
+class WeekdayPicker(QWidget):
+    """Seven 30px working-day toggles, in one compact row."""
+
+    _undo_composite = True
+
+    changed = Signal(list)
+
+    def __init__(
+        self,
+        options: tuple,
+        checked=(),
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("WeekdayPicker")
+        self._buttons: list[QPushButton] = []
+        self._values: list[str] = []
+        self._suspend = False
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        selected = set(checked)
+        for value, label in options:
+            button = QPushButton(label, self)
+            button.setObjectName("DayToggle")
+            button.setCheckable(True)
+            button.setFixedSize(30, CONTROL_H)
+            button.setChecked(value in selected)
+            button.setToolTip(value)
+            button.setAccessibleName(value)
+            button.toggled.connect(self._emit)
+            layout.addWidget(button)
+            self._buttons.append(button)
+            self._values.append(value)
+        layout.addStretch(1)
+
+    def value(self) -> list[str]:
+        return [
+            value
+            for value, button in zip(self._values, self._buttons)
+            if button.isChecked()
+        ]
+
+    def set_value(self, checked) -> None:
+        self._suspend = True
+        try:
+            selected = set(checked or ())
+            for value, button in zip(self._values, self._buttons):
+                button.blockSignals(True)
+                button.setChecked(value in selected)
+                button.blockSignals(False)
+        finally:
+            self._suspend = False
+
+    def _emit(self, _checked: bool) -> None:
+        if not self._suspend:
+            self.changed.emit(self.value())
+
+
+class SuffixEditor(QWidget):
+    """Replace-in-place or keep the source and write a suffixed column."""
+
+    _undo_composite = True
+
+    changed = Signal(str)
+
+    def __init__(self, value: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("SuffixEditor")
+        self._suspend = False
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        self._keep = QCheckBox("Keep original", self)
+        self._keep.toggled.connect(self._toggled)
+        layout.addWidget(self._keep)
+
+        self._suffix = QLineEdit(self)
+        self._suffix.setObjectName("SuffixEdit")
+        self._suffix.setMinimumHeight(CONTROL_H)
+        self._suffix.setPlaceholderText("_clean")
+        self._suffix.setClearButtonEnabled(True)
+        self._suffix.textChanged.connect(self._text_changed)
+        self._suffix.editingFinished.connect(self._finished)
+        layout.addWidget(self._suffix, 1)
+        self.set_value(value)
+
+    def value(self) -> str:
+        if not self._keep.isChecked():
+            return ""
+        return self._suffix.text().strip() or "_clean"
+
+    def set_value(self, value: str) -> None:
+        self._suspend = True
+        try:
+            self._keep.blockSignals(True)
+            self._keep.setChecked(bool(value))
+            self._keep.blockSignals(False)
+            self._suffix.blockSignals(True)
+            self._suffix.setText(value or "_clean")
+            self._suffix.blockSignals(False)
+            self._suffix.setVisible(bool(value))
+        finally:
+            self._suspend = False
+
+    def _toggled(self, checked: bool) -> None:
+        if self._suspend:
+            return
+        self._suffix.setVisible(checked)
+        if checked and not self._suffix.text().strip():
+            self._suffix.setText("_clean")
+        self.changed.emit(self.value())
+
+    def _text_changed(self, text: str) -> None:
+        if not self._suspend and self._keep.isChecked() and text.strip():
+            self.changed.emit(self.value())
+
+    def _finished(self) -> None:
+        if not self._suspend and self._keep.isChecked():
+            if not self._suffix.text().strip():
+                self._suffix.setText("_clean")
+            self.changed.emit(self.value())
 
 
 class ShapingContent(
@@ -88,6 +236,7 @@ class ShapingContent(
     LIVE_CAP_ROWS = 0
     FORM: tuple = ()
     HISTORY = "Node"
+    SUMMARY = ""
 
     def get_serialized_state_schema(self) -> dict:
         return {"settings": {"default": copy.deepcopy(self.SETTINGS)}}
@@ -108,6 +257,7 @@ class ShapingContent(
         self._rows: dict = {}
         self._stacks: dict = {}
         self._timers: list[QTimer] = []
+        self._expanded_cards: dict[str, set[int]] = {}
 
     @property
     def node(self) -> TriggerNode:
@@ -232,20 +382,36 @@ class ShapingContent(
             if i not in self.OPTIONAL_INPUTS
         )
 
+    def _sections(self):
+        for entry in self.FORM:
+            if isinstance(entry, FormSection):
+                yield entry
+            else:
+                title, fields = entry
+                yield FormSection(title, tuple(fields))
+
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if not self.ready():
             dock_layout.addWidget(EmptyStateLabel())
             return
         self._widgets, self._rows, self._stacks = {}, {}, {}
-        for title, fields in self.FORM:
-            section = ConfigSection(title)
+        for section_spec in self._sections():
+            section = ConfigSection(
+                section_spec.title,
+                info=section_spec.info or None,
+                collapsible=section_spec.collapsible,
+                collapsed=section_spec.collapsed,
+            )
             section._undo_composite = True
-            for spec in fields:
-                row = (
-                    self._build_list(spec)
-                    if spec.kind == "list"
-                    else self._build_row(spec)
-                )
+            for spec in section_spec.fields:
+                if spec.kind == "list":
+                    row = self._build_list(spec)
+                elif spec.kind == "pair":
+                    row = self._build_pair(spec)
+                elif spec.kind == "note":
+                    row = self._build_note(spec)
+                else:
+                    row = self._build_row(spec)
                 self._rows[spec.key] = row
                 section.addWidget(row)
             dock_layout.addWidget(section)
@@ -268,9 +434,70 @@ class ShapingContent(
 
         widget = self._make_widget(spec, self.settings.get(spec.key), commit)
         self._widgets[spec.key] = widget
-        return FormRow(spec.label, widget, label_width=96)
+        if spec.label_above:
+            grid = FormGrid()
+            grid.add(spec.label, widget)
+            return grid
+        return FormRow(spec.label, widget, hint=spec.hint or None, label_width=96)
+
+    def _build_pair(self, spec: Field) -> QWidget:
+        grid = FormGrid()
+        for column, sub in enumerate(spec.items):
+
+            def commit(value, s=sub) -> None:
+                self.set_setting(
+                    s.key,
+                    value,
+                    f"{self.HISTORY} {s.label} Changed",
+                    self._burst_key(s),
+                )
+
+            widget = self._make_widget(sub, self.settings.get(sub.key), commit)
+            self._widgets[sub.key] = widget
+            grid.add(sub.label, widget, 0, column)
+        return grid
+
+    def _build_note(self, spec: Field) -> QWidget:
+        label = QLabel(spec.label)
+        label.setObjectName("FieldHint")
+        label.setWordWrap(True)
+        self._widgets.pop(spec.key, None)
+        return label
 
     def _make_widget(self, spec: Field, value: Any, commit: Callable) -> QWidget:
+        if spec.kind == "picker":
+            widget = ColumnPicker(self.names(spec), value or ())
+            widget.changed.connect(commit)
+            return widget
+        if spec.kind == "segment":
+            labels = [label for _value, label in spec.options]
+            current = next(
+                (label for option, label in spec.options if option == value),
+                labels[0] if labels else "",
+            )
+            widget = SegmentedControl(
+                labels,
+                current,
+                expanded=True,
+                compact=len(labels) >= 5,
+            )
+            widget.changed.connect(
+                lambda label, options=spec.options: commit(
+                    next(
+                        (option for option, text in options if text == label),
+                        label,
+                    )
+                )
+            )
+            return widget
+        if spec.kind == "weekdays":
+            widget = WeekdayPicker(spec.options, value or ())
+            widget.changed.connect(commit)
+            return widget
+        if spec.kind == "suffix":
+            widget = SuffixEditor("" if value is None else str(value))
+            widget.changed.connect(commit)
+            return widget
         if spec.kind in ("combo", "column"):
             widget = NoWheelComboBox()
             widget.setMinimumHeight(30)
@@ -368,9 +595,32 @@ class ShapingContent(
         stack.move_requested.connect(
             lambda index, delta, f=spec: self._list_change(f, "move", index, delta)
         )
+        stack.duplicate_requested.connect(
+            lambda index, f=spec: self._list_change(f, "duplicate", index)
+        )
         self._stacks[spec.key] = stack
         self._fill_stack(spec, stack)
         return stack
+
+    def _card_expanded(self, spec: Field, index: int) -> bool:
+        expanded = self._expanded_cards.setdefault(spec.key, {0})
+        return index in expanded
+
+    def _set_card_expanded(self, key: str, index: int, expanded: bool) -> None:
+        cards = self._expanded_cards.setdefault(key, {0})
+        if expanded:
+            cards.add(index)
+        else:
+            cards.discard(index)
+
+    @staticmethod
+    def _item_visible(spec: Field, item: dict) -> bool:
+        if spec.show_if is None:
+            return True
+        try:
+            return bool(spec.show_if(item))
+        except Exception:  # noqa: BLE001 - a bad predicate must not break the dock
+            return True
 
     def _fill_stack(self, spec: Field, stack: RuleStack) -> None:
         stack.clear()
@@ -386,9 +636,50 @@ class ShapingContent(
                 def commit(new_value, f=spec, i=index, s=sub):
                     self._list_change(f, "edit", i, s, new_value)
 
-                widget = self._make_widget(sub, value, commit)
-                layout.addWidget(FormRow(sub.label, widget, label_width=84))
-            stack.add_card(index, len(items), body)
+                if sub.kind == "pair":
+                    grid = FormGrid()
+                    for column, child in enumerate(sub.items):
+                        child_value = item.get(
+                            child.key, spec.item_default.get(child.key)
+                        )
+
+                        def child_commit(new_value, f=spec, i=index, s=child):
+                            self._list_change(f, "edit", i, s, new_value)
+
+                        child_widget = self._make_widget(
+                            child, child_value, child_commit
+                        )
+                        grid.add(child.label, child_widget, 0, column)
+                    layout.addWidget(grid)
+                elif sub.kind == "note":
+                    note = QLabel(sub.label)
+                    note.setObjectName("FieldHint")
+                    note.setWordWrap(True)
+                    layout.addWidget(note)
+                else:
+                    widget = self._make_widget(sub, value, commit)
+                    row = FormRow(
+                        sub.label, widget, hint=sub.hint or None, label_width=96
+                    )
+                    row.setVisible(self._item_visible(sub, item))
+                    layout.addWidget(row)
+            summary = ""
+            if spec.summary is not None:
+                try:
+                    summary = spec.summary(item)
+                except Exception:  # noqa: BLE001 - summary is advisory
+                    summary = ""
+            stack.add_card(
+                index,
+                len(items),
+                body,
+                summary=summary,
+                collapsible=spec.collapsible,
+                collapsed=not self._card_expanded(spec, index),
+                on_toggle=lambda expanded, k=spec.key, i=index: self._set_card_expanded(
+                    k, i, expanded
+                ),
+            )
         stack.add_button.setEnabled(len(items) < spec.max_items)
 
     def _list_change(
@@ -406,11 +697,17 @@ class ShapingContent(
             "remove": "Removed",
             "move": "Moved",
             "edit": "Changed",
+            "duplicate": "Duplicated",
         }
         if operation == "add":
             items.append(copy.deepcopy(dict(spec.item_default)))
+            self._set_card_expanded(spec.key, len(items) - 1, True)
+        elif operation == "duplicate" and 0 <= index < len(items):
+            items.insert(index + 1, copy.deepcopy(items[index]))
+            self._set_card_expanded(spec.key, index + 1, True)
         elif operation == "remove" and 0 <= index < len(items):
             del items[index]
+            self._expanded_cards.setdefault(spec.key, {0}).discard(index)
         elif (
             operation == "move"
             and 0 <= index < len(items)
@@ -428,18 +725,32 @@ class ShapingContent(
             f"{self.HISTORY} {spec.label} {verbs[operation]}",
             merge,
         )
-        if operation != "edit":
+        if operation != "edit" or arg.rebuild_on_change:
             self._fill_stack(spec, self._stacks[spec.key])
+        elif spec.summary is not None:
+            stack = self._stacks.get(spec.key)
+            if stack is not None and index < len(items):
+                try:
+                    stack.set_card_summary(index, spec.summary(items[index]))
+                except Exception:  # noqa: BLE001, S110 - summary is advisory
+                    pass
 
     # ---- undo projection -------------------------------------------------
+    def _iter_fields(self, fields):
+        for spec in fields:
+            if spec.kind == "pair":
+                yield from self._iter_fields(spec.items)
+            else:
+                yield spec
+
     def _all_fields(self):
-        for _title, fields in self.FORM:
-            yield from fields
+        for section in self._sections():
+            yield from self._iter_fields(section.fields)
 
     def _sync_widgets_from_model(self) -> None:
         for spec in self._all_fields():
             widget = self._widgets.get(spec.key)
-            if widget is None or spec.kind == "list":
+            if widget is None or spec.kind in ("list", "note"):
                 continue
             try:
                 self._write_widget(spec, widget)
@@ -454,6 +765,19 @@ class ShapingContent(
         try:
             if spec.kind in ("combo", "column"):
                 self._set_combo(widget, value if value is not None else "")
+            elif spec.kind == "picker":
+                widget.setColumns(self.names(spec), value or ())
+            elif spec.kind == "segment":
+                label = next(
+                    (text for option, text in spec.options if option == value),
+                    "",
+                )
+                if label:
+                    widget.set_value(label)
+            elif spec.kind == "weekdays":
+                widget.set_value(value or ())
+            elif spec.kind == "suffix":
+                widget.set_value("" if value is None else str(value))
             elif spec.kind in ("columns", "choices"):
                 widget.setChecked(value or ())
             elif spec.kind == "check":
@@ -485,17 +809,27 @@ class ShapingContent(
         self._sync_widgets_from_model()
 
     def _update_visibility(self) -> None:
-        for spec in self._all_fields():
-            row = self._rows.get(spec.key)
-            if row is None or spec.show_if is None:
-                continue
-            try:
-                row.setVisible(bool(spec.show_if(self.settings)))
-            except RuntimeError:
-                self._rows.pop(spec.key, None)
+        for section in self._sections():
+            for spec in section.fields:
+                row = self._rows.get(spec.key)
+                if row is None or spec.show_if is None:
+                    continue
+                try:
+                    row.setVisible(bool(spec.show_if(self.settings)))
+                except RuntimeError:
+                    self._rows.pop(spec.key, None)
 
     def dock_context(self):
         return list(self.chips), ""
+
+    def dock_summary(self) -> str:
+        inputs = f"{self.INPUTS} input" + ("s" if self.INPUTS != 1 else "")
+        count = len(self.OUTPUT_KINDS)
+        outputs = f"{count} output" + ("s" if count != 1 else "")
+        parts = [inputs, outputs]
+        if self.SUMMARY:
+            parts.append(self.SUMMARY)
+        return " \u00b7 ".join(parts)
 
     # ---- persistence -----------------------------------------------------
     def serialize(self):

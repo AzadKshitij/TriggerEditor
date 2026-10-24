@@ -8,9 +8,16 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.core.shaping import record_id as core
 from trigger_designer.qt.helpers.shaping_support import (
     Field,
+    FormSection,
     ShapingContent,
     ShapingNode,
 )
+
+
+def _order_summary(item: dict) -> str:
+    column = item.get("column") or "Column"
+    direction = "Z \u2192 A" if item.get("descending") else "A \u2192 Z"
+    return f"{column} \u00b7 {direction}"
 
 
 class RecordIdContent(ShapingContent):
@@ -18,41 +25,63 @@ class RecordIdContent(ShapingContent):
     MODULE = "trigger_designer.core.shaping.record_id"
     OUTPUT_KINDS = ("recordid",)
     HISTORY = "Record ID"
+    SUMMARY = "adds Int64 IDs"
     FORM = (
-        (
+        FormSection(
             "",
             (
-                Field("name", "Name", "text", placeholder="RecordID"),
                 Field(
-                    "start",
-                    "Start at",
-                    "int",
-                    minimum=-1_000_000_000,
-                    maximum=1_000_000_000,
+                    "name",
+                    "Name",
+                    "text",
+                    placeholder="RecordID",
+                    hint="Dense Int64 numbers. The column name must be new.",
                 ),
                 Field(
-                    "position",
-                    "Position",
-                    "combo",
-                    options=(("first", "First"), ("last", "Last")),
+                    "start_position",
+                    "",
+                    "pair",
+                    items=(
+                        Field(
+                            "start",
+                            "Start at",
+                            "int",
+                            minimum=-1_000_000_000,
+                            maximum=1_000_000_000,
+                        ),
+                        Field(
+                            "position",
+                            "Position",
+                            "segment",
+                            options=(("first", "First"), ("last", "Last")),
+                        ),
+                    ),
                 ),
             ),
         ),
-        (
-            "Number within groups",
+        FormSection(
+            "Grouping & order",
             (
-                Field("group_by", "Groups", "columns"),
+                Field("group_by", "Groups", "picker"),
                 Field(
                     "order_by",
                     "Order by",
                     "list",
                     item_default={"column": "", "descending": False},
+                    summary=_order_summary,
                     items=(
                         Field("column", "Column", "column"),
                         Field("descending", "Descending", "check"),
                     ),
                 ),
+                Field(
+                    "_order_hint",
+                    "Rows keep input order. This only changes the numbers.",
+                    "note",
+                ),
             ),
+            info="Optional numbering per group or by another column.",
+            collapsible=True,
         ),
     )
 
