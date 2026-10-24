@@ -27,29 +27,30 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
-        "strip_whitespace": true,
-        "normalize_spaces": true,
-        "remove_all_whitespace": false,
-        "case_modification": "none",
-        "remove_letters": false,
-        "remove_numbers": false,
-        "remove_punctuation": false,
-        "selected_fields": [
-          "Keyword",
-          "Seed",
-          "Source",
-          "Country",
-          "Autocomplete Position",
-          "Difficulty",
-          "Hot Keyword",
-          "Relevancy Score"
-        ],
-        "field_selection_initialized": true,
-        "remove_null_rows": false,
-        "remove_null_rows_from_selected_columns": false,
-        "remove_null_columns": false
+        "settings": {
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": true,
+          "normalize_spaces": true,
+          "remove_all_whitespace": false,
+          "case_modification": "none",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": false,
+          "selected_fields": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1234,22 +1235,23 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
-        "strip_whitespace": false,
-        "normalize_spaces": false,
-        "remove_all_whitespace": false,
-        "case_modification": "title",
-        "remove_letters": false,
-        "remove_numbers": false,
-        "remove_punctuation": true,
-        "selected_fields": [
-          "Keyword"
-        ],
-        "field_selection_initialized": true,
-        "remove_null_rows": false,
-        "remove_null_rows_from_selected_columns": false,
-        "remove_null_columns": false
+        "settings": {
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": false,
+          "normalize_spaces": false,
+          "remove_all_whitespace": false,
+          "case_modification": "title",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": true,
+          "selected_fields": [
+            "Keyword"
+          ],
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1972,22 +1974,23 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
-        "strip_whitespace": true,
-        "normalize_spaces": true,
-        "remove_all_whitespace": false,
-        "case_modification": "none",
-        "remove_letters": false,
-        "remove_numbers": false,
-        "remove_punctuation": false,
-        "selected_fields": [
-          "Keyword"
-        ],
-        "field_selection_initialized": true,
-        "remove_null_rows": false,
-        "remove_null_rows_from_selected_columns": false,
-        "remove_null_columns": false
+        "settings": {
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": true,
+          "normalize_spaces": true,
+          "remove_all_whitespace": false,
+          "case_modification": "none",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": false,
+          "selected_fields": [
+            "Keyword"
+          ],
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false
+        }
       },
       "label_text": "",
       "label_visible": false,

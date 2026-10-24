@@ -21,7 +21,6 @@ from qtpy.QtWidgets import QApplication, QVBoxLayout
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.widgets.nodes.InOut.file_input import FileInputContent
 from trigger_designer.qt.widgets.nodes.Join.join import JoinContent
-from trigger_designer.qt.widgets.nodes.Preparation.cleansing import CleansingContent
 
 APP = QApplication.instance() or QApplication([])
 
@@ -123,44 +122,48 @@ def test_serializable_content_mixin_maps_and_normalizes_state() -> None:
     assert content.config == {"enabled": False, "mode": "safe"}
 
 
-def test_cleansing_content_serializes_full_state() -> None:
-    content = CleansingContent.__new__(CleansingContent)
-    content.replace_null_strings = False
-    content.replace_null_numbers = True
-    content.strip_whitespace = False
-    content.normalize_spaces = True
-    content.remove_all_whitespace = True
-    content.case_modification = "upper"
-    content.remove_letters = True
-    content.remove_numbers = False
-    content.remove_punctuation = True
-    content.selected_fields = []
-    content._field_selection_initialized = True
-    content.remove_null_rows = True
-    content.remove_null_rows_from_selected_columns = True
-    content.remove_null_columns = False
+def test_cleansing_content_serializes_settings() -> None:
+    from trigger_designer.core.node_configuration import (
+        NodeTypes,
+        PreparationNodes,
+        get_class_from_opcode,
+    )
+    from trigger_designer.qt.design_window import TriggerSubWindow
 
-    payload = content.serialize_content_state({})
+    window = TriggerSubWindow()
+    cls = get_class_from_opcode(PreparationNodes.CLEANSING, NodeTypes.PREPARATION)
+    content = cls(window.scene).content
+    content.settings.update(
+        {
+            "replace_null_strings": False,
+            "remove_all_whitespace": True,
+            "case_modification": "upper",
+            "remove_letters": True,
+            "selected_fields": ["a"],
+            "remove_null_rows": True,
+            "remove_null_rows_from_selected_columns": True,
+        }
+    )
 
-    assert payload["replace_null_strings"] is False
-    assert payload["remove_all_whitespace"] is True
-    assert payload["case_modification"] == "upper"
-    assert payload["remove_letters"] is True
-    assert payload["selected_fields"] == []
-    assert payload["field_selection_initialized"] is True
-    assert payload["remove_null_rows_from_selected_columns"] is True
+    payload = content.serialize()
 
-    restored = CleansingContent.__new__(CleansingContent)
-    restored.deserialize_content_state(payload)
+    assert payload["settings"]["replace_null_strings"] is False
+    assert payload["settings"]["remove_all_whitespace"] is True
+    assert payload["settings"]["case_modification"] == "upper"
+    assert payload["settings"]["remove_letters"] is True
+    assert payload["settings"]["selected_fields"] == ["a"]
+    assert payload["settings"]["remove_null_rows"] is True
 
-    assert restored.replace_null_strings is False
-    assert restored.remove_all_whitespace is True
-    assert restored.case_modification == "upper"
-    assert restored.remove_letters is True
-    assert restored.selected_fields == []
-    assert restored._field_selection_initialized is True
-    assert restored.remove_null_rows is True
-    assert restored.remove_null_rows_from_selected_columns is True
+    restored = cls(window.scene).content
+    restored.deserialize(payload)
+
+    assert restored.settings["replace_null_strings"] is False
+    assert restored.settings["remove_all_whitespace"] is True
+    assert restored.settings["case_modification"] == "upper"
+    assert restored.settings["remove_letters"] is True
+    assert restored.settings["selected_fields"] == ["a"]
+    assert restored.settings["remove_null_rows"] is True
+    assert restored.settings["remove_null_rows_from_selected_columns"] is True
 
 
 def test_join_bulk_output_selection_updates_one_side_only() -> None:

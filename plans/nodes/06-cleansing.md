@@ -1,6 +1,6 @@
 ﻿# Cleansing - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 10 of 18 (Tier 2, value/row/column mutation).
 Read first: `plans/nodes/README.md`.
 
@@ -232,11 +232,12 @@ Update the all-node e2e if it checks Old `cleansing_stats`/field checkboxes.
 
 ## 10. Acceptance
 
-- [ ] The operation order matches the old `process_data`.
-- [ ] Text cleanup only touches selected fields.
-- [ ] Empty field selection does not make the node invalid.
-- [ ] Live == generated output.
-- [ ] Old saved state loads.
+- [x] The operation order matches the old `process_data`.
+- [x] Text cleanup only touches selected fields.
+- [x] Empty field selection does not make the node invalid.
+- [x] Live == generated output.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
 
 ## 11. Do not
 
