@@ -10,10 +10,8 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import polars as pl
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.utils_no_qt import dumpException
 from qtpy.QtCore import QTimer, Signal
-from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
@@ -29,9 +27,9 @@ from qtpy.QtWidgets import (
 
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.shaping.common import ShapingError
+from trigger_designer.qt.helpers.config_content import ConfigContent
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
     TriggerGraphicsNode,
     TriggerNode,
     frame_schema,
@@ -224,10 +222,7 @@ class SuffixEditor(QWidget):
             self.changed.emit(self.value())
 
 
-class ShapingContent(
-    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
-):
-    evaluate = Signal()
+class ShapingContent(ConfigContent, SerializableContentMixin):
     SETTINGS: dict = {}  # noqa: RUF012 - subclass defaults, never mutated
     MODULE = ""
     RUNNER = "run_node"
@@ -244,8 +239,6 @@ class ShapingContent(
 
     def __init__(self, node: TriggerNode, parent: QWidget | None = None) -> None:
         super().__init__(node, parent)
-        TriggerChangeHandler.__init__(self, node.scene, node)
-        self.history = node.scene.history
         self.settings: dict = copy.deepcopy(self.SETTINGS)
         self.frames: list = [None] * self.INPUTS
         self.input_vars: list = [""] * self.INPUTS
@@ -259,17 +252,6 @@ class ShapingContent(
         self._stacks: dict = {}
         self._timers: list[QTimer] = []
         self._expanded_cards: dict[str, set[int]] = {}
-
-    @property
-    def node(self) -> TriggerNode:
-        return self._node
-
-    @node.setter
-    def node(self, value: TriggerNode) -> None:
-        self._node = value
-
-    def initUI(self, _icon: QPixmap | None = None) -> None:
-        super().initUI(self.node.rsm.get(f"{self.node.icon}"))
 
     # ---- data and code generation ---------------------------------------
     def schema(self, index: int = 0) -> dict:

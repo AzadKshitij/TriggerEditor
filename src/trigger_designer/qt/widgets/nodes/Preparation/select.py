@@ -13,10 +13,8 @@ from qtpy.QtWidgets import (
     QMenu,
     QInputDialog,
 )
-from qtpy.QtGui import QPixmap
 from qtpy.QtCore import (
     Qt,
-    Signal,
     QSortFilterProxyModel,
 )
 from trigger_designer.core.node_configuration import (
@@ -25,14 +23,13 @@ from trigger_designer.core.node_configuration import (
     NodeTypes,
 )
 from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
     TriggerNode,
     TriggerGraphicsNode,
     frame_schema,
     frame_shape,
     upstream_rename_map,
 )
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.qt.helpers.config_content import ConfigContent
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
     EmptyStateLabel,
@@ -67,7 +64,7 @@ _BOOLEAN_TRUE_TOKENS = ("true", "1", "yes", "y", "t", "on")
 _BOOLEAN_FALSE_TOKENS = ("false", "0", "no", "n", "f", "off")
 
 
-class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class SelectContent(ConfigContent):
     """DataFrame column selection and modification widget.
 
     Provides comprehensive column management including:
@@ -87,8 +84,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
 
     """
 
-    evaluate = Signal()  # Emit when evaluate button is clicked
-
     def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
         super().__init__(node, parent)
         global_logger.debug("📋 SelectContent: Initializing Select node content widget")
@@ -96,7 +91,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         # local variables
         # self.old_data: dict = []
         self.table_data: list = []
-        self.history = self.node.scene.history
 
         # incoming variables
         self.incoming_variable: str = ""
@@ -117,18 +111,6 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "auto_accept_new_columns": True,
         }
         self._auto_accept_action = None
-
-    @property
-    def node(self) -> "TriggerNode":
-        return self._node
-
-    @node.setter
-    def node(self, value: "TriggerNode") -> None:
-        self._node = value
-
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
-        _icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(_icon)
 
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         if self.incom_data is not None:
