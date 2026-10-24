@@ -1,6 +1,6 @@
 ﻿# Rows - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 11 of 18 (Tier 2, generates rows).
 Read first: `plans/nodes/README.md`.
 
@@ -235,11 +235,12 @@ Run the saved Rows workflow and the all-node e2e.
 
 ## 10. Acceptance
 
-- [ ] Loop semantics match the old node for all four types.
-- [ ] Datetime values round-trip as ISO strings.
-- [ ] The 10,000 cap still protects the UI.
-- [ ] Old saved state loads.
-- [ ] Live == generated output.
+- [x] Loop semantics match the old node for all four types.
+- [x] Datetime values round-trip as ISO strings.
+- [x] The 10,000 cap still protects the UI.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 
