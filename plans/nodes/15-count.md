@@ -1,6 +1,6 @@
 ﻿# Count - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 1 of 18 (Tier 0, no settings, lowest risk).
 Read first: `plans/nodes/README.md`, `docs/plan/07-shaping-nodes.md`.
 
@@ -136,14 +136,14 @@ Update the all-node e2e if it asserts the old class name or old
 
 ## 9. Acceptance
 
-- [ ] `core/shaping/count.py` is Qt-free and tested.
-- [ ] `CountRecordsContent`/`TriggerNode_CountRecords` are replaced by
+- [x] `core/shaping/count.py` is Qt-free and tested.
+- [x] `CountRecordsContent`/`TriggerNode_CountRecords` are replaced by
       `CountContent`/`TriggerNode_Count` (or the old class names are kept only
       as the registered node name; prefer new names).
-- [ ] No `incom_data`, `incoming_variable`, `data` or `total_records` in the
+- [x] No `incom_data`, `incoming_variable`, `data` or `total_records` in the
       new execution path.
-- [ ] Live output == generated-code output.
-- [ ] All-node e2e still passes.
+- [x] Live output == generated-code output.
+- [x] All-node e2e still passes.
 
 ## 10. Do not
 
