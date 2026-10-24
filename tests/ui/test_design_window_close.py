@@ -77,6 +77,34 @@ class TestDesignWindowClose(unittest.TestCase):
         self.assertTrue(self.window.close())
         self.assertEqual(order, ["first", "second"])
 
+    def test_accepted_close_stops_the_workflow_runner(self) -> None:
+        stopped = []
+        self.window.shutdown_workflow_worker = lambda: stopped.append(True)
+
+        self.assertTrue(self.window.close())
+
+        self.assertEqual(stopped, [True])
+
+    def test_vetoed_close_leaves_the_workflow_runner_alone(self) -> None:
+        stopped = []
+        self.window.shutdown_workflow_worker = lambda: stopped.append(True)
+        self.window.addCloseEventListener(lambda _widget, event: event.ignore())
+
+        self.assertFalse(self.window.close())
+
+        self.assertEqual(stopped, [])
+
+    def test_listener_runs_before_the_workflow_runner_is_stopped(self) -> None:
+        order = []
+        self.window.shutdown_workflow_worker = lambda: order.append("stopped")
+        self.window.addCloseEventListener(
+            lambda _widget, event: (order.append("listener"), event.accept())
+        )
+
+        self.assertTrue(self.window.close())
+
+        self.assertEqual(order, ["listener", "stopped"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -14,6 +14,26 @@ from trigger_designer.qt.helpers.error_enricher import start_enrichment
 from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
 from trigger_designer.qt.preferences import get_preferences
 
+#: Runs whose window closed before ``run()`` returned. Qt aborts the process
+#: when a running QThread is destroyed, so a reference is held here until the
+#: thread stops (see ``wait_for_orphaned_workflow_workers``).
+_ORPHANED_WORKERS: set[WorkflowWorker] = set()
+
+
+def wait_for_orphaned_workflow_workers(timeout_ms: int = 5000) -> bool:
+    """Wait for runs that outlived their window; True when none remain."""
+    deadline = time.monotonic() + timeout_ms / 1000.0
+    for worker in list(_ORPHANED_WORKERS):
+        remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+        try:
+            stopped = worker.wait(remaining_ms)
+        except RuntimeError:
+            # The C++ thread object was already deleted; nothing to wait for.
+            stopped = True
+        if stopped:
+            _ORPHANED_WORKERS.discard(worker)
+    return not _ORPHANED_WORKERS
+
 
 class WorkflowExecutionMixin:
     """Mixin providing workflow execution orchestration and statistics tracking."""
@@ -51,7 +71,7 @@ class WorkflowExecutionMixin:
     def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
         """Run the current workflow on a single background thread while
         updating execution visuals from signals it emits."""
-        if self._workflow_worker is not None and self._workflow_worker.isRunning():
+        if self._workflow_worker_is_running():
             # A run is already in flight - the GUI thread stays responsive
             # for the whole run now, so this guard is reachable in
             # practice (previously the GUI was blocked, so a second click
@@ -97,6 +117,67 @@ class WorkflowExecutionMixin:
         worker.finished.connect(worker.deleteLater)
         self._workflow_worker = worker
         worker.start()
+
+    def _workflow_worker_is_running(self) -> bool:
+        """Whether a run is in flight, tolerating a deleted Qt wrapper."""
+        worker = self._workflow_worker
+        if worker is None:
+            return False
+        try:
+            return worker.isRunning()
+        except RuntimeError:
+            self._workflow_worker = None
+            return False
+
+    def shutdown_workflow_worker(self, timeout_ms: int = 5000) -> bool:
+        """Cancel the current run and wait for its thread to stop.
+
+        Closing a window while ``run()`` is executing must not let Qt destroy
+        the QThread: that is a ``qFatal`` abort, and a thread inside Polars or
+        DuckDB can fault as an access violation instead. Neither raises a
+        Python exception, so waiting is the only safe way out. Cancellation is
+        cooperative (checked before the next node), so a node already in
+        flight is bounded by its own execution timeout.
+
+        Returns ``True`` when the thread has stopped.
+        """
+        worker = self._workflow_worker
+        self._workflow_worker = None
+        if worker is None:
+            return True
+
+        try:
+            if not worker.isRunning():
+                return True
+            worker.request_cancel()
+            # Detach the UI before waiting: queued nodeFinished /
+            # workflowFinished signals must not repaint a closing window.
+            for signal in (
+                worker.nodeStarted,
+                worker.nodeFinished,
+                worker.nodeErrored,
+                worker.workflowFinished,
+            ):
+                try:
+                    signal.disconnect()
+                except (RuntimeError, TypeError):
+                    pass
+            if worker.wait(timeout_ms):
+                return True
+        except RuntimeError:
+            # The C++ thread object is already gone; nothing left to wait for.
+            return True
+
+        # Still running. Hold the reference so teardown cannot destroy it
+        # mid-run; ``wait_for_orphaned_workflow_workers`` waits once more
+        # after the event loop has stopped.
+        _ORPHANED_WORKERS.add(worker)
+        logger.warning(
+            "Workflow thread still running {} ms after cancel; "
+            "keeping it alive until it stops",
+            timeout_ms,
+        )
+        return False
 
     def _on_node_started(self, node: Any) -> None:
         """Slot: a node is about to execute (runs on the GUI thread)."""

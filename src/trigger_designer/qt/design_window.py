@@ -625,9 +625,18 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         close. This must not call ``super().closeEvent(event)`` afterwards:
         the event arrives accepted, so the base implementation would undo a
         listener's ``event.ignore()`` and the close would always succeed.
+
+        A run still in flight is cancelled and waited for, but only once the
+        close is accepted: cancelling work for a close the user then vetoes
+        would lose the run for nothing.
         """
         for callback in list(self._close_event_listeners):
             callback(self, event)
+        if event.isAccepted():
+            try:
+                self.shutdown_workflow_worker()
+            except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                logger.exception("Failed to stop the workflow run while closing")
 
     def onDragEnter(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):

@@ -35,6 +35,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
 )
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.models.preview_worker import wait_for_preview_workers
 from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.theme_manager import (
     apply_theme_to_scene,
@@ -352,6 +353,27 @@ class TriggerWindow(
             return
         super().onEditPaste()
 
+    def shutdown_background_work(self, timeout_ms: int = 5000) -> None:
+        """Stop in-flight runs and previews before their panels are destroyed.
+
+        Called from ``closeEvent`` and from ``QApplication.aboutToQuit`` so
+        every quit path is covered. A QThread destroyed while running aborts
+        the process, and a Polars collect destroyed mid-run faults without a
+        traceback, so waiting here is what keeps a close during a run clean.
+        """
+        for sub_window in self.mdiArea.subWindowList():
+            widget = sub_window.widget()
+            shutdown = getattr(widget, "shutdown_workflow_worker", None)
+            if callable(shutdown):
+                try:
+                    shutdown(timeout_ms)
+                except Exception:  # noqa: BLE001 - one window must not block shutdown
+                    logger.exception("Failed to stop a workflow run during shutdown")
+        try:
+            wait_for_preview_workers(timeout_ms)
+        except Exception:  # noqa: BLE001 - shutdown must still reach writeSettings
+            logger.exception("Failed to wait for preview workers during shutdown")
+
     def closeEvent(self, event: Optional[QCloseEvent]) -> None:
         # Capture the session before children close: the window list is the
         # source of truth for "what was open", and closing clears it.
@@ -360,6 +382,11 @@ class TriggerWindow(
         if self.mdiArea.currentSubWindow() and event is not None:
             event.ignore()
         else:
+            # The close is really happening. Each subwindow already stopped
+            # its own run in closeEvent; this waits for the preview collects,
+            # whose panels were just destroyed. Doing it before the veto check
+            # would cancel work for a close the user then cancels.
+            self.shutdown_background_work()
             self.writeSettings()
             if event is not None:
                 event.accept()
