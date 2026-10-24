@@ -1,6 +1,7 @@
 # Legacy node modernization - implementation plans
 
-Status: planned, not implemented.
+Status: in progress - Count, Running Total and Sort are implemented; the rest
+are planned.
 Reference migration: Select (`23eadb8`).
 Authoritative architecture: `docs/plan/07-shaping-nodes.md` and
 `docs/plan/08-simplify-node-base.md`.

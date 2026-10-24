@@ -657,16 +657,14 @@
         }
       ],
       "content": {
-        "sum_columns": [
-          "Difficulty"
-        ],
-        "group_by_columns": [
-          "Difficulty"
-        ],
-        "numeric_columns": [
-          "Difficulty",
-          "Relevancy Score"
-        ]
+        "settings": {
+          "sum_columns": [
+            "Difficulty"
+          ],
+          "group_by_columns": [
+            "Difficulty"
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,

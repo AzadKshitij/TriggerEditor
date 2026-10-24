@@ -64,7 +64,7 @@ class Field:
     tip: str = ""
     blank: bool = False
     input: int = 0
-    filter: str = ""
+    filter: str = ""  # "" all | "text" | "numeric" | "numeric_only" | "date"
     show_if: Callable[[dict], bool] | None = None
     items: tuple = ()
     item_default: dict = field(default_factory=dict)
@@ -92,6 +92,8 @@ def _passes(dtype: pl.DataType, kind: str) -> bool:
         return dtype == pl.String
     if kind == "numeric":
         return dtype == pl.String or dtype.is_numeric()
+    if kind == "numeric_only":
+        return dtype.is_numeric()
     if kind == "date":
         return dtype == pl.String or dtype == pl.Date or isinstance(dtype, pl.Datetime)
     return True

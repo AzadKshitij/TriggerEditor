@@ -1,6 +1,6 @@
 ﻿# Running Total - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 2 of 18 (Tier 0, additive columns).
 Read first: `plans/nodes/README.md`.
 
@@ -185,11 +185,12 @@ Keep the existing e2e property test
 
 ## 10. Acceptance
 
-- [ ] `RunTot_<column>` naming is unchanged.
-- [ ] Grouped cumulative sums match the existing property test.
-- [ ] No sum columns passes through.
-- [ ] Old saved selection loads.
-- [ ] Live == generated output.
+- [x] `RunTot_<column>` naming is unchanged.
+- [x] Grouped cumulative sums match the existing property test.
+- [x] No sum columns passes through.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 

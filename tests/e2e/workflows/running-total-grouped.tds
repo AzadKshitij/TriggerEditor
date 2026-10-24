@@ -78,8 +78,10 @@
         }
       ],
       "content": {
-        "sum_columns": ["RelevancyNum"],
-        "group_by_columns": ["Difficulty"]
+        "settings": {
+          "sum_columns": ["RelevancyNum"],
+          "group_by_columns": ["Difficulty"]
+        }
       },
       "node_code": 3,
       "node_type": "transform"
