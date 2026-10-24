@@ -15,16 +15,17 @@ def test_picker_selects_emits_and_filters(qtbot) -> None:
     picker._ensure_popup()
 
     assert picker.checked() == ["Account"]
-    picker._checklist.checkboxes["Customer"].setChecked(True)
+    picker._checklist.checkboxes["Customer"].click()
     assert picker.checked() == ["Account", "Customer"]
     assert changes[-1] == ["Account", "Customer"]
 
     tokens = [
         label.text()
         for label in picker.findChildren(QLabel)
-        if label.objectName() == "ColumnToken"
+        if label.objectName() == "ColumnToken" and not label.isHidden()
     ]
     assert tokens == ["Account", "Customer"]
+    assert all(not label.isWindow() for label in picker.findChildren(QLabel))
 
     picker._search.setText("reg")
     assert picker._checklist.checkboxes["Region"].isHidden() is False

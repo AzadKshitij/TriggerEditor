@@ -866,7 +866,10 @@ class ColumnPicker(QPushButton):
             item = self._layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
-                widget.setParent(None)
+                # Never unparent: a parentless QLabel becomes a native
+                # top-level window until deleteLater() runs, which shows up
+                # as a flash of white window frames over the canvas.
+                widget.hide()
                 widget.deleteLater()
         if not self._checked:
             label = QLabel(self._placeholder, self)
@@ -916,7 +919,7 @@ class ColumnPicker(QPushButton):
 
         toolbar = QHBoxLayout()
         toolbar.setContentsMargins(0, 0, 0, 0)
-        toolbar.setSpacing(3)
+        toolbar.setSpacing(4)
         search = QLineEdit(popup)
         search.setObjectName("ColumnPickerSearch")
         search.setPlaceholderText("Search columns...")
@@ -927,7 +930,7 @@ class ColumnPicker(QPushButton):
         all_button = TextButton("All", "Select every column", popup)
         none_button = TextButton("None", "Deselect every column", popup)
         for button in (all_button, none_button):
-            button.setFixedWidth(34)
+            button.setFixedSize(48, CONTROL_H)
         all_button.clicked.connect(lambda: self._set_all(True))
         none_button.clicked.connect(lambda: self._set_all(False))
         toolbar.addWidget(all_button)
@@ -973,7 +976,7 @@ class ColumnPicker(QPushButton):
         if self._popup.isVisible():
             self._popup.hide()
             return
-        width = max(self.width(), 280)
+        width = max(self.width(), 300)
         self._popup.setFixedWidth(width)
         self._popup.adjustSize()
         pos = self.mapToGlobal(self.rect().bottomLeft())
