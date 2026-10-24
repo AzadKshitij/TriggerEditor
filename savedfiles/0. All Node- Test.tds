@@ -1664,15 +1664,17 @@
         }
       ],
       "content": {
-        "key_columns": [
-          "Keyword"
-        ],
-        "data_columns": [
-          "Country",
-          "Difficulty",
-          "Relevancy Score"
-        ],
-        "missing_action": "warn"
+        "settings": {
+          "key_columns": [
+            "Keyword"
+          ],
+          "data_columns": [
+            "Country",
+            "Difficulty",
+            "Relevancy Score"
+          ],
+          "missing_action": "warn"
+        }
       },
       "label_text": "",
       "label_visible": false,

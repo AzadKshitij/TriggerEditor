@@ -1,6 +1,6 @@
 ﻿# Transpose - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 8 of 18 (Tier 1, reshape columns).
 Read first: `plans/nodes/README.md`.
 
@@ -212,11 +212,12 @@ Run the saved Transpose golden.
 
 ## 10. Acceptance
 
-- [ ] Output columns are exactly `key columns..., Name, Value`.
-- [ ] Empty data selection passes through.
-- [ ] Missing-column actions behave as specified.
-- [ ] Old `key_columns`/`data_columns`/`missing_action` load.
-- [ ] Live == generated output.
+- [x] Output columns are exactly `key columns..., Name, Value`.
+- [x] Empty data selection passes through.
+- [x] Missing-column actions behave as specified.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 
