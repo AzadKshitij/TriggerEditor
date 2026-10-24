@@ -1,6 +1,6 @@
 ﻿# Split - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 4 of 18 (Tier 0, row partition, two outputs).
 Read first: `plans/nodes/README.md`.
 
@@ -198,11 +198,12 @@ Run the Split golden and the all-node e2e.
 
 ## 10. Acceptance
 
-- [ ] The split is deterministic for a fixed seed and matches the old golden.
-- [ ] Both outputs are lazy and partition the input.
-- [ ] Percent bounds are enforced.
-- [ ] Old saved state loads.
-- [ ] Live == generated output.
+- [x] The split is deterministic for a fixed seed and matches the old golden.
+- [x] Both outputs are lazy and partition the input.
+- [x] Percent bounds are enforced.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 
