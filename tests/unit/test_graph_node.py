@@ -71,12 +71,14 @@ def _wired_graph(df):
 
 
 def _rename_headless(content, mapping):
-    """Rename through the same path the select table uses."""
-    for row in content.table_data:
-        if row.text in mapping:
-            row.rename = mapping[row.text]
-    payload = [(row.text, row.dtype, row.rename) for row in content.table_data]
-    content.handleDataChanged(payload)
+    """Rename through the Select settings path and re-evaluate."""
+    columns = [dict(column) for column in content.settings["columns"]]
+    for column in columns:
+        if column["name"] in mapping:
+            column["rename"] = mapping[column["name"]]
+    content.set_setting("columns", columns, "Select Columns Changed")
+    content.node.markDirty(True)
+    content.node.eval()
     APP.processEvents()
 
 

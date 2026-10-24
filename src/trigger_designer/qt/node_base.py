@@ -100,7 +100,21 @@ def upstream_rename_map(upstream_node) -> dict:
     content = getattr(upstream_node, "content", None)
     if content is None:
         return {}
-    # Select stores its renames in ``changes["rename_mapping"]``.
+    # New Select stores its renames in settings["columns"].
+    settings = getattr(content, "settings", None)
+    if isinstance(settings, dict):
+        columns = settings.get("columns")
+        if isinstance(columns, list):
+            mapping = {
+                str(column.get("name")): str(column.get("rename"))
+                for column in columns
+                if isinstance(column, dict)
+                and column.get("rename")
+                and column.get("rename") != column.get("name")
+            }
+            if mapping:
+                return mapping
+    # Old Select stored its renames in ``changes["rename_mapping"]``.
     changes = getattr(content, "changes", None)
     if isinstance(changes, dict):
         mapping = changes.get("rename_mapping")

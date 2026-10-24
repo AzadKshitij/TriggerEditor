@@ -14,7 +14,6 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 )
 
-import polars as pl
 import pytest
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QMainWindow
@@ -186,36 +185,36 @@ def test_select_rename_and_selection_is_undoable(window, nodes):
     history = window.scene.history
     _reset(history)
 
-    old_changes = {"selected_columns": [], "rename_mapping": {}, "dtype_mapping": {}}
-    new_changes = {
-        "selected_columns": ["amount"],
-        "rename_mapping": {"amount": "total_amount"},
-        "dtype_mapping": {},
-    }
-    select.content.data = pl.DataFrame({"amount": [1, 2]})
-    select.content.incoming_variable = "input_df"
-    select.content.changes = {
-        key: (list(value) if isinstance(value, list) else dict(value))
-        for key, value in new_changes.items()
-    }
-    select.content.apply_changes()
+    old_columns = [
+        {
+            "name": "amount",
+            "selected": False,
+            "dtype": "Int64",
+            "rename": "",
+            "date_format": "",
+            "dtype_custom": False,
+        }
+    ]
+    new_columns = [dict(old_columns[0], selected=True, rename="total_amount")]
+    select.content.settings["columns"] = [dict(old_columns[0])]
 
     history.push_edit(
         PropertyChangeCommand(
             select,
-            ("changes",),
-            old_changes,
-            new_changes,
+            ("settings", "columns"),
+            old_columns,
+            new_columns,
             "Column Selection/Rename/Type Changed",
         )
     )
 
     assert history.currentText() == "Column Selection/Rename/Type Changed"
     history.undo()
-    assert select.content.changes["rename_mapping"] == {}
-    assert select.content.changes["selected_columns"] == []
+    assert select.content.settings["columns"][0]["selected"] is False
+    assert select.content.settings["columns"][0]["rename"] == ""
     history.redo()
-    assert select.content.changes["rename_mapping"] == {"amount": "total_amount"}
+    assert select.content.settings["columns"][0]["selected"] is True
+    assert select.content.settings["columns"][0]["rename"] == "total_amount"
 
 
 # ----------------------------------------------------------------------

@@ -802,6 +802,16 @@ class SelectTableWidget(QAbstractTableModel):
                 data.append((row_data.text, row_data.dtype, row_data.rename))
         return data
 
+    def rows(self) -> list:
+        """Every row, including unchecked and missing columns."""
+        return self._data
+
+    def set_rows(self, rows: list) -> None:
+        """Replace the row list without emitting ``data_processed``."""
+        self.beginResetModel()
+        self._data = rows
+        self.endResetModel()
+
     # for row in range(self.table.rowCount()):
     #     # Get checkbox from container
     #     checkbox_container = self.table.cellWidget(row, 0)
