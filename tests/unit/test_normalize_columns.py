@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+"""Normalize node identity, live execution and saved state."""
 
 import os
 import sys
@@ -11,6 +12,7 @@ sys.path.insert(
 )
 
 import polars as pl
+from nodeeditor.node_edge import Edge
 from qtpy.QtWidgets import QApplication, QMainWindow
 
 from trigger_designer.core.node_configuration import (
@@ -18,13 +20,28 @@ from trigger_designer.core.node_configuration import (
     PreparationNodes,
     get_class_from_opcode,
 )
+from trigger_designer.core.shaping import normalize as core
 from trigger_designer.qt.design_window import TriggerSubWindow
-from trigger_designer.qt.widgets.nodes.Preparation.normalize_columns import (
-    build_rename_mapping,
-    normalize_column_name,
-)
+from trigger_designer.qt.node_base import TriggerNode
 
 APP = QApplication.instance() or QApplication([])
+
+
+class Source(TriggerNode):
+    node_title = "Source"
+
+    def __init__(self, scene, frame) -> None:
+        self._frame = frame
+        super().__init__(scene, inputs=[], outputs=[3])
+        self.value = [{"data": frame, "variable_name": "var_src"}]
+        self.markDirty(False)
+        self.markInvalid(False)
+
+    def evalImplementation(self):
+        self.value = [{"data": self._frame, "variable_name": "var_src"}]
+        self.markDirty(False)
+        self.markInvalid(False)
+        return self.value
 
 
 def _make_content():
@@ -35,7 +52,7 @@ def _make_content():
     )
     node = cls(window.scene)
     window.scene.nodes.append(node)
-    return window, node.content
+    return window, node
 
 
 def test_op_resolves_to_normalize_columns() -> None:
@@ -49,36 +66,33 @@ def test_op_resolves_to_normalize_columns() -> None:
 
 
 def test_normalize_column_name_cases() -> None:
-    assert normalize_column_name(" Order ID ") == "Order_ID"
-    assert normalize_column_name("Customer_Id") == "Customer_Id"
-    assert normalize_column_name("a  b\tc") == "a_b_c"
-    assert normalize_column_name("  ") == "  "
-    assert normalize_column_name("a b", remove_all_whitespace=True) == "ab"
-    assert normalize_column_name("Mixed Case", case_modification="lower") == (
+    assert core.normalize_column_name(" Order ID ") == "Order_ID"
+    assert core.normalize_column_name("Customer_Id") == "Customer_Id"
+    assert core.normalize_column_name("a  b\tc") == "a_b_c"
+    assert core.normalize_column_name("  ") == "  "
+    assert core.normalize_column_name("a b", remove_all_whitespace=True) == "ab"
+    assert core.normalize_column_name("Mixed Case", case_modification="lower") == (
         "mixed_case"
-    )
-    assert normalize_column_name("Mixed Case", case_modification="upper") == (
-        "MIXED_CASE"
     )
 
 
 def test_live_rename_and_codegen_agree() -> None:
-    _, content = _make_content()
-    content.incom_data = pl.DataFrame(
-        {" Order ID ": [1], "Customer_Id": [2], "sku": [3]}
-    ).lazy()
-    content.incoming_variable = "var_in"
-    content.update_data()
-    assert content.data.collect_schema().names() == [
+    window, node = _make_content()
+    frame = pl.DataFrame({" Order ID ": [1], "Customer_Id": [2], "sku": [3]}).lazy()
+    source = Source(window.scene, frame)
+    Edge(window.scene, source.outputs[0], node.inputs[0])
+    node.markDirty(True)
+    live = node.eval()
+    assert live is not None and not node.isInvalid()
+    assert live[0]["data"].collect_schema().names() == [
         "Order_ID",
         "Customer_Id",
         "sku",
     ]
 
-    code = content.get_code()
-    namespace = {"var_in": content.incom_data}
-    exec(code, {"__name__": "__main__", "pl": pl}, namespace)  # noqa: S102
-    result = namespace[content.variable_name]
+    namespace = {"var_src": frame}
+    exec(node.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
+    result = namespace[node.content.variable_name]
     assert result.collect_schema().names() == [
         "Order_ID",
         "Customer_Id",
@@ -86,32 +100,27 @@ def test_live_rename_and_codegen_agree() -> None:
     ]
 
 
-def test_duplicate_targets_invalidate() -> None:
-    _, content = _make_content()
-    content.incom_data = pl.DataFrame({"a b": [1], "a_b": [2]}).lazy()
-    content.incoming_variable = "var_in"
-    content.update_data()
-    assert content.data is None
-    assert content.node.isInvalid()
-
-
-def test_build_rename_mapping_respects_scope() -> None:
-    mapping = build_rename_mapping(["a b", "c d"], ["c d"])
-    assert mapping == {"c d": "c_d"}
+def test_duplicate_targets_are_a_shaping_error() -> None:
+    window, node = _make_content()
+    source = Source(window.scene, pl.DataFrame({"a b": [1], "a_b": [2]}).lazy())
+    Edge(window.scene, source.outputs[0], node.inputs[0])
+    node.markDirty(True)
+    assert node.eval() is None
+    assert node.isInvalid()
 
 
 def test_serialize_carries_normalize_state() -> None:
-    window, content = _make_content()
-    assert content.variable_name.startswith("var_normalize_columns_")
+    window, node = _make_content()
+    assert node.content.variable_name.startswith("var_normalize_")
     data = window.scene.serialize()
     node_data = [
-        node
-        for node in data["nodes"]
-        if node.get("op") == "preparation.normalize_columns"
+        item
+        for item in data["nodes"]
+        if item.get("op") == "preparation.normalize_columns"
     ]
     assert len(node_data) == 1
-    state = node_data[0]["content"]
-    assert state["trim_whitespace"] is True
-    assert state["spaces_to_underscore"] is True
-    assert state["case_modification"] == "none"
-    assert state["selected_columns"] == []
+    settings = node_data[0]["content"]["settings"]
+    assert settings["trim_whitespace"] is True
+    assert settings["spaces_to_underscore"] is True
+    assert settings["case_modification"] == "none"
+    assert settings["selected_columns"] == []

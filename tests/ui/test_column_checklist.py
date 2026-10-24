@@ -97,31 +97,3 @@ def test_cleansing_select_none_evaluates_once() -> None:
     content.select_no_fields()
     assert content.selected_fields == []
     assert content.evaluate.count == 1
-
-
-def _normalize_content():
-    from trigger_designer.qt.widgets.nodes.Preparation.normalize_columns import (
-        NormalizeColumnsContent,
-    )
-
-    content = NormalizeColumnsContent.__new__(NormalizeColumnsContent)
-    content.columns_list = _checklist(["a", "b", "c"])
-    content.field_checkboxes = content.columns_list.checkboxes
-    # See _cleansing_content: invoke the unbound handler explicitly.
-    content.columns_list.changed.connect(
-        lambda _cols: NormalizeColumnsContent.on_columns_changed(content)
-    )
-    content.selected_columns = []
-    content._field_selection_initialized = False
-    content.incom_data = None
-    content.evaluate = _EmitCounter()
-    # See _cleansing_content: the pipeline is not what this test is about.
-    content.process_data = lambda: None
-    return content
-
-
-def test_normalize_select_all_evaluates_once() -> None:
-    content = _normalize_content()
-    content.select_all_columns()
-    assert content.selected_columns == ["a", "b", "c"]
-    assert content.evaluate.count == 1

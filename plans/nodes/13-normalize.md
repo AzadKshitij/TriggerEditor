@@ -1,6 +1,6 @@
 ﻿# Normalize - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 7 of 18 (Tier 1, rename columns).
 Read first: `plans/nodes/README.md`.
 
@@ -261,11 +261,12 @@ keep its existing behavior cases.
 
 ## 10. Acceptance
 
-- [ ] No duplicate `build_rename_mapping` implementation remains.
-- [ ] Empty selection still means all columns.
-- [ ] Duplicate names produce a real `TD-SHAPE-002` error.
-- [ ] Downstream rename propagation still works.
-- [ ] Old saved state loads.
+- [x] No duplicate `build_rename_mapping` implementation remains.
+- [x] Empty selection still means all columns.
+- [x] Duplicate names produce a real `TD-SHAPE-002` error.
+- [x] Downstream rename propagation still works.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
 
 ## 11. Do not
 
