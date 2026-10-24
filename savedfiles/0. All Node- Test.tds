@@ -706,28 +706,19 @@
         }
       ],
       "content": {
-        "actions_data": [
-          {
-            "field": "Relevancy Score",
-            "action": "GroupBy",
-            "output_name": "Relevancy Score"
-          },
-          {
-            "field": "Hot Keyword",
-            "action": "Count",
-            "output_name": "Count_Hot Keyword"
-          }
-        ],
-        "changes": {
-          "group_by_columns": [
-            "Relevancy Score"
-          ],
-          "aggregations": {
-            "Hot Keyword": {
-              "function": "count",
-              "alias": "Count_Hot Keyword"
+        "settings": {
+          "actions": [
+            {
+              "field": "Relevancy Score",
+              "action": "GroupBy",
+              "output_name": "Relevancy Score"
+            },
+            {
+              "field": "Hot Keyword",
+              "action": "Count",
+              "output_name": "Count_Hot Keyword"
             }
-          }
+          ]
         }
       },
       "label_text": "",

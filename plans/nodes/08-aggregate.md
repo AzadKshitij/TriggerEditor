@@ -1,6 +1,6 @@
 # Aggregate (GroupBy) - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 12 of 18 (Tier 3, grouping and schema rewrite).
 Read first: `plans/nodes/README.md`.
 
@@ -255,11 +255,12 @@ Run the all-node e2e; add a saved case only if a dedicated fixture is created.
 
 ## 10. Acceptance
 
-- [ ] `changes` is gone from the runtime; actions are the only model.
-- [ ] GroupBy-only, aggregate-only and mixed work as before.
-- [ ] Table undo is one step per action.
-- [ ] Legacy `changes`/`actions_data` load.
-- [ ] Live == generated output.
+- [x] `changes` is gone from the runtime; actions are the only model.
+- [x] GroupBy-only, aggregate-only and mixed work as before.
+- [x] Table undo is one step per action.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 
