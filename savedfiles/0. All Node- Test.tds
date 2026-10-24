@@ -1155,7 +1155,9 @@
         }
       ],
       "content": {
-        "how": "diagonal_relaxed"
+        "settings": {
+          "how": "diagonal_relaxed"
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1195,7 +1197,9 @@
         }
       ],
       "content": {
-        "how": "diagonal_relaxed"
+        "settings": {
+          "how": "diagonal_relaxed"
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1818,7 +1822,9 @@
         }
       ],
       "content": {
-        "how": "diagonal_relaxed"
+        "settings": {
+          "how": "diagonal_relaxed"
+        }
       },
       "label_text": "",
       "label_visible": false,

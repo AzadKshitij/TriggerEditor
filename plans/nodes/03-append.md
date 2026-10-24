@@ -1,6 +1,6 @@
 # Append - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 14 of 18 (Tier 4, two inputs).
 Read first: `plans/nodes/README.md`.
 
@@ -172,11 +172,12 @@ Run the all-node e2e.
 
 ## 10. Acceptance
 
-- [ ] All four concat methods work.
-- [ ] Vertical mismatch has a readable error.
-- [ ] Both inputs are required.
-- [ ] Old saved `how` loads.
-- [ ] Live == generated output.
+- [x] All four concat methods work.
+- [x] Vertical mismatch has a readable error.
+- [x] Both inputs are required.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 
