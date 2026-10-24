@@ -45,10 +45,10 @@ def test_graph_node_runs_clean_and_forwards_its_frame(
     graph = nodes_titled(window, "Graph")[0]
     content = graph.content
     # The saved configuration survived the load untouched.
-    assert content.graph_type == "line"
-    assert content.x_column == "Difficulty"
-    assert content.y_column == "Relevancy Score"
-    assert content.title == "Lol"
+    assert content.settings["graph_type"] == "line"
+    assert content.settings["x_column"] == "Difficulty"
+    assert content.settings["y_column"] == "Relevancy Score"
+    assert content.settings["title"] == "Lol"
 
     run_workflow_and_wait(qtbot, window)
     _assert_run_clean(window)
@@ -61,7 +61,7 @@ def test_graph_node_runs_clean_and_forwards_its_frame(
 
     # The queued run-data signal reached the GUI-thread slot: the frame the
     # run computed is in, and Show graph is unlocked.
-    qtbot.waitUntil(lambda: content.incom_data is not None, timeout=5000)
+    qtbot.waitUntil(lambda: content.frames[0] is not None, timeout=5000)
     assert content.workflow_ran_successfully is True
 
     # Data-only code generation: no matplotlib, no window from a run.

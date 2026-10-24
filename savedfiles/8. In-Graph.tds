@@ -48,10 +48,14 @@
         }
       ],
       "content": {
-        "graph_type": "line",
-        "x_column": "Difficulty",
-        "y_column": "Relevancy Score",
-        "title": "Lol"
+        "settings": {
+          "graph_type": "line",
+          "x_column": "Difficulty",
+          "y_column": "Relevancy Score",
+          "color_column": "",
+          "aggregation": "",
+          "title": "Lol"
+        }
       },
       "node_code": 3,
       "node_type": "report"

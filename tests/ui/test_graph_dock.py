@@ -82,11 +82,9 @@ def _graph(frame=FRAME, saved=None):
     node = cls(window.scene)
     window.scene.nodes.append(node)
     content = node.content
-    for name, value in (saved or {}).items():
-        setattr(content, name, value)
+    content.settings.update(saved or {})
     if frame is not None:
-        content.incom_data = frame
-        content.incoming_variable = "var_in"
+        content.frames[0] = frame
     return {"parent": parent, "window": window, "node": node, "content": content}
 
 
@@ -128,28 +126,38 @@ def test_schema_refresh_keeps_the_selection() -> None:
     content = _build(_graph(saved=SAVED))["content"]
     before = copy.deepcopy(content.serialize())
 
-    content.incom_data = pl.DataFrame(
+    content.frames[0] = pl.DataFrame(
         {"g": ["x"], "a": [1.0], "b": [2], "c": [3], "new": [4]}
     ).lazy()
     content.update_column_options()
 
-    assert (content.x_column, content.y_column) == ("b", "a")
-    assert content.color_column == "g"
+    assert (
+        content.settings["x_column"],
+        content.settings["y_column"],
+    ) == ("b", "a")
+    assert content.settings["color_column"] == "g"
     assert content.x_column_combo.currentText() == "b"
     assert content.y_column_combo.currentText() == "a"
     assert content.color_column_combo.currentText() == "g"
     assert content.serialize() == before
 
 
-def test_removed_column_falls_back_and_shows_the_fallback() -> None:
-    content = _build(_graph(saved={"x_column": "b", "y_column": "a"}))["content"]
+def test_removed_column_stays_saved_and_is_shown_as_missing() -> None:
+    """A saved column survives the schema change instead of being rewritten."""
+    refs = _graph(saved={"x_column": "b", "y_column": "a"})
+    content = _build(refs)["content"]
 
-    content.incom_data = pl.DataFrame({"c": [3, 4], "a": [1, 2]}).lazy()
+    content.frames[0] = pl.DataFrame({"c": [3, 4], "a": [1, 2]}).lazy()
     content.update_column_options()
 
-    assert content.x_column == "c"
-    assert content.y_column == "a"
-    assert content.x_column_combo.currentText() == "c"
+    assert content.settings["x_column"] == "b"
+    assert content.x_column_combo.currentData() == "b"
+    assert content.x_column_combo.currentText() == "b (missing)"
+    assert content.settings["y_column"] == "a"
+    assert content.x_column_combo.itemData(1) == "c"
+
+    # The chart builder reports the problem; the saved value is not rewritten.
+    assert "not in the incoming data" in content.build_spec().message
 
 
 def test_no_data_leaves_the_saved_selection_alone() -> None:
@@ -159,11 +167,15 @@ def test_no_data_leaves_the_saved_selection_alone() -> None:
         )
     )["content"]
 
-    assert (content.x_column, content.y_column, content.color_column) == ("b", "a", "g")
+    assert (
+        content.settings["x_column"],
+        content.settings["y_column"],
+        content.settings["color_column"],
+    ) == ("b", "a", "g")
     assert content.x_column_combo.count() == 0
 
     # The upstream evaluates later; the saved names are still the selection.
-    content.incom_data = FRAME
+    content.frames[0] = FRAME
     content.update_column_options()
 
     assert content.x_column_combo.currentText() == "b"
@@ -239,7 +251,7 @@ def test_run_frame_reaches_the_click_before_the_gui_signal() -> None:
     content.runDataReady.disconnect(content._on_run_data_ready)
     content.after_execution({content.variable_name: FRAME.lazy()})
     content.runDataReady.connect(content._on_run_data_ready)
-    assert content.incom_data is None
+    assert content.frames[0] is None
 
     content.open_graph_in_new_window()
 
@@ -310,13 +322,15 @@ def test_undo_restores_the_widget_from_the_model() -> None:
     history = refs["window"].scene.history
     assert content.graph_type_combo.currentText() == "Bar"
 
-    assert content.push_property_change(("graph_type",), "bar", "line", "Graph type")
+    assert content.push_property_change(
+        ("settings", "graph_type"), "bar", "line", "Graph type"
+    )
     assert history.controller.count == 1
 
     history.undo()
     APP.processEvents()
 
-    assert content.graph_type == "bar"
+    assert content.settings["graph_type"] == "bar"
     assert content.graph_type_combo.currentText() == "Bar"
 
 
@@ -324,9 +338,9 @@ def test_aggregation_widget_surfaces_the_type_default_while_auto() -> None:
     content = _build(_graph(saved={}))["content"]
 
     assert content.aggregation_combo.currentText() == "None"
-    assert content.aggregation == ""
+    assert content.settings["aggregation"] == ""
 
     content.graph_type_combo.setCurrentText("Bar")
 
     assert content.aggregation_combo.currentText() == "Sum"
-    assert content.aggregation == ""
+    assert content.settings["aggregation"] == ""

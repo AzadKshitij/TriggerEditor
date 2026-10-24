@@ -2016,12 +2016,14 @@
         }
       ],
       "content": {
-        "graph_type": "line",
-        "x_column": "Relevancy Score",
-        "y_column": "Hot Keyword",
-        "title": "",
-        "color_column": "",
-        "aggregation": ""
+        "settings": {
+          "graph_type": "line",
+          "x_column": "Relevancy Score",
+          "y_column": "Hot Keyword",
+          "color_column": "",
+          "aggregation": "",
+          "title": ""
+        }
       },
       "label_text": "",
       "label_visible": false,

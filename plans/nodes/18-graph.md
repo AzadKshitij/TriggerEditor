@@ -1,6 +1,6 @@
 # Graph - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 6 of 18 (Tier 0, pass-through data, chart side effect).
 Read first: `plans/nodes/README.md`.
 
@@ -201,11 +201,12 @@ Keep `tests/e2e/test_graph_run.py` and the saved Graph workflow green.
 
 ## 10. Acceptance
 
-- [ ] Graph output equals its input for every graph type.
-- [ ] The chart window opens after Run and after live configuration changes.
-- [ ] No file is written just by editing the dock.
-- [ ] Old saved graph settings load.
-- [ ] Live == generated output.
+- [x] Graph output equals its input for every graph type.
+- [x] The chart window opens after Run and after live configuration changes.
+- [x] No file is written just by editing the dock.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output.
 
 ## 11. Do not
 
