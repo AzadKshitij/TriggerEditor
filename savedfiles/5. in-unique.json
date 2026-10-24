@@ -48,12 +48,14 @@
                 }
             ],
             "content": {
-                "selected_columns": [
-                    "Keyword",
-                    "Seed",
-                    "Source",
-                    "Country"
-                ]
+                "settings": {
+                    "selected_columns": [
+                        "Keyword",
+                        "Seed",
+                        "Source",
+                        "Country"
+                    ]
+                }
             },
             "op_code": 6,
             "op_type": "PREPARATION"

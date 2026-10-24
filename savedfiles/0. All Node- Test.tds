@@ -352,9 +352,11 @@
         }
       ],
       "content": {
-        "selected_columns": [
-          "Relevancy Score"
-        ]
+        "settings": {
+          "selected_columns": [
+            "Relevancy Score"
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,

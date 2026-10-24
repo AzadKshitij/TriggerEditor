@@ -48,9 +48,11 @@
                 }
             ],
             "content": {
-                "selected_columns": [
-                    "Difficulty"
-                ]
+                "settings": {
+                    "selected_columns": [
+                        "Difficulty"
+                    ]
+                }
             },
             "op_code": 6,
             "op_type": "PREPARATION"

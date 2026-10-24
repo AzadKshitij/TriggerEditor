@@ -1,6 +1,6 @@
 ﻿# Unique - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 5 of 18 (Tier 0, row removal, two outputs).
 Read first: `plans/nodes/README.md`.
 
@@ -191,11 +191,12 @@ Update any test that reads `UniqueContent.selected_columns` or
 
 ## 10. Acceptance
 
-- [ ] Both output sockets produce the correct frames.
-- [ ] No selected columns still passes through instead of erroring.
-- [ ] Duplicate rows are all copies, as before.
-- [ ] Old `selected_columns` saved state loads.
-- [ ] Live == generated output for both sockets.
+- [x] Both output sockets produce the correct frames.
+- [x] No selected columns still passes through instead of erroring.
+- [x] Duplicate rows are all copies, as before.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Live == generated output for both sockets.
 
 ## 11. Do not
 
