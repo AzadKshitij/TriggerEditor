@@ -91,48 +91,52 @@ def test_output_socket_carries_the_incoming_frame() -> None:
     forwarded = graph.param[0]["data"]
     assert forwarded is not None
     assert forwarded.collect().equals(df.collect())
-    assert graph.content.incom_data is not None
+    assert graph.content.frames[0] is not None
 
 
 def test_saved_settings_survive_serialize_and_deserialize() -> None:
     refs = _wired_graph(pl.DataFrame({"a": [1], "b": [2]}).lazy())
     content = refs["graph"].content
-    content.graph_type = "bar"
-    content.x_column = "b"
-    content.y_column = "a"
-    content.title = "Saved title"
-    content.aggregation = "mean"
+    content.settings.update(
+        {
+            "graph_type": "bar",
+            "x_column": "b",
+            "y_column": "a",
+            "title": "Saved title",
+            "aggregation": "mean",
+        }
+    )
     payload = copy.deepcopy(content.serialize())
 
     fresh = _graph_node(refs["window"].scene)
     fresh.content.deserialize(payload)
 
-    assert fresh.content.graph_type == "bar"
-    assert fresh.content.x_column == "b"
-    assert fresh.content.y_column == "a"
-    assert fresh.content.title == "Saved title"
-    assert fresh.content.aggregation == "mean"
+    settings = fresh.content.settings
+    assert settings["graph_type"] == "bar"
+    assert settings["x_column"] == "b"
+    assert settings["y_column"] == "a"
+    assert settings["title"] == "Saved title"
+    assert settings["aggregation"] == "mean"
     assert fresh.content.serialize() == payload
 
 
 def test_payload_predating_new_fields_still_loads() -> None:
     refs = _wired_graph(pl.DataFrame({"a": [1], "b": [2]}).lazy())
     content = refs["graph"].content
-    content.graph_type = "bar"
-    content.x_column = "b"
-    content.y_column = "a"
+    content.settings.update({"graph_type": "bar", "x_column": "b", "y_column": "a"})
     payload = copy.deepcopy(content.serialize())
-    payload.pop("color_column", None)
-    payload.pop("aggregation", None)
+    payload["settings"].pop("color_column", None)
+    payload["settings"].pop("aggregation", None)
 
     fresh = _graph_node(refs["window"].scene)
     fresh.content.deserialize(payload)
 
-    assert fresh.content.graph_type == "bar"
-    assert fresh.content.x_column == "b"
-    assert fresh.content.y_column == "a"
-    assert fresh.content.color_column == ""
-    assert fresh.content.aggregation == ""
+    settings = fresh.content.settings
+    assert settings["graph_type"] == "bar"
+    assert settings["x_column"] == "b"
+    assert settings["y_column"] == "a"
+    assert settings["color_column"] == ""
+    assert settings["aggregation"] == ""
 
 
 def test_generated_code_is_data_only() -> None:
@@ -143,7 +147,8 @@ def test_generated_code_is_data_only() -> None:
 
     assert "matplotlib" not in code
     assert "plt" not in code
-    assert f"{content.variable_name} = {content.incoming_variable}" in code
+    assert "trigger_designer.core.shaping.graph" in code
+    assert "run_node" in code
     assert "pl.DataFrame()" not in code
 
 
@@ -167,7 +172,7 @@ def test_run_data_is_announced_and_adopted() -> None:
     content.after_execution({content.variable_name: run_frame})
 
     assert seen == [run_frame]
-    assert content.incom_data is run_frame
+    assert content.frames[0] is run_frame
     assert content.workflow_ran_successfully is True
 
 
@@ -185,32 +190,33 @@ def test_run_without_a_frame_is_still_announced() -> None:
 def test_run_data_keeps_a_selection_whose_columns_survive() -> None:
     refs = _wired_graph(pl.DataFrame({"a": [1], "b": [2]}).lazy())
     content = refs["graph"].content
-    content.x_column = "b"
-    content.y_column = "a"
+    content.settings.update({"x_column": "b", "y_column": "a"})
 
     content.after_execution(
         {content.variable_name: pl.DataFrame({"a": [3], "b": [4], "c": [5]}).lazy()}
     )
 
-    assert content.x_column == "b"
-    assert content.y_column == "a"
+    assert content.settings["x_column"] == "b"
+    assert content.settings["y_column"] == "a"
 
 
-def test_run_data_falls_back_only_for_columns_that_vanished() -> None:
+def test_run_data_keeps_a_saved_column_that_vanished() -> None:
+    """A saved column is never silently rewritten to another column."""
     refs = _wired_graph(pl.DataFrame({"a": [1], "b": [2]}).lazy())
     content = refs["graph"].content
-    content.x_column = "b"
-    content.y_column = "a"
+    content.settings.update({"x_column": "b", "y_column": "a"})
 
     content.after_execution(
         {content.variable_name: pl.DataFrame({"b2": [3], "a": [4]}).lazy()}
     )
 
-    assert content.x_column == "b2"
-    assert content.y_column == "a"
+    assert content.settings["x_column"] == "b"
+    assert content.settings["y_column"] == "a"
+    assert "not in the incoming data" in content.build_spec().message
 
 
-def test_saved_column_follows_an_upstream_rename() -> None:
+def test_saved_column_is_not_rewritten_by_an_upstream_rename() -> None:
+    """Graph keeps the saved name; the chart reports the missing column."""
     parent = QMainWindow()
     window = TriggerSubWindow(parent)
     scene = window.scene
@@ -227,39 +233,38 @@ def test_saved_column_follows_an_upstream_rename() -> None:
 
     graph = _graph_node(scene)
     Edge(scene, select.outputs[0], graph.inputs[0])
-    graph.content.x_column = "b"
-    graph.content.y_column = "a"
+    graph.content.settings.update({"x_column": "b", "y_column": "a"})
     graph.eval()
     APP.processEvents()
 
-    assert graph.content.x_column == "b2"
+    assert graph.content.settings["x_column"] == "b"
+    assert "not in the incoming data" in graph.content.build_spec().message
 
 
-def test_combo_labels_map_to_stored_values() -> None:
+def test_setting_changes_are_stored_in_the_model() -> None:
     refs = _wired_graph(pl.DataFrame({"a": [1]}).lazy())
     content = refs["graph"].content
 
-    content.on_graph_type_changed("Bar")
-    content.on_aggregation_changed("Mean")
-    content.on_color_column_changed("(none)")
-    content.on_color_column_changed("a")
+    content.set_setting("graph_type", "bar", "Graph Type Changed")
+    content.set_setting("aggregation", "mean", "Graph Aggregate Changed")
+    content.set_setting("color_column", "a", "Graph Color by Changed")
 
-    assert content.graph_type == "bar"
-    assert content.aggregation == "mean"
-    assert content.color_column == "a"
+    assert content.settings["graph_type"] == "bar"
+    assert content.settings["aggregation"] == "mean"
+    assert content.settings["color_column"] == "a"
 
-    content.on_color_column_changed("(none)")
-    assert content.color_column == ""
+    content.set_setting("color_column", "", "Graph Color by Changed")
+    assert content.settings["color_column"] == ""
 
 
 def test_changing_type_leaves_an_auto_aggregation_auto() -> None:
     refs = _wired_graph(pl.DataFrame({"a": [1]}).lazy())
     content = refs["graph"].content
 
-    content.on_graph_type_changed("Bar")
+    content.set_setting("graph_type", "bar", "Graph Type Changed")
 
     # "" means "the chart type's default", resolved at build time.
-    assert content.aggregation == ""
+    assert content.settings["aggregation"] == ""
 
 
 def test_startup_import_sweep_keeps_the_chart_backend_out() -> None:
