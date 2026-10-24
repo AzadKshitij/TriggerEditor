@@ -89,12 +89,14 @@
         }
       ],
       "content": {
-        "column": "Keyword",
-        "operation": "Contains",
-        "value": "x",
-        "value2": "",
-        "mode": "builder",
-        "expression": ""
+        "settings": {
+          "mode": "builder",
+          "column": "Keyword",
+          "operation": "Contains",
+          "value": "x",
+          "value2": "",
+          "expression": ""
+        }
       },
       "label_text": "",
       "label_visible": false,

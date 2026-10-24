@@ -55,9 +55,14 @@
                 }
             ],
             "content": {
-                "column": "Difficulty",
-                "operation": "Greater Than or Equal",
-                "value": "7"
+                "settings": {
+                    "mode": "builder",
+                    "column": "Difficulty",
+                    "operation": "Greater Than or Equal",
+                    "value": "7",
+                    "value2": "",
+                    "expression": ""
+                }
             },
             "op_code": 2,
             "op_type": "PREPARATION"

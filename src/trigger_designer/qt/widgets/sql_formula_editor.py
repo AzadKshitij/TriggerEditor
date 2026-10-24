@@ -41,10 +41,12 @@ from qtpy.QtGui import (
     QTextFormat,
 )
 
+from trigger_designer.core.shaping import sql_expression as _sql_expression
 from trigger_designer.qt.theme_manager import get_theme_manager
 
-#: Matches '...' and "..." literals, SQL-style ''/"" escapes included.
-STRING_LITERAL_RE = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"")
+#: Re-exported for callers that already import them from this module.
+STRING_LITERAL_RE = _sql_expression.STRING_LITERAL_RE
+translate_function_aliases = _sql_expression.translate_function_aliases
 
 #: Fixed debounce between typing and validation.
 ERROR_CHECK_DEBOUNCE_MS = 800
@@ -108,16 +110,6 @@ def mask_string_literals(text: str) -> str:
         lambda match: "".join(" " if char != "\n" else "\n" for char in match.group()),
         text,
     )
-
-
-def translate_function_aliases(segment: str) -> str:
-    """Rewrite convenience function spellings to DuckDB names.
-
-    Applied to code segments only (never inside string literals): ``strip(``
-    is the Python spelling of DuckDB's ``trim(``. Signatures match, so a
-    plain token swap is semantics-preserving.
-    """
-    return re.sub(r"(?i)\bstrip\s*\(", "trim(", segment)
 
 
 #: Shared keyword list for highlighting + autocomplete (single source of truth).

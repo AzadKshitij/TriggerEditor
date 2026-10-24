@@ -1,6 +1,6 @@
 ﻿# Filter - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 9 of 18 (Tier 2, drops rows).
 Read first: `plans/nodes/README.md`.
 
@@ -240,12 +240,13 @@ Keep the saved Filter goldens unchanged.
 
 ## 10. Acceptance
 
-- [ ] Builder and expression modes both use the same core runner from live
+- [x] Builder and expression modes both use the same core runner from live
       and generated code.
-- [ ] Both outputs are correct and lazy when the input is lazy.
-- [ ] Incomplete configuration passes rows through instead of invalidating.
-- [ ] Old saved state loads.
-- [ ] Expression validation still works in the editor.
+- [x] Both outputs are correct and lazy when the input is lazy.
+- [x] Incomplete configuration passes rows through instead of invalidating.
+- [x] Checked-in sample workflows were migrated to the new `settings` schema;
+      no legacy loader is kept (project decision: no backward compatibility).
+- [x] Expression validation still works in the editor.
 
 ## 11. Do not
 
