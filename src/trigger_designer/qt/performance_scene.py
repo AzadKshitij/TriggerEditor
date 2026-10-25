@@ -54,6 +54,27 @@ class CachedGraphicsEdge(QDMGraphicsEdge):
 
 
 class TriggerEdge(Edge):
+    def __init__(
+        self,
+        scene,
+        start_socket=None,
+        end_socket=None,
+        *args,
+        **kwargs,
+    ) -> None:
+        # A drag may start on an input socket. The package accepts that pair,
+        # but every graph algorithm requires an output->input edge, so store
+        # the direction data flows, not the direction the user dragged. The
+        # temporary drag edge has no end socket and is left untouched.
+        if (
+            start_socket is not None
+            and end_socket is not None
+            and getattr(start_socket, "is_input", False)
+            and getattr(end_socket, "is_output", False)
+        ):
+            start_socket, end_socket = end_socket, start_socket
+        super().__init__(scene, start_socket, end_socket, *args, **kwargs)
+
     def getGraphicsEdgeClass(self):
         return CachedGraphicsEdge
 

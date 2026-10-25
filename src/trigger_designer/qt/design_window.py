@@ -1,5 +1,4 @@
 from loguru import logger
-from collections import deque
 from contextlib import contextmanager, nullcontext
 import os
 import time
@@ -20,6 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
+from nodeeditor.node_graph import GraphCycleError, topological_order
 from nodeeditor.utils import dumpException
 
 from trigger_designer.core.node_configuration import (
@@ -332,9 +332,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         # A cyclic graph cannot be sorted; fall back to creation order rather
         # than failing the load, matching the previous behaviour.
         try:
-            ordered_nodes = self.topologicalSort(self.getNodeConnections())
-        except Exception as exc:  # noqa: BLE001 - load must not fail on a bad graph
-            self.logWarning(f"Could not sort workflow nodes for evaluation: {exc}")
+            ordered_nodes = topological_order(self.scene)
+        except GraphCycleError as exc:
+            self.logWarning(
+                f"Workflow has a cycle; evaluating in creation order: {exc}"
+            )
             ordered_nodes = list(self.scene.nodes)
 
         # The workflow loader passes its dialog; history restores and other
@@ -534,10 +536,34 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             ):
                 invalid_edges.append(edge)
 
-        # Remove invalid edges
+        # Remove invalid edges. Name both endpoints so a legacy reversed edge
+        # (input -> output) does not disappear without a trace.
         for edge in invalid_edges:
-            if edge in self.scene.edges:
-                edge.remove(silent=True)
+            if edge not in self.scene.edges:
+                continue
+            start_node = (
+                edge.start_socket.node if edge.start_socket is not None else None
+            )
+            end_node = edge.end_socket.node if edge.end_socket is not None else None
+            start_title = (
+                getattr(start_node, "title", None)
+                or getattr(type(start_node), "node_title", None)
+                if start_node is not None
+                else None
+            )
+            end_title = (
+                getattr(end_node, "title", None)
+                or getattr(type(end_node), "node_title", None)
+                if end_node is not None
+                else None
+            )
+            edge.remove(silent=True)
+            if start_title or end_title:
+                self.logWarning(
+                    "Removed invalid edge during workflow load: "
+                    f"{start_title or '?'} -> {end_title or '?'}"
+                )
+            else:
                 self.logWarning(f"Removed invalid edge during workflow load: {edge}")
 
     def setTitle(self) -> None:
@@ -744,33 +770,18 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             }
         return connections
 
-    def topologicalSort(self, connections):
-        in_degree = {node: 0 for node in connections}
-        for node in connections:
-            for output_node in connections[node]["outputs"]:
-                in_degree[output_node] += 1
+    def topologicalSort(self, connections=None):
+        """Deprecated: use :func:`nodeeditor.node_graph.topological_order`.
 
-        queue = deque([node for node in connections if in_degree[node] == 0])
-        sorted_nodes = []
-
-        while queue:
-            node = queue.popleft()
-            sorted_nodes.append(node)
-            for output_node in connections[node]["outputs"]:
-                in_degree[output_node] -= 1
-                if in_degree[output_node] == 0:
-                    queue.append(output_node)
-
-        if len(sorted_nodes) != len(connections):
-            raise Exception("Graph has at least one cycle")
-
-        return sorted_nodes
+        Kept for one release so existing callers keep working. ``connections``
+        is ignored; the scene is the graph of record.
+        """
+        return topological_order(self.scene)
 
     def test_execution_visuals(self) -> None:
         """Test function to verify execution visual effects"""
         self.run_button.setEnabled(False)
-        connections = self.getNodeConnections()
-        sorted_nodes = self.topologicalSort(connections)
+        sorted_nodes = topological_order(self.scene)
 
         # Get all nodes
         nodes = self.getAllNodes()

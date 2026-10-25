@@ -4,6 +4,7 @@ import time
 from typing import Any, Dict, List, Union
 
 from loguru import logger
+from nodeeditor.node_graph import GraphCycleError, topological_order
 from qtpy.QtCore import QTimer
 
 from trigger_designer.core.errors import translate_exception
@@ -81,8 +82,18 @@ class WorkflowExecutionMixin:
         if hasattr(self, "run_button"):
             self.run_button.setEnabled(False)
 
-        connections = self.getNodeConnections()
-        sorted_nodes = self.topologicalSort(connections)
+        try:
+            sorted_nodes = topological_order(self.scene)
+        except GraphCycleError as exc:
+            # Never leave the Run button disabled because the graph cannot be
+            # ordered. Step 3 adds the user-facing TD-CLI-004 wording and
+            # selects the cycle edges; the state restoration belongs here.
+            if hasattr(self, "run_button"):
+                self.run_button.setEnabled(True)
+            message = f"Cannot run the workflow because it contains a cycle: {exc}"
+            logger.warning(message)
+            self._log_to_dock(message)
+            return
         executor = NodeExecutor()
 
         # Reset node visuals and stored results

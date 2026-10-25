@@ -59,15 +59,42 @@ REQUIRED_API = {
         "QDMGraphicsNode",
         "syncDetailVisibility",
     ): "applying the detail state to a node",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "topological_order",
+    ): "dependency ordering for load, restore, and Run",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "ancestors",
+    ): "error-context upstream traversal",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "descendants",
+    ): "cycle validation and affected-node closure",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "cycles",
+    ): "formatting a cycle for load and Run",
+    (
+        "nodeeditor",
+        None,
+        "GraphCycleError",
+    ): "catching a cyclic workflow without failing the load",
 }
 
 
-def _resolve(module_name: str, class_name: str, attribute: str):
+def _resolve(module_name: str, class_name: str | None, attribute: str):
     """Return the attribute, or ``None`` when the module or class lacks it."""
     try:
         module = __import__(module_name, fromlist=["__name__"])
     except ImportError:
         return None
+    if class_name is None:
+        return getattr(module, attribute, None)
     owner = getattr(module, class_name, None)
     if owner is None:
         return None
@@ -77,7 +104,10 @@ def _resolve(module_name: str, class_name: str, attribute: str):
 @pytest.mark.parametrize(
     ("module_name", "class_name", "attribute"),
     sorted(REQUIRED_API),
-    ids=[f"{cls}.{attr}" for _, cls, attr in sorted(REQUIRED_API)],
+    ids=[
+        f"{cls or module_name}.{attr}"
+        for module_name, cls, attr in sorted(REQUIRED_API)
+    ],
 )
 def test_installed_nodeeditor_has_required_api(
     module_name: str, class_name: str, attribute: str
