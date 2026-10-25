@@ -1058,11 +1058,17 @@ class TriggerNode(Node):
             callback(self, finished)
 
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
-        # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
+        # A connection changes the consumer's inputs, not the producer's value.
+        # The package follows this with onInputChanged(socket) on the consumer,
+        # which performs the one evaluation for the drag-end sequence. On
+        # removal both sockets are already cleared, so onInputChanged does the
+        # consumer work and the producer stays untouched.
         self.clear_error("run")
+        end_socket = getattr(new_edge, "end_socket", None)
+        if end_socket is None or self is not getattr(end_socket, "node", None):
+            return
         self.markDirty()
         self.markDescendantsDirty()
-        self.eval()
 
     def onInputChanged(self, socket: Optional["Socket"] = None) -> None:
         content = getattr(self, "content", None)
