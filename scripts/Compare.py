@@ -1,12 +1,9 @@
-import pandas as pd
 import polars as pl
 import time
 import psutil
 import os
 import sys
 import traceback
-from pathlib import Path
-import numpy as np
 
 
 def get_memory_usage():
@@ -22,127 +19,6 @@ def format_size(bytes_size):
             return f"{bytes_size:.2f} {unit}"
         bytes_size /= 1024.0
     return f"{bytes_size:.2f} TB"
-
-
-def test_pandas_read(filename):
-    """Test pandas CSV reading"""
-    print("\n" + "=" * 60)
-    print("TESTING PANDAS")
-    print("=" * 60)
-
-    results = {}
-
-    # Standard pandas read_csv
-    try:
-        memory_before = get_memory_usage()
-        start_time = time.time()
-
-        df = pd.read_csv(filename, nrows=10)
-
-        end_time = time.time()
-        memory_after = get_memory_usage()
-
-        results["pandas_standard"] = {
-            "method": "pandas.read_csv() - standard",
-            "time": end_time - start_time,
-            "memory_used": memory_after - memory_before,
-            "rows": len(df),
-            "columns": len(df.columns),
-            "success": True,
-            "dataframe_memory": df.memory_usage(deep=True).sum() / 1024 / 1024,
-        }
-
-        print(f"✓ Standard pandas read completed")
-        del df  # Free memory
-
-    except Exception as e:
-        results["pandas_standard"] = {
-            "method": "pandas.read_csv() - standard",
-            "success": False,
-            "error": str(e),
-        }
-        print(f"✗ Standard pandas read failed: {e}")
-
-    # # Pandas with chunking
-    # try:
-    #     memory_before = get_memory_usage()
-    #     start_time = time.time()
-
-    #     chunk_size = 10000
-    #     chunks = []
-    #     for chunk in pd.read_csv(filename, chunksize=chunk_size):
-    #         chunks.append(chunk)
-    #     df = pd.concat(chunks, ignore_index=True)
-
-    #     end_time = time.time()
-    #     memory_after = get_memory_usage()
-
-    #     results['pandas_chunked'] = {
-    #         'method': 'pandas.read_csv() - chunked (10k rows)',
-    #         'time': end_time - start_time,
-    #         'memory_used': memory_after - memory_before,
-    #         'rows': len(df),
-    #         'columns': len(df.columns),
-    #         'success': True,
-    #         'dataframe_memory': df.memory_usage(deep=True).sum() / 1024 / 1024
-    #     }
-
-    #     print(f"✓ Chunked pandas read completed")
-    #     del df, chunks  # Free memory
-
-    # except Exception as e:
-    #     results['pandas_chunked'] = {
-    #         'method': 'pandas.read_csv() - chunked',
-    #         'success': False,
-    #         'error': str(e)
-    #     }
-    #     print(f"✗ Chunked pandas read failed: {e}")
-
-    # # Pandas with specific dtypes
-    # try:
-    #     memory_before = get_memory_usage()
-    #     start_time = time.time()
-
-    #     # Define dtypes to optimize memory
-    #     dtypes = {
-    #         'id': 'int32',
-    #         'name': 'string',
-    #         'age': 'int8',
-    #         'salary': 'float32',
-    #         'department': 'category',
-    #         'score': 'float32',
-    #         'active': 'bool',
-    #         'city': 'category',
-    #         'notes': 'string'
-    #     }
-
-    #     df = pd.read_csv(filename, dtype=str, nrows=10)
-
-    #     end_time = time.time()
-    #     memory_after = get_memory_usage()
-
-    #     results['pandas_optimized'] = {
-    #         'method': 'pandas.read_csv() - optimized dtypes',
-    #         'time': end_time - start_time,
-    #         'memory_used': memory_after - memory_before,
-    #         'rows': len(df),
-    #         'columns': len(df.columns),
-    #         'success': True,
-    #         'dataframe_memory': df.memory_usage(deep=True).sum() / 1024 / 1024
-    #     }
-
-    #     print(f"✓ Optimized pandas read completed")
-    #     del df  # Free memory
-
-    # except Exception as e:
-    #     results['pandas_optimized'] = {
-    #         'method': 'pandas.read_csv() - optimized dtypes',
-    #         'success': False,
-    #         'error': str(e)
-    #     }
-    #     print(f"✗ Optimized pandas read failed: {e}")
-
-    return results
 
 
 def test_polars_read(filename):
@@ -369,9 +245,6 @@ def main():
 
         # Run all tests
         all_results = {}
-
-        # Test pandas methods
-        all_results["pandas"] = test_pandas_read(test_file)
 
         # Test polars methods
         all_results["polars"] = test_polars_read(test_file)

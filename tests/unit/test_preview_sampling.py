@@ -9,7 +9,6 @@ sys.path.insert(
     os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
 )
 
-import pandas as pd
 import polars as pl
 import pytest
 
@@ -91,8 +90,25 @@ def test_empty_lazy_frame():
     assert window.limited is False
 
 
-def test_pandas_path_converts_and_caps():
-    window = collect_preview(pd.DataFrame({"n": range(5000)}), max_rows=1000)
+def test_pandas_path_converts_and_caps(monkeypatch):
+    """The duck-typed pandas branch works without pandas being installed.
+
+    ``collect_preview`` recognizes a foreign frame by its ``DataFrame``
+    name plus a ``pandas`` module prefix (no import), then hands it to
+    ``pl.from_pandas``. The stub satisfies the detection half; the
+    conversion is the external boundary polars owns, so it is stubbed to
+    return a real frame of the same shape pandas would have carried.
+    """
+
+    class DataFrame:  # name and module must satisfy _is_pandas_dataframe
+        pass
+
+    DataFrame.__module__ = "pandas.core.frame"
+
+    converted = pl.DataFrame({"n": range(5000)})
+    monkeypatch.setattr(pl, "from_pandas", lambda df: converted)
+
+    window = collect_preview(DataFrame(), max_rows=1000)
     assert isinstance(window.frame, pl.DataFrame)
     assert window.frame.height == 1000
     assert window.total_rows == 5000

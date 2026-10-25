@@ -114,7 +114,36 @@ properly, before and after, with the self-exit flag.
   Gotcha recorded for later phases: **bare `uv sync` prunes the `profiling`
   group** — the project convention is `uv sync --all-groups`.
 
-## Phase 3 — Dev deps cleanup (pandas→polars etc.) — pending
+## Phase 3 — Dev deps cleanup (pandas→polars etc.) — DONE 2026-10-25
+
+- dev group: dropped `pandas`, `pandas-stubs`, `autotyping`, `faker`,
+  `pkgsizer`, `pytest-xdist`. `uv sync` cascaded out `typer`/`rich`/`pytz`/
+  `tzdata`/`mdurl`/`shellingham` with them (they were all reached only via
+  `pkgsizer→typer` and `pandas→pytz/tzdata`) — the venv shrank accordingly.
+- `tests/unit/test_preview_sampling.py`: the pandas-branch test now builds a
+  stub class named `DataFrame` with `__module__ = "pandas.core.frame"` (what
+  `_is_pandas_dataframe` actually inspects — no pandas import involved) and
+  monkeypatches `pl.from_pandas`, so the conversion branch and the row cap
+  stay pinned without pandas installed.
+- `scripts/Compare.py`: dropped `import pandas`/`numpy`/`pathlib`, the
+  `test_pandas_read()` block (incl. its commented-out chunked/dtype variants)
+  and its call in `main()`. It still measures polars vs the stdlib `csv`
+  module. Ruff findings went 18 → 14 (the four in the deleted pandas block
+  left with it); the remaining ones (F541/BLE001/E722/S110) and ty's
+  `dask.dataframe` unresolved-import are pre-existing patterns in the
+  untouched helpers, verified by re-running both tools on `git show HEAD`
+  of the same path.
+- Deleted `scripts/check_output_pandas.py` (generated scratch: one workflow's
+  pandas code export) and `scripts/autotype.bat` (wrapper around the removed
+  `autotyping`). The polars equivalent, `scripts/check_output_polars.py`,
+  stays.
+- The app's *defensive* pandas duck-typing (`core/charts.py`,
+  `qt/models/preview_sampling.py`) is untouched by design: a user's custom
+  node may hand the preview a pandas frame from their own environment. The
+  pyproject comment block records this and the `uv add --dev pandas` escape
+  hatch for the `savedfiles/` reference pipelines.
+- Gate: full pytest 803 passed / 6 skipped; ruff format no-ops on touched
+  files.
 
 ## Phase 4 — Clean-venv proof + nodeeditor 0.8.2 — pending
 

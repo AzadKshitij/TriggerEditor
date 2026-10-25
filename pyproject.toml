@@ -16,7 +16,11 @@ authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 # Keep this list to packages the *application* imports. pandas, numba/llvmlite,
 # numexpr and seaborn are intentionally absent: nothing under
 # src/trigger_designer imports them, and PyInstaller excludes them from the
-# bundle. pandas stays in the dev group for the preview tests and scripts.
+# bundle. pandas is gone from the dev group too (Phase 3): the preview test
+# stubs it and scripts/Compare.py measures polars against the stdlib csv
+# module. The savedfiles/ example pipelines that still import pandas are
+# reference material for their workflows' goldens, not test inputs - re-run
+# them with a one-off `uv add --dev pandas` if ever needed.
 #
 # pyarrow is NOT optional: DuckDB registers Polars frames by calling
 # DataFrame.to_arrow(), which imports pyarrow. Dropping it breaks every
@@ -105,19 +109,11 @@ markers = [
 
 [dependency-groups]
 dev = [
-    "autotyping==24.9.0",
-    "faker==40.39.0",
-    # Tests and developer scripts still exercise the pandas preview path;
-    # the application itself does not import pandas, so it is not bundled.
-    "pandas==2.3.3",
-    "pandas-stubs==2.3.3.260113",
-    "pkgsizer>=0.1.1",
     "pre-commit==4.6.2",
     "pyinstaller==6.22.3",
     "pytest==9.1.1",
     "pytest-qt==4.5.0",
     "pytest-timeout==2.4.0",
-    "pytest-xdist==3.8.0",
     "ruff==0.16.9",
     "ty==0.0.84",
 ]
