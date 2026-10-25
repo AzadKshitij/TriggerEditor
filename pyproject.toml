@@ -49,7 +49,7 @@ dependencies = [
     # Node canvas. Published on PyPI as `nodeeditor-qtpy`; the import package
     # is `nodeeditor`. No extras needed: the Qt binding (pyqt6) is already a
     # direct dependency above. qtpy>=2.4.3 is nodeeditor-qtpy's own floor.
-    "nodeeditor-qtpy==0.8.1",
+    "nodeeditor-qtpy==0.8.2",
     # Visualization
     "matplotlib==3.11.2",
     "pillow==12.3.0",

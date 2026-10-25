@@ -293,15 +293,15 @@ wheels = [
 
 [[package]]
 name = "nodeeditor-qtpy"
-version = "0.8.1"
+version = "0.8.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "orjson" },
     { name = "qtpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a7/e4/d6446c089da5e7d5485a59746b102c99585d719508d831dd731f87b13a84/nodeeditor_qtpy-0.8.1.tar.gz", hash = "sha256:b97f5d61e6bb4647697d9e9bab033e5ad5513f6aac4ea1d00a34ac86002d30c5", size = 448606, upload-time = "2026-10-21T20:15:03.655Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/56/a1/bc4e706cf3195ae6c12ecd2b042a32d52fcdc7826232976fd77aa120e5a2/nodeeditor_qtpy-0.8.2.tar.gz", hash = "sha256:a82b1b616a4345c69dc31b5017055a19c6dfe15a3fd2b892a5c1fef3a019ebf3", size = 465385, upload-time = "2026-10-25T12:53:24.41Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/68/5e/c3d5c3e94baa6d8f8044cb0ed6aa1aec6297387b8afb9d5ad317b354a1ab/nodeeditor_qtpy-0.8.1-py3-none-any.whl", hash = "sha256:be9cea0755def71a4647e6c3632a0497a006804f160b4cc46f22f46949296f33", size = 125441, upload-time = "2026-10-21T20:15:02.103Z" },
+    { url = "https://files.pythonhosted.org/packages/16/71/4d255975d62c68181e8c16c8cdff9e9a892a222752a15fc0f3e39a83bd49/nodeeditor_qtpy-0.8.2-py3-none-any.whl", hash = "sha256:60a543c72b94cfacb7becf3eee3a6e784d7677e23912d11cc053f695679714f4", size = 135221, upload-time = "2026-10-25T12:53:22.673Z" },
 ]
 
 [[package]]
@@ -887,7 +887,7 @@ requires-dist = [
     { name = "fastexcel", specifier = ">=0.15.1" },
     { name = "loguru", specifier = "==0.7.3" },
     { name = "matplotlib", specifier = "==3.11.2" },
-    { name = "nodeeditor-qtpy", specifier = "==0.8.1" },
+    { name = "nodeeditor-qtpy", specifier = "==0.8.2" },
     { name = "numpy", specifier = "==2.5.3" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "orjson", specifier = "==3.12.0" },

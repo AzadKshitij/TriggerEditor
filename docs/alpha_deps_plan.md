@@ -145,7 +145,26 @@ properly, before and after, with the self-exit flag.
 - Gate: full pytest 803 passed / 6 skipped; ruff format no-ops on touched
   files.
 
-## Phase 4 — Clean-venv proof + nodeeditor 0.8.2 — pending
+## Phase 4 — Clean-clone install + nodeeditor 0.8.2 — DONE 2026-10-25
+
+- `nodeeditor-qtpy` 0.8.1 → 0.8.2 (pure-Python patch). The self-tracking
+  pin gate (`test_installed_nodeeditor_matches_the_pinned_version`) re-reads
+  the pin and passed; all 10 nodeeditor API tests green.
+- **Clean-venv proof (the stranger test):** fresh venv under
+  `%TEMP%\opencode\clean_alpha_env` built by `uv venv --python 3.14` +
+  `UV_PROJECT_ENVIRONMENT=<venv> uv sync --all-groups` against the lockfile
+  — no manual installs. Result: python 3.14.8 / Qt 6.11.0 / nodeeditor 0.8.2;
+  **full suite 803 passed / 6 skipped on that interpreter**, which includes
+  the e2e layer that launches the real app, loads checked-in workflows and
+  runs them. (Gotcha: plain `VIRTUAL_ENV` is ignored by `uv sync` — it wants
+  `UV_PROJECT_ENVIRONMENT` or `--active`.)
+- `scripts/build.bat` header already states the lock-managed truth — no
+  change. `scripts/sync-nodeeditor.ps1`: the "uv sync prunes nodeeditor if
+  it is missing from the lock" comment was stale pre-pinning language;
+  replaced with why the `--no-deps` local-checkout branch exists at all
+  (0.8 floors qtpy/orjson are already locked; the branch is a pre-release
+  dev convenience only).
+- Gates: ps1 parses with 0 errors; full pytest 803 passed.
 
 ## Phase 5 — Remaining bumps + duckdb <2 cap + version 0.1.0 — pending
 
