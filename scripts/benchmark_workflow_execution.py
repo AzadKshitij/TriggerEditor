@@ -67,6 +67,76 @@ REPEATS = 5
 # Safety valve so a broken/hung run can't hang the benchmark forever.
 PER_RUN_TIMEOUT_MS = 60_000
 
+# Sample workflows were committed with the authoring machine's absolute paths
+# baked into every File Input/Output node (docs/bugs.md: 16 tracked files
+# contain 'KASHVINCHANDRASAN'). On any other machine File Inputs retry for
+# ~1s, give up, and downstream nodes fail with "no incoming data" - the
+# benchmark then measures the failure cascade, not the workload. Localize
+# such paths onto this checkout before loading, the same basename fallback
+# tests/support/corpus.py uses for e2e fixtures.
+_FOREIGN_REPO_ROOTS = (
+    "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor",
+)
+
+
+def _looks_like_windows_path(value: str) -> bool:
+    return len(value) > 2 and value[1] == ":" and value[2] in "/\\"
+
+
+def _localize_path(value: str) -> str:
+    """Return `value` pointed at this checkout, or unchanged if not a saved path."""
+    norm = value.replace("\\", "/")
+    for foreign in _FOREIGN_REPO_ROOTS:
+        if norm.startswith(foreign + "/"):
+            # Outputs need not exist yet; rewrite the root and trust the
+            # relative layout, which is identical inside every checkout.
+            root = str(REPO_ROOT).replace("\\", "/")
+            return f"{root}/{norm[len(foreign) :].lstrip('/')}"
+    if Path(norm).exists():
+        return value
+    # A file saved at the *repo root* that is missing here is almost always a
+    # sample input left behind at the old working directory; the checked-in
+    # copy lives in data/. Never apply this to nested paths - those may be
+    # File Outputs, which legitimately point at not-yet-existing files.
+    if Path(norm).parent == REPO_ROOT:
+        alt = REPO_ROOT / "data" / Path(norm).name
+        if alt.exists():
+            return str(alt)
+    return value
+
+
+def _localize_strings(obj: object) -> int:
+    """Rewrite path-like strings in a parsed .tds tree in place; count changes."""
+    if isinstance(obj, dict):
+        items = obj.items()
+    elif isinstance(obj, list):
+        items = enumerate(obj)
+    else:
+        return 0
+    changed = 0
+    for key, value in items:
+        if isinstance(value, str):
+            if _looks_like_windows_path(value):
+                fixed = _localize_path(value)
+                if fixed != value:
+                    obj[key] = fixed  # type: ignore[index]
+                    changed += 1
+        else:
+            changed += _localize_strings(value)
+    return changed
+
+
+def _localized(path: Path) -> Path:
+    """Load-time path fix: return a scratch copy if saved paths needed localizing."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not _localize_strings(data):
+        return path
+    out = RESULTS_DIR / "_scratch" / path.name
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(data), encoding="utf-8")
+    print(f"  [remap] localized saved paths in {path.name} -> {out.name}")
+    return out
+
 
 def _run_one(path: Path) -> dict:
     """Load `path` and run its workflow once, returning timing/memory info."""
@@ -134,6 +204,7 @@ def run_benchmark(repeats: int = REPEATS, only: str | None = None) -> dict:
         if not path.exists():
             print(f"  [skip] {name}: {path} not found")
             continue
+        path = _localized(path)
 
         runs = []
         for i in range(repeats):
