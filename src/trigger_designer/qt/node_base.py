@@ -658,6 +658,11 @@ class TriggerNode(Node):
                 normalized_labels.append(label)
         return normalized_labels
 
+    #: Set while this node is inside ``evalImplementation``. A push from one
+    #: branch of a diamond reaches the shared join while that join is already
+    #: computing; without the guard the join recomputes once per branch.
+    _evaluating: bool = False
+
     def __init__(
         self,
         scene: "Scene",
@@ -666,6 +671,9 @@ class TriggerNode(Node):
         input_text: List[str] = [],
         output_text: List[str] = [],
     ) -> None:
+        # Subclasses (e.g. File Input) call eval() immediately after super(),
+        # and a constructor-time exception must never leave the guard stuck.
+        self._evaluating = False
         super().__init__(
             scene,
             self.__class__.node_title,
@@ -979,13 +987,29 @@ class TriggerNode(Node):
             # and be recomputed anyway once deserialization finishes. Leave it
             # dirty; doEvalOutputs runs the single post-load pass.
             return self.value
+        if self._evaluating:
+            # A sibling branch pushed into this node while it was still
+            # computing. The computation in progress will commit the complete
+            # result and push again; recomputing here only repeats work.
+            return self.value
+
+        coordinator = getattr(scene, "evaluator", None)
+        if coordinator is not None:
+            coordinator.flush_now()  # a pending edge edit is newer than us
+
         if not self.isDirty() and not self.isInvalid():
             logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
-        self._report_eval_progress(finished=False)
+
+        self._evaluating = True
+        if scene is not None:
+            scene._eval_depth = getattr(scene, "_eval_depth", 0) + 1
         try:
-            val = self.evalImplementation()
-            return val
+            try:
+                self._report_eval_progress(finished=False)
+            except Exception:  # noqa: BLE001 - UI listener must not break eval
+                logger.exception("Evaluation progress callback failed")
+            return self.evalImplementation()
         except ValueError as e:
             self.markInvalid()
             self.set_error(translate_exception(e, node=self, phase="live"), "live")
@@ -996,14 +1020,28 @@ class TriggerNode(Node):
             dumpException(e)
             return None  # Add explicit return for exception case
         finally:
-            self._report_eval_progress(finished=True)
+            # Clear the guard and depth before notifying listeners: a listener
+            # that calls eval() must see a settled node, not a reentrant one.
+            self._evaluating = False
+            if scene is not None:
+                scene._eval_depth = max(0, getattr(scene, "_eval_depth", 1) - 1)
+            try:
+                self._report_eval_progress(finished=True)
+            except Exception:  # noqa: BLE001 - UI listener must not break eval
+                logger.exception("Evaluation progress callback failed")
             # Scene-level notification so preview surfaces can follow a real
             # recompute; cached evaluations returned above. ``Scene`` is not a
             # QObject, so TriggerScene fans this out to its own listeners.
-            scene = getattr(self, "scene", None)
-            notify = getattr(scene, "notifyNodeEvaluated", None)
-            if callable(notify):
-                notify(self)
+            try:
+                notify = getattr(scene, "notifyNodeEvaluated", None)
+                if callable(notify):
+                    notify(self)
+            except Exception:  # noqa: BLE001 - UI listener must not break eval
+                logger.exception("Node evaluated listener failed")
+            if scene is not None and getattr(scene, "_eval_depth", 0) == 0:
+                coordinator = getattr(scene, "evaluator", None)
+                if coordinator is not None:
+                    coordinator.flush_now()
 
     def _report_eval_progress(self, finished: bool) -> None:
         """Notify the active progress dialog, if any (helpers/eval_progress.py).
