@@ -59,18 +59,20 @@ def materialize(case: WorkflowCase, tmp_path: Path) -> MaterializedWorkflow:
         key = _file_path_key(content)
         if key is None:
             continue
-        raw = str(content.get(key) or "")
+        settings = content.get("settings")
+        target = settings if isinstance(settings, dict) and key in settings else content
+        raw = str(target.get(key) or "")
         if not raw:
             continue
         basename = _basename(raw)
 
         kind = _node_kind(node)
         if kind == "input":
-            content[key] = _input_path(case, basename).as_posix()
+            target[key] = _input_path(case, basename).as_posix()
             # Relative wins on load; a stale one would override the rewrite.
-            content.pop("filePathRel", None)
+            target.pop("filePathRel", None)
         elif kind == "output":
-            content[key] = (out_dir / basename).as_posix()
+            target[key] = (out_dir / basename).as_posix()
 
     workflow_path = tmp_path / f"{case.name}.tds"
     workflow_path.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
@@ -144,9 +146,15 @@ def _basename(raw: str) -> str:
 
 
 def _file_path_key(content: dict) -> str | None:
-    for key in ("filePath", "file_path", "outputPath", "output_path"):
+    keys = ("filePath", "file_path", "outputPath", "output_path")
+    for key in keys:
         if key in content:
             return key
+    settings = content.get("settings")
+    if isinstance(settings, dict):
+        for key in keys:
+            if key in settings:
+                return key
     return None
 
 

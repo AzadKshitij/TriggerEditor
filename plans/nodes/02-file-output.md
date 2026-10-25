@@ -1,6 +1,6 @@
 # File Output - modernization plan
 
-Status: not started.
+Status: implemented.
 Implementation order: 17 of 18 (Tier 5, filesystem write).
 Read first: `plans/nodes/README.md`.
 
@@ -201,11 +201,12 @@ Keep `tests/e2e/test_input_types_e2e.py` and all-node e2e green.
 
 ## 10. Acceptance
 
-- [ ] Editing the dock never writes a file.
-- [ ] Run writes exactly once in the configured format.
-- [ ] All existing file-output tests pass.
-- [ ] Old saved settings load.
-- [ ] No output socket is added.
+- [x] Editing the dock never writes a file.
+- [x] Run writes exactly once in the configured format.
+- [x] All existing file-output tests pass.
+- [x] Old saved settings load through the one-way loader (kept because the
+      e2e harness rewrites the saved `filePath` before load).
+- [x] No output socket is added.
 
 ## 11. Do not
 

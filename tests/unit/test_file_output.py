@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""File Output node codegen tests.
+"""File Output: the core writer and the generated-code entry point.
 
 The streaming `sink_*` calls require a polars with the streaming-engine
 "dtype is unknown" fix (see `_join_union_plan`, which panicked on
@@ -17,24 +17,24 @@ sys.path.insert(
 )
 
 import polars as pl
+import pytest
 from qtpy.QtWidgets import QApplication
+
+from trigger_designer.core.shaping import file_output as core
 
 APP = QApplication.instance() or QApplication([])
 
 
-def _make_content(**kwargs):
-    """Logic-only content (no scene): get_code is pure."""
+def _make_content(**overrides):
+    """Logic-only content (no scene): get_code reads settings and input_vars."""
     from trigger_designer.qt.widgets.nodes.InOut.file_output import (
         FileOutputContent,
     )
 
+    incoming = overrides.pop("incoming_variable", "var_in")
     content = FileOutputContent.__new__(FileOutputContent)
-    content.incoming_variable = kwargs.get("incoming_variable", "var_in")
-    content.filePath = kwargs.get("filePath", "out.csv")
-    content.file_format = kwargs.get("file_format", "csv")
-    content.delimiter = kwargs.get("delimiter", ",")
-    content.use_streaming = kwargs.get("use_streaming", True)
-    content.include_bom = kwargs.get("include_bom", False)
+    content.settings = {**core.DEFAULTS, **overrides}
+    content.input_vars = [incoming]
     return content
 
 
@@ -56,23 +56,11 @@ def _join_union_plan():
     return pl.concat([matched, left_only], how="diagonal_relaxed")
 
 
-def test_csv_codegen_uses_streaming_sink() -> None:
+def test_generated_code_uses_the_core_writer() -> None:
     code = _make_content().get_code()
-    assert "sink_csv" in code
+    assert "trigger_designer.core.shaping.file_output" in code
+    assert "write_node" in code
     assert "collect().write_csv" not in code
-
-
-def test_csv_options_reach_sink() -> None:
-    code = _make_content(delimiter=";", include_bom=True).get_code()
-    assert code.count('separator=";"') == 1
-    assert code.count("include_bom=True") == 1
-
-
-def test_other_formats_use_streaming_sinks() -> None:
-    assert "sink_csv" in _make_content(file_format="custom_delimited").get_code()
-    assert "sink_parquet" in _make_content(file_format="parquet").get_code()
-    assert "sink_ndjson" in _make_content(file_format="ndjson").get_code()
-    assert "sink_ipc" in _make_content(file_format="ipc").get_code()
 
 
 def test_no_input_fails_loudly() -> None:
@@ -80,10 +68,62 @@ def test_no_input_fails_loudly() -> None:
     assert "ValueError" in code
 
 
-def test_backslash_path_is_exported_forward_slash() -> None:
-    code = _make_content(filePath=r"C:\data\out.csv").get_code()
-    assert "C:/data/out.csv" in code
-    assert "\\" not in code.split("if var_in is not None:")[1]
+def test_live_runner_never_writes(tmp_path) -> None:
+    out = tmp_path / "live.csv"
+    outs = core.run_node([pl.DataFrame({"a": [1]}).lazy()], {"filePath": str(out)})
+    assert outs == []
+    assert not out.exists()
+
+
+def test_empty_path_is_an_error() -> None:
+    with pytest.raises(ValueError):
+        core.write_node([pl.DataFrame({"a": [1]})], {})
+
+
+def test_csv_delimiter_and_bom(tmp_path) -> None:
+    out = tmp_path / "out.csv"
+    core.write_node(
+        [pl.DataFrame({"a": [1], "b": [2]})],
+        {"filePath": str(out), "delimiter": ";", "include_bom": True},
+    )
+    raw = out.read_bytes()
+    assert raw.startswith(b"\xef\xbb\xbf")
+    assert b"a;b" in raw
+
+
+def test_other_formats_write(tmp_path) -> None:
+    frame = pl.DataFrame({"a": [1, 2]})
+    cases = {
+        "parquet": ("out.parquet", pl.read_parquet),
+        "json": ("out.json", pl.read_json),
+        "ndjson": ("out.ndjson", pl.read_ndjson),
+        "ipc": ("out.ipc", pl.read_ipc),
+    }
+    for file_format, (name, reader) in cases.items():
+        out = tmp_path / name
+        core.write_node([frame], {"filePath": str(out), "file_format": file_format})
+        assert out.exists(), file_format
+        assert reader(out)["a"].to_list() == [1, 2], file_format
+
+
+def test_custom_delimited_uses_separator(tmp_path) -> None:
+    out = tmp_path / "out.txt"
+    core.write_node(
+        [pl.DataFrame({"a": [1], "b": [2]})],
+        {
+            "filePath": str(out),
+            "file_format": "custom_delimited",
+            "delimiter": "|",
+        },
+    )
+    assert "a|b" in out.read_text(encoding="utf-8")
+
+
+def test_input_is_not_modified(tmp_path) -> None:
+    frame = pl.DataFrame({"a": [1, 2]})
+    before = frame.clone()
+    core.write_node([frame], {"filePath": str(tmp_path / "x.csv")})
+    assert frame.equals(before)
 
 
 def test_generated_csv_code_writes_join_union_plan(tmp_path) -> None:
@@ -103,6 +143,14 @@ def test_generated_csv_code_writes_plain_plan(tmp_path) -> None:
     scope = {"var_in": pl.LazyFrame({"a": [1, 2]})}
     exec(compile(code, "<file_output>", "exec"), scope)  # noqa: S102
     assert pl.read_csv(out)["a"].to_list() == [1, 2]
+
+
+def test_windows_path_survives_generated_code(tmp_path) -> None:
+    out = str(tmp_path / "win path.csv").replace("/", "\\")
+    code = _make_content(filePath=out).get_code()
+    scope = {"var_in": pl.LazyFrame({"a": [1]})}
+    exec(compile(code, "<file_output>", "exec"), scope)  # noqa: S102
+    assert os.path.exists(out)
 
 
 def test_check_output_header_puts_src_on_path(tmp_path, monkeypatch) -> None:

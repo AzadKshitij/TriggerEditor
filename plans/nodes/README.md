@@ -2,7 +2,7 @@
 
 Status: in progress - Count, Running Total, Sort, Split, Unique, Graph,
 Normalize, Transpose, Filter, Cleansing, Rows, Aggregate, Formula, Append and
-Join are implemented; Union, File Output and File Input are planned.
+Join and File Output are implemented; Union and File Input are planned.
 Reference migration: Select (`23eadb8`).
 Authoritative architecture: `docs/plan/07-shaping-nodes.md` and
 `docs/plan/08-simplify-node-base.md`.

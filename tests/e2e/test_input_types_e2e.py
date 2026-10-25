@@ -56,8 +56,8 @@ def _build_workflow(
     content.file_type = file_type
     for key, value in (extra or {}).items():
         setattr(content, key, value)
-    file_output.content.filePath = str(out_path)
-    file_output.content.file_format = "csv"
+    file_output.content.settings["filePath"] = str(out_path)
+    file_output.content.settings["file_format"] = "csv"
 
     Edge(scene, file_input.outputs[0], file_output.inputs[0])
     tds = root / f"{name}.tds"
@@ -244,7 +244,9 @@ def test_workflow_moved_with_data_still_runs(qtbot, tmp_path) -> None:
     data = orjson.loads(moved_tds.read_bytes())
     for node in data["nodes"]:
         if node.get("op") == "input.file_output":
-            node["content"]["filePath"] = str(moved / "out" / "out.csv")
+            node["content"].setdefault("settings", {})["filePath"] = str(
+                moved / "out" / "out.csv"
+            )
     moved_tds.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
     window = _open_and_run(qtbot, moved_tds)
     frame = read_frame(moved / "out" / "out.csv")
