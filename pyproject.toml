@@ -27,7 +27,7 @@ authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 # SQL-backed Formula/Filter evaluation with "No module named 'pyarrow'".
 dependencies = [
     # Core data processing
-    "polars[pyarrow]==1.44.2",
+    "polars[pyarrow]==2.0.0",
     # Pinned (not floored) so the lock cannot jump majors silently. 26.0.0
     # is the post-upgrade pin; the [pyarrow] extra above only says
     # "pyarrow >= 7" on its own.

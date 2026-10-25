@@ -280,7 +280,10 @@ def _collect_points(
             [x_column, y_column] + ([color_column] if color_column else [])
         )
         if chart_type == "line":
-            work = work.sort(x_column, nulls_last=True)
+            # maintain_order: line charts must draw x-ties in input order.
+            # Polars 2.0's sort is no longer stable by default, so without
+            # this the drawn order of tied points changes between runs.
+            work = work.sort(x_column, nulls_last=True, maintain_order=True)
     else:
         if aggregation == "count":
             expression = pl.len().cast(pl.Float64)
