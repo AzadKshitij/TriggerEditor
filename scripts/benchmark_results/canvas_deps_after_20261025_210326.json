@@ -1,0 +1,224 @@
+{
+  "config": {
+    "label": "deps_after",
+    "nodes": 120,
+    "edges": 119,
+    "repeats": 3,
+    "source": "synthetic",
+    "viewport": [
+      1198,
+      798
+    ],
+    "zoom_out_scale": 0.412
+  },
+  "metrics": {
+    "zoomed_out.repaint.viewport": {
+      "steps": 10,
+      "ms_median": 411.704,
+      "ms_per_step": 41.1704,
+      "runs_ms": [
+        407.388,
+        411.704,
+        465.696
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 1190,
+        "paint.node.icon": 1200
+      }
+    },
+    "zoomed_out.render.offscreen": {
+      "steps": 10,
+      "ms_median": 470.901,
+      "ms_per_step": 47.0901,
+      "runs_ms": [
+        464.155,
+        470.901,
+        494.538
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 1190,
+        "paint.node.icon": 1200
+      }
+    },
+    "zoomed_out.pan.middle": {
+      "steps": 40,
+      "ms_median": 1469.669,
+      "ms_per_step": 36.7417,
+      "runs_ms": [
+        1464.527,
+        1469.669,
+        1473.732
+      ],
+      "counters": {
+        "event.mouse_move": 40,
+        "paint.background": 40,
+        "paint.edge": 3825,
+        "paint.node.icon": 3770
+      }
+    },
+    "zoomed_out.zoom.ctrl_wheel": {
+      "steps": 24,
+      "ms_median": 232.075,
+      "ms_per_step": 9.6698,
+      "runs_ms": [
+        227.727,
+        232.075,
+        241.499
+      ],
+      "counters": {
+        "paint.background": 20,
+        "paint.edge": 3,
+        "paint.node.icon": 2
+      }
+    },
+    "zoomed_out.drag.node": {
+      "steps": 30,
+      "ms_median": 454.259,
+      "ms_per_step": 15.142,
+      "runs_ms": [
+        453.261,
+        454.259,
+        496.253
+      ],
+      "counters": {
+        "event.mouse_move": 30,
+        "paint.background": 30,
+        "paint.edge": 283,
+        "paint.node.icon": 249
+      }
+    },
+    "zoomed_out.rubber_band.select": {
+      "steps": 30,
+      "ms_median": 1393.646,
+      "ms_per_step": 46.4549,
+      "runs_ms": [
+        1332.55,
+        1393.646,
+        1410.086
+      ],
+      "counters": {
+        "event.mouse_move": 30,
+        "paint.background": 31,
+        "paint.edge": 1965,
+        "paint.node.icon": 1930
+      }
+    },
+    "zoomed_out.query.items_600": {
+      "steps": 200,
+      "ms_median": 1170.582,
+      "ms_per_step": 5.8529,
+      "runs_ms": [
+        1082.899,
+        1170.582,
+        1253.492
+      ],
+      "counters": {}
+    },
+    "zoomed_in.repaint.viewport": {
+      "steps": 10,
+      "ms_median": 168.668,
+      "ms_per_step": 16.8668,
+      "runs_ms": [
+        168.585,
+        168.668,
+        172.435
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 380,
+        "paint.node.icon": 360
+      }
+    },
+    "zoomed_in.render.offscreen": {
+      "steps": 10,
+      "ms_median": 188.167,
+      "ms_per_step": 18.8167,
+      "runs_ms": [
+        181.053,
+        188.167,
+        196.356
+      ],
+      "counters": {
+        "paint.background": 10,
+        "paint.edge": 380,
+        "paint.node.icon": 360
+      }
+    },
+    "zoomed_in.pan.middle": {
+      "steps": 40,
+      "ms_median": 706.607,
+      "ms_per_step": 17.6652,
+      "runs_ms": [
+        684.088,
+        706.607,
+        714.46
+      ],
+      "counters": {
+        "event.mouse_move": 40,
+        "paint.background": 40,
+        "paint.edge": 1365,
+        "paint.node.icon": 1162
+      }
+    },
+    "zoomed_in.zoom.ctrl_wheel": {
+      "steps": 24,
+      "ms_median": 243.151,
+      "ms_per_step": 10.1313,
+      "runs_ms": [
+        231.14,
+        243.151,
+        259.202
+      ],
+      "counters": {
+        "paint.background": 20,
+        "paint.edge": 6,
+        "paint.node.icon": 10
+      }
+    },
+    "zoomed_in.drag.node": {
+      "steps": 30,
+      "ms_median": 459.086,
+      "ms_per_step": 15.3029,
+      "runs_ms": [
+        451.403,
+        459.086,
+        483.22
+      ],
+      "counters": {
+        "event.mouse_move": 30,
+        "paint.background": 31,
+        "paint.edge": 224,
+        "paint.node.icon": 188
+      }
+    },
+    "zoomed_in.rubber_band.select": {
+      "steps": 30,
+      "ms_median": 681.643,
+      "ms_per_step": 22.7214,
+      "runs_ms": [
+        681.228,
+        681.643,
+        690.234
+      ],
+      "counters": {
+        "event.mouse_move": 30,
+        "paint.background": 31,
+        "paint.edge": 526,
+        "paint.node.icon": 418
+      }
+    },
+    "zoomed_in.query.items_600": {
+      "steps": 200,
+      "ms_median": 1079.538,
+      "ms_per_step": 5.3977,
+      "runs_ms": [
+        1072.815,
+        1079.538,
+        1127.351
+      ],
+      "counters": {}
+    }
+  }
+}

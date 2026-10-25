@@ -187,6 +187,64 @@ properly, before and after, with the self-exit flag.
   drive-by sweep would pollute every later phase's diff. Batch cleanup is a
   Phase 9 candidate.
 
-## Post-upgrade measurement — pending
+## Post-upgrade measurement — DONE 2026-10-25 (Phases 1–5 complete)
 
-(Sections above get their numbers filled in as each phase lands.)
+Measured 20:43–21:04 on the full Phase-5 stack (3.14.8, Qt 6.11.0/6.11.2,
+pyarrow 26, duckdb 1.5.6, pillow 13, orjson 3.13, sqlglot 30.24), offscreen,
+same machine/session profile as Phase 0.
+
+**Workflow harness — one isolated process per workflow** (`--only <wf>
+--repeats 5`, then per-workflow JSONs merged into `after.json`; `baseline.json`
+is the pre-upgrade baseline copy). The all-three-in-one-process mode was
+abandoned mid-session because of the crash documented below; per-workflow
+processes are also a *cleaner* comparison (no cross-workflow memory churn).
+
+| workflow | pre baseline avg | post avg | delta | vs pre baseline |
+|---|---|---|---|---|
+| small_2node | 0.006 s | 0.005 s (0.0040–0.0060) | −0.001 s | 1.17x — sub-10 ms ⇒ **noise** |
+| medium_14node | 0.059 s | 0.059 s (0.0499–0.0745) | −0.000 s | **1.00x** |
+| large_105node | 5.201 s | 5.410 s (4.770–6.341) | +0.209 s | 0.96x (+4.0%) — **inside the ~7% gate** |
+
+Verdict: **no measurable change from Phases 1–5.** Every delta is smaller
+than the pre pair's own same-tree swing (1.00x/1.06x/1.07x) and far inside
+the documented ±10–25% band. Not claimed as wins or losses.
+Secondary observation, not a verdict: post `large` repeats drift upward
+(runs 2–5 at 5.13–6.34 s, pre spread was 4.64–4.97 s) — GC/allocator
+behaviour on this 9.9 GB machine is the candidate; Phase 8 profiling is the
+right place to look before reading anything into it.
+
+**Canvas (`benchmark_canvas_perf.py --label deps_after` vs the committed
+pre baseline, identical defaults):** `canvas_deps_after_20261025_210326.json`.
+Paint counts per operation are identical to pre, so the comparison is
+like-for-like. Key medians: repaint 421.8→411.7 ms (1.02x), pan 1406.1→1469.7
+(0.96x), node drag 424.9→454.3 (0.94x), rubber-band 1151.7→1393.7 (0.83x);
+sum-of-medians 8434.8→9129.7 ms (0.92x). 12/14 operations sit at 0.83–0.96x —
+a consistent slight-slower direction, but the total is inside the repo's ±10–25%
+band and there is no same-tree canvas pair to calibrate it. Recorded as
+**"no improvement, small canvas slowdown plausible — Phase 8 to profile,
+Phase 7 pyqtgraph renderer is the design lever"**; not reported as a regression.
+
+**Side findings (not measured against, filed for follow-up):**
+
+1. **Intermittent hard crash in combined multi-window harness mode.** Running
+   small→medium→large in one process fast-fails (exit 0xC0000409) in 5 of 9
+   attempts, always mid-`large_105node` build/run; all 5 fault in
+   **Qt6Core.dll 6.11.2.0 at offset 0x1c8d8** (WER Application Error events,
+   identical code+offset). Every other shape passed on repeat: each workflow
+   alone, small+large, medium+large, large×2, and a later trio rerun
+   (0/5 crashes after the pattern was known). The identical combined flow ran
+   zero-crash pre-upgrade (Phase 0 pair is that proof), so this is a **Qt
+   6.8→6.11 regression candidate in `TriggerSubWindow` teardown churn**
+   (`close()+deleteLater()` backlog processed inside the next run's
+   `QEventLoop`). Measurement unaffected (isolated processes). The interactive
+   app is not proven hit: e2e launches + the packaged exe smoke are green.
+   Action: open a follow-up issue before the alpha ships; Phase 8 profiling
+   work (py-spy, clean-exit flag) gives the tools to catch it.
+2. **`medium_14node` fails a Formula node on both sides of the upgrade**:
+   `Binder Error: no function matches 'year(VARCHAR)'` on `YEAR("order_date")`
+   — the sample data's ambiguous `05-01-2024` dates stay String through
+   polars' sniffed schema (polars is pinned 1.44.2 unchanged, so pre and post
+   runs execute the *same* failing partial workflow; averages match within
+   0.001 s). The before/after number stays apples-to-apples, but the medium
+   comparison measures a failure cascade, not a successful 14-node run. Fix
+   belongs to the sample data/polars-2.0 date-parsing work (Phase 6 note).
