@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "TriggerDesigner"
-version = "0.0.1"
+version = "0.1.0"
 description = "A visual data processing tool with node-based workflow editor"
 readme = "README.md"
 requires-python = ">=3.14,<3.15"
@@ -28,16 +28,19 @@ authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 dependencies = [
     # Core data processing
     "polars[pyarrow]==1.44.2",
-    # Pinned to the version the existing builds shipped; the extra above only
-    # says "pyarrow >= 7", so without this the lock would silently jump to 26.
-    "pyarrow==25.0.1",
-    "numpy==2.5.3",
-    "duckdb>=1.2.1",
-    "sqlglot>=30.20,<31",
+    # Pinned (not floored) so the lock cannot jump majors silently. 26.0.0
+    # is the post-upgrade pin; the [pyarrow] extra above only says
+    # "pyarrow >= 7" on its own.
+    "pyarrow==26.0.0",
+    "numpy==2.5.4",
+    # Floor raised, ceiling added: duckdb 2.0.0 is a new major and gets its
+    # own phase (6); without `<2` any lock refresh would drift there silently.
+    "duckdb>=1.5.6,<2",
+    "sqlglot>=30.24,<31",
     # File handling
-    "fastexcel>=0.15.1",
-    "openpyxl>=3.1.0",
-    "orjson==3.12.0",
+    "fastexcel>=0.21.0",
+    "openpyxl>=3.1.5",
+    "orjson==3.13.0",
     # GUI framework. The Qt trio is on the newest release because Python 3.14
     # has no wheels for the old pins (pyqt6-sip 13.9.1 falls back to a source
     # build); 6.11.x / sip 13.13.0 ship cp314/abi3 wheels. This bump was
@@ -52,9 +55,9 @@ dependencies = [
     "nodeeditor-qtpy==0.8.2",
     # Visualization
     "matplotlib==3.11.2",
-    "pillow==12.3.0",
+    "pillow==13.0.0",
     # Performance and utilities
-    "psutil>=7.1.0",
+    "psutil>=7.2.2",
     # Logging
     "loguru==0.7.3",
 ]
@@ -109,13 +112,13 @@ markers = [
 
 [dependency-groups]
 dev = [
-    "pre-commit==4.6.2",
+    "pre-commit==4.7.0",
     "pyinstaller==6.22.3",
     "pytest==9.1.1",
     "pytest-qt==4.5.0",
     "pytest-timeout==2.4.0",
-    "ruff==0.16.9",
-    "ty==0.0.84",
+    "ruff==0.17.2",
+    "ty==0.0.91",
 ]
 profiling = [
     "snakeviz==2.2.2",

@@ -166,7 +166,26 @@ properly, before and after, with the self-exit flag.
   dev convenience only).
 - Gates: ps1 parses with 0 errors; full pytest 803 passed.
 
-## Phase 5 — Remaining bumps + duckdb <2 cap + version 0.1.0 — pending
+## Phase 5 — Remaining bumps + duckdb cap + version 0.1.0 — DONE 2026-10-25
+
+- Runtime: `pyarrow` 25.0.1 → **26.0.0** (re-pinned, silent-jump rationale
+  kept in the comment), `numpy` → **2.5.4**, `duckdb` `>=1.2.1` →
+  **`>=1.5.6,<2`** (floor up, ceiling added — 2.0 gets its own Phase 6),
+  `sqlglot` floor → **30.24**, `pillow` → **13.0.0**, `orjson` → **3.13.0**;
+  floors aligned to the (already-current) lock: `fastexcel>=0.21.0`,
+  `openpyxl>=3.1.5`, `psutil>=7.2.2`. `polars` stays 1.44.2 for Phase 6.
+  All 22 installed versions verified via `uv pip list`.
+- Tooling: `ruff` → **0.17.2**, `ty` → **0.0.91**, `pre-commit` → **4.7.0**.
+- `pyproject version` 0.0.1 → **0.1.0**, now matching `core/constants.py`
+  (`VERSION = "0.1.0"`) and the Inno Setup `MyAppVersion` — what a stranger's
+  `pip show` reports.
+- Gate: `uv lock`/`uv sync --all-groups` clean; full pytest **803 passed /
+  6 skipped** on the bumped stack.
+- Recorded, deliberately deferred: repo-wide `ruff format --check` under
+  0.17 wants 20 files touched and `ruff check` counts 933 fixable findings —
+  pre-existing debt the per-file pre-commit flow normalizes lazily; a
+  drive-by sweep would pollute every later phase's diff. Batch cleanup is a
+  Phase 9 candidate.
 
 ## Post-upgrade measurement — pending
 
