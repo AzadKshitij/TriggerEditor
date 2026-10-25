@@ -314,7 +314,7 @@ class FormulaContent(
         for section in sections or []:
             try:
                 editor_height = int(section.get("editor_height", 120))
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 editor_height = 120
             target_dtype = str(section.get("target_dtype") or "")
             if target_dtype not in DTYPE_OPTIONS[1:]:
@@ -339,7 +339,7 @@ class FormulaContent(
                 self.formula_sections[index]["formula_text"] = (
                     widgets["formula_input"].get_text() or ""
                 )
-            except (AttributeError, RuntimeError, IndexError):
+            except AttributeError, RuntimeError, IndexError:
                 continue
 
     def _current_state(self) -> Dict[str, List[Dict[str, Any]]]:
@@ -486,7 +486,7 @@ class FormulaContent(
                     focus_index = index
                     try:
                         focus_pos = editor.editor.textCursor().position()
-                    except (AttributeError, RuntimeError):
+                    except AttributeError, RuntimeError:
                         pass
                     break
         except RuntimeError:
@@ -599,7 +599,7 @@ class FormulaContent(
                 cursor = new_editor.textCursor()
                 cursor.setPosition(min(focus_pos, len(new_editor.toPlainText())))
                 new_editor.setTextCursor(cursor)
-            except (AttributeError, IndexError, KeyError, RuntimeError):
+            except AttributeError, IndexError, KeyError, RuntimeError:
                 pass
 
     def _refresh_section_errors(self) -> None:
@@ -629,6 +629,7 @@ class FormulaContent(
     def _on_section_diagnostics(self, section_index: int, messages: list[str]) -> None:
         self._live_section_errors[section_index] = messages[0] if messages else ""
         self._refresh_section_errors()
+
     def _on_card_toggled(self, index: int, collapsed: bool) -> None:
         """Remember a card fold; UI state only, so no history entry."""
         if collapsed:
@@ -690,7 +691,7 @@ class FormulaContent(
                 widgets["formula_input"].set_available_columns(
                     self._available_columns_before_section(index)
                 )
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 continue
 
     def add_formula_section(self) -> None:
@@ -738,7 +739,7 @@ class FormulaContent(
         try:
             selector: QComboBox = self.section_widgets[section_index]["target_selector"]
             selected_text = selector.itemText(index)
-        except (IndexError, KeyError, RuntimeError):
+        except IndexError, KeyError, RuntimeError:
             return
 
         if selected_text == NEW_COLUMN_OPTION:
@@ -822,7 +823,7 @@ class FormulaContent(
         try:
             selector: QComboBox = self.section_widgets[section_index]["dtype_selector"]
             selected_text = selector.itemText(index)
-        except (IndexError, KeyError, RuntimeError):
+        except IndexError, KeyError, RuntimeError:
             return
 
         self._set_section_dtype(section_index, selected_text)
@@ -845,7 +846,7 @@ class FormulaContent(
             current_formula = (
                 self.section_widgets[section_index]["formula_input"].get_text() or ""
             )
-        except (IndexError, KeyError, RuntimeError):
+        except IndexError, KeyError, RuntimeError:
             return
 
         # Compare before any widget->state sync so real edits are detected.
@@ -1047,7 +1048,7 @@ class FormulaContent(
         with duckdb.connect(":memory:") as duck:
             duck.register("df_for_duck", current_df)
             try:
-                result = duck.execute(query).pl()
+                result = duck.sql(query).pl()
             except Exception:  # noqa: BLE001 - fall back for any query/conversion failure
                 # The combined plan cannot identify the first failing section.
                 # Preserve the existing section index and error text contract.
@@ -1082,7 +1083,7 @@ class FormulaContent(
                     if index == explain_index:
                         duck.execute(f"EXPLAIN {query}").fetchall()
                     else:
-                        current_df = duck.execute(query).pl()
+                        current_df = duck.sql(query).pl()
                 except Exception as exc:
                     logger.debug("Formula section {} SQL failed: {}", index + 1, exc)
                     errors[index] = self._diagnose_section_error(
@@ -1253,7 +1254,7 @@ class FormulaContent(
         for index, section in enumerate(self.formula_sections):
             try:
                 editor = self.section_widgets[index]["formula_input"]
-            except (AttributeError, IndexError, KeyError, TypeError):
+            except AttributeError, IndexError, KeyError, TypeError:
                 continue
             try:
                 if editor.get_text() != section.get("formula_text", ""):
@@ -1310,7 +1311,7 @@ class FormulaContent(
             # section a CTE), so the formula chain is one DuckDB plan
             # instead of one intermediate Polars materialization per
             # section.
-            f"df_for_duck = duck.execute('''{combined_query}''').pl()",
+            f"df_for_duck = duck.sql('''{combined_query}''').pl()",
             "# Widen DuckDB-native types into Select-supported dtypes",
             "df_for_duck = normalize_to_supported_dtypes(df_for_duck)",
             "# Preserve lazy execution when the incoming value is lazy",

@@ -112,6 +112,13 @@ def test_live_formula_runs_sections_in_one_duckdb_query(monkeypatch) -> None:
             statements.append(sql)
             return self.connection.execute(sql)
 
+        def sql(self, sql):
+            # duckdb 2.0 live path: con.sql(query).pl() (the relation API -
+            # execute().pl() no longer exists). Counting it keeps this test
+            # asserting "one query for all sections".
+            statements.append(sql)
+            return self.connection.sql(sql)
+
     monkeypatch.setattr(duckdb, "connect", lambda *args: CountingConnection())
     content.update_data()
 

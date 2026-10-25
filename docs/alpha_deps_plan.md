@@ -248,3 +248,66 @@ Phase 7 pyqtgraph renderer is the design lever"**; not reported as a regression.
    0.001 s). The before/after number stays apples-to-apples, but the medium
    comparison measures a failure cascade, not a successful 14-node run. Fix
    belongs to the sample data/polars-2.0 date-parsing work (Phase 6 note).
+
+## Phase 6 - polars 2.0 + duckdb 2.0 - DONE 2026-10-25
+
+Both major migrations landed. The plan's "stay on 1.x" exit was not needed:
+every break turned out to be a point migration, not a redesign. Gate for
+each: full suite, green at **803 passed / 6 skipped** (same count as the
+1.x baseline), zero deprecation warnings.
+
+**Sample fix first (`20a43ee`), before the bumps.** Side finding 2 above:
+`YEAR([order_date])` never bound on any duckdb — the CSV is `dd-mm-yyyy`
+strings, so it failed identically pre-upgrade. Test1.tds now reads
+`YEAR(strptime([order_date], '%d-%m-%Y'))`; 14/14 nodes complete at the
+same 0.056-0.061 s the failing run took, so the recorded medium
+before/after pair stays apples-to-apples and later medium numbers now
+measure a successful run.
+
+**6a polars 1.44.2 → 2.0.0 (`e9f0c0b`).** Two removals touched the app;
+both fixed result-preservingly:
+
+- `cast(String -> temporal)` now raises instead of yielding nulls with
+  `strict=False`. The Select node's strptime/coalesce builders emitted it
+  as the final fallback branch, which only ever mattered for **non-String**
+  sources (epoch numerics, Date/Datetime re-typing) — for a String source
+  it produced a null the earlier `to_date`/`to_datetime` branch already
+  produced. Both builders (`_build_dtype_conversion_expr` and its codegen
+  twin) take a new `source_dtype` and emit the bare cast only for resolved
+  non-String sources; live, bulk and generated-code paths pass the
+  incoming schema. Unknown source = no fallback (crash-safe,
+  result-identical).
+- `sort` lost tie-stability. `charts.py` line/scatter sorts use
+  `maintain_order=True` so tied x points keep the 1.x input draw order.
+
+Checklist decisions, all deliberate: `pl.Map` left un-normalised in
+`dtype_utils` (like `Object`, dropdown doesn't offer it); Parquet ENUM
+loading as `String` needs no change (Enum→Categorical normalisation
+stays; String-from-parquet converts like any String); 0-width frames
+verified by existing empty-frame tests + probe; `SQLContext`/`rechunk`
+unused.
+
+**6b duckdb 1.5.6 → 2.0.0.** One removal caused *all* 20 failures and the
+full-suite teardown abort: `.pl()`/`fetch_arrow_table()`/`arrow()` are
+gone from `execute()` results (the polars relinker now lives only on
+relations). Migrated per the official 2.0 Python migration doc to
+`con.sql(query).pl()` — 9 sites: `core/warmup.py`, both Filter live
+queries, the Filter codegen string pair, both Formula live queries, and
+the Formula codegen string, so **generated pipelines use the relation API
+too**. `rel.pl()` defaults to `lazy=False`, preserving the eager
+"materialize before the `with` block closes the connection" contract at
+`filter.py:821`. The abort was the failing-test cascade through the
+`deleteLater`/DeferredDelete leak guard (`conftest.py:175`), not a new Qt
+crash — green tests, no abort. Test fake `CountingConnection` learned
+`sql()` to keep its "all sections in one query" assertion meaningful.
+
+Other 2.0 changes probed (nothing in the app relied on them; these are
+behaviour notes for user-typed SQL): `AT TIME ZONE` works (ICU-as-needed
+extension is transparent here); `list_transform(x -> x * 2)` **raises**
+- the deprecated arrow syntax needs `lambda x: ...`; integer `//`/`%` by
+zero **raises** `InvalidInputException` where 1.x returned NULL (hint
+says use `TRY(...)`).
+
+Pins: `polars[pyarrow]==2.0.0`, `duckdb==2.0.0` — exact, the `<2` ceiling
+died with the migration as planned. Both majors are days-to-weeks old, so
+"latest" and "2.x LTS" currently coincide; revisit before beta.

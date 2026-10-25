@@ -704,7 +704,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 self.expression = state["expression"]
                 try:
                     self.expression_input.set_text(state["expression"])
-                except (AttributeError, RuntimeError):
+                except AttributeError, RuntimeError:
                     pass
 
             # Unblock signals
@@ -823,10 +823,8 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 # `with` block below has closed it. Materializing now, while
                 # the connection is open, then re-wrapping is what the
                 # original code did too.
-                self.data = duck.execute(
-                    f"SELECT * FROM df_filter WHERE {prepared}"
-                ).pl()
-                self.f_data = duck.execute(
+                self.data = duck.sql(f"SELECT * FROM df_filter WHERE {prepared}").pl()
+                self.f_data = duck.sql(
                     f"SELECT * FROM df_filter WHERE NOT ({prepared})"
                 ).pl()
             if was_lazy:
@@ -878,7 +876,7 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
         try:
             current = self.expression_input.get_text() or ""
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return
         if self.expression == current:
             return
@@ -1037,8 +1035,8 @@ class FilterContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     ),
                     "duck = duckdb.connect(':memory:')",
                     "duck.register('df_filter', df_for_duck)",
-                    f"{self.variable_name} = duck.execute({query_t!r}).pl()",
-                    f"{self.f_variable_name} = duck.execute({query_f!r}).pl()",
+                    f"{self.variable_name} = duck.sql({query_t!r}).pl()",
+                    f"{self.f_variable_name} = duck.sql({query_f!r}).pl()",
                     "# Preserve lazy execution when the incoming value is lazy",
                     (
                         f"{self.variable_name} = {self.variable_name}.lazy() "

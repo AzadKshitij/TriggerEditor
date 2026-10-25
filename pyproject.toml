@@ -33,9 +33,9 @@ dependencies = [
     # "pyarrow >= 7" on its own.
     "pyarrow==26.0.0",
     "numpy==2.5.4",
-    # Floor raised, ceiling added: duckdb 2.0.0 is a new major and gets its
-    # own phase (6); without `<2` any lock refresh would drift there silently.
-    "duckdb>=1.5.6,<2",
+    # Phase 6b migrated duckdb 1.5.6 -> 2.0.0 (PEG parser, ICU out of
+    # core); exact pin keeps the lock from drifting to a later major.
+    "duckdb==2.0.0",
     "sqlglot>=30.24,<31",
     # File handling
     "fastexcel>=0.21.0",
