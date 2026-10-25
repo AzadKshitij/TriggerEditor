@@ -367,3 +367,72 @@ Gate: 831 passed / 6 skipped (23 new renderer tests + 3 new dock tests:
 schema round-trip incl. old-file default, undo of the combo via
 `push_property_change`, live window swap incl. title). Pin:
 `pyqtgraph==0.14.0`.
+
+## Phase 8 - Profiling stack + re-measurement - DONE 2026-10-26
+
+`scripts/profile_app.py` now answers four questions instead of one, and every
+Python-memory number sits beside the native one:
+
+- tracemalloc depth 25 -> 5; `--snapshot-diff` (before = event loop start,
+  after = exit) so "one-time cost" stops being read as "leak". A 20 s idle run
+  grew 33.5 MB after the loop started, top lines `<frozen importlib>` (+19.1,
+  +3.1 MB) - the warm-up thread importing Polars/DuckDB/PyArrow, i.e. exactly
+  the one-time cost the diff exists to expose.
+- psutil peak/final RSS always printed: tracemalloc tracked **49.8 MB inside a
+  144 MB process (~1/3)** on an idle session. Never quote the tracker alone.
+- `--profile-seconds N` self-exit for scalene (clean JSON), `--no-tracemalloc`
+  overhead control.
+- Two traps found the hard way: a modal welcome dialog's nested event loop
+  swallows a single `quit` (the countdown now re-posts every poll), and an
+  automated run must skip that dialog or it profiles an idle dialog forever
+  (process-local patch of the preference getter; nothing written).
+
+Tools: `snakeviz` + `memory-profiler` removed (dead; `python -m pstats` reads
+the same .prof with no dependency), `py-spy` kept, `objgraph==3.7.0` and
+`scalene==2.4.0` added. Scalene 2.4.0 does run on 3.14 (`run --memory`,
+`view --cli` per the plan's recipe); the *app's* cProfile must yield the
+profile hook or `pr.enable()` raises `ValueError: tool 2 is already in use` -
+`profile_app.py` now detects that and skips cProfile. Memray stays Linux-only.
+
+**Instrument overhead (stated, two pairs, 20 s window):** tracemalloc costs
+**+10% wall and +56 MB RSS** (23.2/23.5 s and 204/199 MB on; 20.6/21.6 s and
+144/144 MB off). Scalene costs ~273 MB peak - a question-answerer, not a
+baseline.
+
+**Re-measurement, honestly labelled:**
+
+| workflow | pre | Phase 5 | Phase 8 | verdict |
+|---|---|---|---|---|
+| small_2node | 0.006 s | 0.005 s | 0.007 s | noise (sub-10 ms) |
+| medium_14node | 0.059 s | 0.059 s | 0.149 s | **not comparable** |
+| large_105node | 5.201 s | 5.410 s | 6.483 s | unresolved |
+
+`medium` is not comparable by construction: it used to abort on
+`YEAR("order_date")` and now completes 70 node executions because `20a43ee`
+fixed the sample's day-first dates. It finally measures work, not a failure
+cascade.
+
+Canvas (identical paint counters, 120 nodes / 3 passes): 8434.8 baseline ->
+9129.7 (0.92x, Phase 5) -> 12553.8 (0.67x). Reported **environment, not
+regression**: uniform 0.63-0.72x across all 14 ops while the work is
+bit-identical, nothing it touches changed (Qt stayed 6.11.2, polars/duckdb are
+lazy and unused, no execution), tight in-run spread (8.5%) on a machine
+sitting at ~40% ambient CPU with 3.4 GB free. Two invalid attempts were
+discarded first: one used `--pan-steps 60 --drag-steps 45` against baselines
+measured at defaults (paint counts differed, so the 0.49x was step count), and
+one ran while two stuck `trigger-designer` processes from cancelled runs were
+resident. **Rule for next time: check for stray app processes before believing
+a canvas number.**
+
+**Crash finding, now the alpha's open risk:** `0xC0000409` in
+**Qt6Core.dll 6.11.2.0 +0x1c8d8**, byte-identical WER events, previously 5/9
+in combined-harness mode and 0/9 isolated - this session it hit **isolated
+`large_105node` twice in three attempts**, once mid-build and once
+mid-execution. Only the surviving run's numbers are used. Phase 9's PySide6
+swap changes the Qt build; re-test there, and file it before the alpha if it
+survives. A `nanobind` reference-count warning also appeared at exit in one
+run (unexplained, noted).
+
+Gate: 831 passed / 6 skipped (dependency swap is dev-only). Pins added:
+`objgraph==3.7.0`, `scalene==2.4.0`; removed `snakeviz==2.2.2`,
+`memory-profiler==0.61.0`.
