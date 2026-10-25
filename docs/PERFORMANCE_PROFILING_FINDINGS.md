@@ -515,6 +515,88 @@ Pattern to reuse:
 - Against the paired baseline the canvas is still 2.80x overall and 10.63x on a
   zoomed-out node drag.
 
+## Seventh Round: The Node Label
+
+The node's badge stopped trailing, and the label above the node took over. The
+label is the plate that carries the node's name, and dragging a node left a
+vertical stack of plates above it.
+
+### 16. A label that painted its plate outside its text rectangle
+
+`QDMGraphicsNodeLabel` is a `QGraphicsTextItem`. Its `paint` draws a rounded box
+padded by 6px horizontally and 3px vertically around the text, plus a 1px border,
+so the visible plate is 14px wider and 8px taller than the text. `boundingRect`
+was the text alone.
+
+Fixing the label was only half of it, and the half that mattered was not obvious.
+A probe with the label's rectangle corrected still reported the plate's old
+position outside the region the scene repainted. The reason is how Qt dirties a
+move: the moved item is repainted by the rectangle *it* declared at its old
+position, and its children are dirtied only at the new position. The label is a
+child of the node, so its new plate was cleared and its old one was not, even
+though the plate itself now fitted inside the label's rectangle.
+
+The fix therefore has three parts:
+
+- `QDMGraphicsNodeLabel.boundingRect()` is the text united with the padding and
+  the border, and `textRect()` keeps the text rectangle on its own.
+- `QDMGraphicsNode` and `QDMIconGraphicsNode` expose `labelRect()` and unite it
+  into their own `boundingRect()`, so the old plate is part of the rectangle the
+  node declared when it moved.
+- Both `_updateLabelPos` implementations and `_refreshLabelVisibility` call
+  `prepareGeometryChange()` before changing the label, so the node's rectangle
+  follows the text, the offset and the level of detail.
+
+Positioning keeps using `textRect()`. Centring on the padded box would have
+shifted every label by 6px left and 3px up; the plate grew outward instead, and
+the drawn pixels did not move.
+
+`QDMGraphicsCutline` had the same defect one size smaller: it declared the bare
+polyline while stroking it with a 2px pen, so a moving cut line left the outer
+half of the stroke behind. Its rectangle now accounts for the pen.
+
+Evidence: `tests/test_210_label_geometry.py` in the package runs six assertions
+of the contract, and `tests/ui/test_label_geometry.py` covers the application:
+the label declares its plate, the node declares the label, hiding the label
+shrinks the node back to its body, and a one-step move dirties the plate's old
+and new positions. Against the pre-fix package the package tests fail with
+`QDMGraphicsNodeLabel has no attribute textRect`; with only the label fixed, the
+move assertion still fails on the old plate (`QRectF(208, 265, 104, 28)` outside
+the repainted region) until the node declares the label as well.
+
+Pattern to reuse:
+
+- Fixing a child's `boundingRect` clears the child's own repaints. It does not
+  clear what the child left behind when the *parent* moved. The parent has to
+  declare the child.
+- Keep the child's content rectangle available (`textRect`, `bodyRect`) and make
+  `boundingRect` the union with its decoration, rather than moving the content
+  to match a larger rectangle. The look stays, the geometry tells the truth.
+- Anything that changes what the parent declares while the child stays in place
+  needs `prepareGeometryChange()` on the parent.
+
+### Measured effect (seventh round)
+
+- The repaint area grows, so a drag step costs a little more: a paired A/B in one
+  process (120 labelled nodes, 45 steps per pass, four alternating passes) puts
+  the declared rectangle at 1.08x at 1:1 and 1.11x zoomed out, roughly 17.5
+  against 16.2 ms/step. With the labels the application actually draws, the old
+  rectangle was cheating: it was 14x8 px smaller than the plate, which is exactly
+  the area that stayed on screen.
+- The union itself had to be cached. A first version recomputed
+  `label.boundingRect().translated(...)` plus `united()` on every call; the node's
+  rectangle is asked for about 190 times per drag step, and that version measured
+  8.2-8.5 us per call, or 8-9% of the step. Caching the label box in
+  `_label_rect` and dropping it when the label moves, changes text or hides brings
+  it to 2.3-2.6 us per call, 2.4-2.6% of the step.
+- The cache has a trap: `QGraphicsItem.setVisible` and `setPos` both query the
+  item's rectangle while the change is still in flight, so the cache has to be
+  dropped after the call as well as before it. Dropping it only before made the
+  node keep the label in its rectangle after `setLabelVisible(False)`, which
+  `tests/test_210_label_geometry.py` caught.
+- A twelve-frame walk of a real node reports both the old and the new plate
+  inside the changed region on every frame.
+
 ## Remaining Major Hotspots
 
 After the first round of fixes, the main costs were:

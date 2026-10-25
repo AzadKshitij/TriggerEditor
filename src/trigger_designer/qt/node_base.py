@@ -146,7 +146,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         return QRectF((self.width - side) / 2.0, self.height - side / 2.0, side, side)
 
     def boundingRect(self) -> QRectF:
-        """The body, the status badge that hangs below it, and the state ring.
+        """The body, the badge below it, the state ring, and the floating label.
 
         Two things ``paint`` draws reach outside the body: the badge is centred
         on the bottom edge, so half of it is below, and the state ring strokes
@@ -155,12 +155,21 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         drew; Qt repaints by the declared rectangle, so what fell outside was
         never cleared and every frame of a drag left another copy behind - the
         trail of green check badges and ring fragments under a dragged node.
+
+        The label above the node counts for the same reason, and it cannot be
+        part of the cached rectangle because its text sets its width. Qt dirties
+        a moved item by its rectangle at the old position and its children only
+        at the new one, so a label left out of it stayed painted where the node
+        had been: the stack of plates above a dragged node.
         """
         if self._bounding_rect is None:
             margin = self.RING_PEN_WIDTH / 2.0 + 1.0
             rect = self.bodyRect().united(self.statusBadgeRect())
             self._bounding_rect = rect.adjusted(-margin, -margin, margin, margin)
-        return self._bounding_rect
+        label_rect = getattr(self, "labelRect", None)
+        if label_rect is None:  # nodeeditor before 0.8.2
+            return self._bounding_rect
+        return self._bounding_rect.united(label_rect())
 
     def shape(self) -> QPainterPath:
         """The node's hit/selection shape, built once.
