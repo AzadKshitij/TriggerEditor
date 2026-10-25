@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
-from nodeeditor.node_graph import GraphCycleError, topological_order
+from nodeeditor.node_graph import GraphCycleError, cycles, topological_order
 from nodeeditor.utils import dumpException
 
 from trigger_designer.core.node_configuration import (
@@ -33,6 +33,11 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.widgets.nodes.unknown import TriggerNode_Unknown
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
+from trigger_designer.qt.helpers.edge_validators import (
+    cycle_message,
+    mark_cycle_reported,
+    report_cycle_once,
+)
 from trigger_designer.qt.helpers.eval_progress import (
     eval_progress_dialog,
     make_progress_dialog,
@@ -334,8 +339,12 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         try:
             ordered_nodes = topological_order(self.scene)
         except GraphCycleError as exc:
-            self.logWarning(
-                f"Workflow has a cycle; evaluating in creation order: {exc}"
+            report_cycle_once(
+                self.scene,
+                exc,
+                lambda message: self.logWarning(
+                    f"{message} Evaluating in creation order."
+                ),
             )
             ordered_nodes = list(self.scene.nodes)
 
@@ -490,6 +499,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
             for message in node_messages:
                 validation_messages.append(f"{node.node_title}: {message}")
+
+        cycle_paths = cycles(self.scene)
+        if cycle_paths:
+            validation_messages.append(cycle_message(cycle_paths))
+            # The caller logs every validation message. Mark the signature so
+            # the evaluation fallback does not repeat the same warning.
+            mark_cycle_reported(self.scene, cycle_paths)
 
         return validation_messages
 

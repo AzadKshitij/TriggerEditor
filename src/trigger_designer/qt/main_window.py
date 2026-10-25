@@ -35,6 +35,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
 )
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
 from trigger_designer.qt.models.preview_worker import wait_for_preview_workers
 from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.theme_manager import (
@@ -57,6 +58,7 @@ from trigger_designer.qt.resource_manager import ResourceManager
 Edge.registerEdgeValidator(edge_validator_debug)
 Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
 Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
+register_cycle_validator()
 
 # images for the dark skin
 

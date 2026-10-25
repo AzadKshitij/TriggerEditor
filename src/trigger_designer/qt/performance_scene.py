@@ -154,6 +154,9 @@ class TriggerScene(Scene):
         super().__init__()
         self._bulk_loading = False
         self._deferred_edge_updates: set[TriggerEdge] = set()
+        #: Cycle signatures already reported by the evaluation fallback, so
+        #: repeated passes over a legacy cyclic graph do not spam the log.
+        self._reported_cycle_signatures: set[tuple[tuple[int, ...], ...]] = set()
         self.loaded_workflow_metadata: dict[str, object] = {}
         #: Set by helpers.eval_progress.eval_progress_dialog while a
         #: progress dialog is driving a load/recompute; None otherwise.

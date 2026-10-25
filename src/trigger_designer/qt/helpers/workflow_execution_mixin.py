@@ -10,6 +10,10 @@ from qtpy.QtCore import QTimer
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.edge_validators import (
+    cycle_message,
+    select_cycle_edges,
+)
 from trigger_designer.qt.helpers.error_context import build_context, build_enrich_job
 from trigger_designer.qt.helpers.error_enricher import start_enrichment
 from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
@@ -86,11 +90,12 @@ class WorkflowExecutionMixin:
             sorted_nodes = topological_order(self.scene)
         except GraphCycleError as exc:
             # Never leave the Run button disabled because the graph cannot be
-            # ordered. Step 3 adds the user-facing TD-CLI-004 wording and
-            # selects the cycle edges; the state restoration belongs here.
+            # ordered. The selected edges make the loop visible; the message
+            # uses the TD-CLI-004 wording without inventing a node-level error.
             if hasattr(self, "run_button"):
                 self.run_button.setEnabled(True)
-            message = f"Cannot run the workflow because it contains a cycle: {exc}"
+            select_cycle_edges(self.scene, exc)
+            message = cycle_message(exc)
             logger.warning(message)
             self._log_to_dock(message)
             return

@@ -48,7 +48,10 @@ from nodeeditor.node_edge import Edge
 from nodeeditor.node_graph import descendants, topological_order
 
 from trigger_designer.qt.design_window import TriggerSubWindow
+from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
 from trigger_designer.qt.node_base import TriggerNode
+
+register_cycle_validator()
 
 with contextlib.suppress(Exception):
     # The app configures loguru on import; a benchmark wants only numbers.
