@@ -765,7 +765,7 @@
         "formula_sections": [
           {
             "target_column": "year",
-            "formula_text": "YEAR([order_date])",
+            "formula_text": "YEAR(strptime([order_date], '%d-%m-%Y'))",
             "editor_height": 120,
             "target_dtype": ""
           }
