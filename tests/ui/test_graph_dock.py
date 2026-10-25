@@ -320,6 +320,77 @@ def test_undo_restores_the_widget_from_the_model() -> None:
     assert content.graph_type_combo.currentText() == "Bar"
 
 
+def test_renderer_round_trips_and_old_files_default_to_matplotlib() -> None:
+    content = _build(_graph(saved=SAVED))["content"]
+    assert content.renderer == "matplotlib"
+    assert content.renderer_combo.currentText() == "matplotlib"
+
+    content.renderer_combo.setCurrentText("pyqtgraph")
+    state = copy.deepcopy(content.serialize())
+    assert state["renderer"] == "pyqtgraph"
+
+    content.renderer = "matplotlib"
+    content.deserialize_content_state(state)
+    content._sync_widgets_from_model()
+    assert content.renderer == "pyqtgraph"
+    assert content.renderer_combo.currentText() == "pyqtgraph"
+
+    # A .tds saved before the setting existed carries no key at all.
+    old_file = {key: value for key, value in state.items() if key != "renderer"}
+    content.renderer = "matplotlib"
+    content.deserialize_content_state(old_file)
+    content._sync_widgets_from_model()
+    assert content.renderer == "matplotlib"
+    assert content.renderer_combo.currentText() == "matplotlib"
+
+
+def test_undo_restores_the_renderer_widget_from_the_model() -> None:
+    refs = _build(_graph(saved={}))
+    content = refs["content"]
+    history = refs["window"].scene.history
+    assert content.renderer_combo.currentText() == "matplotlib"
+
+    assert content.push_property_change(
+        ("renderer",), "matplotlib", "pyqtgraph", "Graph renderer"
+    )
+    assert history.controller.count == 1
+    assert content.renderer == "pyqtgraph"
+
+    history.undo()
+    APP.processEvents()
+
+    assert content.renderer == "matplotlib"
+    assert content.renderer_combo.currentText() == "matplotlib"
+
+
+def test_renderer_switch_swaps_the_open_window_and_its_title(qtbot) -> None:
+    from trigger_designer.qt.widgets.nodes.Report.pyqtgraph_view import (
+        PyqtgraphChartView,
+    )
+
+    refs = _build(_graph(saved=SAVED))
+    content = refs["content"]
+    content.after_execution({content.variable_name: FRAME.lazy()})
+    content.open_graph_in_new_window()
+    window = content._chart_window
+    assert window.renderer == "matplotlib"
+    assert window.windowTitle() == "Graph \u2014 Saved title"
+
+    content.renderer_combo.setCurrentText("pyqtgraph")
+
+    qtbot.waitUntil(lambda: window.renderer == "pyqtgraph", timeout=3000)
+    assert isinstance(window.chart_view, PyqtgraphChartView)
+    assert window.windowTitle() == "Graph \u2014 Saved title (pyqtgraph)"
+    qtbot.waitUntil(
+        lambda: (
+            window.chart_view.spec is not None and window.chart_view.spec.renderable
+        ),
+        timeout=3000,
+    )
+    assert window.toolbar is not None
+    window.close()
+
+
 def test_aggregation_widget_surfaces_the_type_default_while_auto() -> None:
     content = _build(_graph(saved={}))["content"]
 

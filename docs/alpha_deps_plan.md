@@ -311,3 +311,59 @@ says use `TRY(...)`).
 Pins: `polars[pyarrow]==2.0.0`, `duckdb==2.0.0` — exact, the `<2` ceiling
 died with the migration as planned. Both majors are days-to-weeks old, so
 "latest" and "2.x LTS" currently coincide; revisit before beta.
+
+## Phase 7 - pyqtgraph renderer - DONE 2026-10-25
+
+The Graph window can now draw with either library. Chosen by a new
+`Renderer` combo in the dock (`"renderer"` in the node schema, default
+`matplotlib`, so every pre-phase-7 `.tds` opens exactly as before —
+verified by test). The window is renderer-agnostic: it resolves a
+renderer *name* to a module (`chart_window._RENDERER_MODULES`, importlib,
+lazy), and each module exposes `create_view`/`create_toolbar`. Selecting
+`pyqtgraph` on a live window disposes the old view and replays the last
+`ChartSpec` into the new one; the window title gains `(pyqtgraph)` and
+the dock chip strip shows the renderer — the matplotlib caption is
+unchanged.
+
+No drawing code is shared between the two renderers — on purpose. What
+*is* shared is the label logic that makes them agree: `chart_renderer.py`
+holds the `ChartRenderer` base (spec in, message-page behaviour, palette
+theme read) plus pure helpers (`SERIES_COLORS`, tick/label elision at
+18 chars and 40 labelled ticks, numeric-x detection, category ordering).
+A third renderer can exist without touching either existing one.
+
+pyqtgraph 0.14 API traps found by probe, each now a comment in the code:
+
+- `connect="all"` **bridges NaN points** (and the auto default resolves
+  to `'all'` even with NaNs in the data). Lines use explicit
+  `connect="finite"`, which splits at non-finite values — matplotlib's
+  gap behaviour.
+- `PlotWidget.setBackground()` lands on the QGraphicsView's own brush and
+  leaves the plot area black. Theme uses
+  `getViewBox().setBackgroundColor(QColor)`; it stores to `vb.state`
+  synchronously, which makes it assertable.
+- Hover has no mouse-move events offscreen: tooltips ride
+  `sigHovered` from invisible `ScatterPlotItem` overlays carrying
+  `(x_label, y, series_name)` tuples in their structured `data` field;
+  scatter series carry their own payload. Tests drive `_on_hover` with
+  duck-typed spot stubs implementing `pos()`/`data()`.
+- `AxisItem` has no `getPen` (pens live in `_pen`/`_textPen`), ticks in
+  `_tickLevels`, `BarGraphItem` has no `value()`, and there is no
+  `ImageExporter` here — the Save PNG button is `plot_page().grab()`.
+- `pi.clear()` does not remove the legend but does remove the tooltip
+  item, so the tooltip is rebuilt on every render.
+
+pyqtgraph was **missing the `_set_category_ticks` call in its bar path**
+— caught by the smoke script, not by types. The suite is the gate now.
+
+Library isolation verified in fresh processes: a matplotlib-only window
+never imports pyqtgraph and vice-versa (the four Report chart modules
+are in `nodes/__init__._LAZY_HELPER_MODULES`, so startup imports none of
+them). Toolbar parity is deliberately *not* identical — pyqtgraph has no
+`NavigationToolbar2QT`; it ships reset-view + save-PNG icon buttons per
+the design system, and the window title says which renderer is up.
+
+Gate: 831 passed / 6 skipped (23 new renderer tests + 3 new dock tests:
+schema round-trip incl. old-file default, undo of the combo via
+`push_property_change`, live window swap incl. title). Pin:
+`pyqtgraph==0.14.0`.

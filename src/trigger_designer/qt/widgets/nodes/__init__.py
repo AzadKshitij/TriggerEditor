@@ -152,10 +152,14 @@ _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
 
 #: Helper modules under ``nodes/`` that are not nodes. The sweep below would
 #: import them at startup, pulling matplotlib and the Qt canvas into every
-#: launch; they load with the node that needs them instead.
+#: launch; they load with the node that needs them instead. ``chart_renderer``
+#: is the shared contract and ``pyqtgraph_view`` the opt-in renderer: neither
+#: belongs to a node, and neither may drag a plotting library into startup.
 _LAZY_HELPER_MODULES = {
+    "Report.chart_renderer",
     "Report.chart_view",
     "Report.chart_window",
+    "Report.pyqtgraph_view",
 }
 
 modules = []

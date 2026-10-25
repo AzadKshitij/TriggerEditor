@@ -2,8 +2,9 @@
 
 The Graph configures *what* to chart; the shared
 :mod:`trigger_designer.core.charts` model decides what the data means, and
-:class:`~trigger_designer.qt.widgets.nodes.Report.chart_view.ChartView` draws
-it in the non-modal window. The Config Dock has no preview: the window is the
+the window's renderer draws it: :class:`chart_view.ChartView` with
+matplotlib by default, :class:`pyqtgraph_view.PyqtgraphChartView` on
+request. The Config Dock has no preview: the window is the
 chart, and its Show graph button stays disabled until a workflow run has
 succeeded.
 
@@ -70,6 +71,17 @@ _CHART_TYPE_ITEMS = (
     ("Scatter", "scatter"),
 )
 
+#: Display label -> stored value for the renderer combo. The values are the
+#: library names themselves: there is no friendlier word for them, and the
+#: tooltip has to describe the real difference anyway.
+_RENDERER_ITEMS = (
+    ("matplotlib", "matplotlib"),
+    ("pyqtgraph", "pyqtgraph"),
+)
+
+#: The renderer every saved workflow drew with before this setting existed.
+_DEFAULT_RENDERER = "matplotlib"
+
 #: Display label -> stored value for the aggregation combo.
 _AGGREGATION_ITEMS = (
     ("None", "none"),
@@ -118,6 +130,7 @@ class GraphContent(
 
     serialized_state_schema: ClassVar[dict[str, Any]] = {
         "graph_type": {"default": "line"},
+        "renderer": {"default": _DEFAULT_RENDERER},
         "x_column": {"default": ""},
         "y_column": {"default": ""},
         "title": {"default": ""},
@@ -126,7 +139,7 @@ class GraphContent(
     }
 
     def __init__(
-        self, node: "TriggerNode", parent: QDMNodeIconContentWidget | None = None
+        self, node: TriggerNode, parent: QDMNodeIconContentWidget | None = None
     ) -> None:
         QDMNodeIconContentWidget.__init__(self, node, parent)
         TriggerChangeHandler.__init__(self, self.node.scene, self.node)
@@ -136,6 +149,7 @@ class GraphContent(
 
         # Graph settings
         self.graph_type: str = "line"
+        self.renderer: str = _DEFAULT_RENDERER
         self.x_column: str = ""
         self.y_column: str = ""
         self.color_column: str = ""
@@ -160,11 +174,11 @@ class GraphContent(
         self.runDataReady.connect(self._on_run_data_ready)
 
     @property
-    def node(self) -> "TriggerNode":
+    def node(self) -> TriggerNode:
         return self._node
 
     @node.setter
-    def node(self, value: "TriggerNode") -> None:
+    def node(self, value: TriggerNode) -> None:
         self._node = value
 
     def initUI(self, icon_=None) -> None:
@@ -196,6 +210,19 @@ class GraphContent(
         self.graph_type_combo.addItems([label for label, _ in _CHART_TYPE_ITEMS])
         self.graph_type_combo.currentTextChanged.connect(self.on_graph_type_changed)
         graph_section.addWidget(FormRow("Type", self.graph_type_combo, label_width=72))
+
+        self.renderer_combo = NoWheelComboBox()
+        self.renderer_combo.setMinimumHeight(30)
+        self.renderer_combo.addItems([label for label, _ in _RENDERER_ITEMS])
+        self.renderer_combo.setToolTip(
+            "Library that draws the chart window. pyqtgraph replaces the "
+            "navigation toolbar with reset-view and save-PNG buttons."
+        )
+        self.renderer_combo.setAccessibleName("Chart renderer")
+        self.renderer_combo.currentTextChanged.connect(self.on_renderer_changed)
+        graph_section.addWidget(
+            FormRow("Renderer", self.renderer_combo, label_width=72)
+        )
 
         self.x_column_combo = NoWheelComboBox()
         self.x_column_combo.setMinimumHeight(30)
@@ -247,6 +274,8 @@ class GraphContent(
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
         """Configuration summary for the dock context strip."""
         chips: list[tuple[str, str]] = [(self.graph_type, "accent")]
+        if self.renderer != _DEFAULT_RENDERER:
+            chips.append((self.renderer, ""))
         if self.x_column and self.y_column:
             chips.append((f"{self.x_column} \u2192 {self.y_column}", ""))
         aggregation = effective_aggregation(self.graph_type, self.aggregation)
@@ -275,6 +304,10 @@ class GraphContent(
         self._set_combo_selection(
             getattr(self, "graph_type_combo", None),
             _label_for(_CHART_TYPE_ITEMS, self.graph_type, "Line"),
+        )
+        self._set_combo_selection(
+            getattr(self, "renderer_combo", None),
+            _label_for(_RENDERER_ITEMS, self.renderer, _DEFAULT_RENDERER),
         )
         self.update_column_options()
         self._sync_aggregation_widget()
@@ -460,12 +493,25 @@ class GraphContent(
             self._refresh_timer = timer
         timer.start()
 
+    def _window_title(self) -> str:
+        """Window caption; a non-default renderer is named, per disclosure.
+
+        matplotlib is what every pre-phase-7 workflow drew with, so its
+        window keeps the old, unchanged caption.
+        """
+        base = f"Graph \u2014 {self.title}" if self.title else "Graph"
+        if self.renderer != _DEFAULT_RENDERER:
+            base += f" ({self.renderer})"
+        return base
+
     def _refresh_open_window(self) -> None:
         window = getattr(self, "_chart_window", None)
         if window is None:
             return
         try:
             if window.isVisible():
+                window.set_renderer(self.renderer)
+                window.setWindowTitle(self._window_title())
                 window.set_spec(self.build_spec())
         except RuntimeError:
             self._chart_window = None
@@ -487,9 +533,10 @@ class GraphContent(
             # A run can complete before the dock ever listed the columns.
             self.update_column_options()
         window = getattr(self, "_chart_window", None)
-        title = f"Graph \u2014 {self.title}" if self.title else "Graph"
+        title = self._window_title()
         if window is not None:
             try:
+                window.set_renderer(self.renderer)
                 window.setWindowTitle(title)
             except RuntimeError:
                 # Closed since the last click: build a fresh one.
@@ -499,7 +546,7 @@ class GraphContent(
                 ChartWindow,
             )
 
-            window = ChartWindow()
+            window = ChartWindow(renderer=self.renderer)
             self._chart_window = window
             window.setWindowTitle(title)
         window.set_spec(self.build_spec())
@@ -515,6 +562,19 @@ class GraphContent(
         self._sync_aggregation_widget()
         self._refresh_graph_counts()
         self._schedule_window_refresh()
+
+    def on_renderer_changed(self, label: str) -> None:
+        """Swap the drawing library; the open window rebuilds on the debounce.
+
+        The renderer is not part of the chart's meaning, only of how the
+        window draws and feels, so the model change is one attribute and the
+        window swap rides the same 300 ms refresh as every other edit.
+        """
+        value = _value_for(_RENDERER_ITEMS, label, self.renderer)
+        if value != self.renderer:
+            self.renderer = value
+            self._refresh_graph_counts()
+            self._schedule_window_refresh()
 
     def on_x_column_changed(self, text: str) -> None:
         self.x_column = text
@@ -617,7 +677,7 @@ class TriggerNode_Graph(TriggerNode):
     content_label_objname = "trigger_node_graph"
     style: ClassVar[dict] = {}
 
-    def __init__(self, scene: "Scene") -> None:
+    def __init__(self, scene: Scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[3])
 
     def initInnerClasses(self) -> None:

@@ -647,6 +647,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pyqtgraph"
+version = "0.14.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "colorama" },
+    { name = "numpy" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/32/36/4c242f81fdcbfa4fb62a5645f6af79191f4097a0577bd5460c24f19cc4ef/pyqtgraph-0.14.0-py3-none-any.whl", hash = "sha256:7abb7c3e17362add64f8711b474dffac5e7b0e9245abdf992e9a44119b7aa4f5", size = 1924755, upload-time = "2025-11-16T19:43:22.251Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -860,6 +872,7 @@ dependencies = [
     { name = "pyqt6" },
     { name = "pyqt6-qt6" },
     { name = "pyqt6-sip" },
+    { name = "pyqtgraph" },
     { name = "qtpy" },
     { name = "sqlglot" },
 ]
@@ -897,6 +910,7 @@ requires-dist = [
     { name = "pyqt6", specifier = "==6.11.0" },
     { name = "pyqt6-qt6", specifier = "==6.11.2" },
     { name = "pyqt6-sip", specifier = "==13.13.0" },
+    { name = "pyqtgraph", specifier = "==0.14.0" },
     { name = "qtpy", specifier = "==2.4.3" },
     { name = "sqlglot", specifier = ">=30.24,<31" },
 ]
