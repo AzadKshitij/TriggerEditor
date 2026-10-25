@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
@@ -168,7 +168,7 @@ class TriggerScene(Scene):
         data["workflow_metadata"] = {
             "schema_version": WORKFLOW_SCHEMA_VERSION,
             "app_version": VERSION,
-            "saved_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "saved_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         return data
 
@@ -195,7 +195,7 @@ def settle_multi_input_nodes(scene: Scene) -> None:
         try:
             expected = len(node.getOrderedEdges())
             actual = len(node.content.input_frames)
-        except (AttributeError, RuntimeError, TypeError):
+        except AttributeError, RuntimeError, TypeError:
             incomplete.append(node)
             continue
         if node.isDirty() or node.isInvalid() or actual != expected:

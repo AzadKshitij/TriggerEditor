@@ -11,7 +11,7 @@ preview data without writing a pipeline by hand.**
 
 <sub>A workflow loaded in the node canvas, with the Config Dock editing a Cleansing node.</sub>
 
-[![Python](https://img.shields.io/badge/Python-3.13-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![PyQt6](https://img.shields.io/badge/GUI-PyQt6-41CD52?logo=qt&logoColor=white)](https://www.riverbankcomputing.com/software/pyqt/)
 [![Polars](https://img.shields.io/badge/engine-Polars-CD792C)](https://pola.rs/)
 [![DuckDB](https://img.shields.io/badge/formula-DuckDB-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org/)
@@ -88,7 +88,7 @@ identifier stored in saved workflows; icons live in
 
 ## Requirements
 
-- **Python 3.13.12+** (the project pins `>=3.13.12,<3.14`).
+- **Python 3.14+** (the project pins `>=3.14,<3.15`; `uv` fetches it automatically).
 - [**uv**](https://github.com/astral-sh/uv) — the project's package manager.
 
 The app targets Windows, macOS and Linux, and needs a working Qt platform plugin

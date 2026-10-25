@@ -67,7 +67,34 @@ does not exist yet); cProfile data across the upgrade without an automated
 diff is noise we do not need twice. Phase 8 captures profile evidence
 properly, before and after, with the self-exit flag.
 
-## Phase 1 — Python 3.14 — pending
+## Phase 1 — Python 3.14 — DONE 2026-10-25
+
+- Interpreter: 3.14.8 (uv-managed); `.python-version` pinned locally
+  (gitignored by design). `requires-python >=3.14,<3.15`, ruff
+  `target-version = "py314"`, ty `python-version = "3.14"`; README badge +
+  Requirements line updated.
+- **Qt trio pulled forward from Phase 5** (sanctioned exception): `pyqt6-sip`
+  13.9.1 has no cp314 wheel and its source build needs MSVC (absent), so
+  3.14 forces pyqt6 6.11.0 / pyqt6-qt6 6.11.2 / pyqt6-sip 13.13.0
+  (cp314/abi3 wheels).
+- `datetime.utcnow()` → `datetime.now(UTC)` in `performance_scene.py`.
+  PEP 758: `ruff format` under `py314` drops parens on multi-exception
+  `except` — valid 3.14 syntax, accepted deliberately.
+- Gate discovery: the `ui` layer crashed (0xC0000409) + 3 hard failures in
+  `test_formula_editor_loop.py`. Isolated by per-layer bisect, reproduced
+  standalone, and attributed with version probes: `mergeCharFormat` and
+  `QSyntaxHighlighter.setFormat` fire `textChanged` **identically on Qt
+  6.8.1 and 6.11.0** — a pre-existing repo bug (`78d438d` moved error
+  painting to `setExtraSelections` but left the old whole-document format
+  write in place; the write fired `textChanged`, the handler wiped
+  `self.errors` mid-paint, highlights never appeared). Fixed in its own
+  commit `8b3c40a`, not counted against the bump.
+- Gates: `uv sync` clean; all core imports OK; offscreen `TriggerSubWindow`
+  constructs; full pytest **803 passed / 6 skipped** (benchmarks skip as
+  designed); `scripts\build.bat` OK (`TriggerEditor.exe`, 13.3 MB); dist exe
+  launched — window "Trigger Designer" alive at 15 s (WS 172 MB), stopped
+  after smoke.
+- Commits: `8b3c40a` (bugfix), `2738e97` (Phase 1 deps).
 
 ## Phase 2 — Unused runtime deps — pending
 

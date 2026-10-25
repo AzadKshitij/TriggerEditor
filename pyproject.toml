@@ -7,7 +7,7 @@ name = "TriggerDesigner"
 version = "0.0.1"
 description = "A visual data processing tool with node-based workflow editor"
 readme = "README.md"
-requires-python = ">=3.13.12,<3.14"
+requires-python = ">=3.14,<3.15"
 license = {text = "MIT"}
 authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 
@@ -34,10 +34,13 @@ dependencies = [
     "fastexcel>=0.15.1",
     "openpyxl>=3.1.0",
     "orjson==3.12.0",
-    # GUI framework
-    "pyqt6==6.8.0",
-    "pyqt6-qt6==6.8.1",
-    "pyqt6-sip==13.9.1",
+    # GUI framework. The Qt trio is on the newest release because Python 3.14
+    # has no wheels for the old pins (pyqt6-sip 13.9.1 falls back to a source
+    # build); 6.11.x / sip 13.13.0 ship cp314/abi3 wheels. This bump was
+    # planned for Phase 5 and pulled into Phase 1 for that reason.
+    "pyqt6==6.11.0",
+    "pyqt6-qt6==6.11.2",
+    "pyqt6-sip==13.13.0",
     "qtpy==2.4.3",
     # Node canvas. Published on PyPI as `nodeeditor-qtpy`; the import package
     # is `nodeeditor`. No extras needed: the Qt binding (pyqt6) is already a
@@ -73,7 +76,7 @@ packages = ["src/trigger_designer"]
 
 
 [tool.ty.environment]
-python-version = "3.13"
+python-version = "3.14"
 
 [tool.ty.src]
 include = ["src", "scripts"]
@@ -81,7 +84,7 @@ include = ["src", "scripts"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py313"
+target-version = "py314"
 src = ["src", "tests"]
 
 [tool.coverage.run]

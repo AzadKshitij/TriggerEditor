@@ -524,7 +524,7 @@ class SQLFormulaEditor(QTextEdit):
         try:
             first = self.completer.completionModel().index(0, 0)
             popup.setCurrentIndex(first)
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
         # complete(rect) sizes the popup from the rect: a bare cursorRect()
         # is only a few px wide and renders as a thin sliver, so widen it
@@ -532,11 +532,11 @@ class SQLFormulaEditor(QTextEdit):
         rect = self.cursorRect()
         try:
             content_width = popup.sizeHintForColumn(0)
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             content_width = -1
         try:
             content_width += popup.verticalScrollBar().sizeHint().width()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
         rect.setWidth(max(content_width + 12, 200))
         self.completer.complete(rect)
