@@ -43,15 +43,6 @@ wheels = [
 ]
 
 [[package]]
-name = "click"
-version = "8.5.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c7/0e/7fa0ef50764b67090eca4114772a2abf8b6148198475e54c660b97caeee6/click-8.5.0.tar.gz", hash = "sha256:ba0d2089de75ea0310e2dde03160e6ca10009947fb95a182f9b54021bb272e34", size = 382235, upload-time = "2026-08-26T13:33:14.56Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/50/6c0d534c5f134586a8e1ba4e330569e32f057e33372ae556463212fb4cd3/click-8.5.0-py3-none-any.whl", hash = "sha256:255bc9599cf7748b4b1a446ccc735421bd08a2ae529a8b88597d3de5664ee360", size = 125251, upload-time = "2026-08-26T13:33:12.928Z" },
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1043,8 +1034,6 @@ name = "triggerdesigner"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
-    { name = "click" },
-    { name = "colorama" },
     { name = "duckdb" },
     { name = "fastexcel" },
     { name = "loguru" },
@@ -1053,7 +1042,6 @@ dependencies = [
     { name = "numpy" },
     { name = "openpyxl" },
     { name = "orjson" },
-    { name = "packaging" },
     { name = "pillow" },
     { name = "polars", extra = ["pyarrow"] },
     { name = "psutil" },
@@ -1061,11 +1049,8 @@ dependencies = [
     { name = "pyqt6" },
     { name = "pyqt6-qt6" },
     { name = "pyqt6-sip" },
-    { name = "python-dateutil" },
     { name = "qtpy" },
     { name = "sqlglot" },
-    { name = "typing-extensions" },
-    { name = "tzdata" },
 ]
 
 [package.dev-dependencies]
@@ -1092,8 +1077,6 @@ profiling = [
 
 [package.metadata]
 requires-dist = [
-    { name = "click", specifier = "==8.5.0" },
-    { name = "colorama", specifier = "==0.4.6" },
     { name = "duckdb", specifier = ">=1.2.1" },
     { name = "fastexcel", specifier = ">=0.15.1" },
     { name = "loguru", specifier = "==0.7.3" },
@@ -1102,7 +1085,6 @@ requires-dist = [
     { name = "numpy", specifier = "==2.5.3" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "orjson", specifier = "==3.12.0" },
-    { name = "packaging", specifier = "==26.3" },
     { name = "pillow", specifier = "==12.3.0" },
     { name = "polars", extras = ["pyarrow"], specifier = "==1.44.2" },
     { name = "psutil", specifier = ">=7.1.0" },
@@ -1110,11 +1092,8 @@ requires-dist = [
     { name = "pyqt6", specifier = "==6.11.0" },
     { name = "pyqt6-qt6", specifier = "==6.11.2" },
     { name = "pyqt6-sip", specifier = "==13.13.0" },
-    { name = "python-dateutil", specifier = "==2.9.0.post0" },
     { name = "qtpy", specifier = "==2.4.3" },
     { name = "sqlglot", specifier = ">=30.20,<31" },
-    { name = "typing-extensions", specifier = ">=4.13.0" },
-    { name = "tzdata", specifier = "==2026.4" },
 ]
 
 [package.metadata.requires-dev]

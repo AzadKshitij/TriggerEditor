@@ -96,7 +96,23 @@ properly, before and after, with the self-exit flag.
   after smoke.
 - Commits: `8b3c40a` (bugfix), `2738e97` (Phase 1 deps).
 
-## Phase 2 — Unused runtime deps — pending
+## Phase 2 — Unused runtime deps — DONE 2026-10-25
+
+- Dropped from `[project].dependencies`: `click`, `colorama`, `packaging`,
+  `python-dateutil`, `typing-extensions`, `tzdata` — zero imports repo-wide
+  (recursive ripgrep; an earlier non-recursive `Select-String -Path src\*`
+  check was meaningless, re-verified). They stay in the lock as transitive
+  deps of dev tooling (typer→click, pandas→dateutil/tzdata, pytest→
+  packaging); nothing in `src/` can reach those paths.
+- `typing-extensions` removal: `main_window.py` now takes `override` from
+  stdlib `typing` (3.12+).
+- `tzdata` pre-check: duckdb `TIMESTAMPTZ` round-trip runs on the **bundled
+  ICU extension** (`duckdb_extensions() → icu loaded=True`); the tzinfo it
+  returns (`DstTzInfo`) is duckdb-native, not Python `zoneinfo`; repo has
+  zero `zoneinfo` imports. Safe to drop on Windows.
+- Gate: full pytest 803 passed / 6 skipped.
+  Gotcha recorded for later phases: **bare `uv sync` prunes the `profiling`
+  group** — the project convention is `uv sync --all-groups`.
 
 ## Phase 3 — Dev deps cleanup (pandas→polars etc.) — pending
 
