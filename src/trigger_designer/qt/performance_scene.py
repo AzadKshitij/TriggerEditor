@@ -6,6 +6,7 @@ from collections.abc import Callable
 from datetime import datetime
 
 import orjson
+from loguru import logger
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
 from nodeeditor.node_multi_input_node import MultiInputNode
@@ -263,18 +264,17 @@ class TriggerScene(Scene):
         return super().deserialize(data, hashmap, restore_id, *args, **kwargs)
 
 
-def settle_multi_input_nodes(scene: Scene) -> None:
-    """Retry only collectors whose first pass did not settle every edge.
+def _incomplete_collectors(scene: Scene) -> list[MultiInputNode]:
+    """Collectors whose first pass did not settle every edge.
 
-    Union now commits its value before evaluating children, so the old
-    unconditional second pass recalculated complete Union branches for no
-    benefit. Keep a recovery pass for dirty/invalid/incomplete collectors.
+    A complete collector is a cache hit; retrying it would recompute a whole
+    Union branch for no benefit. A collector that is still incomplete after
+    the retry is reported once and left alone rather than looped over.
     """
-    multi_input_nodes = [
-        node for node in scene.nodes if isinstance(node, MultiInputNode)
-    ]
-    incomplete = []
-    for node in multi_input_nodes:
+    incomplete: list[MultiInputNode] = []
+    for node in scene.nodes:
+        if not isinstance(node, MultiInputNode):
+            continue
         try:
             expected = len(node.getOrderedEdges())
             actual = len(node.content.input_frames)
@@ -283,7 +283,18 @@ def settle_multi_input_nodes(scene: Scene) -> None:
             continue
         if node.isDirty() or node.isInvalid() or actual != expected:
             incomplete.append(node)
+    return incomplete
 
+
+def settle_multi_input_nodes(scene: Scene) -> None:
+    """Retry only collectors whose first pass did not settle every edge.
+
+    Union commits its value before evaluating children, so a complete
+    collector is already settled. Only dirty/invalid/incomplete collectors
+    and their descendants need one recovery pass; unrelated branches must
+    keep their cached values.
+    """
+    incomplete = _incomplete_collectors(scene)
     if not incomplete:
         return
 
@@ -291,5 +302,25 @@ def settle_multi_input_nodes(scene: Scene) -> None:
         node.markDirty(True)
         node.markDescendantsDirty(True)
 
-    for node in scene.nodes:
-        node.eval()
+    evaluator = getattr(scene, "evaluator", None)
+    if evaluator is not None:
+        evaluator.evaluate_nodes(incomplete, mark_dirty=False)
+    else:
+        # Plain nodeeditor Scene (low-level tests and embedders) has no
+        # coordinator; preserve the old recovery path there only.
+        for node in scene.nodes:
+            node.eval()
+
+    still_incomplete = _incomplete_collectors(scene)
+    for node in still_incomplete:
+        try:
+            edges = len(node.getOrderedEdges())
+            frames = len(node.content.input_frames)
+            detail = f"{frames} frames for {edges} edges"
+        except (AttributeError, RuntimeError, TypeError):
+            detail = "unreadable input state"
+        logger.warning(
+            "Multi-input collector {} did not settle after retry ({})",
+            node.__class__.__name__,
+            detail,
+        )

@@ -570,6 +570,44 @@ def scenario_validate_cycle(total_nodes: int, repeats: int, work: int):
         _close_window(window)
 
 
+def scenario_settle_union_chain(depth: int, repeats: int, work: int):
+    """Time one recovery pass after deliberately desynchronising the root."""
+    from nodeeditor.node_multi_input_node import MultiInputNode
+
+    from trigger_designer.qt.performance_scene import settle_multi_input_nodes
+
+    window = make_window()
+    try:
+        build_union_chain(window, depth, work)
+        settle(window)
+        unions = [
+            node for node in window.scene.nodes if isinstance(node, MultiInputNode)
+        ]
+        if not unions:
+            raise RuntimeError("union chain has no collectors")
+        root = unions[0]
+        times: list[float] = []
+        counts: dict = {}
+        for _ in range(repeats):
+            root.content.input_frames = []
+            reset_counters()
+            with _gc_paused():
+                started = time.perf_counter()
+                settle_multi_input_nodes(window.scene)
+                times.append(time.perf_counter() - started)
+            if not counts:
+                counts = dict(COUNTERS)
+        expected = {f"u{index}" for index in range(depth)}
+        _use_first_counts(counts)
+        data = _stats(times)
+        data["computes"] = _counts(expected)
+        data["nodes"] = len(window.scene.nodes)
+        data["edges"] = len(window.scene.edges)
+        return data
+    finally:
+        _close_window(window)
+
+
 def scenario_union_chain(depth: int, repeats: int, work: int):
     window = make_window()
     try:
@@ -697,11 +735,18 @@ def _all_scenarios(repeats: int, work: int, only: set[str] | None = None) -> dic
                 lambda c=count: scenario_validate_cycle(c, repeats, work),
             )
         )
-    for depth in (10, 25, 50):
+    for depth in (10, 25, 50, 200, 500):
         jobs.append(
             (
                 f"union.chain.{depth}",
                 lambda d=depth: scenario_union_chain(d, repeats, work),
+            )
+        )
+    for depth in (50, 200, 500):
+        jobs.append(
+            (
+                f"settle.union.chain.{depth}",
+                lambda d=depth: scenario_settle_union_chain(d, repeats, work),
             )
         )
 
