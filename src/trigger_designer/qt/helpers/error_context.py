@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from nodeeditor.node_graph import ancestors as graph_ancestors
+
 from trigger_designer.core.errors import (
     Ancestor,
     EnrichJob,
@@ -34,20 +36,72 @@ def _first_frame(node) -> Any:
     return None
 
 
+def _input_edges(node) -> list[tuple[Any, Any]]:
+    """Every incoming edge, in the node's own read order when it has one.
+
+    ``Node.getInput(index)`` returns only the first edge on a socket. A Union
+    (or any other multi-input node) can have several edges on one socket, so
+    walk every edge and preserve ``getOrderedEdges()`` order for collectors.
+    Remaining sockets are appended in input-index order.
+    """
+    pairs: list[tuple[Any, Any]] = []
+    seen: set[int] = set()
+    sockets = list(getattr(node, "inputs", ()) or ())
+
+    ordered_getter = getattr(node, "getOrderedEdges", None)
+    if callable(ordered_getter):
+        try:
+            ordered = list(ordered_getter() or ())
+        except Exception:  # noqa: BLE001 - context is best effort
+            ordered = []
+        for edge in ordered:
+            for socket in sockets:
+                if edge not in (getattr(socket, "edges", ()) or ()):
+                    continue
+                if id(edge) not in seen:
+                    pairs.append((socket, edge))
+                    seen.add(id(edge))
+                break
+
+    for socket in sockets:
+        try:
+            edges = list(socket.orderedEdges())
+        except (AttributeError, RuntimeError, TypeError):
+            edges = list(getattr(socket, "edges", ()) or ())
+        for edge in edges:
+            if id(edge) in seen:
+                continue
+            pairs.append((socket, edge))
+            seen.add(id(edge))
+    return pairs
+
+
+def _edge_frame(socket, edge) -> Any:
+    """Return the upstream frame connected to ``socket`` through ``edge``."""
+    try:
+        upstream_socket = edge.getOtherSocket(socket)
+    except (AttributeError, RuntimeError):
+        return None
+    upstream = getattr(upstream_socket, "node", None)
+    if upstream_socket is None or upstream is None:
+        return None
+    value = getattr(upstream, "value", None)
+    index = getattr(upstream_socket, "index", None)
+    if not isinstance(index, int):
+        return _first_frame(upstream)
+    try:
+        entry = value[index]
+    except (IndexError, KeyError, TypeError):
+        return None
+    return entry.get("data") if isinstance(entry, dict) else None
+
+
 def _frames_into(node) -> tuple[Any, ...]:
     frames: list[Any] = []
-    for index in range(len(getattr(node, "inputs", ()) or ())):
-        try:
-            upstream = node.getInput(index)
-            if upstream is None:
-                continue
-            socket_index = node.getSocketValue(upstream.outputs, node)
-            entry = upstream.value[socket_index]
-            data = entry.get("data") if isinstance(entry, dict) else None
-            if data is not None:
-                frames.append(data)
-        except Exception:  # noqa: BLE001, S112 - context is best effort
-            continue
+    for socket, edge in _input_edges(node):
+        data = _edge_frame(socket, edge)
+        if data is not None:
+            frames.append(data)
     return tuple(frames)
 
 
@@ -55,19 +109,10 @@ def _input_schema(node) -> tuple[tuple[str, ...], dict[str, str]]:
     try:
         from trigger_designer.qt.node_base import frame_schema
 
-        frame = None
-        for index in range(len(getattr(node, "inputs", ()) or ())):
-            upstream = node.getInput(index)
-            if upstream is None:
-                continue
-            socket_index = node.getSocketValue(upstream.outputs, node)
-            entry = upstream.value[socket_index]
-            frame = entry.get("data") if isinstance(entry, dict) else None
-            if frame is not None:
-                break
-        if frame is None:
+        frames = _frames_into(node)
+        if not frames:
             return (), {}
-        schema = frame_schema(frame)
+        schema = frame_schema(frames[0])
         return tuple(schema), {name: str(dtype) for name, dtype in schema.items()}
     except Exception:  # noqa: BLE001
         return (), {}
@@ -152,34 +197,27 @@ def build_enrich_job(
         if op:
             ops[node_id] = op
 
-    ancestors: list[tuple[int, Ancestor]] = []
-    seen: set[int] = {getattr(node, "id", id(node))}
-    queue: list[tuple[Any, int]] = [(node, 0)]
     inputs_of: dict[int, tuple[Any, ...]] = {}
-    while queue:
-        current, depth = queue.pop(0)
-        current_id = getattr(current, "id", None)
-        if current_id is not None:
-            inputs_of[current_id] = _frames_into(current)
-        for index in range(len(getattr(current, "inputs", ()) or ())):
-            try:
-                upstream = current.getInput(index)
-            except Exception:  # noqa: BLE001
-                upstream = None
-            if upstream is None:
-                continue
-            upstream_id = getattr(upstream, "id", id(upstream))
-            if upstream_id in seen:
-                continue
-            seen.add(upstream_id)
-            ancestors.append((depth + 1, Ancestor(upstream_id, _first_frame(upstream))))
-            queue.append((upstream, depth + 1))
+    target_id = getattr(node, "id", None)
+    if target_id is None:
+        target_id = id(node)
+    inputs_of[target_id] = _frames_into(node)
 
-    ancestors.sort(key=lambda item: item[0], reverse=True)
+    ancestors: list[Ancestor] = []
+    upstream_nodes = list(graph_ancestors(scene, node)) if scene is not None else []
+    # graph_ancestors is nearest-first, breadth-first and deduplicated. Reverse
+    # it so attribution still tests the farthest cause before the nearest one.
+    for _depth, upstream in enumerate(reversed(upstream_nodes), start=1):
+        upstream_id = getattr(upstream, "id", None)
+        if upstream_id is None:
+            upstream_id = id(upstream)
+        inputs_of[upstream_id] = _frames_into(upstream)
+        ancestors.append(Ancestor(upstream_id, _first_frame(upstream)))
+
     prefs = get_preferences()
     return EnrichJob(
         error=error,
-        ancestors=tuple(item for _depth, item in ancestors),
+        ancestors=tuple(ancestors),
         inputs_of=inputs_of,
         labels=labels,
         titles=titles,
