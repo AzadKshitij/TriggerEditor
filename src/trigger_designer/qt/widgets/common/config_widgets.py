@@ -874,14 +874,19 @@ class RuleStack(QWidget):
         self._chevrons: list[QLabel] = []
         self._callbacks: list = []
         self._collapsed: list[bool] = []
+        self._titles: list[QLabel] = []
+        self._ups: list[QWidget] = []
+        self._downs: list[QWidget] = []
+
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(SECTION_GAP)
         self._cards_layout = QVBoxLayout()
         self._cards_layout.setContentsMargins(0, 0, 0, 0)
         self._cards_layout.setSpacing(SECTION_GAP)
-        layout.addLayout(self._cards_layout)
 
+        # The add button sits above the cards: appending a card then never
+        # moves a new control under the pointer that just clicked Add.
         add_row = QHBoxLayout()
         add_row.setContentsMargins(0, 0, 0, 0)
         add_row.addStretch(1)
@@ -894,6 +899,7 @@ class RuleStack(QWidget):
         self.add_button.clicked.connect(self.add_requested.emit)
         add_row.addWidget(self.add_button)
         layout.addLayout(add_row)
+        layout.addLayout(self._cards_layout)
 
     def _icon(self, name: str):
         if self._rsm is None:
@@ -907,12 +913,43 @@ class RuleStack(QWidget):
         self._cards, self._headers, self._bodies = [], [], []
         self._summaries, self._chevrons, self._callbacks = [], [], []
         self._collapsed = []
+        self._titles, self._ups, self._downs = [], [], []
         while self._cards_layout.count():
             item = self._cards_layout.takeAt(0)
             widget = item.widget()
             if widget is not None:
                 widget.setParent(None)
                 widget.deleteLater()
+
+    def remove_card(self, index: int) -> None:
+        """Remove one card without touching the others (no full rebuild)."""
+        if not 0 <= index < len(self._cards):
+            return
+        card = self._cards.pop(index)
+        for rows in (
+            self._headers,
+            self._bodies,
+            self._summaries,
+            self._chevrons,
+            self._callbacks,
+            self._collapsed,
+            self._titles,
+            self._ups,
+            self._downs,
+        ):
+            rows.pop(index)
+        self._cards_layout.removeWidget(card)
+        card.setParent(None)
+        card.deleteLater()
+        self._renumber()
+
+    def _renumber(self) -> None:
+        count = len(self._cards)
+        for position, title in enumerate(self._titles):
+            title.setText(str(position + 1))
+        for position, (up, down) in enumerate(zip(self._ups, self._downs)):
+            up.setEnabled(position > 0)
+            down.setEnabled(position < count - 1)
 
     def add_card(
         self,
@@ -983,10 +1020,19 @@ class RuleStack(QWidget):
         )
         up.setEnabled(index > 0)
         down.setEnabled(index < count - 1)
-        up.clicked.connect(lambda: self.move_requested.emit(index, -1))
-        down.clicked.connect(lambda: self.move_requested.emit(index, 1))
-        duplicate.clicked.connect(lambda: self.duplicate_requested.emit(index))
-        remove.clicked.connect(lambda: self.remove_requested.emit(index))
+
+        def position() -> int:
+            try:
+                return self._cards.index(card)
+            except ValueError:
+                return -1
+
+        up.clicked.connect(lambda _=False: self.move_requested.emit(position(), -1))
+        down.clicked.connect(lambda _=False: self.move_requested.emit(position(), 1))
+        duplicate.clicked.connect(
+            lambda _=False: self.duplicate_requested.emit(position())
+        )
+        remove.clicked.connect(lambda _=False: self.remove_requested.emit(position()))
         header_layout.addWidget(up)
         header_layout.addWidget(down)
         header_layout.addWidget(duplicate)
@@ -1004,19 +1050,23 @@ class RuleStack(QWidget):
         self._chevrons.append(chevron)
         self._callbacks.append(on_toggle)
         self._collapsed.append(False)
+        self._titles.append(title)
+        self._ups.append(up)
+        self._downs.append(down)
 
         if collapsible:
             header.setCursor(Qt.CursorShape.PointingHandCursor)
             header.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             header.setToolTip("Expand or collapse this card")
             header.mousePressEvent = (  # type: ignore[method-assign]
-                lambda event, i=index: self._toggle(i)
+                lambda event: self._toggle(position())
             )
             header.keyPressEvent = (  # type: ignore[method-assign]
-                lambda event, i=index: self._toggle_key(event, i)
+                lambda event: self._toggle_key(event, position())
             )
 
         self._apply_collapsed(index, collapsed and collapsible)
+        self._renumber()
         return card
 
     def set_card_summary(self, index: int, text: str) -> None:

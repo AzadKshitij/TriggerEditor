@@ -77,6 +77,32 @@ def test_rule_text_edit_is_in_place_and_undoable(qtbot) -> None:
     assert find_widget.text() == ""
 
 
+def test_add_and_remove_keep_existing_cards(qtbot) -> None:
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    stack = content._stacks["rules"]
+    stack.add_button.click()
+
+    first_card = stack._cards[0]
+    first_widgets = content._card_widgets["rules"][0]
+    stack.add_button.click()
+    assert stack._cards[0] is first_card
+    assert content._card_widgets["rules"][0] is first_widgets
+    assert len(stack._cards) == 2
+
+    second_card = stack._cards[1]
+    second_widgets = content._card_widgets["rules"][1]
+    remove_button = second_card.findChildren(type(stack.add_button))[3]
+    remove_button.click()
+    assert stack._cards == [first_card]
+    assert content._card_widgets["rules"] == [first_widgets]
+
+    # The remaining card's buttons still target its new position.
+    up_button = first_card.findChildren(type(stack.add_button))[0]
+    assert up_button.isEnabled() is False
+    assert second_widgets  # captured before removal
+
+
 def test_add_and_remove_rule_still_rebuilds(qtbot) -> None:
     window, node, _dock = _node(qtbot)
     content = node.content

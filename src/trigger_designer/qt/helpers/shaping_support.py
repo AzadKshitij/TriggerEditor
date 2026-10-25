@@ -632,75 +632,88 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         except Exception:  # noqa: BLE001 - a bad predicate must not break the dock
             return True
 
+    def _build_card(
+        self, spec: Field, stack: RuleStack, index: int, item: dict, count: int
+    ) -> dict:
+        body = QWidget()
+        layout = QVBoxLayout(body)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(2)
+        widgets: dict = {}
+        for sub in spec.items:
+            value = item.get(sub.key, spec.item_default.get(sub.key))
+
+            def commit(new_value, f=spec, i=index, s=sub):
+                self._list_change(f, "edit", i, s, new_value)
+
+            if sub.kind == "pair":
+                grid = FormGrid()
+                for column, child in enumerate(sub.items):
+                    child_value = item.get(child.key, spec.item_default.get(child.key))
+
+                    def child_commit(new_value, f=spec, i=index, s=child):
+                        self._list_change(f, "edit", i, s, new_value)
+
+                    child_widget = self._make_widget(child, child_value, child_commit)
+                    widgets[child.key] = child_widget
+                    grid.add(child.label, child_widget, 0, column)
+                layout.addWidget(grid)
+            elif sub.kind == "note":
+                note = QLabel(sub.label)
+                note.setObjectName("FieldHint")
+                note.setWordWrap(True)
+                layout.addWidget(note)
+            else:
+                widget = self._make_widget(sub, value, commit)
+                widgets[sub.key] = widget
+                row = FormRow(sub.label, widget, hint=sub.hint or None, label_width=96)
+                row.setVisible(self._item_visible(sub, item))
+                layout.addWidget(row)
+        summary = ""
+        if spec.summary is not None:
+            try:
+                summary = spec.summary(item)
+            except Exception:  # noqa: BLE001 - summary is advisory
+                summary = ""
+        stack.add_card(
+            index,
+            count,
+            body,
+            summary=summary,
+            collapsible=spec.collapsible,
+            collapsed=not self._card_expanded(spec, index),
+            on_toggle=lambda expanded, k=spec.key, i=index: self._set_card_expanded(
+                k, i, expanded
+            ),
+        )
+        return widgets
+
     def _fill_stack(self, spec: Field, stack: RuleStack) -> None:
         stack.setUpdatesEnabled(False)
         try:
             stack.clear()
             items = self.settings.get(spec.key) or []
-            card_widgets: list[dict] = []
-            for index, item in enumerate(items):
-                body = QWidget()
-                layout = QVBoxLayout(body)
-                layout.setContentsMargins(0, 0, 0, 0)
-                layout.setSpacing(2)
-                widgets: dict = {}
-                for sub in spec.items:
-                    value = item.get(sub.key, spec.item_default.get(sub.key))
-
-                    def commit(new_value, f=spec, i=index, s=sub):
-                        self._list_change(f, "edit", i, s, new_value)
-
-                    if sub.kind == "pair":
-                        grid = FormGrid()
-                        for column, child in enumerate(sub.items):
-                            child_value = item.get(
-                                child.key, spec.item_default.get(child.key)
-                            )
-
-                            def child_commit(new_value, f=spec, i=index, s=child):
-                                self._list_change(f, "edit", i, s, new_value)
-
-                            child_widget = self._make_widget(
-                                child, child_value, child_commit
-                            )
-                            widgets[child.key] = child_widget
-                            grid.add(child.label, child_widget, 0, column)
-                        layout.addWidget(grid)
-                    elif sub.kind == "note":
-                        note = QLabel(sub.label)
-                        note.setObjectName("FieldHint")
-                        note.setWordWrap(True)
-                        layout.addWidget(note)
-                    else:
-                        widget = self._make_widget(sub, value, commit)
-                        widgets[sub.key] = widget
-                        row = FormRow(
-                            sub.label, widget, hint=sub.hint or None, label_width=96
-                        )
-                        row.setVisible(self._item_visible(sub, item))
-                        layout.addWidget(row)
-                summary = ""
-                if spec.summary is not None:
-                    try:
-                        summary = spec.summary(item)
-                    except Exception:  # noqa: BLE001 - summary is advisory
-                        summary = ""
-                stack.add_card(
-                    index,
-                    len(items),
-                    body,
-                    summary=summary,
-                    collapsible=spec.collapsible,
-                    collapsed=not self._card_expanded(spec, index),
-                    on_toggle=lambda expanded, k=spec.key, i=index: (
-                        self._set_card_expanded(k, i, expanded)
-                    ),
-                )
-                card_widgets.append(widgets)
-            self._card_widgets[spec.key] = card_widgets
+            self._card_widgets[spec.key] = [
+                self._build_card(spec, stack, index, item, len(items))
+                for index, item in enumerate(items)
+            ]
             stack.add_button.setEnabled(len(items) < spec.max_items)
         finally:
             stack.setUpdatesEnabled(True)
+
+    def _append_card(
+        self, spec: Field, stack: RuleStack, item: dict, count: int
+    ) -> None:
+        widgets = self._build_card(spec, stack, count - 1, item, count)
+        self._card_widgets.setdefault(spec.key, []).append(widgets)
+        stack.add_button.setEnabled(count < spec.max_items)
+
+    def _remove_card_at(self, spec: Field, stack: RuleStack, index: int) -> None:
+        stack.remove_card(index)
+        cards = self._card_widgets.get(spec.key) or []
+        if 0 <= index < len(cards):
+            cards.pop(index)
+        stack.add_button.setEnabled(len(cards) < spec.max_items)
 
     @staticmethod
     def _card_sub_fields(spec: Field):
@@ -775,6 +788,17 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         structural = operation in ("add", "remove", "move", "duplicate") or (
             operation == "edit" and arg.rebuild_on_change
         )
+        # Add and remove update the visible stack in place, so the pointer
+        # never lands on a freshly rebuilt control. Reordering or reshaping a
+        # card clears the projection and lets the undo command rebuild it.
+        stack = self._stacks.get(spec.key)
+        if stack is not None:
+            if operation == "add":
+                self._append_card(spec, stack, items[-1], len(items))
+            elif operation == "remove":
+                self._remove_card_at(spec, stack, index)
+            elif structural:
+                self._card_widgets.pop(spec.key, None)
         self.set_setting(
             spec.key,
             items,
@@ -782,13 +806,6 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
             merge,
             structural=structural,
         )
-        # Structural edits rebuild through the undo command's redo; a value
-        # edit only needs its card summary refreshed. Without a history stack
-        # there is no redo, so rebuild here.
-        if structural and len(self._card_widgets.get(spec.key) or []) != len(items):
-            stack = self._stacks.get(spec.key)
-            if stack is not None:
-                self._fill_stack(spec, stack)
         if not structural and spec.summary is not None:
             stack = self._stacks.get(spec.key)
             if stack is not None and index < len(items):
@@ -880,6 +897,11 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
                 continue
             stack = self._stacks.get(spec.key)
             if stack is None:
+                continue
+            cards = self._card_widgets.get(spec.key) or []
+            items = self.settings.get(spec.key) or []
+            if len(cards) == len(items):
+                # In-place add/remove already projected the new structure.
                 continue
             try:
                 self._fill_stack(spec, stack)
