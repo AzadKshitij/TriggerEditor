@@ -435,6 +435,9 @@ def scenario_edit_edge_connect(repeats: int, work: int):
                     socket.node.onEdgeConnectionChanged(new_edge)
                     if socket.is_input:
                         socket.node.onInputChanged(socket)
+                # Edge notifications coalesce in a 0 ms flush; the benchmark
+                # closes the event turn explicitly so counts are comparable.
+                window.scene.evaluator.flush_now()
                 times.append(time.perf_counter() - started)
             if not counts:
                 counts = dict(COUNTERS)
@@ -481,6 +484,7 @@ def scenario_edit_split(repeats: int, work: int):
                     socket.node.onEdgeConnectionChanged(edge)
                     if socket.is_input:
                         socket.node.onInputChanged(socket)
+                window.scene.evaluator.flush_now()
                 times.append(time.perf_counter() - started)
             if not counts:
                 counts = dict(COUNTERS)

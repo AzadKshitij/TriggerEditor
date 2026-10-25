@@ -87,6 +87,11 @@ class WorkflowExecutionMixin:
             self.run_button.setEnabled(False)
 
         try:
+            # Run reads values, so any coalesced edge edit must be settled
+            # before the ordering and code generation below.
+            coordinator = getattr(self.scene, "evaluator", None)
+            if coordinator is not None:
+                coordinator.flush_now()
             sorted_nodes = topological_order(self.scene)
         except GraphCycleError as exc:
             # Never leave the Run button disabled because the graph cannot be

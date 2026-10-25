@@ -52,6 +52,7 @@ def test_drag_end_evaluates_consumer_once_and_producer_not_at_all() -> None:
             socket.node.onEdgeConnectionChanged(new_edge)
             if socket.is_input:
                 socket.node.onInputChanged(socket)
+        window.scene.evaluator.flush_now()
 
         assert second.computes == 0
         assert join.computes == 1

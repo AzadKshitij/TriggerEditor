@@ -107,6 +107,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
         self.scene.addHasBeenModifiedListener(self.setTitle)
         self.scene.history.addHistoryRestoredListener(self.onHistoryRestored)
+        evaluator = getattr(self.scene, "evaluator", None)
+        if evaluator is not None:
+            # A deferred pass can discover a legacy cycle between full passes;
+            # route it to the same log/dock the window uses elsewhere.
+            self.scene.cycle_reporter = lambda message: self.logWarning(message)
         self.scene.addDragEnterListener(self.onDragEnter)
         self.scene.addDropListener(self.onDrop)
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
@@ -332,25 +337,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         return TriggerNode_Unknown
 
     def doEvalOutputs(self, dialog=None) -> None:
-        # Evaluate in dependency order so every node pulls settled inputs
-        # instead of cascading eval() calls through the creation-order walk.
-        # A cyclic graph cannot be sorted; fall back to creation order rather
-        # than failing the load, matching the previous behaviour.
-        try:
-            ordered_nodes = topological_order(self.scene)
-        except GraphCycleError as exc:
-            report_cycle_once(
-                self.scene,
-                exc,
-                lambda message: self.logWarning(
-                    f"{message} Evaluating in creation order."
-                ),
-            )
-            ordered_nodes = list(self.scene.nodes)
+        # The loader and undo restore need every node in one ordered pass. A
+        # cyclic graph cannot be sorted; the coordinator reports it once and
+        # falls back to creation order instead of failing the load.
+        def report_cycle(message: str) -> None:
+            self.logWarning(f"{message} Evaluating in creation order.")
 
-        # The workflow loader passes its dialog; history restores and other
-        # evaluations run silently, regardless of graph size.
-        total = len(ordered_nodes)
+        total = len(self.scene.nodes)
         progress = (
             eval_progress_dialog(
                 self.scene, self, total, "Evaluating workflow…", dialog=dialog
@@ -359,16 +352,36 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             else nullcontext()
         )
         with progress:
+            # Keep the flat-pass flag around the settle call as well; step 6
+            # replaces the full-scene settle with a targeted pass, but until
+            # then it must not trigger eager pushes from inside the pass.
             previous_batch = getattr(self.scene, "_batch_evaluating", False)
             self.scene._batch_evaluating = True
             try:
-                for node in ordered_nodes:
-                    node.eval()
+                coordinator = getattr(self.scene, "evaluator", None)
+                if coordinator is not None:
+                    coordinator.evaluate_all(report=report_cycle)
+                else:
+                    try:
+                        ordered_nodes = topological_order(self.scene)
+                    except GraphCycleError as exc:
+                        report_cycle_once(self.scene, exc, report_cycle)
+                        ordered_nodes = list(self.scene.nodes)
+                    for node in ordered_nodes:
+                        node.eval()
                 settle_multi_input_nodes(self.scene)
             finally:
                 self.scene._batch_evaluating = previous_batch
 
     def onHistoryRestored(self) -> None:
+        # A snapshot restore rebuilds scene nodes. Drop queued work first so
+        # no timer or pending origin can retain or evaluate an old node.
+        evaluator = getattr(self.scene, "evaluator", None)
+        if evaluator is not None:
+            evaluator.reset_pending()
+        signatures = getattr(self.scene, "_reported_cycle_signatures", None)
+        if signatures is not None:
+            signatures.clear()
         # Force the Config Dock to rebuild: a restore reverts the selected
         # node in place, so without force=True the dock's _current_key check
         # would short-circuit and leave the widgets showing stale values.
@@ -675,6 +688,9 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         for callback in list(self._close_event_listeners):
             callback(self, event)
         if event.isAccepted():
+            evaluator = getattr(self.scene, "evaluator", None)
+            if evaluator is not None:
+                evaluator.close()
             try:
                 self.shutdown_workflow_worker()
             except Exception:  # noqa: BLE001 - a raising slot aborts the process

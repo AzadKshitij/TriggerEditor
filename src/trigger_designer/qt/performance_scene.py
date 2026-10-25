@@ -12,6 +12,7 @@ from nodeeditor.node_multi_input_node import MultiInputNode
 from nodeeditor.node_scene import Scene
 
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
+from trigger_designer.qt.helpers.evaluation import EvaluationCoordinator
 from trigger_designer.qt.undo.history import TriggerSceneHistory
 
 
@@ -157,6 +158,11 @@ class TriggerScene(Scene):
         #: Cycle signatures already reported by the evaluation fallback, so
         #: repeated passes over a legacy cyclic graph do not spam the log.
         self._reported_cycle_signatures: set[tuple[tuple[int, ...], ...]] = set()
+        #: Set by the owning sub-window so a cycle found by a deferred pass
+        #: reaches the same log/dock as a full pass.
+        self.cycle_reporter: Callable[[str], None] | None = None
+        self._eval_depth = 0
+        self.evaluator = EvaluationCoordinator(self)
         self.loaded_workflow_metadata: dict[str, object] = {}
         #: Set by helpers.eval_progress.eval_progress_dialog while a
         #: progress dialog is driving a load/recompute; None otherwise.
@@ -181,11 +187,15 @@ class TriggerScene(Scene):
     def beginBulkLoad(self) -> None:
         self._bulk_loading = True
         self._deferred_edge_updates.clear()
+        self.evaluator.begin_bulk_load()
 
     def endBulkLoad(self) -> None:
         pending_edges = list(self._deferred_edge_updates)
         self._bulk_loading = False
         self._deferred_edge_updates.clear()
+        # A load gathers constructor/deserialize notifications but must not
+        # flush them; the single doEvalOutputs pass owns evaluation.
+        self.evaluator.end_bulk_load()
 
         for edge in pending_edges:
             edge.updatePositions()
@@ -220,6 +230,10 @@ class TriggerScene(Scene):
         self._save_target = filename
         tmp_path = None
         try:
+            # A pending edge edit is newer than the serialization about to
+            # run; never let the file capture a stale value. The save target
+            # is visible first because evaluation may resolve content paths.
+            self.evaluator.flush_now()
             payload = orjson.dumps(self.serialize(), option=orjson.OPT_INDENT_2)
             directory = os.path.dirname(os.path.abspath(filename))
             fd, tmp_path = tempfile.mkstemp(

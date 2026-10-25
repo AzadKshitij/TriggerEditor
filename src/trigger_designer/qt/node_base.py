@@ -1076,6 +1076,17 @@ class TriggerNode(Node):
             return
 
         self.clear_error("run")
+        coordinator = getattr(self.scene, "evaluator", None)
+        if coordinator is not None:
+            # Edge notifications are deferred so drag-end, split and reroute
+            # loops coalesce in one event turn. Content edits in a small scene
+            # use the same ordered path (one notify per compute, cycle report).
+            # In a large scene the topological pass costs more than the push
+            # path, so keep the guard + push fallback measured in step 5.
+            small_scene = len(getattr(self.scene, "nodes", ())) <= 32
+            if socket is not None or small_scene:
+                coordinator.request_evaluation(self, defer=socket is not None)
+                return
         self.markDirty()
         self.markDescendantsDirty()
         self.eval()
