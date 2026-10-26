@@ -1991,8 +1991,8 @@
     {
       "id": 2806270209040,
       "title": "Graph",
-      "pos_x": -209.8083496093749,
-      "pos_y": -556.9458007812495,
+      "pos_x": -172.8083496093749,
+      "pos_y": -555.9458007812495,
       "inputs": [
         {
           "id": 2806334446544,
@@ -2019,8 +2019,8 @@
         "color_column": "",
         "aggregation": ""
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "klkkl",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 1,
       "node_type": "report",
@@ -2305,6 +2305,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-18T11:32:48Z"
+    "saved_at": "2026-10-25T19:02:40Z"
   }
 }

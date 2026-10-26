@@ -89,12 +89,14 @@ analysis = Analysis(
         "PIL",
         "PIL.ImageQt",
 
-        # GUI frameworks
+        # GUI frameworks. PySide6 ships its Qt DLLs inside the wheel and
+        # PyInstaller's hook collects them; shiboken6 is the binding core.
         "qtpy",
         "qtpy.QtCore",
         "qtpy.QtGui",
         "qtpy.QtWidgets",
-        "PyQt6.sip",
+        "PySide6",
+        "shiboken6",
 
         # Visualization (qtagg is the Qt6 backend; keep qt5agg alias harmless)
         "matplotlib",

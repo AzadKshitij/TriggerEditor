@@ -41,16 +41,18 @@ dependencies = [
     "fastexcel>=0.21.0",
     "openpyxl>=3.1.5",
     "orjson==3.13.0",
-    # GUI framework. The Qt trio is on the newest release because Python 3.14
-    # has no wheels for the old pins (pyqt6-sip 13.9.1 falls back to a source
-    # build); 6.11.x / sip 13.13.0 ship cp314/abi3 wheels. This bump was
-    # planned for Phase 5 and pulled into Phase 1 for that reason.
-    "pyqt6==6.11.0",
-    "pyqt6-qt6==6.11.2",
-    "pyqt6-sip==13.13.0",
+    # GUI framework: PySide6 (LGPLv3), not PyQt6 (GPLv3-or-commercial). The
+    # application is MIT, and a bundle that ships Qt6 cannot honestly declare
+    # MIT while carrying a GPL binding. Every Qt import in the app goes
+    # through qtpy, so this is a dependency swap rather than a code port.
+    # PySide6-Essentials is deliberate: the `PySide6` meta package also pulls
+    # PySide6-Addons (~39 MB of Charts/Multimedia/WebEngine), and the app
+    # imports only QtCore, QtGui, QtWidgets and QtTest.
+    "PySide6-Essentials==6.12.0",
+    "shiboken6==6.12.0",
     "qtpy==2.4.3",
     # Node canvas. Published on PyPI as `nodeeditor-qtpy`; the import package
-    # is `nodeeditor`. No extras needed: the Qt binding (pyqt6) is already a
+    # is `nodeeditor`. No extras needed: the Qt binding (PySide6) is already a
     # direct dependency above. qtpy>=2.4.3 is nodeeditor-qtpy's own floor.
     "nodeeditor-qtpy==0.8.2",
     # Visualization
@@ -98,7 +100,7 @@ testpaths = ["tests"]
 # (see tests/conftest.py); `--strict-markers` keeps a typo from silently
 # creating an unselectable layer.
 addopts = "-ra --strict-markers"
-qt_api = "pyqt6"
+qt_api = "pyside6"
 # A hung test is the failure mode that used to make this suite look slow:
 # one demo ran app.exec_() for ever. Per-test, with a thread dump on expiry.
 timeout = 120
