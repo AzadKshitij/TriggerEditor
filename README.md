@@ -12,7 +12,7 @@ preview data without writing a pipeline by hand.**
 <sub>A workflow loaded in the node canvas, with the Config Dock editing a Cleansing node.</sub>
 
 [![Python](https://img.shields.io/badge/Python-3.14-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![PyQt6](https://img.shields.io/badge/GUI-PyQt6-41CD52?logo=qt&logoColor=white)](https://www.riverbankcomputing.com/software/pyqt/)
+[![PySide6](https://img.shields.io/badge/GUI-PySide6-41CD52?logo=qt&logoColor=white)](https://doc.qt.io/qtforpython-6/)
 [![Polars](https://img.shields.io/badge/engine-Polars-CD792C)](https://pola.rs/)
 [![DuckDB](https://img.shields.io/badge/formula-DuckDB-FFF000?logo=duckdb&logoColor=black)](https://duckdb.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#license)

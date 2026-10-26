@@ -243,10 +243,10 @@ def main() -> None:
 
     exit_code = app.exec()
 
-    # Destroy every top-level window while Qt and PyQt are still fully alive.
-    # Letting the interpreter finalize with live widgets faults inside sip on
-    # Windows (0xC0000005 after the last log line), so run the deferred
-    # deletions here instead. Chart windows go first, in their own pass.
+    # Destroy every top-level window while Qt and its Python binding are alive.
+    # The old PyQt/SIP build faulted during interpreter finalization with live
+    # widgets on Windows (0xC0000005 after the last log line), so dispatch the
+    # deferred deletions here. Chart windows go first, in their own pass.
     from qtpy.QtCore import QCoreApplication, QEvent
 
     for widget in QApplication.topLevelWidgets():

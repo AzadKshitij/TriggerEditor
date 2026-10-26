@@ -436,10 +436,9 @@ class TriggerChangeHandler(TriggerContentUndoMixin):
         ``_dock_context_refresh`` while it owns this node's layout, and this is
         a no-op once the dock is gone or the node is destroyed.
         """
-        # ``__dict__`` rather than ``getattr``: on a widget whose C++ init never
-        # ran (a ``__new__``-built content in tests) or one already deleted,
-        # PyQt's attribute lookup itself raises RuntimeError, outside any
-        # default the two-argument form could fall back to.
+        # ``__dict__`` rather than ``getattr``: this callback is Python-side
+        # bookkeeping, so read it without resolving descriptors or other
+        # binding-provided attributes on an uninitialized or deleted widget.
         try:
             callback = self.__dict__.get("_dock_context_refresh")
         except RuntimeError:
