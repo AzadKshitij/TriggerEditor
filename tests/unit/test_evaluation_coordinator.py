@@ -149,6 +149,45 @@ def test_bulk_load_discards_pending() -> None:
         window.close()
 
 
+def test_suspend_queues_live_evaluation_until_resume() -> None:
+    window = TriggerSubWindow()
+    try:
+        node = CountingNode(window.scene, inputs=[], outputs=[1], key="deferred")
+        window.doEvalOutputs()
+        _reset(node)
+        coordinator = window.scene.evaluator
+
+        coordinator.suspend()
+        node.onInputChanged()
+        assert node.computes == 0
+        assert node in coordinator.pending
+
+        coordinator.resume()
+        assert node.computes == 1
+        assert coordinator.pending == set()
+    finally:
+        window.close()
+
+
+def test_suspend_queues_evaluate_all_until_resume() -> None:
+    window = TriggerSubWindow()
+    try:
+        node = CountingNode(window.scene, inputs=[], outputs=[1], key="deferred-all")
+        window.doEvalOutputs()
+        _reset(node)
+        coordinator = window.scene.evaluator
+
+        coordinator.suspend()
+        window.doEvalOutputs()
+        assert node.computes == 0
+        assert node in coordinator.pending
+
+        coordinator.resume()
+        assert node.computes == 1
+    finally:
+        window.close()
+
+
 def test_undo_restore_resets_pending() -> None:
     window = TriggerSubWindow()
     try:

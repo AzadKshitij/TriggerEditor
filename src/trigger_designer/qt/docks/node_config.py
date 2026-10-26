@@ -174,9 +174,9 @@ class ConfigDock(QDockWidget):
         """Commit deferred dock edits when leaving the current node.
 
         Nodes with staged (non-live) edits expose
-        ``commit_pending_dock_edits`` (Aggregate). It runs before the dock
-        widgets are destroyed so the model is already current and only the
-        heavy recompute + evaluate happens here.
+        ``commit_pending_dock_edits`` (Formula, Filter, Aggregate). It runs
+        before the dock widgets are destroyed so the model is already current
+        and only the heavy recompute + evaluate happens here.
         """
         current = self._current_node
         if current is None:

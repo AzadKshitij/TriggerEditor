@@ -87,8 +87,11 @@ class WorkflowExecutionMixin:
             self.run_button.setEnabled(False)
 
         try:
-            # Run reads values, so any coalesced edge edit must be settled
-            # before the ordering and code generation below.
+            # Run reads values, so any coalesced edge edit and the latest SQL
+            # editor text must be settled before ordering and code generation.
+            commit_pending = getattr(self, "commit_pending_config_edits", None)
+            if callable(commit_pending):
+                commit_pending(evaluate=False)
             coordinator = getattr(self.scene, "evaluator", None)
             if coordinator is not None:
                 coordinator.flush_now()
@@ -137,7 +140,20 @@ class WorkflowExecutionMixin:
         worker.workflowFinished.connect(self._on_workflow_finished)
         worker.finished.connect(worker.deleteLater)
         self._workflow_worker = worker
-        worker.start()
+
+        # The worker and live GUI evaluation both enter Polars/DuckDB. Hold
+        # live passes until the worker is finished; edits made during the run
+        # queue in the coordinator and flush once it stops.
+        coordinator = getattr(self.scene, "evaluator", None)
+        if coordinator is not None:
+            coordinator.suspend()
+        try:
+            worker.start()
+        except Exception:
+            self._workflow_worker = None
+            if coordinator is not None:
+                coordinator.resume()
+            raise
 
     def _workflow_worker_is_running(self) -> bool:
         """Whether a run is in flight, tolerating a deleted Qt wrapper."""
@@ -310,6 +326,13 @@ class WorkflowExecutionMixin:
         # a deleted QThread's isRunning() on the next Run click raises
         # "wrapped C/C++ object ... has been deleted".
         self._workflow_worker = None
+        scene = getattr(self, "scene", None)
+        coordinator = getattr(scene, "evaluator", None)
+        if coordinator is not None:
+            try:
+                coordinator.resume()
+            except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                logger.exception("Failed to resume live evaluation after a run")
         self.getPyFile(self._workflow_sorted_nodes)
 
         if success:

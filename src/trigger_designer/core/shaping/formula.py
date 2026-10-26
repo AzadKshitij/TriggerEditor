@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import re
 
-import duckdb
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
+    connect_duckdb,
     schema_of,
 )
 from trigger_designer.core.shaping.sql_expression import (
@@ -154,7 +154,7 @@ def _run_sequential(
 ) -> tuple[pl.DataFrame, list[str], dict[int, str]]:
     columns = list(available)
     errors: dict[int, str] = {}
-    with duckdb.connect(":memory:") as duck:
+    with connect_duckdb() as duck:
         for index, section in configured:
             relation = f"df_step_{index}"
             query, columns = section_query(section, columns, relation)
@@ -181,7 +181,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     available = list(schema_of(frame))
     query, _columns = build_combined_query(configured, available, "df_for_duck")
     try:
-        with duckdb.connect(":memory:") as duck:
+        with connect_duckdb() as duck:
             duck.register("df_for_duck", frame)
             result = duck.execute(query).pl()
     except Exception:  # noqa: BLE001 - fall back to identify the section
@@ -204,7 +204,7 @@ def validate_section(frames: list, settings: dict, section_index: int) -> list[d
         return []
     sample = pl.DataFrame(schema=schema_of(frames[0]))
     available = list(sample.columns)
-    with duckdb.connect(":memory:") as duck:
+    with connect_duckdb() as duck:
         current = sample
         for index, section in enumerate(sections[:section_index]):
             if not is_configured(section):

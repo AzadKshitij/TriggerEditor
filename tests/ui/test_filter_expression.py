@@ -76,6 +76,18 @@ def _set_cursor_position(widget, position: int) -> None:
     widget.setTextCursor(cursor)
 
 
+def _count_compute(monkeypatch, content):
+    calls = []
+    original = content.compute
+
+    def counted():
+        calls.append(1)
+        return original()
+
+    monkeypatch.setattr(content, "compute", counted)
+    return calls
+
+
 def test_commit_preserves_caret_position(qtbot) -> None:
     _window, content = _make_content(qtbot)
     content.mode_selector._buttons["Expression"].click()
@@ -92,6 +104,51 @@ def test_commit_preserves_caret_position(qtbot) -> None:
     content.value_input.setCursorPosition(1)
     content._sync_widgets_from_model()
     assert content.value_input.cursorPosition() == 1
+
+
+def test_expression_typing_defers_compute_until_focus_out(qtbot, monkeypatch) -> None:
+    _window, content = _make_content(qtbot)
+    content.mode_selector._buttons["Expression"].click()
+    calls = _count_compute(monkeypatch, content)
+
+    content.expression_input.set_text("[order_value] > 100")
+    qtbot.wait(350)
+
+    assert calls == []
+    assert content.settings["expression"] == "[order_value] > 100"
+
+    monkeypatch.setattr(content, "_sql_editor_has_focus", lambda: False)
+    content._on_expression_finished()
+    qtbot.wait(20)
+
+    assert calls == [1]
+    matched = content.node.value[0]["data"].collect()
+    assert matched["order_value"].to_list() == [600, 250]
+
+    content._on_expression_finished()
+    qtbot.wait(20)
+    assert calls == [1]
+
+
+def test_expression_pending_text_flushes_without_compute(qtbot, monkeypatch) -> None:
+    _window, content = _make_content(qtbot)
+    calls = _count_compute(monkeypatch, content)
+
+    content.expression_input.set_text("[order_value] > 100")
+    content.commit_pending_dock_edits(evaluate=False)
+
+    assert content.settings["expression"] == "[order_value] > 100"
+    assert content._pending_evaluate is False
+    assert calls == []
+
+
+def test_builder_value_still_evaluates_immediately(qtbot, monkeypatch) -> None:
+    _window, content = _make_content(qtbot)
+    calls = _count_compute(monkeypatch, content)
+
+    content.set_setting("value", "250", "Filter Value Changed")
+
+    assert calls == [1]
 
 
 def test_strip_alias_filters_like_trim(qtbot) -> None:

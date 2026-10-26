@@ -6,6 +6,7 @@ import copy
 import importlib
 import json
 from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -13,6 +14,7 @@ import polars as pl
 from nodeeditor.utils_no_qt import dumpException
 from qtpy.QtCore import QTimer, Signal
 from qtpy.QtWidgets import (
+    QApplication,
     QCheckBox,
     QDoubleSpinBox,
     QHBoxLayout,
@@ -258,6 +260,14 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         self._timers: list[QTimer] = []
         self._expanded_cards: dict[str, set[int]] = {}
         self._card_widgets: dict[str, list[dict]] = {}
+        #: A text edit has reached the model but its node evaluation is waiting
+        #: for focus to leave the SQL editor (see ``sql_editors``).
+        self._pending_evaluate = False
+        #: Invalidates a queued focus-out callback after a dock rebuild.
+        self._eval_generation = 0
+        #: A modal dialog is running; hold the focus-out callback until it
+        #: closes so the nested event loop cannot recompute behind the dialog.
+        self._modal_open = False
 
     # ---- data and code generation ---------------------------------------
     def schema(self, index: int = 0) -> dict:
@@ -342,6 +352,7 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         merge_key: str | None = None,
         *,
         structural: bool = False,
+        evaluate: bool = True,
     ) -> None:
         if is_syncing(self) or self.history.is_restoring_history:
             return
@@ -349,10 +360,15 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         if value == old:
             return
         self.settings[key] = copy.deepcopy(value)
+        self._mark_scene_modified()
         self._update_visibility()
         self.after_change()
         self.refresh_dock_context()
-        self.evaluate.emit()
+        if evaluate:
+            self._pending_evaluate = False
+            self.evaluate.emit()
+        else:
+            self._pending_evaluate = True
         push = (
             self.push_list_change
             if structural and isinstance(value, list)
@@ -372,6 +388,101 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
             )
         finally:
             self._suspend_node_evaluation = previous
+
+    # ---- deferred evaluation -------------------------------------------
+    def sql_editors(self) -> list[QWidget]:
+        """SQL editors whose focus-out applies a deferred evaluation.
+
+        Most shaping nodes have none. Formula and Filter return the editors
+        they own; the shared helper then coalesces a focus move between those
+        editors into one evaluation when focus finally leaves them all.
+        """
+        return []
+
+    def _mark_scene_modified(self) -> None:
+        """Mark the document dirty without recording an undo step."""
+        scene = getattr(getattr(self, "node", None), "scene", None)
+        if scene is None or getattr(scene, "_bulk_loading", False):
+            return
+        try:
+            scene.has_been_modified = True
+        except RuntimeError:
+            # A queued widget signal can arrive after the design window was
+            # deleted; its title listener is no longer callable.
+            return
+
+    def _mark_text_dirty(self) -> None:
+        """Dirty immediately on a user keystroke, before the debounce fires.
+
+        ``set_text`` during a dock rebuild or a history restore also emits
+        ``textChanged``; those writes must not dirty the document.
+        """
+        if (
+            is_syncing(self)
+            or self.history.is_restoring_history
+            or getattr(self, "_suspend_input_tracking", False)
+        ):
+            return
+        self._mark_scene_modified()
+
+    def _evaluate_pending(self) -> None:
+        """Apply one deferred evaluation, if the node is in a safe state."""
+        if not self._pending_evaluate:
+            return
+        if (
+            is_syncing(self)
+            or self.history.is_restoring_history
+            or getattr(self, "_suspend_node_evaluation", False)
+        ):
+            return
+        self._pending_evaluate = False
+        self.evaluate.emit()
+
+    def cancel_pending_evaluation(self) -> None:
+        """Drop deferred work and invalidate any queued focus-out callback."""
+        self._pending_evaluate = False
+        self._eval_generation += 1
+
+    def _schedule_focus_out_evaluation(self) -> None:
+        """Check focus on the next event turn and evaluate once it has left."""
+        if not self._pending_evaluate:
+            return
+        self._eval_generation += 1
+        generation = self._eval_generation
+        QTimer.singleShot(0, lambda: self._focus_out_timer_fired(generation))
+
+    def _focus_out_timer_fired(self, generation: int) -> None:
+        if generation != self._eval_generation or self._modal_open:
+            return
+        if self._sql_editor_has_focus():
+            return
+        self._evaluate_pending()
+
+    @contextmanager
+    def _hold_deferred_evaluation(self):
+        """Keep a modal dialog's nested event loop from evaluating behind it."""
+        previous = self._modal_open
+        self._modal_open = True
+        try:
+            yield
+        finally:
+            self._modal_open = previous
+            if not previous and self._pending_evaluate:
+                self._schedule_focus_out_evaluation()
+
+    def _sql_editor_has_focus(self) -> bool:
+        focus = QApplication.focusWidget()
+        if focus is None:
+            return False
+        for editor in self.sql_editors():
+            try:
+                if editor is focus or editor.isAncestorOf(focus):
+                    return True
+            except RuntimeError:
+                # The dock rebuilt and deleted this editor between the
+                # focus-out signal and the timer.
+                continue
+        return False
 
     def after_change(self) -> None:
         """Hook after every model change."""

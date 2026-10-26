@@ -181,11 +181,19 @@ class FormulaContent(ShapingContent):
         *,
         structural: bool = False,
         merge_key: str | None = None,
+        evaluate: bool = True,
     ) -> None:
         normalized = core.normalize({"sections": sections})["sections"]
         if normalized == self.settings.get("sections"):
             return
-        self.set_setting("sections", normalized, text, merge_key, structural=structural)
+        self.set_setting(
+            "sections",
+            normalized,
+            text,
+            merge_key,
+            structural=structural,
+            evaluate=evaluate,
+        )
 
     def _configured_count(self) -> int:
         return sum(1 for section in self._section_list() if core.is_configured(section))
@@ -227,6 +235,7 @@ class FormulaContent(ShapingContent):
 
     # -- dock construction ----------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
+        self.cancel_pending_evaluation()
         self.add_section_button = None
         if not self.ready():
             dock_layout.addWidget(EmptyStateLabel())
@@ -272,19 +281,30 @@ class FormulaContent(ShapingContent):
 
     # -- cards ------------------------------------------------------------
     @staticmethod
-    def _clear_layout(layout: QVBoxLayout | None) -> None:
+    def _clear_layout(layout: QVBoxLayout | None) -> bool:
         if layout is None:
-            return
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
+            return False
+        try:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+        except RuntimeError:
+            # The Config Dock cleared while a modal dialog was open.
+            return False
+        return True
 
     def _rebuild_cards(self) -> None:
-        if getattr(self, "sections_layout", None) is None:
+        layout = getattr(self, "sections_layout", None)
+        if layout is None:
             return
-        self._clear_layout(self.sections_layout)
+        self.cancel_pending_evaluation()
+        if not self._clear_layout(layout):
+            self.sections_layout = None
+            self.section_widgets = []
+            self.section_errors = {}
+            return
         self.section_widgets = []
         self.section_errors = {}
         sections = self._section_list()
@@ -335,11 +355,14 @@ class FormulaContent(ShapingContent):
             if section["formula_text"]:
                 formula_input.set_text(section["formula_text"])
             formula_input.set_validate_callback(partial(self._validate_section, index))
+            formula_input.textChanged.connect(self._mark_text_dirty)
             self._debounced(
                 formula_input.textChanged,
-                partial(self._commit_text, index),
+                partial(self._commit_text, index, evaluate=False),
             )
-            formula_input.editingFinished.connect(partial(self._commit_text, index))
+            formula_input.editingFinished.connect(
+                partial(self._on_editor_finished, index)
+            )
 
             error_label = QLabel()
             error_label.setObjectName("formulaSectionError")
@@ -376,7 +399,7 @@ class FormulaContent(ShapingContent):
     def _on_target_selected(self, index: int, selector) -> None:
         text = selector.currentText()
         if text == NEW_COLUMN_OPTION:
-            self._prompt_new_column(index)
+            self._prompt_new_column(index, selector)
             return
         target = "" if text == EMPTY_TARGET_OPTION else text
         sections = self._section_list()
@@ -385,30 +408,58 @@ class FormulaContent(ShapingContent):
         sections[index]["target_column"] = target
         self._commit(sections, "Formula Target Changed", structural=True)
 
-    def _prompt_new_column(self, index: int) -> None:
+    def _prompt_new_column(self, index: int, selector) -> None:
         known = self._known_targets(index)
         text = self._section_list()[index]["target_column"]
-        while True:
-            name, accepted = QInputDialog.getText(
-                self, "Add Column", "Column name:", text=text
-            )
-            if not accepted:
-                self._rebuild_cards()
-                return
-            name = name.strip()
-            if not name:
-                QMessageBox.warning(self, "Add Column", "Column name cannot be empty.")
-                continue
-            if name.lower() in known:
-                QMessageBox.warning(
-                    self, "Add Column", f"Column '{name}' already exists."
+        with self._hold_deferred_evaluation():
+            while True:
+                name, accepted = QInputDialog.getText(
+                    None , "Add Column", "Column name:", text=text
                 )
-                text = name
-                continue
-            sections = self._section_list()
-            sections[index]["target_column"] = name
-            self._commit(sections, "Formula Target Changed", structural=True)
+                if not accepted:
+                    pending = self._pending_evaluate
+                    sections = self._section_list()
+                    target = (
+                        sections[index]["target_column"]
+                        if 0 <= index < len(sections)
+                        else ""
+                    )
+                    self._reset_target_selector(selector, target)
+                    self._pending_evaluate = pending
+                    return
+                name = name.strip()
+                if not name:
+                    QMessageBox.warning(
+                        self, "Add Column", "Column name cannot be empty."
+                    )
+                    continue
+                if name.lower() in known:
+                    QMessageBox.warning(
+                        self, "Add Column", f"Column '{name}' already exists."
+                    )
+                    text = name
+                    continue
+                sections = self._section_list()
+                sections[index]["target_column"] = name
+                self._commit(sections, "Formula Target Changed", structural=True)
+                return
+
+    @staticmethod
+    def _reset_target_selector(selector, target: str) -> None:
+        """Put a cancelled Add Column combo back without rebuilding the dock."""
+        try:
+            selector.blockSignals(True)
+        except RuntimeError:
             return
+        try:
+            selector.setCurrentText(target or EMPTY_TARGET_OPTION)
+        except RuntimeError:
+            pass
+        finally:
+            try:
+                selector.blockSignals(False)
+            except RuntimeError:
+                pass
 
     def _on_dtype_selected(self, index: int, selector) -> None:
         text = selector.currentText()
@@ -419,21 +470,72 @@ class FormulaContent(ShapingContent):
         sections[index]["target_dtype"] = target_dtype
         self._commit(sections, "Formula Type Changed")
 
-    def _commit_text(self, index: int) -> None:
-        try:
-            text = self.section_widgets[index]["formula_input"].get_text() or ""
-        except (IndexError, KeyError, RuntimeError):
-            return
+    def _commit_text(self, index: int, *, evaluate: bool = True) -> None:
+        # Capture every editor, not only the one whose debounce fired. A
+        # model update re-projects the other cards, so committing one section
+        # alone would write stale model text back into a sibling editor that
+        # the user has typed in but whose debounce has not fired yet.
+        sections, changed = self._editor_sections()
+        if changed:
+            merge_key = f"formula-text-{index}" if changed == [index] else None
+            self._commit(
+                sections,
+                "Formula Text Changed",
+                merge_key=merge_key,
+                evaluate=evaluate,
+            )
+            for changed_index in changed:
+                self._refresh_error(changed_index)
+        if evaluate:
+            self._evaluate_pending()
+
+    def _editor_sections(self) -> tuple[list[dict], list[int]]:
+        """Return the model sections with every editor's current text applied."""
         sections = self._section_list()
-        if index >= len(sections) or sections[index]["formula_text"] == text:
-            return
-        sections[index]["formula_text"] = text
-        self._commit(
-            sections,
-            "Formula Text Changed",
-            merge_key=f"formula-text-{index}",
-        )
-        self._refresh_error(index)
+        changed: list[int] = []
+        for index, widgets in enumerate(getattr(self, "section_widgets", ())):
+            if index >= len(sections):
+                break
+            try:
+                text = widgets["formula_input"].get_text() or ""
+            except (KeyError, RuntimeError):
+                continue
+            if sections[index]["formula_text"] == text:
+                continue
+            sections[index]["formula_text"] = text
+            changed.append(index)
+        return sections, changed
+
+    def _on_editor_finished(self, index: int) -> None:
+        """Commit on focus-out without evaluating until every editor is left."""
+        self._commit_text(index, evaluate=False)
+        self._schedule_focus_out_evaluation()
+
+    def sql_editors(self) -> list:
+        return [
+            widgets["formula_input"]
+            for widgets in getattr(self, "section_widgets", ())
+            if "formula_input" in widgets
+        ]
+
+    def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
+        """Read every card's text into the model before the dock is destroyed."""
+        sections, changed = self._editor_sections()
+        if changed:
+            merge_key = f"formula-text-{changed[0]}" if len(changed) == 1 else None
+            self._commit(
+                sections,
+                "Formula Text Changed",
+                merge_key=merge_key,
+                evaluate=False,
+            )
+            for index in changed:
+                self._refresh_error(index)
+
+        if evaluate:
+            self._evaluate_pending()
+        else:
+            self.cancel_pending_evaluation()
 
     def _commit_height(self, index: int, height: int) -> None:
         sections = self._section_list()
@@ -492,6 +594,8 @@ class FormulaContent(ShapingContent):
 
     # -- model -> widgets -------------------------------------------------
     def _sync_widgets_from_model(self) -> None:
+        if self.history.is_restoring_history:
+            self.cancel_pending_evaluation()
         if getattr(self, "sections_layout", None) is None:
             return
         sections = self._section_list()

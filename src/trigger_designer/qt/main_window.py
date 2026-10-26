@@ -470,6 +470,10 @@ class TriggerWindow(
             dumpException(e)
 
     def onFileSave(self):
+        current = self.getCurrentNodeEditorWidget()
+        commit = getattr(current, "commit_pending_config_edits", None)
+        if callable(commit):
+            commit(evaluate=False)
         result = super().onFileSave()
         if result:
             current = self.getCurrentNodeEditorWidget()
@@ -478,6 +482,10 @@ class TriggerWindow(
         return result
 
     def onFileSaveAs(self):
+        current = self.getCurrentNodeEditorWidget()
+        commit = getattr(current, "commit_pending_config_edits", None)
+        if callable(commit):
+            commit(evaluate=False)
         result = super().onFileSaveAs()
         if result:
             current = self.getCurrentNodeEditorWidget()

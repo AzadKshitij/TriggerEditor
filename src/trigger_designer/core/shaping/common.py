@@ -4,9 +4,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
+import duckdb
 import polars as pl
 
 Frame = pl.LazyFrame | pl.DataFrame
+
+#: DuckDB workers can enter Polars' ``LazyFrame.collect`` off the Qt main
+#: thread. Formula and Filter live evaluation crashed in that path, and one
+#: worker keeps the Arrow exchange on the caller. These shaping queries are
+#: row-wise scans/projections, so the measured throughput loss is negligible;
+#: a future heavy aggregation may warrant its own connection setting.
+DUCKDB_THREADS = 1
+
+
+def connect_duckdb() -> duckdb.DuckDBPyConnection:
+    """Open the in-memory connection used by shaping nodes."""
+    return duckdb.connect(":memory:", config={"threads": DUCKDB_THREADS})
+
 
 #: Stable error codes (plan 03 translates; never reuse or renumber).
 ERROR_CODES: dict[str, str] = {

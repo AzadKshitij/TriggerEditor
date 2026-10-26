@@ -63,6 +63,9 @@ class EvaluationCoordinator:
         self._flushing = False
         self._flush_scheduled = False
         self._generation = 0
+        #: Live GUI evaluation is held while a workflow worker is running;
+        #: both use Polars/DuckDB and must not overlap.
+        self._suspended = False
 
     # -- pending work ---------------------------------------------------
     @property
@@ -80,6 +83,7 @@ class EvaluationCoordinator:
         if (
             getattr(self.scene, "_bulk_loading", False)
             or self._flushing
+            or self._suspended
             or getattr(self.scene, "_eval_depth", 0) > 0
         ):
             return
@@ -93,6 +97,7 @@ class EvaluationCoordinator:
         if (
             getattr(self.scene, "_bulk_loading", False)
             or self._flushing
+            or self._suspended
             or getattr(self.scene, "_eval_depth", 0) > 0
         ):
             return
@@ -124,6 +129,9 @@ class EvaluationCoordinator:
     # -- full and targeted passes --------------------------------------
     def evaluate_all(self, report: Callable[[str], None] | None = None) -> None:
         """Evaluate every node once, as a load or undo restore needs."""
+        if self._suspended:
+            self._pending.update(set(getattr(self.scene, "nodes", ())))
+            return
         if (
             getattr(self.scene, "_bulk_loading", False)
             or self._flushing
@@ -161,6 +169,7 @@ class EvaluationCoordinator:
         if (
             getattr(self.scene, "_bulk_loading", False)
             or self._flushing
+            or self._suspended
             or getattr(self.scene, "_eval_depth", 0) > 0
         ):
             self._pending.update(origins)
@@ -196,7 +205,18 @@ class EvaluationCoordinator:
     def end_bulk_load(self) -> None:
         self.reset_pending()
 
+    def suspend(self) -> None:
+        """Hold live GUI evaluation while a workflow worker is running."""
+        self._suspended = True
+
+    def resume(self) -> None:
+        """Release a suspension and run anything that queued behind it."""
+        self._suspended = False
+        if self._pending:
+            self.flush_now()
+
     def close(self) -> None:
+        self._suspended = False
         self.reset_pending()
 
     # -- internals ------------------------------------------------------

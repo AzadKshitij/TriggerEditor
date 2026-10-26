@@ -336,7 +336,8 @@ Qt gives an `objectName` selector (`QPushButton#IconButton`) higher specificity 
 Every `setData / move / check / sort` → `data_processed → handleDataChanged → process_data_changes + apply_changes + evaluate.emit`, as in `select.py:255`, `groupby` equivalent.
 
 - Debounce: `300ms` for text search / rename edits; immediate for check/move/combo.
-- Heavy nodes (Join, GroupBy, Formula) still live — debounce, don't add Apply buttons. `groupby.py:278` Apply and `join.py:197` Evaluate are migration targets, not patterns.
+- Heavy nodes (Join, GroupBy) still live — debounce, don't add Apply buttons. `groupby.py:278` Apply and `join.py:197` Evaluate are migration targets, not patterns.
+- Formula sections and the Filter expression editor are the SQL-text exception. Text updates the model and diagnostics live, but node evaluation waits until focus leaves the node's SQL editors, the user Runs, or selection/save/close needs the current text. Do not add Apply buttons for that path.
 - History: store diff only (`old != new`), verb format `"Noun Verbed"` e.g. `"Column Selection/Rename/Type Changed"`.
 - Dock preservation: `ConfigDock.updateConfig` (`node_config.py:30`) skips wipe when `id(content) == _current_key`, suspends `_suspend_input_tracking/_suspend_node_evaluation` during `create_layout`. Do not rebuild widgets on every keystroke.
 

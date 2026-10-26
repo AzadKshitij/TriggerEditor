@@ -408,6 +408,39 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             parent_widget = parent_widget.parentWidget()
         return getattr(parent_widget, "configDock", None)
 
+    def _pending_config_content(self):
+        """The content currently owning the Config Dock widgets, if any."""
+        dock = self._find_config_dock()
+        node = dock.currentNode() if dock is not None else None
+        return getattr(node, "content", None)
+
+    def commit_pending_config_edits(self, *, evaluate: bool = True) -> None:
+        """Drive a node's staged Config Dock edits into its model.
+
+        Formula and Filter use this to keep the latest editor text across
+        Save, Run, Close and node selection. ``evaluate=False`` commits the
+        text without starting a live recompute.
+        """
+        content = self._pending_config_content()
+        commit = getattr(content, "commit_pending_dock_edits", None)
+        if not callable(commit):
+            return
+        try:
+            commit(evaluate=evaluate)
+        except Exception:  # noqa: BLE001 - lifecycle must not be blocked
+            logger.exception("Failed to commit pending Config Dock edits")
+
+    def cancel_pending_config_edits(self) -> None:
+        """Drop deferred Config Dock work before a run or teardown."""
+        content = self._pending_config_content()
+        cancel = getattr(content, "cancel_pending_evaluation", None)
+        if not callable(cancel):
+            return
+        try:
+            cancel()
+        except Exception:  # noqa: BLE001 - teardown must not be blocked
+            logger.exception("Failed to cancel pending Config Dock evaluation")
+
     @contextmanager
     def _suspend_scene_restore_updates(self):
         previous_silent_selection = getattr(
@@ -688,6 +721,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         for callback in list(self._close_event_listeners):
             callback(self, event)
         if event.isAccepted():
+            self.cancel_pending_config_edits()
             evaluator = getattr(self.scene, "evaluator", None)
             if evaluator is not None:
                 evaluator.close()

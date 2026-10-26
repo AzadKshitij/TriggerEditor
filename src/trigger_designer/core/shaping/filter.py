@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
-import duckdb
 import polars as pl
 
-from trigger_designer.core.shaping.common import ShapingError, as_lazy, schema_of
+from trigger_designer.core.shaping.common import (
+    ShapingError,
+    as_lazy,
+    connect_duckdb,
+    schema_of,
+)
 from trigger_designer.core.shaping.sql_expression import (
     prepare_expression_sql,
     shorten_error,
@@ -118,7 +122,7 @@ def _expression_outputs(
 
     try:
         prepared = prepare_expression_sql(text, list(schema_of(frame)))
-        with duckdb.connect(":memory:") as duck:
+        with connect_duckdb() as duck:
             duck.register("df_filter", frame)
             # Eager .pl(): a lazy result streams from this connection after
             # the with-block closes, which fails. Materialise now.

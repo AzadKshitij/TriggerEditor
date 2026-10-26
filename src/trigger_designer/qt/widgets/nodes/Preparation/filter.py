@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import duckdb
 import polars as pl
 from qtpy.QtWidgets import QLineEdit, QVBoxLayout
 
@@ -12,6 +11,7 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.shaping import filter as core
+from trigger_designer.core.shaping.common import connect_duckdb
 from trigger_designer.core.shaping.sql_expression import (
     prepare_expression_sql,
     shorten_error,
@@ -59,6 +59,7 @@ class FilterContent(ShapingContent):
 
     # -- dock construction ----------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
+        self.cancel_pending_evaluation()
         if not self.ready():
             dock_layout.addWidget(EmptyStateLabel())
             return
@@ -130,8 +131,12 @@ class FilterContent(ShapingContent):
         self.expression_input.set_available_columns(list(self.schema(0)))
         self.expression_input.set_validate_callback(self.validate_expression)
         self.expression_input.setMinimumHeight(120)
-        self._debounced(self.expression_input.textChanged, self._commit_expression)
-        self.expression_input.editingFinished.connect(self._commit_expression)
+        self.expression_input.textChanged.connect(self._mark_text_dirty)
+        self._debounced(
+            self.expression_input.textChanged,
+            lambda: self._commit_expression(evaluate=False),
+        )
+        self.expression_input.editingFinished.connect(self._on_expression_finished)
         expression.addWidget(self.expression_input)
 
         dock_layout.addWidget(condition)
@@ -165,20 +170,55 @@ class FilterContent(ShapingContent):
         if self.settings.get("operation") not in operations:
             self.set_setting("operation", "Equals", "Filter Operation Changed")
 
-    def _commit_expression(self) -> None:
+    def _commit_expression(self, *, evaluate: bool = True) -> None:
         try:
             text = self.expression_input.get_text() or ""
         except (AttributeError, RuntimeError):
             return
         self.set_setting(
-            "expression", text, "Filter Expression Changed", "filter-expression"
+            "expression",
+            text,
+            "Filter Expression Changed",
+            "filter-expression",
+            evaluate=evaluate,
         )
+        if evaluate:
+            self._evaluate_pending()
+
+    def _on_expression_finished(self) -> None:
+        """Commit on focus-out; evaluate when the SQL editor is left."""
+        self._commit_expression(evaluate=False)
+        self._schedule_focus_out_evaluation()
+
+    def sql_editors(self) -> list:
+        editor = getattr(self, "expression_input", None)
+        return [editor] if editor is not None else []
+
+    def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
+        """Read the expression into the model before the dock is destroyed."""
+        try:
+            text = self.expression_input.get_text() or ""
+        except (AttributeError, RuntimeError):
+            return
+        self.set_setting(
+            "expression",
+            text,
+            "Filter Expression Changed",
+            "filter-expression",
+            evaluate=False,
+        )
+        if evaluate:
+            self._evaluate_pending()
+        else:
+            self.cancel_pending_evaluation()
 
     def _column_dtype(self, column: str):
         return self.schema(0).get(column) if column else None
 
     # -- model -> widgets ------------------------------------------------
     def _sync_widgets_from_model(self) -> None:
+        if self.history.is_restoring_history:
+            self.cancel_pending_evaluation()
         if getattr(self, "mode_selector", None) is None:
             return
         self._sync_mode_widget()
@@ -269,7 +309,7 @@ class FilterContent(ShapingContent):
         try:
             sample = pl.DataFrame(schema=frame_schema(self.frames[0]))
             prepared = prepare_expression_sql(text, columns)
-            with duckdb.connect(":memory:") as duck:
+            with connect_duckdb() as duck:
                 duck.register("df_filter", sample)
                 duck.execute(
                     f"EXPLAIN SELECT * FROM df_filter WHERE {prepared}"
