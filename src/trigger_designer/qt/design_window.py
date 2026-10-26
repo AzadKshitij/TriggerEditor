@@ -743,7 +743,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
             # print("dataStream::::::::: ", dataStream)
-            node_code = dataStream.readInt()
+            # Qt 6 name; PySide6 has no readInt alias (issue #3).
+            node_code = dataStream.readInt32()
             node_type = dataStream.readQString()
 
             mouse_position = event.pos()

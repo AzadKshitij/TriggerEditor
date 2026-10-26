@@ -123,7 +123,9 @@ class QTRDragListbox(QListWidget):
             itemData = QByteArray()
             dataStream = QDataStream(itemData, QIODevice.WriteOnly)
             dataStream << pixmap
-            dataStream.writeInt(node_code)
+            # Qt 6 renamed writeInt to writeInt32, and PySide6 dropped the old
+            # alias outright - drags never started on that binding (issue #3).
+            dataStream.writeInt32(node_code)
             dataStream.writeQString(self.node_type)
             # dataStream.writeQString(item.text())
 
