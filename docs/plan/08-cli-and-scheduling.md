@@ -547,7 +547,7 @@ positives on the corpus; a legitimate rejection is fixed in the allowlist with a
    | Source plan | Generated import (module -> allowed names) | Notes |
    |---|---|---|
    | existing nodes | `polars, duckdb, fastexcel, datetime(datetime, timedelta), os` ; `trigger_designer.core.utils.dtype_utils` -> `normalize_to_supported_dtypes`; `...cleansing_util` -> `DataCleansing, NullStrategy` | `import os` is **stripped** and replaced by the SafeOs global; all other allowed imports stay real statements |
-   | 01 | `trigger_designer.core.input_source` -> `build_source` | the spec dict literal carries `filePath` (checked by the path-key scan) |
+   | 01 | `trigger_designer.core.input_source` -> `build_source`, `name_blank_columns` | `build_source` is the builder path; the spec dict literal carries `filePath` (checked by the path-key scan). `name_blank_columns` is emitted by the legacy CSV/TXT path to name blank header cells. |
    | 04 | `trigger_designer.core.audit.{duplicates,gaps,benford,sampling,risk_filters}` -> `DuplicatesParams/run_duplicates`, `GapsParams/run_gaps`, `BenfordParams/run_benford`, `SamplingParams/run_sample`, `RiskParams/run_risk_filters` | calls `.from_dict(...)`, `.for_run()` (plain attributes) |
    | 05 | `trigger_designer.core.profile` -> `profile_table, empty_profile_frame` | |
    | 06 | `trigger_designer.core.excel.frame_export` -> `write_frame_xlsx`; `trigger_designer.core.workpaper.node_runner` -> `run_workpaper` | output path lives in `spec_json` (`output_path`) -> path-key scan; this plan's S1 row `OPS["input.workpaper_output"].output_keys = ("output_path",)` makes the patcher stage it |

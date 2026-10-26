@@ -1,8 +1,8 @@
 """Characterization tests for the legacy single-file File Input path.
 
 These freeze the generated code and live frames that existed before input
-types were added. The legacy branch must stay byte-identical: every existing
-workflow runs through it, and a change here would silently alter output.
+types were added. The legacy branch runs every existing workflow, so a change
+to these strings is a deliberate output change, not a cosmetic edit.
 """
 
 from __future__ import annotations
@@ -38,10 +38,12 @@ def _legacy(path: str, **overrides) -> FileInputContent:
 EXPECTED_CSV_CODE = (
     "import polars as pl\n"
     "import os\n"
+    "from trigger_designer.core.input_source import name_blank_columns\n"
     "\n"
     "# Always use LazyFrame for memory efficiency\n"
     "# Using LazyFrame for optimal memory usage\n"
-    "var_file_input_7 = pl.scan_csv('C:\\\\data\\\\in.csv', infer_schema=False)\n"
+    "var_file_input_7 = name_blank_columns("
+    "pl.scan_csv('C:\\\\data\\\\in.csv', infer_schema=False))\n"
     "\n"
     "# var_file_input_7 is now a LazyFrame for memory-efficient processing\n"
     "# Use .collect() only when you need to materialize the data\n"
@@ -50,11 +52,13 @@ EXPECTED_CSV_CODE = (
 EXPECTED_TXT_CODE = (
     "import polars as pl\n"
     "import os\n"
+    "from trigger_designer.core.input_source import name_blank_columns\n"
     "\n"
     "# Always use LazyFrame for memory efficiency\n"
     "# Using LazyFrame for optimal memory usage\n"
-    "var_file_input_7 = pl.scan_csv('C:\\\\data\\\\in.txt', "
-    "infer_schema=False, separator=';')\n"
+    "var_file_input_7 = name_blank_columns("
+    "pl.scan_csv('C:\\\\data\\\\in.txt', "
+    "infer_schema=False, separator=';'))\n"
     "\n"
     "# var_file_input_7 is now a LazyFrame for memory-efficient processing\n"
     "# Use .collect() only when you need to materialize the data\n"
@@ -63,11 +67,13 @@ EXPECTED_TXT_CODE = (
 EXPECTED_NO_HEADER_CODE = (
     "import polars as pl\n"
     "import os\n"
+    "from trigger_designer.core.input_source import name_blank_columns\n"
     "\n"
     "# Always use LazyFrame for memory efficiency\n"
     "# Using LazyFrame for optimal memory usage\n"
-    "var_file_input_7 = pl.scan_csv('C:\\\\data\\\\in.csv', "
-    "infer_schema=False, has_header=False)\n"
+    "var_file_input_7 = name_blank_columns("
+    "pl.scan_csv('C:\\\\data\\\\in.csv', "
+    "infer_schema=False, has_header=False))\n"
     "\n"
     "# var_file_input_7 is now a LazyFrame for memory-efficient processing\n"
     "# Use .collect() only when you need to materialize the data\n"
@@ -96,10 +102,12 @@ EXPECTED_EXCEL_CODE = (
 EXPECTED_FILENAME_CODE = (
     "import polars as pl\n"
     "import os\n"
+    "from trigger_designer.core.input_source import name_blank_columns\n"
     "\n"
     "# Always use LazyFrame for memory efficiency\n"
     "# Using LazyFrame for optimal memory usage\n"
-    "var_file_input_7 = pl.scan_csv('C:\\\\data\\\\in.csv', infer_schema=False)\n"
+    "var_file_input_7 = name_blank_columns("
+    "pl.scan_csv('C:\\\\data\\\\in.csv', infer_schema=False))\n"
     "# Add filename field using lazy operations\n"
     "filename_7 = os.path.basename('C:\\\\data\\\\in.csv')\n"
     "var_file_input_7 = var_file_input_7.with_columns("
@@ -162,6 +170,26 @@ def test_legacy_live_csv_frame_all_strings(tmp_path) -> None:
     assert isinstance(frame, pl.LazyFrame)
     assert all(dtype == pl.String for dtype in frame.collect_schema().values())
     assert frame.collect().rows() == [("1", "Ann"), ("2", "Bob")]
+
+
+def test_legacy_live_csv_blank_header_gets_a_name(tmp_path) -> None:
+    source = tmp_path / "in.csv"
+    source.write_text(",name\n1,Ann\n", encoding="utf-8")
+    content = _legacy(str(source))
+    frame = content._read_file_based_on_type(str(source))
+    assert frame.collect_schema().names() == ["column_1", "name"]
+    assert frame.collect().rows() == [("1", "Ann")]
+
+
+def test_legacy_generated_code_names_a_blank_header(tmp_path) -> None:
+    source = tmp_path / "in.csv"
+    source.write_text(",name\n1,Ann\n", encoding="utf-8")
+    content = _legacy(str(source))
+    namespace: dict = {}
+    exec(content.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
+    frame = namespace[content.variable_name].collect()
+    assert frame.columns == ["column_1", "name"]
+    assert frame.rows() == [("1", "Ann")]
 
 
 def test_legacy_live_csv_delimiter_and_filename_field(tmp_path) -> None:

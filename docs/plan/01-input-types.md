@@ -125,7 +125,7 @@ Not persisted (runtime only): `last_report: SourceReport | None`, `last_error: I
 2. Legacy content (no `input_schema_version`) loads as version 1 with all new keys at defaults = exactly the old behaviour.
 3. `FileInputContent.deserialize` ends by calling `migrate_file_input_state(self)`; for version 1 it does nothing except set `self.input_schema_version = 1` (hook for future). `serialize()` always writes `2`.
 4. v1-format workflow files (no `op`, `node_code` ints; brief 7.3) already map to `input.file_input` via `V1_OPCODE_TO_OP`; nothing changes.
-5. **Legacy single-file CSV/TXT/Excel code generation is byte-identical** (section 3.7). A characterization test pinned BEFORE any change enforces it (step 0).
+5. **Legacy single-file CSV/TXT/Excel code generation stays byte-identical, except CSV/TXT now wrap the scan in `name_blank_columns`** so a blank header cell is selectable. A characterization test pinned before any change enforces the rest (step 0).
 6. New file types in a `.tds` opened by an OLD app version: `file_type="parquet"` falls to the old `else` branch (scan_csv) - degraded but no crash. Acceptable; documented in pitfalls.
 
 ### 3.4 File type table
@@ -190,6 +190,8 @@ effective_mode(path_text, base_exists):
 9. `frame = pl.concat(parts, how="diagonal_relaxed")` when more than one part, else the single part. Missing columns become null. Column order = first appearance across parts in file order (this is what `diagonal` does) - deterministic.
 10. `record_limit > 0` -> `.head(n)`. `read_as_text` -> `pl.all().cast(pl.String)`. `json_nested="text"` -> stringify Struct/List columns (before the text cast).
 11. Return `SourceResult(frame=LazyFrame, report=SourceReport)`.
+
+CSV/TXT header cells that are blank (or whitespace-only) become `column_<1-based position>` before any schema work, because Polars keeps an empty header cell as `""` and Select skips blank names. A generated name already present in the header gets `_2`, `_3`, ... appended. Headerless files already get positional names from Polars.
 
 Typical lazy plans stay lazy (csv/parquet/ndjson). Excel, JSON (array), sqlite and duckdb are eager per part and wrapped `.lazy()` (same as today's Excel).
 
@@ -410,7 +412,7 @@ The builder path of `get_code()` imports exactly these and nothing else; the lis
 | `polars` | `pl` (`import polars as pl`) | fallback `pl.DataFrame()`, all paths |
 | `trigger_designer.core.input_source` | `build_source` | builder path (`from trigger_designer.core.input_source import build_source`) |
 
-The legacy path keeps its existing imports (`polars`, `os`, and `fastexcel` for Excel) unchanged. `InputReadError` is raised inside `build_source` and never imported by generated code.
+The legacy CSV/TXT path adds `from trigger_designer.core.input_source import name_blank_columns` so a blank header cell becomes usable there too. The legacy Excel path keeps `polars`, `os` and `fastexcel` unchanged. `InputReadError` is raised inside `build_source` and never imported by generated code.
 
 ### 3.15 Keys the CLI may override (for plan 08 `PARAM_TARGETS`)
 
@@ -574,11 +576,13 @@ def diagnose_collect_error(exc: BaseException, report: SourceReport | None) -> I
 Part reader dispatch (one function per type, each returns a `pl.LazyFrame`):
 
 ```python
+def name_blank_columns(frame):   # blank header -> column_<pos>, avoiding names in use
+    ...
 def _read_csv(path, s):   # csv/txt
     opts = {"infer_schema": False, "encoding": s.encoding}
     if s.delimiter != ",": opts["separator"] = s.delimiter
     if not s.first_row_contains_field_names: opts["has_header"] = False
-    return pl.scan_csv(io_path(path), **opts)
+    return name_blank_columns(pl.scan_csv(io_path(path), **opts))
 def _read_parquet(path, s): return pl.scan_parquet(io_path(path))
 def _read_ndjson(path, s):  return pl.scan_ndjson(io_path(path))
 def _read_json(path, s):    return pl.read_json(io_path(path)).lazy()
@@ -775,9 +779,9 @@ def _builder_code(self) -> str:
     )
 ```
   (Defining `var = pl.DataFrame()` first guarantees the variable exists even if the call raises, matching the P0-fallback rule in brief 3.4.)
-* Excel one-sheet legacy path: nothing changes. Remove the unescaped `separator='{...}'`/`idx_or_name='{...}'` ONLY on the builder path (not on legacy, to keep byte-identical output; the quoting bug stays documented in pitfalls).
+* Excel one-sheet legacy path: nothing changes. Remove the unescaped `separator='{...}'`/`idx_or_name='{...}'` ONLY on the builder path (not on legacy, so the legacy text stays otherwise unchanged; legacy CSV/TXT now add the `name_blank_columns` wrapper; the quoting bug stays documented in pitfalls).
 
-Done when: `.venv\Scripts\python.exe -m pytest tests\unit\test_file_input_codegen.py tests\unit\test_file_input_legacy.py -q` pass (legacy text still equal; builder code executes via `exec` and equals live). Commit `input: wire builder into live and Run paths`.
+Done when: `.venv\Scripts\python.exe -m pytest tests\unit\test_file_input_codegen.py tests\unit\test_file_input_legacy.py -q` pass (frozen legacy text updated for the `name_blank_columns` wrapper; builder code executes via `exec` and equals live). Commit `input: wire builder into live and Run paths`.
 
 ### Step 8 - validate_loaded_state and tooltips
 
@@ -1163,7 +1167,7 @@ Tests:
 - [ ] Multi-sheet Excel (one / all / chosen) with sheet-name column.
 - [ ] No write is possible to a database (negative tests + file hash unchanged).
 - [ ] Live and Run produce equal frames (agreement tests) for every new type; generated code never raises `NameError` downstream.
-- [ ] Legacy single-file CSV/TXT/Excel: `get_code()` text byte-identical (step 0 tests), e2e goldens unchanged, legacy `.tds` load.
+- [ ] Legacy single-file CSV/TXT/Excel: `get_code()` matches the frozen step 0 strings (deliberate change: CSV/TXT add `name_blank_columns`), e2e goldens unchanged, legacy `.tds` load.
 - [ ] `.tds` stores `filePath` (absolute) + `filePathRel`; moved project folder loads; Save-As to another folder writes the right relative path.
 - [ ] `serialize()` does no file reads.
 - [ ] `ResolvedFile`, `resolve_input_files`, `FileInputContent.resolved_input_files(hash=...)`, `InputReadError`, `SourceReport`, `diagnose_collect_error` exist and are tested.
@@ -1215,7 +1219,7 @@ Manual smoke script: new workflow -> File Input -> browse folder (`monthly`, gen
 10. **DuckDB read-only needs no writer**: another process holding the file for writing makes `connect(read_only=True)` fail with a lock error -> classified `locked`.
 11. **Never `os.path.exists(pattern)` for a glob.** `effective_mode` must test directory-ness first, then glob chars.
 12. **Windows**: `os.scandir` yields case-preserving names; compare with lower-cased regex only. Long paths: use `io_path()` on every `open`/`scandir`/`scan_*` call inside the core modules; do not store the prefixed form anywhere.
-13. **Generated code**: `repr()` of the spec dict is the only embedding mechanism on the builder path. The legacy path still has the unescaped delimiter/sheet interpolation (`file_input.py:760, 795`) - it stays because byte-identical legacy output is the regression guarantee; a `'` in a delimiter is an existing, documented bug.
+13. **Generated code**: `repr()` of the spec dict is the only embedding mechanism on the builder path. The legacy path otherwise keeps the unescaped delimiter/sheet interpolation (`file_input.py:760, 795`); only the CSV/TXT read gained the `name_blank_columns` wrapper, so the frozen legacy text changed deliberately. A `'` in a delimiter is an existing, documented bug.
 14. **`QFileDialog.Options()`** does not exist in PyQt6 (legacy `openFileDialog` calls it); remove it when rewriting the dialog or the browse button raises.
 15. **Dock sweep double-binding**: omitting `_undo_composite = True` on a section yields two history entries per edit (brief 6.4).
 16. **`evaluate.emit()` after `_apply_setting` is mandatory**: merged pushes skip `redo()`, so without it typing in merged controls would not re-evaluate.

@@ -70,6 +70,18 @@ def test_folder_pick_shows_files_section_and_table(qtbot, tmp_path) -> None:
     assert content.last_report.differing_files()
 
 
+def test_blank_header_preview_uses_a_generated_name(qtbot, tmp_path) -> None:
+    source = tmp_path / "blank.csv"
+    source.write_text(",name\n1,Ann\n", encoding="utf-8")
+    _window, _node, content, _dock = _graph(qtbot, str(source))
+    content.loadFile(str(source))
+    assert content.data.collect_schema().names() == ["column_1", "name"]
+    assert content.schema_snapshot == [
+        {"name": "column_1", "dtype": "String"},
+        {"name": "name", "dtype": "String"},
+    ]
+
+
 def test_visibility_matrix(qtbot, tmp_path) -> None:
     source = _source_file(tmp_path)
     _window, _node, content, _dock = _graph(qtbot, source)

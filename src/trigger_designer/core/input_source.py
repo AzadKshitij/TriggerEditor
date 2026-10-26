@@ -1,8 +1,9 @@
 """Readers and union logic behind File Input's new source types.
 
 Qt-free. Live evaluation and generated code both call :func:`build_source`,
-so they cannot disagree. CSV stays all-``String``; typed formats keep their
-native dtypes and cross-file dtype conflicts resolve deterministically.
+so they cannot disagree. CSV stays all-``String``; blank header cells get
+positional names so Select can see them; typed formats keep their native
+dtypes and cross-file dtype conflicts resolve deterministically.
 """
 
 from __future__ import annotations
@@ -543,13 +544,40 @@ def _sql_error(exc: BaseException, path: str) -> InputReadError:
     )
 
 
+def name_blank_columns(
+    frame: pl.LazyFrame | pl.DataFrame,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Replace blank CSV header cells with usable positional names.
+
+    Polars keeps an empty header cell as ``""``. Select's table skips blank
+    names, so that column vanishes from the editor even though the data still
+    carries it (issue #2). Name each blank cell by its 1-based position, the
+    same convention polars uses for headerless files, and step around names
+    the file already uses.
+    """
+    names = list(frame.collect_schema().names())
+    used = {name for name in names if name.strip()}
+    renames: dict[str, str] = {}
+    for position, name in enumerate(names, start=1):
+        if name.strip():
+            continue
+        candidate = f"column_{position}"
+        suffix = 2
+        while candidate in used:
+            candidate = f"column_{position}_{suffix}"
+            suffix += 1
+        used.add(candidate)
+        renames[name] = candidate
+    return frame.rename(renames) if renames else frame
+
+
 def _read_csv(path: str, settings: SourceSettings) -> pl.LazyFrame:
     options: dict[str, Any] = {"infer_schema": False, "encoding": settings.encoding}
     if settings.delimiter != ",":
         options["separator"] = settings.delimiter
     if not settings.first_row_contains_field_names:
         options["has_header"] = False
-    return pl.scan_csv(io_path(path), **options)
+    return name_blank_columns(pl.scan_csv(io_path(path), **options))
 
 
 def _read_parquet(path: str, settings: SourceSettings) -> pl.LazyFrame:

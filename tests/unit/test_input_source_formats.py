@@ -42,6 +42,21 @@ def test_csv_delimiter_and_no_header(tmp_path) -> None:
     assert frame.rows() == [("1", "Ann"), ("2", "Bob")]
 
 
+def test_blank_csv_header_cells_get_generated_names(tmp_path) -> None:
+    source = write_text(
+        tmp_path / "blank_headers.csv", ",Keyword,Seed\n0,kids sudoku,foo\n1,bar,baz\n"
+    )
+    frame = build_source(_state(source)).frame.collect()
+    assert frame.columns == ["column_1", "Keyword", "Seed"]
+    assert frame["column_1"].to_list() == ["0", "1"]
+
+
+def test_generated_csv_header_name_avoids_a_taken_name(tmp_path) -> None:
+    source = write_text(tmp_path / "collision.csv", ",column_1\n0,taken\n")
+    frame = build_source(_state(source)).frame.collect()
+    assert frame.columns == ["column_1_2", "column_1"]
+
+
 def test_csv_encoding_default_strict_vs_lossy(tmp_path) -> None:
     source = tmp_path / "latin.csv"
     source.write_bytes(b"id,name\n1,caf\xe9\n")

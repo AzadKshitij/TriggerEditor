@@ -29,6 +29,7 @@ from trigger_designer.core.input_source import (
     SOURCE_KEYS,
     build_source,
     list_db_tables,
+    name_blank_columns,
 )
 from trigger_designer.core.inputs import (
     DEFAULT_EXCLUDE,
@@ -1532,7 +1533,7 @@ class FileInputContent(
             scan_options["separator"] = self.delimiter
         if not self.first_row_contains_field_names:
             scan_options["has_header"] = False
-        frame = pl.scan_csv(fileName, **scan_options)
+        frame = name_blank_columns(pl.scan_csv(fileName, **scan_options))
         if self.record_limit > 0:
             frame = frame.head(self.record_limit)
         if self.output_filename_as_field:
@@ -1555,7 +1556,7 @@ class FileInputContent(
                 frame = self._scan_csv_full(fileName)
             else:
                 # Default to CSV with memory optimization
-                frame = pl.scan_csv(fileName, infer_schema=False)
+                frame = name_blank_columns(pl.scan_csv(fileName, infer_schema=False))
 
             if self.output_filename_as_field and self.file_type not in ["csv", "txt"]:
                 filename_only = os.path.basename(fileName)
@@ -1652,6 +1653,11 @@ class FileInputContent(
         code_lines = []
         code_lines.append("import polars as pl")
         code_lines.append("import os")
+        if self.file_type != "excel":
+            # Blank CSV header cells need a name before Select can pick them.
+            code_lines.append(
+                "from trigger_designer.core.input_source import name_blank_columns"
+            )
         code_lines.append("")
         code_lines.append("# Always use LazyFrame for memory efficiency")
 
@@ -1712,7 +1718,7 @@ class FileInputContent(
                 lazy_call += f", {', '.join(read_params)}"
             lazy_call += ")"
 
-            code_lines.append(f"{self.variable_name} = {lazy_call}")
+            code_lines.append(f"{self.variable_name} = name_blank_columns({lazy_call})")
 
             # Apply record limit using lazy operations if specified
             if self.record_limit > 0:
@@ -1724,7 +1730,8 @@ class FileInputContent(
             # Default to CSV with LazyFrame
             code_lines.append("# Default to CSV with LazyFrame")
             code_lines.append(
-                f"{self.variable_name} = pl.scan_csv({self.filePath!r}, infer_schema=False)"
+                f"{self.variable_name} = name_blank_columns("
+                f"pl.scan_csv({self.filePath!r}, infer_schema=False))"
             )
 
         # Add filename as field if requested - using lazy operations
