@@ -500,10 +500,12 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 | Hover | 1px `rgba(255,255,255,.30)` | none | Must not shift layout |
 | Selected | 2px `node.selection` (`#FFA637`) | optional success | Selection outranks hover |
 | Running | 2px `activity` | spinner/dot optional | No pulsing fill on the whole tile |
-| Executed | 2px `success` | success check, bottom-right | Clears when the node is dirtied |
-| Error | 2px `danger` | danger glyph, bottom-right | Tooltip carries the message |
+| Executed | 2px `success` | success check, bottom edge (centred) | Clears when the node is dirtied |
+| Error | 2px `danger` | danger glyph, bottom edge (centred) | Tooltip carries the message; replaces the status glyph |
 
 - State is never colour alone: the ring plus dot/glyph plus tooltip.
+- One status glyph per node. An error or warning replaces the executed/dirty
+  glyph in the same place; never draw a second indicator in a corner.
 - The ring is drawn outside the tile and must not change the node's hit area.
 
 ### Edges and grid

@@ -223,9 +223,12 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
             # Draw node content
             super().paint(painter, option, widget)
 
-        # The status badge is drawn on top of either, so it can outlive the
-        # card and still tell a finished node from a broken one.
-        if getattr(self, "_badge_visible", True):
+        # Exactly one badge, in one place. A node with an error replaces the
+        # normal status badge with the severity badge rather than drawing a
+        # second copy at the top-right corner (issue #4).
+        if self._error_badge:
+            self._paint_error_badge(painter)
+        elif getattr(self, "_badge_visible", True):
             offset = 24.0
             if self.node.isDirty():
                 offset = 0.0
@@ -239,14 +242,6 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
                 QRectF(offset, 0, side, side),
             )
 
-        # The error badge is independent of the status badge: a hidden status
-        # badge must not hide the reason the node failed.
-        self._paint_error_badge(painter)
-
-    def errorBadgeRect(self) -> QRectF:
-        side = 14.0
-        return QRectF(self.width - 19.0, 5.0, side, side)
-
     def set_error_badge(self, severity: str) -> None:
         value = severity if severity in {"error", "warning"} else ""
         if value == self._error_badge:
@@ -255,21 +250,37 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self.update()
 
     def _paint_error_badge(self, painter: QPainter) -> None:
+        """Draw the one error indicator, in the status badge's place.
+
+        It sits on the bottom edge like the normal badge, so an error never
+        doubles up with a second glyph in the top-right corner. The colour
+        keeps the severity: danger for a failed node, warning for a skipped
+        one. A hidden status badge does not hide it - the reason a node failed
+        stays visible.
+        """
         if not self._error_badge:
             return
         manager = get_theme_manager()
         token = "danger" if self._error_badge == "error" else "warning"
         fallback = "#e0686c" if token == "danger" else "#d9a441"
+        fill = QColor(manager.color(token, fallback))
+        rect = self.statusBadgeRect()
         painter.save()
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(manager.color(token, fallback)))
-        rect = self.errorBadgeRect()
+        painter.setBrush(fill)
         painter.drawEllipse(rect)
         font = QFont()
         font.setBold(True)
-        font.setPixelSize(10)
+        font.setPixelSize(14)
         painter.setFont(font)
-        painter.setPen(QPen(QColor(manager.color("text_on_accent", "#ffffff"))))
+        # White on danger, as the status sprite uses. The warning gold is light
+        # in every shipped theme, so its glyph is a darkened shade of the same
+        # token - ``background_primary`` is itself light in the light themes.
+        if token == "danger":
+            text = QColor(manager.color("text_on_accent", "#ffffff"))
+        else:
+            text = fill.darker(300)
+        painter.setPen(QPen(text))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "!")
         painter.restore()
 
