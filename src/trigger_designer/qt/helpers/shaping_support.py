@@ -28,7 +28,7 @@ from qtpy.QtWidgets import (
 )
 
 from trigger_designer.core.errors import translate_exception
-from trigger_designer.core.shaping.common import ShapingError
+from trigger_designer.core.shaping.common import ShapingError, live_sample
 from trigger_designer.qt.helpers.config_content import ConfigContent
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import (
@@ -1128,7 +1128,8 @@ class ShapingNode(TriggerNode):
                 self.markDirty(True)
                 self.markInvalid(True)
                 return None
-            content.frames[index] = entry["data"]
+            # Live evaluation works on the leading rows; Run reads the whole input.
+            content.frames[index] = live_sample(entry["data"])
             content.input_vars[index] = entry["variable_name"]
         try:
             outs = content.compute()
@@ -1138,7 +1139,7 @@ class ShapingNode(TriggerNode):
             self.markInvalid(True)
             return None
         self.param = [
-            {"data": frame, "variable_name": name}
+            {"data": live_sample(frame), "variable_name": name}
             for frame, name in zip(outs, content.output_variables)
         ]
         return self.param
