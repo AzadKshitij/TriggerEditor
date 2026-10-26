@@ -24,6 +24,22 @@ from trigger_designer.qt.preferences import get_preferences
 #: thread stops (see ``wait_for_orphaned_workflow_workers``).
 _ORPHANED_WORKERS: set[WorkflowWorker] = set()
 
+#: Runs whose ``run()`` emitted ``workflowFinished`` but whose thread is still
+#: unwinding. Dropping the last Python reference at that point lets PySide6
+#: collect a running QThread (a ``qFatal`` abort), so the reference is kept
+#: here until ``isFinished()`` is true.
+_FINISHING_WORKERS: set[WorkflowWorker] = set()
+
+
+def _prune_finishing_workers() -> None:
+    for worker in list(_FINISHING_WORKERS):
+        try:
+            done = worker.isFinished()
+        except RuntimeError:
+            done = True  # C++ object already deleted by deleteLater()
+        if done:
+            _FINISHING_WORKERS.discard(worker)
+
 
 def wait_for_orphaned_workflow_workers(timeout_ms: int = 5000) -> bool:
     """Wait for runs that outlived their window; True when none remain."""
@@ -133,6 +149,7 @@ class WorkflowExecutionMixin:
 
         self._workflow_sorted_nodes = sorted_nodes
 
+        _prune_finishing_workers()
         worker = WorkflowWorker(sorted_nodes, executor)
         worker.nodeStarted.connect(self._on_node_started)
         worker.nodeFinished.connect(self._on_node_finished)
@@ -197,7 +214,7 @@ class WorkflowExecutionMixin:
             ):
                 try:
                     signal.disconnect()
-                except (RuntimeError, TypeError):
+                except RuntimeError, TypeError:
                     pass
             if worker.wait(timeout_ms):
                 return True
@@ -325,7 +342,11 @@ class WorkflowExecutionMixin:
         # (queued right behind this one) triggers deleteLater() - querying
         # a deleted QThread's isRunning() on the next Run click raises
         # "wrapped C/C++ object ... has been deleted".
+        finished_worker = self._workflow_worker
         self._workflow_worker = None
+        if finished_worker is not None:
+            _FINISHING_WORKERS.add(finished_worker)
+        _prune_finishing_workers()
         scene = getattr(self, "scene", None)
         coordinator = getattr(scene, "evaluator", None)
         if coordinator is not None:
