@@ -252,8 +252,9 @@ class ColumnPickerFilterProxy(QSortFilterProxyModel):
         query = text.strip().casefold()
         if query == self._query:
             return
+        self.beginFilterChange()
         self._query = query
-        self.invalidateFilter()
+        self.endFilterChange(QSortFilterProxyModel.Direction.Rows)
 
     def filterAcceptsRow(self, source_row: int, source_parent: QModelIndex) -> bool:
         model = self.sourceModel()

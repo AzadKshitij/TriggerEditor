@@ -137,16 +137,17 @@ def changed_cell_counts(frame: Frame, settings: dict) -> dict[str, int]:
     suffix = str(s["suffix"] or "")
     head = lf.head(10_000)
     try:
-        original = head.select(columns).collect()
-        changed = (
-            head.with_columns(
-                [
-                    _expr(column, rules).alias(f"__chg_{i}")
-                    for i, column in enumerate(columns)
-                ]
-            )
-            .select([f"__chg_{i}" for i in range(len(columns))])
-            .collect()
+        # One collect for both projections, so the shared head is computed once.
+        original, changed = pl.collect_all(
+            [
+                head.select(columns),
+                head.with_columns(
+                    [
+                        _expr(column, rules).alias(f"__chg_{i}")
+                        for i, column in enumerate(columns)
+                    ]
+                ).select([f"__chg_{i}" for i in range(len(columns))]),
+            ]
         )
     except Exception:  # noqa: BLE001
         return {}

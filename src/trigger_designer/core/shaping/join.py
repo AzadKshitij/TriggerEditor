@@ -237,15 +237,16 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     else:
         selected = []
 
-    collected = result.collect()
+    # The outputs stay lazy: an output nothing consumes costs nothing, and a
+    # consumed one streams instead of holding the whole join in memory.
     both = pl.col(LEFT_TAG).is_not_null() & pl.col(RIGHT_TAG).is_not_null()
     left_only = pl.col(RIGHT_TAG).is_null()
     right_only = pl.col(LEFT_TAG).is_null()
 
     if selected_columns:
-        data = collected.filter(both).select(selected)
+        data = result.filter(both).select(selected)
     else:
-        data = collected.filter(both).select(
+        data = result.filter(both).select(
             [name for name in result_columns if not name.startswith("__")]
         )
 
@@ -256,7 +257,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         or (name.endswith(LEFT_SUFFIX) and name.replace(LEFT_SUFFIX, "") in left_names)
     ]
     left_final = [name for name in left_final if not name.startswith("__")]
-    l_data = collected.filter(left_only).select(left_final)
+    l_data = result.filter(left_only).select(left_final)
 
     # Right-only output carries the right frame's columns only. A conflicting
     # right column was renamed before the join, so its original name belongs
@@ -277,6 +278,6 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             and left_key not in right_final
         ):
             right_final.append(left_key)
-    r_data = collected.filter(right_only).select(right_final)
+    r_data = result.filter(right_only).select(right_final)
 
-    return [l_data.lazy(), data.lazy(), r_data.lazy()]
+    return [l_data, data, r_data]

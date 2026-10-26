@@ -288,11 +288,18 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         schema = self.schema(spec.input)
         return [(name, dtype_label(schema[name])) for name in self.names(spec)]
 
-    def _rows_in(self) -> int:
+    def _rows_in(self, limit: int | None = None) -> int:
+        """Rows across the inputs; with ``limit``, lazy inputs stop past it.
+
+        Reading at most ``limit + 1`` rows from each lazy input is enough to
+        tell whether the total exceeds ``limit``, so the cap check never scans
+        a whole source just to count it.
+        """
         total = 0
         for frame in self.frames:
             if isinstance(frame, pl.LazyFrame):
-                total += frame.select(pl.len()).collect().item()
+                source = frame if limit is None else frame.head(limit + 1)
+                total += source.select(pl.len()).collect().item()
             elif frame is not None:
                 total += frame.height
         return total
@@ -302,7 +309,9 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         settings = copy.deepcopy(self.settings)
         frames = list(self.frames)
         self.chips = []
-        capped = bool(self.LIVE_CAP_ROWS) and self._rows_in() > self.LIVE_CAP_ROWS
+        capped = bool(self.LIVE_CAP_ROWS) and (
+            self._rows_in(self.LIVE_CAP_ROWS) > self.LIVE_CAP_ROWS
+        )
         if capped:
             frames = [
                 None
