@@ -49,6 +49,11 @@ DEFAULTS: dict[str, Any] = {
     "editor/render_detail_sockets": "auto",
     "editor/render_detail_label": "always",
     "editor/render_detail_indicator": "auto",
+    "errors/continue_past_failure": True,
+    "errors/redact_values": False,
+    "errors/locate_rows": True,
+    "errors/locate_row_cap": 5_000_000,
+    "errors/show_technical": False,
 }
 
 _MISSING = object()

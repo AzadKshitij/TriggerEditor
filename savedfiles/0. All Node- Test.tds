@@ -27,29 +27,30 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
-        "strip_whitespace": true,
-        "normalize_spaces": true,
-        "remove_all_whitespace": false,
-        "case_modification": "none",
-        "remove_letters": false,
-        "remove_numbers": false,
-        "remove_punctuation": false,
-        "selected_fields": [
-          "Keyword",
-          "Seed",
-          "Source",
-          "Country",
-          "Autocomplete Position",
-          "Difficulty",
-          "Hot Keyword",
-          "Relevancy Score"
-        ],
-        "field_selection_initialized": true,
-        "remove_null_rows": false,
-        "remove_null_rows_from_selected_columns": false,
-        "remove_null_columns": false
+        "settings": {
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": true,
+          "normalize_spaces": true,
+          "remove_all_whitespace": false,
+          "case_modification": "none",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": false,
+          "selected_fields": [
+            "Keyword",
+            "Seed",
+            "Source",
+            "Country",
+            "Autocomplete Position",
+            "Difficulty",
+            "Hot Keyword",
+            "Relevancy Score"
+          ],
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -89,12 +90,14 @@
         }
       ],
       "content": {
-        "column": "Keyword",
-        "operation": "Contains",
-        "value": "x",
-        "value2": "",
-        "mode": "builder",
-        "expression": ""
+        "settings": {
+          "mode": "builder",
+          "column": "Keyword",
+          "operation": "Contains",
+          "value": "x",
+          "value2": "",
+          "expression": ""
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -127,26 +130,28 @@
         }
       ],
       "content": {
-        "formula_sections": [
-          {
-            "target_column": "Check",
-            "formula_text": "CASE when [Relevancy Score] > 95 \nthen 'pass' \nelse 'fail' \nEnd",
-            "editor_height": 84,
-            "target_dtype": "Categorical"
-          },
-          {
-            "target_column": "Autocomplete Position",
-            "formula_text": "[Autocomplete Position] * 2",
-            "editor_height": 60,
-            "target_dtype": ""
-          },
-          {
-            "target_column": "Year",
-            "formula_text": "YEAR(TODAY())",
-            "editor_height": 120,
-            "target_dtype": ""
-          }
-        ]
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Check",
+              "formula_text": "CASE when [Relevancy Score] > 95 \nthen 'pass' \nelse 'fail' \nEnd",
+              "editor_height": 84,
+              "target_dtype": "Categorical"
+            },
+            {
+              "target_column": "Autocomplete Position",
+              "formula_text": "[Autocomplete Position] * 2",
+              "editor_height": 60,
+              "target_dtype": ""
+            },
+            {
+              "target_column": "Year",
+              "formula_text": "YEAR(TODAY())",
+              "editor_height": 120,
+              "target_dtype": ""
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -305,12 +310,14 @@
         }
       ],
       "content": {
-        "sort_data": [
-          {
-            "column": "Keyword",
-            "order": "Ascending"
-          }
-        ]
+        "settings": {
+          "keys": [
+            {
+              "column": "Keyword",
+              "order": "Ascending"
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -350,9 +357,11 @@
         }
       ],
       "content": {
-        "selected_columns": [
-          "Relevancy Score"
-        ]
+        "settings": {
+          "selected_columns": [
+            "Relevancy Score"
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -392,9 +401,11 @@
         }
       ],
       "content": {
-        "estimation_percent": 70,
-        "random_seed": 42,
-        "is_random": true
+        "settings": {
+          "estimation_percent": 70,
+          "random_seed": 42,
+          "is_random": true
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -519,78 +530,80 @@
         }
       ],
       "content": {
-        "join_type": "inner",
-        "mapping_data": [
-          {
-            "left_column": "Relevancy Score",
-            "right_column": "Relevancy Score"
-          }
-        ],
-        "selected_columns": [
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          }
-        ],
-        "auto_accept_new_columns": true,
-        "known_columns": [
-          {
-            "name": "Count_Hot Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Country",
-            "source": "R"
-          },
-          {
-            "name": "Difficulty",
-            "source": "R"
-          },
-          {
-            "name": "Hot Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Seed",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          }
-        ]
+        "settings": {
+          "join_type": "inner",
+          "mapping_data": [
+            {
+              "left_column": "Relevancy Score",
+              "right_column": "Relevancy Score"
+            }
+          ],
+          "selected_columns": [
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            }
+          ],
+          "auto_accept_new_columns": true,
+          "known_columns": [
+            {
+              "name": "Count_Hot Keyword",
+              "source": "L"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Country",
+              "source": "R"
+            },
+            {
+              "name": "Difficulty",
+              "source": "R"
+            },
+            {
+              "name": "Hot Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            },
+            {
+              "name": "Seed",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -657,16 +670,14 @@
         }
       ],
       "content": {
-        "sum_columns": [
-          "Difficulty"
-        ],
-        "group_by_columns": [
-          "Difficulty"
-        ],
-        "numeric_columns": [
-          "Difficulty",
-          "Relevancy Score"
-        ]
+        "settings": {
+          "sum_columns": [
+            "Difficulty"
+          ],
+          "group_by_columns": [
+            "Difficulty"
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -699,28 +710,19 @@
         }
       ],
       "content": {
-        "actions_data": [
-          {
-            "field": "Relevancy Score",
-            "action": "GroupBy",
-            "output_name": "Relevancy Score"
-          },
-          {
-            "field": "Hot Keyword",
-            "action": "Count",
-            "output_name": "Count_Hot Keyword"
-          }
-        ],
-        "changes": {
-          "group_by_columns": [
-            "Relevancy Score"
-          ],
-          "aggregations": {
-            "Hot Keyword": {
-              "function": "count",
-              "alias": "Count_Hot Keyword"
+        "settings": {
+          "actions": [
+            {
+              "field": "Relevancy Score",
+              "action": "GroupBy",
+              "output_name": "Relevancy Score"
+            },
+            {
+              "field": "Hot Keyword",
+              "action": "Count",
+              "output_name": "Count_Hot Keyword"
             }
-          }
+          ]
         }
       },
       "label_text": "",
@@ -1155,7 +1157,9 @@
         }
       ],
       "content": {
-        "how": "diagonal_relaxed"
+        "settings": {
+          "how": "diagonal_relaxed"
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1195,7 +1199,9 @@
         }
       ],
       "content": {
-        "how": "diagonal_relaxed"
+        "settings": {
+          "how": "diagonal_relaxed"
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1228,22 +1234,23 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
-        "strip_whitespace": false,
-        "normalize_spaces": false,
-        "remove_all_whitespace": false,
-        "case_modification": "title",
-        "remove_letters": false,
-        "remove_numbers": false,
-        "remove_punctuation": true,
-        "selected_fields": [
-          "Keyword"
-        ],
-        "field_selection_initialized": true,
-        "remove_null_rows": false,
-        "remove_null_rows_from_selected_columns": false,
-        "remove_null_columns": false
+        "settings": {
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": false,
+          "normalize_spaces": false,
+          "remove_all_whitespace": false,
+          "case_modification": "title",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": true,
+          "selected_fields": [
+            "Keyword"
+          ],
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1429,82 +1436,84 @@
         }
       ],
       "content": {
-        "join_type": "inner",
-        "mapping_data": [
-          {
-            "left_column": "Relevancy Score",
-            "right_column": "Relevancy Score"
-          }
-        ],
-        "selected_columns": [
-          {
-            "name": "Autocomplete Position",
-            "source": "L"
-          },
-          {
-            "name": "Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Source",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          }
-        ],
-        "auto_accept_new_columns": true,
-        "known_columns": [
-          {
-            "name": "Autocomplete Position",
-            "source": "L"
-          },
-          {
-            "name": "Keyword",
-            "source": "L"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "L"
-          },
-          {
-            "name": "Source",
-            "source": "L"
-          },
-          {
-            "name": "Autocomplete Position",
-            "source": "R"
-          },
-          {
-            "name": "Keyword",
-            "source": "R"
-          },
-          {
-            "name": "Relevancy Score",
-            "source": "R"
-          },
-          {
-            "name": "Source",
-            "source": "R"
-          }
-        ]
+        "settings": {
+          "join_type": "inner",
+          "mapping_data": [
+            {
+              "left_column": "Relevancy Score",
+              "right_column": "Relevancy Score"
+            }
+          ],
+          "selected_columns": [
+            {
+              "name": "Autocomplete Position",
+              "source": "L"
+            },
+            {
+              "name": "Keyword",
+              "source": "L"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Source",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            }
+          ],
+          "auto_accept_new_columns": true,
+          "known_columns": [
+            {
+              "name": "Autocomplete Position",
+              "source": "L"
+            },
+            {
+              "name": "Keyword",
+              "source": "L"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "L"
+            },
+            {
+              "name": "Source",
+              "source": "L"
+            },
+            {
+              "name": "Autocomplete Position",
+              "source": "R"
+            },
+            {
+              "name": "Keyword",
+              "source": "R"
+            },
+            {
+              "name": "Relevancy Score",
+              "source": "R"
+            },
+            {
+              "name": "Source",
+              "source": "R"
+            }
+          ]
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1660,15 +1669,17 @@
         }
       ],
       "content": {
-        "key_columns": [
-          "Keyword"
-        ],
-        "data_columns": [
-          "Country",
-          "Difficulty",
-          "Relevancy Score"
-        ],
-        "missing_action": "warn"
+        "settings": {
+          "key_columns": [
+            "Keyword"
+          ],
+          "data_columns": [
+            "Country",
+            "Difficulty",
+            "Relevancy Score"
+          ],
+          "missing_action": "warn"
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1815,7 +1826,9 @@
         }
       ],
       "content": {
-        "how": "diagonal_relaxed"
+        "settings": {
+          "how": "diagonal_relaxed"
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1964,22 +1977,23 @@
         }
       ],
       "content": {
-        "replace_null_strings": true,
-        "replace_null_numbers": true,
-        "strip_whitespace": true,
-        "normalize_spaces": true,
-        "remove_all_whitespace": false,
-        "case_modification": "none",
-        "remove_letters": false,
-        "remove_numbers": false,
-        "remove_punctuation": false,
-        "selected_fields": [
-          "Keyword"
-        ],
-        "field_selection_initialized": true,
-        "remove_null_rows": false,
-        "remove_null_rows_from_selected_columns": false,
-        "remove_null_columns": false
+        "settings": {
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": true,
+          "normalize_spaces": true,
+          "remove_all_whitespace": false,
+          "case_modification": "none",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": false,
+          "selected_fields": [
+            "Keyword"
+          ],
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false
+        }
       },
       "label_text": "",
       "label_visible": false,
@@ -1991,8 +2005,8 @@
     {
       "id": 2806270209040,
       "title": "Graph",
-      "pos_x": -209.8083496093749,
-      "pos_y": -556.9458007812495,
+      "pos_x": -172.8083496093749,
+      "pos_y": -555.9458007812495,
       "inputs": [
         {
           "id": 2806334446544,
@@ -2012,15 +2026,17 @@
         }
       ],
       "content": {
-        "graph_type": "line",
-        "x_column": "Relevancy Score",
-        "y_column": "Hot Keyword",
-        "title": "",
-        "color_column": "",
-        "aggregation": ""
+        "settings": {
+          "graph_type": "line",
+          "x_column": "Relevancy Score",
+          "y_column": "Hot Keyword",
+          "color_column": "",
+          "aggregation": "",
+          "title": ""
+        }
       },
-      "label_text": "",
-      "label_visible": false,
+      "label_text": "klkkl",
+      "label_visible": true,
       "label_offset": 10.0,
       "node_code": 1,
       "node_type": "report",
@@ -2305,6 +2321,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-18T11:32:48Z"
+    "saved_at": "2026-10-25T19:02:40Z"
   }
 }

@@ -1,401 +1,232 @@
+"""Select node: table-driven column selection on the shared shaping system."""
+
+from __future__ import annotations
+
 import polars as pl
-import dataclasses
-import re
-from datetime import datetime
+from qtpy.QtCore import QSortFilterProxyModel, Qt
 from qtpy.QtWidgets import (
-    QWidget,
-    QLineEdit,
-    QVBoxLayout,
-    QTableView,
     QHBoxLayout,
     QHeaderView,
-    QStyledItemDelegate,
-    QMenu,
     QInputDialog,
+    QLineEdit,
+    QMenu,
+    QStyledItemDelegate,
+    QTableView,
+    QVBoxLayout,
+    QWidget,
 )
-from qtpy.QtGui import QPixmap
-from qtpy.QtCore import (
-    Qt,
-    Signal,
-    QSortFilterProxyModel,
-)
+
 from trigger_designer.core.node_configuration import (
-    register_node,
-    PreparationNodes,
     NodeTypes,
+    PreparationNodes,
+    register_node,
 )
-from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
-    TriggerNode,
-    TriggerGraphicsNode,
-    frame_schema,
-    frame_shape,
-    upstream_rename_map,
-)
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from trigger_designer.core.shaping import select as core
+from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
+from trigger_designer.qt.node_base import upstream_rename_map
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
     EmptyStateLabel,
     IconButton,
     TextButton,
 )
-from nodeeditor.utils_no_qt import dumpException
-
 from trigger_designer.qt.widgets.select_table_widget import (
     ComboBoxDelegate,
-    SelectTableWidget,
     RowData,
-)
-from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.undo.protocol import is_syncing
-from typing import (
-    Optional,
-    TYPE_CHECKING,
+    SelectTableWidget,
 )
 
-if TYPE_CHECKING:
-    import polars as pl
 
+class SelectContent(ShapingContent):
+    """Column table projected over ``settings['columns']``.
 
-# Tokens recognised when coercing a column to Boolean. Polars cannot cast
-# Utf8 -> Boolean at all (it raises InvalidOperationError regardless of
-# `strict`), so anything textual needs an explicit token match. Numeric
-# sources fall back to a non-zero test, since `cast(Float64)` renders 1.0 as
-# "1.0" which is not in either token set. Unrecognised values become null,
-# matching the `strict=False` contract the other dtype conversions use.
-_BOOLEAN_TRUE_TOKENS = ("true", "1", "yes", "y", "t", "on")
-_BOOLEAN_FALSE_TOKENS = ("false", "0", "no", "n", "f", "off")
-
-
-class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-    """DataFrame column selection and modification widget.
-
-    Provides comprehensive column management including:
-    - Selection and filtering
-    - Reordering and sorting
-    - Type conversion and renaming
-    - Metadata management
-
-    Args:
-        QDMNodeContentWidget (_type_): _description_
-
-    Variables:
-        columns (dict): {column_name: [is_selected, column_type, rename]}
-        incoming_columns (list): [column_name]
-
-    Extra:
-
+    The table remains the editor. Every table mutation becomes one ``columns``
+    setting, so live evaluation and Run share the same core runner and undo is
+    one step per table action.
     """
 
-    evaluate = Signal()  # Emit when evaluate button is clicked
+    SETTINGS = core.DEFAULTS
+    MODULE = "trigger_designer.core.shaping.select"
+    RUNNER = "run_node"
+    OUTPUT_KINDS = ("select",)
+    INPUTS = 1
+    HISTORY = "Select"
+    SUMMARY = "column selection"
+    BULK_SAMPLE_ROWS = 1000
 
-    def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
-        global_logger.debug("📋 SelectContent: Initializing Select node content widget")
-
-        # local variables
-        # self.old_data: dict = []
-        self.table_data: list = []
-        self.history = self.node.scene.history
-
-        # incoming variables
-        self.incoming_variable: str = ""
-        self.incom_data: Optional[pl.DataFrame] = None
-
-        global_logger.trace("📋 SelectContent: Initialization completed")
-
-        # pass on variables
-        self.data: Optional[pl.DataFrame] = None
-        self.variable_name: str = f"var_select_{self.id}"
-
-        # Must exist before create_layout runs so processInputs can call
-        # apply_changes() on first connection.
-        self.changes: dict = {
-            "selected_columns": [],
-            "rename_mapping": {},
-            "dtype_mapping": {},
-            "auto_accept_new_columns": True,
-        }
+        self.table_data: list[RowData] = []
+        self.table_widget: SelectTableWidget | None = None
+        self.table_view: QTableView | None = None
+        self.proxy_model: QSortFilterProxyModel | None = None
         self._auto_accept_action = None
+        self._suspend_table = False
 
-    @property
-    def node(self) -> "TriggerNode":
-        return self._node
-
-    @node.setter
-    def node(self, value: "TriggerNode") -> None:
-        self._node = value
-
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
-        _icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(_icon)
-
+    # ---- dock -----------------------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        if self.incom_data is not None:
-            # Initialize changes if not already present (e.g., from deserialization)
-            if not hasattr(self, "changes") or not self.changes:
-                self.changes: dict = {
-                    "selected_columns": list(
-                        frame_schema(self.incom_data)
-                    ),  # Select all by default
-                    "rename_mapping": {},
-                    "dtype_mapping": {},
-                    "auto_accept_new_columns": True,
-                }
-
-            # Align rows + mappings with the live upstream schema (e.g. an
-            # Aggregate rename). Preserves choices for surviving columns.
-            self._reconcile_schema()
-
-            # Ensure selected_columns has default values if empty
-            if not self.changes.get("selected_columns"):
-                self.changes["selected_columns"] = list(frame_schema(self.incom_data))
-
-            # Columns section: toolbar (search / move / options) + table.
-            # No title: a table of columns with a search box is self-evident.
-            columns_section = ConfigSection("")
-            self.columns_section = columns_section
-
-            toolbar_widget = QWidget()
-            toolbar_layout = QHBoxLayout(toolbar_widget)
-            toolbar_layout.setContentsMargins(0, 0, 0, 0)  # Remove margins
-            toolbar_widget.setFixedHeight(40)  # One command row, controls are 30px
-
-            # Search box
-            self.search_input = QLineEdit()
-            self.search_input.setPlaceholderText("Search columns...")
-            self.search_input.setClearButtonEnabled(True)
-            # Set minimum height for search input
-            self.search_input.setMinimumHeight(30)
-            toolbar_layout.addWidget(self.search_input)
-
-            # Bulk check/uncheck: two 30px text buttons, the one place the
-            # design system allows text next to the search field.
-            self.all_btn = TextButton("All", "Select every column", toolbar_widget)
-            self.none_btn = TextButton("None", "Deselect every column", toolbar_widget)
-            for button in (self.all_btn, self.none_btn):
-                button.setObjectName("BulkButton")
-                button.setFixedWidth(32)
-            self.all_btn.clicked.connect(self.select_all_columns)
-            self.none_btn.clicked.connect(self.select_no_columns)
-            toolbar_layout.addWidget(self.all_btn)
-            toolbar_layout.addWidget(self.none_btn)
-
-            # Move buttons (icon-only, 30x30/12px per design system §4)
-            self.up_btn = IconButton.themed(
-                "Move column up",
-                rsm_icon=None,
-                qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
-                theme_fallback="go-up",
-                parent=toolbar_widget,
-            )
-
-            self.down_btn = IconButton.themed(
-                "Move column down",
-                rsm_icon=None,
-                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
-                theme_fallback="go-down",
-                parent=toolbar_widget,
-            )
-
-            toolbar_layout.addWidget(self.up_btn)
-            toolbar_layout.addWidget(self.down_btn)
-
-            # Options menu button (icon-only; QSS hides menu indicator)
-            self.options_btn = IconButton.themed(
-                "Column options",
-                rsm_icon=self.node.rsm.get("icon_options"),
-                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
-                theme_fallback=None,
-                parent=toolbar_widget,
-            )
-            self.options_btn.setObjectName("OptionsButton")
-
-            toolbar_layout.addWidget(self.options_btn)
-
-            # Add toolbar to the section
-            columns_section.addWidget(toolbar_widget)
-
-            self.table_widget = SelectTableWidget(
-                data=self.table_data, changes=self.changes, parent=self
-            )
-
-            # Create proxy model for filtering
-            self.proxy_model = QSortFilterProxyModel(self)
-            self.proxy_model.setFilterCaseSensitivity(
-                Qt.CaseSensitivity.CaseInsensitive
-            )  # Make search case-insensitive
-            self.proxy_model.setSourceModel(self.table_widget)
-            self.proxy_model.setFilterKeyColumn(-1)  # Filter on all columns
-
-            self.table_view = QTableView()
-            self.table_view.setObjectName("ColumnTable")
-            self.table_view.setModel(self.proxy_model)
-            # 22px rows: the grid is the point of this dock, so it gets the
-            # density of a data tool, not a settings form.
-            self.table_view.verticalHeader().setDefaultSectionSize(22)
-            self.table_view.horizontalHeader().setFixedHeight(20)
-            # self.table_view.setModel(self.table_widget)
-
-            # Set the custom delegate for the 'Option' column (index 2)
-            self.table_view.setItemDelegateForColumn(
-                2, ComboBoxDelegate(self.table_view)
-            )
-            self.table_view.setItemDelegateForColumn(
-                3, QStyledItemDelegate()
-            )  # For rename column
-
-            # self.table_view.setModel(self.table_widget)
-
-            # Configure view properties
-            self.table_view.setSelectionMode(QTableView.SelectionMode.ExtendedSelection)
-            self.table_view.setSelectionBehavior(
-                QTableView.SelectionBehavior.SelectRows
-            )
-
-            # Column widths: checkbox pinned, dtype pinned to the widest of
-            # its handful of short options, the two text columns share the
-            # rest. Left at Qt's default, the dtype column took 100px of the
-            # pane and the rename column was the one that clipped.
-            header = self.table_view.horizontalHeader()
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-            header.resizeSection(0, 40)  # Checkbox column
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-            metrics = self.table_view.fontMetrics()
-            dtype_width = max(
-                metrics.horizontalAdvance(name) for name in SelectTableWidget.DATA_TYPES
-            )
-            header.resizeSection(2, dtype_width + 30)  # pad + arrow air
-            header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-
-            # Keep a usable number of rows on a short pane: the dock scrolls
-            # as a whole rather than squeezing the grid down to two rows.
-            self.table_view.setMinimumHeight(220)
-
-            # Connect signals
-            self.setup_connections()
-
-            # Connect to the new data_processed signal instead
-            self.table_widget.data_processed.connect(self.handleDataChanged)
-
-            columns_section.addWidget(self.table_view, 1)
-            dock_layout.addWidget(columns_section, 1)
-            self._refresh_select_counts()
-        else:
+        if self.frames[0] is None:
             dock_layout.addWidget(EmptyStateLabel())
+            return
 
-        # return layout
+        self._reconcile_columns()
+        self.table_data = self._rows_from_settings()
+        section = ConfigSection("")
 
-    def dock_context(self) -> tuple[list[tuple[str, str]], str]:
-        """Configuration summary for the dock context strip."""
-        changes = getattr(self, "changes", None) or {}
-        selected = changes.get("selected_columns") or []
-        renames = changes.get("rename_mapping") or {}
-        dtypes = changes.get("dtype_mapping") or {}
-        chips: list[tuple[str, str]] = []
-        total = len(getattr(self, "table_data", []) or [])
-        if total:
-            chips.append(
-                (f"{len(selected)} of {total} columns", "accent" if selected else "")
-            )
-        if renames:
-            chips.append((f"{len(renames)} renamed", ""))
-        if dtypes:
-            chips.append((f"{len(dtypes)} retyped", ""))
-        return chips, ""
+        toolbar = QWidget()
+        toolbar_layout = QHBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(0, 0, 0, 0)
+        toolbar_layout.setSpacing(4)
+        toolbar.setFixedHeight(40)
 
-    def _refresh_select_counts(self) -> None:
-        """Refresh the pane summary; counts are no longer rendered."""
-        self.refresh_dock_context()
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search columns...")
+        self.search_input.setClearButtonEnabled(True)
+        self.search_input.setMinimumHeight(30)
+        toolbar_layout.addWidget(self.search_input, 1)
 
-    def select_all_columns(self) -> None:
-        """Check every column in one undoable step."""
-        widget = getattr(self, "table_widget", None)
-        if widget is not None:
-            widget.set_all_checked(True)
+        self.all_btn = TextButton("All", "Select every column", toolbar)
+        self.none_btn = TextButton("None", "Deselect every column", toolbar)
+        for button in (self.all_btn, self.none_btn):
+            button.setObjectName("BulkButton")
+            button.setFixedWidth(32)
+        self.all_btn.clicked.connect(self.select_all_columns)
+        self.none_btn.clicked.connect(self.select_no_columns)
+        toolbar_layout.addWidget(self.all_btn)
+        toolbar_layout.addWidget(self.none_btn)
 
-    def select_no_columns(self) -> None:
-        """Deselect every column in one undoable step."""
-        widget = getattr(self, "table_widget", None)
-        if widget is not None:
-            widget.set_all_checked(False)
-
-    def setup_connections(self) -> None:
-        # Search functionality
-        self.search_input.textChanged.connect(
-            self.proxy_model.setFilterRegularExpression
+        self.up_btn = IconButton.themed(
+            "Move column up",
+            rsm_icon=None,
+            qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
+            theme_fallback="go-up",
+            parent=toolbar,
         )
-        # self.search_input.textChanged.connect(self.table_widget.filterRows)
-
-        # Move row buttons
+        self.down_btn = IconButton.themed(
+            "Move column down",
+            rsm_icon=None,
+            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            theme_fallback="go-down",
+            parent=toolbar,
+        )
         self.up_btn.clicked.connect(
             lambda: self.table_widget.moveSelectedRow("up", self.table_view)
         )
         self.down_btn.clicked.connect(
             lambda: self.table_widget.moveSelectedRow("down", self.table_view)
         )
+        toolbar_layout.addWidget(self.up_btn)
+        toolbar_layout.addWidget(self.down_btn)
 
-        # Options menu
-        self.table_widget.setupOptionsMenu(self.options_btn, self.table_view)
+        self.options_btn = IconButton.themed(
+            "Column options",
+            rsm_icon=self.node.rsm.get("icon_options"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            theme_fallback=None,
+            parent=toolbar,
+        )
+        self.options_btn.setObjectName("OptionsButton")
+        toolbar_layout.addWidget(self.options_btn)
+        section.addWidget(toolbar)
 
-        # Bulk rename / retype actions (appended to the same Options menu)
-        self.setup_bulk_menus()
+        self.table_widget = SelectTableWidget(
+            self.table_data, self._table_changes(), parent=self
+        )
+        self.table_widget._undo_composite = True
+        self.table_widget.data_processed.connect(self._on_table_data)
 
-    BULK_SAMPLE_ROWS = 1000
+        self.proxy_model = QSortFilterProxyModel(self)
+        self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.proxy_model.setSourceModel(self.table_widget)
+        self.proxy_model.setFilterKeyColumn(-1)
 
-    def setup_bulk_menus(self) -> None:
-        """Append Bulk Rename / Bulk Data Type submenus to the Options menu."""
-        menu = self.options_btn.menu()
-        if menu is None:
-            return
+        self.table_view = QTableView()
+        self.table_view.setObjectName("ColumnTable")
+        self.table_view.setModel(self.proxy_model)
+        self.table_view.verticalHeader().setDefaultSectionSize(22)
+        self.table_view.horizontalHeader().setFixedHeight(20)
+        self.table_view.setItemDelegateForColumn(2, ComboBoxDelegate(self.table_view))
+        self.table_view.setItemDelegateForColumn(3, QStyledItemDelegate())
+        self.table_view.setSelectionMode(QTableView.SelectionMode.ExtendedSelection)
+        self.table_view.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        header = self.table_view.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+        header.resizeSection(0, 40)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+        metrics = self.table_view.fontMetrics()
+        dtype_width = max(
+            metrics.horizontalAdvance(name) for name in SelectTableWidget.DATA_TYPES
+        )
+        header.resizeSection(2, dtype_width + 30)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        self.table_view.setMinimumHeight(220)
+        self.search_input.textChanged.connect(self.proxy_model.setFilterFixedString)
+
+        section.addWidget(self.table_view, 1)
+        dock_layout.addWidget(section, 1)
+        self._setup_options_menu()
+        self._refresh_select_counts()
+
+    def _setup_options_menu(self) -> None:
+        menu = QMenu(self.options_btn)
+        menu.addAction("Check Selected").triggered.connect(
+            lambda _checked=False: self.table_widget.checkSelected(self.table_view)
+        )
+        menu.addAction("Uncheck Selected").triggered.connect(
+            lambda _checked=False: self.table_widget.uncheckSelected(self.table_view)
+        )
         menu.addSeparator()
 
-        rename_menu = QMenu("Bulk Rename", menu)
-        rename_menu.addAction("Add Prefix to Selected...").triggered.connect(
-            lambda _checked=False: self.prompt_bulk_affix(
-                selected_only=True, is_prefix=True
+        sort_menu = menu.addMenu("Sort")
+        for label, key in (
+            ("Original Order", "original"),
+            ("Name (A-Z)", "name_asc"),
+            ("Name (Z-A)", "name_desc"),
+            ("By Type", "type"),
+        ):
+            sort_menu.addAction(label).triggered.connect(
+                lambda _checked=False, sort_key=key: self._sort_columns(sort_key)
             )
-        )
-        rename_menu.addAction("Add Prefix to All...").triggered.connect(
-            lambda _checked=False: self.prompt_bulk_affix(
-                selected_only=False, is_prefix=True
-            )
-        )
-        rename_menu.addAction("Add Suffix to Selected...").triggered.connect(
-            lambda _checked=False: self.prompt_bulk_affix(
-                selected_only=True, is_prefix=False
-            )
-        )
-        rename_menu.addAction("Add Suffix to All...").triggered.connect(
-            lambda _checked=False: self.prompt_bulk_affix(
-                selected_only=False, is_prefix=False
-            )
-        )
-        rename_menu.addSeparator()
-        rename_menu.addAction("Clear Renames (Selected)").triggered.connect(
-            lambda _checked=False: self.bulk_clear_renames(selected_only=True)
-        )
-        rename_menu.addAction("Clear Renames (All)").triggered.connect(
-            lambda _checked=False: self.bulk_clear_renames(selected_only=False)
-        )
-        menu.addMenu(rename_menu)
 
-        dtype_menu = QMenu("Bulk Data Type", menu)
-        dtype_menu.addAction("Auto-Detect Types (Selected)").triggered.connect(
-            lambda _checked=False: self.bulk_auto_detect(selected_only=True)
-        )
-        dtype_menu.addAction("Auto-Detect Types (All)").triggered.connect(
-            lambda _checked=False: self.bulk_auto_detect(selected_only=False)
-        )
+        menu.addSeparator()
+        rename_menu = menu.addMenu("Bulk Rename")
+        for label, selected_only, prefix in (
+            ("Add Prefix to Selected...", True, True),
+            ("Add Prefix to All...", False, True),
+            ("Add Suffix to Selected...", True, False),
+            ("Add Suffix to All...", False, False),
+        ):
+            rename_menu.addAction(label).triggered.connect(
+                lambda _checked=False, s=selected_only, p=prefix: (
+                    self.prompt_bulk_affix(selected_only=s, is_prefix=p)
+                )
+            )
+        rename_menu.addSeparator()
+        for label, selected_only in (
+            ("Clear Renames (Selected)", True),
+            ("Clear Renames (All)", False),
+        ):
+            rename_menu.addAction(label).triggered.connect(
+                lambda _checked=False, s=selected_only: self.bulk_clear_renames(s)
+            )
+
+        dtype_menu = menu.addMenu("Bulk Data Type")
+        for label, selected_only in (
+            ("Auto-Detect Types (Selected)", True),
+            ("Auto-Detect Types (All)", False),
+        ):
+            dtype_menu.addAction(label).triggered.connect(
+                lambda _checked=False, s=selected_only: self.bulk_auto_detect(s)
+            )
         dtype_menu.addSeparator()
-        dtype_menu.addAction("Reset Types (Selected)").triggered.connect(
-            lambda _checked=False: self.bulk_reset_dtypes(selected_only=True)
-        )
-        dtype_menu.addAction("Reset Types (All)").triggered.connect(
-            lambda _checked=False: self.bulk_reset_dtypes(selected_only=False)
-        )
-        menu.addMenu(dtype_menu)
+        for label, selected_only in (
+            ("Reset Types (Selected)", True),
+            ("Reset Types (All)", False),
+        ):
+            dtype_menu.addAction(label).triggered.connect(
+                lambda _checked=False, s=selected_only: self.bulk_reset_dtypes(s)
+            )
 
         menu.addSeparator()
         self._auto_accept_action = menu.addAction("Auto-add new columns")
@@ -404,140 +235,304 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             "When checked, columns arriving from upstream are included automatically."
         )
         self._auto_accept_action.setChecked(
-            bool((self.changes or {}).get("auto_accept_new_columns", True))
+            bool(self.settings.get("auto_accept_new_columns", True))
         )
         self._auto_accept_action.toggled.connect(self._on_auto_accept_toggled)
+        self.options_btn.setMenu(menu)
 
-    def _on_auto_accept_toggled(self, checked: bool) -> None:
-        """Toggle whether newly arrived upstream columns are auto-included."""
-        if self.history.is_restoring_history or is_syncing(self):
+    def _sort_columns(self, sort_type: str) -> None:
+        schema_order = {name: index for index, name in enumerate(self.schema(0))}
+        if sort_type == "original":
+            key = lambda row: schema_order.get(row.text, len(schema_order))
+        elif sort_type == "name_asc" or sort_type == "name_desc":
+            key = lambda row: row.text.casefold()
+        elif sort_type == "type":
+            key = lambda row: (row.dtype.casefold(), row.text.casefold())
+        else:
             return
-        old = bool((self.changes or {}).get("auto_accept_new_columns", True))
-        if old == bool(checked):
+        rows = sorted(self.table_data, key=key, reverse=sort_type == "name_desc")
+        self.table_data = rows
+        if self.table_widget is not None:
+            self.table_widget.set_rows(rows)
+        self._commit_table()
+
+    # ---- settings projection -------------------------------------------
+    def _table_changes(self) -> dict:
+        columns = list(self.settings.get("columns") or [])
+        return {
+            "selected_columns": [
+                column["name"] for column in columns if column.get("selected")
+            ],
+            "rename_mapping": {
+                column["name"]: column["rename"]
+                for column in columns
+                if column.get("rename")
+            },
+            "dtype_mapping": {
+                column["name"]: column.get("dtype", "")
+                for column in columns
+                if column.get("dtype")
+            },
+            "column_order": [column["name"] for column in columns],
+            "auto_accept_new_columns": bool(
+                self.settings.get("auto_accept_new_columns", True)
+            ),
+        }
+
+    def _rows_from_settings(self) -> list[RowData]:
+        schema = self.schema(0)
+        rows: list[RowData] = []
+        for column in self.settings.get("columns") or []:
+            name = str(column.get("name") or "")
+            if not name:
+                continue
+            source = schema.get(name)
+            dtype = str(column.get("dtype") or "")
+            if not dtype:
+                dtype = core.display_dtype(source) if source is not None else "String"
+            rows.append(
+                RowData(
+                    checked=bool(column.get("selected")),
+                    text=name,
+                    dtype=dtype,
+                    rename=str(column.get("rename") or ""),
+                    is_missing=source is None,
+                    date_format=str(column.get("date_format") or ""),
+                )
+            )
+        return rows
+
+    def _columns_from_rows(self, rows: list[RowData]) -> list[dict]:
+        schema = self.schema(0)
+        previous = {
+            column.get("name"): column
+            for column in (self.settings.get("columns") or [])
+        }
+        columns: list[dict] = []
+        for row in rows:
+            source = schema.get(row.text)
+            old = previous.get(row.text, {})
+            if source is None:
+                custom = bool(old.get("dtype_custom", True))
+            else:
+                custom = row.dtype != core.display_dtype(source)
+            columns.append(
+                {
+                    "name": row.text,
+                    "selected": bool(row.checked),
+                    "dtype": row.dtype,
+                    "rename": row.rename,
+                    "date_format": row.date_format,
+                    "dtype_custom": custom,
+                }
+            )
+        return columns
+
+    def _on_table_data(self, _payload=None) -> None:
+        if self._suspend_table:
             return
-        self.changes["auto_accept_new_columns"] = bool(checked)
-        self.push_property_change(
-            ("changes", "auto_accept_new_columns"),
-            old,
-            bool(checked),
-            "Auto-Accept Changed",
+        if self.table_widget is not None:
+            self.table_data = self.table_widget.rows()
+        self.set_setting(
+            "columns",
+            self._columns_from_rows(self.table_data),
+            "Select Columns Changed",
         )
+        if self.table_widget is not None:
+            self.table_widget.changes = self._table_changes()
+        self.refresh_dock_context()
+
+    def _commit_table(self) -> None:
+        if self.table_widget is not None and self.table_data:
+            self.table_widget.dataChanged.emit(
+                self.table_widget.index(0, 0),
+                self.table_widget.index(len(self.table_data) - 1, 3),
+                [],
+            )
+        self._on_table_data()
+
+    def _refresh_table(self) -> None:
+        rows = self._rows_from_settings()
+        self.table_data = rows
+        if self.table_widget is not None:
+            self.table_widget.set_rows(rows)
+            self.table_widget.changes = self._table_changes()
+        self._sync_auto_action()
+        self.refresh_dock_context()
+
+    def _sync_auto_action(self) -> None:
+        action = self._auto_accept_action
+        if action is None:
+            return
+        try:
+            checked = bool(self.settings.get("auto_accept_new_columns", True))
+            if action.isChecked() != checked:
+                action.blockSignals(True)
+                action.setChecked(checked)
+                action.blockSignals(False)
+        except RuntimeError:
+            self._auto_accept_action = None
 
     def _sync_widgets_from_model(self) -> None:
-        """Refresh widget values from the model, preserving widget identity."""
-        action = getattr(self, "_auto_accept_action", None)
-        if action is not None:
-            try:
-                checked = bool(
-                    (self.changes or {}).get("auto_accept_new_columns", True)
-                )
-                if action.isChecked() != checked:
-                    action.setChecked(checked)
-            except RuntimeError:
-                pass
+        rows = self._rows_from_settings()
+        if self.table_widget is not None and rows != self.table_widget.rows():
+            self.table_data = rows
+            self.table_widget.set_rows(rows)
+            self.table_widget.changes = self._table_changes()
+        elif self.table_widget is not None:
+            self.table_data = self.table_widget.rows()
+        self._sync_auto_action()
+        self.refresh_dock_context()
+
+    # ---- schema reconciliation -----------------------------------------
+    def _reconcile_columns(self) -> bool:
+        schema = self.schema(0)
+        if not schema:
+            return False
+        columns = [dict(column) for column in (self.settings.get("columns") or [])]
+        first_build = not columns
+        auto = bool(self.settings.get("auto_accept_new_columns", True))
+        existing = {column.get("name") for column in columns}
+        changed = False
+
+        for column in columns:
+            column.setdefault("selected", False)
+            column.setdefault("dtype", "")
+            column.setdefault("rename", "")
+            column.setdefault("date_format", "")
+            column.setdefault("dtype_custom", False)
+            name = column.get("name")
+            if name in schema:
+                source = core.display_dtype(schema[name])
+                if not column.get("dtype_custom") and column.get("dtype") != source:
+                    column["dtype"] = source
+                    column["date_format"] = ""
+                    changed = True
+
+        new_names = [name for name in schema if name not in existing]
+        for name in new_names:
+            columns.append(
+                {
+                    "name": name,
+                    "selected": bool(auto or first_build),
+                    "dtype": core.display_dtype(schema[name]),
+                    "rename": "",
+                    "date_format": "",
+                    "dtype_custom": False,
+                }
+            )
+            changed = True
+
+        if first_build:
+            for column in columns:
+                column["selected"] = True
+
+        missing_changed = any(
+            row.is_missing != (row.text not in schema) for row in self.table_data
+        )
+        if changed or first_build:
+            self.settings["columns"] = columns
+        if self.table_widget is not None and (
+            changed or first_build or missing_changed
+        ):
+            self._refresh_table()
+        return changed or first_build
+
+    def compute(self) -> list:
+        if self.frames[0] is not None:
+            self._reconcile_columns()
+        return super().compute()
 
     def apply_upstream_renames(self, rename_map: dict) -> bool:
-        """Follow an upstream rename in place, preserving order and settings.
-
-        A rename otherwise looks like a drop + add to schema diffing: the
-        renamed row jumps to the end and per-column rename/dtype choices
-        keyed by the old name are pruned. When ``old`` is gone from the
-        live schema but ``new`` is present, the row (and its ``changes``
-        keys) is renamed instead.
-
-        :return: True when anything was renamed.
-        """
-        if not rename_map or getattr(self, "incom_data", None) is None:
+        if not rename_map:
             return False
-        try:
-            live = set(frame_schema(self.incom_data))
-        except Exception:  # noqa: BLE001 - any frame error means no follow
-            return False
-        changes = self.changes or {}
-        rows = [row for row in self.table_data if hasattr(row, "text")]
-        present = {row.text for row in rows}
-        renamed_any = False
+        columns = [dict(column) for column in (self.settings.get("columns") or [])]
+        names = {column.get("name") for column in columns}
+        changed = False
         for old, new in rename_map.items():
-            if old in live or new not in live:
+            if old not in names or new in names:
                 continue
-            if old not in present or new in present:
-                continue
-            for row in rows:
-                if row.text == old:
-                    row.text = new
-                    renamed_any = True
-            for key in ("selected_columns", "column_order"):
-                values = changes.get(key)
-                if isinstance(values, list):
-                    changes[key] = [new if value == old else value for value in values]
-            for key in ("rename_mapping", "dtype_mapping"):
-                mapping = changes.get(key)
-                if isinstance(mapping, dict) and old in mapping:
-                    mapping[new] = mapping.pop(old)
-        if renamed_any:
-            self.changes = changes
-        return renamed_any
+            for column in columns:
+                if column.get("name") == old:
+                    column["name"] = new
+                    changed = True
+            names.discard(old)
+            names.add(new)
+        if changed:
+            self.settings["columns"] = columns
+            if self.table_widget is not None:
+                self._refresh_table()
+            self.refresh_dock_context()
+        return changed
 
-    def _bulk_target_rows(self, selected_only: bool) -> list:
-        """Rows a bulk action applies to.
+    # ---- summary --------------------------------------------------------
+    def dock_summary(self) -> str:
+        columns = list(self.settings.get("columns") or [])
+        selected = sum(1 for column in columns if column.get("selected"))
+        renamed = sum(1 for column in columns if column.get("rename"))
+        retyped = sum(1 for column in columns if column.get("dtype_custom"))
+        parts = [f"{selected} of {len(columns)} columns selected"]
+        if renamed:
+            parts.append(f"{renamed} renamed")
+        if retyped:
+            parts.append(f"{retyped} retyped")
+        return " \u00b7 ".join(parts)
 
-        "Selected" means highlighted rows in the view - the same vocabulary
-        as Check/Uncheck Selected - mapped through the search proxy. "All"
-        means every row. An empty highlight is a no-op, never a fallback to
-        everything: with everything checked by default, checked-state would
-        make "Selected" silently mean "All".
-        """
+    def dock_context(self):
+        columns = list(self.settings.get("columns") or [])
+        selected = sum(1 for column in columns if column.get("selected"))
+        chips = [
+            (f"{selected} of {len(columns)} columns", "accent" if selected else "")
+        ]
+        renamed = sum(1 for column in columns if column.get("rename"))
+        retyped = sum(1 for column in columns if column.get("dtype_custom"))
+        if renamed:
+            chips.append((f"{renamed} renamed", ""))
+        if retyped:
+            chips.append((f"{retyped} retyped", ""))
+        return chips, ""
+
+    def _refresh_select_counts(self) -> None:
+        self.refresh_dock_context()
+
+    def select_all_columns(self) -> None:
+        if self.table_widget is not None:
+            self.table_widget.set_all_checked(True)
+
+    def select_no_columns(self) -> None:
+        if self.table_widget is not None:
+            self.table_widget.set_all_checked(False)
+
+    # ---- bulk tools -----------------------------------------------------
+    def _bulk_target_rows(self, selected_only: bool) -> list[RowData]:
         if not selected_only:
             return list(self.table_data)
         try:
-            view = getattr(self, "table_view", None)
-            selection = view.selectionModel() if view is not None else None
+            selection = (
+                self.table_view.selectionModel()
+                if self.table_view is not None
+                else None
+            )
             if selection is None:
                 return []
-            rows = []
-            seen = set()
+            rows: list[RowData] = []
+            seen: set[int] = set()
             for index in selection.selectedRows():
-                model = view.model()
-                if isinstance(model, QSortFilterProxyModel):
-                    index = model.mapToSource(index)
+                if isinstance(self.table_view.model(), QSortFilterProxyModel):
+                    index = self.table_view.model().mapToSource(index)
                 row = index.row()
                 if 0 <= row < len(self.table_data) and row not in seen:
                     seen.add(row)
                     rows.append(self.table_data[row])
+            return rows
         except RuntimeError:
-            # Dock was rebuilt under this menu; nothing valid to target.
             return []
-        return rows
-
-    def _bulk_commit(self) -> None:
-        """Repaint the table and run one history-tracked pipeline pass.
-
-        Emits a bounded dataChanged (values changed, structure did not). A
-        bare layoutChanged here segfaults once a selection exists: the proxy
-        and view rebuild selection state around a layout change that never
-        happened.
-        """
-        try:
-            if self.table_data:
-                top_left = self.table_widget.index(0, 0)
-                bottom_right = self.table_widget.index(len(self.table_data) - 1, 3)
-                self.table_widget.dataChanged.emit(top_left, bottom_right, [])
-            self.handleDataChanged(self.table_widget.getData())
-        except Exception as exc:
-            global_logger.error(f"Select bulk edit failed: {exc}")
-            try:
-                self.node.grNode.setToolTip(f"Bulk edit failed: {exc}")
-            except RuntimeError:
-                pass
 
     def prompt_bulk_affix(self, selected_only: bool, is_prefix: bool) -> None:
-        """Ask for an affix, then compose it onto the effective names."""
         scope = "Selected" if selected_only else "All"
         kind = "Prefix" if is_prefix else "Suffix"
         affix, accepted = QInputDialog.getText(
-            None,
-            f"Add {kind} ({scope})",
-            f"{kind} to add:",
+            None, f"Add {kind} ({scope})", f"{kind} to add:"
         )
         if not accepted or not affix:
             return
@@ -547,7 +542,7 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         for row in rows:
             base = row.rename or row.text
             row.rename = f"{affix}{base}" if is_prefix else f"{base}{affix}"
-        self._bulk_commit()
+        self._commit_table()
 
     def bulk_clear_renames(self, selected_only: bool) -> None:
         rows = self._bulk_target_rows(selected_only)
@@ -555,1415 +550,143 @@ class SelectContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
         for row in rows:
             row.rename = ""
-        self._bulk_commit()
+        self._commit_table()
 
     def bulk_reset_dtypes(self, selected_only: bool) -> None:
-        """Restore source-schema dtypes for the scoped rows."""
-        if self.incom_data is None:
-            return
+        schema = self.schema(0)
         rows = self._bulk_target_rows(selected_only)
         if not rows:
-            return
-        try:
-            schema = frame_schema(self.incom_data)
-        except Exception:
             return
         for row in rows:
             if row.text in schema:
-                row.dtype = str(schema[row.text])
+                row.dtype = core.display_dtype(schema[row.text])
                 row.date_format = ""
-        self._bulk_commit()
+        self._commit_table()
 
     def bulk_auto_detect(self, selected_only: bool) -> None:
-        """Infer dtypes from a capped sample of each scoped column."""
-        if self.incom_data is None:
-            return
+        schema = self.schema(0)
         rows = self._bulk_target_rows(selected_only)
         if not rows:
             return
-        try:
-            available = set(frame_schema(self.incom_data))
-        except Exception:
-            available = set()
-        columns = [row.text for row in rows if row.text in available]
-        samples = self._sample_columns(columns) if columns else {}
+        columns = [row.text for row in rows if row.text in schema]
+        samples = self._sample_columns(columns)
         for row in rows:
-            if row.text not in available:
-                # No live data to sample (a retained missing row): skip
-                # rather than let _infer_column_dtype fall through to its
-                # own doomed single-column collect against a column that
-                # isn't there.
+            if row.text not in schema:
                 continue
-            inferred, date_format = self._infer_column_dtype(
-                row.text, samples.get(row.text)
-            )
-            if inferred is not None:
-                row.dtype = inferred
+            dtype, date_format = core.infer_dtype(samples.get(row.text, []))
+            if dtype is not None:
+                row.dtype = dtype
                 row.date_format = date_format or ""
-        self._bulk_commit()
+        self._commit_table()
 
     def _sample_columns(self, columns: list[str]) -> dict[str, list]:
-        """Fetch up to BULK_SAMPLE_ROWS string values for many columns at once.
-
-        One ``select(...).head(...).collect()`` runs the upstream lazy plan
-        a single time; sampling each column with its own collect (the
-        previous approach) re-runs that whole upstream plan once per column.
-        """
-        if not columns:
+        if not columns or self.frames[0] is None:
             return {}
         try:
             frame = (
-                self.incom_data.select([pl.col(c).cast(pl.String) for c in columns])
+                self.frames[0]
+                .select([pl.col(column).cast(pl.String) for column in columns])
                 .head(self.BULK_SAMPLE_ROWS)
                 .collect()
             )
-        except Exception:
+        except Exception:  # noqa: BLE001 - sampling is advisory
             return {}
         return {column: frame.get_column(column).to_list() for column in columns}
 
-    def _infer_column_dtype(
-        self, column: str, sample: Optional[list] = None
-    ) -> tuple[Optional[str], Optional[str]]:
-        """Infer a display dtype from up to BULK_SAMPLE_ROWS values.
+    def _on_auto_accept_toggled(self, checked: bool) -> None:
+        self.set_setting(
+            "auto_accept_new_columns",
+            bool(checked),
+            "Select Auto Accept Changed",
+        )
 
-        Precedence: Boolean -> Int64 -> Float64 -> Date -> String. Anything
-        unparseable (or all-null) stays String. ``sample`` lets callers pass
-        an already-collected batch (see ``_sample_columns``); when omitted
-        this falls back to collecting just this one column.
+    # ---- old saved workflow loader -------------------------------------
+    def deserialize(self, data, hashmap={}):  # noqa: B006
+        """Load old Select content into the new ordered-columns setting.
 
-        Returns ``(dtype, date_format)``. ``date_format`` is the single
-        strptime pattern that matched every sampled value when ``dtype`` is
-        "Date", else None -- callers (``bulk_auto_detect``) stash it on the
-        row so the cast that actually runs later can try that one format
-        first instead of blindly coalescing across every pattern
-        ``_date_parse_formats``/``_datetime_parse_formats`` knows (see
-        ``_build_dtype_conversion_expr``).
+        This is a one-way migration for checked-in workflows and existing
+        files. The new runtime only ever writes ``settings``.
         """
-        if sample is None:
-            try:
-                sample = (
-                    self.incom_data.select(pl.col(column).cast(pl.String))
-                    .head(self.BULK_SAMPLE_ROWS)
-                    .collect()
-                    .get_column(column)
-                    .to_list()
-                )
-            except Exception:
-                return None, None
-        values = [
-            value for value in sample if value is not None and str(value).strip() != ""
-        ]
-        if not values:
-            return "String", None
-        lowered = [str(value).strip().lower() for value in values]
-        if all(value in ("true", "false") for value in lowered):
-            return "Boolean", None
-        try:
-            for value in values:
-                int(str(value).strip())
-            return "Int64", None
-        except (TypeError, ValueError):
-            pass
-        try:
-            for value in values:
-                float(str(value).strip())
-            return "Float64", None
-        except (TypeError, ValueError):
-            pass
-        for fmt in self._date_parse_formats():
-            try:
-                for value in values:
-                    datetime.strptime(str(value).strip(), fmt)
-                return "Date", fmt
-            except (TypeError, ValueError, re.error):
-                continue
-        return "String", None
-
-    def _map_dtype_to_polars(self, dtype_str: str) -> Optional[pl.DataType]:
-        """Map string data type to Polars data type"""
-        dtype_mapping = {
-            "String": pl.String,
-            "Int64": pl.Int64,
-            "Float64": pl.Float64,
-            "Boolean": pl.Boolean,
-            "Date": pl.Date,
-            "Datetime": pl.Datetime,
-            "List": pl.List,
-            "Struct": pl.Struct,
-            "Categorical": pl.Categorical,
-            "Binary": pl.Binary,
-            "Decimal": pl.Decimal,
-            "Duration": pl.Duration,
-            # Legacy pandas compatibility
-            "object": pl.String,
-            "int64": pl.Int64,
-            "float64": pl.Float64,
-            "bool": pl.Boolean,
-            "datetime64": pl.Datetime,
-        }
-        return dtype_mapping.get(dtype_str)
-
-    def _dtype_matches(
-        self, current_dtype: Optional[pl.DataType], dtype_str: str
-    ) -> bool:
-        """Return True when ``current_dtype`` already satisfies ``dtype_str``.
-
-        Compared via ``current_dtype.base_type()`` so a parametrised incoming
-        dtype (e.g. ``Datetime(time_unit='us')``) correctly matches the bare
-        "Datetime" the dropdown offers -- a plain
-        ``str(current_dtype) == dtype_str`` comparison would not.
-
-        Returns False (never skip a conversion) when either side can't be
-        resolved: ``current_dtype`` is None (column absent from the schema
-        being checked against), or ``dtype_str`` isn't one
-        ``_map_dtype_to_polars`` recognises.
-        """
-        if current_dtype is None:
-            return False
-        target_dtype = self._map_dtype_to_polars(dtype_str)
-        if target_dtype is None:
-            return False
-        base_type = getattr(current_dtype, "base_type", None)
-        if base_type is None:
-            return False
-        return base_type() == target_dtype
-
-    def _get_polars_type_string(self, dtype_str: str) -> str:
-        """Get Polars type string for code generation"""
-        type_string_mapping = {
-            "String": "pl.String",
-            "Int64": "pl.Int64",
-            "Float64": "pl.Float64",
-            "Boolean": "pl.Boolean",
-            "Date": "pl.Date",
-            "Datetime": "pl.Datetime",
-            "List": "pl.List",
-            "Struct": "pl.Struct",
-            "Categorical": "pl.Categorical",
-            "Binary": "pl.Binary",
-            "Decimal": "pl.Decimal",
-            "Duration": "pl.Duration",
-            # Legacy pandas compatibility
-            "object": "pl.String",
-            "int64": "pl.Int64",
-            "float64": "pl.Float64",
-            "bool": "pl.Boolean",
-            "datetime64": "pl.Datetime",
-        }
-        return type_string_mapping.get(dtype_str, "pl.String")
-
-    def _date_parse_formats(self) -> list[str]:
-        return [
-            "%Y-%m-%d",
-            "%Y/%m/%d",
-            "%Y.%m.%d",
-            "%d-%m-%Y",
-            "%d/%m/%Y",
-            "%d.%m.%Y",
-            "%m-%d-%Y",
-            "%m/%d/%Y",
-            "%m.%d.%Y",
-            "%d %b %Y",
-            "%d %B %Y",
-            "%b %d %Y",
-            "%B %d %Y",
-            "%d-%b-%Y",
-            "%d-%B-%Y",
-        ]
-
-    def _datetime_parse_formats(self) -> list[str]:
-        base_date_formats = self._date_parse_formats()
-        time_suffixes = [
-            " %H:%M:%S",
-            " %H:%M",
-            "T%H:%M:%S",
-            "T%H:%M",
-        ]
-
-        formats: list[str] = []
-        for date_format in base_date_formats:
-            for suffix in time_suffixes:
-                formats.append(f"{date_format}{suffix}")
-
-        formats.extend(
-            [
-                "%d %b %Y %H:%M:%S",
-                "%d %B %Y %H:%M:%S",
-                "%b %d %Y %H:%M:%S",
-                "%B %d %Y %H:%M:%S",
-                "%d %b %Y %H:%M",
-                "%d %B %Y %H:%M",
-                "%b %d %Y %H:%M",
-                "%B %d %Y %H:%M",
-            ]
-        )
-        return formats
-
-    def _build_boolean_expr(self, col: str) -> pl.Expr:
-        """Coerce ``col`` to Boolean from any source type.
-
-        Polars has no Utf8 -> Boolean cast, so the Boolean dtype is served by
-        matching normalised text tokens and falling back to a non-zero numeric
-        test. Kept source-agnostic so the live path and the generated code
-        cannot drift apart.
-        """
-        source = pl.col(col)
-        token = (
-            source.cast(pl.String, strict=False).str.to_lowercase().str.strip_chars()
-        )
-        number = source.cast(pl.Float64, strict=False)
-        return (
-            pl.when(token.is_in(_BOOLEAN_TRUE_TOKENS))
-            .then(True)
-            .when(token.is_in(_BOOLEAN_FALSE_TOKENS))
-            .then(False)
-            .when(number.is_not_null() & (number != 0.0))
-            .then(True)
-            .when(number.is_not_null())
-            .then(False)
-            .otherwise(None)
-            .alias(col)
-        )
-
-    def _date_format_by_column(self) -> dict[str, str]:
-        """col -> the single strptime format bulk_auto_detect matched for it.
-
-        Only includes columns whose dtype is still "Date" -- the format is
-        cleared (or was never set) the moment dtype changes away from Date
-        by any other writer (bulk_reset_dtypes, the schema-driven refresh in
-        _reconcile_schema, or a manual dropdown pick in
-        SelectTableWidget.setData), so a stale format can never be looked up
-        here for a column no longer configured as Date.
-        """
-        return {
-            row.text: row.date_format
-            for row in getattr(self, "table_data", [])
-            if hasattr(row, "text")
-            and getattr(row, "dtype", "") == "Date"
-            and getattr(row, "date_format", "")
-        }
-
-    def _build_dtype_conversion_expr(
-        self, col: str, dtype: str, date_format: str = ""
-    ) -> Optional[pl.Expr]:
-        """Build a Polars expression that converts a column to the requested dtype.
-
-        ``date_format`` is a single strptime pattern already known to match
-        every sampled value (see ``_infer_column_dtype``/``bulk_auto_detect``).
-        When given, it's tried first with a couple of cheap fallbacks instead
-        of coalescing across every pattern this class knows -- most columns
-        use one consistent format, so the brute-force list below only earns
-        its cost for the (rarer) column that doesn't.
-        """
-        polars_dtype = self._map_dtype_to_polars(dtype)
-        if polars_dtype is None:
-            return None
-
-        if polars_dtype is pl.Boolean:
-            return self._build_boolean_expr(col)
-
-        if polars_dtype not in (pl.Date, pl.Datetime):
-            return pl.col(col).cast(polars_dtype, strict=False).alias(col)
-
-        text_expr = pl.col(col).cast(pl.String, strict=False)
-
-        if polars_dtype == pl.Date:
-            if date_format:
-                parse_exprs = [
-                    text_expr.str.strptime(
-                        pl.Date, date_format, strict=False, exact=True
-                    ),
-                    text_expr.str.to_date(strict=False),
-                    pl.col(col).cast(pl.Date, strict=False),
-                ]
-                return pl.coalesce(parse_exprs).alias(col)
-
-            parse_exprs: list[pl.Expr] = []
-            parse_exprs.extend(
-                text_expr.str.strptime(pl.Date, fmt, strict=False, exact=True)
-                for fmt in self._date_parse_formats()
-            )
-            parse_exprs.extend(
-                text_expr.str.strptime(pl.Datetime, fmt, strict=False, exact=True).cast(
-                    pl.Date, strict=False
-                )
-                for fmt in self._datetime_parse_formats()
-            )
-            parse_exprs.append(text_expr.str.to_date(strict=False))
-            parse_exprs.append(pl.col(col).cast(pl.Date, strict=False))
-            return pl.coalesce(parse_exprs).alias(col)
-
-        parse_exprs = []
-        parse_exprs.extend(
-            text_expr.str.strptime(pl.Datetime, fmt, strict=False, exact=True)
-            for fmt in self._datetime_parse_formats()
-        )
-        parse_exprs.extend(
-            text_expr.str.strptime(pl.Date, fmt, strict=False, exact=True).cast(
-                pl.Datetime, strict=False
-            )
-            for fmt in self._date_parse_formats()
-        )
-        parse_exprs.append(text_expr.str.to_datetime(strict=False))
-        parse_exprs.append(pl.col(col).cast(pl.Datetime, strict=False))
-        return pl.coalesce(parse_exprs).alias(col)
-
-    def _build_dtype_conversion_code(
-        self, col: str, dtype: str, date_format: str = ""
-    ) -> Optional[str]:
-        """Build generated code for converting a column to the requested dtype.
-
-        ``date_format`` mirrors ``_build_dtype_conversion_expr``'s parameter
-        of the same name -- keep the two in step.
-        """
-        polars_dtype = self._map_dtype_to_polars(dtype)
-        if polars_dtype is None:
-            return None
-
-        if polars_dtype is pl.Boolean:
-            # Mirrors _build_boolean_expr exactly. Keep the two in step.
-            source = f"pl.col({col!r})"
-            token = f"{source}.cast(pl.String, strict=False).str.to_lowercase().str.strip_chars()"
-            number = f"{source}.cast(pl.Float64, strict=False)"
-            return (
-                f"pl.when({token}.is_in({_BOOLEAN_TRUE_TOKENS!r})).then(True)\n"
-                f"    .when({token}.is_in({_BOOLEAN_FALSE_TOKENS!r})).then(False)\n"
-                f"    .when({number}.is_not_null() & ({number} != 0.0)).then(True)\n"
-                f"    .when({number}.is_not_null()).then(False)\n"
-                f"    .otherwise(None)\n"
-                f"    .alias({col!r})"
-            )
-
-        if polars_dtype not in (pl.Date, pl.Datetime):
-            type_str = self._get_polars_type_string(dtype)
-            return f"pl.col('{col}').cast({type_str}, strict=False).alias('{col}')"
-
-        text_expr = f"pl.col('{col}').cast(pl.String, strict=False)"
-
-        if polars_dtype == pl.Date:
-            if date_format:
-                expressions = [
-                    f"{text_expr}.str.strptime(pl.Date, {date_format!r}, strict=False, exact=True)",
-                    f"{text_expr}.str.to_date(strict=False)",
-                    f"pl.col('{col}').cast(pl.Date, strict=False)",
-                ]
-                joined = ",\n        ".join(expressions)
-                return f"pl.coalesce([\n        {joined}\n    ]).alias('{col}')"
-
-            expressions = [
-                f"{text_expr}.str.strptime(pl.Date, {fmt!r}, strict=False, exact=True)"
-                for fmt in self._date_parse_formats()
-            ]
-            expressions.extend(
-                f"{text_expr}.str.strptime(pl.Datetime, {fmt!r}, strict=False, exact=True).cast(pl.Date, strict=False)"
-                for fmt in self._datetime_parse_formats()
-            )
-            expressions.append(f"{text_expr}.str.to_date(strict=False)")
-            expressions.append(f"pl.col('{col}').cast(pl.Date, strict=False)")
-        else:
-            expressions = [
-                f"{text_expr}.str.strptime(pl.Datetime, {fmt!r}, strict=False, exact=True)"
-                for fmt in self._datetime_parse_formats()
-            ]
-            expressions.extend(
-                f"{text_expr}.str.strptime(pl.Date, {fmt!r}, strict=False, exact=True).cast(pl.Datetime, strict=False)"
-                for fmt in self._date_parse_formats()
-            )
-            expressions.append(f"{text_expr}.str.to_datetime(strict=False)")
-            expressions.append(f"pl.col('{col}').cast(pl.Datetime, strict=False)")
-
-        joined = ",\n        ".join(expressions)
-        return f"pl.coalesce([\n        {joined}\n    ]).alias('{col}')"
-
-    def _reconcile_schema(self) -> bool:
-        """Align rows + mappings with the live upstream schema.
-
-        An upstream rename/add/drop (e.g. from Aggregate) otherwise leaves
-        this node showing stale columns until its dock is rebuilt from
-        scratch. Surviving columns keep their check/rename/dtype choices;
-        new columns arrive checked when auto-accept is on (unchecked
-        otherwise). A column that disappears from the live schema is kept
-        (not dropped): its row stays in ``table_data``/``column_order`` with
-        ``is_missing`` flipped True so its settings re-apply automatically
-        if the column reappears (mirrors Alteryx's Select tool). The
-        execution-facing dicts (``selected_columns``/``rename_mapping``/
-        ``dtype_mapping``) stay pruned to live columns only -- code
-        downstream (``apply_changes``/``get_code``) has no existence check
-        of its own and would raise on a stale name.
-
-        The user's display order is preserved: surviving rows (live or
-        missing) stay where they are and new columns are appended. In
-        particular a manual move-up/move-down must survive the
-        ``apply_changes`` pass that follows its ``data_processed`` signal.
-
-        :return: True when the view needs a repaint -- row structure
-            changed (added/dropped/reordered) OR any row's missing-state
-            flipped this call. A column going missing/reappearing alone
-            does not change row count or order, so this is broader than
-            "row structure changed" was before rows were retained.
-        """
-        if getattr(self, "incom_data", None) is None:
-            return False
-        try:
-            schema = frame_schema(self.incom_data)
-        except Exception:
-            return False
-        columns = list(schema)
-        if not isinstance(getattr(self, "table_data", None), list):
-            self.table_data = []
-        changes = getattr(self, "changes", None) or {}
-        changes.setdefault("selected_columns", [])
-        changes.setdefault("rename_mapping", {})
-        changes.setdefault("dtype_mapping", {})
-        changes.setdefault("column_order", [])
-        changes.setdefault("auto_accept_new_columns", True)
-        auto_accept = bool(changes.get("auto_accept_new_columns", True))
-        user_dtypes = set(changes.get("dtype_mapping") or {})
-        existing = {row.text: row for row in self.table_data if hasattr(row, "text")}
-        old_texts = [row.text for row in self.table_data if hasattr(row, "text")]
-        old_set = set(old_texts)
-        new_set = set(columns)
-
-        restoring = bool(
-            getattr(getattr(self, "history", None), "is_restoring_history", False)
-        )
-        if restoring:
-            # Undo/redo: the stored order wins over the on-screen order.
-            #
-            # Trusts the just-deserialized table_data completely -- each
-            # row's own is_missing/dtype, already restored from the
-            # snapshot -- rather than re-deriving them against self.schema
-            # here. history_stamp_callback() runs this (via apply_changes())
-            # before any OTHER node in the scene has re-evaluated, so an
-            # upstream node's own just-restored output hasn't propagated
-            # through processInputs() yet: self.incom_data (and therefore
-            # `schema`/`columns` above) can be transiently stale at this
-            # exact point, one full evaluation behind. Reconciling rows
-            # against a schema known to be unreliable here risks fabricating
-            # rows for names that only look "new" because of that staleness
-            # (retained rows never get dropped, so nothing is lost by
-            # deferring). The non-restoring path below is what correctly
-            # reconciles against the live schema, on the real evaluation
-            # that always follows a restore.
-            stored_order = list(changes.get("column_order") or [])
-            if not stored_order:
-                # Legacy stamp without full order: checked first, then rest.
-                # (Built only from selected_columns/columns, both already
-                # live-only, so this fallback can never name a missing column.)
-                selected_set = set(changes.get("selected_columns", []))
-                stored_order = [
-                    col for col in changes.get("selected_columns", []) if col in new_set
-                ]
-                stored_order += [col for col in columns if col not in selected_set]
-            ordered = list(stored_order)
-            selected_set = set(changes.get("selected_columns", []))
-            new_rows: list = []
-            for col in ordered:
-                row = existing.get(col)
-                if row is None:
-                    # `col` named by a stored order/selection this table
-                    # never built a row for (a pre-this-feature save file,
-                    # or column_order/table_data desynced by an external
-                    # mutation). It can be a currently-missing column, so
-                    # schema[col] is not safe -- fall back to a valid
-                    # dropdown default instead of a bare lookup that would
-                    # KeyError. "String" (not RowData's own "object"
-                    # default) since "object" isn't one of the 12 options
-                    # ComboBoxDelegate actually offers.
-                    dtype_str = str(schema[col]) if col in schema else "String"
-                    row = RowData(col in selected_set, col, dtype_str)
-                new_rows.append(row)
-            structural = old_texts != ordered
-            # Mutate in place: the live table model holds this same list object.
-            self.table_data[:] = new_rows
-            changes["selected_columns"] = [
-                col for col in changes.get("selected_columns", []) if col in new_set
-            ]
-            changes["column_order"] = ordered
-            changes["rename_mapping"] = {
-                key: value
-                for key, value in changes.get("rename_mapping", {}).items()
-                if key in new_set
-            }
-            changes["dtype_mapping"] = {
-                key: value
-                for key, value in changes.get("dtype_mapping", {}).items()
-                if key in new_set
-            }
-            self.changes = changes
-            return structural
-
-        # Refresh dtypes for surviving columns unless the user overrode them,
-        # and flag rows whose column is no longer live as missing (retained,
-        # not dropped) so their settings re-apply if the column reappears.
-        # `newly_missing_rows` (rows that flipped live -> missing THIS call,
-        # as opposed to ones already missing coming in) feeds the rename
-        # heuristic below.
-        missing_changed = False
-        newly_missing_rows: list = []
-        for row in self.table_data:
-            if not hasattr(row, "text"):
-                continue
-            now_missing = row.text not in schema
-            was_missing = getattr(row, "is_missing", False)
-            if now_missing:
-                if not was_missing:
-                    missing_changed = True
-                    newly_missing_rows.append(row)
-                    row.is_missing = True
-                continue  # nothing live to refresh dtype/rename/checked from
-            if was_missing:
-                missing_changed = True
-                # Reappeared: re-activate its execution-facing entries,
-                # pruned while it was missing, from the row's own preserved
-                # state -- matching how a live checked column always
-                # carries a dense dtype_mapping entry (see apply_changes).
-                # Adding it to user_dtypes here (not just changes) stops
-                # the auto-refresh below from immediately overwriting the
-                # dtype this same row is being restored with.
-                if row.checked:
-                    changes["dtype_mapping"][row.text] = row.dtype
-                    user_dtypes.add(row.text)
-                    if row.rename:
-                        changes["rename_mapping"][row.text] = row.rename
-            row.is_missing = False
-            if row.text not in user_dtypes and row.dtype != str(schema[row.text]):
-                row.dtype = str(schema[row.text])
-                row.date_format = ""
-
-        if old_set == new_set and old_texts:
-            # No columns added or dropped: keep the display order exactly.
-            # Rebuild the checked selection from the rows so an uncheck
-            # cannot be re-added by stale state. (Given this branch's own
-            # precondition old_set == new_set, every row here is already
-            # live -- "and row.text in new_set" is a no-op today, kept only
-            # so this stays correct on its own if that precondition ever
-            # loosens.)
-            changes["selected_columns"] = [
-                row.text
-                for row in self.table_data
-                if getattr(row, "checked", False) and row.text in new_set
-            ]
-            changes["column_order"] = list(old_texts)
-            changes["rename_mapping"] = {
-                key: value
-                for key, value in changes.get("rename_mapping", {}).items()
-                if key in new_set
-            }
-            changes["dtype_mapping"] = {
-                key: value
-                for key, value in changes.get("dtype_mapping", {}).items()
-                if key in new_set
-            }
-            self.changes = changes
-            return missing_changed
-
-        # Columns were added and/or dropped: keep every existing row in
-        # place (live or missing -- the loop above already flagged/
-        # refreshed each one), append genuinely new columns in upstream
-        # order. New arrivals are checked only when auto-accept is on
-        # (first build checks all); a brand-new column is always live, so
-        # is_missing stays its dataclass default of False.
-        brand_new_columns = [col for col in columns if col not in existing]
-
-        # An upstream rename can look identical to "one column vanished,
-        # one appeared" here -- e.g. apply_upstream_renames only follows the
-        # upstream's CURRENT rename_mapping, so an undo that removes a
-        # mapping entry outright (rather than reversing it) leaves it with
-        # no signal to act on. When it's unambiguous (exactly one row went
-        # missing and exactly one column is genuinely new this call), reuse
-        # the row's identity instead of retaining a phantom "missing" row
-        # alongside a freshly created one for what's really the same slot.
-        if len(newly_missing_rows) == 1 and len(brand_new_columns) == 1:
-            renamed_row = newly_missing_rows[0]
-            old_text, new_text = renamed_row.text, brand_new_columns[0]
-            renamed_row.text = new_text
-            renamed_row.is_missing = False
-            for key in ("rename_mapping", "dtype_mapping"):
-                mapping = changes.get(key)
-                if isinstance(mapping, dict) and old_text in mapping:
-                    mapping[new_text] = mapping.pop(old_text)
-            brand_new_columns = []
-
-        new_rows = list(self.table_data)
-        first_build = not old_texts
-        for col in brand_new_columns:
-            new_rows.append(
-                RowData(bool(auto_accept) or first_build, col, str(schema[col]))
-            )
-        structural = (old_texts != [row.text for row in new_rows]) or missing_changed
-        # Mutate in place: the live table model holds this same list object.
-        self.table_data[:] = new_rows
-        changes["selected_columns"] = [
-            row.text
-            for row in new_rows
-            if getattr(row, "checked", False) and row.text in new_set
-        ]
-        changes["column_order"] = [row.text for row in new_rows]
-        changes["rename_mapping"] = {
-            key: value
-            for key, value in changes.get("rename_mapping", {}).items()
-            if key in new_set
-        }
-        changes["dtype_mapping"] = {
-            key: value
-            for key, value in changes.get("dtype_mapping", {}).items()
-            if key in new_set
-        }
-        self.changes = changes
-        return structural
-
-    def _refresh_live_view(self) -> None:
-        """Repaint the open table after a schema change that needs a redraw.
-
-        Covers rows added/dropped/reordered, or a row's missing-state
-        flipped. Uses a model reset (never a bare layoutChanged, which
-        segfaults with an active selection) and emits no data_processed, so
-        this cannot recurse into handleDataChanged.
-        """
-        widget = getattr(self, "table_widget", None)
-        if widget is None:
-            return
-        try:
-            view = getattr(self, "table_view", None)
-            if view is not None:
-                try:
-                    view.clearSelection()
-                except RuntimeError:
-                    pass
-            widget.beginResetModel()
-            widget.endResetModel()
-        except RuntimeError:
-            pass
-
-    def apply_changes(self) -> None:
-        """Apply changes from self.changes to self.data"""
-        global_logger.debug(
-            "📋 SelectContent: Applying column selection and transformation changes"
-        )
-
-        # Reconcile first so a renamed upstream column flows through even
-        # while this node's dock is open.
-        needs_repaint = self._reconcile_schema()
-        if needs_repaint:
-            self._refresh_live_view()
-
-        # Ensure we have both incoming data and changes to apply
-        if (
-            getattr(self, "changes", None) is not None
-            and getattr(self, "incom_data", None) is not None
-        ):
-            selected_columns = self.changes["selected_columns"]
-            available_columns = list(frame_schema(self.incom_data))
-
-            # First time with data: select all columns by default
-            if not selected_columns:
-                selected_columns = available_columns
-                self.changes["selected_columns"] = selected_columns
-
-            global_logger.debug(
-                f"📊 SelectContent: Available columns: {available_columns}"
-            )
-            global_logger.debug(
-                f"📊 SelectContent: Requested columns: {selected_columns}"
-            )
-
-            # Validate that selected columns exist in the incoming data
-            valid_columns = []
-            invalid_columns = []
-
-            for col in selected_columns:
-                if col in available_columns:
-                    valid_columns.append(col)
-                else:
-                    invalid_columns.append(col)
-
-            if invalid_columns:
-                global_logger.warning(
-                    f"⚠️ SelectContent: Invalid columns found and will be skipped: {invalid_columns}"
-                )
-                global_logger.info(
-                    f"📊 SelectContent: Available columns are: {available_columns}"
-                )
-
-            # If no valid columns, use all available columns
-            if not valid_columns:
-                valid_columns = available_columns
-                global_logger.warning(
-                    "⚠️ SelectContent: No valid columns selected, using all available columns"
-                )
-                self.changes["selected_columns"] = valid_columns
-            else:
-                # Update changes to only include valid columns
-                if len(valid_columns) != len(selected_columns):
-                    self.changes["selected_columns"] = valid_columns
-                    global_logger.info(
-                        f"📊 SelectContent: Updated selection to {len(valid_columns)} valid columns"
-                    )
-
-            global_logger.info(
-                f"📊 SelectContent: Applying changes to {len(valid_columns)} valid columns"
-            )
-
-            try:
-                global_logger.debug(
-                    f"📋 SelectContent: Selecting columns: {valid_columns}"
-                )
-                self.data = self.incom_data.select(valid_columns)
-                global_logger.info(
-                    f"✅ SelectContent: Successfully selected {len(valid_columns)} columns"
-                )
-            except Exception as e:
-                global_logger.error(
-                    f"❌ SelectContent: Failed to select columns: {str(e)}"
-                )
-                # Fallback: try to select all available columns
-                try:
-                    global_logger.warning(
-                        "🔄 SelectContent: Attempting fallback to all available columns"
-                    )
-                    self.data = self.incom_data.select(available_columns)
-                    self.changes["selected_columns"] = available_columns
-                    global_logger.info(
-                        f"✅ SelectContent: Fallback successful - selected all {len(available_columns)} columns"
-                    )
-                except Exception as fallback_error:
-                    global_logger.error(
-                        f"❌ SelectContent: Fallback also failed: {str(fallback_error)}"
-                    )
-                    self.data = None
-                    return
-        else:
-            global_logger.warning(
-                "⚠️ SelectContent: Cannot apply changes - missing incoming data or changes configuration"
-            )
-
-        # Apply data type changes if any (only for columns that exist in the data)
-        if self.data is not None:
-            current_schema = frame_schema(self.data)
-            date_formats = self._date_format_by_column()
-            exprs = []
-            for col, dtype in self.changes["dtype_mapping"].items():
-                if col not in current_schema:
-                    global_logger.warning(
-                        f"⚠️ SelectContent: Skipping type conversion for missing column '{col}'"
-                    )
-                    continue
-
-                if self._dtype_matches(current_schema[col], dtype):
-                    global_logger.debug(
-                        f"📋 SelectContent: Column '{col}' already {dtype}, skipping no-op conversion"
-                    )
-                    continue
-
-                global_logger.debug(
-                    f"📋 SelectContent: Converting column '{col}' to type '{dtype}'"
-                )
-                expr = self._build_dtype_conversion_expr(
-                    col, dtype, date_formats.get(col, "")
-                )
-                if expr is None:
-                    global_logger.warning(
-                        f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}', skipping conversion"
-                    )
-                    continue
-                exprs.append((col, dtype, expr))
-
-            if exprs:
-                # One with_columns([...]) call builds a single projection
-                # instead of one per column, letting Polars evaluate every
-                # conversion in a single pass over the frame.
-                try:
-                    self.data = self.data.with_columns([expr for _, _, expr in exprs])
-                    for col, dtype, _ in exprs:
-                        global_logger.info(
-                            f"✅ SelectContent: Successfully converted column '{col}' to {dtype}"
-                        )
-                except Exception:
-                    # Fall back to applying one at a time so a single bad
-                    # conversion can't block the others (only reachable for
-                    # an eager DataFrame, since a LazyFrame defers errors
-                    # past with_columns() to collect time).
-                    for col, dtype, expr in exprs:
-                        try:
-                            self.data = self.data.with_columns(expr)
-                            global_logger.info(
-                                f"✅ SelectContent: Successfully converted column '{col}' to {dtype}"
-                            )
-                        except Exception as e:
-                            global_logger.error(
-                                f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"
-                            )
-
-        # Apply renaming if any
-        if self.changes["rename_mapping"]:
-            rename_dict = self.changes["rename_mapping"]
-            global_logger.debug(f"📋 SelectContent: Renaming columns: {rename_dict}")
-            self.data = self.data.rename(rename_dict)
-            global_logger.info(
-                f"✅ SelectContent: Successfully renamed {len(rename_dict)} columns"
-            )
-
-        # Summary log
-        if hasattr(self, "data") and self.data is not None:
-            final_shape = frame_shape(self.data)
-            global_logger.info(
-                f"🎯 SelectContent: Column selection completed - Final DataFrame shape: {final_shape}"
-            )
-        else:
-            global_logger.warning(
-                "⚠️ SelectContent: No output data generated after applying changes"
-            )
-
-    def process_data_changes(
-        self, data_: list[list]
-    ) -> tuple[list[str], dict[str, str], dict[str, str]]:
-        global_logger.debug(
-            f"📋 SelectContent: Processing data changes for {len(data_)} columns"
-        )
-
-        # Store the changes in a serializable format
-        auto_accept = bool((self.changes or {}).get("auto_accept_new_columns", True))
-        self.changes = {
-            "selected_columns": [],
-            "rename_mapping": {},
-            "dtype_mapping": {},
-            "column_order": [
-                row.text
-                for row in getattr(self, "table_data", [])
-                if hasattr(row, "text")
-            ],
-            "auto_accept_new_columns": auto_accept,
-        }
-
-        # Extract selected columns, their new names and data types
-        for column_info in data_:
-            column_name, data_type, new_name = column_info
-            self.changes["selected_columns"].append(column_name)
-            global_logger.trace(
-                f"📋 SelectContent: Processing column '{column_name}' -> type: {data_type}, name: {new_name}"
-            )
-
-            if new_name:
-                self.changes["rename_mapping"][column_name] = new_name
-
-            if data_type:
-                self.changes["dtype_mapping"][column_name] = data_type
-
-        if not self.changes["column_order"]:
-            # No live rows (e.g. headless caller): fall back to checked order.
-            self.changes["column_order"] = list(self.changes["selected_columns"])
-
-        return (
-            self.changes["selected_columns"],
-            self.changes["rename_mapping"],
-            self.changes["dtype_mapping"],
-        )
-
-    def update_data_dtype(
-        self, selected_columns: list[str], rename_mapping: dict, dtype_mapping: dict
-    ) -> None:
-        """Update self.data based on the processed changes"""
-        global_logger.debug(
-            f"📋 SelectContent: Updating data types for {len(selected_columns)} columns"
-        )
-
-        # Select only the specified columns from incom_data
-        self.data = self.incom_data.select(selected_columns)
-        global_logger.info(
-            f"📊 SelectContent: Selected {len(selected_columns)} columns from input data"
-        )
-
-        # Apply data type changes if any
-        for col, dtype in dtype_mapping.items():
-            try:
-                global_logger.debug(
-                    f"🔄 SelectContent: Converting column '{col}' to type '{dtype}'"
-                )
-                expr = self._build_dtype_conversion_expr(col, dtype)
-                if expr is None:
-                    global_logger.warning(
-                        f"⚠️ SelectContent: Unknown data type '{dtype}' for column '{col}'"
-                    )
-                    continue
-
-                self.data = self.data.with_columns(expr)
-                global_logger.trace(
-                    f"✅ SelectContent: Column '{col}' converted to {dtype}"
-                )
-            except Exception as e:
-                global_logger.error(
-                    f"❌ SelectContent: Failed to convert column '{col}' to {dtype}: {str(e)}"
-                )
-
-        # Apply renaming if any (only for columns that exist in the data)
-        if rename_mapping and self.data is not None:
-            current_columns = list(frame_schema(self.data))
-            # Filter rename mapping to only include existing columns
-            valid_rename_mapping = {
-                old_name: new_name
-                for old_name, new_name in rename_mapping.items()
-                if old_name in current_columns
-            }
-            invalid_columns = set(rename_mapping.keys()) - set(current_columns)
-
-            if invalid_columns:
-                global_logger.warning(
-                    f"⚠️ SelectContent: Skipping rename for missing columns: {invalid_columns}"
-                )
-
-            if valid_rename_mapping:
-                try:
-                    global_logger.debug(
-                        f"🏷️ SelectContent: Renaming {len(valid_rename_mapping)} columns"
-                    )
-                    self.data = self.data.rename(valid_rename_mapping)
-                    global_logger.info(
-                        "✅ SelectContent: Column renaming completed successfully"
-                    )
-                except Exception as e:
-                    global_logger.error(
-                        f"❌ SelectContent: Failed to rename columns: {str(e)}"
-                    )
-
-    def handleDataChanged(self, data_: list) -> None:
-        if self.history.is_restoring_history:
-            global_logger.trace(
-                "📋 SelectContent: Skipping data change handling - restoring history"
-            )
-            return
-
-        global_logger.debug(
-            f"📋 SelectContent: Handling data changes for {len(data_)} items"
-        )
-
-        # Store old state before changes
-        old_changes = {
-            "selected_columns": (
-                self.changes["selected_columns"].copy()
-                if hasattr(self, "changes")
-                else []
-            ),
-            "rename_mapping": (
-                self.changes["rename_mapping"].copy()
-                if hasattr(self, "changes")
-                else {}
-            ),
-            "dtype_mapping": (
-                self.changes["dtype_mapping"].copy() if hasattr(self, "changes") else {}
-            ),
-            "auto_accept_new_columns": (
-                self.changes.get("auto_accept_new_columns", True)
-                if hasattr(self, "changes")
-                else True
-            ),
-            "column_order": (
-                self.changes["column_order"].copy()
-                if hasattr(self, "changes") and "column_order" in self.changes
-                else (
-                    [row.text for row in self.table_data if hasattr(row, "text")]
-                    if hasattr(self, "table_data")
-                    else []
-                )
-            ),
-        }
-
-        # Process the new changes
-        self.process_data_changes(data_)
-        self.apply_changes()
-        self._refresh_select_counts()
-
-        # Store history only if there are actual changes
-        if old_changes != self.changes:
-            history_data = {
-                "node": self.node,
-                "old_changes": old_changes,
-                "new_changes": {
-                    "selected_columns": self.changes["selected_columns"].copy(),
-                    "rename_mapping": self.changes["rename_mapping"].copy(),
-                    "dtype_mapping": self.changes["dtype_mapping"].copy(),
-                    "auto_accept_new_columns": self.changes.get(
-                        "auto_accept_new_columns", True
-                    ),
-                    "column_order": self.changes["column_order"].copy(),
-                },
-            }
-
-            self.history.storeHistory(
-                desc="Column Selection/Rename/Type Changed",
-                data=history_data,
-                setModified=True,
-            )
-
-        # self.node.scene.has_been_modified = True
-        # self.node.scene.history.storeHistory("Input Modified")
-
-        # self.process_data_changes(
-        #     data_)
-        # self.apply_changes()
-
-        self.evaluate.emit()
-
-    def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
-        """Callback for undo/redo operations.
-
-        The scene snapshot has already restored the model (table rows and
-        ``changes``) before this runs, so the payload's old/new diff must
-        NOT be re-applied here: it describes the edit that produced the
-        applied stamp, and picking its "old" side would step back twice.
-        The only job left is re-running the pipeline and re-projecting
-        the widgets from the restored model.
-        """
-        del history_data, is_undo
-        # Legacy stamps predate the auto-accept toggle.
-        if isinstance(self.changes, dict):
-            self.changes.setdefault("auto_accept_new_columns", True)
-
-        # Apply the changes and update the table
-        self.apply_changes()
-        widget = getattr(self, "table_widget", None)
-        if widget is not None:
-            try:
-                # A snapshot restore replaces `table_data` wholesale, which
-                # breaks the list identity the live model edits in place.
-                # Re-point it so later moves/checks mutate `table_data`.
-                if getattr(widget, "_data", None) is not self.table_data:
-                    try:
-                        widget.beginResetModel()
-                        widget._data = self.table_data
-                        widget.endResetModel()
-                    except RuntimeError:
-                        widget._data = self.table_data
-                widget.update_from_changes(self.changes)
-            except RuntimeError:
-                pass
-        self._sync_widgets_from_model()
-
-    def get_code(self) -> str:
-        if self.data is None or not self.incoming_variable:
-            # Fallback: always define the output so downstream code never
-            # NameErrors (or SyntaxErrors on an empty incoming variable).
-            code = ["import polars as pl"]
-            if self.incoming_variable:
-                code.append(f"{self.variable_name} = {self.incoming_variable}")
-            else:
-                code.append(f"{self.variable_name} = pl.DataFrame()")
-            return "\n".join(code) + "\n"
-
-        if not self.changes["selected_columns"]:
-            # No selection: keep everything (matches live apply_changes).
-            return f"{self.variable_name} = {self.incoming_variable}\n"
-
-        code_lines = []
-
-        # Get selected columns using the stored changes
-        selected_columns = [f"'{col}'" for col in self.changes["selected_columns"]]
-        columns_str = ", ".join(selected_columns)
-        code_lines.append(
-            f"{self.variable_name} = {self.incoming_variable}.select([{columns_str}])"
-        )
-
-        # Apply data type changes from stored changes, batched into a single
-        # with_columns([...]) call instead of one call per column. Columns
-        # whose incoming dtype already matches the target are skipped so a
-        # chain of Select nodes doesn't keep re-casting -- or, worse,
-        # re-running the Date/Datetime strptime/coalesce parse -- on every hop.
-        incoming_schema = frame_schema(self.incom_data)
-        date_formats = self._date_format_by_column()
-        dtype_expr_codes = [
-            expr_code
-            for col, dtype in self.changes["dtype_mapping"].items()
-            if not self._dtype_matches(incoming_schema.get(col), dtype)
-            and (
-                expr_code := self._build_dtype_conversion_code(
-                    col, dtype, date_formats.get(col, "")
-                )
-            )
-        ]
-        if dtype_expr_codes:
-            joined = ",\n    ".join(dtype_expr_codes)
-            code_lines.append(
-                f"{self.variable_name} = {self.variable_name}.with_columns([\n"
-                f"    {joined}\n"
-                f"])"
-            )
-
-        # Apply column renaming from stored changes
-        if self.changes["rename_mapping"]:
-            rename_dict = self.changes["rename_mapping"]
-            rename_str = ", ".join(
-                [f"'{old}': '{new}'" for old, new in rename_dict.items()]
-            )
-            code_lines.append(
-                f"{self.variable_name} = {self.variable_name}.rename({{{rename_str}}})"
-            )
-
-        return "\n".join(code_lines) + "\n"
-
-    def _sparse_dtype_mapping(self, changes: dict) -> dict:
-        """Serialized dtype_mapping with no-op entries stripped.
-
-        An entry is only worth persisting when it genuinely differs from
-        the column's incoming dtype -- mirrors Alteryx only writing a field
-        that was "modified or explicitly interacted with." Pure: never
-        mutates ``changes``/``self.changes`` (serialize() can run mid-edit,
-        since every undo/redo snapshot goes through it). Fails safe to
-        "always write" via ``_dtype_matches``'s own None-safe False return
-        whenever the source dtype can't be determined (no incoming data,
-        column missing from the live schema, unrecognised dtype string) --
-        never drops an entry it isn't sure is redundant.
-
-        Compares each entry's own stored target dtype, not the matching
-        row's ``.dtype`` display field: the two are normally in lockstep
-        (``process_data_changes`` always sets both from the same value),
-        but a row the "refresh dtype unless user overrode it" path in
-        ``_reconcile_schema`` is protecting can keep an older display value
-        even while ``dtype_mapping`` holds the real, current target -- and
-        it's the target that determines whether re-casting is a no-op.
-        """
+        if "settings" not in data and ("table_data" in data or "changes" in data):
+            data = dict(data)
+            data["settings"] = self._legacy_settings(data)
+        return super().deserialize(data, hashmap)
+
+    def _legacy_settings(self, data: dict) -> dict:
+        changes = data.get("changes") or {}
         dtype_mapping = changes.get("dtype_mapping") or {}
-        if not dtype_mapping:
-            return {}
-        schema = frame_schema(getattr(self, "incom_data", None))
+        rename_mapping = changes.get("rename_mapping") or {}
+        selected = set(changes.get("selected_columns") or [])
+        columns = []
+        for row in data.get("table_data") or []:
+            name = str(row.get("text") or row.get("column_name") or "")
+            if not name:
+                continue
+            checked = row.get("checked")
+            if checked is None:
+                checked = name in selected
+            dtype = self._legacy_dtype(
+                row.get("dtype") or dtype_mapping.get(name, "String")
+            )
+            columns.append(
+                {
+                    "name": name,
+                    "selected": bool(checked),
+                    "dtype": dtype,
+                    "rename": str(row.get("rename") or rename_mapping.get(name) or ""),
+                    "date_format": str(row.get("date_format") or ""),
+                    "dtype_custom": name in dtype_mapping,
+                }
+            )
+        if not columns:
+            for name in changes.get("selected_columns") or []:
+                columns.append(
+                    {
+                        "name": str(name),
+                        "selected": True,
+                        "dtype": self._legacy_dtype(dtype_mapping.get(name, "String")),
+                        "rename": str(rename_mapping.get(name) or ""),
+                        "date_format": "",
+                        "dtype_custom": name in dtype_mapping,
+                    }
+                )
         return {
-            column: dtype
-            for column, dtype in dtype_mapping.items()
-            if not self._dtype_matches(schema.get(column), dtype)
+            "columns": columns,
+            "auto_accept_new_columns": bool(
+                changes.get("auto_accept_new_columns", True)
+            ),
         }
 
-    def serialize(self):
-        res = super().serialize()
-        res["table_data"] = [
-            dataclasses.asdict(item) if dataclasses.is_dataclass(item) else item
-            for item in self.table_data
-        ]
-        changes = getattr(
-            self,
-            "changes",
-            {
-                "selected_columns": [],
-                "rename_mapping": {},
-                "dtype_mapping": {},
-                "auto_accept_new_columns": True,
-            },
-        )
-        # Shallow copy: swapping in a sparse dtype_mapping below must not
-        # mutate the live self.changes dict -- serialize() runs mid-edit
-        # too (every undo/redo snapshot calls it via createHistoryStamp).
-        serialized_changes = dict(changes)
-        serialized_changes["dtype_mapping"] = self._sparse_dtype_mapping(changes)
-        res["changes"] = serialized_changes
-        return res
-
-    def _densify_dtype_mapping(self) -> None:
-        """Backfill dtype_mapping entries a sparse serialize() omitted.
-
-        Mirrors process_data_changes' original unconditional write: every
-        checked row with a non-empty dtype string gets a dtype_mapping
-        entry, whether or not it was written to disk. Runs unconditionally
-        on every deserialize (disk load AND every undo/redo snapshot
-        restore) so the in-memory dict is 100% identical to what today's
-        dense writer would have produced -- an already-dense payload
-        backfills nothing (every key already present). Deliberately does
-        not consult incom_data/frame_schema at all: a straight copy from
-        each row's own stored dtype, so it's correct even before incom_data
-        is set (deserialize() runs before this node's first eval on a
-        fresh disk load).
-
-        Must run before apply_changes(): _reconcile_schema() derives
-        user_dtypes = set(dtype_mapping) to decide whether a column was
-        explicitly overridden and exempt from schema-driven auto-refresh.
-        A sparse dtype_mapping would make every omitted (matching-at-save-
-        time) column look un-overridden, silently activating that
-        currently-dormant auto-refresh the moment the upstream schema next
-        changes -- an orthogonal behaviour change this feature must not
-        introduce.
-        """
-        dtype_mapping = self.changes.setdefault("dtype_mapping", {})
-        for row in self.table_data:
-            if not getattr(row, "checked", False):
-                continue
-            text = getattr(row, "text", "")
-            if text in dtype_mapping:
-                continue
-            dtype = getattr(row, "dtype", "")
-            if dtype:
-                dtype_mapping[text] = dtype
-
-    def deserialize(self, data, hashmap={}):
-        res = super().deserialize(data, hashmap)
-        try:
-            # Load the table data and convert dictionaries back to RowData objects
-            raw_table_data = data.get("table_data", [])
-            self.table_data = []
-
-            for item in raw_table_data:
-                if isinstance(item, dict):
-                    # Convert dictionary back to RowData object
-                    self.table_data.append(
-                        RowData(
-                            checked=item.get("checked", False),
-                            text=item.get("text", ""),
-                            dtype=item.get("dtype", "object"),
-                            rename=item.get("rename", ""),
-                            is_missing=item.get("is_missing", False),
-                            date_format=item.get("date_format", ""),
-                        )
-                    )
-                else:
-                    # Already a RowData object (shouldn't happen but handle it)
-                    self.table_data.append(item)
-
-            self.changes = data.get(
-                "changes",
-                {
-                    "selected_columns": [],
-                    "rename_mapping": {},
-                    "dtype_mapping": {},
-                    "auto_accept_new_columns": True,
-                },
-            )
-            if isinstance(self.changes, dict):
-                self.changes.setdefault("auto_accept_new_columns", True)
-                self.changes.setdefault("dtype_mapping", {})
-                self._densify_dtype_mapping()
-
-            # Apply the changes if we have incoming data
-            if hasattr(self, "incom_data") and self.incom_data is not None:
-                self.apply_changes()
-
-            return True and res
-        except Exception as e:
-            dumpException(e)
-        return res
+    @staticmethod
+    def _legacy_dtype(dtype) -> str:
+        text = str(dtype)
+        return {
+            "object": "String",
+            "int64": "Int64",
+            "float64": "Float64",
+            "bool": "Boolean",
+            "datetime64": "Datetime",
+        }.get(text, text)
 
 
 @register_node(PreparationNodes.SELECT, NodeTypes.PREPARATION)
-class TriggerNode_Select(TriggerNode):
+class TriggerNode_Select(ShapingNode):
+    """Select node on the shared shaping execution and Config Dock system."""
+
     icon = "node_select"
     node_code = PreparationNodes.SELECT
-    node_title = "Select"
     node_type = NodeTypes.PREPARATION
+    node_title = "Select"
+    content_class = SelectContent
+    output_text = ("Out",)
     content_label_objname = "trigger_node_select"
-    style = {}
-
-    def __init__(self, scene) -> None:
-        global_logger.info("🔧 SelectNode: Initializing Select node")
-        super().__init__(scene, inputs=[1], outputs=[3])
-        global_logger.debug("📋 SelectNode: Node created with 1 input and 3 outputs")
-        self.eval()
-        global_logger.trace("✅ SelectNode: Initialization completed")
-
-    def initInnerClasses(self) -> None:
-        global_logger.debug("🔧 SelectNode: Initializing inner classes")
-        self.content: SelectContent = SelectContent(self)
-        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
-        self.content.evaluate.connect(self.onInputChanged)
-        self.param: list = []
-        global_logger.trace("✅ SelectNode: Inner classes initialized")
+    style = {}  # noqa: RUF012 - shared empty node style
 
     def processInputs(self, input_values):
-        global_logger.info("🔄 SelectNode: Starting input processing")
-
         try:
             input_node = self.getInput(0)
-            socket_index = self.getSocketValue(input_node.outputs, self)
-            input_value = input_values[0][socket_index]
-
-            global_logger.debug(
-                f"� SelectNode: Retrieved input data, socket index: {socket_index}"
-            )
-
-            if input_value:
-                global_logger.info("✅ SelectNode: Input data received, processing...")
-
-                # Validate input data
-                input_data = input_value.get("data")
-                variable_name = input_value.get("variable_name", "unknown")
-
-                if input_data is not None:
-                    global_logger.info(
-                        f"📊 SelectNode: Processing DataFrame with shape {frame_shape(input_data)} for variable '{variable_name}'"
-                    )
-
-                    self.markDirty(False)
-                    self.markInvalid(False)
-
-                    # Custom processing logic for the Select node
-                    self.content.incom_data = input_data
-                    self.content.incoming_variable = variable_name
-
-                    # Follow an upstream rename so downstream configs keep
-                    # working instead of going stale.
-                    followed = False
-                    try:
-                        rename_map = upstream_rename_map(input_node)
-                        if rename_map:
-                            followed = self.content.apply_upstream_renames(rename_map)
-                    except (AttributeError, ValueError, RuntimeError) as follow_error:
-                        global_logger.warning(
-                            f"⚠️ SelectNode: Could not follow upstream renames: {follow_error}"
-                        )
-
-                    # Apply column selection and transformations
-                    self.content.apply_changes()
-                    if followed:
-                        self.content._refresh_live_view()
-
-                    # Validate output data
-                    if hasattr(self.content, "data") and self.content.data is not None:
-                        output_shape = frame_shape(self.content.data)
-                        global_logger.info(
-                            f"📊 SelectNode: Output DataFrame shape: {output_shape}"
-                        )
-
-                        self.param = [
-                            {
-                                "data": self.content.data,
-                                "variable_name": self.content.variable_name,
-                            }
-                        ]
-
-                        # NOTE: no evalChildren() here. The base
-                        # evalImplementation evaluates children after this
-                        # returns and the new value is committed; evaluating
-                        # them here would hand them the previous output.
-                        global_logger.info(
-                            "✅ SelectNode: Processing completed successfully"
-                        )
-
-                        return self.param
-                    else:
-                        global_logger.error(
-                            "❌ SelectNode: No output data generated after processing"
-                        )
-                        self.markDirty(True)
-                        self.markInvalid(True)
-                        return None
-                else:
-                    global_logger.warning("⚠️ SelectNode: Input value contains no data")
-                    self.markDirty(True)
-                    self.markInvalid(True)
-                    return None
-
-            else:
-                global_logger.warning("⚠️ SelectNode: No input data available")
-                self.markDirty(True)
-                self.markInvalid(True)
-                self.grNode.setToolTip("Input is not connected")
-                return None
-
-        except Exception as e:
-            global_logger.error(
-                f"❌ SelectNode: Error during input processing: {str(e)}"
-            )
-            global_logger.critical(
-                f"🚨 SelectNode: Exception details: {type(e).__name__}: {str(e)}"
-            )
-            self.markDirty(True)
-            self.markInvalid(True)
-            self.grNode.setToolTip(f"Processing error: {str(e)}")
-            return None
-
-    def get_code(self):
-        return self.content.get_code()
+            if input_node is not None:
+                self.content.apply_upstream_renames(upstream_rename_map(input_node))
+        except AttributeError, ValueError, RuntimeError:
+            pass
+        return super().processInputs(input_values)

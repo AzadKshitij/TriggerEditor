@@ -49,6 +49,7 @@ from trigger_designer.core.node_configuration import (
     NodeTypes,
     register_node,
 )
+from trigger_designer.core.shaping.common import live_sample
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
@@ -937,7 +938,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
         # "clean" while self.value is still the previous, stale result.
         self.param = [
             {
-                "data": self.content.data,
+                "data": live_sample(self.content.data),
                 "variable_name": self.content.variable_name,
             }
         ]

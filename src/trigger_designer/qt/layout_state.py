@@ -231,9 +231,11 @@ def apply_default_layout(window: QMainWindow) -> None:
         ("configDock", Qt.DockWidgetArea.LeftDockWidgetArea),
         ("loggingDock", Qt.DockWidgetArea.BottomDockWidgetArea),
         ("dataPreviewDock", Qt.DockWidgetArea.BottomDockWidgetArea),
+        ("problemsDock", Qt.DockWidgetArea.BottomDockWidgetArea),
     )
     logging: QWidget | None = None
     preview: QWidget | None = None
+    problems: QWidget | None = None
     for attribute, area in default_areas:
         dock = getattr(window, attribute, None)
         if dock is None:
@@ -245,6 +247,11 @@ def apply_default_layout(window: QMainWindow) -> None:
             logging = dock
         elif attribute == "dataPreviewDock":
             preview = dock
+        elif attribute == "problemsDock":
+            problems = dock
     if logging is not None and preview is not None:
         window.tabifyDockWidget(logging, preview)
+    if logging is not None and problems is not None:
+        window.tabifyDockWidget(logging, problems)
+    if logging is not None:
         logging.raise_()

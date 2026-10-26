@@ -11,6 +11,7 @@ from trigger_designer.qt.docks.data_preview import DataPreviewDock
 from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
+from trigger_designer.qt.docks.problems_dock import ProblemsDock
 from trigger_designer.qt.helpers.dock_chrome import (
     enable_tab_drag_out,
     install_tab_only_chrome,
@@ -120,6 +121,11 @@ class MainWindowMenuMixin:
             preview_action.setText("Data Preview")
             preview_action.setShortcut(QKeySequence("Ctrl+Shift+D"))
             self.windowMenu.addAction(preview_action)
+
+        if hasattr(self, "problemsDock") and self.problemsDock is not None:
+            problems_action = self.problemsDock.toggleViewAction()
+            problems_action.setText("Problems")
+            self.windowMenu.addAction(problems_action)
 
         if hasattr(self, "configDock") and self.configDock is not None:
             config_action = self.configDock.toggleViewAction()
@@ -272,6 +278,14 @@ class MainWindowDockMixin:
         install_tab_only_chrome(self.loggingDock)
         install_tab_only_chrome(self.dataPreviewDock)
 
+    def createProblemsDock(self) -> None:
+        """Create the Problems dock, tabified with Logs and Data Preview."""
+        self.problemsDock = ProblemsDock(self)
+        self.problemsDock.setObjectName("ProblemsDock")
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.problemsDock)
+        self.tabifyDockWidget(self.loggingDock, self.problemsDock)
+        install_tab_only_chrome(self.problemsDock)
+
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""
         return getattr(self, "loggingDock", None)
@@ -286,6 +300,16 @@ class MainWindowDockMixin:
         if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
             self.dataPreviewDock.switch_to_design_window(design_window)
 
+    def switchProblemsDock(self, design_window) -> None:
+        if hasattr(self, "problemsDock") and self.problemsDock:
+            self.problemsDock.switch_to_design_window(design_window)
+
+    def raiseProblemsDock(self) -> None:
+        dock = getattr(self, "problemsDock", None)
+        if dock is not None:
+            dock.show()
+            dock.raise_()
+
     def onDesignWindowClose(self, design_window, event) -> None:
         """Handle design window close event to clean up logs and previews"""
         design_window_id = str(id(design_window))
@@ -293,6 +317,8 @@ class MainWindowDockMixin:
             self.loggingDock.remove_design_window(design_window_id)
         if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
             self.dataPreviewDock.remove_design_window(design_window_id)
+        if hasattr(self, "problemsDock") and self.problemsDock:
+            self.problemsDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
         """Build the status bar with the scene-position readout.

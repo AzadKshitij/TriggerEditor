@@ -242,6 +242,8 @@ Import from `qt/widgets/common/__init__.py`:
 - `EmptyStateLabel` — only empty state. Centered gray, default text `"No incoming data available"`. Gate at top of `create_layout`: `if incom_data is None: dock.addWidget(EmptyStateLabel()); return`.
 - `ConfigSection(title, info)` — `QGroupBox#ConfigSection` + `QLabel#ConfigSectionInfo` (wordWrap). Never `layout().setSpacing(10)` / `setMargins(15)` — see `unique.py:87` violation. **Target:** flatten the group-box border; the heading + hairline is the section.
 - `ColumnChecklist(columns, checked, max_height)` — scrollable checkboxes, `changed(list)` signal. Never hand-rolled `QListWidget` checkboxes (`unique.py`, `join.py` violations).
+- `ColumnPicker(columns, checked)` — 30px token field with a searchable popover checklist and `All` / `None`. Use it when a node has several column roles (Pivot, Unpivot, group selectors) instead of stacking full checklists. The popover reuses `ColumnChecklist`; the picker is one undo composite.
+- `RuleStack` — ordered cards with an optional summary header, collapse and duplicate. A collapsed card keeps the list readable; the summary states the rule in the user's terms. Use `duplicate_requested` only when the list item is copyable.
 - `NoWheelComboBox` — drops wheel events unless popup open. Use everywhere a combo sits in a scrollable dock.
 - `IconButton` / `TextButton` — see §4.
 
@@ -334,7 +336,8 @@ Qt gives an `objectName` selector (`QPushButton#IconButton`) higher specificity 
 Every `setData / move / check / sort` → `data_processed → handleDataChanged → process_data_changes + apply_changes + evaluate.emit`, as in `select.py:255`, `groupby` equivalent.
 
 - Debounce: `300ms` for text search / rename edits; immediate for check/move/combo.
-- Heavy nodes (Join, GroupBy, Formula) still live — debounce, don't add Apply buttons. `groupby.py:278` Apply and `join.py:197` Evaluate are migration targets, not patterns.
+- Heavy nodes (Join, GroupBy) still live — debounce, don't add Apply buttons. `groupby.py:278` Apply and `join.py:197` Evaluate are migration targets, not patterns.
+- Formula sections and the Filter expression editor are the SQL-text exception. Text updates the model and diagnostics live, but node evaluation waits until focus leaves the node's SQL editors, the user Runs, or selection/save/close needs the current text. Do not add Apply buttons for that path.
 - History: store diff only (`old != new`), verb format `"Noun Verbed"` e.g. `"Column Selection/Rename/Type Changed"`.
 - Dock preservation: `ConfigDock.updateConfig` (`node_config.py:30`) skips wipe when `id(content) == _current_key`, suspends `_suspend_input_tracking/_suspend_node_evaluation` during `create_layout`. Do not rebuild widgets on every keystroke.
 
@@ -343,7 +346,7 @@ Every `setData / move / check / sort` → `data_processed → handleDataChanged 
 ## 7. QSS / theming
 
 - Zero inline `setStyleSheet` in node files and shared dock chrome. Use `objectName` + `resources/qt/themes/base.qss` / `qss/_style.scss`.
-- Required Config Dock objectNames: `ConfigSection`, `ConfigSectionInfo`, `EmptyStateLabel`, `ColumnChecklist`, `IconButton`, `OptionsButton`, `TextButton`, `DataTypeCombo`, `JoinSourceLeft`/`JoinSourceRight`, `JoinSourceHeaderLeft`/`Right`, `JoinDtypeLabel`.
+- Required Config Dock objectNames: `ConfigSection`, `ConfigSectionInfo`, `EmptyStateLabel`, `ColumnChecklist`, `ColumnPicker`, `ColumnPickerPopup`, `ColumnToken`, `ConfigSummary`, `RuleSummary`, `RuleNumber`, `DayToggle`, `SuffixEdit`, `IconButton`, `OptionsButton`, `TextButton`, `DataTypeCombo`, `JoinSourceLeft`/`JoinSourceRight`, `JoinSourceHeaderLeft`/`Right`, `JoinDtypeLabel`.
 - Dock chrome objectNames: `PreviewStrip`, `PreviewNodeChip`, `PreviewNodeLabel`, `PreviewPinDot`, `PreviewSocketChip`, `PreviewSocketCombo`, `PreviewSearchEdit`, `PreviewScopeCombo`, `PreviewCountsChip`, `PreviewStatusLabel`, `PreviewLimitedBadge`, `PreviewSourceBadge`, `PreviewPinButton`, `DockTabOnlyTitleBar`.
 - The dock-chrome boundary is explicit: §§1–7 govern node config docks; shared dock chrome follows §7 and the new §§8–14. Both use `objectName` + `base.qss`/`_style.scss`, restate hover/pressed per `objectName`, and use no inline QSS.
 - `base.qss` is a `str.format` template: only keys present in the theme JSONs may be used. The full key set is grouped in `qt/theme_manager.py` (`TOKEN_GROUPS`): **Surfaces, Text, Accent, Status, Borders, Controls, Canvas, Code, Nodes**. `tests/unit/test_theme_tokens.py` asserts every `{token}` exists in every built-in theme (they all define the same key set) and that every colour token is exposed in the editor — run it after editing any theme file.

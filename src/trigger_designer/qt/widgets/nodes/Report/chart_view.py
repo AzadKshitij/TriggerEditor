@@ -1,117 +1,72 @@
-"""matplotlib view for the Graph node's chart window.
+"""matplotlib implementation of the Graph window's chart renderer.
 
-The Config Dock configures the chart; the window draws it, and this module is
-the only renderer. Everything drawn comes from a
-:class:`~trigger_designer.core.charts.ChartSpec`, so no frame, setting or node
-state crosses this boundary.
+The Config Dock configures the chart; the window draws it. Everything drawn
+comes from a :class:`~trigger_designer.core.charts.ChartSpec`, so no frame,
+setting or node state crosses this boundary. The shared message-page
+behaviour and the label logic that keeps both renderers in agreement live
+in :mod:`chart_renderer`; nothing about drawing is shared with
+``pyqtgraph_view`` on purpose.
 
-``nodes/__init__`` keeps this module and ``chart_window`` out of its startup
-import sweep, so matplotlib loads the first time a chart window actually opens
-rather than on every launch.
+``nodes/__init__`` keeps this module, ``chart_window``, ``chart_renderer``
+and ``pyqtgraph_view`` out of its startup import sweep, so matplotlib loads
+the first time a chart window actually opens rather than on every launch.
 """
 
 from __future__ import annotations
 
-import math
-from collections.abc import Sequence
 from typing import Any
 
 import numpy as np
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-from qtpy.QtCore import QCoreApplication, QEvent, Qt
+from qtpy.QtCore import QCoreApplication, QEvent
 from qtpy.QtGui import QPalette
-from qtpy.QtWidgets import QApplication, QLabel, QStackedLayout, QWidget
+from qtpy.QtWidgets import QApplication, QWidget
 
-from trigger_designer.core.charts import ChartSeries, ChartSpec
-
-#: Categorical series colours, in drawing order.
-SERIES_COLORS: tuple[str, ...] = (
-    "#4c9aff",
-    "#f2994a",
-    "#27ae60",
-    "#eb5757",
-    "#9b51e0",
-    "#2d9cdb",
-    "#f2c94c",
-    "#6fcf97",
+from trigger_designer.core.charts import ChartSpec
+from trigger_designer.qt.widgets.nodes.Report.chart_renderer import (
+    SERIES_COLORS,
+    ChartRenderer,
+    categories,
+    category_labels,
+    format_value,
+    is_numeric_x,
+    to_float,
+    x_name,
 )
-
-#: Longest category label drawn on the axis before it is elided.
-_MAX_TICK_CHARS = 18
-
-#: Most category ticks to label before thinning them out.
-_MAX_LABELLED_TICKS = 40
 
 #: Cursor distance, in pixels, at which a point or bar counts as hovered.
 _HOVER_RADIUS_PX = 12
 
 
-def _to_float(value: Any) -> float:
-    """Best-effort numeric conversion; non-numeric values become NaN."""
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return float("nan")
+class _ChartToolbar(NavigationToolbar2QT):
+    """Toolbar without the subplot editor.
+
+    ``configure_subplots`` calls ``subplots_adjust`` and switches the figure
+    to a tight layout, which conflicts with the constrained layout the chart
+    draws with; the rest of the toolbar (home, pan, zoom, save) is fine.
+    """
+
+    toolitems = tuple(
+        item for item in NavigationToolbar2QT.toolitems if item[0] != "Subplots"
+    )
 
 
-def _format_value(value: float) -> str:
-    """Compact number for a tooltip: no trailing zeros, thousands separated."""
-    if math.isnan(value):
-        return "\u2014"
-    if float(value).is_integer():
-        return f"{int(value):,}"
-    return f"{value:,.6g}"
+def create_view(parent: QWidget | None = None) -> ChartView:
+    """The renderer-module contract ``chart_window`` builds against."""
+    return ChartView(parent)
 
 
-def _tick_label(value: Any) -> str:
-    text = "null" if value is None else str(value)
-    if len(text) > _MAX_TICK_CHARS:
-        return text[: _MAX_TICK_CHARS - 1] + "\u2026"
-    return text
+def create_toolbar(view: ChartView, parent: QWidget | None = None) -> QWidget:
+    """The matplotlib half of the per-renderer toolbar contract."""
+    return _ChartToolbar(view.canvas, parent)
 
 
-def _x_name(value: Any) -> str:
-    """Full X value for a tooltip; the axis label is the elided form."""
-    return "null" if value is None else str(value)
-
-
-def _is_numeric_x(series: Sequence[ChartSeries]) -> bool:
-    values = [value for item in series for value in item.x]
-    if not values:
-        return False
-    try:
-        for value in values:
-            float(value)
-    except (TypeError, ValueError):
-        return False
-    return True
-
-
-def _categories(series: Sequence[ChartSeries]) -> list[Any]:
-    """Distinct X values in first-seen order, across every series."""
-    seen: dict[Any, None] = {}
-    for item in series:
-        for value in item.x:
-            seen.setdefault(value, None)
-    return list(seen)
-
-
-def _category_labels(categories: list[Any]) -> list[str]:
-    """Elide every label, and blank out all but ~40 so the axis stays readable."""
-    step = max(1, len(categories) // _MAX_LABELLED_TICKS)
-    return [
-        _tick_label(value) if index % step == 0 else ""
-        for index, value in enumerate(categories)
-    ]
-
-
-class ChartView(QWidget):
-    """Draws a ``ChartSpec``; an empty or invalid spec draws its message."""
+class ChartView(ChartRenderer):
+    """Draws a ``ChartSpec`` with matplotlib; a message draws its text."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self._spec: ChartSpec | None = None
         self._text_color = "#000000"
         self._background = "#ffffff"
 
@@ -125,18 +80,10 @@ class ChartView(QWidget):
         self._y_label = ""
         self._show_series_names = False
 
-        self.message = QLabel(self)
-        self.message.setObjectName("EmptyStateLabel")
-        self.message.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.message.setWordWrap(True)
-
         self.figure = Figure(layout="constrained")
         self.canvas = FigureCanvasQTAgg(self.figure)
         self.axes = self.figure.add_subplot(111)
 
-        self._stack = QStackedLayout(self)
-        self._stack.setContentsMargins(0, 0, 0, 0)
-        self._stack.addWidget(self.message)
         self._stack.addWidget(self.canvas)
 
         self._hover_cid = self.canvas.mpl_connect(
@@ -144,56 +91,14 @@ class ChartView(QWidget):
         )
         self.set_spec(None)
 
-    @property
-    def spec(self) -> ChartSpec | None:
-        """The spec currently drawn."""
-        return self._spec
+    # -- contract hooks ----------------------------------------------------
+    def plot_is_live(self) -> bool:
+        return self.canvas is not None
 
-    @property
-    def showing_message(self) -> bool:
-        """Whether the message page is up instead of the plot."""
-        return self._stack.currentWidget() is self.message
+    def plot_page(self) -> QWidget:
+        return self.canvas
 
-    def set_spec(self, spec: ChartSpec | None) -> None:
-        self._spec = spec
-        if self.canvas is None:
-            # Disposed: the window that owned this view is gone.
-            return
-        if spec is None or not spec.renderable:
-            self._reset()
-            self.message.setText(
-                spec.message if spec is not None else "No incoming data."
-            )
-            self._stack.setCurrentWidget(self.message)
-            return
-        self._render(spec)
-        self._stack.setCurrentWidget(self.canvas)
-
-    # -- drawing ---------------------------------------------------------
-    def dispose(self) -> None:
-        """Release the canvas in its own event-loop pass.
-
-        Used by tests before the shared widget cleanup runs, so a figure is
-        never destroyed in the same batch as the windows around it.
-        """
-        canvas = getattr(self, "canvas", None)
-        if canvas is None:
-            return
-        try:
-            canvas.mpl_disconnect(self._hover_cid)
-        except (AttributeError, ValueError):
-            pass
-        self.canvas = None
-        self._annotation = None
-        try:
-            canvas.hide()
-            canvas.deleteLater()
-        except RuntimeError:
-            return
-        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
-        QApplication.processEvents()
-
-    def _reset(self) -> None:
+    def clear_plot(self) -> None:
         """Drop every drawn artist so the next render starts clean."""
         self.axes.clear()
         self._annotation = None
@@ -202,8 +107,8 @@ class ChartView(QWidget):
         self._hover_key = None
         self.canvas.draw_idle()
 
-    def _render(self, spec: ChartSpec) -> None:
-        self._reset()
+    def render_plot(self, spec: ChartSpec) -> None:
+        self.clear_plot()
         self._apply_theme()
         self.axes.set_title(spec.title)
         self.axes.set_xlabel(spec.x_column)
@@ -216,12 +121,10 @@ class ChartView(QWidget):
         if spec.chart_type == "bar":
             self._draw_bars(spec, show_legend)
         else:
-            categories = (
-                None if _is_numeric_x(spec.series) else _categories(spec.series)
-            )
-            self._draw_points(spec, categories, show_legend)
-            if categories is not None:
-                self._set_category_ticks(categories)
+            cats = None if is_numeric_x(spec.series) else categories(spec.series)
+            self._draw_points(spec, cats, show_legend)
+            if cats is not None:
+                self._set_category_ticks(cats)
         self._annotation = self.axes.annotate(
             "",
             xy=(0.0, 0.0),
@@ -240,6 +143,30 @@ class ChartView(QWidget):
         )
         self._annotation.set_visible(False)
         self.canvas.draw_idle()
+
+    # -- drawing ---------------------------------------------------------
+    def dispose(self) -> None:
+        """Release the canvas in its own event-loop pass.
+
+        Used by tests before the shared widget cleanup runs, so a figure is
+        never destroyed in the same batch as the windows around it.
+        """
+        canvas = getattr(self, "canvas", None)
+        if canvas is None:
+            return
+        try:
+            canvas.mpl_disconnect(self._hover_cid)
+        except AttributeError, ValueError:
+            pass
+        self.canvas = None
+        self._annotation = None
+        try:
+            canvas.hide()
+            canvas.deleteLater()
+        except RuntimeError:
+            return
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        QApplication.processEvents()
 
     def _apply_theme(self) -> None:
         palette = self.palette()
@@ -267,9 +194,9 @@ class ChartView(QWidget):
         frame.set_edgecolor(self._text_color)
 
     def _draw_bars(self, spec: ChartSpec, show_legend: bool) -> None:
-        categories = _categories(spec.series)
-        names = [_x_name(value) for value in categories]
-        positions = {value: index for index, value in enumerate(categories)}
+        cats = categories(spec.series)
+        names = [x_name(value) for value in cats]
+        positions = {value: index for index, value in enumerate(cats)}
         count = max(1, len(spec.series))
         width = 0.8 / count
 
@@ -283,7 +210,7 @@ class ChartView(QWidget):
                 if index is None:
                     continue
                 xs.append(index + offset)
-                ys.append(_to_float(y))
+                ys.append(to_float(y))
                 labels.append(names[index])
             if not xs:
                 continue
@@ -306,30 +233,30 @@ class ChartView(QWidget):
                         series.name,
                     )
                 )
-        self._set_category_ticks(categories)
+        self._set_category_ticks(cats)
         if show_legend:
             self._draw_legend()
 
     def _draw_points(
         self,
         spec: ChartSpec,
-        categories: list[Any] | None,
+        cats: list[Any] | None,
         show_legend: bool,
     ) -> None:
         positions = (
-            {value: index for index, value in enumerate(categories)}
-            if categories is not None
+            {value: index for index, value in enumerate(cats)}
+            if cats is not None
             else None
         )
         for order, series in enumerate(spec.series):
             color = SERIES_COLORS[order % len(SERIES_COLORS)]
             if positions is None:
-                xs = [_to_float(value) for value in series.x]
-                labels = [_format_value(value) for value in xs]
+                xs = [to_float(value) for value in series.x]
+                labels = [format_value(value) for value in xs]
             else:
                 xs = [float(positions[value]) for value in series.x]
-                labels = [_x_name(value) for value in series.x]
-            ys = [_to_float(value) for value in series.y]
+                labels = [x_name(value) for value in series.x]
+            ys = [to_float(value) for value in series.y]
             label = series.name if show_legend else None
             if spec.chart_type == "scatter":
                 self.axes.scatter(xs, ys, s=36, color=color, label=label)
@@ -340,9 +267,9 @@ class ChartView(QWidget):
         if show_legend:
             self._draw_legend()
 
-    def _set_category_ticks(self, categories: list[Any]) -> None:
-        self.axes.set_xticks(range(len(categories)))
-        self.axes.set_xticklabels(_category_labels(categories))
+    def _set_category_ticks(self, cats: list[Any]) -> None:
+        self.axes.set_xticks(range(len(cats)))
+        self.axes.set_xticklabels(category_labels(cats))
 
     # -- hover -----------------------------------------------------------
     def _on_motion(self, event: Any) -> None:
@@ -390,7 +317,7 @@ class ChartView(QWidget):
         if self._show_series_names and series_name:
             lines.append(series_name)
         lines.append(f"{self._x_label or 'X'}: {x_text}")
-        lines.append(f"{self._y_label or 'Y'}: {_format_value(y_value)}")
+        lines.append(f"{self._y_label or 'Y'}: {format_value(y_value)}")
         return "\n".join(lines)
 
     def _show_hover(self, x: float, y: float, text: str) -> None:

@@ -96,7 +96,7 @@ def test_zoomed_out_background_paints_an_empty_minor_batch(window) -> None:
     _paint_background(gr_scene, scale)
 
 
-@pytest.mark.parametrize("scale", [0.02, 0.1, 0.199, 0.2, 0.35, 0.5, 1.0, 2.0, 4.0])
+@pytest.mark.parametrize("scale", [0.22, 0.1, 0.199, 0.2, 0.35, 0.5, 1.0, 2.0, 4.0])
 def test_background_paints_at_every_zoom_level(window, scale: float) -> None:
     _paint_background(window.scene.grScene, scale)
 

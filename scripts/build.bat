@@ -38,7 +38,7 @@ if exist "build\trigger" rmdir /s /q "build\trigger"
 REM Install the locked dependencies (nodeeditor-qtpy included) and the app
 REM itself, editable, into .venv. --frozen keeps uv.lock authoritative: a
 REM stale lock fails the build instead of silently resolving new versions.
-REM --all-groups keeps the profiling tools (py-spy, snakeviz) installed.
+REM --all-groups keeps the profiling tools (py-spy, scalene, objgraph) installed.
 echo Installing locked dependencies...
 uv sync --frozen --all-groups
 if %ERRORLEVEL% NEQ 0 (

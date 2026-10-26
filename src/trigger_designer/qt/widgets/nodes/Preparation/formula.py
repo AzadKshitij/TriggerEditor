@@ -1,15 +1,13 @@
-from functools import partial
-import re
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+"""Formula node: Qt wrapper only; the logic is core/shaping/formula.py."""
 
-import duckdb
+from __future__ import annotations
+
+from functools import partial
+from typing import Any
+
 import polars as pl
-from loguru import logger
-from qtpy.QtCore import Qt, QTimer, Signal
-from qtpy.QtGui import QPixmap
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtWidgets import (
-    QApplication,
-    QComboBox,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -19,77 +17,52 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.widgets.common import (
-    EmptyStateLabel,
-    IconButton,
-    NoWheelComboBox,
-)
-from nodeeditor.utils_no_qt import dumpException
-from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
-from trigger_designer.qt.helpers import global_logger
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
     register_node,
 )
-from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
-from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
-    TriggerGraphicsNode,
-    TriggerNode,
-    frame_schema,
+from trigger_designer.core.shaping import formula as core
+from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
+from trigger_designer.qt.widgets.common import (
+    EmptyStateLabel,
+    IconButton,
+    NoWheelComboBox,
 )
-from trigger_designer.qt.widgets.sql_formula_editor import (
-    ERROR_CHECK_DEBOUNCE_MS,
-    SQLFormulaEditor,
-    SQLFormulaWidget,
-    STRING_LITERAL_RE,
-    translate_function_aliases,
-)
+from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaWidget
 
-if TYPE_CHECKING:
-    pass
-
-
-MAX_FORMULA_SECTIONS = 5
 EMPTY_TARGET_OPTION = "Select target column"
 NEW_COLUMN_OPTION = "+ add column"
 FORMULA_PLACEHOLDER = (
     "Enter formula e.g.:\nCASE WHEN [Age] > 30 THEN 'Adult' ELSE 'Young' END"
 )
-MIN_EDITOR_HEIGHT = 60
-MAX_EDITOR_HEIGHT = 600
-DEFAULT_EDITOR_HEIGHT = 120
-AUTO_DTYPE_OPTION = "Auto"
-DTYPE_OPTIONS = [
-    AUTO_DTYPE_OPTION,
-    "String",
-    "Integer",
-    "Float",
-    "Boolean",
-    "Date",
-    "Datetime",
-    "Time",
-    "Categorical",
-]
-DTYPE_TO_DUCKDB = {
-    "String": "VARCHAR",
-    "Integer": "BIGINT",
-    "Float": "DOUBLE",
-    "Boolean": "BOOLEAN",
-    "Date": "DATE",
-    "Datetime": "TIMESTAMP",
-    "Time": "TIME",
-    "Categorical": "VARCHAR",
-}
+
+
+def _dtype_label(dtype: Any) -> str:
+    base = getattr(dtype, "base_type", lambda: dtype)()
+    if base in (pl.String, pl.Categorical):
+        return "Categorical" if base == pl.Categorical else "String"
+    if base == pl.Boolean:
+        return "Boolean"
+    if base == pl.Date:
+        return "Date"
+    if base == pl.Time:
+        return "Time"
+    if isinstance(base, pl.Datetime) or base == pl.Datetime:
+        return "Datetime"
+    text = str(base)
+    if "Int" in text or "UInt" in text:
+        return "Integer"
+    if "Float" in text or "Decimal" in text:
+        return "Float"
+    return "String"
 
 
 class _ResizeGrip(QFrame):
     """Drag handle adjusting one section editor's fixed height."""
 
     def __init__(
-        self, content: "FormulaContent", section_index: int, editor: QWidget
+        self, content: FormulaContent, section_index: int, editor: QWidget
     ) -> None:
         super().__init__()
         self._content = content
@@ -98,51 +71,40 @@ class _ResizeGrip(QFrame):
         self.setObjectName("formulaResizeGrip")
         self.setFixedHeight(4)
         self.setCursor(Qt.CursorShape.SizeVerCursor)
-        self._press_y: Optional[int] = None
-        self._press_height = DEFAULT_EDITOR_HEIGHT
-        self._old_state: Optional[Dict[str, List[Dict[str, Any]]]] = None
+        self._press_y: int | None = None
+        self._press_height = core.DEFAULT_EDITOR_HEIGHT
 
     def mousePressEvent(self, event) -> None:
         self._press_y = event.globalPosition().toPoint().y()
         self._press_height = self._editor.height()
-        self._old_state = self._content._current_state()
 
     def mouseMoveEvent(self, event) -> None:
         if self._press_y is None:
             return
         delta = event.globalPosition().toPoint().y() - self._press_y
-        height = min(
-            MAX_EDITOR_HEIGHT, max(MIN_EDITOR_HEIGHT, self._press_height + delta)
+        self._editor.setFixedHeight(
+            min(
+                core.MAX_EDITOR_HEIGHT,
+                max(core.MIN_EDITOR_HEIGHT, self._press_height + delta),
+            )
         )
-        self._editor.setFixedHeight(height)
 
     def mouseReleaseEvent(self, event) -> None:
         if self._press_y is None:
             return
         self._press_y = None
-        try:
-            sections = self._content.formula_sections
-            if 0 <= self._section_index < len(sections):
-                sections[self._section_index]["editor_height"] = self._editor.height()
-                if self._old_state is not None:
-                    self._content.store_history(self._old_state)
-        except RuntimeError:
-            pass
-        self._old_state = None
+        self._content._commit_height(self._section_index, self._editor.height())
 
 
 class _FormulaCard(QFrame):
-    """Collapsible formula card: the header keeps target + type in view.
-
-    Folding is UI state only - it is never recorded in history; a structural
-    rebuild re-applies the fold from ``FormulaContent._collapsed_sections``.
-    """
+    """Collapsible formula card: the header keeps target + type in view."""
 
     toggled = Signal(bool)
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("FormulaCard")
+        self._undo_composite = True
         self._collapsed = False
 
         layout = QVBoxLayout(self)
@@ -188,71 +150,102 @@ class _FormulaCard(QFrame):
         self.set_collapsed(not self._collapsed)
 
 
-class FormulaContent(
-    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
-):
-    """Content widget for the formula node with support for multiple formulas."""
+class FormulaContent(ShapingContent):
+    """Ordered formula cards; each card edits one section in settings."""
 
-    evaluate = Signal()
-    serialized_state_schema = {
-        "formula_sections": {
-            "default": [
-                {
-                    "target_column": "",
-                    "formula_text": "",
-                    "editor_height": 120,
-                    "target_dtype": "",
-                }
-            ]
-        }
-    }
+    SETTINGS = core.DEFAULTS
+    MODULE = "trigger_designer.core.shaping.formula"
+    OUTPUT_KINDS = ("formula",)
+    INPUTS = 1
+    HISTORY = "Formula"
+    SUMMARY = "calculated columns"
 
-    def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
-        self.history = self.node.scene.history
-        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
-
-        self.formula_sections: List[Dict[str, Any]] = [self._default_section()]
-        self.section_widgets: List[Dict[str, Any]] = []
-        self.sections_layout: Optional[QVBoxLayout] = None
-        #: Folded formula cards (UI state only, never a history entry).
+        self.output_variables = [f"var_formula_{self.id}"]
+        self.variable_name = self.output_variables[0]
+        self.section_widgets: list[dict] = []
+        self.section_errors: dict[int, str] = {}
         self._collapsed_sections: set[int] = set()
-        self.add_section_button: Optional[IconButton] = None
-        self.section_count_label: Optional[QLabel] = None
 
-        self.incoming_variable: str = ""
-        self.incom_data: Optional[pl.DataFrame | pl.LazyFrame] = None
+    # -- model helpers ----------------------------------------------------
+    def _section_list(self) -> list[dict]:
+        return core.normalize({"sections": self.settings.get("sections") or []})[
+            "sections"
+        ]
 
-        self.data: Optional[pl.DataFrame | pl.LazyFrame] = None
-        self.variable_name = f"var_formula_{self.id}"
-        self.last_error: str = ""
-        self.section_errors: Dict[int, str] = {}
-        self._live_section_errors: Dict[int, str] = {}
-        self._last_logged_error: str = ""
+    def _commit(
+        self,
+        sections: list[dict],
+        text: str,
+        *,
+        structural: bool = False,
+        merge_key: str | None = None,
+        evaluate: bool = True,
+    ) -> None:
+        normalized = core.normalize({"sections": sections})["sections"]
+        if normalized == self.settings.get("sections"):
+            return
+        self.set_setting(
+            "sections",
+            normalized,
+            text,
+            merge_key,
+            structural=structural,
+            evaluate=evaluate,
+        )
 
-    @property
-    def node(self) -> "TriggerNode":
-        return self._node
+    def _configured_count(self) -> int:
+        return sum(1 for section in self._section_list() if core.is_configured(section))
 
-    @node.setter
-    def node(self, value: "TriggerNode") -> None:
-        self._node = value
+    def _available_before(self, index: int) -> list[str]:
+        columns = list(self.schema(0))
+        for section in self._section_list()[:index]:
+            target = section["target_column"].strip()
+            if target and target not in columns:
+                columns.append(target)
+        return columns
 
-    def initUI(self, icon_: Optional[QPixmap] = None) -> None:
-        """Initialize the user interface for the formula content widget."""
-        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon)
+    def _target_items(self, index: int) -> list[str]:
+        available = self._available_before(index)
+        current = self._section_list()[index]["target_column"].strip()
+        items = [EMPTY_TARGET_OPTION, NEW_COLUMN_OPTION]
+        if current and current not in available:
+            items.append(current)
+        items.extend(available)
+        return items
 
+    def _dtype_state(self, index: int) -> tuple[str, bool]:
+        section = self._section_list()[index]
+        target = section["target_column"].strip()
+        schema = self.schema(0)
+        if target and target in schema:
+            return _dtype_label(schema[target]), False
+        return section.get("target_dtype") or core.AUTO_DTYPE_OPTION, True
+
+    def _known_targets(self, exclude: int) -> set[str]:
+        known = {name.lower() for name in self.schema(0)}
+        for index, section in enumerate(self._section_list()):
+            if index == exclude:
+                continue
+            target = section["target_column"].strip()
+            if target:
+                known.add(target.lower())
+        return known
+
+    # -- dock construction ----------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        """Create the layout for the formula content widget."""
-        # Stale widget from a previous build: the dock deletes its children on
-        # rebuild, so the reference must not survive into ``dock_actions()``.
+        self.cancel_pending_evaluation()
         self.add_section_button = None
-        if self.incom_data is None:
+        if not self.ready():
             dock_layout.addWidget(EmptyStateLabel())
             return
 
-        self.formula_sections = self._normalize_sections(self.formula_sections)
+        self.add_section_button = IconButton.themed(
+            "Add formula",
+            rsm_icon=self.node.rsm.get("icon_add"),
+        )
+        self.add_section_button.clicked.connect(self._add_section)
 
         container = QWidget()
         main_layout = QVBoxLayout(container)
@@ -260,246 +253,62 @@ class FormulaContent(
         main_layout.setSpacing(2)
         self.sections_layout = QVBoxLayout()
         self.sections_layout.setSpacing(2)
-
-        # The add action rides on the dock's label row (ConfigDock mounts
-        # ``dock_actions()`` there), so the cards start right under the label
-        # instead of below a 30px command row of their own.
-        self.add_section_button = IconButton.themed(
-            "Add formula",
-            rsm_icon=self.node.rsm.get("icon_add"),
-        )
-        self.add_section_button.clicked.connect(self.add_formula_section)
-        self.section_count_label: Optional[QLabel] = None
-
         main_layout.addLayout(self.sections_layout)
         main_layout.addStretch()
-
         dock_layout.addWidget(container, 1)
 
-        self._rebuild_section_widgets()
+        self._rebuild_cards()
 
-    def dock_actions(self) -> List[QWidget]:
-        """One obvious action, mounted on the dock's label row."""
+    def dock_actions(self) -> list:
         button = getattr(self, "add_section_button", None)
         return [button] if button is not None else []
 
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
-        """Configuration summary for the dock context strip."""
         chips: list[tuple[str, str]] = []
-        if self.incom_data is not None:
-            try:
-                columns = list(frame_schema(self.incom_data))
-            except Exception:
-                columns = []
-            if columns:
-                chips.append((f"{len(columns)} columns", ""))
-        filled = len(self._configured_sections())
-        total = len(self.formula_sections)
-        chips.append((f"{filled} of {total} formulas", "accent" if filled else ""))
+        columns = self.schema(0)
+        if columns:
+            chips.append((f"{len(columns)} columns", ""))
+        chips.append(
+            (
+                f"{self._configured_count()} of {len(self._section_list())} formulas",
+                "accent" if self._configured_count() else "",
+            )
+        )
         return chips, ""
 
-    def _default_section(self) -> Dict[str, Any]:
-        return {
-            "target_column": "",
-            "formula_text": "",
-            "editor_height": 120,
-            "target_dtype": "",
-        }
+    def _refresh_counts(self) -> None:
+        self.refresh_dock_context()
 
-    def _normalize_sections(
-        self, sections: Optional[List[Dict[str, Any]]]
-    ) -> List[Dict[str, Any]]:
-        normalized_sections: List[Dict[str, Any]] = []
-
-        for section in sections or []:
-            try:
-                editor_height = int(section.get("editor_height", 120))
-            except (TypeError, ValueError):
-                editor_height = 120
-            target_dtype = str(section.get("target_dtype") or "")
-            if target_dtype not in DTYPE_OPTIONS[1:]:
-                target_dtype = ""
-            normalized_sections.append(
-                {
-                    "target_column": str(section.get("target_column") or ""),
-                    "formula_text": str(section.get("formula_text") or ""),
-                    "editor_height": min(600, max(60, editor_height)),
-                    "target_dtype": target_dtype,
-                }
-            )
-
-        if not normalized_sections:
-            normalized_sections.append(self._default_section())
-
-        return normalized_sections[:MAX_FORMULA_SECTIONS]
-
-    def _sync_sections_from_widgets(self) -> None:
-        for index, widgets in enumerate(self.section_widgets):
-            try:
-                self.formula_sections[index]["formula_text"] = (
-                    widgets["formula_input"].get_text() or ""
-                )
-            except (AttributeError, RuntimeError, IndexError):
-                continue
-
-    def _current_state(self) -> Dict[str, List[Dict[str, Any]]]:
-        self._sync_sections_from_widgets()
-        return {
-            "formula_sections": [section.copy() for section in self.formula_sections]
-        }
-
-    def _configured_sections(self) -> List[Tuple[int, Dict[str, Any]]]:
-        self._sync_sections_from_widgets()
-        return [
-            (index, section.copy())
-            for index, section in enumerate(self.formula_sections)
-            if section["target_column"].strip() and section["formula_text"].strip()
-        ]
-
+    # -- cards ------------------------------------------------------------
     @staticmethod
-    def polars_dtype_to_label(dtype: Any) -> str:
-        """Map a polars dtype to a dropdown label ("" when unmapped)."""
-        match = re.match(r"[A-Za-z0-9]+", str(dtype))
-        key = match.group() if match else ""
-        mapping = {
-            "String": "String",
-            "Utf8": "String",
-            "Int8": "Integer",
-            "Int16": "Integer",
-            "Int32": "Integer",
-            "Int64": "Integer",
-            "UInt8": "Integer",
-            "UInt16": "Integer",
-            "UInt32": "Integer",
-            "UInt64": "Integer",
-            "Float32": "Float",
-            "Float64": "Float",
-            "Boolean": "Boolean",
-            "Date": "Date",
-            "Datetime": "Datetime",
-            "Time": "Time",
-            "Categorical": "Categorical",
-            "Enum": "Categorical",
-        }
-        return mapping.get(key, "")
+    def _clear_layout(layout: QVBoxLayout | None) -> bool:
+        if layout is None:
+            return False
+        try:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+        except RuntimeError:
+            # The Config Dock cleared while a modal dialog was open.
+            return False
+        return True
 
-    def _dtype_state_for_section(self, section_index: int) -> tuple:
-        """Return (current label, enabled) for a section's dtype dropdown.
-
-        Existing input columns show their actual type, disabled. New targets
-        stay editable so a cast can be picked before the first run.
-        """
-        section = self.formula_sections[section_index]
-        target = section["target_column"].strip()
-        if self.incom_data is not None and target:
-            try:
-                schema = (
-                    self.incom_data.collect_schema()
-                    if isinstance(self.incom_data, pl.LazyFrame)
-                    else self.incom_data.schema
-                )
-                for column_name, dtype in schema.items():
-                    if column_name == target:
-                        return self.polars_dtype_to_label(dtype), False
-            except Exception:
-                pass
-        return section.get("target_dtype") or AUTO_DTYPE_OPTION, True
-
-    def _set_section_dtype(self, section_index: int, target_dtype: str) -> None:
-        old_state = {
-            "formula_sections": [section.copy() for section in self.formula_sections]
-        }
-        normalized = target_dtype.strip()
-        if normalized not in DTYPE_OPTIONS[1:]:
-            normalized = ""
-
-        if self.formula_sections[section_index].get("target_dtype", "") == normalized:
-            return
-
-        self.formula_sections[section_index]["target_dtype"] = normalized
-        self.update_data()
-        self.store_history(old_state)
-
-    def _available_columns_before_section(self, section_index: int) -> List[str]:
-        available_columns: List[str] = []
-        if self.incom_data is not None:
-            available_columns.extend(list(frame_schema(self.incom_data)))
-
-        for section in self.formula_sections[:section_index]:
-            target_column = section["target_column"].strip()
-            if target_column and target_column not in available_columns:
-                available_columns.append(target_column)
-
-        return available_columns
-
-    def _target_items_for_section(self, section_index: int) -> List[str]:
-        available_columns = self._available_columns_before_section(section_index)
-        current_target = self.formula_sections[section_index]["target_column"].strip()
-
-        items = [EMPTY_TARGET_OPTION, NEW_COLUMN_OPTION]
-        if current_target and current_target not in available_columns:
-            items.append(current_target)
-        items.extend(available_columns)
-        return items
-
-    def _set_target_selector_value(
-        self, selector: QComboBox, target_column: str
-    ) -> None:
-        selected_text = target_column or EMPTY_TARGET_OPTION
-        index = selector.findText(selected_text)
-        selector.setCurrentIndex(index if index >= 0 else 0)
-
-    def _clear_layout(self, layout: Optional[QVBoxLayout]) -> None:
+    def _rebuild_cards(self) -> None:
+        layout = getattr(self, "sections_layout", None)
         if layout is None:
             return
-
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            child_layout = item.layout()
-            if widget is not None:
-                widget.deleteLater()
-            elif child_layout is not None:
-                self._clear_layout(child_layout)
-            del item
-
-    def _refresh_input_tracking(self) -> None:
-        # Formula manages its own commit/history explicitly (debounce timer,
-        # focus-out, selector handlers). Auto-tracking is left disabled: it
-        # would store a history entry (and serialize the scene) per keystroke
-        # while never recomputing with the new text.
-        self.clearInputWidgets()
-
-    def _rebuild_section_widgets(self) -> None:
-        # Remember the focused editor so a structural rebuild (add/remove,
-        # or an undo that changes shape) can hand focus back instead of
-        # dropping it onto the scene.
-        focus_index: Optional[int] = None
-        focus_pos = 0
-        try:
-            focused = QApplication.focusWidget()
-            for index, widgets in enumerate(self.section_widgets):
-                editor = widgets.get("formula_input")
-                if editor is not None and (
-                    editor is focused or editor.isAncestorOf(focused)
-                ):
-                    focus_index = index
-                    try:
-                        focus_pos = editor.editor.textCursor().position()
-                    except (AttributeError, RuntimeError):
-                        pass
-                    break
-        except RuntimeError:
-            pass
-
-        if self.sections_layout is None:
+        self.cancel_pending_evaluation()
+        if not self._clear_layout(layout):
+            self.sections_layout = None
+            self.section_widgets = []
+            self.section_errors = {}
             return
-
-        self._clear_layout(self.sections_layout)
         self.section_widgets = []
-        self._live_section_errors.clear()
-
-        for index, section in enumerate(self.formula_sections):
+        self.section_errors = {}
+        sections = self._section_list()
+        for index, section in enumerate(sections):
             if index > 0:
                 separator = QFrame()
                 separator.setObjectName("formulaSeparator")
@@ -507,60 +316,52 @@ class FormulaContent(
                 self.sections_layout.addWidget(separator)
 
             card = _FormulaCard()
-            header_layout = card.header_layout
-            body_layout = card.body_layout
+            target_selector = NoWheelComboBox()
+            target_selector.setMinimumHeight(30)
+            target_selector.addItems(self._target_items(index))
+            target = section["target_column"]
+            found = target_selector.findText(target or EMPTY_TARGET_OPTION)
+            target_selector.setCurrentIndex(max(0, found))
+            target_selector.activated.connect(
+                partial(self._on_target_selected, index, target_selector)
+            )
+
+            dtype_selector = NoWheelComboBox()
+            dtype_selector.setMinimumHeight(30)
+            dtype_selector.addItems(core.DTYPE_OPTIONS)
+            label, enabled = self._dtype_state(index)
+            dtype_selector.setCurrentText(label)
+            dtype_selector.setEnabled(enabled)
+            dtype_selector.activated.connect(
+                partial(self._on_dtype_selected, index, dtype_selector)
+            )
 
             remove_button = IconButton.themed(
                 "Remove formula",
                 rsm_icon=self.node.rsm.get("icon_remove"),
             )
-            remove_button.clicked.connect(partial(self.remove_formula_section, index))
+            remove_button.clicked.connect(partial(self._remove_section, index))
 
-            target_selector = NoWheelComboBox()
-            target_selector.addItems(self._target_items_for_section(index))
-            self._set_target_selector_value(target_selector, section["target_column"])
-            target_selector.activated.connect(
-                partial(self.handle_column_activation, index)
-            )
-            dtype_selector = NoWheelComboBox()
-            dtype_selector.addItems(DTYPE_OPTIONS)
-            dtype_label, dtype_enabled = self._dtype_state_for_section(index)
-            dtype_selector.setCurrentText(dtype_label or AUTO_DTYPE_OPTION)
-            dtype_selector.setEnabled(dtype_enabled)
-            dtype_selector.setToolTip("Data type for the target column")
-            dtype_selector.activated.connect(
-                partial(self.handle_dtype_activation, index)
-            )
-            header_layout.addWidget(target_selector, 1)
-            header_layout.addWidget(dtype_selector, 1)
-            header_layout.addStretch()
-            header_layout.addWidget(remove_button)
+            card.header_layout.addWidget(target_selector, 1)
+            card.header_layout.addWidget(dtype_selector, 1)
+            card.header_layout.addStretch()
+            card.header_layout.addWidget(remove_button)
 
             formula_input = SQLFormulaWidget()
+            formula_input._undo_composite = True
             formula_input.set_placeholder_text(FORMULA_PLACEHOLDER)
-            formula_input.setFixedHeight(section.get("editor_height", 120))
-            formula_input.set_available_columns(
-                self._available_columns_before_section(index)
-            )
+            formula_input.setFixedHeight(section["editor_height"])
+            formula_input.set_available_columns(self._available_before(index))
             if section["formula_text"]:
                 formula_input.set_text(section["formula_text"])
-            formula_input.set_validate_callback(
-                partial(self.validate_section_text, index)
+            formula_input.set_validate_callback(partial(self._validate_section, index))
+            formula_input.textChanged.connect(self._mark_text_dirty)
+            self._debounced(
+                formula_input.textChanged,
+                partial(self._commit_text, index, evaluate=False),
             )
-            debounce_timer = QTimer(card)
-            debounce_timer.setSingleShot(True)
-            debounce_timer.setInterval(ERROR_CHECK_DEBOUNCE_MS)
-            debounce_timer.timeout.connect(partial(self._debounced_commit, index))
-            formula_input.textChanged.connect(debounce_timer.start)
-            formula_input.textChanged.connect(
-                partial(self._on_section_text_changed, index)
-            )
-            formula_input.editor.allErrorsDetected.connect(
-                partial(self._on_section_diagnostics, index)
-            )
-            formula_input.editingFinished.connect(debounce_timer.stop)
             formula_input.editingFinished.connect(
-                partial(self.commit_formula_text, index)
+                partial(self._on_editor_finished, index)
             )
 
             error_label = QLabel()
@@ -568,10 +369,9 @@ class FormulaContent(
             error_label.setWordWrap(True)
             error_label.hide()
 
-            body_layout.addWidget(formula_input)
-            body_layout.addWidget(_ResizeGrip(self, index, formula_input))
-            body_layout.addWidget(error_label)
-
+            card.body_layout.addWidget(formula_input)
+            card.body_layout.addWidget(_ResizeGrip(self, index, formula_input))
+            card.body_layout.addWidget(error_label)
             card.set_collapsed(index in self._collapsed_sections)
             card.toggled.connect(partial(self._on_card_toggled, index))
 
@@ -579,834 +379,254 @@ class FormulaContent(
             self.section_widgets.append(
                 {
                     "card": card,
-                    "remove_button": remove_button,
                     "target_selector": target_selector,
                     "dtype_selector": dtype_selector,
                     "formula_input": formula_input,
                     "error_label": error_label,
+                    "target": section["target_column"],
+                    "dtype": section["target_dtype"],
                 }
             )
+        self._refresh_counts()
 
-        self._refresh_section_controls()
-        self._refresh_section_dependencies()
-        self._refresh_section_errors()
-        self._refresh_input_tracking()
-
-        if focus_index is not None and focus_index < len(self.section_widgets):
-            try:
-                new_editor = self.section_widgets[focus_index]["formula_input"].editor
-                new_editor.setFocus()
-                cursor = new_editor.textCursor()
-                cursor.setPosition(min(focus_pos, len(new_editor.toPlainText())))
-                new_editor.setTextCursor(cursor)
-            except (AttributeError, IndexError, KeyError, RuntimeError):
-                pass
-
-    def _refresh_section_errors(self) -> None:
-        """Show per-section error messages on their cards."""
-        for index, widgets in enumerate(self.section_widgets):
-            label = widgets.get("error_label")
-            if label is None:
-                continue
-            try:
-                message = self.section_errors.get(index, "")
-                if index in self._live_section_errors:
-                    live = self._live_section_errors[index]
-                    if live or (
-                        widgets["formula_input"].get_text()
-                        != self.formula_sections[index]["formula_text"]
-                    ):
-                        message = live
-                label.setText(message)
-                label.setVisible(bool(message))
-            except RuntimeError:
-                continue
-
-    def _on_section_text_changed(self, section_index: int) -> None:
-        self._live_section_errors[section_index] = ""
-        self._refresh_section_errors()
-
-    def _on_section_diagnostics(self, section_index: int, messages: list[str]) -> None:
-        self._live_section_errors[section_index] = messages[0] if messages else ""
-        self._refresh_section_errors()
     def _on_card_toggled(self, index: int, collapsed: bool) -> None:
-        """Remember a card fold; UI state only, so no history entry."""
         if collapsed:
             self._collapsed_sections.add(index)
         else:
             self._collapsed_sections.discard(index)
 
-    def _refresh_section_controls(self) -> None:
-        section_count = len(self.formula_sections)
+    # -- commits ----------------------------------------------------------
+    def _on_target_selected(self, index: int, selector) -> None:
+        text = selector.currentText()
+        if text == NEW_COLUMN_OPTION:
+            self._prompt_new_column(index, selector)
+            return
+        target = "" if text == EMPTY_TARGET_OPTION else text
+        sections = self._section_list()
+        if sections[index]["target_column"] == target:
+            return
+        sections[index]["target_column"] = target
+        self._commit(sections, "Formula Target Changed", structural=True)
 
-        if self.add_section_button is not None:
-            self.add_section_button.setEnabled(section_count < MAX_FORMULA_SECTIONS)
+    def _prompt_new_column(self, index: int, selector) -> None:
+        known = self._known_targets(index)
+        text = self._section_list()[index]["target_column"]
+        with self._hold_deferred_evaluation():
+            while True:
+                name, accepted = QInputDialog.getText(
+                    None, "Add Column", "Column name:", text=text
+                )
+                if not accepted:
+                    pending = self._pending_evaluate
+                    sections = self._section_list()
+                    target = (
+                        sections[index]["target_column"]
+                        if 0 <= index < len(sections)
+                        else ""
+                    )
+                    self._reset_target_selector(selector, target)
+                    self._pending_evaluate = pending
+                    return
+                name = name.strip()
+                if not name:
+                    QMessageBox.warning(
+                        self, "Add Column", "Column name cannot be empty."
+                    )
+                    continue
+                if name.lower() in known:
+                    QMessageBox.warning(
+                        self, "Add Column", f"Column '{name}' already exists."
+                    )
+                    text = name
+                    continue
+                sections = self._section_list()
+                sections[index]["target_column"] = name
+                self._commit(sections, "Formula Target Changed", structural=True)
+                return
 
-        self.refresh_dock_context()
-
-        for index, widgets in enumerate(self.section_widgets):
-            widgets["remove_button"].setEnabled(section_count > 1)
-
-    def refresh_dependencies_for_new_data(self) -> None:
-        """Refresh selectors when the input schema changed (no widget rebuild).
-
-        The config dock no longer rebuilds on every eval, so without this the
-        target/dtype dropdowns would go stale when new columns arrive. Only
-        combo items are touched: editors keep focus and scroll is preserved.
-        """
-        if self.incom_data is None or not self.section_widgets:
+    @staticmethod
+    def _reset_target_selector(selector, target: str) -> None:
+        """Put a cancelled Add Column combo back without rebuilding the dock."""
+        try:
+            selector.blockSignals(True)
+        except RuntimeError:
             return
         try:
-            columns = list(frame_schema(self.incom_data))
-        except Exception:
-            return
-        if columns != getattr(self, "_dep_columns", None):
-            self._dep_columns = columns
+            selector.setCurrentText(target or EMPTY_TARGET_OPTION)
+        except RuntimeError:
+            pass
+        finally:
             try:
-                self._refresh_section_dependencies()
+                selector.blockSignals(False)
             except RuntimeError:
                 pass
 
-    def _refresh_section_dependencies(self) -> None:
-        for index, widgets in enumerate(self.section_widgets):
-            selector = widgets["target_selector"]
-            current_target = self.formula_sections[index]["target_column"]
+    def _on_dtype_selected(self, index: int, selector) -> None:
+        text = selector.currentText()
+        target_dtype = "" if text == core.AUTO_DTYPE_OPTION else text
+        sections = self._section_list()
+        if sections[index]["target_dtype"] == target_dtype:
+            return
+        sections[index]["target_dtype"] = target_dtype
+        self._commit(sections, "Formula Type Changed")
 
-            selector.blockSignals(True)
-            selector.clear()
-            selector.addItems(self._target_items_for_section(index))
-            self._set_target_selector_value(selector, current_target)
-            selector.blockSignals(False)
+    def _commit_text(self, index: int, *, evaluate: bool = True) -> None:
+        # Capture every editor, not only the one whose debounce fired. A
+        # model update re-projects the other cards, so committing one section
+        # alone would write stale model text back into a sibling editor that
+        # the user has typed in but whose debounce has not fired yet.
+        sections, changed = self._editor_sections()
+        if changed:
+            merge_key = f"formula-text-{index}" if changed == [index] else None
+            self._commit(
+                sections,
+                "Formula Text Changed",
+                merge_key=merge_key,
+                evaluate=evaluate,
+            )
+            for changed_index in changed:
+                self._refresh_error(changed_index)
+        if evaluate:
+            self._evaluate_pending()
 
-            dtype_selector = widgets.get("dtype_selector")
-            if dtype_selector is not None:
-                dtype_label, dtype_enabled = self._dtype_state_for_section(index)
-                dtype_selector.blockSignals(True)
-                dtype_selector.setCurrentText(dtype_label or AUTO_DTYPE_OPTION)
-                dtype_selector.setEnabled(dtype_enabled)
-                dtype_selector.blockSignals(False)
-
+    def _editor_sections(self) -> tuple[list[dict], list[int]]:
+        """Return the model sections with every editor's current text applied."""
+        sections = self._section_list()
+        changed: list[int] = []
+        for index, widgets in enumerate(getattr(self, "section_widgets", ())):
+            if index >= len(sections):
+                break
             try:
-                widgets["formula_input"].set_available_columns(
-                    self._available_columns_before_section(index)
-                )
-            except (AttributeError, RuntimeError):
+                text = widgets["formula_input"].get_text() or ""
+            except KeyError, RuntimeError:
                 continue
-
-    def add_formula_section(self) -> None:
-        """Add a new formula section up to the configured limit."""
-        if self.history.is_restoring_history:
-            return
-
-        if len(self.formula_sections) >= MAX_FORMULA_SECTIONS:
-            return
-
-        old_state = self._current_state()
-        self.formula_sections.append(self._default_section())
-        self.section_errors.clear()
-        self._rebuild_section_widgets()
-        self.update_data()
-        self.store_history(old_state)
-
-    def remove_formula_section(self, section_index: int) -> None:
-        """Remove a formula section while preserving at least one section."""
-        if self.history.is_restoring_history:
-            return
-
-        if len(self.formula_sections) <= 1:
-            return
-
-        old_state = self._current_state()
-        self.formula_sections.pop(section_index)
-        self.section_errors.clear()
-        # Folded cards are addressed by index; keep the folds pointing at the
-        # same sections after the shift.
-        self._collapsed_sections = {
-            (i if i < section_index else i - 1)
-            for i in self._collapsed_sections
-            if i != section_index
-        }
-        self._rebuild_section_widgets()
-        self.update_data()
-        self.store_history(old_state)
-
-    def handle_column_activation(self, section_index: int, index: int) -> None:
-        """Handle target-column selection for a formula section."""
-        if self.history.is_restoring_history:
-            return
-
-        try:
-            selector: QComboBox = self.section_widgets[section_index]["target_selector"]
-            selected_text = selector.itemText(index)
-        except (IndexError, KeyError, RuntimeError):
-            return
-
-        if selected_text == NEW_COLUMN_OPTION:
-            self._prompt_new_column(section_index)
-            return
-
-        if selected_text == EMPTY_TARGET_OPTION:
-            self._set_section_target(section_index, "")
-            return
-
-        self._set_section_target(section_index, selected_text)
-
-    def _known_target_names(self, exclude_section: Optional[int] = None) -> set:
-        """Lowercased input + section target names for duplicate detection."""
-        known = set()
-        if self.incom_data is not None:
-            known.update(col.strip().lower() for col in frame_schema(self.incom_data))
-        for index, section in enumerate(self.formula_sections):
-            if index == exclude_section:
+            if sections[index]["formula_text"] == text:
                 continue
-            target = section["target_column"].strip()
-            if target:
-                known.add(target.lower())
-        return known
+            sections[index]["formula_text"] = text
+            changed.append(index)
+        return sections, changed
 
-    @staticmethod
-    def _new_column_error(name: str, known: set) -> Optional[str]:
-        """Validate a new column name. Returns an error message or None."""
-        if not name:
-            return "Column name cannot be empty."
-        if name.lower() in known:
-            return f"Column '{name}' already exists."
-        return None
+    def _on_editor_finished(self, index: int) -> None:
+        """Commit on focus-out without evaluating until every editor is left."""
+        self._commit_text(index, evaluate=False)
+        self._schedule_focus_out_evaluation()
 
-    def _prompt_new_column(
-        self,
-        section_index: int,
-        parent=None,
-    ) -> None:
-        """App-level dialog loop for adding a target column."""
-        existing_target = self.formula_sections[section_index]["target_column"]
-        known = self._known_target_names(exclude_section=section_index)
-        parent = parent
-        text = existing_target
-        while True:
-            new_column, accepted = QInputDialog.getText(
-                parent,
-                "Add Column",
-                "Column name:",
-                text=text,
-            )
-            if not accepted:
-                self._refresh_section_dependencies()
-                return
-            name = new_column.strip()
-            error = self._new_column_error(name, known)
-            if error is None:
-                self._set_section_target(section_index, name)
-                return
-            text = name
-            QMessageBox.warning(parent, "Add Column", error)
-
-    def _set_section_target(self, section_index: int, target_column: str) -> None:
-        old_state = self._current_state()
-        normalized_target = target_column.strip()
-
-        if self.formula_sections[section_index]["target_column"] == normalized_target:
-            self._refresh_section_dependencies()
-            return
-
-        self.formula_sections[section_index]["target_column"] = normalized_target
-        self._refresh_section_dependencies()
-        self.update_data()
-        self.store_history(old_state)
-
-    def handle_dtype_activation(self, section_index: int, index: int) -> None:
-        """Handle target dtype selection for a formula section."""
-        if self.history.is_restoring_history:
-            return
-
-        try:
-            selector: QComboBox = self.section_widgets[section_index]["dtype_selector"]
-            selected_text = selector.itemText(index)
-        except (IndexError, KeyError, RuntimeError):
-            return
-
-        self._set_section_dtype(section_index, selected_text)
-
-    def _debounced_commit(self, section_index: int) -> None:
-        """Apply a section's text after the debounce pause (history every pause)."""
-        if self.history.is_restoring_history:
-            return
-        try:
-            self.commit_formula_text(section_index)
-        except RuntimeError:
-            pass
-
-    def commit_formula_text(self, section_index: int) -> None:
-        """Commit a section's formula text after editing finishes."""
-        if self.history.is_restoring_history:
-            return
-
-        try:
-            current_formula = (
-                self.section_widgets[section_index]["formula_input"].get_text() or ""
-            )
-        except (IndexError, KeyError, RuntimeError):
-            return
-
-        # Compare before any widget->state sync so real edits are detected.
-        if self.formula_sections[section_index]["formula_text"] == current_formula:
-            return
-
-        old_state = {
-            "formula_sections": [section.copy() for section in self.formula_sections]
-        }
-        self.formula_sections[section_index]["formula_text"] = current_formula
-        self.update_data()
-        self.store_history(old_state)
-
-    def _quote_identifier(self, identifier: str) -> str:
-        return '"' + identifier.replace('"', '""') + '"'
-
-    def _apply_outside_string_literals(self, formula: str, transform: Any) -> str:
-        parts: List[str] = []
-        current_pos = 0
-        string_literals = list(STRING_LITERAL_RE.finditer(formula))
-
-        for match in string_literals:
-            before_string = formula[current_pos : match.start()]
-            parts.append(transform(before_string))
-            parts.append(match.group())
-            current_pos = match.end()
-
-        remaining = formula[current_pos:]
-        parts.append(transform(remaining))
-        return "".join(parts)
-
-    def _replace_column_names(self, formula: str, column_name: str) -> str:
-        """Replace bracketed column names while preserving string literals.
-
-        Matches case-insensitively with optional padding inside the brackets
-        (mirroring editor validation) and rewrites to the canonical casing.
-        """
-        pattern = rf"\[\s*{re.escape(column_name)}\s*\]"
-        replacement = self._quote_identifier(column_name)
-
-        return self._apply_outside_string_literals(
-            formula,
-            lambda segment: re.sub(pattern, replacement, segment, flags=re.IGNORECASE),
-        )
-
-    @staticmethod
-    def _normalize_double_quoted(match: re.Match) -> str:
-        inner = match.group()[1:-1].replace('""', '"').replace("'", "''")
-        return f"'{inner}'"
-
-    def _normalize_string_literals(self, formula: str) -> str:
-        """Rewrite "..." as '...' (only [...] are columns).
-
-        Single-quoted strings and bracketed column refs pass through.
-        """
-        token_pattern = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"|\[[^\]]*\]")
-        parts: List[str] = []
-        current_pos = 0
-        for match in token_pattern.finditer(formula):
-            parts.append(formula[current_pos : match.start()])
-            token = match.group()
-            if token.startswith('"'):
-                token = self._normalize_double_quoted(match)
-            parts.append(token)
-            current_pos = match.end()
-        parts.append(formula[current_pos:])
-        return "".join(parts)
-
-    def _prepare_formula_for_sql(
-        self, formula_text: str, available_columns: List[str]
-    ) -> str:
-        sql_formula = self._normalize_string_literals(formula_text)
-        sql_formula = self._apply_outside_string_literals(
-            sql_formula, translate_function_aliases
-        )
-        for column_name in available_columns:
-            sql_formula = self._replace_column_names(sql_formula, column_name)
-        return sql_formula
-
-    @staticmethod
-    def _shorten_error(message: str) -> str:
-        """Reduce a DuckDB error to its first useful sentence."""
-        text = (message or "").strip().replace("\r\n", "\n")
-        match = re.search(r'Referenced column "[^"]+" not found', text)
-        if match:
-            return match.group()
-        first_line = text.split("\n", 1)[0].strip()
-        for prefix in ("Binder Error:", "Catalog Error:", "Parser Error:"):
-            if first_line.startswith(prefix):
-                first_line = first_line[len(prefix) :].strip()
-        return first_line[:160]
-
-    @staticmethod
-    def _diagnose_section_error(exc: Exception, formula_text: str) -> dict:
-        """Return a user-facing diagnostic, never a generated SQL location.
-
-        DuckDB parses SELECT/CTE wrappers, so its parser cursor and snippets
-        cannot be mapped directly to a position in the user's expression.
-        SQLGlot can locate a malformed original expression; if it cannot,
-        report a locationless error instead of underlining the first quote.
-        """
-        if isinstance(exc, duckdb.ParserException):
-            syntax = SQLFormulaEditor.validate_sql_syntax(formula_text)
-            if syntax:
-                return {**syntax[0], "category": "syntax"}
-            return {
-                "message": "Invalid formula expression (check quotes and operators)",
-                "category": "syntax",
-            }
-
-        message = FormulaContent._shorten_error(str(exc))
-        if not message or any(
-            artifact in message
-            for artifact in ("df_step_", "df_for_duck", "SELECT ", ' AS "')
-        ):
-            message = "Unable to evaluate formula expression"
-        return {"message": message, "category": "execution"}
-
-    def _section_query(
-        self,
-        section: Dict[str, Any],
-        available_columns: List[str],
-        relation_name: str,
-    ) -> Tuple[str, List[str]]:
-        """Build the SELECT query for one section (shared by run/codegen).
-
-        A picked dtype casts new target columns only; overwrites keep the
-        expression result untouched. CAST failures surface as section errors.
-        """
-        target_column = section["target_column"]
-        sql_formula = self._prepare_formula_for_sql(
-            section["formula_text"], available_columns
-        )
-        if target_column in available_columns:
-            # REPLACE keeps the column at its original ordinal position
-            # (EXCLUDE + re-add would move it to the end of the table).
-            query = (
-                f"SELECT * REPLACE ({sql_formula} AS {self._quote_identifier(target_column)}) "
-                f"FROM {relation_name}"
-            )
-        else:
-            db_type = DTYPE_TO_DUCKDB.get(section.get("target_dtype") or "")
-            if db_type:
-                sql_formula = f"CAST({sql_formula} AS {db_type})"
-            query = (
-                f"SELECT *, {sql_formula} AS {self._quote_identifier(target_column)} "
-                f"FROM {relation_name}"
-            )
-            available_columns = available_columns + [target_column]
-        return query, available_columns
-
-    def _build_combined_query(
-        self,
-        configured_sections: List[Tuple[int, Dict[str, Any]]],
-        available_columns: List[str],
-        base_relation: str,
-    ) -> Tuple[str, List[str]]:
-        """Chain every configured section into one statement via CTEs.
-
-        Codegen used to register and execute one query per section, pulling
-        a full intermediate Polars DataFrame across the DuckDB boundary each
-        time. Chaining sections as CTEs of a single statement lets DuckDB
-        plan the whole formula chain at once and only materialize the final
-        result.
-        """
-        ctes: List[str] = []
-        current_relation = base_relation
-        for section_index, section in configured_sections:
-            query, available_columns = self._section_query(
-                section, available_columns, current_relation
-            )
-            step_name = f"df_step_{section_index}"
-            ctes.append(f"{step_name} AS ({query})")
-            current_relation = step_name
-
-        combined_query = (
-            "WITH " + ", ".join(ctes) + f" SELECT * FROM {current_relation}"
-        )
-        return combined_query, available_columns
-
-    def _run_sections(
-        self,
-        current_df: Union[pl.DataFrame, pl.LazyFrame],
-        configured: List[Tuple[int, Dict[str, Any]]],
-        explain_index: Optional[int] = None,
-    ) -> Tuple[pl.DataFrame, List[str], Dict[int, str]]:
-        """Apply all sections in one query; fall back for diagnostic errors.
-
-        EXPLAIN still uses the section-by-section path, so validation can
-        report which section failed and execute its predecessors in context.
-        """
-        if explain_index is not None:
-            return self._run_sections_sequential(current_df, configured, explain_index)
-
-        available_columns = list(frame_schema(current_df))
-        query, available_columns = self._build_combined_query(
-            configured, available_columns, "df_for_duck"
-        )
-        with duckdb.connect(":memory:") as duck:
-            duck.register("df_for_duck", current_df)
-            try:
-                result = duck.execute(query).pl()
-            except Exception:  # noqa: BLE001 - fall back for any query/conversion failure
-                # The combined plan cannot identify the first failing section.
-                # Preserve the existing section index and error text contract.
-                return self._run_sections_sequential(current_df, configured)
-        return result, available_columns, {}
-
-    def _run_sections_sequential(
-        self,
-        current_df: pl.DataFrame | pl.LazyFrame,
-        configured: list[tuple[int, dict[str, Any]]],
-        explain_index: int | None = None,
-    ) -> tuple[pl.DataFrame, list[str], dict[int, str]]:
-        """Apply configured (index, section) pairs in order for error reporting.
-
-        With explain_index set, that section is EXPLAINed instead of run
-        (prior sections still run so later sections validate in context).
-        ``current_df`` may still be a LazyFrame on the first call - only
-        ``duck.register`` touches it before the first section's query turns
-        it into a concrete frame for the rest of the loop.
-        Returns (frame, available columns, {index: error message}).
-        """
-        available_columns = list(frame_schema(current_df))
-        errors: dict[int, str] = {}
-        with duckdb.connect(":memory:") as duck:
-            for index, section in configured:
-                relation_name = f"df_step_{index}"
-                query, available_columns = self._section_query(
-                    section, available_columns, relation_name
-                )
-                duck.register(relation_name, current_df)
-                try:
-                    if index == explain_index:
-                        duck.execute(f"EXPLAIN {query}").fetchall()
-                    else:
-                        current_df = duck.execute(query).pl()
-                except Exception as exc:
-                    logger.debug("Formula section {} SQL failed: {}", index + 1, exc)
-                    errors[index] = self._diagnose_section_error(
-                        exc, section["formula_text"]
-                    )["message"]
-                    break
-        return current_df, available_columns, errors
-
-    def validate_section_text(
-        self, section_index: int, formula_text: str, sample_n: int = 200
-    ) -> List[Dict[str, Any]]:
-        """Validate through the target section without reading incoming rows.
-
-        Earlier sections are kept as CTEs so column names and types match
-        execution. EXPLAIN binds the actual SELECT, including casts and the
-        generated target alias, on a zero-row copy of the incoming schema.
-        """
-        if self.incom_data is None:
-            return []
-        if not 0 <= section_index < len(self.formula_sections):
-            return []
-        sections = [section.copy() for section in self.formula_sections]
-        sections[section_index] = {
-            **sections[section_index],
-            "formula_text": formula_text,
-        }
-        configured = [
-            (index, section)
-            for index, section in enumerate(sections)
-            if section["target_column"].strip() and section["formula_text"].strip()
-        ]
-        if section_index not in [index for index, _ in configured]:
-            return []
-        try:
-            sample = pl.DataFrame(schema=frame_schema(self.incom_data))
-            with duckdb.connect(":memory:") as duck:
-                duck.register("df_for_duck", sample)
-                for position, (index, section) in enumerate(configured):
-                    query, _ = self._build_combined_query(
-                        configured[: position + 1], list(sample.columns), "df_for_duck"
-                    )
-                    try:
-                        duck.execute(f"EXPLAIN {query}").fetchall()
-                    except Exception as exc:
-                        logger.debug(
-                            "Formula section {} validation failed: {}", index + 1, exc
-                        )
-                        if index != section_index:
-                            return [
-                                {
-                                    "message": f"Fix section {index + 1} before validating this section",
-                                    "category": "dependency",
-                                }
-                            ]
-                        return [self._diagnose_section_error(exc, formula_text)]
-                    if index == section_index:
-                        break
-        except Exception as exc:
-            logger.debug("Formula validation unavailable: {}", exc)
-            return [
-                {
-                    "message": f"Validation unavailable: {type(exc).__name__}",
-                    "category": "validation",
-                }
-            ]
-        return []
-
-    def _collect_input_data(self) -> tuple[Union[pl.DataFrame, pl.LazyFrame], bool]:
-        if isinstance(self.incom_data, pl.LazyFrame):
-            # DuckDB scans a LazyFrame directly (see filter.py's DuckDB
-            # usage): handing it off lets the first section's query
-            # materialize it, instead of collecting the whole upstream
-            # chain here before any section has even run.
-            return self.incom_data, True
-
-        if isinstance(self.incom_data, pl.DataFrame):
-            return self.incom_data.clone(), False
-
-        raise ValueError("Formula input must be a Polars DataFrame or LazyFrame")
-
-    def update_data(self) -> None:
-        """Apply all configured formulas to the incoming data."""
-        self.last_error = ""
-        self.section_errors = {}
-
-        if self.incom_data is None:
-            self.data = None
-            return
-
-        configured_sections = self._configured_sections()
-        if not configured_sections:
-            self.data = self.incom_data
-            return
-
-        try:
-            current_df, was_lazy = self._collect_input_data()
-            current_df, _, errors = self._run_sections(current_df, configured_sections)
-            if errors:
-                self.section_errors = errors
-                failed = min(errors)
-                raise ValueError(f"Section {failed + 1}: {errors[failed]}")
-
-            # DuckDB rebuilds every column with its native types (an Auto
-            # `THEN 1 ELSE 0` comes back INTEGER -> Int32), which the Select
-            # dropdown cannot represent. Normalise the frame.
-            current_df = normalize_to_supported_dtypes(current_df)
-            self.data = current_df.lazy() if was_lazy else current_df
-        except Exception as exc:
-            self.data = None
-            self.last_error = str(exc)
-        finally:
-            self._refresh_section_errors()
-
-    def _rebuild_widgets(self) -> None:
-        """Undo protocol hook: recreate the section editors from the model.
-
-        Adding or removing a section changes how many editors exist, so a
-        restore has to rebuild structure rather than just write values, and
-        recompute the frame because the set of derived columns changed.
-        ``sync_from_model`` emits ``evaluate`` afterwards.
-        """
-        self._rebuild_section_widgets()
-        self.update_data()
-
-    def store_history(self, old_state: Dict[str, List[Dict[str, Any]]]) -> None:
-        """Record a formula-section change as one undoable step.
-
-        Text-only edits (same section count, targets and dtypes) travel as a
-        value change with a typing merge key, so restoring them rewrites the
-        live editors instead of tearing them down - typing never loses focus.
-        Structural edits keep the list command, which rebuilds the dock.
-        """
-        new_state = self._current_state()
-        old_sections = old_state["formula_sections"]
-        new_sections = new_state["formula_sections"]
-
-        if old_sections == new_sections:
-            return
-
-        if self._sections_shape(old_sections) == self._sections_shape(new_sections):
-            self.push_property_change(
-                ("formula_sections",),
-                old_sections,
-                new_sections,
-                "Formula Changed",
-                merge_key="formula-text",
-            )
-            return
-
-        self.push_list_change(
-            ("formula_sections",), old_sections, new_sections, "Formula Changed"
-        )
-
-    @staticmethod
-    def _sections_shape(sections: List[Dict[str, Any]]) -> List[tuple]:
-        """Structural identity of sections: everything except the text."""
+    def sql_editors(self) -> list:
         return [
-            (section.get("target_column"), section.get("target_dtype"))
-            for section in sections
+            widgets["formula_input"]
+            for widgets in getattr(self, "section_widgets", ())
+            if "formula_input" in widgets
         ]
 
-    def _sync_widgets_from_model(self) -> None:
-        """Write model texts into the live editors, preserving identity.
+    def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
+        """Read every card's text into the model before the dock is destroyed."""
+        sections, changed = self._editor_sections()
+        if changed:
+            merge_key = f"formula-text-{changed[0]}" if len(changed) == 1 else None
+            self._commit(
+                sections,
+                "Formula Text Changed",
+                merge_key=merge_key,
+                evaluate=False,
+            )
+            for index in changed:
+                self._refresh_error(index)
 
-        Only touched editors update, so cursor position and focus survive an
-        undo of a typing burst.
-        """
-        for index, section in enumerate(self.formula_sections):
+        if evaluate:
+            self._evaluate_pending()
+        else:
+            self.cancel_pending_evaluation()
+
+    def _commit_height(self, index: int, height: int) -> None:
+        sections = self._section_list()
+        if index >= len(sections):
+            return
+        height = min(core.MAX_EDITOR_HEIGHT, max(core.MIN_EDITOR_HEIGHT, height))
+        if sections[index]["editor_height"] == height:
+            return
+        sections[index]["editor_height"] = height
+        self._commit(
+            sections,
+            "Formula Height Changed",
+            merge_key=f"formula-height-{index}",
+        )
+
+    def _add_section(self) -> None:
+        sections = self._section_list()
+        if len(sections) >= core.MAX_FORMULA_SECTIONS:
+            return
+        sections.append(dict(core.DEFAULT_SECTION))
+        self._commit(sections, "Formula Section Added", structural=True)
+
+    def _remove_section(self, index: int) -> None:
+        sections = self._section_list()
+        if not 0 <= index < len(sections):
+            return
+        del sections[index]
+        self._commit(sections, "Formula Section Removed", structural=True)
+
+    # -- validation -------------------------------------------------------
+    def _validate_section(self, index: int, text: str) -> list[dict]:
+        sections = self._section_list()
+        if 0 <= index < len(sections):
+            sections[index]["formula_text"] = text
+        return core.validate_section(self.frames, {"sections": sections}, index)
+
+    def _refresh_error(self, index: int) -> None:
+        if index >= len(self.section_widgets):
+            return
+        widget = self.section_widgets[index]
+        try:
+            text = widget["formula_input"].get_text() or ""
+        except RuntimeError:
+            return
+        errors = self._validate_section(index, text)
+        label = widget["error_label"]
+        if errors:
+            message = str(errors[0].get("message") or "Invalid formula")
+            self.section_errors[index] = message
+            label.setText(message)
+            label.show()
+        else:
+            self.section_errors.pop(index, None)
+            label.clear()
+            label.hide()
+
+    # -- model -> widgets -------------------------------------------------
+    def _sync_widgets_from_model(self) -> None:
+        if self.history.is_restoring_history:
+            self.cancel_pending_evaluation()
+        if getattr(self, "sections_layout", None) is None:
+            return
+        sections = self._section_list()
+        structural = len(self.section_widgets) != len(sections) or any(
+            widgets["target"] != section["target_column"]
+            or widgets["dtype"] != section["target_dtype"]
+            for widgets, section in zip(self.section_widgets, sections)
+        )
+        if structural:
+            self._rebuild_cards()
+            return
+        for widgets, section in zip(self.section_widgets, sections):
             try:
-                editor = self.section_widgets[index]["formula_input"]
-            except (AttributeError, IndexError, KeyError, TypeError):
-                continue
-            try:
-                if editor.get_text() != section.get("formula_text", ""):
-                    editor.set_text(section.get("formula_text", ""))
+                if widgets["formula_input"].get_text() != section["formula_text"]:
+                    widgets["formula_input"].set_text(section["formula_text"])
+                widgets["formula_input"].setFixedHeight(section["editor_height"])
             except RuntimeError:
                 continue
+        self._refresh_counts()
 
-    def history_stamp_callback(self, history_data: dict, is_undo: bool) -> None:
-        """Restore formula sections from a whole-scene snapshot restore.
-
-        Only reached for snapshot commands; the fine-grained path in
-        :meth:`store_history` goes through :meth:`push_list_change` instead.
-        ``restoring`` is a depth counter, so this block cannot re-enable
-        recording part-way through an outer restore.
-        """
-        state = history_data["old_state"] if is_undo else history_data["new_state"]
-        with self.history.restoring(is_undo=is_undo):
-            self.formula_sections = self._normalize_sections(state["formula_sections"])
-            self._rebuild_widgets()
-
-    def get_code(self) -> str:
-        """Generate Python code for all configured formula sections."""
-        configured_sections = self._configured_sections()
-
-        if not self.incoming_variable:
-            # Fallback: always define the output so downstream code never
-            # NameErrors.
-            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
-
-        if not configured_sections:
-            return f"{self.variable_name} = {self.incoming_variable}\n"
-
-        available_columns: List[str] = []
-        if self.incom_data is not None:
-            available_columns.extend(list(frame_schema(self.incom_data)))
-
-        combined_query, _ = self._build_combined_query(
-            configured_sections, available_columns, "df_for_duck"
-        )
-
-        code_lines = [
-            "import duckdb",
-            "import polars as pl",
-            "from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes",
-            "# Initialize DuckDB connection",
-            "duck = duckdb.connect(':memory:')",
-            "# Convert polars LazyFrame to DataFrame if needed for DuckDB",
-            (
-                f"df_for_duck = {self.incoming_variable}.collect() "
-                f"if hasattr({self.incoming_variable}, 'collect') else {self.incoming_variable}"
-            ),
-            "duck.register('df_for_duck', df_for_duck)",
-            # All configured sections run as one chained query (each
-            # section a CTE), so the formula chain is one DuckDB plan
-            # instead of one intermediate Polars materialization per
-            # section.
-            f"df_for_duck = duck.execute('''{combined_query}''').pl()",
-            "# Widen DuckDB-native types into Select-supported dtypes",
-            "df_for_duck = normalize_to_supported_dtypes(df_for_duck)",
-            "# Preserve lazy execution when the incoming value is lazy",
-            (
-                f"{self.variable_name} = df_for_duck.lazy() "
-                f"if hasattr({self.incoming_variable}, 'collect') else df_for_duck"
-            ),
-            "duck.close()",
-        ]
-
-        return "\n".join(code_lines) + "\n"
-
-    def serialize(self) -> dict:
-        """Serialize the formula content (legacy keys still load, not written)."""
-        self._sync_sections_from_widgets()
-        return self.serialize_content_state(super().serialize())
-
-    def deserialize(self, data: dict, hashmap: dict = {}) -> bool:
-        """Deserialize formula content from either new or legacy saved state."""
-        res = super().deserialize(data, hashmap)
-
-        try:
-            sections = data.get("formula_sections")
-            if sections is None:
-                sections = [
-                    {
-                        "target_column": data.get("target_column", ""),
-                        "formula_text": data.get("formula", ""),
-                    }
-                ]
-
-            self.formula_sections = self._normalize_sections(sections)
-            return True and res
-        except Exception as exc:
-            dumpException(exc)
-        return res
+    def after_change(self) -> None:
+        self._refresh_counts()
 
 
 @register_node(PreparationNodes.FORMULA, NodeTypes.PREPARATION)
-class TriggerNode_Formula(TriggerNode):
-    """A node for creating calculated columns using SQL-like expressions."""
-
+class TriggerNode_Formula(ShapingNode):
     icon = "node_formula"
     node_code = PreparationNodes.FORMULA
     node_type = NodeTypes.PREPARATION
     node_title = "Formula"
+    content_class = FormulaContent
+    output_text = ("Out",)
     content_label_objname = "trigger_node_formula"
-    style = {}
-
-    def __init__(self, scene) -> None:
-        super().__init__(scene, inputs=[1], outputs=[3])
-        self.markInvalid(True)
-
-    def initInnerClasses(self) -> None:
-        self.content: FormulaContent = FormulaContent(self)
-        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
-        self.content.evaluate.connect(self.onInputChanged)
-        self.param: list = []
-
-    def processInputs(self, input_values: list) -> Optional[list]:
-        """Process input data and apply all configured formulas."""
-        this_socket_index = 0
-        input_node = self.getInput(this_socket_index)
-        socket_index = self.getSocketValue(input_node.outputs, self)
-        input_value = input_values[this_socket_index][socket_index]
-
-        if not input_value:
-            self.markDirty(True)
-            self.markInvalid(True)
-            self.grNode.setToolTip("Input is not connected")
-            return None
-
-        self.content.incom_data = input_value.get("data")
-        self.content.incoming_variable = input_value.get("variable_name")
-        self.content.refresh_dependencies_for_new_data()
-        self.content.update_data()
-
-        if self.content.last_error:
-            self.markDirty(True)
-            self.markInvalid(True)
-            self.grNode.setToolTip(self.content.last_error)
-            if self.content._last_logged_error != self.content.last_error:
-                global_logger.error(f"Formula node failed: {self.content.last_error}")
-                self.content._last_logged_error = self.content.last_error
-            return None
-
-        self.content._last_logged_error = ""
-        self.grNode.setToolTip("")
-        self.param = [
-            {
-                "data": self.content.data,
-                "variable_name": self.content.variable_name,
-            }
-        ]
-        return self.param
-
-    def get_code(self) -> str:
-        """Get the generated code for this formula node."""
-        return self.content.get_code()
+    style = {}  # noqa: RUF012 - shared empty node style

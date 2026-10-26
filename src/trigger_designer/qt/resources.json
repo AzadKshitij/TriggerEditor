@@ -48,6 +48,22 @@
         "path":"qt/images/node_icons/Preparation/Select.svg",
         "mode": "rb"
     },
+    "node_record_id":{
+        "path":"qt/images/node_icons/Preparation/RecordID.svg",
+        "mode": "rb"
+    },
+    "node_select_records":{
+        "path":"qt/images/node_icons/Preparation/SelectRecords.svg",
+        "mode": "rb"
+    },
+    "node_find_replace":{
+        "path":"qt/images/node_icons/Preparation/FindReplace.svg",
+        "mode": "rb"
+    },
+    "node_date_helper":{
+        "path":"qt/images/node_icons/Preparation/DateHelper.svg",
+        "mode": "rb"
+    },
     "node_sort":{
         "path":"qt/images/node_icons/Preparation/Sort.svg",
         "mode": "rb"
@@ -78,6 +94,10 @@
         "path":"qt/images/node_icons/Join/Union.svg",
         "mode": "rb"
     },
+    "node_reconcile":{
+        "path":"qt/images/node_icons/Join/Reconcile.svg",
+        "mode": "rb"
+    },
 
 
     "node_count":{
@@ -90,6 +110,14 @@
     },
     "node_transpose":{
         "path":"qt/images/node_icons/Transform/Transpose.svg",
+        "mode": "rb"
+    },
+    "node_pivot":{
+        "path":"qt/images/node_icons/Transform/Pivot.svg",
+        "mode": "rb"
+    },
+    "node_unpivot":{
+        "path":"qt/images/node_icons/Transform/Unpivot.svg",
         "mode": "rb"
     },
     
@@ -110,6 +138,18 @@
 
     "icon_folder_open":{
         "path":"qt/images/node_icons/ui/folder_open.svg",
+        "mode": "rb"
+    },
+    "icon_files":{
+        "path":"qt/images/node_icons/ui/files.svg",
+        "mode": "rb"
+    },
+    "icon_copy":{
+        "path":"qt/images/node_icons/ui/copy.svg",
+        "mode": "rb"
+    },
+    "icon_details":{
+        "path":"qt/images/node_icons/ui/details.svg",
         "mode": "rb"
     },
     "icon_save":{

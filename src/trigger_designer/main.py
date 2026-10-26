@@ -90,7 +90,12 @@ def _log_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "logs"
 
 
-def _configure_logging() -> None:
+def _configure_logging() -> Path | None:
+    """Redirect stdout/stderr and loguru into one timestamped log file.
+
+    Returns the log path so the crash handlers can write to the same file, or
+    ``None`` when it could not be opened.
+    """
     original_stdout = sys.stdout
     original_stderr = sys.stderr
 
@@ -123,7 +128,7 @@ def _configure_logging() -> None:
             format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
         )
         logger.warning(f"Unable to open log file {log_file_path}: {exc}")
-        return
+        return None
 
     sys.stdout = _TeeStream(original_stdout, log_file_handle)
     sys.stderr = _TeeStream(original_stderr, log_file_handle)
@@ -140,9 +145,47 @@ def _configure_logging() -> None:
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
         colorize=False,
     )
+    return log_file_path
 
 
-_configure_logging()
+_LOG_FILE_PATH = _configure_logging()
+
+if _LOG_FILE_PATH is not None:
+    from trigger_designer.qt.helpers.crash_capture import install_crash_capture
+
+    install_crash_capture(_LOG_FILE_PATH)
+
+
+def _wait_for_background_workers(timeout_ms: int = 5000) -> None:
+    """Give in-flight previews and runs a chance to stop before Qt teardown.
+
+    A ``QThread`` destroyed while its ``run()`` is executing aborts the
+    process (Qt calls ``qFatal``), and when that thread is inside Polars the
+    result can be an access violation instead. Neither raises a Python
+    exception, which is why these crashes leave no traceback behind.
+    """
+    try:
+        from trigger_designer.qt.helpers.workflow_execution_mixin import (
+            wait_for_orphaned_workflow_workers,
+        )
+        from trigger_designer.qt.models.preview_worker import (
+            wait_for_preview_workers,
+        )
+    except Exception as exc:  # noqa: BLE001 - shutdown must still proceed
+        logger.debug(f"Background worker wait skipped: {exc}")
+        return
+
+    try:
+        previews_stopped = wait_for_preview_workers(timeout_ms)
+        runs_stopped = wait_for_orphaned_workflow_workers(timeout_ms)
+    except Exception:  # noqa: BLE001 - exiting must still reach the teardown
+        logger.exception("Background worker wait failed")
+        return
+
+    if not previews_stopped:
+        logger.warning("A preview collect is still running at exit")
+    if not runs_stopped:
+        logger.warning("A workflow thread is still running at exit")
 
 
 def main() -> None:
@@ -230,6 +273,11 @@ def main() -> None:
     main_window.show()
     main_window.activateWindow()
 
+    # Every quit path (window close, File > Exit, Ctrl+Q) runs this before
+    # the event loop stops, so a running workflow or preview is not left
+    # alive while Qt tears its widgets down.
+    app.aboutToQuit.connect(main_window.shutdown_background_work)
+
     # Hide splash screen
     splash.finish(main_window)
 
@@ -243,10 +291,12 @@ def main() -> None:
 
     exit_code = app.exec()
 
-    # Destroy every top-level window while Qt and PyQt are still fully alive.
-    # Letting the interpreter finalize with live widgets faults inside sip on
-    # Windows (0xC0000005 after the last log line), so run the deferred
-    # deletions here instead. Chart windows go first, in their own pass.
+    _wait_for_background_workers()
+
+    # Destroy every top-level window while Qt and its Python binding are alive.
+    # The old PyQt/SIP build faulted during interpreter finalization with live
+    # widgets on Windows (0xC0000005 after the last log line), so dispatch the
+    # deferred deletions here. Chart windows go first, in their own pass.
     from qtpy.QtCore import QCoreApplication, QEvent
 
     for widget in QApplication.topLevelWidgets():

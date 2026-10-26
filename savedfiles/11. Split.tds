@@ -55,8 +55,11 @@
         }
       ],
       "content": {
-        "main_percent": 80,
-        "random_seed": 1
+        "settings": {
+          "estimation_percent": 70,
+          "random_seed": 1,
+          "is_random": true
+        }
       },
       "node_code": 7,
       "node_type": "preparation"

@@ -48,11 +48,13 @@
         }
       ],
       "content": {
-        "field_name": "counter",
-        "field_type": "int",
-        "initial_value": 1,
-        "increment_value": 2,
-        "max_value": 50
+        "settings": {
+          "field_name": "counter",
+          "field_type": "int",
+          "initial_value": 1,
+          "increment_value": 2,
+          "max_value": 50
+        }
       },
       "node_code": 8,
       "node_type": "preparation"

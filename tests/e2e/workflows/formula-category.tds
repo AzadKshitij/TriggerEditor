@@ -27,8 +27,16 @@
         }
       ],
       "content": {
-        "formula": "CASE \n    WHEN TRY_CAST(Difficulty AS INTEGER) > 7 THEN 'High'\n    WHEN TRY_CAST(Difficulty AS INTEGER) > 6 THEN 'Medium'\n    ELSE 'Low'\nEND",
-        "target_column": "Category"
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Category",
+              "formula_text": "CASE \n    WHEN TRY_CAST(Difficulty AS INTEGER) > 7 THEN 'High'\n    WHEN TRY_CAST(Difficulty AS INTEGER) > 6 THEN 'Medium'\n    ELSE 'Low'\nEND",
+              "editor_height": 120,
+              "target_dtype": ""
+            }
+          ]
+        }
       },
       "op_code": 3,
       "op_type": "PREPARATION"

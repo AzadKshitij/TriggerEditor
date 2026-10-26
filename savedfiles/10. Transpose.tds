@@ -48,13 +48,15 @@
         }
       ],
       "content": {
-        "key_columns": [
-          "Seed"
-        ],
-        "data_columns": [
-          "Keyword"
-        ],
-        "missing_action": "warn"
+        "settings": {
+          "key_columns": [
+            "Seed"
+          ],
+          "data_columns": [
+            "Keyword"
+          ],
+          "missing_action": "warn"
+        }
       },
       "node_code": 4,
       "node_type": "transform"

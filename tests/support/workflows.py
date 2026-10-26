@@ -47,7 +47,12 @@ class MaterializedWorkflow:
     out_dir: Path
 
 
-def materialize(case: WorkflowCase, tmp_path: Path) -> MaterializedWorkflow:
+def materialize(
+    case: WorkflowCase,
+    tmp_path: Path,
+    input_paths: dict[str, Path] | None = None,
+) -> MaterializedWorkflow:
+    """Copy ``case`` into ``tmp_path``; ``input_paths`` replaces a fixture by name."""
     data = orjson.loads(case.source_path.read_bytes())
     out_dir = tmp_path / "out"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -59,16 +64,20 @@ def materialize(case: WorkflowCase, tmp_path: Path) -> MaterializedWorkflow:
         key = _file_path_key(content)
         if key is None:
             continue
-        raw = str(content.get(key) or "")
+        settings = content.get("settings")
+        target = settings if isinstance(settings, dict) and key in settings else content
+        raw = str(target.get(key) or "")
         if not raw:
             continue
         basename = _basename(raw)
 
         kind = _node_kind(node)
         if kind == "input":
-            content[key] = _input_path(case, basename).as_posix()
+            target[key] = _input_path(case, basename, input_paths).as_posix()
+            # Relative wins on load; a stale one would override the rewrite.
+            target.pop("filePathRel", None)
         elif kind == "output":
-            content[key] = (out_dir / basename).as_posix()
+            target[key] = (out_dir / basename).as_posix()
 
     workflow_path = tmp_path / f"{case.name}.tds"
     workflow_path.write_bytes(orjson.dumps(data, option=orjson.OPT_INDENT_2))
@@ -142,9 +151,15 @@ def _basename(raw: str) -> str:
 
 
 def _file_path_key(content: dict) -> str | None:
-    for key in ("filePath", "file_path", "outputPath", "output_path"):
+    keys = ("filePath", "file_path", "outputPath", "output_path")
+    for key in keys:
         if key in content:
             return key
+    settings = content.get("settings")
+    if isinstance(settings, dict):
+        for key in keys:
+            if key in settings:
+                return key
     return None
 
 
@@ -159,7 +174,11 @@ def _node_kind(node: dict) -> str | None:
     return None
 
 
-def _input_path(case: WorkflowCase, basename: str) -> Path:
+def _input_path(
+    case: WorkflowCase, basename: str, overrides: dict[str, Path] | None = None
+) -> Path:
+    if overrides and basename in overrides:
+        return overrides[basename]
     candidates = []
     if basename in case.inputs:
         candidates.append(REPO_ROOT / case.inputs[basename])

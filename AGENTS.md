@@ -105,8 +105,8 @@ makes an undo look like it did nothing.
 - Never let an exception escape `undo()`/`redo()`. `QUndoStack` calls them from
   C++; a raise there aborts the process instead of propagating. `UndoableEdit`
   provides `_guard` for this.
-- Do not implement `mergeWith`. Qt `delete`s the command it merges away, which
-  leaves a dangling wrapper under PyQt. `UndoController.push` folds commands via
+- Do not implement `mergeWith`. `QUndoStack` deletes a merged-away command,
+  invalidating its Python wrapper. `UndoController.push` folds commands via
   `can_merge_with`/`absorb` instead.
 
 - Verify: `uv run --project . ruff format <files>` then

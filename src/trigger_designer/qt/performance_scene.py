@@ -1,14 +1,19 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 
+import orjson
+from loguru import logger
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
 from nodeeditor.node_multi_input_node import MultiInputNode
 from nodeeditor.node_scene import Scene
 
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
+from trigger_designer.qt.helpers.evaluation import EvaluationCoordinator
 from trigger_designer.qt.undo.history import TriggerSceneHistory
 
 
@@ -51,6 +56,27 @@ class CachedGraphicsEdge(QDMGraphicsEdge):
 
 
 class TriggerEdge(Edge):
+    def __init__(
+        self,
+        scene,
+        start_socket=None,
+        end_socket=None,
+        *args,
+        **kwargs,
+    ) -> None:
+        # A drag may start on an input socket. The package accepts that pair,
+        # but every graph algorithm requires an output->input edge, so store
+        # the direction data flows, not the direction the user dragged. The
+        # temporary drag edge has no end socket and is left untouched.
+        if (
+            start_socket is not None
+            and end_socket is not None
+            and getattr(start_socket, "is_input", False)
+            and getattr(end_socket, "is_output", False)
+        ):
+            start_socket, end_socket = end_socket, start_socket
+        super().__init__(scene, start_socket, end_socket, *args, **kwargs)
+
     def getGraphicsEdgeClass(self):
         return CachedGraphicsEdge
 
@@ -61,13 +87,13 @@ class TriggerEdge(Edge):
             return None
         try:
             return finder(node)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
 
     def _stub_pos(self, group) -> list | None:
         try:
             point = group.stubPosFor(self)
-        except Exception:
+        except Exception:  # noqa: BLE001
             return None
         if point is None:
             return None
@@ -87,7 +113,7 @@ class TriggerEdge(Edge):
             # untouched. expand()/restoreExpandedVisuals() reveals it again.
             try:
                 self.grEdge.hide()
-            except Exception:
+            except Exception:  # noqa: BLE001, S110
                 pass
             return
 
@@ -130,6 +156,14 @@ class TriggerScene(Scene):
         super().__init__()
         self._bulk_loading = False
         self._deferred_edge_updates: set[TriggerEdge] = set()
+        #: Cycle signatures already reported by the evaluation fallback, so
+        #: repeated passes over a legacy cyclic graph do not spam the log.
+        self._reported_cycle_signatures: set[tuple[tuple[int, ...], ...]] = set()
+        #: Set by the owning sub-window so a cycle found by a deferred pass
+        #: reaches the same log/dock as a full pass.
+        self.cycle_reporter: Callable[[str], None] | None = None
+        self._eval_depth = 0
+        self.evaluator = EvaluationCoordinator(self)
         self.loaded_workflow_metadata: dict[str, object] = {}
         #: Set by helpers.eval_progress.eval_progress_dialog while a
         #: progress dialog is driving a load/recompute; None otherwise.
@@ -154,23 +188,73 @@ class TriggerScene(Scene):
     def beginBulkLoad(self) -> None:
         self._bulk_loading = True
         self._deferred_edge_updates.clear()
+        self.evaluator.begin_bulk_load()
 
     def endBulkLoad(self) -> None:
         pending_edges = list(self._deferred_edge_updates)
         self._bulk_loading = False
         self._deferred_edge_updates.clear()
+        # A load gathers constructor/deserialize notifications but must not
+        # flush them; the single doEvalOutputs pass owns evaluation.
+        self.evaluator.end_bulk_load()
 
         for edge in pending_edges:
             edge.updatePositions()
+
+    #: Set only while ``saveToFile`` runs: the vendored implementation
+    #: serialises BEFORE it sets ``self.filename``, so content that stores a
+    #: path relative to the workflow needs the target during that window.
+    _save_target: str | None = None
+
+    @property
+    def workflow_dir(self) -> str | None:
+        """Folder of the workflow being saved (during a save) or loaded."""
+        target = self._save_target or self.filename
+        return os.path.dirname(os.path.abspath(target)) if target else None
 
     def serialize(self):
         data = super().serialize()
         data["workflow_metadata"] = {
             "schema_version": WORKFLOW_SCHEMA_VERSION,
             "app_version": VERSION,
-            "saved_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "saved_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         return data
+
+    def saveToFile(self, filename: str) -> None:
+        """Write UTF-8 JSON atomically, making the target visible to serialize.
+
+        The file is only replaced after the whole payload is on disk, so a
+        failure while serialising leaves the previous workflow untouched.
+        """
+        filename = os.fspath(filename)
+        self._save_target = filename
+        tmp_path = None
+        try:
+            # A pending edge edit is newer than the serialization about to
+            # run; never let the file capture a stale value. The save target
+            # is visible first because evaluation may resolve content paths.
+            self.evaluator.flush_now()
+            payload = orjson.dumps(self.serialize(), option=orjson.OPT_INDENT_2)
+            directory = os.path.dirname(os.path.abspath(filename))
+            fd, tmp_path = tempfile.mkstemp(
+                prefix=".tds-", suffix=".tmp", dir=directory
+            )
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(payload)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.replace(tmp_path, filename)
+            tmp_path = None
+            self.filename = filename
+            self.has_been_modified = False
+        finally:
+            self._save_target = None
+            if tmp_path is not None:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
 
     def deserialize(self, data, hashmap=None, restore_id: bool = True, *args, **kwargs):
         self.loaded_workflow_metadata = data.get(
@@ -180,27 +264,37 @@ class TriggerScene(Scene):
         return super().deserialize(data, hashmap, restore_id, *args, **kwargs)
 
 
-def settle_multi_input_nodes(scene: Scene) -> None:
-    """Retry only collectors whose first pass did not settle every edge.
+def _incomplete_collectors(scene: Scene) -> list[MultiInputNode]:
+    """Collectors whose first pass did not settle every edge.
 
-    Union now commits its value before evaluating children, so the old
-    unconditional second pass recalculated complete Union branches for no
-    benefit. Keep a recovery pass for dirty/invalid/incomplete collectors.
+    A complete collector is a cache hit; retrying it would recompute a whole
+    Union branch for no benefit. A collector that is still incomplete after
+    the retry is reported once and left alone rather than looped over.
     """
-    multi_input_nodes = [
-        node for node in scene.nodes if isinstance(node, MultiInputNode)
-    ]
-    incomplete = []
-    for node in multi_input_nodes:
+    incomplete: list[MultiInputNode] = []
+    for node in scene.nodes:
+        if not isinstance(node, MultiInputNode):
+            continue
         try:
             expected = len(node.getOrderedEdges())
             actual = len(node.content.input_frames)
-        except (AttributeError, RuntimeError, TypeError):
+        except AttributeError, RuntimeError, TypeError:
             incomplete.append(node)
             continue
         if node.isDirty() or node.isInvalid() or actual != expected:
             incomplete.append(node)
+    return incomplete
 
+
+def settle_multi_input_nodes(scene: Scene) -> None:
+    """Retry only collectors whose first pass did not settle every edge.
+
+    Union commits its value before evaluating children, so a complete
+    collector is already settled. Only dirty/invalid/incomplete collectors
+    and their descendants need one recovery pass; unrelated branches must
+    keep their cached values.
+    """
+    incomplete = _incomplete_collectors(scene)
     if not incomplete:
         return
 
@@ -208,5 +302,25 @@ def settle_multi_input_nodes(scene: Scene) -> None:
         node.markDirty(True)
         node.markDescendantsDirty(True)
 
-    for node in scene.nodes:
-        node.eval()
+    evaluator = getattr(scene, "evaluator", None)
+    if evaluator is not None:
+        evaluator.evaluate_nodes(incomplete, mark_dirty=False)
+    else:
+        # Plain nodeeditor Scene (low-level tests and embedders) has no
+        # coordinator; preserve the old recovery path there only.
+        for node in scene.nodes:
+            node.eval()
+
+    still_incomplete = _incomplete_collectors(scene)
+    for node in still_incomplete:
+        try:
+            edges = len(node.getOrderedEdges())
+            frames = len(node.content.input_frames)
+            detail = f"{frames} frames for {edges} edges"
+        except AttributeError, RuntimeError, TypeError:
+            detail = "unreadable input state"
+        logger.warning(
+            "Multi-input collector {} did not settle after retry ({})",
+            node.__class__.__name__,
+            detail,
+        )

@@ -24,6 +24,7 @@ layer; ``pytest -m unit`` must not need a window.
 
 from __future__ import annotations
 
+import gc
 import os
 import sys
 import tempfile
@@ -185,14 +186,24 @@ def _no_leaked_qt_windows(qapp):
     from qtpy.QtCore import QCoreApplication, QEvent
     from qtpy.QtWidgets import QApplication
 
+    widgets = []
     for widget in list(QApplication.topLevelWidgets()):
         if widget is qapp:
             continue
         try:
             widget.hide()
             widget.deleteLater()
+            widgets.append(widget)
         except RuntimeError:
             continue
+    # Drop Python's own references first, then run the queued deletions.
+    # Under PySide6 a top-level widget's C++ side is owned by Python, so the
+    # destruction order matters: collecting before the deferred pass lets the
+    # wrapper and the C++ object go down in one defined step instead of
+    # leaving a half-dead item for the next test to paint into (access
+    # violation, position varies with GC timing).
+    del widgets
+    gc.collect()
     QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
     QApplication.processEvents()
 

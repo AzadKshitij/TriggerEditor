@@ -47,18 +47,29 @@ def _menu_titles(menu: QMenu) -> list[str]:
 
 
 def _node_menu(window: TriggerSubWindow, monkeypatch) -> QMenu:
-    """Build the node context menu and capture it instead of showing it."""
+    """Build the node context menu and capture it instead of showing it.
+
+    Patching ``QMenu.exec`` on the Qt type is silently ineffective under
+    PySide6 (the call still reaches the C++ slot, so a real menu opens and
+    the test hangs until its timeout). A stub subclass patched into the
+    mixin's namespace intercepts it on either binding, and the menu that
+    gets built is still the real one.
+    """
     captured: list[QMenu] = []
 
-    def _exec(self, *args, **kwargs):
-        captured.append(self)
+    class _CapturingMenu(QMenu):
+        def exec(self, *args, **kwargs):
+            captured.append(self)
 
-    monkeypatch.setattr(QMenu, "exec", _exec)
-    monkeypatch.setattr(QMenu, "exec_", _exec)
+    monkeypatch.setattr(context_menu_mixin, "QMenu", _CapturingMenu)
 
     from qtpy.QtGui import QContextMenuEvent
 
-    event = QContextMenuEvent(QContextMenuEvent.Reason.Mouse, QPoint(0, 0))
+    event = QContextMenuEvent(
+        QContextMenuEvent.Reason.Mouse,
+        QPoint(0, 0),
+        QPoint(0, 0),
+    )
     window.handleNodeContextMenu(event)
     assert captured, "the context menu was never built"
     return captured[0]

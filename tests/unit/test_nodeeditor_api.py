@@ -59,15 +59,42 @@ REQUIRED_API = {
         "QDMGraphicsNode",
         "syncDetailVisibility",
     ): "applying the detail state to a node",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "topological_order",
+    ): "dependency ordering for load, restore, and Run",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "ancestors",
+    ): "error-context upstream traversal",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "descendants",
+    ): "cycle validation and affected-node closure",
+    (
+        "nodeeditor.node_graph",
+        None,
+        "cycles",
+    ): "formatting a cycle for load and Run",
+    (
+        "nodeeditor",
+        None,
+        "GraphCycleError",
+    ): "catching a cyclic workflow without failing the load",
 }
 
 
-def _resolve(module_name: str, class_name: str, attribute: str):
+def _resolve(module_name: str, class_name: str | None, attribute: str):
     """Return the attribute, or ``None`` when the module or class lacks it."""
     try:
         module = __import__(module_name, fromlist=["__name__"])
     except ImportError:
         return None
+    if class_name is None:
+        return getattr(module, attribute, None)
     owner = getattr(module, class_name, None)
     if owner is None:
         return None
@@ -77,7 +104,10 @@ def _resolve(module_name: str, class_name: str, attribute: str):
 @pytest.mark.parametrize(
     ("module_name", "class_name", "attribute"),
     sorted(REQUIRED_API),
-    ids=[f"{cls}.{attr}" for _, cls, attr in sorted(REQUIRED_API)],
+    ids=[
+        f"{cls or module_name}.{attr}"
+        for module_name, cls, attr in sorted(REQUIRED_API)
+    ],
 )
 def test_installed_nodeeditor_has_required_api(
     module_name: str, class_name: str, attribute: str
@@ -98,11 +128,17 @@ def test_the_scene_carries_a_detail_lod_threshold() -> None:
 
 
 def test_installed_nodeeditor_matches_the_pinned_version() -> None:
-    """The installed distribution is the one the lock pins."""
-    import tomllib
-    from pathlib import Path
+    """The installed distribution is the one the lock pins.
 
-    import nodeeditor
+    Read the distribution metadata, not ``nodeeditor.__version__``: 0.8.2's
+    PySide6 branch does ``from PySide6 import __version__``, which shadows the
+    package's own version with the binding's (the PyQt6 branch assigns
+    ``PYQT_VERSION_STR`` to a different name and keeps it intact). Reported
+    upstream; the pin is what this test is about.
+    """
+    import tomllib
+    from importlib import metadata
+    from pathlib import Path
 
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
     with pyproject.open("rb") as handle:
@@ -112,8 +148,9 @@ def test_installed_nodeeditor_matches_the_pinned_version() -> None:
         dep for dep in dependencies if dep.lower().startswith("nodeeditor-qtpy==")
     )
     expected = requirement.split("==", 1)[1]
+    installed = metadata.version("nodeeditor-qtpy")
 
-    assert nodeeditor.__version__ == expected, (
-        f"nodeeditor {nodeeditor.__version__} is installed, but pyproject.toml "
+    assert installed == expected, (
+        f"nodeeditor-qtpy {installed} is installed, but pyproject.toml "
         f"pins {expected}. Run `uv sync` to install the pinned version."
     )

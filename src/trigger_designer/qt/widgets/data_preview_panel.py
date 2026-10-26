@@ -31,6 +31,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.core.shaping.common import LIVE_SAMPLE_ROWS
 from trigger_designer.qt.models.polars_table_viewer import (
     ALL_COLUMNS_LABEL,
     PolarsTableViewer,
@@ -54,8 +55,8 @@ _SOURCE_LABELS = {"run": "from Run", "value": "evaluated · not run"}
 _SOURCE_TOOLTIPS = {
     "run": "This frame is the output of the last workflow Run.",
     "value": (
-        "Computed by the app's live evaluation (file open, an edit), not by "
-        "a workflow Run."
+        "Computed by the app's live evaluation (file open, an edit) on the first "
+        f"{LIVE_SAMPLE_ROWS} rows of each input, not by a workflow Run."
     ),
 }
 

@@ -1,0 +1,6 @@
+id,region,amount,channel,FileName
+1,N,10.50,,sales_2024-01.csv
+2,S,20.00,,sales_2024-01.csv
+3,N,30.25,,sales_2024-02.csv
+4,E,40.00,web,sales_2024-03.csv
+5,W,5.75,store,sales_2024-03.csv

@@ -163,6 +163,14 @@ def test_truncated_lazy_request_counts_in_the_background():
     assert _wait_until(lambda: not preview_worker._LIVE_WORKERS)
 
 
+def test_wait_for_preview_workers_drains_in_flight_collects():
+    controller = PreviewRequestController()
+    controller.request(pl.DataFrame({"n": range(100)}))
+
+    assert preview_worker.wait_for_preview_workers(10_000) is True
+    assert not preview_worker._LIVE_WORKERS
+
+
 def test_unlimited_lazy_request_never_starts_a_count():
     controller = PreviewRequestController(max_rows=1000)
     previews = []

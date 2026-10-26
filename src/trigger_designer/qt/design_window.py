@@ -1,5 +1,4 @@
 from loguru import logger
-from collections import deque
 from contextlib import contextmanager, nullcontext
 import os
 import time
@@ -20,6 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from nodeeditor.node_editor_widget import NodeEditorWidget
+from nodeeditor.node_graph import GraphCycleError, cycles, topological_order
 from nodeeditor.utils import dumpException
 
 from trigger_designer.core.node_configuration import (
@@ -33,6 +33,11 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.widgets.nodes.unknown import TriggerNode_Unknown
 from trigger_designer.qt.helpers.context_menu_mixin import ContextMenuMixin
+from trigger_designer.qt.helpers.edge_validators import (
+    cycle_message,
+    mark_cycle_reported,
+    report_cycle_once,
+)
 from trigger_designer.qt.helpers.eval_progress import (
     eval_progress_dialog,
     make_progress_dialog,
@@ -42,6 +47,7 @@ from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.problems_store import ProblemsStore
 from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
@@ -91,6 +97,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self._last_scale: float = 1.0
 
         self.init_workflow_execution()
+        self.problems = ProblemsStore(self)
         self.init_context_menu_support()
 
         self.setTitle()
@@ -100,6 +107,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
         self.scene.addHasBeenModifiedListener(self.setTitle)
         self.scene.history.addHistoryRestoredListener(self.onHistoryRestored)
+        evaluator = getattr(self.scene, "evaluator", None)
+        if evaluator is not None:
+            # A deferred pass can discover a legacy cycle between full passes;
+            # route it to the same log/dock the window uses elsewhere.
+            self.scene.cycle_reporter = lambda message: self.logWarning(message)
         self.scene.addDragEnterListener(self.onDragEnter)
         self.scene.addDropListener(self.onDrop)
         self.scene.setNodeClassSelector(self.getNodeClassFromData)
@@ -325,19 +337,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         return TriggerNode_Unknown
 
     def doEvalOutputs(self, dialog=None) -> None:
-        # Evaluate in dependency order so every node pulls settled inputs
-        # instead of cascading eval() calls through the creation-order walk.
-        # A cyclic graph cannot be sorted; fall back to creation order rather
-        # than failing the load, matching the previous behaviour.
-        try:
-            ordered_nodes = self.topologicalSort(self.getNodeConnections())
-        except Exception as exc:  # noqa: BLE001 - load must not fail on a bad graph
-            self.logWarning(f"Could not sort workflow nodes for evaluation: {exc}")
-            ordered_nodes = list(self.scene.nodes)
+        # The loader and undo restore need every node in one ordered pass. A
+        # cyclic graph cannot be sorted; the coordinator reports it once and
+        # falls back to creation order instead of failing the load.
+        def report_cycle(message: str) -> None:
+            self.logWarning(f"{message} Evaluating in creation order.")
 
-        # The workflow loader passes its dialog; history restores and other
-        # evaluations run silently, regardless of graph size.
-        total = len(ordered_nodes)
+        total = len(self.scene.nodes)
         progress = (
             eval_progress_dialog(
                 self.scene, self, total, "Evaluating workflow…", dialog=dialog
@@ -346,16 +352,36 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             else nullcontext()
         )
         with progress:
+            # Keep the flat-pass flag around the settle call as well; step 6
+            # replaces the full-scene settle with a targeted pass, but until
+            # then it must not trigger eager pushes from inside the pass.
             previous_batch = getattr(self.scene, "_batch_evaluating", False)
             self.scene._batch_evaluating = True
             try:
-                for node in ordered_nodes:
-                    node.eval()
+                coordinator = getattr(self.scene, "evaluator", None)
+                if coordinator is not None:
+                    coordinator.evaluate_all(report=report_cycle)
+                else:
+                    try:
+                        ordered_nodes = topological_order(self.scene)
+                    except GraphCycleError as exc:
+                        report_cycle_once(self.scene, exc, report_cycle)
+                        ordered_nodes = list(self.scene.nodes)
+                    for node in ordered_nodes:
+                        node.eval()
                 settle_multi_input_nodes(self.scene)
             finally:
                 self.scene._batch_evaluating = previous_batch
 
     def onHistoryRestored(self) -> None:
+        # A snapshot restore rebuilds scene nodes. Drop queued work first so
+        # no timer or pending origin can retain or evaluate an old node.
+        evaluator = getattr(self.scene, "evaluator", None)
+        if evaluator is not None:
+            evaluator.reset_pending()
+        signatures = getattr(self.scene, "_reported_cycle_signatures", None)
+        if signatures is not None:
+            signatures.clear()
         # Force the Config Dock to rebuild: a restore reverts the selected
         # node in place, so without force=True the dock's _current_key check
         # would short-circuit and leave the widgets showing stale values.
@@ -381,6 +407,39 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         while parent_widget is not None and not hasattr(parent_widget, "configDock"):
             parent_widget = parent_widget.parentWidget()
         return getattr(parent_widget, "configDock", None)
+
+    def _pending_config_content(self):
+        """The content currently owning the Config Dock widgets, if any."""
+        dock = self._find_config_dock()
+        node = dock.currentNode() if dock is not None else None
+        return getattr(node, "content", None)
+
+    def commit_pending_config_edits(self, *, evaluate: bool = True) -> None:
+        """Drive a node's staged Config Dock edits into its model.
+
+        Formula and Filter use this to keep the latest editor text across
+        Save, Run, Close and node selection. ``evaluate=False`` commits the
+        text without starting a live recompute.
+        """
+        content = self._pending_config_content()
+        commit = getattr(content, "commit_pending_dock_edits", None)
+        if not callable(commit):
+            return
+        try:
+            commit(evaluate=evaluate)
+        except Exception:  # noqa: BLE001 - lifecycle must not be blocked
+            logger.exception("Failed to commit pending Config Dock edits")
+
+    def cancel_pending_config_edits(self) -> None:
+        """Drop deferred Config Dock work before a run or teardown."""
+        content = self._pending_config_content()
+        cancel = getattr(content, "cancel_pending_evaluation", None)
+        if not callable(cancel):
+            return
+        try:
+            cancel()
+        except Exception:  # noqa: BLE001 - teardown must not be blocked
+            logger.exception("Failed to cancel pending Config Dock evaluation")
 
     @contextmanager
     def _suspend_scene_restore_updates(self):
@@ -487,6 +546,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             for message in node_messages:
                 validation_messages.append(f"{node.node_title}: {message}")
 
+        cycle_paths = cycles(self.scene)
+        if cycle_paths:
+            validation_messages.append(cycle_message(cycle_paths))
+            # The caller logs every validation message. Mark the signature so
+            # the evaluation fallback does not repeat the same warning.
+            mark_cycle_reported(self.scene, cycle_paths)
+
         return validation_messages
 
     def _show_workflow_validation_warnings(self, messages: list[str]) -> None:
@@ -532,10 +598,34 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             ):
                 invalid_edges.append(edge)
 
-        # Remove invalid edges
+        # Remove invalid edges. Name both endpoints so a legacy reversed edge
+        # (input -> output) does not disappear without a trace.
         for edge in invalid_edges:
-            if edge in self.scene.edges:
-                edge.remove(silent=True)
+            if edge not in self.scene.edges:
+                continue
+            start_node = (
+                edge.start_socket.node if edge.start_socket is not None else None
+            )
+            end_node = edge.end_socket.node if edge.end_socket is not None else None
+            start_title = (
+                getattr(start_node, "title", None)
+                or getattr(type(start_node), "node_title", None)
+                if start_node is not None
+                else None
+            )
+            end_title = (
+                getattr(end_node, "title", None)
+                or getattr(type(end_node), "node_title", None)
+                if end_node is not None
+                else None
+            )
+            edge.remove(silent=True)
+            if start_title or end_title:
+                self.logWarning(
+                    "Removed invalid edge during workflow load: "
+                    f"{start_title or '?'} -> {end_title or '?'}"
+                )
+            else:
                 self.logWarning(f"Removed invalid edge during workflow load: {edge}")
 
     def setTitle(self) -> None:
@@ -623,9 +713,22 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         close. This must not call ``super().closeEvent(event)`` afterwards:
         the event arrives accepted, so the base implementation would undo a
         listener's ``event.ignore()`` and the close would always succeed.
+
+        A run still in flight is cancelled and waited for, but only once the
+        close is accepted: cancelling work for a close the user then vetoes
+        would lose the run for nothing.
         """
         for callback in list(self._close_event_listeners):
             callback(self, event)
+        if event.isAccepted():
+            self.cancel_pending_config_edits()
+            evaluator = getattr(self.scene, "evaluator", None)
+            if evaluator is not None:
+                evaluator.close()
+            try:
+                self.shutdown_workflow_worker()
+            except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                logger.exception("Failed to stop the workflow run while closing")
 
     def onDragEnter(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
@@ -733,33 +836,18 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             }
         return connections
 
-    def topologicalSort(self, connections):
-        in_degree = {node: 0 for node in connections}
-        for node in connections:
-            for output_node in connections[node]["outputs"]:
-                in_degree[output_node] += 1
+    def topologicalSort(self, connections=None):
+        """Deprecated: use :func:`nodeeditor.node_graph.topological_order`.
 
-        queue = deque([node for node in connections if in_degree[node] == 0])
-        sorted_nodes = []
-
-        while queue:
-            node = queue.popleft()
-            sorted_nodes.append(node)
-            for output_node in connections[node]["outputs"]:
-                in_degree[output_node] -= 1
-                if in_degree[output_node] == 0:
-                    queue.append(output_node)
-
-        if len(sorted_nodes) != len(connections):
-            raise Exception("Graph has at least one cycle")
-
-        return sorted_nodes
+        Kept for one release so existing callers keep working. ``connections``
+        is ignored; the scene is the graph of record.
+        """
+        return topological_order(self.scene)
 
     def test_execution_visuals(self) -> None:
         """Test function to verify execution visual effects"""
         self.run_button.setEnabled(False)
-        connections = self.getNodeConnections()
-        sorted_nodes = self.topologicalSort(connections)
+        sorted_nodes = topological_order(self.scene)
 
         # Get all nodes
         nodes = self.getAllNodes()

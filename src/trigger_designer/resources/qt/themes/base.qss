@@ -2034,6 +2034,163 @@ QFrame#FormulaCardHeader {{
 QFrame#FormulaCardBody {{
   background-color: transparent;
   border: 0px; }}
+QFrame#RuleCard {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+QFrame#RuleCardHeader {{
+  background-color: transparent;
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+QFrame#RuleCardBody {{
+  background-color: transparent;
+  border: 0px; }}
+QFrame#RuleCardHeader[collapsed="true"] {{
+  border-bottom: 0px; }}
+QLabel#RuleNumber {{
+  min-width: 18px;
+  max-width: 18px;
+  min-height: 18px;
+  max-height: 18px;
+  border: 1px solid {border_primary};
+  border-radius: 9px;
+  background-color: {editor_background};
+  color: {text_inactive};
+  font-size: 10px; }}
+QLabel#RuleSummary {{
+  color: {text_secondary};
+  font-size: 11px; }}
+QLabel#RuleChevron {{
+  color: {text_inactive};
+  font-size: 10px; }}
+
+/* Compact multi-column field: selected tokens, then a popover checklist. */
+QPushButton#ColumnPicker {{
+  background-color: {editor_background};
+  border: 1px solid {card_border};
+  border-radius: 4px;
+  padding: 0px;
+  text-align: left; }}
+QPushButton#ColumnPicker:hover {{
+  background-color: {background_hover};
+  border: 1px solid {accent_primary}; }}
+QPushButton#ColumnPicker:pressed {{
+  background-color: {background_pressed};
+  border: 1px solid {accent_primary}; }}
+QPushButton#ColumnPicker:focus {{
+  border: 1px solid {accent_primary}; }}
+QPushButton#ColumnPicker:disabled {{
+  background-color: {editor_background};
+  border: 1px solid {card_border}; }}
+QPushButton#ColumnPicker[open="true"] {{
+  border: 1px solid {accent_primary}; }}
+QLabel#ColumnPickerCount {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 3px;
+  color: {text_inactive};
+  font-family: "Cascadia Mono", "Consolas";
+  font-size: 9px;
+  padding: 0px 4px; }}
+QLabel#ColumnToken {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 3px;
+  color: {text_secondary};
+  font-size: 10px;
+  padding: 1px 4px; }}
+QLabel#ColumnPickerMore {{
+  color: {text_inactive};
+  font-family: "Cascadia Mono", "Consolas";
+  font-size: 10px; }}
+QLabel#ColumnPickerChevron {{
+  color: {text_inactive};
+  font-size: 10px; }}
+QLabel#ColumnPickerPlaceholder {{
+  color: {text_inactive};
+  font-size: 11px; }}
+QFrame#ColumnPickerPopup {{
+  background-color: {menu_background};
+  border: 1px solid {border_light};
+  border-radius: 6px; }}
+QLineEdit#ColumnPickerSearch {{
+  background-color: {editor_background};
+  border: 1px solid {card_border};
+  border-radius: 4px;
+  padding: 0px 6px; }}
+QLineEdit#ColumnPickerSearch:hover {{
+  border: 1px solid {accent_primary}; }}
+QLineEdit#ColumnPickerSearch:focus {{
+  border: 1px solid {accent_primary}; }}
+QFrame#ColumnPickerTray {{
+  background-color: {background_secondary};
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+QLabel#ColumnPickerTrayLabel {{
+  color: {text_inactive};
+  font-size: 9px;
+  font-weight: 600; }}
+QLabel#ColumnPickerTrayCount {{
+  color: {text_inactive};
+  font-family: "Cascadia Mono", "Consolas";
+  font-size: 9px; }}
+QFrame#ColumnPickerTray QLabel#ColumnToken {{
+  background-color: {background_primary}; }}
+QListView#ColumnPickerList {{
+  background-color: {menu_background};
+  border: 0px;
+  outline: 0px; }}
+QListView#ColumnPickerList QScrollBar:vertical {{
+  background: transparent;
+  width: 8px;
+  margin: 0px;
+  border: 0px; }}
+QListView#ColumnPickerList QScrollBar::handle:vertical {{
+  background-color: {border_primary};
+  min-height: 24px;
+  border-radius: 4px; }}
+QListView#ColumnPickerList QScrollBar::add-line:vertical,
+QListView#ColumnPickerList QScrollBar::sub-line:vertical {{
+  height: 0px;
+  background: transparent; }}
+QLabel#ColumnPickerEmpty {{
+  color: {text_inactive};
+  font-size: 11px; }}
+QFrame#ColumnPickerFooter {{
+  background-color: {background_secondary};
+  border: 0px;
+  border-top: 1px solid {border_primary};
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px; }}
+QLabel#ColumnPickerFooterCount {{
+  color: {text_inactive};
+  font-family: "Cascadia Mono", "Consolas";
+  font-size: 9px; }}
+QLabel#ConfigSummary {{
+  color: {text_inactive};
+  font-size: 10px;
+  padding: 0px 2px 2px 46px; }}
+QPushButton#DayToggle {{
+  background-color: {button_bg};
+  border: 1px solid {button_bg};
+  border-radius: 4px;
+  color: {text_secondary};
+  font-size: 10px;
+  padding: 0px; }}
+QPushButton#DayToggle:hover {{
+  background-color: {background_hover};
+  border: 1px solid {accent_primary}; }}
+QPushButton#DayToggle:pressed {{
+  background-color: {background_pressed};
+  border: 1px solid {accent_primary}; }}
+QPushButton#DayToggle:checked {{
+  background-color: {accent_primary};
+  border: 1px solid {accent_primary};
+  color: #ffffff; }}
+QPushButton#DayToggle:disabled {{
+  background-color: {button_bg};
+  border: 1px solid {button_bg};
+  color: {text_disabled}; }}
 QFrame#formulaResizeGrip {{
   background-color: {card_border}; }}
 QFrame#formulaSeparator {{
@@ -2173,6 +2330,8 @@ QPushButton#SegmentButton {{
     background-color: {accent_secondary};
     border: 1px solid {accent_secondary};
     color: #ffffff; }}
+  QPushButton#SegmentButton[compact="true"] {{
+    padding: 0px 3px; }}
 
 /* Tables inside the dock follow the section rhythm. */
 QTableView#ColumnTable {{

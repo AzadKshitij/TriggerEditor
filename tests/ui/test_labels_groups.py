@@ -216,13 +216,13 @@ def test_config_dock_label_sync_survives_rebuild() -> None:
     """
     from trigger_designer.qt.docks.node_config import ConfigDock
     from trigger_designer.qt.widgets.nodes.Transform.count_records import (
-        TriggerNode_CountRecords,
+        TriggerNode_Count,
     )
 
     scene = _make_scene()
     scene.history.storeHistory("baseline")
-    first = TriggerNode_CountRecords(scene)
-    second = TriggerNode_CountRecords(scene)
+    first = TriggerNode_Count(scene)
+    second = TriggerNode_Count(scene)
 
     dock = ConfigDock()
     dock.updateConfig([first.grNode])
@@ -244,12 +244,12 @@ def test_config_dock_label_sync_survives_rebuild() -> None:
 def test_config_dock_label_edit_follows_canvas() -> None:
     from trigger_designer.qt.docks.node_config import ConfigDock
     from trigger_designer.qt.widgets.nodes.Transform.count_records import (
-        TriggerNode_CountRecords,
+        TriggerNode_Count,
     )
 
     scene = _make_scene()
     scene.history.storeHistory("baseline")
-    node = TriggerNode_CountRecords(scene)
+    node = TriggerNode_Count(scene)
 
     dock = ConfigDock()
     dock.updateConfig([node.grNode])
@@ -267,12 +267,12 @@ def test_config_dock_label_edit_follows_canvas() -> None:
 def test_config_dock_label_section_and_debounced_commit() -> None:
     from trigger_designer.qt.docks.node_config import ConfigDock
     from trigger_designer.qt.widgets.nodes.Transform.count_records import (
-        TriggerNode_CountRecords,
+        TriggerNode_Count,
     )
 
     scene = _make_scene()
     scene.history.storeHistory("baseline")
-    node = TriggerNode_CountRecords(scene)
+    node = TriggerNode_Count(scene)
     node.setNodeLabel("dock seed", store_history=False)
 
     dock = ConfigDock()
