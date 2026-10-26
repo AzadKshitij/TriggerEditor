@@ -47,7 +47,12 @@ class MaterializedWorkflow:
     out_dir: Path
 
 
-def materialize(case: WorkflowCase, tmp_path: Path) -> MaterializedWorkflow:
+def materialize(
+    case: WorkflowCase,
+    tmp_path: Path,
+    input_paths: dict[str, Path] | None = None,
+) -> MaterializedWorkflow:
+    """Copy ``case`` into ``tmp_path``; ``input_paths`` replaces a fixture by name."""
     data = orjson.loads(case.source_path.read_bytes())
     out_dir = tmp_path / "out"
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -68,7 +73,7 @@ def materialize(case: WorkflowCase, tmp_path: Path) -> MaterializedWorkflow:
 
         kind = _node_kind(node)
         if kind == "input":
-            target[key] = _input_path(case, basename).as_posix()
+            target[key] = _input_path(case, basename, input_paths).as_posix()
             # Relative wins on load; a stale one would override the rewrite.
             target.pop("filePathRel", None)
         elif kind == "output":
@@ -169,7 +174,11 @@ def _node_kind(node: dict) -> str | None:
     return None
 
 
-def _input_path(case: WorkflowCase, basename: str) -> Path:
+def _input_path(
+    case: WorkflowCase, basename: str, overrides: dict[str, Path] | None = None
+) -> Path:
+    if overrides and basename in overrides:
+        return overrides[basename]
     candidates = []
     if basename in case.inputs:
         candidates.append(REPO_ROOT / case.inputs[basename])

@@ -75,6 +75,17 @@ def schema_of(frame: Frame) -> dict[str, pl.DataType]:
     return dict(schema.items())
 
 
+#: Live (editing) evaluation reads this many leading rows of each input and
+#: shows at most this many rows of each output, so opening or editing a large
+#: workflow stays responsive. Run always processes the whole input.
+LIVE_SAMPLE_ROWS = 100
+
+
+def live_sample(frame: Frame | None) -> Frame | None:
+    """The leading rows live evaluation works on; ``None`` passes through."""
+    return None if frame is None else frame.head(LIVE_SAMPLE_ROWS)
+
+
 def require_columns(frame_schema: dict, names: Iterable[str]) -> None:
     missing = [name for name in names if name not in frame_schema]
     if missing:
