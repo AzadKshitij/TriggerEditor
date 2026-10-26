@@ -58,15 +58,18 @@ def _node_menu(window: TriggerSubWindow, monkeypatch) -> QMenu:
     captured: list[QMenu] = []
 
     class _CapturingMenu(QMenu):
-        def exec(self, *args, **kwargs):  # noqa: A003 - Qt's own spelling
+        def exec(self, *args, **kwargs):
             captured.append(self)
-            return None
 
     monkeypatch.setattr(context_menu_mixin, "QMenu", _CapturingMenu)
 
     from qtpy.QtGui import QContextMenuEvent
 
-    event = QContextMenuEvent(QContextMenuEvent.Reason.Mouse, QPoint(0, 0))
+    event = QContextMenuEvent(
+        QContextMenuEvent.Reason.Mouse,
+        QPoint(0, 0),
+        QPoint(0, 0),
+    )
     window.handleNodeContextMenu(event)
     assert captured, "the context menu was never built"
     return captured[0]
