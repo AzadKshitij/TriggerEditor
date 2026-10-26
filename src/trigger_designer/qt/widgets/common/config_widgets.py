@@ -7,10 +7,9 @@ states; these widgets own structure and change signals only
 """
 
 from collections.abc import Callable, Iterable
-from typing import Optional
 
 from qtpy.QtCore import QEvent, QSize, Qt, Signal
-from qtpy.QtGui import QIcon, QPixmap
+from qtpy.QtGui import QIcon, QPainter, QPixmap
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
@@ -181,7 +180,7 @@ class Chip(QLabel):
     """
 
     def __init__(
-        self, text: str, tone: str = "", parent: Optional[QWidget] = None
+        self, text: str, tone: str = "", parent: QWidget | None = None
     ) -> None:
         super().__init__(text, parent)
         self.setObjectName("Chip")
@@ -194,7 +193,7 @@ class StatusBadge(QLabel):
     """18px status badge; by exception only (§0.1: status by exception)."""
 
     def __init__(
-        self, text: str, tone: str = "", parent: Optional[QWidget] = None
+        self, text: str, tone: str = "", parent: QWidget | None = None
     ) -> None:
         super().__init__(text, parent)
         self.setObjectName("StatusBadge")
@@ -216,7 +215,7 @@ class InspectorHeader(QFrame):
         title: str,
         icon: QIcon | QPixmap | None = None,
         category: str | None = None,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("InspectorHeader")
@@ -243,7 +242,7 @@ class InspectorHeader(QFrame):
         layout.addWidget(self._title)
         layout.addStretch(1)
 
-        self._badge: Optional[StatusBadge] = None
+        self._badge: StatusBadge | None = None
 
     def set_icon(self, icon: QIcon | QPixmap | None) -> None:
         if icon is None or (isinstance(icon, QIcon) and icon.isNull()):
@@ -291,7 +290,7 @@ class ContextStrip(QFrame):
         self,
         chips: Iterable[tuple[str, str]] = (),
         label: str = "",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("ContextStrip")
@@ -335,12 +334,12 @@ class ConfigSection(QFrame):
     def __init__(
         self,
         title: str = "",
-        info: Optional[str] = None,
-        parent: Optional[QWidget] = None,
+        info: str | None = None,
+        parent: QWidget | None = None,
         *,
         collapsible: bool = False,
         collapsed: bool = False,
-        count: Optional[str] = None,
+        count: str | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("ConfigSection")
@@ -358,9 +357,9 @@ class ConfigSection(QFrame):
 
         self._collapsible = collapsible
         self._collapsed = collapsed and collapsible
-        self._header: Optional[QFrame] = None
-        self._chevron: Optional[QLabel] = None
-        self._title: Optional[QLabel] = None
+        self._header: QFrame | None = None
+        self._chevron: QLabel | None = None
+        self._title: QLabel | None = None
 
         if self._has_header:
             self._header = QFrame(self)
@@ -493,8 +492,11 @@ class SegmentedControl(QWidget):
     def __init__(
         self,
         options: Iterable[str],
-        current: Optional[str] = None,
-        parent: Optional[QWidget] = None,
+        current: str | None = None,
+        parent: QWidget | None = None,
+        *,
+        expanded: bool = False,
+        compact: bool = False,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("Segmented")
@@ -516,10 +518,18 @@ class SegmentedControl(QWidget):
             button.setCursor(Qt.CursorShape.PointingHandCursor)
             button.setChecked(option == self._value)
             button.toggled.connect(self._on_toggled)
+            if expanded:
+                button.setMinimumWidth(0)
+                button.setSizePolicy(
+                    QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed
+                )
+            if compact:
+                button.setProperty("compact", True)
             self._group.addButton(button)
             self._buttons[option] = button
-            layout.addWidget(button)
-        layout.addStretch(1)
+            layout.addWidget(button, 1 if expanded else 0)
+        if not expanded:
+            layout.addStretch(1)
 
     def value(self) -> str:
         return self._value
@@ -551,11 +561,11 @@ class FormRow(QFrame):
         self,
         label: str,
         field: QWidget,
-        hint: Optional[str] = None,
-        parent: Optional[QWidget] = None,
+        hint: str | None = None,
+        parent: QWidget | None = None,
         *,
         label_width: int = 0,
-        action: Optional[QWidget] = None,
+        action: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("FieldRow")
@@ -606,7 +616,7 @@ class FormRow(QFrame):
 class FormGrid(QFrame):
     """Columns of labelled fields: label above control, one cell per field."""
 
-    def __init__(self, parent: Optional[QWidget] = None) -> None:
+    def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("FieldStack")
         self._grid = QGridLayout(self)
@@ -648,10 +658,10 @@ class ColumnChecklist(QWidget):
         self,
         columns: Iterable[str] = (),
         checked: Iterable[str] = (),
-        label_fn: Optional[Callable[[str], str]] = None,
+        label_fn: Callable[[str], str] | None = None,
         min_height: int = 0,
         max_height: int = 320,
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
         self.setObjectName("ColumnChecklist")
@@ -794,13 +804,320 @@ class ColumnChecklist(QWidget):
             self.changed.emit(self.checked())
 
 
+class ElidedLabel(QLabel):
+    """A one-line label that elides instead of widening its parent."""
+
+    def __init__(self, text: str = "", parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._full_text = str(text)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.setMinimumWidth(0)
+        self.setToolTip(self._full_text)
+        super().setText(self._full_text)
+
+    def set_full_text(self, text: str) -> None:
+        self._full_text = str(text)
+        self.setToolTip(self._full_text)
+        super().setText(self._full_text)
+        self.update()
+
+    def full_text(self) -> str:
+        return self._full_text
+
+    def sizeHint(self) -> QSize:
+        hint = super().sizeHint()
+        return QSize(0, hint.height())
+
+    def minimumSizeHint(self) -> QSize:
+        hint = super().minimumSizeHint()
+        return QSize(0, hint.height())
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setPen(self.palette().color(self.foregroundRole()))
+        painter.setFont(self.font())
+        text = self.fontMetrics().elidedText(
+            self._full_text,
+            Qt.TextElideMode.ElideRight,
+            max(self.width(), 0),
+        )
+        painter.drawText(
+            self.rect(),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            text,
+        )
+        painter.end()
+
+
+class RuleStack(QWidget):
+    """Ordered cards with summary-first headers and one add button.
+
+    The owner keeps the list; this widget only draws it and emits intents.
+    A card can collapse to a one-line summary, which is the default for long
+    rule lists. The summary is supplied by the owner and can be refreshed
+    without rebuilding the card.
+    """
+
+    add_requested = Signal()
+    remove_requested = Signal(int)
+    move_requested = Signal(int, int)
+    duplicate_requested = Signal(int)
+
+    def __init__(self, add_tooltip: str, rsm=None, parent=None) -> None:
+        super().__init__(parent)
+        self.setObjectName("RuleStack")
+        self._rsm = rsm
+        self._cards: list[QFrame] = []
+        self._headers: list[QFrame] = []
+        self._bodies: list[QWidget] = []
+        self._summaries: list[QLabel] = []
+        self._chevrons: list[QLabel] = []
+        self._callbacks: list = []
+        self._collapsed: list[bool] = []
+        self._titles: list[QLabel] = []
+        self._ups: list[QWidget] = []
+        self._downs: list[QWidget] = []
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(SECTION_GAP)
+        self._cards_layout = QVBoxLayout()
+        self._cards_layout.setContentsMargins(0, 0, 0, 0)
+        self._cards_layout.setSpacing(SECTION_GAP)
+
+        # The add button sits above the cards: appending a card then never
+        # moves a new control under the pointer that just clicked Add.
+        add_row = QHBoxLayout()
+        add_row.setContentsMargins(0, 0, 0, 0)
+        add_row.addStretch(1)
+        self.add_button = IconButton.themed(
+            add_tooltip,
+            rsm_icon=self._icon("icon_add"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_right.png",
+            parent=self,
+        )
+        self.add_button.clicked.connect(self.add_requested.emit)
+        add_row.addWidget(self.add_button)
+        layout.addLayout(add_row)
+        layout.addLayout(self._cards_layout)
+
+    def _icon(self, name: str):
+        if self._rsm is None:
+            return None
+        try:
+            return self._rsm.get(name)
+        except Exception:  # noqa: BLE001 - icon lookup is advisory
+            return None
+
+    def clear(self) -> None:
+        self._cards, self._headers, self._bodies = [], [], []
+        self._summaries, self._chevrons, self._callbacks = [], [], []
+        self._collapsed = []
+        self._titles, self._ups, self._downs = [], [], []
+        while self._cards_layout.count():
+            item = self._cards_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.setParent(None)
+                widget.deleteLater()
+
+    def remove_card(self, index: int) -> None:
+        """Remove one card without touching the others (no full rebuild)."""
+        if not 0 <= index < len(self._cards):
+            return
+        card = self._cards.pop(index)
+        for rows in (
+            self._headers,
+            self._bodies,
+            self._summaries,
+            self._chevrons,
+            self._callbacks,
+            self._collapsed,
+            self._titles,
+            self._ups,
+            self._downs,
+        ):
+            rows.pop(index)
+        self._cards_layout.removeWidget(card)
+        card.setParent(None)
+        card.deleteLater()
+        self._renumber()
+
+    def _renumber(self) -> None:
+        count = len(self._cards)
+        for position, title in enumerate(self._titles):
+            title.setText(str(position + 1))
+        for position, (up, down) in enumerate(zip(self._ups, self._downs)):
+            up.setEnabled(position > 0)
+            down.setEnabled(position < count - 1)
+
+    def add_card(
+        self,
+        index: int,
+        count: int,
+        body: QWidget,
+        *,
+        summary: str = "",
+        collapsible: bool = False,
+        collapsed: bool = False,
+        on_toggle=None,
+    ) -> QFrame:
+        card = QFrame(self)
+        card.setObjectName("RuleCard")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(4, 2, 4, 4)
+        card_layout.setSpacing(2)
+
+        header = QFrame(card)
+        header.setObjectName("RuleCardHeader")
+        header.setFixedHeight(30)
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(2, 0, 2, 0)
+        header_layout.setSpacing(2)
+
+        chevron = QLabel("", header)
+        chevron.setObjectName("RuleChevron")
+        chevron.setFixedWidth(10)
+        chevron.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if collapsible:
+            header_layout.addWidget(chevron)
+        else:
+            chevron.hide()
+
+        title = QLabel(str(index + 1), header)
+        title.setObjectName("RuleNumber")
+        title.setFixedWidth(20)
+        title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header_layout.addWidget(title)
+
+        summary_label = ElidedLabel(summary or f"Rule {index + 1}", header)
+        summary_label.setObjectName("RuleSummary")
+        header_layout.addWidget(summary_label, 1)
+
+        up = IconButton.themed(
+            "Move up",
+            rsm_icon=self._icon("icon_move_up"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
+            parent=header,
+        )
+        down = IconButton.themed(
+            "Move down",
+            rsm_icon=self._icon("icon_move_down"),
+            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            parent=header,
+        )
+        duplicate = IconButton.themed(
+            "Duplicate",
+            rsm_icon=self._icon("icon_copy"),
+            qss_fallback=":/qss_icons/dark/rc/window_new.png",
+            parent=header,
+        )
+        remove = IconButton.themed(
+            "Remove",
+            rsm_icon=self._icon("icon_remove"),
+            qss_fallback=":/qss_icons/dark/rc/window_close.png",
+            parent=header,
+        )
+        up.setEnabled(index > 0)
+        down.setEnabled(index < count - 1)
+
+        def position() -> int:
+            try:
+                return self._cards.index(card)
+            except ValueError:
+                return -1
+
+        up.clicked.connect(lambda _=False: self.move_requested.emit(position(), -1))
+        down.clicked.connect(lambda _=False: self.move_requested.emit(position(), 1))
+        duplicate.clicked.connect(
+            lambda _=False: self.duplicate_requested.emit(position())
+        )
+        remove.clicked.connect(lambda _=False: self.remove_requested.emit(position()))
+        header_layout.addWidget(up)
+        header_layout.addWidget(down)
+        header_layout.addWidget(duplicate)
+        header_layout.addWidget(remove)
+
+        body.setObjectName("RuleCardBody")
+        card_layout.addWidget(header)
+        card_layout.addWidget(body)
+        self._cards_layout.addWidget(card)
+
+        self._cards.append(card)
+        self._headers.append(header)
+        self._bodies.append(body)
+        self._summaries.append(summary_label)
+        self._chevrons.append(chevron)
+        self._callbacks.append(on_toggle)
+        self._collapsed.append(False)
+        self._titles.append(title)
+        self._ups.append(up)
+        self._downs.append(down)
+
+        if collapsible:
+            header.setCursor(Qt.CursorShape.PointingHandCursor)
+            header.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+            header.setToolTip("Expand or collapse this card")
+            header.mousePressEvent = (  # type: ignore[method-assign]
+                lambda event: self._toggle(position())
+            )
+            header.keyPressEvent = (  # type: ignore[method-assign]
+                lambda event: self._toggle_key(event, position())
+            )
+
+        self._apply_collapsed(index, collapsed and collapsible)
+        self._renumber()
+        return card
+
+    def set_card_summary(self, index: int, text: str) -> None:
+        if 0 <= index < len(self._summaries):
+            label = self._summaries[index]
+            if isinstance(label, ElidedLabel):
+                label.set_full_text(text or f"Rule {index + 1}")
+            else:
+                label.setText(text or f"Rule {index + 1}")
+            label.setToolTip(text)
+
+    def is_collapsed(self, index: int) -> bool:
+        return 0 <= index < len(self._collapsed) and self._collapsed[index]
+
+    def _apply_collapsed(self, index: int, collapsed: bool) -> None:
+        if not (0 <= index < len(self._bodies)):
+            return
+        self._collapsed[index] = bool(collapsed)
+        self._bodies[index].setVisible(not collapsed)
+        self._chevrons[index].setText("\u25b8" if collapsed else "\u25be")
+        self._headers[index].setProperty("collapsed", collapsed)
+        self._headers[index].style().unpolish(self._headers[index])
+        self._headers[index].style().polish(self._headers[index])
+
+    def _toggle(self, index: int) -> None:
+        if not (0 <= index < len(self._bodies)):
+            return
+        collapsed = not self._collapsed[index]
+        self._apply_collapsed(index, collapsed)
+        callback = self._callbacks[index]
+        if callable(callback):
+            callback(not collapsed)
+
+    def _toggle_key(self, event, index: int) -> None:
+        if event.key() in (
+            Qt.Key.Key_Space,
+            Qt.Key.Key_Return,
+            Qt.Key.Key_Enter,
+        ):
+            self._toggle(index)
+            return
+        event.ignore()
+
+
 class EmptyStateLabel(QLabel):
     """Centered gray placeholder for nodes with no incoming data."""
 
     def __init__(
         self,
         text: str = "No incoming data available",
-        parent: Optional[QWidget] = None,
+        parent: QWidget | None = None,
     ) -> None:
         super().__init__(text, parent)
         self.setObjectName("EmptyStateLabel")

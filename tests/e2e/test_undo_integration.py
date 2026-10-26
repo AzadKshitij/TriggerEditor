@@ -14,7 +14,6 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 )
 
-import polars as pl
 import pytest
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QMainWindow
@@ -104,23 +103,25 @@ def test_formula_change_round_trips(window, nodes):
     history = window.scene.history
     _reset(history)
 
-    old_sections = [dict(s) for s in formula.content.formula_sections]
-    formula.content.formula_sections = old_sections + [
-        {"target_column": "doubled", "formula_text": "[amount] * 2"}
-    ]
-    formula.content.store_history({"formula_sections": old_sections})
+    old_sections = [dict(s) for s in formula.content.settings["sections"]]
+    formula.content.set_setting(
+        "sections",
+        old_sections + [{"target_column": "doubled", "formula_text": "[amount] * 2"}],
+        "Formula Changed",
+        structural=True,
+    )
 
     assert history.canUndo()
     assert history.currentText() == "Formula Changed"
     assert history.controller.count == 1
 
     history.undo()
-    assert len(formula.content.formula_sections) == len(old_sections)
+    assert len(formula.content.settings["sections"]) == len(old_sections)
     assert history.canRedo()
     assert history.nextText() == "Formula Changed"
 
     history.redo()
-    assert len(formula.content.formula_sections) == len(old_sections) + 1
+    assert len(formula.content.settings["sections"]) == len(old_sections) + 1
     assert not history.canRedo()
 
 
@@ -131,11 +132,13 @@ def test_each_added_section_is_its_own_step(window, nodes):
     before = history.controller.count
 
     for index in range(5):
-        sections = [dict(s) for s in formula.content.formula_sections]
-        formula.content.formula_sections = sections + [
-            {"target_column": f"c{index}", "formula_text": "1"}
-        ]
-        formula.content.store_history({"formula_sections": sections})
+        sections = [dict(s) for s in formula.content.settings["sections"]]
+        formula.content.set_setting(
+            "sections",
+            sections + [{"target_column": f"c{index}", "formula_text": "1"}],
+            "Formula Section Added",
+            structural=True,
+        )
 
     # Five separate clicks are five separate undo steps - only a *burst* of
     # typing collapses.
@@ -186,36 +189,36 @@ def test_select_rename_and_selection_is_undoable(window, nodes):
     history = window.scene.history
     _reset(history)
 
-    old_changes = {"selected_columns": [], "rename_mapping": {}, "dtype_mapping": {}}
-    new_changes = {
-        "selected_columns": ["amount"],
-        "rename_mapping": {"amount": "total_amount"},
-        "dtype_mapping": {},
-    }
-    select.content.data = pl.DataFrame({"amount": [1, 2]})
-    select.content.incoming_variable = "input_df"
-    select.content.changes = {
-        key: (list(value) if isinstance(value, list) else dict(value))
-        for key, value in new_changes.items()
-    }
-    select.content.apply_changes()
+    old_columns = [
+        {
+            "name": "amount",
+            "selected": False,
+            "dtype": "Int64",
+            "rename": "",
+            "date_format": "",
+            "dtype_custom": False,
+        }
+    ]
+    new_columns = [dict(old_columns[0], selected=True, rename="total_amount")]
+    select.content.settings["columns"] = [dict(old_columns[0])]
 
     history.push_edit(
         PropertyChangeCommand(
             select,
-            ("changes",),
-            old_changes,
-            new_changes,
+            ("settings", "columns"),
+            old_columns,
+            new_columns,
             "Column Selection/Rename/Type Changed",
         )
     )
 
     assert history.currentText() == "Column Selection/Rename/Type Changed"
     history.undo()
-    assert select.content.changes["rename_mapping"] == {}
-    assert select.content.changes["selected_columns"] == []
+    assert select.content.settings["columns"][0]["selected"] is False
+    assert select.content.settings["columns"][0]["rename"] == ""
     history.redo()
-    assert select.content.changes["rename_mapping"] == {"amount": "total_amount"}
+    assert select.content.settings["columns"][0]["selected"] is True
+    assert select.content.settings["columns"][0]["rename"] == "total_amount"
 
 
 # ----------------------------------------------------------------------
@@ -243,8 +246,8 @@ def test_dock_is_rebuilt_after_a_restore(window, nodes):
     history.push_edit(
         PropertyChangeCommand(
             formula,
-            ("formula_sections",),
-            formula.content.formula_sections,
+            ("settings", "sections"),
+            formula.content.settings["sections"],
             [{"target_column": "x", "formula_text": "1"}],
             "Formula Changed",
         )

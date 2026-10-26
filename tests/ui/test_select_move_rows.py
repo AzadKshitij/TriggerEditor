@@ -32,8 +32,8 @@ def _make_content(cols=("a", "b", "c", "d")):
     node = cls(window.scene)
     window.scene.nodes.append(node)
     content = node.content
-    content.incom_data = pl.DataFrame({c: [1, 2] for c in cols}).lazy()
-    content.incoming_variable = "var_in"
+    content.frames[0] = pl.DataFrame({c: [1, 2] for c in cols}).lazy()
+    content.input_vars[0] = "var_in"
     host = QWidget()
     content.create_layout(QVBoxLayout(host))
     return parent, window, content, host
@@ -44,7 +44,9 @@ def _table_order(content):
 
 
 def _output_cols(content):
-    return list(content.data.collect_schema().names())
+    frame = content.compute()[0]
+    frame = frame["data"] if isinstance(frame, dict) else frame
+    return list(frame.collect_schema().names())
 
 
 def _select_proxy_row(content, proxy_row, clear=True):
@@ -68,8 +70,8 @@ def test_move_up_single_row_sticks():
     content.table_widget.moveSelectedRow("up", content.table_view)
     APP.processEvents()
     assert _table_order(content) == ["a", "c", "b", "d"]
-    assert content.changes["selected_columns"] == ["a", "c", "b", "d"]
-    assert content.changes["column_order"] == ["a", "c", "b", "d"]
+    assert content._table_changes()["selected_columns"] == ["a", "c", "b", "d"]
+    assert content._table_changes()["column_order"] == ["a", "c", "b", "d"]
     assert [r[0] for r in content.table_widget.getData()] == ["a", "c", "b", "d"]
     assert _output_cols(content) == ["a", "c", "b", "d"]
 
@@ -135,7 +137,7 @@ def test_move_preserves_unchecked_and_filters_output():
         content.table_widget.index(1, 0), 0, Qt.ItemDataRole.CheckStateRole
     )
     APP.processEvents()
-    assert content.changes["selected_columns"] == ["a", "c", "d"]
+    assert content._table_changes()["selected_columns"] == ["a", "c", "d"]
     assert _output_cols(content) == ["a", "c", "d"]
     # Move 'c' (source row 2) above 'a'.
     _select_proxy_row(content, 2)
@@ -145,7 +147,7 @@ def test_move_preserves_unchecked_and_filters_output():
     APP.processEvents()
     assert _table_order(content) == ["c", "a", "b", "d"]
     assert [r.text for r in content.table_data if not r.checked] == ["b"]
-    assert content.changes["selected_columns"] == ["c", "a", "d"]
+    assert content._table_changes()["selected_columns"] == ["c", "a", "d"]
     assert _output_cols(content) == ["c", "a", "d"]
 
 
@@ -156,13 +158,13 @@ def test_moves_record_history_steps():
     content.table_widget.moveSelectedRow("up", content.table_view)
     APP.processEvents()
     assert _table_order(content) == ["b", "a", "c", "d"]
-    # First stamp is the baseline, not an undo step.
-    assert history.controller.stack.count() == 0
+    # Each move is one undo step; the loaded state is never a step of its own.
+    assert history.controller.stack.count() == 1
     _select_proxy_row(content, 2)
     content.table_widget.moveSelectedRow("up", content.table_view)
     APP.processEvents()
     assert _table_order(content) == ["b", "c", "a", "d"]
-    assert history.controller.stack.count() == 1
+    assert history.controller.stack.count() == 2
 
 
 def test_move_undo_redo_round_trip():
@@ -177,7 +179,7 @@ def test_move_undo_redo_round_trip():
     content.table_widget.moveSelectedRow("up", content.table_view)
     APP.processEvents()
     assert _table_order(content) == ["b", "c", "a", "d"]
-    assert history.controller.count == 1
+    assert history.controller.count == 2
 
     history.undo()
     APP.processEvents()
@@ -203,7 +205,8 @@ def test_move_order_restores_via_update_from_changes():
     content.table_widget.moveSelectedRow("up", content.table_view)
     APP.processEvents()
     assert _table_order(content) == ["b", "a", "c", "d"]
-    saved_changes = copy.deepcopy(content.changes)
+    saved_changes = copy.deepcopy(content._table_changes())
+    saved_columns = copy.deepcopy(content.settings["columns"])
     _select_proxy_row(content, 2)
     content.table_widget.moveSelectedRow("up", content.table_view)
     APP.processEvents()
@@ -211,8 +214,9 @@ def test_move_order_restores_via_update_from_changes():
     # Re-apply the restored state as an undo would (no new history).
     with content.history.restoring(is_undo=True):
         content.table_widget.update_from_changes(saved_changes)
-        content.changes = copy.deepcopy(saved_changes)
-        content.apply_changes()
+        content.settings["columns"] = copy.deepcopy(saved_columns)
+        content._sync_widgets_from_model()
+        content.compute()
     APP.processEvents()
     assert _table_order(content) == ["b", "a", "c", "d"]
     assert _output_cols(content) == ["b", "a", "c", "d"]
@@ -225,11 +229,11 @@ def test_upstream_add_preserves_user_order():
     APP.processEvents()
     assert _table_order(content) == ["a", "c", "b", "d"]
     # Upstream adds 'e': survivors keep their order, newcomer appends checked.
-    content.incom_data = pl.DataFrame(
+    content.frames[0] = pl.DataFrame(
         {c: [1, 2] for c in ["a", "b", "c", "d", "e"]}
     ).lazy()
-    content.apply_changes()
+    content.compute()
     APP.processEvents()
     assert _table_order(content) == ["a", "c", "b", "d", "e"]
-    assert content.changes["selected_columns"] == ["a", "c", "b", "d", "e"]
+    assert content._table_changes()["selected_columns"] == ["a", "c", "b", "d", "e"]
     assert _output_cols(content) == ["a", "c", "b", "d", "e"]

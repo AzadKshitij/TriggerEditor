@@ -48,18 +48,14 @@
         }
       ],
       "content": {
-        "sum_columns": [
-          "Autocomplete Position"
-        ],
-        "group_by_columns": [
-          "Keyword"
-        ],
-        "numeric_columns": [
-          "Unnamed: 0",
-          "Autocomplete Position",
-          "Difficulty",
-          "Relevancy Score"
-        ]
+        "settings": {
+          "sum_columns": [
+            "Autocomplete Position"
+          ],
+          "group_by_columns": [
+            "Keyword"
+          ]
+        }
       },
       "node_code": 3,
       "node_type": "transform"

@@ -48,8 +48,16 @@
         }
       ],
       "content": {
-        "formula": "TRY_CAST([Relevancy Score] AS DOUBLE)",
-        "target_column": "RelevancyNum"
+        "settings": {
+          "sections": [
+            {
+              "target_column": "RelevancyNum",
+              "formula_text": "TRY_CAST([Relevancy Score] AS DOUBLE)",
+              "editor_height": 120,
+              "target_dtype": ""
+            }
+          ]
+        }
       },
       "op_code": 3,
       "op_type": "PREPARATION"
@@ -78,8 +86,10 @@
         }
       ],
       "content": {
-        "sum_columns": ["RelevancyNum"],
-        "group_by_columns": ["Difficulty"]
+        "settings": {
+          "sum_columns": ["RelevancyNum"],
+          "group_by_columns": ["Difficulty"]
+        }
       },
       "node_code": 3,
       "node_type": "transform"

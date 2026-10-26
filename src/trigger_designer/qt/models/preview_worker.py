@@ -11,6 +11,7 @@ collect that outlives a closed preview is dropped by Qt instead of being
 delivered into a deleted object.
 """
 
+import time
 from functools import partial
 from typing import Any
 
@@ -39,6 +40,32 @@ def _keep_alive(worker: QThread) -> None:
 def _release_worker(worker: QThread) -> None:
     _LIVE_WORKERS.discard(worker)
     worker.deleteLater()
+
+
+def wait_for_preview_workers(timeout_ms: int = 5000) -> bool:
+    """Wait for in-flight preview collects before the app tears down.
+
+    The crash that motivated this leaves no traceback: the process faults
+    inside ``_polars_runtime.pyd`` while a QThread running a Polars collect is
+    being destroyed as the interpreter finalises. Waiting is the only way to
+    avoid it, since a running Polars scan cannot be cancelled.
+
+    Returns ``True`` when every worker has stopped.
+    """
+    deadline = time.monotonic() + timeout_ms / 1000.0
+    stopped_all = True
+    for worker in list(_LIVE_WORKERS):
+        remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+        try:
+            stopped = worker.wait(remaining_ms)
+        except RuntimeError:
+            # The C++ thread object was already deleted; nothing to wait for.
+            stopped = True
+        if stopped:
+            _LIVE_WORKERS.discard(worker)
+        else:
+            stopped_all = False
+    return stopped_all
 
 
 class PreviewCollectWorker(QThread):

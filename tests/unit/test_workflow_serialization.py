@@ -4,7 +4,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from types import SimpleNamespace
 from typing import ClassVar
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -16,12 +15,10 @@ sys.path.insert(
 SRC_PATH = sys.path[0]
 
 import polars as pl
-from qtpy.QtWidgets import QApplication, QVBoxLayout
+from qtpy.QtWidgets import QApplication
 
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.widgets.nodes.InOut.file_input import FileInputContent
-from trigger_designer.qt.widgets.nodes.Join.join import JoinContent
-from trigger_designer.qt.widgets.nodes.Preparation.cleansing import CleansingContent
 
 APP = QApplication.instance() or QApplication([])
 
@@ -123,142 +120,48 @@ def test_serializable_content_mixin_maps_and_normalizes_state() -> None:
     assert content.config == {"enabled": False, "mode": "safe"}
 
 
-def test_cleansing_content_serializes_full_state() -> None:
-    content = CleansingContent.__new__(CleansingContent)
-    content.replace_null_strings = False
-    content.replace_null_numbers = True
-    content.strip_whitespace = False
-    content.normalize_spaces = True
-    content.remove_all_whitespace = True
-    content.case_modification = "upper"
-    content.remove_letters = True
-    content.remove_numbers = False
-    content.remove_punctuation = True
-    content.selected_fields = []
-    content._field_selection_initialized = True
-    content.remove_null_rows = True
-    content.remove_null_rows_from_selected_columns = True
-    content.remove_null_columns = False
-
-    payload = content.serialize_content_state({})
-
-    assert payload["replace_null_strings"] is False
-    assert payload["remove_all_whitespace"] is True
-    assert payload["case_modification"] == "upper"
-    assert payload["remove_letters"] is True
-    assert payload["selected_fields"] == []
-    assert payload["field_selection_initialized"] is True
-    assert payload["remove_null_rows_from_selected_columns"] is True
-
-    restored = CleansingContent.__new__(CleansingContent)
-    restored.deserialize_content_state(payload)
-
-    assert restored.replace_null_strings is False
-    assert restored.remove_all_whitespace is True
-    assert restored.case_modification == "upper"
-    assert restored.remove_letters is True
-    assert restored.selected_fields == []
-    assert restored._field_selection_initialized is True
-    assert restored.remove_null_rows is True
-    assert restored.remove_null_rows_from_selected_columns is True
-
-
-def test_join_bulk_output_selection_updates_one_side_only() -> None:
-    content = SimpleNamespace()
-    content._get_frame_schema = JoinContent._get_frame_schema.__get__(
-        content, JoinContent
+def test_cleansing_content_serializes_settings() -> None:
+    from trigger_designer.core.node_configuration import (
+        NodeTypes,
+        PreparationNodes,
+        get_class_from_opcode,
     )
-    content._get_available_output_columns = (
-        JoinContent._get_available_output_columns.__get__(content, JoinContent)
+    from trigger_designer.qt.design_window import TriggerSubWindow
+
+    window = TriggerSubWindow()
+    cls = get_class_from_opcode(PreparationNodes.CLEANSING, NodeTypes.PREPARATION)
+    content = cls(window.scene).content
+    content.settings.update(
+        {
+            "replace_null_strings": False,
+            "remove_all_whitespace": True,
+            "case_modification": "upper",
+            "remove_letters": True,
+            "selected_fields": ["a"],
+            "remove_null_rows": True,
+            "remove_null_rows_from_selected_columns": True,
+        }
     )
-    content._sync_output_column_checkboxes = (
-        JoinContent._sync_output_column_checkboxes.__get__(content, JoinContent)
-    )
-    content._set_output_columns_checked = (
-        JoinContent._set_output_columns_checked.__get__(content, JoinContent)
-    )
-    # The bulk toggle ends by refreshing the section counts; the fake has no
-    # dock sections, only the call itself has to be reachable.
-    content.refresh_dock_context = lambda: None
-    content._refresh_join_counts = JoinContent._refresh_join_counts.__get__(
-        content, JoinContent
-    )
-    content.history = DummyHistory()
-    content.selected_columns = [{"name": "existing_right", "source": "R"}]
-    content.mapping_data = [{"left_column": "id", "right_column": "id"}]
-    content.join_type = "inner"
-    content.node = DummyNode()
-    content.left_data = pl.DataFrame({"id": [1], "name": ["Alice"]})
-    content.right_data = pl.DataFrame({"code": [10]})
-    left_id_checkbox = DummyCheckbox()
-    left_name_checkbox = DummyCheckbox()
-    right_code_checkbox = DummyCheckbox()
-    content.output_column_checkboxes = [
-        {"name": "id", "source": "L", "checkbox": left_id_checkbox},
-        {"name": "name", "source": "L", "checkbox": left_name_checkbox},
-        {"name": "code", "source": "R", "checkbox": right_code_checkbox},
-    ]
 
-    content._set_output_columns_checked("L", True)
+    payload = content.serialize()
 
-    assert {tuple(column.items()) for column in content.selected_columns} == {
-        (("name", "existing_right"), ("source", "R")),
-        (("name", "id"), ("source", "L")),
-        (("name", "name"), ("source", "L")),
-    }
-    assert left_id_checkbox.checked_states[-1] is True
-    assert left_name_checkbox.checked_states[-1] is True
-    assert right_code_checkbox.checked_states == []
-    assert len(content.history.entries) == 1
+    assert payload["settings"]["replace_null_strings"] is False
+    assert payload["settings"]["remove_all_whitespace"] is True
+    assert payload["settings"]["case_modification"] == "upper"
+    assert payload["settings"]["remove_letters"] is True
+    assert payload["settings"]["selected_fields"] == ["a"]
+    assert payload["settings"]["remove_null_rows"] is True
 
-    content._set_output_columns_checked("L", False)
+    restored = cls(window.scene).content
+    restored.deserialize(payload)
 
-    assert content.selected_columns == [{"name": "existing_right", "source": "R"}]
-    assert left_id_checkbox.checked_states[-1] is False
-    assert left_name_checkbox.checked_states[-1] is False
-    assert len(content.history.entries) == 2
-
-
-def test_join_mapping_rows_show_dtype_labels_but_keep_raw_column_names() -> None:
-    _get_app()
-
-    content = SimpleNamespace()
-    content._get_frame_schema = JoinContent._get_frame_schema.__get__(
-        content, JoinContent
-    )
-    content._format_column_label = JoinContent._format_column_label.__get__(
-        content, JoinContent
-    )
-    content._populate_column_combo = JoinContent._populate_column_combo.__get__(
-        content, JoinContent
-    )
-    content._combo_current_column = JoinContent._combo_current_column.__get__(
-        content, JoinContent
-    )
-    content.update_mapping_data = lambda *args: None
-    content.remove_mapping_row = lambda mapping_pair: None
-    content.add_mapping_row = JoinContent.add_mapping_row.__get__(content, JoinContent)
-    content.history = DummyHistory()
-    content.mapping_data = []
-    content.mapping_pairs = []
-    content.selected_columns = []
-    content.node = DummyNode()
-    content.left_data = pl.DataFrame({"id": [1], "name": ["Alice"]})
-    content.right_data = pl.DataFrame({"code": [10], "label": ["A"]})
-    content.mapping_container = QVBoxLayout()
-
-    content.add_mapping_row(left_col="id", right_col="code")
-
-    left_combo = content.mapping_pairs[0]["left_combo"]
-    right_combo = content.mapping_pairs[0]["right_combo"]
-    left_index = left_combo.findData("id")
-    right_index = right_combo.findData("code")
-
-    assert left_combo.itemText(left_index) == "id [Int64]"
-    assert right_combo.itemText(right_index) == "code [Int64]"
-    assert left_combo.currentData() == "id"
-    assert right_combo.currentData() == "code"
-    assert content.mapping_data == [{"left_column": "id", "right_column": "code"}]
+    assert restored.settings["replace_null_strings"] is False
+    assert restored.settings["remove_all_whitespace"] is True
+    assert restored.settings["case_modification"] == "upper"
+    assert restored.settings["remove_letters"] is True
+    assert restored.settings["selected_fields"] == ["a"]
+    assert restored.settings["remove_null_rows"] is True
+    assert restored.settings["remove_null_rows_from_selected_columns"] is True
 
 
 def test_trigger_scene_workflow_metadata_round_trip_in_subprocess() -> None:

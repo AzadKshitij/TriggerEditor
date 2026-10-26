@@ -21,14 +21,6 @@ from qtpy.QtWidgets import QApplication
 APP = QApplication.instance() or QApplication([])
 
 
-class _EmitCounter:
-    def __init__(self) -> None:
-        self.count = 0
-
-    def emit(self, *_args) -> None:
-        self.count += 1
-
-
 def _checklist(columns):
     from trigger_designer.qt.widgets.common.config_widgets import ColumnChecklist
 
@@ -53,75 +45,3 @@ def test_single_toggle_still_emits() -> None:
     boxes.changed.connect(seen.append)
     boxes.checkboxes["a"].setChecked(True)
     assert len(seen) == 1
-
-
-def _cleansing_content():
-    from trigger_designer.qt.widgets.nodes.Preparation.cleansing import (
-        CleansingContent,
-    )
-
-    content = CleansingContent.__new__(CleansingContent)
-    content.fields_list = _checklist(["a", "b", "c"])
-    content.field_checkboxes = content.fields_list.checkboxes
-    # NB: signals connected to bound methods of a __new__-created (C++-
-    # uninitialized) instance are silently never delivered, so invoke the
-    # unbound handler explicitly - closest to the production wiring, where
-    # `changed` is connected to this same method on a live object.
-    content.fields_list.changed.connect(
-        lambda _cols: CleansingContent.on_field_selection_changed(content)
-    )
-    content.selected_fields = []
-    content._field_selection_initialized = False
-    content.incom_data = None
-    content.evaluate = _EmitCounter()
-    # The contract under test is "one bulk action -> one `changed` emission ->
-    # one evaluate". The cleansing pipeline is out of scope, and running it on
-    # a __new__-built content reads Qt widgets that were never constructed
-    # (PyQt raises RuntimeError straight out of the attribute lookup, which a
-    # signal handler turns into an abort).
-    content.process_data = lambda: None
-    return content
-
-
-def test_cleansing_select_all_evaluates_once() -> None:
-    content = _cleansing_content()
-    content.select_all_fields()
-    assert content.selected_fields == ["a", "b", "c"]
-    assert content.evaluate.count == 1
-
-
-def test_cleansing_select_none_evaluates_once() -> None:
-    content = _cleansing_content()
-    content.select_all_fields()
-    content.evaluate.count = 0
-    content.select_no_fields()
-    assert content.selected_fields == []
-    assert content.evaluate.count == 1
-
-
-def _normalize_content():
-    from trigger_designer.qt.widgets.nodes.Preparation.normalize_columns import (
-        NormalizeColumnsContent,
-    )
-
-    content = NormalizeColumnsContent.__new__(NormalizeColumnsContent)
-    content.columns_list = _checklist(["a", "b", "c"])
-    content.field_checkboxes = content.columns_list.checkboxes
-    # See _cleansing_content: invoke the unbound handler explicitly.
-    content.columns_list.changed.connect(
-        lambda _cols: NormalizeColumnsContent.on_columns_changed(content)
-    )
-    content.selected_columns = []
-    content._field_selection_initialized = False
-    content.incom_data = None
-    content.evaluate = _EmitCounter()
-    # See _cleansing_content: the pipeline is not what this test is about.
-    content.process_data = lambda: None
-    return content
-
-
-def test_normalize_select_all_evaluates_once() -> None:
-    content = _normalize_content()
-    content.select_all_columns()
-    assert content.selected_columns == ["a", "b", "c"]
-    assert content.evaluate.count == 1

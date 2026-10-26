@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 
-from qtpy.QtGui import QPixmap, QColor, QPen, QPainter, QPainterPath
+from qtpy.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from qtpy.QtWidgets import (
     QScrollArea,
     QWidget,
@@ -8,7 +8,7 @@ from qtpy.QtWidgets import (
     QStyleOptionGraphicsItem,
     QLayout,
 )
-from qtpy.QtCore import QRectF
+from qtpy.QtCore import QRectF, Qt
 from qtpy.QtWidgets import (
     QLabel,
 )
@@ -23,6 +23,17 @@ from nodeeditor.node_edge import Edge
 from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
+from trigger_designer.core.errors import (
+    ErrorContext,
+    NodeError,
+    make_error,
+    translate_exception,
+)
+from trigger_designer.core.frames import frame_schema as frame_schema
+from trigger_designer.core.frames import frame_shape as frame_shape
+from trigger_designer.qt.helpers.rename_map import (
+    upstream_rename_map as upstream_rename_map,
+)
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.helpers.eval_progress import (
@@ -53,63 +64,6 @@ if TYPE_CHECKING:
     from nodeeditor.node_scene import Scene
 
 from loguru import logger
-import polars as pl
-
-
-def frame_schema(frame) -> dict:
-    """Column names and dtypes without collecting (lazy-safe).
-
-    Live data may be a LazyFrame (e.g. downstream of Append/Join) — use
-    this anywhere only names/types are needed instead of `.columns`/`.dtype`.
-    """
-    # ponytail: one shared helper, not per-node isinstance blocks
-    if frame is None:
-        return {}
-    if isinstance(frame, pl.LazyFrame):
-        schema = frame.collect_schema()
-    else:
-        schema = frame.schema
-    return {name: dtype for name, dtype in schema.items()}
-
-
-def frame_shape(frame) -> tuple:
-    """(height, width) for logs; height is "lazy" without collecting."""
-    width = len(frame_schema(frame))
-    if isinstance(frame, pl.LazyFrame):
-        return ("lazy", width)
-    try:
-        return (frame.height, width)
-    except Exception:
-        return ("?", width)
-
-
-def upstream_rename_map(upstream_node) -> dict:
-    """Column renames advertised by an upstream node (``{old: new}``).
-
-    Lets a downstream node follow a rename instead of treating it as a
-    drop + add: a config referencing ``old`` can be remapped to ``new``
-    when ``new`` is present in the live upstream schema. Nodes that do
-    not rename report ``{}``.
-    """
-    content = getattr(upstream_node, "content", None)
-    if content is None:
-        return {}
-    # Select stores its renames in ``changes["rename_mapping"]``.
-    changes = getattr(content, "changes", None)
-    if isinstance(changes, dict):
-        mapping = changes.get("rename_mapping")
-        if isinstance(mapping, dict):
-            return {str(old): str(new) for old, new in mapping.items() if new}
-    # Normalize derives its mapping from its rules.
-    current_mapping = getattr(content, "_current_mapping", None)
-    if callable(current_mapping):
-        try:
-            mapping = current_mapping()
-        except Exception:  # noqa: BLE001 - any upstream error means no map
-            return {}
-        if isinstance(mapping, dict):
-            return {str(old): str(new) for old, new in mapping.items() if new}
-    return {}
 
 
 class TriggerGraphicsNode(QDMIconGraphicsNode):
@@ -132,6 +86,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._bounding_rect: QRectF | None = None
         self._detail_pixmap: QPixmap | None = None
         self._detail_pixmap_resolved = False
+        self._error_badge = ""
         super().__init__(node, parent)
         self._pen_role = "default"
         self._rebuild_theme_pens()
@@ -268,21 +223,53 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
 
         # The status badge is drawn on top of either, so it can outlive the
         # card and still tell a finished node from a broken one.
-        if not getattr(self, "_badge_visible", True):
+        if getattr(self, "_badge_visible", True):
+            offset = 24.0
+            if self.node.isDirty():
+                offset = 0.0
+            if self.node.isInvalid():
+                offset = 48.0
+
+            side = self.STATUS_BADGE_SIDE
+            painter.drawImage(
+                self.statusBadgeRect(),
+                self.icons,
+                QRectF(offset, 0, side, side),
+            )
+
+        # The error badge is independent of the status badge: a hidden status
+        # badge must not hide the reason the node failed.
+        self._paint_error_badge(painter)
+
+    def errorBadgeRect(self) -> QRectF:
+        side = 14.0
+        return QRectF(self.width - 19.0, 5.0, side, side)
+
+    def set_error_badge(self, severity: str) -> None:
+        value = severity if severity in {"error", "warning"} else ""
+        if value == self._error_badge:
             return
+        self._error_badge = value
+        self.update()
 
-        offset = 24.0
-        if self.node.isDirty():
-            offset = 0.0
-        if self.node.isInvalid():
-            offset = 48.0
-
-        side = self.STATUS_BADGE_SIDE
-        painter.drawImage(
-            self.statusBadgeRect(),
-            self.icons,
-            QRectF(offset, 0, side, side),
-        )
+    def _paint_error_badge(self, painter: QPainter) -> None:
+        if not self._error_badge:
+            return
+        manager = get_theme_manager()
+        token = "danger" if self._error_badge == "error" else "warning"
+        fallback = "#e0686c" if token == "danger" else "#d9a441"
+        painter.save()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(manager.color(token, fallback)))
+        rect = self.errorBadgeRect()
+        painter.drawEllipse(rect)
+        font = QFont()
+        font.setBold(True)
+        font.setPixelSize(10)
+        painter.setFont(font)
+        painter.setPen(QPen(QColor(manager.color("text_on_accent", "#ffffff"))))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "!")
+        painter.restore()
 
     def _detailPixmap(self) -> QPixmap | None:
         """The pixmap that stands in for this node once the detail is off.
@@ -659,6 +646,8 @@ class TriggerNode(Node):
     content_label: str = ""
     content_label_objname: str = "calc_node_bg"
     style: dict[str, str] = {"brush_color": "#000000"}
+    #: Input indexes that may stay unconnected; processInputs receives None.
+    optional_inputs: frozenset = frozenset()
 
     # Explicitly define types for Node classes
     GraphicsNode_class: TriggerGraphicsNode = TriggerGraphicsNode  # type: ignore
@@ -678,6 +667,11 @@ class TriggerNode(Node):
                 normalized_labels.append(label)
         return normalized_labels
 
+    #: Set while this node is inside ``evalImplementation``. A push from one
+    #: branch of a diamond reaches the shared join while that join is already
+    #: computing; without the guard the join recomputes once per branch.
+    _evaluating: bool = False
+
     def __init__(
         self,
         scene: "Scene",
@@ -686,6 +680,9 @@ class TriggerNode(Node):
         input_text: List[str] = [],
         output_text: List[str] = [],
     ) -> None:
+        # Subclasses (e.g. File Input) call eval() immediately after super(),
+        # and a constructor-time exception must never leave the guard stuck.
+        self._evaluating = False
         super().__init__(
             scene,
             self.__class__.node_title,
@@ -806,6 +803,86 @@ class TriggerNode(Node):
         except RuntimeError:
             return ""
 
+    # -- structured error state -------------------------------------------
+    _errors_by_source: dict[str, NodeError] | None = None
+
+    def _errors_dict(self) -> dict[str, NodeError]:
+        if self._errors_by_source is None:
+            self._errors_by_source = {}
+        return self._errors_by_source
+
+    @property
+    def current_error(self) -> NodeError | None:
+        store = self._errors_dict()
+        return store.get("run") or store.get("live")
+
+    def set_error(self, error: NodeError, source: str = "live") -> None:
+        store = self._errors_dict()
+        old = store.get(source)
+        store[source] = error
+        self._apply_error_state()
+        if old is None or old.fingerprint != error.fingerprint:
+            self._log_new_error(error)
+        problems = self._problems_store()
+        if problems is not None and not (error.knock_on and source == "live"):
+            problems.upsert(error, source)
+
+    def clear_error(
+        self, source: str | None = None, *, _seen: set[int] | None = None
+    ) -> None:
+        seen = set() if _seen is None else _seen
+        if id(self) in seen:
+            return
+        seen.add(id(self))
+        store = self._errors_dict()
+        if source is None:
+            removed = list(store)
+            store.clear()
+        else:
+            removed = [source] if store.pop(source, None) is not None else []
+        self._apply_error_state()
+        problems = self._problems_store()
+        if problems is not None:
+            for item in removed:
+                problems.remove(self.id, item)
+        if source in (None, "run"):
+            for child in self.getChildrenNodes():
+                current = getattr(child, "current_error", None)
+                if current is not None and current.knock_on:
+                    child.clear_error("run", _seen=seen)
+
+    def _apply_error_state(self) -> None:
+        error = self.current_error
+        self._set_node_tooltip(error.render_tooltip() if error else "")
+        gr = getattr(self, "grNode", None)
+        if gr is not None:
+            try:
+                gr.set_error_badge(error.severity if error else "")
+            except RuntimeError:
+                pass
+
+    def _problems_store(self):
+        try:
+            view = self.scene.getView() if hasattr(self.scene, "getView") else None
+        except (IndexError, RuntimeError, AttributeError):
+            view = None
+        owner = view.parentWidget() if view is not None else None
+        while owner is not None and not hasattr(owner, "problems"):
+            owner = owner.parentWidget()
+        return getattr(owner, "problems", None)
+
+    def _log_new_error(self, error: NodeError) -> None:
+        try:
+            logger.error(error.render_text(include_technical=True))
+        except Exception:  # noqa: BLE001, S110 - logging must never break eval
+            pass
+        try:
+            from trigger_designer.qt.helpers import global_logger
+
+            global_logger.error(error.render_summary())
+        except Exception:  # noqa: BLE001, S110 - dock may not exist in tests
+            pass
+
     def evalOperation(self, input1: Any, input2: Any) -> int:
         return 123
 
@@ -827,9 +904,19 @@ class TriggerNode(Node):
         for i in range(len(self.inputs)):
             input_node = self.getInput(i)
             if not input_node:
+                if i in self.optional_inputs:
+                    input_values.append(None)
+                    continue
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self._set_node_tooltip(f"Input {i} is not connected")
+                self.set_error(
+                    make_error(
+                        "TD-RUN-005",
+                        ErrorContext.from_node(self, "live"),
+                        input_number=i + 1,
+                    ),
+                    "live",
+                )
                 self._refresh_selected_node_config()
                 return None
 
@@ -837,7 +924,17 @@ class TriggerNode(Node):
             if val is None:
                 self.markInvalid()
                 self.markDescendantsDirty()
-                self._set_node_tooltip(f"Input {i}: upstream node produced no output")
+                upstream = ErrorContext.from_node(input_node, "live")
+                self.set_error(
+                    make_error(
+                        "TD-RUN-003",
+                        ErrorContext.from_node(self, "live"),
+                        culprit_label=upstream.node_label,
+                        culprit_node_id=getattr(input_node, "id", None),
+                        culprit_node_title=upstream.node_label,
+                    ),
+                    "live",
+                )
                 self._refresh_selected_node_config()
                 return None
 
@@ -847,15 +944,23 @@ class TriggerNode(Node):
         if result is None:
             self.markInvalid()
             self.markDescendantsDirty()
-            if not self._node_tooltip():
-                self._set_node_tooltip("Invalid operation")
+            if self.current_error is None:
+                message = self._node_tooltip() or "Invalid operation"
+                self.set_error(
+                    make_error(
+                        "TD-SYS-001",
+                        ErrorContext.from_node(self, "live"),
+                        message=message,
+                    ),
+                    "live",
+                )
             self._refresh_selected_node_config()
             return None
 
         self.value = result
         self.markInvalid(False)
         self.markDirty(False)
-        self._set_node_tooltip("")
+        self.clear_error("live")
         self.evalChildren()
         self._refresh_selected_node_config()
         return self.value
@@ -891,31 +996,61 @@ class TriggerNode(Node):
             # and be recomputed anyway once deserialization finishes. Leave it
             # dirty; doEvalOutputs runs the single post-load pass.
             return self.value
+        if self._evaluating:
+            # A sibling branch pushed into this node while it was still
+            # computing. The computation in progress will commit the complete
+            # result and push again; recomputing here only repeats work.
+            return self.value
+
+        coordinator = getattr(scene, "evaluator", None)
+        if coordinator is not None:
+            coordinator.flush_now()  # a pending edge edit is newer than us
+
         if not self.isDirty() and not self.isInvalid():
             logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
-        self._report_eval_progress(finished=False)
+
+        self._evaluating = True
+        if scene is not None:
+            scene._eval_depth = getattr(scene, "_eval_depth", 0) + 1
         try:
-            val = self.evalImplementation()
-            return val
+            try:
+                self._report_eval_progress(finished=False)
+            except Exception:  # noqa: BLE001 - UI listener must not break eval
+                logger.exception("Evaluation progress callback failed")
+            return self.evalImplementation()
         except ValueError as e:
             self.markInvalid()
-            self._set_node_tooltip(str(e))
+            self.set_error(translate_exception(e, node=self, phase="live"), "live")
             self.markDescendantsDirty()
         except Exception as e:
             self.markInvalid()
-            self._set_node_tooltip(str(e))
+            self.set_error(translate_exception(e, node=self, phase="live"), "live")
             dumpException(e)
             return None  # Add explicit return for exception case
         finally:
-            self._report_eval_progress(finished=True)
+            # Clear the guard and depth before notifying listeners: a listener
+            # that calls eval() must see a settled node, not a reentrant one.
+            self._evaluating = False
+            if scene is not None:
+                scene._eval_depth = max(0, getattr(scene, "_eval_depth", 1) - 1)
+            try:
+                self._report_eval_progress(finished=True)
+            except Exception:  # noqa: BLE001 - UI listener must not break eval
+                logger.exception("Evaluation progress callback failed")
             # Scene-level notification so preview surfaces can follow a real
             # recompute; cached evaluations returned above. ``Scene`` is not a
             # QObject, so TriggerScene fans this out to its own listeners.
-            scene = getattr(self, "scene", None)
-            notify = getattr(scene, "notifyNodeEvaluated", None)
-            if callable(notify):
-                notify(self)
+            try:
+                notify = getattr(scene, "notifyNodeEvaluated", None)
+                if callable(notify):
+                    notify(self)
+            except Exception:  # noqa: BLE001 - UI listener must not break eval
+                logger.exception("Node evaluated listener failed")
+            if scene is not None and getattr(scene, "_eval_depth", 0) == 0:
+                coordinator = getattr(scene, "evaluator", None)
+                if coordinator is not None:
+                    coordinator.flush_now()
 
     def _report_eval_progress(self, finished: bool) -> None:
         """Notify the active progress dialog, if any (helpers/eval_progress.py).
@@ -932,16 +1067,35 @@ class TriggerNode(Node):
             callback(self, finished)
 
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
-        # print("%s::__onEdgeConnectionChanged" % self.__class__.__name__)
+        # A connection changes the consumer's inputs, not the producer's value.
+        # The package follows this with onInputChanged(socket) on the consumer,
+        # which performs the one evaluation for the drag-end sequence. On
+        # removal both sockets are already cleared, so onInputChanged does the
+        # consumer work and the producer stays untouched.
+        self.clear_error("run")
+        end_socket = getattr(new_edge, "end_socket", None)
+        if end_socket is None or self is not getattr(end_socket, "node", None):
+            return
         self.markDirty()
         self.markDescendantsDirty()
-        self.eval()
 
     def onInputChanged(self, socket: Optional["Socket"] = None) -> None:
         content = getattr(self, "content", None)
         if getattr(content, "_suspend_node_evaluation", False):
             return
 
+        self.clear_error("run")
+        coordinator = getattr(self.scene, "evaluator", None)
+        if coordinator is not None:
+            # Edge notifications are deferred so drag-end, split and reroute
+            # loops coalesce in one event turn. Content edits in a small scene
+            # use the same ordered path (one notify per compute, cycle report).
+            # In a large scene the topological pass costs more than the push
+            # path, so keep the guard + push fallback measured in step 5.
+            small_scene = len(getattr(self.scene, "nodes", ())) <= 32
+            if socket is not None or small_scene:
+                coordinator.request_evaluation(self, defer=socket is not None)
+                return
         self.markDirty()
         self.markDescendantsDirty()
         self.eval()

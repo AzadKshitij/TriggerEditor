@@ -2,16 +2,14 @@
 
 The Graph configures *what* to chart; the shared
 :mod:`trigger_designer.core.charts` model decides what the data means, and
-the window's renderer draws it: :class:`chart_view.ChartView` with
-matplotlib by default, :class:`pyqtgraph_view.PyqtgraphChartView` on
-request. The Config Dock has no preview: the window is the
-chart, and its Show graph button stays disabled until a workflow run has
-succeeded.
+the window's renderer draws it in the non-modal window: matplotlib by
+default, or pyqtgraph when the node's Renderer is set to it.
 
-Two data paths feed the node:
+Two data paths feed the chart:
 
-* Evaluation sets ``incom_data`` and refreshes the column lists without ever
-  clobbering a saved X/Y selection.
+* Live evaluation hands the frame to ``ShapingContent.frames[0]``; the dock
+  projects the live schema into the column choices without rewriting a saved
+  selection.
 * A workflow run publishes the frame the node passed through over the
   ``runDataReady`` signal. The executor calls ``after_execution`` on the
   worker thread, so that hook only emits; the slot runs on the GUI thread and
@@ -22,37 +20,20 @@ output variable. It never imports a plotting library, shows a window or writes
 a file.
 """
 
-from collections import OrderedDict
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-)
+from typing import Any
 
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from nodeeditor.utils_no_qt import dumpException
 from qtpy.QtCore import QTimer, Signal
 from qtpy.QtWidgets import QLineEdit, QVBoxLayout
 
-from trigger_designer.core.charts import (
-    ChartSpec,
-    build_chart_spec,
-    effective_aggregation,
-)
+from trigger_designer.core.charts import build_chart_spec, effective_aggregation
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     ReportNodes,
     register_node,
 )
-from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
-from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
-    TriggerGraphicsNode,
-    TriggerNode,
-    frame_schema,
-    upstream_rename_map,
-)
+from trigger_designer.core.shaping import graph as core
+from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
+from trigger_designer.qt.node_base import frame_schema
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
     FormRow,
@@ -60,27 +41,12 @@ from trigger_designer.qt.widgets.common import (
     NoWheelComboBox,
 )
 
-if TYPE_CHECKING:
-    from nodeeditor.node_scene import Scene
-
-
 #: Display label -> stored value for the chart type combo.
 _CHART_TYPE_ITEMS = (
     ("Line", "line"),
     ("Bar", "bar"),
     ("Scatter", "scatter"),
 )
-
-#: Display label -> stored value for the renderer combo. The values are the
-#: library names themselves: there is no friendlier word for them, and the
-#: tooltip has to describe the real difference anyway.
-_RENDERER_ITEMS = (
-    ("matplotlib", "matplotlib"),
-    ("pyqtgraph", "pyqtgraph"),
-)
-
-#: The renderer every saved workflow drew with before this setting existed.
-_DEFAULT_RENDERER = "matplotlib"
 
 #: Display label -> stored value for the aggregation combo.
 _AGGREGATION_ITEMS = (
@@ -93,11 +59,21 @@ _AGGREGATION_ITEMS = (
     ("Max", "max"),
 )
 
+#: Display label -> stored value for the renderer combo. The values are the
+#: library names themselves: the tooltip has to describe the real difference.
+_RENDERER_ITEMS = (
+    ("matplotlib", "matplotlib"),
+    ("pyqtgraph", "pyqtgraph"),
+)
+
+#: The renderer every saved workflow drew with before this setting existed.
+_DEFAULT_RENDERER = "matplotlib"
+
 #: Color-by entry that clears the setting.
 _NO_COLOR_LABEL = "(none)"
+#: Placeholder for a column column setting with no value yet.
+_NO_COLUMN_LABEL = "(select column)"
 
-#: Open-window refresh debounce, matching the text/search pause of the design
-#: system. Only an already-open window is refreshed; the dock previews nothing.
 _WINDOW_REFRESH_DEBOUNCE_MS = 300
 
 
@@ -119,84 +95,67 @@ def _value_for(
     return default
 
 
-class GraphContent(
-    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
-):
-    evaluate = Signal()  # Emit when evaluate button is clicked
+class GraphContent(ShapingContent):
+    """Chart configuration dock; the data itself is a pass-through."""
+
+    SETTINGS = core.DEFAULTS
+    MODULE = "trigger_designer.core.shaping.graph"
+    OUTPUT_KINDS = ("graph",)
+    INPUTS = 1
+    HISTORY = "Graph"
+    SUMMARY = "chart, pass-through"
+    PRESENTATION_SETTINGS = ("renderer",)
+
     #: Carries the frame a workflow run passed through the node. Emitted from
-    #: the executor's worker thread; the connection below queues the slot onto
-    #: the GUI thread, which is what makes ``after_execution`` widget-safe.
+    #: the executor's worker thread; the connection queues the slot onto the
+    #: GUI thread, which is what makes ``after_execution`` widget-safe.
     runDataReady = Signal(object)
 
-    serialized_state_schema: ClassVar[dict[str, Any]] = {
-        "graph_type": {"default": "line"},
-        "renderer": {"default": _DEFAULT_RENDERER},
-        "x_column": {"default": ""},
-        "y_column": {"default": ""},
-        "title": {"default": ""},
-        "color_column": {"default": ""},
-        "aggregation": {"default": ""},
-    }
-
-    def __init__(
-        self, node: TriggerNode, parent: QDMNodeIconContentWidget | None = None
-    ) -> None:
-        QDMNodeIconContentWidget.__init__(self, node, parent)
-        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
-
-        self._node = node
-        self.history = getattr(self.node.scene, "history", None)
-
-        # Graph settings
-        self.graph_type: str = "line"
-        self.renderer: str = _DEFAULT_RENDERER
-        self.x_column: str = ""
-        self.y_column: str = ""
-        self.color_column: str = ""
-        self.aggregation: str = ""
-        self.title: str = ""
-
-        # incoming variables
-        self.incoming_variable: str = ""
-        self.incom_data: Any = None
+    def __init__(self, node, parent=None) -> None:
+        super().__init__(node, parent)
         #: Frame handed over by the executor on its worker thread. Kept apart
-        #: from ``incom_data`` so a run's result survives until the GUI slot
+        #: from ``frames[0]`` so a run's result survives until the GUI slot
         #: and any dock rebuild have seen it.
         self._run_frame: Any = None
         self.workflow_ran_successfully = False
-
-        # pass on variables
-        self.data: Any = None
-        self.variable_name = f"var_graph_{self.id}"
-
         self._refresh_timer: QTimer | None = None
         self._chart_window: Any | None = None
         self.runDataReady.connect(self._on_run_data_ready)
 
+    # -- settings helpers -------------------------------------------------
+    def _value(self, key: str, default: Any = "") -> Any:
+        return self.settings.get(key, default)
+
     @property
-    def node(self) -> TriggerNode:
-        return self._node
+    def renderer(self) -> str:
+        """The library that draws the window; matplotlib unless chosen."""
+        return str(self._value("renderer", _DEFAULT_RENDERER) or _DEFAULT_RENDERER)
 
-    @node.setter
-    def node(self, value: TriggerNode) -> None:
-        self._node = value
+    def _frame(self) -> Any:
+        if self.frames and self.frames[0] is not None:
+            return self.frames[0]
+        if self.outputs:
+            return self.outputs[0]
+        return None
 
-    def initUI(self, icon_=None) -> None:
-        icon = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon)
+    def _columns(self) -> list[str]:
+        frame = self._frame()
+        if frame is None:
+            return []
+        try:
+            return list(frame_schema(frame))
+        except Exception:  # noqa: BLE001 - schema peek only
+            return []
 
     # -- dock construction ----------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
         self.open_graph_button = None
         self.graph_section = None
 
-        graph_section = ConfigSection()
-        self.graph_section = graph_section
+        section = ConfigSection()
+        section._undo_composite = True
+        self.graph_section = section
 
-        # Show graph rides on the dock's label row (ConfigDock mounts
-        # ``dock_actions()`` there) instead of spending a 30px row of its own.
-        # It stays disabled until a run has produced the frame, so the dock
-        # never offers a chart of data the workflow has not computed.
         self.open_graph_button = IconButton.themed(
             "Show graph",
             rsm_icon=self.node.rsm.get("icon_external"),
@@ -205,66 +164,97 @@ class GraphContent(
         )
         self.open_graph_button.clicked.connect(self.open_graph_in_new_window)
 
-        self.graph_type_combo = NoWheelComboBox()
-        self.graph_type_combo.setMinimumHeight(30)
-        self.graph_type_combo.addItems([label for label, _ in _CHART_TYPE_ITEMS])
-        self.graph_type_combo.currentTextChanged.connect(self.on_graph_type_changed)
-        graph_section.addWidget(FormRow("Type", self.graph_type_combo, label_width=72))
+        self.graph_type_combo = self._make_choice_combo(_CHART_TYPE_ITEMS)
+        self.graph_type_combo.currentIndexChanged.connect(
+            lambda _index: self._commit(
+                "graph_type", self.graph_type_combo.currentData(), "Type"
+            )
+        )
+        section.addWidget(FormRow("Type", self.graph_type_combo, label_width=72))
 
-        self.renderer_combo = NoWheelComboBox()
-        self.renderer_combo.setMinimumHeight(30)
-        self.renderer_combo.addItems([label for label, _ in _RENDERER_ITEMS])
+        self.renderer_combo = self._make_choice_combo(_RENDERER_ITEMS)
         self.renderer_combo.setToolTip(
             "Library that draws the chart window. pyqtgraph replaces the "
             "navigation toolbar with reset-view and save-PNG buttons."
         )
         self.renderer_combo.setAccessibleName("Chart renderer")
-        self.renderer_combo.currentTextChanged.connect(self.on_renderer_changed)
-        graph_section.addWidget(
-            FormRow("Renderer", self.renderer_combo, label_width=72)
+        self.renderer_combo.currentIndexChanged.connect(
+            lambda _index: self.set_setting(
+                "renderer",
+                self.renderer_combo.currentData(),
+                "Graph Renderer Changed",
+                evaluate=False,
+            )
         )
+        section.addWidget(FormRow("Renderer", self.renderer_combo, label_width=72))
 
-        self.x_column_combo = NoWheelComboBox()
-        self.x_column_combo.setMinimumHeight(30)
-        self.x_column_combo.currentTextChanged.connect(self.on_x_column_changed)
-        graph_section.addWidget(
-            FormRow("X column", self.x_column_combo, label_width=72)
+        self.x_column_combo = self._make_column_combo()
+        self.x_column_combo.currentIndexChanged.connect(
+            lambda _index: self._commit(
+                "x_column", self.x_column_combo.currentData() or "", "X column"
+            )
         )
+        section.addWidget(FormRow("X column", self.x_column_combo, label_width=72))
 
-        self.y_column_combo = NoWheelComboBox()
-        self.y_column_combo.setMinimumHeight(30)
-        self.y_column_combo.currentTextChanged.connect(self.on_y_column_changed)
-        graph_section.addWidget(
-            FormRow("Y column", self.y_column_combo, label_width=72)
+        self.y_column_combo = self._make_column_combo()
+        self.y_column_combo.currentIndexChanged.connect(
+            lambda _index: self._commit(
+                "y_column", self.y_column_combo.currentData() or "", "Y column"
+            )
         )
+        section.addWidget(FormRow("Y column", self.y_column_combo, label_width=72))
 
-        self.color_column_combo = NoWheelComboBox()
-        self.color_column_combo.setMinimumHeight(30)
-        self.color_column_combo.currentTextChanged.connect(self.on_color_column_changed)
-        graph_section.addWidget(
-            FormRow("Color by", self.color_column_combo, label_width=72)
+        self.color_column_combo = self._make_column_combo()
+        self.color_column_combo.currentIndexChanged.connect(
+            lambda _index: self._commit(
+                "color_column",
+                self.color_column_combo.currentData() or "",
+                "Color by",
+            )
         )
+        section.addWidget(FormRow("Color by", self.color_column_combo, label_width=72))
 
-        self.aggregation_combo = NoWheelComboBox()
-        self.aggregation_combo.setMinimumHeight(30)
-        self.aggregation_combo.addItems([label for label, _ in _AGGREGATION_ITEMS])
-        self.aggregation_combo.currentTextChanged.connect(self.on_aggregation_changed)
-        graph_section.addWidget(
-            FormRow("Aggregate", self.aggregation_combo, label_width=72)
+        self.aggregation_combo = self._make_choice_combo(_AGGREGATION_ITEMS)
+        self.aggregation_combo.currentIndexChanged.connect(
+            lambda _index: self._commit(
+                "aggregation",
+                self.aggregation_combo.currentData() or "",
+                "Aggregate",
+            )
         )
+        section.addWidget(FormRow("Aggregate", self.aggregation_combo, label_width=72))
 
         self.title_edit = QLineEdit()
         self.title_edit.setMinimumHeight(30)
         self.title_edit.setPlaceholderText("Chart title")
-        self.title_edit.textChanged.connect(self.on_title_changed)
-        graph_section.addWidget(FormRow("Title", self.title_edit, label_width=72))
+        self._debounced(
+            self.title_edit.textChanged,
+            lambda: self._commit("title", self.title_edit.text(), "Title"),
+        )
+        section.addWidget(FormRow("Title", self.title_edit, label_width=72))
 
-        dock_layout.addWidget(graph_section)
+        dock_layout.addWidget(section)
         dock_layout.addStretch()
 
+        self.update_column_options()
         self._sync_widgets_from_model()
-        self._update_open_graph_button_state()
         self._refresh_graph_counts()
+
+    @staticmethod
+    def _make_choice_combo(
+        items: tuple[tuple[str, str], ...],
+    ) -> NoWheelComboBox:
+        combo = NoWheelComboBox()
+        combo.setMinimumHeight(30)
+        for label, value in items:
+            combo.addItem(label, value)
+        return combo
+
+    @staticmethod
+    def _make_column_combo() -> NoWheelComboBox:
+        combo = NoWheelComboBox()
+        combo.setMinimumHeight(30)
+        return combo
 
     def dock_actions(self) -> list:
         """One obvious action, mounted on the dock's label row."""
@@ -273,41 +263,50 @@ class GraphContent(
 
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
         """Configuration summary for the dock context strip."""
-        chips: list[tuple[str, str]] = [(self.graph_type, "accent")]
+        graph_type = str(self._value("graph_type", "line"))
+        chips: list[tuple[str, str]] = [(graph_type, "accent")]
         if self.renderer != _DEFAULT_RENDERER:
             chips.append((self.renderer, ""))
-        if self.x_column and self.y_column:
-            chips.append((f"{self.x_column} \u2192 {self.y_column}", ""))
-        aggregation = effective_aggregation(self.graph_type, self.aggregation)
+        x_column = str(self._value("x_column", ""))
+        y_column = str(self._value("y_column", ""))
+        if x_column and y_column:
+            chips.append((f"{x_column} \u2192 {y_column}", ""))
+        aggregation = effective_aggregation(graph_type, self._value("aggregation", ""))
         if aggregation != "none":
             chips.append((aggregation, ""))
-        if self.color_column:
-            chips.append((f"by {self.color_column}", ""))
-        return chips, self.title
+        color = str(self._value("color_column", ""))
+        if color:
+            chips.append((f"by {color}", ""))
+        return chips, str(self._value("title", ""))
 
     def _refresh_graph_counts(self) -> None:
         """Keep the section header count in step with the configuration."""
         self.refresh_dock_context()
         section = getattr(self, "graph_section", None)
-        if section is None:
-            return
-        section.set_count(self.graph_type)
+        if section is not None:
+            section.set_count(str(self._value("graph_type", "line")))
+
+    # -- one model change ------------------------------------------------
+    def _commit(self, key: str, value: Any, label: str) -> None:
+        self.set_setting(key, value, f"Graph {label} Changed")
+
+    def after_change(self) -> None:
+        """Refresh the displayed aggregation and any open chart window."""
+        self._sync_aggregation_widget()
+        self._refresh_graph_counts()
+        self._update_open_graph_button_state()
+        self._schedule_window_refresh()
 
     # -- model -> widgets ------------------------------------------------
     def _sync_widgets_from_model(self) -> None:
-        """Project every setting onto the live widgets without emitting.
-
-        Called after a dock rebuild and after undo/redo restores. All writes
-        are blocked, so a restore cannot look like a user edit (and the
-        generic bindings never see a programmatic change).
-        """
-        self._set_combo_selection(
+        """Project every setting onto the live widgets without emitting."""
+        self._set_combo_value(
             getattr(self, "graph_type_combo", None),
-            _label_for(_CHART_TYPE_ITEMS, self.graph_type, "Line"),
+            self._value("graph_type", "line"),
         )
-        self._set_combo_selection(
+        self._set_combo_value(
             getattr(self, "renderer_combo", None),
-            _label_for(_RENDERER_ITEMS, self.renderer, _DEFAULT_RENDERER),
+            self.renderer,
         )
         self.update_column_options()
         self._sync_aggregation_widget()
@@ -316,7 +315,7 @@ class GraphContent(
         if edit is not None:
             blocked = edit.blockSignals(True)
             try:
-                edit.setText(self.title or "")
+                edit.setText(str(self._value("title", "") or ""))
             finally:
                 edit.blockSignals(blocked)
 
@@ -326,16 +325,16 @@ class GraphContent(
         combo = getattr(self, "aggregation_combo", None)
         if combo is None:
             return
-        effective = effective_aggregation(self.graph_type, self.aggregation)
-        self._set_combo_selection(
-            combo, _label_for(_AGGREGATION_ITEMS, effective, "None")
+        effective = effective_aggregation(
+            self._value("graph_type", "line"), self._value("aggregation", "")
         )
+        self._set_combo_value(combo, effective)
 
     @staticmethod
-    def _set_combo_selection(combo: NoWheelComboBox | None, label: str) -> None:
-        if combo is None or not label:
+    def _set_combo_value(combo: NoWheelComboBox | None, value: Any) -> None:
+        if combo is None:
             return
-        index = combo.findText(label)
+        index = combo.findData(value)
         if index < 0:
             return
         blocked = combo.blockSignals(True)
@@ -344,120 +343,74 @@ class GraphContent(
         finally:
             combo.blockSignals(blocked)
 
-    @staticmethod
-    def _set_combo_items(
-        combo: NoWheelComboBox | None, items: list[str], selected: str
-    ) -> None:
-        """Replace a combo's items without letting the change reach the model.
-
-        The old code cleared and refilled the combos while their
-        ``currentTextChanged`` handlers were connected, so every schema
-        refresh overwrote the saved X and Y with the first column. Signals
-        stay blocked here for exactly that reason.
-        """
-        if combo is None:
-            return
-        blocked = combo.blockSignals(True)
-        try:
-            combo.clear()
-            combo.addItems(items)
-            if selected:
-                index = combo.findText(selected)
-                if index >= 0:
-                    combo.setCurrentIndex(index)
-            elif combo.count():
-                combo.setCurrentIndex(0)
-        finally:
-            combo.blockSignals(blocked)
-
-    def _frame_columns(self) -> list[str]:
-        if self.incom_data is None:
-            return []
-        try:
-            return list(frame_schema(self.incom_data))
-        except Exception as exc:  # noqa: BLE001 - schema peek only
-            global_logger.debug(f"Graph: cannot read incoming schema: {exc}")
-            return []
-
-    def _apply_rename_map(self, columns: list[str]) -> None:
-        """Follow an upstream rename instead of treating it as a drop + add."""
-        if not columns:
-            return
-        try:
-            upstream = self.node.getInput(0)
-        except Exception:  # noqa: BLE001 - node may be half-built
-            upstream = None
-        if upstream is None:
-            return
-        mapping = upstream_rename_map(upstream)
-        if not mapping:
-            return
-        for attr in ("x_column", "y_column", "color_column"):
-            current = getattr(self, attr, "")
-            if current and current not in columns:
-                renamed = mapping.get(current)
-                if renamed in columns:
-                    setattr(self, attr, renamed)
-
     def update_column_options(self) -> None:
-        """Refresh the column combos from the incoming schema.
+        """Project the live schema into the column combos.
 
-        Selections survive the refresh: a saved X/Y is kept whenever the
-        column still exists and only falls back when it genuinely went away.
-        With no incoming data the model is left alone entirely - a node can be
-        selected before its upstream has evaluated, and blanking the saved
-        columns there would lose configuration for good.
+        Saved values are never rewritten: a column that disappeared stays
+        selected and is shown as ``<name> (missing)``; an empty value shows a
+        placeholder. The chart builder reports the problem when opened.
         """
-        columns = self._frame_columns()
-        if columns:
-            self._apply_rename_map(columns)
-            x = self.x_column if self.x_column in columns else columns[0]
-            y = (
-                self.y_column
-                if self.y_column in columns
-                else self._default_y(columns, x)
-            )
-            color = self.color_column if self.color_column in columns else ""
-            self.x_column = x
-            self.y_column = y
-            self.color_column = color
-        else:
-            x, y, color = self.x_column, self.y_column, self.color_column
-
-        self._set_combo_items(getattr(self, "x_column_combo", None), columns, x)
-        self._set_combo_items(getattr(self, "y_column_combo", None), columns, y)
-        color_label = color if color in columns else _NO_COLOR_LABEL
-        self._set_combo_items(
+        columns = self._columns()
+        self._fill_column_combo(
+            getattr(self, "x_column_combo", None),
+            columns,
+            str(self._value("x_column", "")),
+            placeholder=_NO_COLUMN_LABEL,
+        )
+        self._fill_column_combo(
+            getattr(self, "y_column_combo", None),
+            columns,
+            str(self._value("y_column", "")),
+            placeholder=_NO_COLUMN_LABEL,
+        )
+        self._fill_column_combo(
             getattr(self, "color_column_combo", None),
-            [_NO_COLOR_LABEL] + columns,
-            color_label,
+            columns,
+            str(self._value("color_column", "")),
+            placeholder=_NO_COLOR_LABEL,
         )
         self._update_open_graph_button_state()
         self._schedule_window_refresh()
 
     @staticmethod
-    def _default_y(columns: list[str], x_column: str) -> str:
-        for column in columns:
-            if column != x_column:
-                return column
-        return columns[0] if columns else ""
+    def _fill_column_combo(
+        combo: NoWheelComboBox | None,
+        columns: list[str],
+        value: str,
+        *,
+        placeholder: str,
+    ) -> None:
+        if combo is None:
+            return
+        blocked = combo.blockSignals(True)
+        try:
+            combo.clear()
+            if not columns:
+                return
+            combo.addItem(placeholder, "")
+            for name in columns:
+                combo.addItem(name, name)
+            if value and value not in columns:
+                combo.addItem(f"{value} (missing)", value)
+            index = combo.findData(value) if value else 0
+            combo.setCurrentIndex(max(0, index))
+        finally:
+            combo.blockSignals(blocked)
 
     def _update_open_graph_button_state(self) -> None:
-        """Unlock Show graph only once a run has produced the frame.
-
-        The window charts what the *run* computed, so a frame from a mere
-        evaluation or a reload is not enough. The unlock latches for the
-        lifetime of the node and is reset when a saved workflow is loaded.
-        """
+        """Unlock Show graph only once a run has produced a drawable frame."""
         button = getattr(self, "open_graph_button", None)
         if button is None:
             return
-        has_data = self.incom_data is not None or self._run_frame is not None
-        ready = (
+        has_data = self._frame() is not None or self._run_frame is not None
+        columns = self._columns()
+        x_column = str(self._value("x_column", ""))
+        y_column = str(self._value("y_column", ""))
+        ready = bool(
             self.workflow_ran_successfully
             and has_data
-            and bool(self.x_column)
-            and bool(self.y_column)
+            and x_column in columns
+            and y_column in columns
         )
         if not self.workflow_ran_successfully:
             text = "Show graph (run the workflow first)"
@@ -470,16 +423,16 @@ class GraphContent(
         button.setAccessibleName(text)
 
     # -- chart window ----------------------------------------------------
-    def build_spec(self) -> ChartSpec:
+    def build_spec(self):
         """The chart the current settings and data produce."""
         return build_chart_spec(
-            self.incom_data,
-            chart_type=self.graph_type,
-            x_column=self.x_column,
-            y_column=self.y_column,
-            color_column=self.color_column,
-            aggregation=self.aggregation,
-            title=self.title,
+            self._frame(),
+            chart_type=self._value("graph_type", "line"),
+            x_column=self._value("x_column", ""),
+            y_column=self._value("y_column", ""),
+            color_column=self._value("color_column", ""),
+            aggregation=self._value("aggregation", ""),
+            title=self._value("title", ""),
         )
 
     def _schedule_window_refresh(self) -> None:
@@ -492,17 +445,6 @@ class GraphContent(
             timer.timeout.connect(self._refresh_open_window)
             self._refresh_timer = timer
         timer.start()
-
-    def _window_title(self) -> str:
-        """Window caption; a non-default renderer is named, per disclosure.
-
-        matplotlib is what every pre-phase-7 workflow drew with, so its
-        window keeps the old, unchanged caption.
-        """
-        base = f"Graph \u2014 {self.title}" if self.title else "Graph"
-        if self.renderer != _DEFAULT_RENDERER:
-            base += f" ({self.renderer})"
-        return base
 
     def _refresh_open_window(self) -> None:
         window = getattr(self, "_chart_window", None)
@@ -517,21 +459,20 @@ class GraphContent(
             self._chart_window = None
 
     # -- actions and handlers --------------------------------------------
-    def open_graph_in_new_window(self) -> None:
-        """Open (or re-show) the non-modal chart window.
+    def _window_title(self) -> str:
+        """Window caption; a non-default renderer is named, per disclosure."""
+        title = str(self._value("title", "") or "")
+        base = f"Graph \u2014 {title}" if title else "Graph"
+        if self.renderer != _DEFAULT_RENDERER:
+            base += f" ({self.renderer})"
+        return base
 
-        Guarded on the run latch: the window charts what the workflow
-        computed, not whatever a bare evaluation left in ``incom_data``. The
-        click re-establishes the run's frame itself, so a dropped or late GUI
-        signal can never make the button appear to do nothing.
-        """
+    def open_graph_in_new_window(self) -> None:
+        """Open (or re-show) the non-modal chart window."""
         if not self.workflow_ran_successfully:
             return
-        if self.incom_data is None and self._run_frame is not None:
-            self.incom_data = self._run_frame
-        if not self.x_column or not self.y_column:
-            # A run can complete before the dock ever listed the columns.
-            self.update_column_options()
+        if self._frame() is None and self._run_frame is not None:
+            self.frames[0] = self._run_frame
         window = getattr(self, "_chart_window", None)
         title = self._window_title()
         if window is not None:
@@ -539,7 +480,6 @@ class GraphContent(
                 window.set_renderer(self.renderer)
                 window.setWindowTitle(title)
             except RuntimeError:
-                # Closed since the last click: build a fresh one.
                 window = None
         if window is None:
             from trigger_designer.qt.widgets.nodes.Report.chart_window import (
@@ -555,63 +495,9 @@ class GraphContent(
         window.activateWindow()
         self._update_open_graph_button_state()
 
-    def on_graph_type_changed(self, label: str) -> None:
-        value = _value_for(_CHART_TYPE_ITEMS, label, self.graph_type)
-        if value != self.graph_type:
-            self.graph_type = value
-        self._sync_aggregation_widget()
-        self._refresh_graph_counts()
-        self._schedule_window_refresh()
-
-    def on_renderer_changed(self, label: str) -> None:
-        """Swap the drawing library; the open window rebuilds on the debounce.
-
-        The renderer is not part of the chart's meaning, only of how the
-        window draws and feels, so the model change is one attribute and the
-        window swap rides the same 300 ms refresh as every other edit.
-        """
-        value = _value_for(_RENDERER_ITEMS, label, self.renderer)
-        if value != self.renderer:
-            self.renderer = value
-            self._refresh_graph_counts()
-            self._schedule_window_refresh()
-
-    def on_x_column_changed(self, text: str) -> None:
-        self.x_column = text
-        self._refresh_graph_counts()
-        self._schedule_window_refresh()
-
-    def on_y_column_changed(self, text: str) -> None:
-        self.y_column = text
-        self._refresh_graph_counts()
-        self._schedule_window_refresh()
-
-    def on_color_column_changed(self, label: str) -> None:
-        self.color_column = "" if label == _NO_COLOR_LABEL else label
-        self._refresh_graph_counts()
-        self._schedule_window_refresh()
-
-    def on_aggregation_changed(self, label: str) -> None:
-        self.aggregation = _value_for(_AGGREGATION_ITEMS, label, self.aggregation)
-        self._refresh_graph_counts()
-        self._schedule_window_refresh()
-
-    def on_title_changed(self, text: str) -> None:
-        self.title = text
-        self._refresh_graph_counts()
-        self._schedule_window_refresh()
-
     # -- run data --------------------------------------------------------
     def after_execution(self, context: dict[str, Any]) -> None:
-        """Publish the frame the run passed through, from the worker thread.
-
-        Runs inside ``NodeExecutor.execute_node`` on the workflow worker.
-        No widget is touched here; the queued ``runDataReady`` slot does that
-        on the GUI thread. The latch is set *here* as well as in that slot:
-        the slot is queued, so it is skipped if this content is destroyed
-        while the run finishes - and then the dock would show a button that
-        stays locked no matter how often the workflow ran.
-        """
+        """Publish the frame the run passed through, from the worker thread."""
         data = None
         if isinstance(context, dict):
             data = context.get(self.variable_name)
@@ -631,85 +517,27 @@ class GraphContent(
         self.workflow_ran_successfully = True
         frame = data if data is not None else self._run_frame
         if frame is not None:
-            self.incom_data = frame
+            self.frames[0] = frame
             self._run_frame = frame
         self.update_column_options()
         self._update_open_graph_button_state()
 
-    # -- code generation --------------------------------------------------
-    def get_code(self) -> str:
-        if not self.incoming_variable:
-            # Fallback: always define the output so downstream code never
-            # NameErrors.
-            return f"import polars as pl\n{self.variable_name} = pl.DataFrame()\n"
-        return (
-            "import polars as pl\n"
-            "# Graph is a visualization sink: pass the frame through.\n"
-            f"{self.variable_name} = {self.incoming_variable}\n"
-        )
-
-    # -- serialization ----------------------------------------------------
-    def serialize(self) -> OrderedDict[Any, Any]:
-        return self.serialize_content_state(super().serialize())
-
-    def deserialize(
-        self, data: dict, hashmap: dict | None = None, restore_id: bool | None = True
-    ) -> bool:
-        res = super().deserialize(data, hashmap if hashmap is not None else {})
-
-        try:
-            self.deserialize_content_state(data)
-            self.workflow_ran_successfully = False
-            self._run_frame = None
-            self._sync_widgets_from_model()
-            return True and res
-        except Exception as e:  # noqa: BLE001 - a bad state must not abort the load
-            dumpException(e)
+    # -- persistence -----------------------------------------------------
+    def deserialize(self, data, hashmap={}):  # noqa: B006
+        res = super().deserialize(data, hashmap)
+        self.workflow_ran_successfully = False
+        self._run_frame = None
+        self._sync_widgets_from_model()
         return res
 
 
 @register_node(ReportNodes.GRAPH, NodeTypes.REPORT)
-class TriggerNode_Graph(TriggerNode):
+class TriggerNode_Graph(ShapingNode):
     icon = "node_graph"
     node_code = ReportNodes.GRAPH
     node_type = NodeTypes.REPORT
     node_title = "Graph"
+    content_class = GraphContent
+    output_text = ("Out",)
     content_label_objname = "trigger_node_graph"
-    style: ClassVar[dict] = {}
-
-    def __init__(self, scene: Scene) -> None:
-        super().__init__(scene, inputs=[1], outputs=[3])
-
-    def initInnerClasses(self) -> None:
-        self.content: GraphContent = GraphContent(self)  # type: ignore
-        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)  # type: ignore
-        self.content.evaluate.connect(self.onInputChanged)
-        self.param: list = []
-
-    def processInputs(self, input_values: list[Any]) -> list[dict] | None:
-        # Only one input for simplicity
-        this_socket_index = 0
-        input_node = self.getInput(this_socket_index)
-        if input_node is None:
-            return None
-        socket_index = self.getSocketValue(input_node.outputs, self)
-        input_value = input_values[this_socket_index][socket_index]
-        if input_value:
-            data = input_value.get("data")
-            self.content.incom_data = data
-            self.content.incoming_variable = input_value.get("variable_name")
-            self.content.data = data
-            self.content.update_column_options()
-            # The sink still forwards its input, so a downstream node sees the
-            # frame the user charted instead of the old empty list.
-            self.param = [{"data": data, "variable_name": self.content.variable_name}]
-            return self.param
-        # variable = self.content.variable_name
-        else:
-            self.markDirty(True)
-            self.markInvalid(True)
-            self.grNode.setToolTip("Input is not connected")
-            return None
-
-    def get_code(self):
-        return self.content.get_code()
+    style = {}  # noqa: RUF012 - shared empty node style

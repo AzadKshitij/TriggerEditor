@@ -200,12 +200,97 @@ def test_workflow_worker_reports_unexpected_exceptions() -> None:
         workflow_module.global_logger = original_global_logger
 
 
+class FakeWorker:
+    """Minimal QThread stand-in for the shutdown path."""
+
+    def __init__(self, running: bool = True, stops: bool = True) -> None:
+        self.running = running
+        self.stops = stops
+        self.cancelled = False
+        self.waited_ms: int | None = None
+        self.nodeStarted = FakeSignal()
+        self.nodeFinished = FakeSignal()
+        self.nodeErrored = FakeSignal()
+        self.workflowFinished = FakeSignal()
+
+    def isRunning(self) -> bool:
+        return self.running
+
+    def request_cancel(self) -> None:
+        self.cancelled = True
+
+    def wait(self, timeout_ms: int) -> bool:
+        self.waited_ms = timeout_ms
+        if self.stops:
+            self.running = False
+        return self.stops
+
+
+class FakeSignal:
+    def __init__(self) -> None:
+        self.disconnected = False
+
+    def disconnect(self) -> None:
+        self.disconnected = True
+
+
+def test_shutdown_workflow_worker_cancels_waits_and_detaches() -> None:
+    window = DummyWindow()
+    worker = FakeWorker()
+    window._workflow_worker = worker
+
+    assert window.shutdown_workflow_worker(1234) is True
+
+    assert worker.cancelled is True
+    assert worker.waited_ms == 1234
+    assert window._workflow_worker is None
+    assert worker.nodeStarted.disconnected
+    assert worker.nodeFinished.disconnected
+    assert worker.nodeErrored.disconnected
+    assert worker.workflowFinished.disconnected
+
+
+def test_shutdown_workflow_worker_without_a_run_is_a_noop() -> None:
+    window = DummyWindow()
+
+    assert window.shutdown_workflow_worker() is True
+    assert window._workflow_worker is None
+
+
+def test_shutdown_keeps_a_stuck_worker_alive_instead_of_destroying_it() -> None:
+    window = DummyWindow()
+    worker = FakeWorker(stops=False)
+    window._workflow_worker = worker
+
+    try:
+        assert window.shutdown_workflow_worker(10) is False
+        assert window._workflow_worker is None
+        assert worker in workflow_module._ORPHANED_WORKERS
+    finally:
+        workflow_module._ORPHANED_WORKERS.discard(worker)
+
+
+def test_wait_for_orphaned_workers_releases_stopped_threads() -> None:
+    worker = FakeWorker(stops=True)
+    workflow_module._ORPHANED_WORKERS.add(worker)
+
+    try:
+        assert workflow_module.wait_for_orphaned_workflow_workers(0) is True
+        assert worker not in workflow_module._ORPHANED_WORKERS
+    finally:
+        workflow_module._ORPHANED_WORKERS.clear()
+
+
 def main() -> None:
     test_workflow_worker_logs_failed_results_to_global_logger()
     test_workflow_worker_records_successful_results()
     test_workflow_worker_prunes_results_to_declared_outputs()
     test_workflow_worker_keeps_previewable_frames_without_declarations()
     test_workflow_worker_reports_unexpected_exceptions()
+    test_shutdown_workflow_worker_cancels_waits_and_detaches()
+    test_shutdown_workflow_worker_without_a_run_is_a_noop()
+    test_shutdown_keeps_a_stuck_worker_alive_instead_of_destroying_it()
+    test_wait_for_orphaned_workers_releases_stopped_threads()
     print("ok")
 
 

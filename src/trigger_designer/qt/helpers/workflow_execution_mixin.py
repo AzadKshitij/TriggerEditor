@@ -4,11 +4,40 @@ import time
 from typing import Any, Dict, List, Union
 
 from loguru import logger
+from nodeeditor.node_graph import GraphCycleError, topological_order
 from qtpy.QtCore import QTimer
 
+from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.edge_validators import (
+    cycle_message,
+    select_cycle_edges,
+)
+from trigger_designer.qt.helpers.error_context import build_context, build_enrich_job
+from trigger_designer.qt.helpers.error_enricher import start_enrichment
 from trigger_designer.qt.helpers.workflow_worker import WorkflowWorker
+from trigger_designer.qt.preferences import get_preferences
+
+#: Runs whose window closed before ``run()`` returned. Qt aborts the process
+#: when a running QThread is destroyed, so a reference is held here until the
+#: thread stops (see ``wait_for_orphaned_workflow_workers``).
+_ORPHANED_WORKERS: set[WorkflowWorker] = set()
+
+
+def wait_for_orphaned_workflow_workers(timeout_ms: int = 5000) -> bool:
+    """Wait for runs that outlived their window; True when none remain."""
+    deadline = time.monotonic() + timeout_ms / 1000.0
+    for worker in list(_ORPHANED_WORKERS):
+        remaining_ms = max(0, int((deadline - time.monotonic()) * 1000))
+        try:
+            stopped = worker.wait(remaining_ms)
+        except RuntimeError:
+            # The C++ thread object was already deleted; nothing to wait for.
+            stopped = True
+        if stopped:
+            _ORPHANED_WORKERS.discard(worker)
+    return not _ORPHANED_WORKERS
 
 
 class WorkflowExecutionMixin:
@@ -47,7 +76,7 @@ class WorkflowExecutionMixin:
     def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
         """Run the current workflow on a single background thread while
         updating execution visuals from signals it emits."""
-        if self._workflow_worker is not None and self._workflow_worker.isRunning():
+        if self._workflow_worker_is_running():
             # A run is already in flight - the GUI thread stays responsive
             # for the whole run now, so this guard is reachable in
             # practice (previously the GUI was blocked, so a second click
@@ -57,14 +86,39 @@ class WorkflowExecutionMixin:
         if hasattr(self, "run_button"):
             self.run_button.setEnabled(False)
 
-        connections = self.getNodeConnections()
-        sorted_nodes = self.topologicalSort(connections)
+        try:
+            # Run reads values, so any coalesced edge edit and the latest SQL
+            # editor text must be settled before ordering and code generation.
+            commit_pending = getattr(self, "commit_pending_config_edits", None)
+            if callable(commit_pending):
+                commit_pending(evaluate=False)
+            coordinator = getattr(self.scene, "evaluator", None)
+            if coordinator is not None:
+                coordinator.flush_now()
+            sorted_nodes = topological_order(self.scene)
+        except GraphCycleError as exc:
+            # Never leave the Run button disabled because the graph cannot be
+            # ordered. The selected edges make the loop visible; the message
+            # uses the TD-CLI-004 wording without inventing a node-level error.
+            if hasattr(self, "run_button"):
+                self.run_button.setEnabled(True)
+            select_cycle_edges(self.scene, exc)
+            message = cycle_message(exc)
+            logger.warning(message)
+            self._log_to_dock(message)
+            return
         executor = NodeExecutor()
 
         # Reset node visuals and stored results
         self.execution_results.clear()
+        problems = getattr(self, "problems", None)
+        if problems is not None:
+            problems.clear_source("run")
         for node in self.getAllNodes():
             node.markInvalid(False)
+            clear = getattr(node, "clear_error", None)
+            if callable(clear):
+                clear("run")
             node.grNode.resetPen()
             node.grNode.update()
 
@@ -86,7 +140,81 @@ class WorkflowExecutionMixin:
         worker.workflowFinished.connect(self._on_workflow_finished)
         worker.finished.connect(worker.deleteLater)
         self._workflow_worker = worker
-        worker.start()
+
+        # The worker and live GUI evaluation both enter Polars/DuckDB. Hold
+        # live passes until the worker is finished; edits made during the run
+        # queue in the coordinator and flush once it stops.
+        coordinator = getattr(self.scene, "evaluator", None)
+        if coordinator is not None:
+            coordinator.suspend()
+        try:
+            worker.start()
+        except Exception:
+            self._workflow_worker = None
+            if coordinator is not None:
+                coordinator.resume()
+            raise
+
+    def _workflow_worker_is_running(self) -> bool:
+        """Whether a run is in flight, tolerating a deleted Qt wrapper."""
+        worker = self._workflow_worker
+        if worker is None:
+            return False
+        try:
+            return worker.isRunning()
+        except RuntimeError:
+            self._workflow_worker = None
+            return False
+
+    def shutdown_workflow_worker(self, timeout_ms: int = 5000) -> bool:
+        """Cancel the current run and wait for its thread to stop.
+
+        Closing a window while ``run()`` is executing must not let Qt destroy
+        the QThread: that is a ``qFatal`` abort, and a thread inside Polars or
+        DuckDB can fault as an access violation instead. Neither raises a
+        Python exception, so waiting is the only safe way out. Cancellation is
+        cooperative (checked before the next node), so a node already in
+        flight is bounded by its own execution timeout.
+
+        Returns ``True`` when the thread has stopped.
+        """
+        worker = self._workflow_worker
+        self._workflow_worker = None
+        if worker is None:
+            return True
+
+        try:
+            if not worker.isRunning():
+                return True
+            worker.request_cancel()
+            # Detach the UI before waiting: queued nodeFinished /
+            # workflowFinished signals must not repaint a closing window.
+            for signal in (
+                worker.nodeStarted,
+                worker.nodeFinished,
+                worker.nodeErrored,
+                worker.workflowFinished,
+            ):
+                try:
+                    signal.disconnect()
+                except (RuntimeError, TypeError):
+                    pass
+            if worker.wait(timeout_ms):
+                return True
+        except RuntimeError:
+            # The C++ thread object is already gone; nothing left to wait for.
+            return True
+
+        # Still running. Hold the reference so teardown cannot destroy it
+        # mid-run; ``wait_for_orphaned_workflow_workers`` waits once more
+        # after the event loop has stopped.
+        _ORPHANED_WORKERS.add(worker)
+        logger.warning(
+            "Workflow thread still running {} ms after cancel; "
+            "keeping it alive until it stops",
+            timeout_ms,
+        )
+        return False
 
     def _on_node_started(self, node: Any) -> None:
         """Slot: a node is about to execute (runs on the GUI thread)."""
@@ -98,10 +226,28 @@ class WorkflowExecutionMixin:
         node_name = getattr(node, "node_title", node.__class__.__name__)
 
         if result.success:
+            clear = getattr(node, "clear_error", None)
+            if callable(clear):
+                clear("run")
             self.execution_results[node] = self._prune_node_results(
                 node, result.variables
             )
             node.grNode.setPenExecuted()
+            node.grNode.update()
+        elif callable(getattr(node, "set_error", None)):
+            logger.debug("Run failed for node {}", node_name)
+            error = translate_exception(
+                getattr(result, "exception", None) or result.error,
+                node=node,
+                phase="run",
+                ctx=build_context(node, self, "run"),
+                redact=bool(get_preferences().get("errors/redact_values", False)),
+                traceback_text=getattr(result, "traceback_text", ""),
+            )
+            node.set_error(error, "run")
+            self._start_error_enrichment(node, error)
+            node.markInvalid()
+            node.grNode.setPenError()
             node.grNode.update()
         else:
             error_message = f"Node execution failed for '{node_name}': {result.error}"
@@ -115,12 +261,62 @@ class WorkflowExecutionMixin:
         """Slot: node raised unexpectedly outside NodeExecutor's own error
         handling (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
-        error_message = f"Error executing node '{node_name}': {exc}"
-        logger.error(error_message)
-        global_logger.error(error_message)
+        if callable(getattr(node, "set_error", None)):
+            logger.debug("Unexpected error for node {}", node_name)
+            error = translate_exception(
+                exc,
+                node=node,
+                phase="run",
+                ctx=build_context(node, self, "run"),
+                redact=bool(get_preferences().get("errors/redact_values", False)),
+            )
+            node.set_error(error, "run")
+            self._start_error_enrichment(node, error)
+        else:
+            error_message = f"Error executing node '{node_name}': {exc}"
+            logger.error(error_message)
+            global_logger.error(error_message)
         node.markInvalid()
         node.grNode.setPenError()
         node.grNode.update()
+
+    def _start_error_enrichment(self, node: Any, error) -> None:
+        try:
+            job = build_enrich_job(node, self, error, "run")
+            start_enrichment(
+                job,
+                lambda result, failed=node: self._apply_enrichment(failed, result),
+                store=getattr(self, "problems", None),
+            )
+        except Exception:  # noqa: BLE001, S110 - enrichment is optional
+            pass
+
+    def _apply_enrichment(self, node: Any, result) -> None:
+        clear = getattr(node, "clear_error", None)
+        if callable(clear):
+            clear("run")
+        culprit_id = getattr(result, "culprit_node_id", None)
+        culprit = None
+        if culprit_id is not None:
+            culprit = next(
+                (
+                    item
+                    for item in self.getAllNodes()
+                    if getattr(item, "id", None) == culprit_id
+                ),
+                None,
+            )
+        if culprit is not None and culprit is not node:
+            culprit_set = getattr(culprit, "set_error", None)
+            if callable(culprit_set):
+                culprit_set(result.root, "run")
+            node_set = getattr(node, "set_error", None)
+            if callable(node_set) and result.knock_on is not None:
+                node_set(result.knock_on, "run")
+        else:
+            node_set = getattr(node, "set_error", None)
+            if callable(node_set):
+                node_set(result.root, "run")
 
     def _on_workflow_finished(self, success: bool) -> None:
         """Slot: the worker thread's run() has returned (runs on the GUI
@@ -130,12 +326,30 @@ class WorkflowExecutionMixin:
         # a deleted QThread's isRunning() on the next Run click raises
         # "wrapped C/C++ object ... has been deleted".
         self._workflow_worker = None
+        scene = getattr(self, "scene", None)
+        coordinator = getattr(scene, "evaluator", None)
+        if coordinator is not None:
+            try:
+                coordinator.resume()
+            except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                logger.exception("Failed to resume live evaluation after a run")
         self.getPyFile(self._workflow_sorted_nodes)
 
         if success:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
         else:
             self._execution_cleanup(success=False)
+
+        problems = getattr(self, "problems", None)
+        count = problems.count("error", roots_only=True) if problems else 0
+        if count:
+            self._log_to_dock(f"Run finished with {count} problem(s).")
+            raiser = getattr(self, "on_run_problems", None)
+            if callable(raiser):
+                try:
+                    raiser()
+                except Exception:  # noqa: BLE001, S110 - showing a dock must not fail
+                    pass
 
         if self.executionResultsChanged is not None:
             self.executionResultsChanged.emit()

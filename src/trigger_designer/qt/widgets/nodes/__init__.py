@@ -146,6 +146,55 @@ _LAZY_NODE_SPECS = [
         "node_title": "Transpose",
         "icon": "node_transpose",
     },
+    {
+        "module_path": "Preparation.record_id",
+        "node_code": PreparationNodes.RECORD_ID,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Record ID",
+        "icon": "node_record_id",
+    },
+    {
+        "module_path": "Preparation.select_records",
+        "node_code": PreparationNodes.SELECT_RECORDS,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Select Records",
+        "icon": "node_select_records",
+    },
+    {
+        "module_path": "Preparation.find_replace",
+        "node_code": PreparationNodes.FIND_REPLACE,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Find and Replace",
+        "icon": "node_find_replace",
+    },
+    {
+        "module_path": "Preparation.date_helper",
+        "node_code": PreparationNodes.DATE_HELPER,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Date Helper",
+        "icon": "node_date_helper",
+    },
+    {
+        "module_path": "Transform.pivot",
+        "node_code": TransformNodes.PIVOT,
+        "node_type": NodeTypes.TRANSFORM,
+        "node_title": "Pivot",
+        "icon": "node_pivot",
+    },
+    {
+        "module_path": "Transform.unpivot",
+        "node_code": TransformNodes.UNPIVOT,
+        "node_type": NodeTypes.TRANSFORM,
+        "node_title": "Unpivot",
+        "icon": "node_unpivot",
+    },
+    {
+        "module_path": "Join.reconcile",
+        "node_code": JoinNodes.RECONCILE,
+        "node_type": NodeTypes.JOIN,
+        "node_title": "Reconcile",
+        "icon": "node_reconcile",
+    },
 ]
 
 _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}

@@ -46,12 +46,17 @@ class PreparationNodes(IntEnum):
     SPLIT = auto()
     DYNAMIC_ROW_BUILDER = auto()
     NORMALIZE_COLUMNS = auto()
+    RECORD_ID = auto()
+    SELECT_RECORDS = auto()
+    FIND_REPLACE = auto()
+    DATE_HELPER = auto()
 
 
 class JoinNodes(IntEnum):
     APPEND = auto()
     JOIN = auto()
     UNION = auto()
+    RECONCILE = auto()
 
 
 class TransformNodes(IntEnum):
@@ -59,6 +64,8 @@ class TransformNodes(IntEnum):
     COUNT_RECORDS = auto()
     RUNNING_TOTAL = auto()
     TRANSPOSE = auto()
+    PIVOT = auto()
+    UNPIVOT = auto()
 
 
 class ReportNodes(IntEnum):

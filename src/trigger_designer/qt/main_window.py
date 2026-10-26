@@ -34,6 +34,8 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
 )
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
+from trigger_designer.qt.models.preview_worker import wait_for_preview_workers
 from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.theme_manager import (
     apply_theme_to_scene,
@@ -55,6 +57,7 @@ from trigger_designer.qt.resource_manager import ResourceManager
 Edge.registerEdgeValidator(edge_validator_debug)
 Edge.registerEdgeValidator(edge_cannot_connect_two_outputs_or_two_inputs)
 Edge.registerEdgeValidator(edge_cannot_connect_input_and_output_of_same_node)
+register_cycle_validator()
 
 # images for the dark skin
 
@@ -145,6 +148,7 @@ class TriggerWindow(
         self.createConfigDock()
         self.createLoggingDock()
         self.createDataPreviewDock()
+        self.createProblemsDock()
 
         self.createMenus()
 
@@ -323,6 +327,9 @@ class TriggerWindow(
             refresh = getattr(preview_dock, "refresh_theme", None)
             if callable(refresh):
                 refresh()
+        problems_dock = getattr(self, "problemsDock", None)
+        if problems_dock is not None:
+            problems_dock.apply_theme()
         # Caption glyphs are painted in Python, so they re-read the tokens.
         chrome = getattr(self, "window_chrome", None)
         if chrome is not None:
@@ -347,6 +354,27 @@ class TriggerWindow(
             return
         super().onEditPaste()
 
+    def shutdown_background_work(self, timeout_ms: int = 5000) -> None:
+        """Stop in-flight runs and previews before their panels are destroyed.
+
+        Called from ``closeEvent`` and from ``QApplication.aboutToQuit`` so
+        every quit path is covered. A QThread destroyed while running aborts
+        the process, and a Polars collect destroyed mid-run faults without a
+        traceback, so waiting here is what keeps a close during a run clean.
+        """
+        for sub_window in self.mdiArea.subWindowList():
+            widget = sub_window.widget()
+            shutdown = getattr(widget, "shutdown_workflow_worker", None)
+            if callable(shutdown):
+                try:
+                    shutdown(timeout_ms)
+                except Exception:  # noqa: BLE001 - one window must not block shutdown
+                    logger.exception("Failed to stop a workflow run during shutdown")
+        try:
+            wait_for_preview_workers(timeout_ms)
+        except Exception:  # noqa: BLE001 - shutdown must still reach writeSettings
+            logger.exception("Failed to wait for preview workers during shutdown")
+
     def closeEvent(self, event: Optional[QCloseEvent]) -> None:
         # Capture the session before children close: the window list is the
         # source of truth for "what was open", and closing clears it.
@@ -355,6 +383,11 @@ class TriggerWindow(
         if self.mdiArea.currentSubWindow() and event is not None:
             event.ignore()
         else:
+            # The close is really happening. Each subwindow already stopped
+            # its own run in closeEvent; this waits for the preview collects,
+            # whose panels were just destroyed. Doing it before the veto check
+            # would cancel work for a close the user then cancels.
+            self.shutdown_background_work()
             self.writeSettings()
             if event is not None:
                 event.accept()
@@ -436,6 +469,10 @@ class TriggerWindow(
             dumpException(e)
 
     def onFileSave(self):
+        current = self.getCurrentNodeEditorWidget()
+        commit = getattr(current, "commit_pending_config_edits", None)
+        if callable(commit):
+            commit(evaluate=False)
         result = super().onFileSave()
         if result:
             current = self.getCurrentNodeEditorWidget()
@@ -444,6 +481,10 @@ class TriggerWindow(
         return result
 
     def onFileSaveAs(self):
+        current = self.getCurrentNodeEditorWidget()
+        commit = getattr(current, "commit_pending_config_edits", None)
+        if callable(commit):
+            commit(evaluate=False)
         result = super().onFileSaveAs()
         if result:
             current = self.getCurrentNodeEditorWidget()
@@ -490,6 +531,7 @@ class TriggerWindow(
         # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
+        nodeeditor.on_run_problems = self.raiseProblemsDock
         nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemSelectedListener(
             lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems())
@@ -545,6 +587,7 @@ class TriggerWindow(
                 # Switch both docks to show content for this window
                 self.switchLoggingDock(widget)
                 self.switchDataPreviewDock(widget)
+                self.switchProblemsDock(widget)
             # The status bar reports the cursor position of the canvas the
             # user is looking at.
             self.connectStatusScene(widget)

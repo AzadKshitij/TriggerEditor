@@ -42,7 +42,7 @@ Set `PYTHONUTF8=1` for runs whose stdout is piped, otherwise emoji log lines rai
 | BUG-009 | Run failures: no node tooltip, exception type lost, "Original traceback" is useless | Medium | Errors | Verified | 03, 02 |
 | BUG-010 | `execute_node` raises `UnboundLocalError` when `get_code()` raises | Medium | Executor | Verified (latent) | 03, 08 |
 | BUG-011 | Cancellation is not wired anywhere; timeouts abandon threads; load progress dialog has no Cancel | Medium | Run / UX | Verified | 08, 01 |
-| BUG-012 | A cyclic graph leaves the Run button disabled for good (and re-raises into the Qt slot) | Medium | Run / UX | Verified | 08 |
+| BUG-012 | A cyclic graph leaves the Run button disabled for good (and re-raises into the Qt slot) | Medium | Run / UX | **Fixed** (2026-10-25) | 08 |
 | BUG-013 | `getPyFile` writes `check_output.py` into the CWD on every Run; file is git-tracked; contents non-deterministic and contain a personal path | Medium | Run / repo hygiene | Verified | 02, 08 |
 | BUG-014 | Absolute file paths stored in `.tds`; tracked workflows embed a developer's home path | Medium | Persistence | Verified | 01, 02, 08 |
 | BUG-015 | No workflow version check on open; `workflow_metadata` extras are dropped on save | Medium | Persistence | Verified | 02, 08 |
@@ -63,6 +63,7 @@ Set `PYTHONUTF8=1` for runs whose stdout is piped, otherwise emoji log lines rai
 | BUG-030 | DuckDB `extract_statements` type and `lock_configuration` are not a read-only guard (PRAGMA, DESCRIBE, `FROM 'x'`, `read_*()` are typed `SELECT`; in-memory DDL still runs after the lock) | Medium | DuckDB hazard (blocks plan 07 SQL nodes) | Verified | 07 |
 | BUG-031 | `TriggerNode.evalImplementation` requires every input to be connected; optional inputs need an override (only `union.py` has one) | Low | Evaluation | Verified (code) | 07 |
 | BUG-032 | Generated Formula code embeds the query in `'''...'''`: a formula containing `'''` is a `SyntaxError` at Run; `duck.close()` is skipped on error | Low | Codegen | Verified | 07 |
+| BUG-033 | A diamond join recomputes once per branch while it is already evaluating; edge connect and split notify both endpoints | Medium | Evaluation | **Fixed** (2026-10-25) | 04, 05 |
 
 Claims from the task brief that could not be confirmed are in the section "Claims not confirmed" at the end
 (`isModified()` stub, stale `ToDo.md` File Input entry, Cleansing serialization).
@@ -450,7 +451,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-012 - A cyclic graph leaves the Run button disabled for good
 
 * **Severity:** Medium (UX dead end until the window is reopened).
-* **Status:** Verified (reproduced).
+* **Status:** Fixed (2026-10-25). Edge insertion now rejects a cycle before it forms (`qt/helpers/edge_validators.py`); `executeWorkflow` catches `GraphCycleError`, selects the loop edges, logs `TD-CLI-004`, re-enables Run and never starts a worker. Legacy cyclic files still open, warn, and evaluate each node at most once.
 * **Root cause:** `workflow_execution_mixin.py:57-61` disables `run_button` *before* `topologicalSort` raises (`design_window.py:754` `raise Exception("Graph has at least one cycle")`); `design_window.py:690-696` `run_workflow` logs and **re-raises** into the Qt slot. Nothing re-enables the button on this path.
 * **Reproduce / verified output:** two Select nodes wired A->B and B->A, `window.run_workflow()`:
   ```
@@ -782,6 +783,16 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 * **Regression test:** `tests/unit/test_formula_codegen.py::test_formula_with_triple_quotes_compiles` (`compile(get_code(), ...)` and exec yields the same frame as live).
 * **Effort:** S.
 
+## BUG-033 - A diamond join recomputes once per branch during live evaluation
+
+* **Severity:** Medium. A shared node does duplicate work and its history/preview notifications can fire once per branch; the result is usually correct, but the cost grows with fan-in and hides real dependency order.
+* **Status:** Fixed (2026-10-25).
+* **Measured baseline:** one edit on the source of a diamond computed the join twice (`edit.diamond.2x1`: 5 computes, 4 unique, ratio 1.25). Four branches computed it four times (`4x1`: 9 vs 6, ratio 1.50); two stages did the same per join (`2x2`: 9 vs 7, ratio 1.29; `4x2`: 17 vs 11, ratio 1.55). Connecting an edge computed the join three times plus the source (`4` total); splitting an edge computed three downstream nodes and five helper computes (`8` total).
+* **Root cause:** every branch called `eval()` while the shared join was still inside `evalImplementation`. The join had not committed its new value yet, so each branch's synchronous push recomputed it. `onEdgeConnectionChanged` also evaluated both endpoints of every edge, even though the producer's value does not change. There was no ordered pass to coalesce the two notifications from a split.
+* **Resolution:** `TriggerNode._evaluating` blocks a push into a node that is already computing; `EvaluationCoordinator` defers edge notifications and runs one topological pass per event turn; `onEdgeConnectionChanged` marks only the consumer. The final benchmark records 4/6/7/11 computes for the four diamonds (all unique, ratio 1.00), one compute for edge connect, and two for split (one helper plus one target).
+* **Regression tests:** `tests/unit/test_eval_reentrancy.py::test_diamond_join_computes_once`, `::test_two_stage_diamond_each_join_once`, `::test_reentrant_push_does_not_recompute`; `tests/unit/test_evaluation_coordinator.py::test_split_notifications_coalesce` and the edge-notification tests.
+* **Effort:** M.
+
 ---
 
 # Claims not confirmed (status Unverified)
@@ -800,7 +811,7 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 
 Fix before implementing each plan (smallest, riskiest first):
 
-1. **Immediately, before any plan (all S):** BUG-001 (panic as success, 30 min), BUG-010 (one-line `node_name` move), BUG-012 (cycle leaves Run disabled), BUG-013 step 1+2 (`git rm --cached check_output.py`, stop writing into the CWD). Also BUG-002 (save truncation): it is data loss and a 25-line override. **BUG-018 and BUG-007 were fixed on 2026-10-22** and are off this list.
+1. **Immediately, before any plan (all S):** BUG-001 (panic as success, 30 min), BUG-010 (one-line `node_name` move), BUG-013 step 1+2 (`git rm --cached check_output.py`, stop writing into the CWD). Also BUG-002 (save truncation): it is data loss and a 25-line override. **BUG-018 and BUG-007 were fixed on 2026-10-22, BUG-012 and BUG-033 on 2026-10-25** and are off this list.
 2. **Before plan 03 (plain-language errors):** BUG-001, BUG-009 (exception fields + tooltip), BUG-010, BUG-021 handling rules. These are plan 03's own Step 4 and must land together.
 3. **Before plan 02 (audit trail):** BUG-001, BUG-009 (`ExecutionResult.exception`), BUG-005 (re-evaluate on Run), BUG-013 (stable variable names, no CWD write), BUG-015 (carry metadata keys), BUG-017 (pure `serialize()`), BUG-008 only if the recorder uses `getSocketValue` (it must not).
 4. **Before plan 01 (input types):** BUG-003 (`!r` quoting everywhere; plan 01 adds many user strings), BUG-014 (relative paths), BUG-017 (serialize re-read), BUG-011 (Cancel on load) and BUG-002 (non-ASCII names).
@@ -816,7 +827,7 @@ Fix before implementing each plan (smallest, riskiest first):
 |---|---|---|
 | BUG-010 | Move `node_name = getattr(...)` above `code = node.get_code()` | `executor.py:310-311` |
 | BUG-001 | `except BaseException` in the exec thread; try/except around `task()` in the worker loop | `executor.py:266`, `:172` |
-| BUG-012 | Compute `sorted_nodes` before disabling the button; do not re-raise the cycle error | `workflow_execution_mixin.py:57-61`, `design_window.py:690-696` |
+| BUG-012 | **Fixed 2026-10-25:** edge-time cycle validator; Run catches `GraphCycleError`, selects the loop and re-enables | `qt/helpers/edge_validators.py`, `workflow_execution_mixin.py`, `design_window.py` |
 | BUG-013 | `git rm --cached check_output.py`; add `encoding="utf-8"` and a path argument to `getPyFile` | `design_window.py:698-706` |
 | BUG-018 | ~~Block document signals around `mergeCharFormat` in `update_error_highlights`~~ **done 2026-10-22:** drop the document write, paint with `setExtraSelections` only | `sql_formula_editor.py:852-899` |
 | BUG-015 | Warn on newer `schema_version`; carry extra `workflow_metadata` keys; replace `utcnow()` | `design_window.py:461-467`, `performance_scene.py:166-173` |

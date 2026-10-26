@@ -1,526 +1,369 @@
-from typing import Optional, Any
-import polars as pl
-from datetime import datetime, timedelta
+"""Rows node: Qt wrapper only; the logic is core/shaping/rows.py."""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from qtpy.QtCore import QDateTime
 from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QLineEdit,
-    QSpinBox,
     QDateTimeEdit,
     QDoubleSpinBox,
+    QLineEdit,
+    QSpinBox,
+    QVBoxLayout,
 )
-from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Signal, Qt, QDateTime
+
 from trigger_designer.core.node_configuration import (
-    register_node,
-    PreparationNodes,
     NodeTypes,
+    PreparationNodes,
+    register_node,
 )
-from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
-    TriggerNode,
-    TriggerGraphicsNode,
+from trigger_designer.core.shaping import rows as core
+from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
+from trigger_designer.qt.widgets.common import (
+    ConfigSection,
+    FormRow,
+    NoWheelComboBox,
 )
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
-from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.widgets.common import ConfigSection, FormRow, NoWheelComboBox
-from nodeeditor.utils_no_qt import dumpException
+
+_TYPE_ITEMS = (
+    ("int", "Int"),
+    ("float", "Float"),
+    ("string", "Text"),
+    ("datetime", "Date/time"),
+)
+
+_VALUE_LABELS = (
+    ("initial_value", "Start"),
+    ("increment_value", "Increment"),
+    ("max_value", "End"),
+)
+
+_INT_DEFAULT = {"initial_value": 1, "increment_value": 1, "max_value": 10}
+_FLOAT_DEFAULT = {"initial_value": 1.0, "increment_value": 1.0, "max_value": 10.0}
+_STRING_DEFAULT = {"initial_value": "A", "increment_value": "1", "max_value": "Z"}
+_DATETIME_DEFAULT = {
+    "initial_value": "2024-01-01T00:00:00",
+    "increment_value": 3600,
+    "max_value": "2024-01-02T00:00:00",
+}
+#: Settings store naive ISO strings; the editor mirrors that.
+_DEFAULT_DATETIME = datetime(2024, 1, 1)  # noqa: DTZ001
 
 
-class DynamicRowBuilderContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-    """Generate rows dynamically based on configured rules.
+def _parse_iso(value) -> datetime | None:
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value))
+    except (TypeError, ValueError):
+        return None
 
-    Features:
-    - Create new rows from scratch or based on input data
-    - Support for numeric, string, and datetime fields
-    - Configurable start value and increment
-    - Safety limits to prevent infinite loops
-    """
 
-    evaluate = Signal()
-    MAX_ITERATIONS = 10000  # Safety limit
+class RowsContent(ShapingContent):
+    """Generate a typed column and concatenate it to the input."""
 
-    def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
+    SETTINGS = core.DEFAULTS
+    MODULE = "trigger_designer.core.shaping.rows"
+    OUTPUT_KINDS = ("rows",)
+    INPUTS = 1
+    HISTORY = "Rows"
+    SUMMARY = "generated rows"
+
+    def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
-        self.node = node
-        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
+        # Keep the generated variable name the old node used.
+        self.output_variables = [f"var_genrows_{self.id}"]
+        self.variable_name = self.output_variables[0]
+        self._widget_type: str | None = None
+        self._value_widgets: dict = {}
+        self._value_rows: dict = {}
 
-        # Data tracking
-        self.incoming_variable: str = ""
-        self.incom_data: Optional[pl.DataFrame] = None
-        self.data: Optional[pl.DataFrame] = None
-        self.variable_name = f"var_genrows_{self.id}"
-
-        # Configuration
-        self.field_name: str = "counter"
-        self.field_type: str = "int"
-        self.initial_value: Any = 1
-        self.increment_value: Any = 1
-        self.max_value: Any = 10
-
-        # Type mapping
-        self.type_mapping = {
-            "int": int,
-            "float": float,
-            "string": str,
-            "datetime": datetime,
-        }
-
-    @property
-    def node(self) -> "TriggerNode":
-        return self._node
-
-    @node.setter
-    def node(self, value: "TriggerNode") -> None:
-        self._node = value
-
-    def initUI(self, _icon: Optional[QPixmap] = None) -> None:
-        icon: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon)
-
+    # -- dock construction ----------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        """Create the node's UI layout"""
-        # Field Configuration
-        field_group = ConfigSection()
-        self.field_section = field_group
+        field_type = str(self.settings.get("field_type") or "int")
 
-        self.name_edit = QLineEdit(self.field_name)
+        field_section = ConfigSection()
+        field_section._undo_composite = True
+        self.field_section = field_section
+
+        self.name_edit = QLineEdit()
+        self.name_edit.setMinimumHeight(30)
         self.name_edit.setToolTip("Name of the generated column")
-        self.name_edit.textChanged.connect(self.on_field_name_changed)
-        field_group.addWidget(FormRow("Name", self.name_edit, label_width=88))
+        self.name_edit.setText(str(self.settings.get("field_name") or ""))
+        self._debounced(
+            self.name_edit.textChanged,
+            lambda: self.set_setting(
+                "field_name",
+                self.name_edit.text(),
+                "Rows Field name Changed",
+                "Rows-field_name",
+            ),
+        )
+        field_section.addWidget(FormRow("Name", self.name_edit, label_width=88))
 
         self.type_combo = NoWheelComboBox()
-        self.type_combo.addItems(["int", "float", "string", "datetime"])
         self.type_combo.setMinimumHeight(30)
-        self.type_combo.setCurrentText(self.field_type)
-        self.type_combo.currentTextChanged.connect(self.on_field_type_changed)
-        field_group.addWidget(FormRow("Type", self.type_combo, label_width=88))
+        for value, label in _TYPE_ITEMS:
+            self.type_combo.addItem(label, value)
+        index = self.type_combo.findData(field_type)
+        if index >= 0:
+            self.type_combo.setCurrentIndex(index)
+        self.type_combo.currentIndexChanged.connect(
+            lambda _index: self._commit_type(self.type_combo.currentData() or "int")
+        )
+        field_section.addWidget(FormRow("Type", self.type_combo, label_width=88))
 
-        dock_layout.addWidget(field_group)
+        value_section = ConfigSection()
+        value_section._undo_composite = True
+        self.value_section = value_section
+        self._value_widgets = {}
+        self._value_rows = {}
+        for key, label in _VALUE_LABELS:
+            widget = self._make_value_widget(key, field_type)
+            row = FormRow(label, widget, label_width=88)
+            self._value_rows[key] = row
+            self._value_widgets[key] = widget
+            value_section.addWidget(row)
 
-        # Value Configuration: start / increment / end
-        value_group = ConfigSection()
-        self.value_section = value_group
-
-        self.initial_widget = self.create_value_widget(self.field_type)
-        self._restore_widget_value(self.initial_widget, self.initial_value)
-        self.initial_row = FormRow("Start", self.initial_widget, label_width=88)
-        value_group.addWidget(self.initial_row)
-
-        self.increment_widget = self.create_value_widget(self.field_type)
-        self._restore_widget_value(self.increment_widget, self.increment_value)
-        self.increment_row = FormRow("Increment", self.increment_widget, label_width=88)
-        value_group.addWidget(self.increment_row)
-
-        self.max_widget = self.create_value_widget(self.field_type)
-        self._restore_widget_value(self.max_widget, self.max_value)
-        self.max_row = FormRow("End", self.max_widget, label_width=88)
-        value_group.addWidget(self.max_row)
-
-        dock_layout.addWidget(value_group)
+        dock_layout.addWidget(field_section)
+        dock_layout.addWidget(value_section)
         dock_layout.addStretch()
 
-        self._refresh_dynamic_row_counts()
+        self._widget_type = field_type
+        self._apply_visibility()
+        self._refresh_counts()
 
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
-        """Configuration summary for the dock context strip."""
-        chips: list[tuple[str, str]] = [(self.field_type, "accent")]
-        summary = self._range_summary()
-        if summary:
+        field_type = str(self.settings.get("field_type") or "int")
+        chips: list[tuple[str, str]] = [(field_type, "accent")]
+        if field_type in ("int", "float"):
+            summary = (
+                f"{self.settings.get('initial_value')} to "
+                f"{self.settings.get('max_value')} by "
+                f"{self.settings.get('increment_value')}"
+            )
             chips.append((summary, ""))
         return chips, ""
 
-    def _range_summary(self) -> str:
-        """Start/step/end in one phrase, when the type has a range."""
-        if self.field_type in ("int", "float"):
-            return f"{self.initial_value} to {self.max_value} by {self.increment_value}"
-        return ""
-
-    def _refresh_dynamic_row_counts(self) -> None:
-        """Keep section header counts in step with the configuration."""
+    def _refresh_counts(self) -> None:
         self.refresh_dock_context()
         section = getattr(self, "field_section", None)
         if section is not None:
-            section.set_count(self.field_name or "")
+            section.set_count(str(self.settings.get("field_name") or ""))
 
-        section = getattr(self, "value_section", None)
-        if section is not None:
-            section.set_count(self._range_summary())
-
-    def create_value_widget(self, field_type: str) -> QWidget:
-        """Create appropriate widget based on field type"""
-        if field_type == "int":
-            widget = QSpinBox()
-            widget.setRange(-1000000, 1000000)
-            widget.valueChanged.connect(self.on_value_changed)
-        elif field_type == "float":
-            widget = QDoubleSpinBox()
-            widget.setRange(-1000000, 1000000)
-            widget.setDecimals(4)
-            widget.valueChanged.connect(self.on_value_changed)
-        elif field_type == "datetime":
+    # -- value widgets ----------------------------------------------------
+    def _make_value_widget(self, key: str, field_type: str):
+        value = self.settings.get(key)
+        label = dict(_VALUE_LABELS)[key]
+        if field_type == "datetime" and key != "increment_value":
             widget = QDateTimeEdit()
             widget.setCalendarPopup(True)
-            widget.setDateTime(QDateTime.currentDateTime())
-            widget.dateTimeChanged.connect(self.on_value_changed)
-        else:  # string
-            widget = QLineEdit()
-            widget.textChanged.connect(self.on_value_changed)
+            widget.setMinimumHeight(30)
+            dt = _parse_iso(value) or _DEFAULT_DATETIME
+            widget.setDateTime(QDateTime(dt))
+            widget.dateTimeChanged.connect(
+                lambda dt, k=key, l=label: self.set_setting(
+                    k,
+                    dt.toPython().isoformat(),
+                    f"Rows {l} Changed",
+                    f"Rows-{k}",
+                )
+            )
+            return widget
+        if field_type == "datetime":
+            widget = QSpinBox()
+            widget.setRange(-1_000_000_000, 1_000_000_000)
+            return self._finish_spin(widget, key, value, label)
+        if field_type == "int":
+            widget = QSpinBox()
+            widget.setRange(-1_000_000_000, 1_000_000_000)
+            return self._finish_spin(widget, key, value, label)
+        if field_type == "float":
+            widget = QDoubleSpinBox()
+            widget.setRange(-1_000_000_000, 1_000_000_000)
+            widget.setDecimals(4)
+            widget.setMinimumHeight(30)
+            try:
+                widget.setValue(float(value))
+            except (TypeError, ValueError):
+                widget.setValue(0.0)
+            widget.valueChanged.connect(
+                lambda v, k=key, l=label: self.set_setting(
+                    k, float(v), f"Rows {l} Changed", f"Rows-{k}"
+                )
+            )
+            return widget
+
+        widget = QLineEdit()
+        widget.setMinimumHeight(30)
+        widget.setText("" if value is None else str(value))
+        self._debounced(
+            widget.textChanged,
+            lambda w=widget, k=key, l=label: self.set_setting(
+                k, w.text(), f"Rows {l} Changed", f"Rows-{k}"
+            ),
+        )
         return widget
 
-    @staticmethod
-    def _restore_widget_value(widget: QWidget, value: Any) -> None:
-        """Seed a fresh widget from deserialized state (best effort).
-
-        Signals stay blocked: sibling widgets may not exist yet and
-        on_value_changed compares against all three.
-        """
+    def _finish_spin(self, widget: QSpinBox, key: str, value, label: str):
+        widget.setMinimumHeight(30)
         try:
-            widget.blockSignals(True)
-            if isinstance(widget, QDateTimeEdit):
-                dt = value
-                if isinstance(dt, str):
+            widget.setValue(int(float(value)))
+        except (TypeError, ValueError):
+            widget.setValue(0)
+        widget.valueChanged.connect(
+            lambda v, k=key, l=label: self.set_setting(
+                k, int(v), f"Rows {l} Changed", f"Rows-{k}"
+            )
+        )
+        return widget
+
+    def _rebuild_value_widgets(self) -> None:
+        field_type = str(self.settings.get("field_type") or "int")
+        for key, _label in _VALUE_LABELS:
+            row = self._value_rows.get(key)
+            if row is None:
+                continue
+            old = self._value_widgets.get(key)
+            widget = self._make_value_widget(key, field_type)
+            row.replace_field(widget)
+            if old is not None:
+                old.deleteLater()
+            self._value_widgets[key] = widget
+        self._widget_type = field_type
+        self._write_value_widgets()
+
+    def _write_value_widgets(self) -> None:
+        for key, widget in self._value_widgets.items():
+            value = self.settings.get(key)
+            blocked = widget.blockSignals(True)
+            try:
+                if isinstance(widget, QDateTimeEdit):
+                    dt = _parse_iso(value) or _DEFAULT_DATETIME
+                    widget.setDateTime(QDateTime(dt))
+                elif isinstance(widget, QDoubleSpinBox):
                     try:
-                        dt = datetime.fromisoformat(dt)
-                    except ValueError:
-                        return
-                elif hasattr(dt, "toPython"):  # QDateTime
-                    return  # already displayable; widget default stands in
-                if isinstance(dt, datetime):
-                    text = dt.isoformat()
-                    fmt = (
-                        Qt.DateFormat.ISODateWithMs
-                        if "." in text
-                        else Qt.DateFormat.ISODate
-                    )
-                    parsed = QDateTime.fromString(text, fmt)
-                    if parsed.isValid():
-                        widget.setDateTime(parsed)
-            elif isinstance(widget, (QSpinBox, QDoubleSpinBox)):
-                if isinstance(value, bool):
-                    return
-                if isinstance(value, (int, float)):
-                    widget.setValue(value)
-            elif isinstance(widget, QLineEdit):
-                if isinstance(value, str):
-                    widget.setText(value)
-        except Exception:
-            pass
-        finally:
-            try:
-                widget.blockSignals(False)
-            except Exception:
-                pass
-
-    def process_data(self) -> None:
-        """Generate rows based on configuration"""
-        try:
-            # Initialize values based on field type
-            start_val = self.get_typed_value(self.initial_widget)
-            increment = self.get_typed_value(self.increment_widget)
-            end_val = self.get_typed_value(self.max_widget)
-
-            # Generate rows
-            values = []
-            current = start_val
-            iteration = 0
-
-            while iteration < self.MAX_ITERATIONS:
-                if self.should_stop(current, end_val):
-                    break
-
-                values.append(current)
-                current = self._increment_value(current, increment)
-                iteration += 1
-
-                if iteration == self.MAX_ITERATIONS:
-                    global_logger.warning(
-                        f"Warning: Reached maximum iterations ({self.MAX_ITERATIONS})"
-                    )
-
-            # Create DataFrame (match lazy/eager kind so concat never mixes)
-            frame_kind = (
-                pl.LazyFrame
-                if isinstance(self.incom_data, pl.LazyFrame)
-                else pl.DataFrame
-            )
-            if self.incom_data is not None:
-                # Add counter column to existing DataFrame
-                repeated_df = frame_kind({self.field_name: values})
-                self.data = pl.concat([self.incom_data, repeated_df], how="horizontal")
-            else:
-                # Create new DataFrame
-                self.data = frame_kind({self.field_name: values})
-
-            self._refresh_dynamic_row_counts()
-
-        except Exception as e:
-            global_logger.error(f"Error generating rows: {str(e)}")
-            self.data = None
-
-    def get_typed_value(self, widget: QWidget) -> Any:
-        """Get properly typed value from widget"""
-        if isinstance(widget, QSpinBox):
-            return widget.value()
-        elif isinstance(widget, QDoubleSpinBox):
-            return float(widget.value())
-        elif isinstance(widget, QDateTimeEdit):
-            return widget.dateTime().toPython()
-        else:  # QLineEdit
-            return widget.text()
-
-    def should_stop(self, current: Any, end: Any) -> bool:
-        """Determine if row generation should stop"""
-        if self.field_type in ["int", "float"]:
-            return current > end
-        elif self.field_type == "datetime":
-            return current > end
-        else:  # string
-            return False
-
-    def _increment_value(self, current: Any, increment: Any) -> Any:
-        """Calculate next value based on field type"""
-        if self.field_type in ["int", "float"]:
-            return current + increment
-        elif self.field_type == "datetime":
-            return current + timedelta(seconds=increment)
-        else:  # string
-            return f"{current}{increment}"
-
-    def on_field_name_changed(self, value: str) -> None:
-        """Handle field name changes"""
-        self.field_name = value
-        self._refresh_dynamic_row_counts()
-        self.process_data()
-        self.evaluate.emit()
-
-    def on_field_type_changed(self, value: str) -> None:
-        """Handle field type changes"""
-        old_type = self.field_type
-        self.field_type = value
-
-        # Create new widgets for the new type
-        new_initial = self.create_value_widget(value)
-        new_increment = self.create_value_widget(value)
-        new_max = self.create_value_widget(value)
-
-        # Replace old widgets with new ones (the row keeps its label)
-        old_initial = self.initial_widget
-        old_increment = self.increment_widget
-        old_max = self.max_widget
-
-        initial_row = getattr(self, "initial_row", None)
-        if initial_row is not None:
-            try:
-                initial_row.replace_field(new_initial)
-                self.increment_row.replace_field(new_increment)
-                self.max_row.replace_field(new_max)
+                        widget.setValue(float(value))
+                    except (TypeError, ValueError):
+                        pass
+                elif isinstance(widget, QSpinBox):
+                    try:
+                        widget.setValue(int(float(value)))
+                    except (TypeError, ValueError):
+                        pass
+                elif isinstance(widget, QLineEdit):
+                    text = "" if value is None else str(value)
+                    if widget.text() != text:
+                        widget.setText(text)
             except RuntimeError:
-                pass
+                continue
+            finally:
+                widget.blockSignals(blocked)
 
-        # Clean up old widgets
-        old_initial.deleteLater()
-        old_increment.deleteLater()
-        old_max.deleteLater()
+    def _apply_visibility(self) -> None:
+        field_type = str(self.settings.get("field_type") or "int")
+        max_row = self._value_rows.get("max_value")
+        if max_row is not None:
+            max_row.setVisible(field_type != "string")
 
-        # Store new widgets
-        self.initial_widget = new_initial
-        self.increment_widget = new_increment
-        self.max_widget = new_max
-
-        # Reset to default values based on type
-        if value == "int":
-            self.initial_value = 1
-            self.increment_value = 1
-            self.max_value = 10
-        elif value == "float":
-            self.initial_value = 1.0
-            self.increment_value = 1.0
-            self.max_value = 10.0
-        elif value == "datetime":
-            now = QDateTime.currentDateTime()
-            self.initial_value = now
-            self.increment_value = 3600  # 1 hour in seconds
-            self.max_value = now.addDays(1)
-        else:  # string
-            self.initial_value = "A"
-            self.increment_value = "1"
-            self.max_value = "Z"
-
-        self.process_data()
-        self._refresh_dynamic_row_counts()
-        self.evaluate.emit()
-
-    def on_value_changed(self, value: Any) -> None:
-        """Handle changes to any value widget"""
-        # Determine which widget triggered the change
-        sender = self.sender()
-
-        if sender == self.initial_widget:
-            self.initial_value = self.get_typed_value(sender)
-        elif sender == self.increment_widget:
-            self.increment_value = self.get_typed_value(sender)
-        elif sender == self.max_widget:
-            self.max_value = self.get_typed_value(sender)
-
-        self._refresh_dynamic_row_counts()
-        self.process_data()
-        self.evaluate.emit()
-
-    @staticmethod
-    def _render_literal(value: Any) -> str:
-        """Render a configured value as Python source (strings quoted,
-        datetimes rebuilt; QDateTime accepted too)."""
-        if isinstance(value, str):
-            return repr(value)
-        if isinstance(value, datetime):
-            return f"datetime.fromisoformat({value.isoformat()!r})"
-        if hasattr(value, "toPython"):  # QDateTime
-            try:
-                return f"datetime.fromisoformat({value.toPython().isoformat()!r})"
-            except Exception:
-                pass
-        return repr(value)
-
-    def get_code(self) -> str:
-        """Generate code for row generation"""
-        code_lines = [
-            "import polars as pl",
-            "from datetime import datetime, timedelta",
-            f"# Generate rows",
-            f"values = []",
-            f"current = {self._render_literal(self.initial_value)}",
-            f"iteration = 0",
-        ]
-        if self.field_type == "string":
-            # Live should_stop() is always False for strings: cap only.
-            code_lines.append(f"while iteration < {self.MAX_ITERATIONS}:")
-        else:
-            code_lines.append(
-                f"while current <= {self._render_literal(self.max_value)}"
-                f" and iteration < {self.MAX_ITERATIONS}:"
-            )
-        code_lines.append(f"    values.append(current)")
-        code_lines.append(f"    {self._increment_statement()}")
-        code_lines.append(f"    iteration += 1")
-        code_lines.append(f"")
-        code_lines.append(
-            f"{self.variable_name} = pl.DataFrame({{'{self.field_name}': values}})"
-        )
-
-        if self.incoming_variable:
-            code_lines.append(
-                f"{self.variable_name} = pl.concat([{self.incoming_variable}, {self.variable_name}], how='horizontal')"
-            )
-
-        return "\n".join(code_lines) + "\n"
-
-    def _increment_statement(self) -> str:
-        """Loop increment source line matching live _increment_value()."""
-        if self.field_type in ["int", "float"]:
-            return f"current = current + {self._render_literal(self.increment_value)}"
-        if self.field_type == "datetime":
-            return (
-                "current = current + "
-                f"timedelta(seconds={self._render_literal(self.increment_value)})"
-            )
-        return f"current = current + {self._render_literal(str(self.increment_value))}"
-
-    def get_increment_code(self) -> str:
-        """Get code for increment operation (legacy, kept for compatibility)."""
-        return self._increment_statement().replace("current = ", "", 1)
-
-    @staticmethod
-    def _serialize_value(value: Any) -> Any:
-        """Make a configured value JSON-safe (datetimes → iso strings)."""
-        if isinstance(value, datetime):
-            return value.isoformat()
-        if hasattr(value, "toPython"):  # QDateTime
-            try:
-                return value.toPython().isoformat()
-            except Exception:
-                return None
-        return value
-
-    def serialize(self) -> dict:
-        """Serialize node content"""
-        res = super().serialize()
-        res.update(
-            {
-                "field_name": self.field_name,
-                "field_type": self.field_type,
-                "initial_value": self._serialize_value(self.initial_value),
-                "increment_value": self._serialize_value(self.increment_value),
-                "max_value": self._serialize_value(self.max_value),
-            }
-        )
-        return res
-
-    def deserialize(self, data: dict, hashmap={}) -> bool:
-        """Deserialize node content"""
-        res = super().deserialize(data, hashmap)
+    # -- commits ----------------------------------------------------------
+    def _commit_type(self, value: str) -> None:
+        if value == str(self.settings.get("field_type") or "int"):
+            return
+        changes = self._converted_values(value)
+        previous = getattr(self, "_suspend_node_evaluation", False)
+        self._suspend_node_evaluation = True
         try:
-            self.field_name = data.get("field_name", "counter")
-            self.field_type = data.get("field_type", "int")
-            self.initial_value = data.get("initial_value", 1)
-            self.increment_value = data.get("increment_value", 1)
-            self.max_value = data.get("max_value", 10)
-            if self.field_type == "datetime":
-                # Revive iso strings written by _serialize_value.
-                for attr in ("initial_value", "increment_value", "max_value"):
-                    value = getattr(self, attr)
-                    if isinstance(value, str):
-                        try:
-                            setattr(self, attr, datetime.fromisoformat(value))
-                        except ValueError:
-                            pass
-            return True and res
-        except Exception as e:
-            dumpException(e)
-            return res
+            for key, converted in changes.items():
+                self.set_setting(
+                    key,
+                    converted,
+                    f"Rows {dict(_VALUE_LABELS)[key]} Changed",
+                )
+            self.set_setting("field_type", value, "Rows Field type Changed")
+        finally:
+            self._suspend_node_evaluation = previous
+        self.evaluate.emit()
+
+    def _converted_values(self, target: str) -> dict:
+        settings = self.settings
+        if target == "int":
+            return {
+                key: self._number(settings.get(key), default, int)
+                for key, default in _INT_DEFAULT.items()
+            }
+        if target == "float":
+            return {
+                key: self._number(settings.get(key), default, float)
+                for key, default in _FLOAT_DEFAULT.items()
+            }
+        if target == "string":
+            return {
+                key: "" if settings.get(key) is None else str(settings.get(key))
+                for key in _STRING_DEFAULT
+            }
+        initial = _parse_iso(settings.get("initial_value"))
+        maximum = _parse_iso(settings.get("max_value"))
+        increment = self._number(settings.get("increment_value"), 3600, float)
+        return {
+            "initial_value": (
+                initial or datetime.fromisoformat(_DATETIME_DEFAULT["initial_value"])
+            ).isoformat(),
+            "increment_value": increment,
+            "max_value": (
+                maximum or datetime.fromisoformat(_DATETIME_DEFAULT["max_value"])
+            ).isoformat(),
+        }
+
+    @staticmethod
+    def _number(value, default, cast):
+        try:
+            return cast(float(value))
+        except (TypeError, ValueError):
+            return default
+
+    # -- model -> widgets -------------------------------------------------
+    def after_change(self) -> None:
+        if getattr(self, "name_edit", None) is None:
+            return
+        self._sync_widgets_from_model()
+        self._refresh_counts()
+
+    def _sync_widgets_from_model(self) -> None:
+        if getattr(self, "name_edit", None) is None:
+            return
+        field_type = str(self.settings.get("field_type") or "int")
+        if self._widget_type != field_type:
+            self._rebuild_value_widgets()
+        else:
+            self._write_value_widgets()
+
+        text = str(self.settings.get("field_name") or "")
+        if self.name_edit.text() != text:
+            blocked = self.name_edit.blockSignals(True)
+            try:
+                self.name_edit.setText(text)
+            finally:
+                self.name_edit.blockSignals(blocked)
+
+        index = self.type_combo.findData(field_type)
+        if index >= 0:
+            blocked = self.type_combo.blockSignals(True)
+            try:
+                self.type_combo.setCurrentIndex(index)
+            finally:
+                self.type_combo.blockSignals(blocked)
+        self._apply_visibility()
 
 
 @register_node(PreparationNodes.DYNAMIC_ROW_BUILDER, NodeTypes.PREPARATION)
-class TriggerNode_DynamicRowBuilder(TriggerNode):
+class TriggerNode_Rows(ShapingNode):
     icon = "node_generate_rows"
     node_code = PreparationNodes.DYNAMIC_ROW_BUILDER
     node_title = "Rows"
     node_type = NodeTypes.PREPARATION
+    content_class = RowsContent
+    output_text = ("Out",)
     content_label_objname = "trigger_node_generate_rows"
-
-    def __init__(self, scene) -> None:
-        super().__init__(scene, inputs=[1], outputs=[1])
-        self.eval()
-
-    def initInnerClasses(self) -> None:
-        self.content: DynamicRowBuilderContent = DynamicRowBuilderContent(self)
-        self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
-        self.content.evaluate.connect(self.onInputChanged)
-        self.param: list = []
-
-    def processInputs(self, input_values):
-        """Process inputs and generate rows based on configuration"""
-        this_socket_index = 0
-        input_node = self.getInput(this_socket_index)
-        socket_index = self.getSocketValue(input_node.outputs, self)
-        input_value = input_values[this_socket_index][socket_index]
-
-        if input_value:
-            self.content.incom_data = input_value.get("data")
-            self.content.incoming_variable = input_value.get("variable_name")
-
-            self.content.process_data()
-
-            self.param = [
-                {"data": self.content.data, "variable_name": self.content.variable_name}
-            ]
-
-            return self.param
-        else:
-            self.markDirty(True)
-            self.markInvalid(True)
-            self.grNode.setToolTip("Input is not connected")
-            return None
-
-    def get_code(self) -> str:
-        return self.content.get_code()
+    style = {}  # noqa: RUF012 - shared empty node style

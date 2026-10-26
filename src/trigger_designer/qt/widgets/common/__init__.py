@@ -1,3 +1,4 @@
+from trigger_designer.qt.widgets.common.column_picker import ColumnPicker, dtype_label
 from trigger_designer.qt.widgets.common.config_widgets import (
     CHIP_H,
     CONTROL_H,
@@ -16,6 +17,7 @@ from trigger_designer.qt.widgets.common.config_widgets import (
     IconButton,
     InspectorHeader,
     NoWheelComboBox,
+    RuleStack,
     SegmentedControl,
     StatusBadge,
     TextButton,
@@ -31,6 +33,7 @@ __all__ = [
     "TOOLBAR_H",
     "Chip",
     "ColumnChecklist",
+    "ColumnPicker",
     "ConfigSection",
     "ContextStrip",
     "EmptyStateLabel",
@@ -39,7 +42,9 @@ __all__ = [
     "IconButton",
     "InspectorHeader",
     "NoWheelComboBox",
+    "RuleStack",
     "SegmentedControl",
     "StatusBadge",
     "TextButton",
+    "dtype_label",
 ]

@@ -1,21 +1,28 @@
+"""File Output node: Qt wrapper only; the writer lives in core/shaping."""
+
+from __future__ import annotations
+
+import json
 import os
-import polars as pl
+
 from qtpy.QtWidgets import (
-    QWidget,
-    QLineEdit,
-    QFileDialog,
-    QVBoxLayout,
     QCheckBox,
+    QFileDialog,
+    QLineEdit,
+    QVBoxLayout,
 )
-from qtpy.QtGui import QPixmap
-from qtpy.QtCore import Signal
-from trigger_designer.core.node_configuration import register_node, IONodes, NodeTypes
+
+from trigger_designer.core.node_configuration import (
+    IONodes,
+    NodeTypes,
+    register_node,
+)
+from trigger_designer.core.shaping import file_output as core
+from trigger_designer.qt.helpers.shaping_support import ShapingContent
 from trigger_designer.qt.node_base import (
-    TriggerChangeHandler,
-    TriggerNode,
     TriggerGraphicsNode,
+    TriggerNode,
 )
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from trigger_designer.qt.widgets.common import (
     ConfigSection,
     FormRow,
@@ -23,369 +30,242 @@ from trigger_designer.qt.widgets.common import (
     NoWheelComboBox,
 )
 
-from nodeeditor.utils import dumpException
-from typing import Optional, Union
-from loguru import logger
+_FORMAT_LABELS = (
+    ("csv", "CSV"),
+    ("excel", "Excel"),
+    ("parquet", "Parquet"),
+    ("json", "JSON"),
+    ("ndjson", "NDJSON"),
+    ("ipc", "Arrow IPC"),
+    ("custom_delimited", "Custom delimited"),
+)
+
+_EXTENSION_FORMATS = {
+    "csv": "csv",
+    "txt": "csv",
+    "xlsx": "excel",
+    "xls": "excel",
+    "parquet": "parquet",
+    "json": "json",
+    "ndjson": "ndjson",
+    "ipc": "ipc",
+    "arrow": "ipc",
+}
 
 
-class FileOutputContent(QDMNodeIconContentWidget, TriggerChangeHandler):
-    evaluate = Signal()
+class FileOutputContent(ShapingContent):
+    """Destination and format settings for the sink."""
 
-    def __init__(self, node: "TriggerNode", parent: Optional[QWidget] = None) -> None:
-        super().__init__(node, parent)
-        # local Variables
-        self.filePath = ""
-        self.node = node
-        TriggerChangeHandler.__init__(self, self.node.scene, self.node)
+    SETTINGS = core.DEFAULTS
+    MODULE = "trigger_designer.core.shaping.file_output"
+    OUTPUT_KINDS = ()
+    INPUTS = 1
+    HISTORY = "File Output"
+    SUMMARY = "write to file"
 
-        # File format options
-        self.file_format = "csv"  # Default format
-        self.delimiter = ","  # Custom delimiter for CSV/text files
-        self.use_streaming = True  # Use streaming for memory optimization
-        self.include_bom = False  # BOM for text files
-        self.compression = None  # Compression type
-
-        # incoming variables
-        self.incoming_variable = ""
-        self.data: Optional[Union[pl.DataFrame, pl.LazyFrame]] = None
-
-    @property
-    def node(self) -> "TriggerNode":
-        return self._node
-
-    @node.setter
-    def node(self, value: "TriggerNode") -> None:
-        self._node = value
-
-    def initUI(self, icon: Optional[QPixmap] = None) -> None:
-        icon_: QPixmap = self.node.rsm.get(f"{self.node.icon}")
-        super().initUI(icon_)
-
+    # -- dock ------------------------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
-        # Destination section: path + browse, the only mandatory choice
-        destination = ConfigSection()
+        destination = ConfigSection("Destination")
+        destination._undo_composite = True
         self.destination_section = destination
 
-        self.filePathEdit = QLineEdit(self)
-        self.filePathEdit.setPlaceholderText("Enter file path")
+        self.filePathEdit = QLineEdit()
         self.filePathEdit.setMinimumHeight(30)
-        self.filePathEdit.textChanged.connect(self._on_filePathEdit_textChanged)
-        self.registerInputWidget(self.filePathEdit)
-
+        self.filePathEdit.setPlaceholderText("Enter file path")
+        self.filePathEdit.setText(str(self.settings.get("filePath") or ""))
+        self._debounced(
+            self.filePathEdit.textChanged,
+            lambda: self._commit_path(self.filePathEdit.text()),
+        )
         self.saveButton = IconButton.themed(
             "Browse for save location",
             rsm_icon=self.node.rsm.get("icon_save"),
             theme_fallback="document-save",
-            parent=self,
         )
         self.saveButton.clicked.connect(self.openFileDialog)
-
-        # Label and field share one 30px row; the browse button rides along.
         destination.addWidget(
-            FormRow("File", self.filePathEdit, label_width=32, action=self.saveButton)
+            FormRow(
+                "File",
+                self.filePathEdit,
+                label_width=32,
+                action=self.saveButton,
+            )
         )
+        dock_layout.addWidget(destination)
 
-        # Format section: format, delimiter and write options
-        options = ConfigSection()
+        options = ConfigSection("Format")
+        options._undo_composite = True
         self.format_section = options
 
-        self.formatCombo = NoWheelComboBox(self)
+        self.formatCombo = NoWheelComboBox()
         self.formatCombo.setMinimumHeight(30)
-        self.formatCombo.addItems(
-            ["csv", "excel", "parquet", "json", "ndjson", "ipc", "custom_delimited"]
+        self.formatCombo.setMaxVisibleItems(len(_FORMAT_LABELS))
+        for value, label in _FORMAT_LABELS:
+            self.formatCombo.addItem(label, value)
+        index = self.formatCombo.findData(
+            str(self.settings.get("file_format") or "csv")
         )
-        self.formatCombo.currentTextChanged.connect(self._on_format_changed)
+        self.formatCombo.setCurrentIndex(max(0, index))
+        self.formatCombo.currentIndexChanged.connect(
+            lambda _index: self.set_setting(
+                "file_format",
+                self.formatCombo.currentData() or "csv",
+                "File Output Format Changed",
+            )
+        )
         options.addWidget(FormRow("Format", self.formatCombo, label_width=88))
 
-        # Custom delimiter (for CSV/custom delimited)
-        self.delimiterEdit = QLineEdit(self)
-        self.delimiterEdit.setText(",")
+        self.delimiterEdit = QLineEdit()
         self.delimiterEdit.setMinimumHeight(30)
         self.delimiterEdit.setMaximumWidth(60)
-        self.delimiterEdit.textChanged.connect(self._on_delimiter_changed)
+        self.delimiterEdit.setText(str(self.settings.get("delimiter") or ","))
+        self._debounced(
+            self.delimiterEdit.textChanged,
+            lambda: self.set_setting(
+                "delimiter",
+                self.delimiterEdit.text() or ",",
+                "File Output Delimiter Changed",
+            ),
+        )
         self.delimiter_row = FormRow("Delimiter", self.delimiterEdit, label_width=88)
         options.addWidget(self.delimiter_row)
 
-        # Streaming option
-        self.streamingCheckbox = QCheckBox("Use streaming (memory optimized)")
-        self.streamingCheckbox.setChecked(True)
-        self.streamingCheckbox.toggled.connect(self._on_streaming_changed)
-        options.addWidget(self.streamingCheckbox)
+        self.bom_check = QCheckBox("Include BOM")
+        self.bom_check.setChecked(bool(self.settings.get("include_bom", False)))
+        self.bom_check.toggled.connect(
+            lambda checked: self.set_setting(
+                "include_bom", bool(checked), "File Output BOM Changed"
+            )
+        )
+        self.bom_row = FormRow("Encoding", self.bom_check, label_width=88)
+        options.addWidget(self.bom_row)
 
-        dock_layout.addWidget(destination)
         dock_layout.addWidget(options)
         dock_layout.addStretch()
-
-        if self.filePath:
-            self.filePathEdit.setText(self.filePath)
-        self._refresh_file_output_counts()
-
-        # Set initial visibility
-        self._update_ui_visibility()
+        self._apply_visibility()
+        self._refresh_counts()
 
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
-        """Configuration summary for the pane tooltip."""
-        chips: list[tuple[str, str]] = [(self.file_format, "accent")]
-        chips.append(("streaming" if self.use_streaming else "in memory", ""))
-        label = os.path.basename(self.filePath) if self.filePath else ""
-        return chips, label
+        file_format = str(self.settings.get("file_format") or "csv")
+        path = str(self.settings.get("filePath") or "")
+        chips: list[tuple[str, str]] = [(file_format, "accent")]
+        if path:
+            chips.append(("path set", ""))
+        return chips, os.path.basename(path)
 
-    def _refresh_file_output_counts(self) -> None:
-        """Refresh the pane summary; counts are no longer rendered."""
+    def _refresh_counts(self) -> None:
         self.refresh_dock_context()
 
-    def _on_filePathEdit_textChanged(self) -> None:
-        self.filePath = self.filePathEdit.text()
-        # Auto-detect format from file extension
-        if self.filePath:
-            ext = self.filePath.lower().split(".")[-1] if "." in self.filePath else ""
-            if ext in ["csv", "txt"]:
-                self.formatCombo.setCurrentText("csv")
-            elif ext in ["xlsx", "xls"]:
-                self.formatCombo.setCurrentText("excel")
-            elif ext == "parquet":
-                self.formatCombo.setCurrentText("parquet")
-            elif ext == "json":
-                self.formatCombo.setCurrentText("json")
-            elif ext == "ndjson":
-                self.formatCombo.setCurrentText("ndjson")
-            elif ext == "ipc":
-                self.formatCombo.setCurrentText("ipc")
-        self._refresh_file_output_counts()
+    def after_change(self) -> None:
+        self._sync_widgets_from_model()
+        self._refresh_counts()
 
-    def _on_format_changed(self, format_type: str) -> None:
-        self.file_format = format_type
-        self._update_ui_visibility()
-        self._refresh_file_output_counts()
-
-    def _on_delimiter_changed(self) -> None:
-        self.delimiter = self.delimiterEdit.text() or ","
-        self._refresh_file_output_counts()
-
-    def _on_streaming_changed(self, checked: bool) -> None:
-        self.use_streaming = checked
-        self._refresh_file_output_counts()
-
-    def _update_ui_visibility(self) -> None:
-        """Update UI element visibility based on selected format"""
-        # Only update UI if elements have been created
-        if not hasattr(self, "delimiterEdit") or not self.delimiterEdit:
+    def _sync_widgets_from_model(self) -> None:
+        """Project settings onto the custom controls (undo/redo/load)."""
+        if getattr(self, "formatCombo", None) is None:
             return
+        path = str(self.settings.get("filePath") or "")
+        if self.filePathEdit.text() != path:
+            blocked = self.filePathEdit.blockSignals(True)
+            try:
+                self.filePathEdit.setText(path)
+            finally:
+                self.filePathEdit.blockSignals(blocked)
 
-        show_delimiter = self.file_format in ["csv", "custom_delimited"]
-        self.delimiterEdit.setVisible(show_delimiter)
-        row = getattr(self, "delimiter_row", None)
-        if row is not None:
-            row.setVisible(show_delimiter)
+        index = self.formatCombo.findData(
+            str(self.settings.get("file_format") or "csv")
+        )
+        if index >= 0 and self.formatCombo.currentIndex() != index:
+            blocked = self.formatCombo.blockSignals(True)
+            try:
+                self.formatCombo.setCurrentIndex(index)
+            finally:
+                self.formatCombo.blockSignals(blocked)
 
-    def check_file_path(self) -> bool:
-        if not self.filePath:
-            return False
+        delimiter = str(self.settings.get("delimiter") or ",")
+        if self.delimiterEdit.text() != delimiter:
+            blocked = self.delimiterEdit.blockSignals(True)
+            try:
+                self.delimiterEdit.setText(delimiter)
+            finally:
+                self.delimiterEdit.blockSignals(blocked)
 
-        # Outputs may target files that don't exist yet: validate the
-        # parent directory instead of the file itself.
-        if os.path.exists(self.filePath):
-            self.node.grNode.setToolTip("")
-            self.node.markInvalid(False)
-            return True
-        parent = os.path.dirname(self.filePath) or "."
-        if os.path.isdir(parent):
-            self.node.grNode.setToolTip("")
-            self.node.markInvalid(False)
-            return True
-        self.node.grNode.setToolTip("Directory does not exist")
-        self.node.markInvalid(True)
-        return False
+        include_bom = bool(self.settings.get("include_bom", False))
+        if self.bom_check.isChecked() != include_bom:
+            blocked = self.bom_check.blockSignals(True)
+            try:
+                self.bom_check.setChecked(include_bom)
+            finally:
+                self.bom_check.blockSignals(blocked)
+
+        self._apply_visibility()
+
+    def _apply_visibility(self) -> None:
+        if getattr(self, "delimiter_row", None) is None:
+            return
+        delimited = self.settings.get("file_format") in (
+            "csv",
+            "custom_delimited",
+        )
+        self.delimiter_row.setVisible(delimited)
+        self.bom_row.setVisible(delimited)
+
+    # -- commits ----------------------------------------------------------
+    def _commit_path(self, path: str) -> None:
+        self.set_setting(
+            "filePath", path, "File Output Path Changed", "File Output-path"
+        )
+        extension = path.lower().rsplit(".", 1)[-1] if "." in path else ""
+        detected = _EXTENSION_FORMATS.get(extension)
+        if detected and detected != self.settings.get("file_format"):
+            self.set_setting("file_format", detected, "File Output Format Changed")
 
     def openFileDialog(self) -> None:
-        format_filters = {
+        file_format = str(self.settings.get("file_format") or "csv")
+        filters = {
             "csv": "CSV Files (*.csv);;Text Files (*.txt)",
             "excel": "Excel Files (*.xlsx *.xls)",
             "parquet": "Parquet Files (*.parquet)",
             "json": "JSON Files (*.json)",
             "ndjson": "NDJSON Files (*.ndjson)",
             "ipc": "Arrow IPC Files (*.ipc *.arrow)",
-            "custom_delimited": "Text Files (*.txt);;CSV Files (*.csv);;All Files (*)",
+            "custom_delimited": "Text Files (*.txt);;CSV Files (*.csv)",
         }
-
-        filter_str = format_filters.get(self.file_format, "All Files (*)")
-        filter_str += ";;All Files (*)"
-
-        filePath, _ = QFileDialog.getSaveFileName(
-            self.parent(), f"Save {self.file_format.upper()} File", "", filter_str
+        filter_str = filters.get(file_format, "All Files (*)")
+        path, _selected = QFileDialog.getSaveFileName(
+            self.parent(), f"Save {file_format.upper()} File", "", filter_str
         )
+        if path:
+            self.filePathEdit.setText(path)
+            self._commit_path(path)
 
-        if filePath:
-            self.filePath = filePath
-            self.filePathEdit.setText(filePath)
-            # Auto-update format based on extension
-            ext = filePath.lower().split(".")[-1] if "." in filePath else ""
-            if ext in ["csv", "txt"] and self.file_format not in [
-                "csv",
-                "custom_delimited",
-            ]:
-                self.formatCombo.setCurrentText("csv")
-            elif ext in ["xlsx", "xls"]:
-                self.formatCombo.setCurrentText("excel")
-
-    def get_code(self):
-        if self.incoming_variable is None or self.incoming_variable == "":
-            # Fail loudly: a print stub would report success while saving nothing.
+    # -- code generation --------------------------------------------------
+    def get_code(self) -> str:
+        if not self.input_vars or not self.input_vars[0]:
             return (
-                "raise ValueError('File Output: no incoming data — connect an input')\n"
+                "raise ValueError('File Output: no incoming data - connect an input')\n"
             )
-
-        code_lines = []
-        var_name = self.incoming_variable
-        # Forward slashes: a raw backslash path breaks the generated success
-        # print below (`\U` reads as a unicode escape and kills compilation).
-        export_path = self.filePath.replace("\\", "/")
-
-        # Add safety check for LazyFrame existence and convert to lazy if needed
-        code_lines.append(
-            f"# Ensure we're working with a LazyFrame for memory efficiency"
+        payload = json.dumps(self.settings, sort_keys=True)
+        return (
+            "import json\n"
+            "from trigger_designer.core.shaping.file_output import "
+            "write_node as _write_node\n"
+            f"_write_node([{self.input_vars[0]}], json.loads({payload!r}))\n"
         )
-        code_lines.append(f"if {var_name} is not None:")
-        code_lines.append(f"    # Check if we have a LazyFrame or DataFrame")
-        code_lines.append(f"    import polars as pl")
-        code_lines.append(f"    if isinstance({var_name}, pl.DataFrame):")
-        code_lines.append(f"        {var_name}_lazy = {var_name}.lazy()")
-        code_lines.append(f"    elif isinstance({var_name}, pl.LazyFrame):")
-        code_lines.append(f"        {var_name}_lazy = {var_name}")
-        code_lines.append(f"    else:")
-        code_lines.append(
-            f"        raise TypeError(f'Expected pl.DataFrame or pl.LazyFrame, got {{type({var_name})}}')"
-        )
-        code_lines.append("")
-        code_lines.append("    try:")
 
-        if self.file_format == "csv":
-            # CSV with lazy streaming support
-            options = []
-            if self.delimiter != ",":
-                options.append(f'separator="{self.delimiter}"')
-            if self.include_bom:
-                options.append("include_bom=True")
-
-            code_lines.append(
-                f"        # Using LazyFrame sink for optimal memory usage"
-            )
-            options_str = ", " + ", ".join(options) if options else ""
-            code_lines.append(
-                f"        {var_name}_lazy.sink_csv({export_path!r}{options_str})"
-            )
-
-        elif self.file_format == "custom_delimited":
-            # Custom delimiter with lazy streaming
-            delimiter = self.delimiter if self.delimiter else ","
-            options = [f'separator="{delimiter}"']
-            if self.include_bom:
-                options.append("include_bom=True")
-
-            options_str = ", " + ", ".join(options)
-            code_lines.append(
-                f"        # Custom delimiter: '{delimiter}' with LazyFrame"
-            )
-            code_lines.append(
-                f"        {var_name}_lazy.sink_csv({export_path!r}{options_str})"
-            )
-
-        elif self.file_format == "excel":
-            # Excel format - LazyFrame needs to be collected first
-            code_lines.append(
-                f"        # Excel requires eager evaluation - collecting LazyFrame"
-            )
-            code_lines.append(
-                f"        {var_name}_lazy.collect().write_excel({export_path!r})"
-            )
-
-        elif self.file_format == "parquet":
-            # Parquet with lazy execution for optimal memory usage
-            code_lines.append(
-                f"        # Using LazyFrame sink_parquet for zero-copy streaming"
-            )
-            code_lines.append(
-                f"        {var_name}_lazy.sink_parquet({export_path!r}, compression='snappy')"
-            )
-
-        elif self.file_format == "json":
-            # JSON format - requires eager evaluation
-            code_lines.append(
-                f"        # JSON requires eager evaluation - collecting LazyFrame"
-            )
-            code_lines.append(
-                f"        {var_name}_lazy.collect().write_json({export_path!r})"
-            )
-
-        elif self.file_format == "ndjson":
-            # Newline-delimited JSON with lazy execution
-            code_lines.append(
-                f"        # Using LazyFrame sink_ndjson for memory-efficient streaming"
-            )
-            code_lines.append(f"        {var_name}_lazy.sink_ndjson({export_path!r})")
-
-        elif self.file_format == "ipc":
-            # Arrow IPC format with lazy execution
-            code_lines.append(
-                f"        # Using LazyFrame sink_ipc for ultra-fast columnar streaming"
-            )
-            code_lines.append(f"        {var_name}_lazy.sink_ipc({export_path!r})")
-
-        else:
-            # Default to CSV with lazy execution
-            code_lines.append(f"        # Defaulting to CSV format with LazyFrame")
-            code_lines.append(f"        {var_name}_lazy.sink_csv({export_path!r})")
-
-        # Add success message (note: we can't easily get row count from LazyFrame without collecting)
-        code_lines.append(
-            f"        print(f'[SUCCESS] Successfully saved data to {export_path} using LazyFrame')"
-        )
-        code_lines.append("    except Exception as e:")
-        code_lines.append(f"        print(f'[ERROR] Failed to save file: {{e}}')")
-        code_lines.append(f"        raise e")
-        code_lines.append("else:")
-        code_lines.append(f"    print('[WARNING] No data to save')")
-
-        return "\n".join(code_lines) + "\n"
-
-    def serialize(self):
-        res = super().serialize()
-        res["filePath"] = self.filePath
-        res["file_format"] = self.file_format
-        res["delimiter"] = self.delimiter
-        res["use_streaming"] = self.use_streaming
-        res["include_bom"] = self.include_bom
-        return res
-
-    def deserialize(self, data, hashmap={}):
-        logger.debug(f"FileOutput deserialize data: {data}")
-        res = super().deserialize(data, hashmap)
-
-        try:
-            self.filePath = data.get("filePath", "")
-            self.file_format = data.get("file_format", "csv")
-            self.delimiter = data.get("delimiter", ",")
-            self.use_streaming = data.get("use_streaming", True)
-            self.include_bom = data.get("include_bom", False)
-
-            # Update UI elements if they exist
-            if hasattr(self, "filePathEdit") and self.filePathEdit:
-                self.filePathEdit.setText(self.filePath)
-            if hasattr(self, "formatCombo") and self.formatCombo:
-                self.formatCombo.setCurrentText(self.file_format)
-            if hasattr(self, "delimiterEdit") and self.delimiterEdit:
-                self.delimiterEdit.setText(self.delimiter)
-            if hasattr(self, "streamingCheckbox") and self.streamingCheckbox:
-                self.streamingCheckbox.setChecked(self.use_streaming)
-
-            # Update UI visibility
-            if hasattr(self, "_update_ui_visibility"):
-                self._update_ui_visibility()
-
-            return True and res
-        except Exception as e:
-            dumpException(e)
-            return res
+    # -- persistence ------------------------------------------------------
+    def deserialize(self, data, hashmap={}):  # noqa: B006
+        if "settings" not in data and ("filePath" in data or "file_format" in data):
+            data = dict(data)
+            data["settings"] = {
+                "filePath": str(data.get("filePath") or ""),
+                "file_format": str(data.get("file_format") or "csv"),
+                "delimiter": str(data.get("delimiter") or ","),
+                "use_streaming": bool(data.get("use_streaming", True)),
+                "include_bom": bool(data.get("include_bom", False)),
+                "compression": data.get("compression"),
+            }
+        return super().deserialize(data, hashmap)
 
 
 @register_node(IONodes.FILE_OUTPUT, NodeTypes.IO)
@@ -395,44 +275,41 @@ class TriggerNode_FileOutput(TriggerNode):
     node_title = "File Output"
     node_type = NodeTypes.IO
     content_label_objname = "trigger_node_file_output"
-    style = {}
+    style = {}  # noqa: RUF012 - shared empty node style
 
     def __init__(self, scene) -> None:
         super().__init__(scene, inputs=[1], outputs=[])
-        # self.eval()
 
     def initInnerClasses(self) -> None:
         self.content: FileOutputContent = FileOutputContent(self)
         self.grNode: TriggerGraphicsNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
+        self.param: list = []
 
     def processInputs(self, input_values):
-        # Only one input for simplicity
-        this_socket_index = 0
-        input_node = self.getInput(this_socket_index)
-        socket_index = self.getSocketValue(input_node.outputs, self)  # type: ignore
-        input_value = input_values[this_socket_index][socket_index]
-
-        if not input_value:
+        upstream = socket = None
+        try:
+            upstream, socket = self.getInputWithSocket(0)
+        except Exception:  # noqa: BLE001 - unconnected input
+            upstream = socket = None
+        entry = None
+        if upstream is not None and socket is not None and input_values:
+            row = input_values[0]
+            if row and socket.index < len(row):
+                entry = row[socket.index]
+        if entry is None or entry.get("data") is None:
+            self.content.frames[0] = None
+            self.content.input_vars[0] = ""
             self.grNode.setToolTip("Input is not connected")
             self.markInvalid(True)
             return None
 
+        self.content.frames[0] = entry["data"]
+        self.content.input_vars[0] = entry.get("variable_name") or ""
         self.markDirty(False)
         self.markInvalid(False)
-
-        self.content.incoming_variable = input_value.get("variable_name")
         self.grNode.setToolTip("")
+        return entry
 
-        return input_value
-
-    def get_code(self):
-        # print("getting code for file output: ", self.content.get_code())
+    def get_code(self) -> str:
         return self.content.get_code()
-
-    # def params(self):
-    # param = {
-    #     "columns": self.content.get_columns(),
-    #     "data": self.content.data
-    # }
-    # return param
