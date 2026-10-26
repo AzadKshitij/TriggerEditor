@@ -115,7 +115,11 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
             margin = self.RING_PEN_WIDTH / 2.0 + 1.0
             rect = self.bodyRect().united(self.statusBadgeRect())
             self._bounding_rect = rect.adjusted(-margin, -margin, margin, margin)
-        return self._bounding_rect
+        # A copy: callers treat the result as a value (``fitView`` used to call
+        # ``moveTopLeft`` on it). Handing out the cached object let such a call
+        # rewrite the item's bounds, and Qt then culled the item as if it sat at
+        # twice its position.
+        return QRectF(self._bounding_rect)
 
     def shape(self) -> QPainterPath:
         """The node's hit/selection shape, built once.
@@ -183,6 +187,12 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         super().initAssets()
         self.icons = self.rsm.get("status_icons")
 
+        # Selection and hover outlines are UI furniture: keep them the same
+        # width on screen at every zoom instead of letting a scene-space pen
+        # fade to a sub-pixel line when the canvas is zoomed out.
+        self._pen_selected.setCosmetic(True)
+        self._pen_hovered.setCosmetic(True)
+
     def paint(
         self,
         painter: Optional[QPainter],
@@ -208,6 +218,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         # drawn is the user's call (see ``render_settings``).
         if not getattr(self, "_content_visible", True):
             self._paintLowDetail(painter)
+            self._paintLowDetailHighlight(painter)
         else:
             # Draw node content
             super().paint(painter, option, widget)
@@ -307,6 +318,49 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         painter.save()
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
         painter.drawPixmap(target, pixmap, QRectF(pixmap.rect()))
+        painter.restore()
+
+    def _paintLowDetailHighlight(self, painter: QPainter) -> None:
+        """Keep the selection/hover outline visible after the card is dropped.
+
+        ``QDMIconGraphicsNode.paint`` is the only place the ring is drawn, and
+        the low-detail branch never calls it. Its pens are cosmetic (see
+        ``initAssets``), so the ring keeps the same on-screen width at every
+        zoom; this only has to draw it in the branch that paints the icon
+        instead of the card.
+        """
+        if not (self.hovered or self.isSelected()):
+            return
+
+        # Match ``QDMIconGraphicsNode.paint``: hover wins over selection. The
+        # base pen is already cosmetic, so its width is in device pixels.
+        pen = self._pen_hovered if self.hovered else self._pen_selected
+        width = pen.widthF()
+
+        # Draw the stroke just inside the base outline. The pen is measured in
+        # device pixels, so convert half its width back into scene units and
+        # inset the path by that much. Painting inward from the body edge keeps
+        # the ring from straddling ``boundingRect``, where Qt would clip it or
+        # leave drag trails.
+        scale = abs(painter.worldTransform().m11()) or 1.0
+        inset = min(
+            (width / 2.0) / scale,
+            min(self.width, self.height) / 2.0,
+        )
+        rect = QRectF(
+            -1.0 + inset,
+            -1.0 + inset,
+            self.width + 2.0 - 2.0 * inset,
+            self.height + 2.0 - 2.0 * inset,
+        )
+        radius = min(self.edge_roundness, rect.width() / 2.0, rect.height() / 2.0)
+        path = QPainterPath()
+        path.addRoundedRect(rect, radius, radius)
+
+        painter.save()
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(pen)
+        painter.drawPath(path.simplified())
         painter.restore()
 
     def setDetailState(self, state: Mapping[str, bool]) -> None:

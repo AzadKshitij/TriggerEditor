@@ -202,13 +202,12 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         try:  # Calculate the bounding rectangle of all nodes
             rect = None
             for node in nodes:
-                if rect is None:
-                    rect = node.grNode.boundingRect()
-                    rect.moveTopLeft(node.pos)
-                else:
-                    node_rect = node.grNode.boundingRect()
-                    node_rect.moveTopLeft(node.pos)
-                    rect = rect.united(node_rect)
+                # ``sceneBoundingRect`` is already in scene coordinates and is
+                # returned by value. Do not translate ``boundingRect`` with
+                # ``moveTopLeft``: that rect is cached by the item, and moving it
+                # rewrote the node's own bounds (see ``TriggerGraphicsNode``).
+                node_rect = node.grNode.sceneBoundingRect()
+                rect = node_rect if rect is None else rect.united(node_rect)
 
             if rect is None:
                 return
@@ -217,7 +216,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             padding = 50
             rect = rect.adjusted(-padding, -padding, padding, padding)
 
-            # Fit the view while preserving current scale
             self.view.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
             self._last_scale = self.view.transform().m11()  # Store current scale
             self.view.zoom = self._last_scale * 10
