@@ -33,6 +33,8 @@ from qtpy.QtCore import QObject, Qt, Signal
 from qtpy.QtGui import QColor, QGuiApplication, QPalette
 from qtpy.QtWidgets import QApplication, QWidget
 
+from trigger_designer.qt.checkbox_icons import TOKENS as _CHECKBOX_TOKENS
+from trigger_designer.qt.checkbox_icons import checkbox_tokens
 from trigger_designer.qt.preferences import (
     Preferences,
     bundle_base,
@@ -169,6 +171,17 @@ TOKEN_GROUPS: tuple[tuple[str, tuple[tuple[str, str], ...]], ...] = (
 COLOR_KEYS: frozenset[str] = frozenset(
     key for _group, rows in TOKEN_GROUPS for key, _label in rows
 )
+
+#: base.qss tokens computed at format time, so theme JSONs need not define them.
+DERIVED_TOKENS = frozenset({"text_on_accent"}) | _CHECKBOX_TOKENS
+
+
+def _text_on(background: str) -> str:
+    """Black or white, whichever reads better on ``background``."""
+    c = QColor(background)
+    luminance = 0.2126 * c.redF() + 0.7152 * c.greenF() + 0.0722 * c.blueF()
+    return "#10151a" if luminance > 0.6 else "#ffffff"
+
 
 
 class ThemeError(Exception):
@@ -612,6 +625,8 @@ class ThemeManager(QObject):
         qss = self._base_qss()
         tokens = dict(self._fallback_tokens())
         tokens.update(theme.tokens)
+        tokens.setdefault("text_on_accent", _text_on(tokens["accent_primary"]))
+        tokens.update(checkbox_tokens(tokens))
         try:
             return qss.format(**tokens)
         except KeyError as exc:

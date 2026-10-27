@@ -545,7 +545,8 @@ class SegmentedControl(QWidget):
 
 
 class FormRow(QFrame):
-    """One setting: label left, control right, optional hint under both."""
+    """One setting: label left, control right (checkbox first, then label),
+    optional hint under both."""
 
     def __init__(
         self,
@@ -568,10 +569,16 @@ class FormRow(QFrame):
         row.setSpacing(6)
         label_widget = QLabel(label, self)
         label_widget.setObjectName("FieldLabel")
-        if label_width:
-            label_widget.setFixedWidth(label_width)
-        row.addWidget(label_widget)
-        row.addWidget(field, 1)
+        if isinstance(field, QCheckBox):
+            # Checkbox first, then a label that wraps instead of being cut off.
+            label_widget.setWordWrap(True)
+            row.addWidget(field)
+            row.addWidget(label_widget, 1)
+        else:
+            if label_width:
+                label_widget.setFixedWidth(label_width)
+            row.addWidget(label_widget)
+            row.addWidget(field, 1)
         if action is not None:
             # A trailing control (browse, clear) sits in the same 30px row
             # instead of owning a line of its own.

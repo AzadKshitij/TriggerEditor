@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pytest
 
+from trigger_designer.qt.theme_manager import DERIVED_TOKENS
+
 THEMES_DIR = (
     Path(__file__).resolve().parents[2]
     / "src"
@@ -71,7 +73,9 @@ def test_theme_uses_new_schema(theme_name: str) -> None:
 
 @pytest.mark.parametrize("theme_name", _builtin_theme_names())
 def test_every_qss_token_exists_in_theme(theme_name: str) -> None:
-    missing = sorted(_qss_tokens() - set(_theme_tokens(theme_name)))
+    missing = sorted(
+        _qss_tokens() - DERIVED_TOKENS - set(_theme_tokens(theme_name))
+    )
     assert not missing, f"{theme_name}.json is missing keys used by base.qss: {missing}"
 
 

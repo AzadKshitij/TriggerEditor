@@ -35,16 +35,18 @@ QWidget {{
   padding: 0px;
   color: {text_primary};
   selection-background-color: {accent_primary};
-  selection-color: {text_primary}; }}
+  selection-color: {text_on_accent}; }}
   QWidget:disabled {{
     background-color: {background_primary};
     color: {text_disabled};
     selection-background-color: {accent_disabled};
     selection-color: {text_disabled}; }}
   QWidget::item:selected {{
-    background-color: {accent_primary}; }}
+    background-color: {accent_primary};
+    color: {text_on_accent}; }}
   QWidget::item:hover:!selected {{
-    background-color: {accent_secondary}; }}
+    background-color: {accent_secondary};
+    color: {text_on_accent}; }}
 
 /* QMainWindow ------------------------------------------------------------
 
@@ -79,7 +81,7 @@ https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtooltip
 --------------------------------------------------------------------------- */
 QToolTip {{
   background-color: {accent_primary};
-  color: {text_primary};
+  color: {text_on_accent};
   /* If you remove the border property, background stops working on Windows */
   border: none;
   /* Remove padding, for fix combo box tooltip */
@@ -132,25 +134,25 @@ QCheckBox {{
     height: 14px;
     width: 14px; }}
     QCheckBox::indicator:unchecked {{
-      image: url(":/qss_icons/dark/rc/checkbox_unchecked.png"); }}
+      image: url("{checkbox_unchecked}"); }}
       QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:unchecked:focus, QCheckBox::indicator:unchecked:pressed {{
         border: none;
-        image: url(":/qss_icons/dark/rc/checkbox_unchecked_focus.png"); }}
+        image: url("{checkbox_unchecked_focus}"); }}
       QCheckBox::indicator:unchecked:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_unchecked_disabled.png"); }}
+        image: url("{checkbox_unchecked_disabled}"); }}
     QCheckBox::indicator:checked {{
-      image: url(":/qss_icons/dark/rc/checkbox_checked.png"); }}
+      image: url("{checkbox_checked}"); }}
       QCheckBox::indicator:checked:hover, QCheckBox::indicator:checked:focus, QCheckBox::indicator:checked:pressed {{
         border: none;
-        image: url(":/qss_icons/dark/rc/checkbox_checked_focus.png"); }}
+        image: url("{checkbox_checked_focus}"); }}
       QCheckBox::indicator:checked:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_checked_disabled.png"); }}
+        image: url("{checkbox_checked_disabled}"); }}
     QCheckBox::indicator:indeterminate {{
-      image: url(":/qss_icons/dark/rc/checkbox_indeterminate.png"); }}
+      image: url("{checkbox_indeterminate}"); }}
       QCheckBox::indicator:indeterminate:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_indeterminate_disabled.png"); }}
+        image: url("{checkbox_indeterminate_disabled}"); }}
       QCheckBox::indicator:indeterminate:focus, QCheckBox::indicator:indeterminate:hover, QCheckBox::indicator:indeterminate:pressed {{
-        image: url(":/qss_icons/dark/rc/checkbox_indeterminate_focus.png"); }}
+        image: url("{checkbox_indeterminate_focus}"); }}
 
 /* QGroupBox --------------------------------------------------------------
 
@@ -179,20 +181,20 @@ QGroupBox {{
     width: 14px; }}
     QGroupBox::indicator:unchecked {{
       border: none;
-      image: url(":/qss_icons/dark/rc/checkbox_unchecked.png"); }}
+      image: url("{checkbox_unchecked}"); }}
       QGroupBox::indicator:unchecked:hover, QGroupBox::indicator:unchecked:focus, QGroupBox::indicator:unchecked:pressed {{
         border: none;
-        image: url(":/qss_icons/dark/rc/checkbox_unchecked_focus.png"); }}
+        image: url("{checkbox_unchecked_focus}"); }}
       QGroupBox::indicator:unchecked:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_unchecked_disabled.png"); }}
+        image: url("{checkbox_unchecked_disabled}"); }}
     QGroupBox::indicator:checked {{
       border: none;
-      image: url(":/qss_icons/dark/rc/checkbox_checked.png"); }}
+      image: url("{checkbox_checked}"); }}
       QGroupBox::indicator:checked:hover, QGroupBox::indicator:checked:focus, QGroupBox::indicator:checked:pressed {{
         border: none;
-        image: url(":/qss_icons/dark/rc/checkbox_checked_focus.png"); }}
+        image: url("{checkbox_checked_focus}"); }}
       QGroupBox::indicator:checked:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_checked_disabled.png"); }}
+        image: url("{checkbox_checked_disabled}"); }}
 
 /* QRadioButton -----------------------------------------------------------
 
@@ -371,25 +373,25 @@ QMenu {{
     /* non-exclusive indicator = check box style indicator (see QActionGroup::setExclusive) */
     /* exclusive indicator = radio button style indicator (see QActionGroup::setExclusive) */ }}
     QMenu::indicator:non-exclusive:unchecked {{
-      image: url(":/qss_icons/dark/rc/checkbox_unchecked.png"); }}
+      image: url("{checkbox_unchecked}"); }}
       QMenu::indicator:non-exclusive:unchecked:hover, QMenu::indicator:non-exclusive:unchecked:focus, QMenu::indicator:non-exclusive:unchecked:pressed {{
         border: none;
-        image: url(":/qss_icons/dark/rc/checkbox_unchecked_focus.png"); }}
+        image: url("{checkbox_unchecked_focus}"); }}
       QMenu::indicator:non-exclusive:unchecked:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_unchecked_disabled.png"); }}
+        image: url("{checkbox_unchecked_disabled}"); }}
     QMenu::indicator:non-exclusive:checked {{
-      image: url(":/qss_icons/dark/rc/checkbox_checked.png"); }}
+      image: url("{checkbox_checked}"); }}
       QMenu::indicator:non-exclusive:checked:hover, QMenu::indicator:non-exclusive:checked:focus, QMenu::indicator:non-exclusive:checked:pressed {{
         border: none;
-        image: url(":/qss_icons/dark/rc/checkbox_checked_focus.png"); }}
+        image: url("{checkbox_checked_focus}"); }}
       QMenu::indicator:non-exclusive:checked:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_checked_disabled.png"); }}
+        image: url("{checkbox_checked_disabled}"); }}
     QMenu::indicator:non-exclusive:indeterminate {{
-      image: url(":/qss_icons/dark/rc/checkbox_indeterminate.png"); }}
+      image: url("{checkbox_indeterminate}"); }}
       QMenu::indicator:non-exclusive:indeterminate:disabled {{
-        image: url(":/qss_icons/dark/rc/checkbox_indeterminate_disabled.png"); }}
+        image: url("{checkbox_indeterminate_disabled}"); }}
       QMenu::indicator:non-exclusive:indeterminate:focus, QMenu::indicator:non-exclusive:indeterminate:hover, QMenu::indicator:non-exclusive:indeterminate:pressed {{
-        image: url(":/qss_icons/dark/rc/checkbox_indeterminate_focus.png"); }}
+        image: url("{checkbox_indeterminate_focus}"); }}
     QMenu::indicator:exclusive:unchecked {{
       image: url(":/qss_icons/dark/rc/radio_unchecked.png"); }}
       QMenu::indicator:exclusive:unchecked:hover, QMenu::indicator:exclusive:unchecked:focus, QMenu::indicator:exclusive:unchecked:pressed {{
@@ -1077,13 +1079,14 @@ QComboBox {{
     border: 1px solid {border_primary};
     border-radius: 0;
     background-color: {background_primary};
-    selection-background-color: {accent_primary}; }}
+    selection-background-color: {accent_primary};
+    selection-color: {text_on_accent}; }}
     QComboBox QAbstractItemView:hover {{
       background-color: {background_primary};
       color: {text_primary}; }}
     QComboBox QAbstractItemView:selected {{
       background: {accent_primary};
-      color: {border_primary}; }}
+      color: {text_on_accent}; }}
     QComboBox QAbstractItemView:alternate {{
       background: {background_primary}; }}
   QComboBox:disabled {{
@@ -1117,6 +1120,9 @@ QComboBox {{
         */ }}
     QComboBox::item:alternate {{
       background: {background_primary}; }}
+    QComboBox::item:selected {{
+      background: {accent_primary};
+      color: {text_on_accent}; }}
   QComboBox::drop-down {{
     subcontrol-origin: padding;
     subcontrol-position: top right;
@@ -1156,7 +1162,8 @@ ComboBoxDelegate {{
     border: 1px solid {border_primary};
     border-radius: 0;
     background-color: {background_primary};
-    selection-background-color: {accent_primary}; }}
+    selection-background-color: {accent_primary};
+    selection-color: {text_on_accent}; }}
     ComboBoxDelegate QAbstractItemView:hover {{
       background-color: {background_primary};
       color: {text_primary}; }}
@@ -1551,7 +1558,7 @@ QTreeView::indicator:checked,
 QListView::indicator:checked,
 QTableView::indicator:checked,
 QColumnView::indicator:checked {{
-  image: url(":/qss_icons/dark/rc/checkbox_checked.png"); }}
+  image: url("{checkbox_checked}"); }}
   QTreeView::indicator:checked:hover, QTreeView::indicator:checked:focus, QTreeView::indicator:checked:pressed,
   QListView::indicator:checked:hover,
   QListView::indicator:checked:focus,
@@ -1562,13 +1569,13 @@ QColumnView::indicator:checked {{
   QColumnView::indicator:checked:hover,
   QColumnView::indicator:checked:focus,
   QColumnView::indicator:checked:pressed {{
-    image: url(":/qss_icons/dark/rc/checkbox_checked_focus.png"); }}
+    image: url("{checkbox_checked_focus}"); }}
 
 QTreeView::indicator:unchecked,
 QListView::indicator:unchecked,
 QTableView::indicator:unchecked,
 QColumnView::indicator:unchecked {{
-  image: url(":/qss_icons/dark/rc/checkbox_unchecked.png"); }}
+  image: url("{checkbox_unchecked}"); }}
   QTreeView::indicator:unchecked:hover, QTreeView::indicator:unchecked:focus, QTreeView::indicator:unchecked:pressed,
   QListView::indicator:unchecked:hover,
   QListView::indicator:unchecked:focus,
@@ -1579,13 +1586,13 @@ QColumnView::indicator:unchecked {{
   QColumnView::indicator:unchecked:hover,
   QColumnView::indicator:unchecked:focus,
   QColumnView::indicator:unchecked:pressed {{
-    image: url(":/qss_icons/dark/rc/checkbox_unchecked_focus.png"); }}
+    image: url("{checkbox_unchecked_focus}"); }}
 
 QTreeView::indicator:indeterminate,
 QListView::indicator:indeterminate,
 QTableView::indicator:indeterminate,
 QColumnView::indicator:indeterminate {{
-  image: url(":/qss_icons/dark/rc/checkbox_indeterminate.png"); }}
+  image: url("{checkbox_indeterminate}"); }}
   QTreeView::indicator:indeterminate:hover, QTreeView::indicator:indeterminate:focus, QTreeView::indicator:indeterminate:pressed,
   QListView::indicator:indeterminate:hover,
   QListView::indicator:indeterminate:focus,
@@ -1596,7 +1603,7 @@ QColumnView::indicator:indeterminate {{
   QColumnView::indicator:indeterminate:hover,
   QColumnView::indicator:indeterminate:focus,
   QColumnView::indicator:indeterminate:pressed {{
-    image: url(":/qss_icons/dark/rc/checkbox_indeterminate_focus.png"); }}
+    image: url("{checkbox_indeterminate_focus}"); }}
 
 QTreeView,
 QListView,
@@ -1618,7 +1625,7 @@ QColumnView {{
   QTableView:selected,
   QColumnView:selected {{
     background-color: {accent_primary};
-    color: {border_primary}; }}
+    color: {text_on_accent}; }}
   QTreeView:focus,
   QListView:focus,
   QTableView:focus,
@@ -1628,12 +1635,14 @@ QColumnView {{
   QListView::item:pressed,
   QTableView::item:pressed,
   QColumnView::item:pressed {{
-    background-color: {accent_primary}; }}
+    background-color: {accent_primary};
+    color: {text_on_accent}; }}
   QTreeView::item:selected:active,
   QListView::item:selected:active,
   QTableView::item:selected:active,
   QColumnView::item:selected:active {{
-    background-color: {accent_primary}; }}
+    background-color: {accent_primary};
+    color: {text_on_accent}; }}
   QTreeView::item:selected:!active,
   QListView::item:selected:!active,
   QTableView::item:selected:!active,
@@ -2300,6 +2309,11 @@ QLabel#FieldHint {{
 QFrame#FieldRow, QFrame#FieldStack {{
   background-color: transparent;
   border: 0px; }}
+QFrame#FieldRow:hover {{
+  background-color: {background_hover};
+  border-radius: 4px; }}
+QFrame#FieldRow QLabel, QFrame#FieldRow QCheckBox {{
+  background-color: transparent; }}
 
 /* Segmented mode switch: one exclusive row of 30px buttons. */
 QWidget#Segmented {{
