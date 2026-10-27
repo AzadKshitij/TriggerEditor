@@ -3,10 +3,7 @@ from typing import Optional
 from loguru import logger
 from qtpy.QtGui import QColor, QPalette, QPainter, QPen
 from qtpy.QtWidgets import (
-    QApplication,
-    QMainWindow,
     QTableView,
-    QVBoxLayout,
     QWidget,
     QPushButton,
     QCheckBox,
@@ -15,8 +12,6 @@ from qtpy.QtWidgets import (
     QStyleOptionComboBox,
     QStyle,
     QAbstractItemView,
-    QAbstractItemDelegate,
-    QStyleOptionViewItem,
     QMenu,
     QLineEdit,
     QHBoxLayout,
@@ -30,7 +25,6 @@ from qtpy.QtCore import (
     QItemSelectionModel,
 )
 from qtpy.QtCore import Qt, Signal
-import polars as pl
 
 from trigger_designer.qt.resource_manager import ResourceManager
 

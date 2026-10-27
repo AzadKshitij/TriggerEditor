@@ -36,10 +36,6 @@ from trigger_designer.qt.helpers.rename_map import (
 )
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
-from trigger_designer.qt.helpers.eval_progress import (
-    count_pending_recomputes,
-    eval_progress_dialog,
-)
 from trigger_designer.qt.helpers.content_undo_mixin import (
     _COMPOSITE_ATTR,
     _IMMEDIATE_WIDGET_TYPES,

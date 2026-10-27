@@ -1,12 +1,9 @@
 from qtpy.QtGui import (
     QPixmap,
-    QIcon,
     QDrag,
     QPainter,
-    QColor,
     QFont,
     QCursor,
-    QMouseEvent,
     QPainterPath,
 )
 from qtpy.QtCore import QSize, Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
@@ -15,12 +12,9 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QListWidgetItem,
     QWidget,
-    QVBoxLayout,
     QLabel,
     QSizePolicy,
-    QHBoxLayout,
     QGridLayout,
-    QFrame,
 )
 
 from nodeeditor.utils import dumpException
@@ -28,10 +22,8 @@ from nodeeditor.utils import dumpException
 from typing import Any, Optional
 
 from trigger_designer.qt.resource_manager import ResourceManager
-from trigger_designer.qt.node_base import TriggerNode
 from trigger_designer.core.node_configuration import (
     NodeTypes,
-    get_class_from_opcode,
     LISTBOX_MIMETYPE,
     NODE_REGISTRIES,
 )

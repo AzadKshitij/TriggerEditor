@@ -10,7 +10,7 @@ from qtpy.QtGui import (
     QDragEnterEvent,
     QKeyEvent,
 )
-from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
+from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QTimer
 from qtpy.QtWidgets import (
     QApplication,
     QGraphicsView,
@@ -23,7 +23,6 @@ from nodeeditor.node_graph import GraphCycleError, cycles, topological_order
 from nodeeditor.utils import dumpException
 
 from trigger_designer.core.node_configuration import (
-    NODE_REGISTRIES,
     NodeTypes,
     OpCodeNotRegistered,
     get_class_from_op,

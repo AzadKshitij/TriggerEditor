@@ -11,7 +11,7 @@ This module provides a custom QTextEdit widget with:
 
 import re
 import time
-from typing import Callable, List, Optional, Dict, Set, Tuple
+from typing import Callable, List, Optional, Dict, Tuple
 
 from sqlglot import exp, parse_one
 from sqlglot.errors import ParseError, TokenError
@@ -21,9 +21,6 @@ from qtpy.QtWidgets import (
     QTextEdit,
     QWidget,
     QVBoxLayout,
-    QApplication,
-    QMainWindow,
-    QPushButton,
 )
 from qtpy.QtCore import Qt, QTimer, QRect, Signal, QRegularExpression, QStringListModel
 from qtpy.QtGui import (
@@ -35,8 +32,6 @@ from qtpy.QtGui import (
     QTextCursor,
     QTextDocument,
     QFontMetrics,
-    QPalette,
-    QBrush,
     QPen,
     QTextFormat,
 )
