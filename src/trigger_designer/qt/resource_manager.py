@@ -52,21 +52,6 @@ class ResourceManager:
             # logger.info(
             #     f"{self.__class__.__name__} Resources: {ResourceManager._map.items()}")
 
-    def load_theme(self, theme_file: str = "dark") -> str:
-        """Deprecated: build QSS for a theme id.
-
-        Kept so older call sites keep working; new code uses
-        ``ThemeManager`` directly. Applying the stylesheet is the
-        ThemeManager's job, not this class's.
-        """
-        from trigger_designer.qt.theme_manager import get_theme_manager
-
-        try:
-            return get_theme_manager().stylesheet_for(theme_file)
-        except Exception as exc:
-            logger.error(f"Unable to build theme '{theme_file}': {exc}")
-            return ""
-
     def get_theme_color(self, key: str, default: str = "#000000") -> QColor:
         """Resolve one theme token to a QColor, for a data-driven paint.
 
@@ -139,20 +124,6 @@ class ResourceManager:
                     ResourceManager._res_folder / "resources" / res.get("path", "")
                 )
 
-                # if res.get("mode") in ["r", "rb"]:
-                #     with open(
-                #         (file_path),
-                #         res.get("mode", "r"),
-                #     ) as f:
-                #         data = f.read()
-                #         if res.get("mode") == 'rb':
-                #             data = bytes(data)
-                #             # Convert this svg image into qpixmap
-                #             qim = ImageQt.ImageQt(data)
-                #             data = QPixmap.fromImage(qim)
-                #             # data = QImage(data)
-                #         ResourceManager._cache[id] = data
-                #         return data
                 if res.get("mode") == "rb":
                     # Create QPixmap for SVG
                     renderer = QSvgRenderer(str(file_path))
@@ -168,10 +139,6 @@ class ResourceManager:
                     ResourceManager._cache[id] = pixmap
                     ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
-                elif res and res.get("mode") == "pil":
-                    data = Image.open(file_path)
-                    ResourceManager._cache[id] = data
-                    return data
                 elif res and res.get("mode") == "qimg":
                     data = Image.open(file_path)
                     qim = ImageQt.ImageQt(data)
@@ -201,9 +168,3 @@ class ResourceManager:
         if pixmap is None or pixmap.isNull():
             return None
         return ResourceManager._id_by_key.get(pixmap.cacheKey())
-
-    def __getattr__(self, __name: str) -> Any:
-        attr = self.get(__name)
-        if attr:
-            return attr
-        raise AttributeError(f"{self.__class__.__name__} has no attribute {__name}")

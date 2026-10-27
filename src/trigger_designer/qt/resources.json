@@ -134,11 +134,9 @@
     "icon_folder_open":{ "mode": "material", "name": "folder_open" },
     "icon_files":{ "mode": "material", "name": "folder_copy" },
     "icon_copy":{ "mode": "material", "name": "content_copy" },
-    "icon_details":{ "mode": "material", "name": "info" },
     "icon_technical":{ "mode": "material", "name": "expand_more" },
     "icon_save":{ "mode": "material", "name": "save" },
     "icon_external":{ "mode": "material", "name": "open_in_new" },
-    "icon_apply":{ "mode": "material", "name": "check" },
     "icon_options":{ "mode": "material", "name": "tune" },
     "icon_refresh":{ "mode": "material", "name": "refresh" },
     "icon_pin":{ "mode": "material", "name": "keep" },
@@ -147,9 +145,5 @@
     "icon_run_play":{ "mode": "material", "name": "play_arrow" },
     "icon_zoom_in":{ "mode": "material", "name": "zoom_in" },
     "icon_zoom_out":{ "mode": "material", "name": "zoom_out" },
-    "icon_zoom_fit":{ "mode": "material", "name": "fit_screen" },
-    "icon_chevron_first":{ "mode": "material", "name": "first_page" },
-    "icon_chevron_prev":{ "mode": "material", "name": "chevron_left" },
-    "icon_chevron_next":{ "mode": "material", "name": "chevron_right" },
-    "icon_chevron_last":{ "mode": "material", "name": "last_page" }
+    "icon_zoom_fit":{ "mode": "material", "name": "fit_screen" }
 }
