@@ -657,10 +657,8 @@ class ThemeManager(QObject):
         switch has to clear them or every already-built button keeps the
         glyph it was painted with.
         """
-        from trigger_designer.qt import theme_icons
         from trigger_designer.qt.resource_manager import ResourceManager
 
-        theme_icons.clear_cache()
         ResourceManager._cache.clear()
 
     def commit_preview(self) -> Theme:

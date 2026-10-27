@@ -602,7 +602,7 @@ CONTROL_H = 30
 CHIP_H = 24
 ROW_H = 28
 DENSE_ROW_H = 24
-ICON_SIZE = 12
+ICON_SIZE = 16
 ```
 
 `IconButton`, `TextButton`, `Chip` and `StatusBadge` use these constants. Do not repeat the numbers in node files.

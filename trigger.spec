@@ -89,6 +89,11 @@ analysis = Analysis(
         "PIL",
         "PIL.ImageQt",
 
+        # Material Symbols: the style/size modules are imported by name at
+        # runtime (importlib), so PyInstaller cannot see them.
+        "qt_material_icons",
+        "qt_material_icons.resources.icons_outlined_20",
+
         # GUI frameworks. PySide6 ships its Qt DLLs inside the wheel and
         # PyInstaller's hook collects them; shiboken6 is the binding core.
         "qtpy",

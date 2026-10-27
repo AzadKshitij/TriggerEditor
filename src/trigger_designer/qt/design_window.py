@@ -10,7 +10,7 @@ from qtpy.QtGui import (
     QDragEnterEvent,
     QKeyEvent,
 )
-from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QTimer
+from qtpy.QtCore import QDataStream, QIODevice, QSize, Qt, Signal, QTimer
 from qtpy.QtWidgets import (
     QApplication,
     QGraphicsView,
@@ -60,6 +60,8 @@ if TYPE_CHECKING:
     from trigger_designer.qt.docks.logging_dock import LoggingDock
 
 DEBUG = False
+#: Glyph size of the run/zoom/fit overlay buttons on the canvas.
+CANVAS_ICON_SIZE = 20
 DEBUG_CONTEXT = False
 
 # Header prepended to exported scripts (see TriggerSubWindow.getPyFile).
@@ -142,8 +144,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def addButtons(self) -> None:
         """Build the canvas overlay: run, zoom in, zoom out, fit view.
 
-        Icon-only buttons per docs/DESIGN_SYSTEM.md §4: 30x30 with a 12px
-        icon, a mandatory tooltip and accessible name. The glyphs come from
+        Icon-only buttons per docs/DESIGN_SYSTEM.md §4: 30x30 with a larger
+        canvas icon, a mandatory tooltip and accessible name. The glyphs come from
         the ResourceManager - a desktop theme icon renders blank on Windows.
         """
         # Run button
@@ -181,6 +183,16 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         )
         self.fit_button.move(118, 10)
         self.fit_button.clicked.connect(self.fitView)
+
+        # The overlay floats over the canvas, so its glyphs are larger than
+        # the 12px used in the config dock.
+        for button in (
+            self.run_button,
+            self.zoom_in_button,
+            self.zoom_out_button,
+            self.fit_button,
+        ):
+            button.setIconSize(QSize(CANVAS_ICON_SIZE, CANVAS_ICON_SIZE))
 
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()

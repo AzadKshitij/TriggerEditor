@@ -4,7 +4,7 @@
 The four canvas buttons (run, zoom in, zoom out, fit view) used
 ``QIcon.fromTheme`` on a button with no text, so on Windows they were blank
 white rectangles with nothing on them. They are now icon-only ``IconButton``
-s: 30x30 with a 12px icon, a tooltip and an accessible name
+s: 30x30 with a larger canvas icon, a tooltip and an accessible name
 (docs/DESIGN_SYSTEM.md §4).
 """
 
@@ -23,7 +23,7 @@ import pytest
 from qtpy.QtCore import QSize
 from qtpy.QtWidgets import QApplication
 
-from trigger_designer.qt.design_window import TriggerSubWindow
+from trigger_designer.qt.design_window import CANVAS_ICON_SIZE, TriggerSubWindow
 
 _APP = QApplication.instance() or QApplication([])
 
@@ -60,7 +60,7 @@ def test_every_canvas_button_is_an_icon_button(window) -> None:
         assert button.objectName() == "IconButton"
         assert button.text() == "", "an icon button must carry no text"
         assert button.size() == QSize(30, 30)
-        assert button.iconSize() == QSize(12, 12)
+        assert button.iconSize() == QSize(CANVAS_ICON_SIZE, CANVAS_ICON_SIZE)
 
 
 def test_every_canvas_button_has_a_tooltip_and_an_accessible_name(window) -> None:

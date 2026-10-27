@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""The monochrome ``ui/`` glyphs follow the theme; the node icons do not.
+"""The Material button glyphs follow the theme; the node icons do not.
 
-The ``ui/`` icons ship with a hardcoded ``#D0D0D0`` stroke. On a light theme
-that grey lands on a near-white button at a contrast ratio of ~1.4:1, so the
-icon is invisible. The node icons are the opposite case: they carry their
-node type in their colour, so recolouring them would destroy their meaning.
+Button and action icons are Material Symbols drawn in the theme's
+``text_secondary`` ink, so they stay legible on dark and light buttons alike.
+The node icons are the opposite case: they carry their node type in their
+colour, so recolouring them would destroy their meaning.
 """
 
 import os
@@ -21,7 +21,6 @@ import pytest
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import QApplication
 
-from trigger_designer.qt import theme_icons
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
 
@@ -78,17 +77,16 @@ def theme(theme_manager):
     def _apply(theme_id: str) -> None:
         theme_manager.apply(theme_id)
         ResourceManager._cache.clear()
-        theme_icons.clear_cache()
 
     return _apply
 
 
-def test_dark_theme_keeps_the_shipped_glyph_colour(theme, rsm) -> None:
-    """The dark themes already read well, so they must not change."""
+def test_dark_theme_draws_the_glyph_in_the_theme_ink(theme, rsm) -> None:
     theme("dark")
     pixmap = rsm.get("icon_options")
 
-    assert _dominant_colour(pixmap).name() == "#d0d0d0"
+    expected = get_theme_manager().color("text_secondary").name()
+    assert _dominant_colour(pixmap).name().lower() == expected.lower()
 
 
 def test_light_theme_recolours_the_glyph_to_the_theme_ink(theme, rsm) -> None:
@@ -124,31 +122,6 @@ def test_node_icons_keep_their_type_colour(theme, rsm) -> None:
     assert colour.red() > colour.blue(), "the red input icon lost its hue"
 
 
-def test_tinting_is_a_no_op_on_dark_themes(theme, rsm) -> None:
-    """``themed_pixmap`` returns the raw pixmap on a dark theme."""
-    theme("dark")
-    raw = rsm.get("icon_options")
-    assert theme_icons.themed_pixmap("icon_options", None, raw) is raw
-
-
-def test_the_two_tone_glyph_keeps_its_cut_out(theme, rsm) -> None:
-    """``document_save.svg`` is a shape with a hole; both parts must survive."""
-    theme("light")
-    manager = get_theme_manager()
-    pixmap = rsm.get("icon_save")
-
-    image = pixmap.toImage()
-    colours = {
-        image.pixelColor(x, y).name()
-        for y in range(image.height())
-        for x in range(image.width())
-        if image.pixelColor(x, y).alpha() > 200
-    }
-    assert len(colours) >= 2, "the cut-out was flattened into the shape"
-    # The cut-out becomes the button fill, so it reads as a hole.
-    assert manager.color("button_bg").name().lower() in {c.lower() for c in colours}
-
-
 def test_a_button_re_resolves_its_glyph_after_a_theme_switch(theme, rsm) -> None:
     """A button built before the switch must not keep the old glyph.
 
@@ -162,10 +135,20 @@ def test_a_button_re_resolves_its_glyph_after_a_theme_switch(theme, rsm) -> None
     theme("dark")
     button = IconButton.themed("Column options", rsm_icon=rsm.get("icon_options"))
     assert button._resource_id == "icon_options"
-    assert _icon_colour(button) == "#d0d0d0"
+    dark_ink = _icon_colour(button)
 
     theme("light")
     button.apply_theme()
 
     expected = get_theme_manager().color("text_secondary").name()
     assert _icon_colour(button).lower() == expected.lower()
+    assert _icon_colour(button) != dark_ink
+
+
+def test_every_button_icon_id_renders(rsm) -> None:
+    """A mistyped Material name would silently paint nothing."""
+    ids = [k for k in ResourceManager._map if k.startswith("icon_")]
+    assert ids
+    for icon_id in ids:
+        pixmap = rsm.get(icon_id)
+        assert pixmap is not None and not pixmap.isNull(), icon_id

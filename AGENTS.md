@@ -15,7 +15,7 @@
   for those states — `{button_hover}` is ~invisible against `{button_bg}`.
   Keep a constant 1px base border so hover does not shift layout.
 - Layout tokens: main `spacing 2, margins 5`; toolbar `H40 margins 0`;
-  controls `H30`; icon buttons `30x30 / 12px`.
+  controls `H30`; icon buttons `30x30 / 16px`.
 - Live-by-default with ~300ms debounce on text/search; history entries
   `"Noun Verbed"` and only on real diff.
 

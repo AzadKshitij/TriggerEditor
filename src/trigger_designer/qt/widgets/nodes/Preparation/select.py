@@ -97,16 +97,12 @@ class SelectContent(ShapingContent):
 
         self.up_btn = IconButton.themed(
             "Move column up",
-            rsm_icon=None,
-            qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
-            theme_fallback="go-up",
+            rsm_icon=self.node.rsm.get("icon_move_up"),
             parent=toolbar,
         )
         self.down_btn = IconButton.themed(
             "Move column down",
-            rsm_icon=None,
-            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
-            theme_fallback="go-down",
+            rsm_icon=self.node.rsm.get("icon_move_down"),
             parent=toolbar,
         )
         self.up_btn.clicked.connect(
@@ -121,8 +117,6 @@ class SelectContent(ShapingContent):
         self.options_btn = IconButton.themed(
             "Column options",
             rsm_icon=self.node.rsm.get("icon_options"),
-            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
-            theme_fallback=None,
             parent=toolbar,
         )
         self.options_btn.setObjectName("OptionsButton")

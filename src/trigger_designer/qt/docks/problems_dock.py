@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
 
 from trigger_designer.core.errors import NodeError
 from trigger_designer.qt.preferences import get_preferences
+from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.widgets.common import EmptyStateLabel, IconButton
 
@@ -72,8 +73,7 @@ class ProblemsDock(QDockWidget):
 
         self.copy_button = IconButton.themed(
             "Copy details",
-            rsm_icon=None,
-            qss_fallback=":/qss_icons/dark/rc/copy.png",
+            rsm_icon=ResourceManager().get("icon_copy"),
             parent=toolbar,
         )
         self.copy_button.clicked.connect(self._copy_details)
@@ -81,8 +81,7 @@ class ProblemsDock(QDockWidget):
 
         self.technical_button = IconButton.themed(
             "Show technical details",
-            rsm_icon=None,
-            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
+            rsm_icon=ResourceManager().get("icon_technical"),
             parent=toolbar,
         )
         self.technical_button.setCheckable(True)

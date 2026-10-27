@@ -159,8 +159,6 @@ class GraphContent(ShapingContent):
         self.open_graph_button = IconButton.themed(
             "Show graph",
             rsm_icon=self.node.rsm.get("icon_external"),
-            qss_fallback=":/qss_icons/dark/rc/window_undock.png",
-            theme_fallback="window-new",
         )
         self.open_graph_button.clicked.connect(self.open_graph_in_new_window)
 

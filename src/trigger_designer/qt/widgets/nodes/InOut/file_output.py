@@ -80,7 +80,6 @@ class FileOutputContent(ShapingContent):
         self.saveButton = IconButton.themed(
             "Browse for save location",
             rsm_icon=self.node.rsm.get("icon_save"),
-            theme_fallback="document-save",
         )
         self.saveButton.clicked.connect(self.openFileDialog)
         destination.addWidget(

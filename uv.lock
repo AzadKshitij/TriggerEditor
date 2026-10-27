@@ -889,6 +889,15 @@ wheels = [
 ]
 
 [[package]]
+name = "qt-material-icons"
+version = "0.5.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b3/91/8e44b10a63d7ce434851bba248388f78ae142d43e2e6ef9b8c45d8edb897/qt_material_icons-0.5.2.tar.gz", hash = "sha256:3ebc917f0e6499222d6aa768febf0027f9526c9e9882d9099905651c2b5d6e7c", size = 20650098, upload-time = "2026-10-01T06:20:50.448Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/7c/7aace56c68b69940dc5063e472f9b5c4d97e5bdcd3ba02eaad3fae8e70a3/qt_material_icons-0.5.2-py3-none-any.whl", hash = "sha256:a6b526ea25d3747319c319bfc8f4fecaa77061b566a403dec0d2ea796c48ac1f", size = 21157400, upload-time = "2026-10-01T06:20:46.226Z" },
+]
+
+[[package]]
 name = "qtpy"
 version = "2.4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1020,6 +1029,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pyqtgraph" },
     { name = "pyside6-essentials" },
+    { name = "qt-material-icons" },
     { name = "qtpy" },
     { name = "shiboken6" },
     { name = "sqlglot" },
@@ -1057,6 +1067,7 @@ requires-dist = [
     { name = "pyarrow", specifier = "==26.0.0" },
     { name = "pyqtgraph", specifier = "==0.14.0" },
     { name = "pyside6-essentials", specifier = "==6.12.0" },
+    { name = "qt-material-icons", specifier = "==0.5.2" },
     { name = "qtpy", specifier = "==2.4.3" },
     { name = "shiboken6", specifier = "==6.12.0" },
     { name = "sqlglot", specifier = ">=30.24,<31" },

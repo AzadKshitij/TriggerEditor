@@ -104,9 +104,10 @@ class ResourceManager:
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 
-        The monochrome ``ui/`` glyphs are re-rendered for the active theme
-        (see :mod:`trigger_designer.qt.theme_icons`); node icons and the
-        app chrome are returned untouched.
+        ``material`` entries (buttons and actions) are drawn from Material
+        Symbols in the active theme's ink colour (see
+        :mod:`trigger_designer.qt.theme_icons`); node icons and the app chrome
+        are returned untouched.
 
         Args:
             id (str): The name of the resource.
@@ -122,6 +123,16 @@ class ResourceManager:
             res: dict = ResourceManager._map.get(id, {})
             if not res:
                 return None
+
+            if res.get("mode") == "material":
+                from trigger_designer.qt import theme_icons
+
+                pixmap = theme_icons.material_pixmap(
+                    res["name"], bool(res.get("fill"))
+                )
+                ResourceManager._cache[id] = pixmap
+                ResourceManager._id_by_key[pixmap.cacheKey()] = id
+                return pixmap
 
             try:
                 file_path = (
@@ -154,7 +165,6 @@ class ResourceManager:
                     renderer.render(painter)
                     painter.end()
 
-                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
                     ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
@@ -171,7 +181,6 @@ class ResourceManager:
                     data = Image.open(file_path)
                     qim = ImageQt.ImageQt(data)
                     pixmap = QPixmap.fromImage(qim)
-                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
                     ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
@@ -192,21 +201,6 @@ class ResourceManager:
         if pixmap is None or pixmap.isNull():
             return None
         return ResourceManager._id_by_key.get(pixmap.cacheKey())
-
-    @staticmethod
-    def _themed(id: str, res: dict, file_path: Path, pixmap: QPixmap) -> QPixmap:
-        """Re-render a monochrome glyph for the active theme.
-
-        Node icons carry their type in their colour, so only the ``ui/``
-        glyph set is re-rendered. Everything else - including the app icon
-        and the splash - is returned as loaded.
-        """
-        from trigger_designer.qt import theme_icons
-
-        path = res.get("path", "")
-        if not theme_icons.is_themable(id, path):
-            return pixmap
-        return theme_icons.themed_pixmap(id, file_path, pixmap)
 
     def __getattr__(self, __name: str) -> Any:
         attr = self.get(__name)

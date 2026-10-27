@@ -56,10 +56,12 @@ from trigger_designer.qt.helpers.win_caption import (
     native_caption_supported,
 )
 from trigger_designer.qt.theme_manager import get_theme_manager
-from trigger_designer.qt.widgets.common.config_widgets import ICON_SIZE, IconButton
+from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 #: Chrome row height and caption-button hit area (docs/DESIGN_SYSTEM.md §17).
 CHROME_H = 32
+#: Caption glyphs are hand-drawn on a 12px grid; independent of IconButton.
+CAPTION_ICON_SIZE = 12
 CAPTION_BUTTON_W = 44
 #: Width of the edge zone that starts a native resize on a frameless window.
 RESIZE_MARGIN = 5
@@ -107,7 +109,7 @@ def caption_icon(glyph: str, color: QColor) -> QIcon:
     """One 12px caption glyph as a multi-DPI ``QIcon``."""
     icon = QIcon()
     for dpr in (1.0, 1.25, 1.5, 2.0):
-        pixmap = QPixmap(round(ICON_SIZE * dpr), round(ICON_SIZE * dpr))
+        pixmap = QPixmap(round(CAPTION_ICON_SIZE * dpr), round(CAPTION_ICON_SIZE * dpr))
         pixmap.setDevicePixelRatio(dpr)
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)

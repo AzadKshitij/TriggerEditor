@@ -62,7 +62,6 @@ from trigger_designer.qt.widgets.common import (
 )
 
 _FILENAME_COLUMN = "FileName"
-_BULK_QSS_FALLBACK = ":/qss_icons/dark/rc/up_arrow.png"
 
 
 def _workflow_dir(scene) -> str | None:
@@ -307,13 +306,11 @@ class FileInputContent(
         self.loadButton = IconButton.themed(
             "Browse for file",
             rsm_icon=self.node.rsm.get("icon_folder_open"),
-            qss_fallback=_BULK_QSS_FALLBACK,
         )
         self.loadButton.clicked.connect(self.openFileDialog)
         self.folderButton = IconButton.themed(
             "Browse for folder",
             rsm_icon=self.node.rsm.get("icon_files"),
-            qss_fallback=_BULK_QSS_FALLBACK,
         )
         self.folderButton.clicked.connect(self.openFolderDialog)
         buttons_layout.addWidget(self.loadButton)
@@ -597,7 +594,6 @@ class FileInputContent(
         self.dbRefreshButton = IconButton.themed(
             "Reload table list",
             rsm_icon=self.node.rsm.get("icon_refresh"),
-            qss_fallback=_BULK_QSS_FALLBACK,
         )
         self.dbRefreshButton.clicked.connect(self._refresh_db_tables)
         self.db_table_row = FormRow(

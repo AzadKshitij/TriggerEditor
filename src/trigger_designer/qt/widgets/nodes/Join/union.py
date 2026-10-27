@@ -453,15 +453,11 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             row.addWidget(name, 1)
             up_btn = IconButton.themed(
                 f"Move input {pos + 1} earlier",
-                rsm_icon=None,
-                qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
-                theme_fallback="go-up",
+                rsm_icon=self.node.rsm.get("icon_move_up"),
             )
             down_btn = IconButton.themed(
                 f"Move input {pos + 1} later",
-                rsm_icon=None,
-                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
-                theme_fallback="go-down",
+                rsm_icon=self.node.rsm.get("icon_move_down"),
             )
             up_btn.clicked.connect(
                 lambda _checked=False, e=edge, p=pos: self._move_input(e, p - 1)

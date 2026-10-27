@@ -357,13 +357,11 @@ class PyqtgraphChartToolbar(QWidget):
         self.reset_button = IconButton.themed(
             "Reset view",
             rsm_icon=ResourceManager().get("icon_zoom_fit"),
-            theme_fallback="zoom-fit-best",
         )
         self.reset_button.clicked.connect(self.reset_view)
         self.save_button = IconButton.themed(
             "Save PNG",
             rsm_icon=ResourceManager().get("icon_save"),
-            theme_fallback="document-save",
         )
         self.save_button.clicked.connect(self.save_png)
 
