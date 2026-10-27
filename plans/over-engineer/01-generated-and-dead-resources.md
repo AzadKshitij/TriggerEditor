@@ -2,7 +2,7 @@
 
 Paths relative to `src/trigger_designer/` unless noted. Runtime theming is `resources/qt/themes/base.qss` + theme JSONs (`theme_manager._base_qss`). `qss/_style.scss` and `qss/_variable.scss` stay (AGENTS.md / DESIGN_SYSTEM.md require them to agree with base.qss).
 
-## Batch A — zero importers, no replacement (~14,500 lines) — risk low
+## Batch A — zero importers, no replacement (~14,500 lines) — risk low — ALREADY STAGED on `feature`; verify with `git status`, then commit
 
 1. `delete:` legacy stylesheet sources, 0 references in src/tests/scripts/spec (only `docs/plan/00-codebase-brief.md` and `examples/example_test/main.py` mention them):
    - `qss/QDarkStyle.qss` (2215), `qss/_my_style.scss` (2214), `qss/darkstyle.qss` (1627), `qss/blender_style.qss` (185), `qss/blender_style_ascent.qss` (89), `qss/blender_style_ascent copy.qss`, `qss/nodeeditor.qss` (83), `qss/nodeeditor-dark.qss` (40), `qss/nodeeditor.styl`, `qss/main.scss` (imports nonexistent `_variables`/`_styles`), `qss/nodestyle.qss`.
@@ -19,16 +19,16 @@ Steps: `git grep -nw` each filename once more, `git rm`, delete mention lines in
 Steps:
 1. Confirm every node icon has a `resources.json` key (loop over registered nodes in `nodes/__init__.py` `_LAZY_NODE_SPECS`, check `icon` value exists).
 2. Make `_get_action_icon` always call `rsm.get(icon_id)`.
-3. Delete `icons_rc.py`, `icons.qrc`, `get_icon_path` (18 lines), the `icons_rc` import in `main.py` (~:245).
+3. Delete `icons_rc.py`, `icons.qrc`, `get_icon_path` (18 lines), the `icons_rc` import in `main.py:276`, and the stale comment at `context_menu_mixin.py:71` ("recompile icons_rc.py").
 Tests: `tests/ui/test_context_menu_dev_actions.py`, `tests/ui/test_theme_icons.py`.
 
 ## Batch C — oversized auto-generated rc blob (up to ~11,000 lines) — risk medium, confidence medium
 
-`shrink:` `qt/darkstyle_rc.py` (11,383 lines, PyQt5-era compiled resources) imported at `main.py:~244` only to register `:/qss_icons/...`. Referenced: `problems_dock.py:76,85`, `config_widgets.py:896,1000,1006` (copy, arrow_down, arrow_up, arrow_right) plus ~97 `url(:/qss_icons...)` refs in `base.qss`.
+`shrink:` `qt/darkstyle_rc.py` (11,383 lines, PyQt5-era compiled resources; confirm its import actually works under PySide6) imported at `main.py:275` only to register `:/qss_icons/...`. Referenced: `problems_dock.py:76,85`, `config_widgets.py:896,1000,1006` (copy, arrow_down, arrow_up, arrow_right) plus ~97 `url(:/qss_icons...)` refs in `base.qss`, and more Python refs than listed: `union.py:457,463`, `select.py:101,108,124`, `graph.py:162`, `file_input.py:65`, `config_widgets.py:896,1012,1018` (so also `window_new`, `window_close`, `up_arrow`, `window_undock`, `arrow_right`). The step-1 grep is the source of truth, not this list.
 
 Steps:
 1. `grep -o ":/qss_icons/[^)\"']*" resources/qt/themes/base.qss | sort -u` plus the Python refs → exact used set.
-2. Ship only those PNGs (or recolored SVGs via `theme_icons`) and register a tiny rc, or load by file path. Keep other icons that might be useful in future. or May be use a entirely different library for icons like qt-material-icons or any other library with icons...
+2. Decision: ship only the used PNGs under `resources/qt/` and load them by file path (resolve `:/qss_icons/...` through `ResourceManager`, and rewrite the `url(:/qss_icons/...)` entries in `base.qss` to match). Do not add an icon library: it is a new dependency for ~15 icons. Unused icons stay recoverable from git history.
 3. Delete `darkstyle_rc.py`.
 4. Visual check: checkboxes, combo arrows, spin buttons, dock icons in light and dark themes.
 Tests: `tests/ui/` full run plus manual screenshot comparison.

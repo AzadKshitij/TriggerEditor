@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/channels.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\channels.csv",
         "filePathRel": "../data/channels.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -87,8 +87,8 @@
     {
       "id": 2667100541712,
       "title": "File Input",
-      "pos_x": -680.7288818359374,
-      "pos_y": -117.49499511718741,
+      "pos_x": -675.7288818359375,
+      "pos_y": -115.49499511718741,
       "inputs": [],
       "outputs": [
         {
@@ -100,7 +100,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/orders.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\orders.csv",
         "filePathRel": "../data/orders.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -225,7 +225,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/customers.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\customers.csv",
         "filePathRel": "../data/customers.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -330,7 +330,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/products.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\products.csv",
         "filePathRel": "../data/products.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -431,7 +431,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/suppliers.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\suppliers.csv",
         "filePathRel": "../data/suppliers.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -516,7 +516,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/data/fx_rates.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\fx_rates.csv",
         "filePathRel": "../data/fx_rates.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -1718,7 +1718,108 @@
             }
           ],
           "auto_accept_new_columns": true,
-          "known_columns": []
+          "known_columns": [
+            {
+              "name": "channel_id",
+              "source": "L"
+            },
+            {
+              "name": "currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_id",
+              "source": "L"
+            },
+            {
+              "name": "discount_pct",
+              "source": "L"
+            },
+            {
+              "name": "is_returned",
+              "source": "L"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
+            },
+            {
+              "name": "order_ts",
+              "source": "L"
+            },
+            {
+              "name": "payment_method",
+              "source": "L"
+            },
+            {
+              "name": "product_id",
+              "source": "L"
+            },
+            {
+              "name": "quantity",
+              "source": "L"
+            },
+            {
+              "name": "shipping_local",
+              "source": "L"
+            },
+            {
+              "name": "status",
+              "source": "L"
+            },
+            {
+              "name": "supplier_id",
+              "source": "L"
+            },
+            {
+              "name": "tax_local",
+              "source": "L"
+            },
+            {
+              "name": "unit_price_local",
+              "source": "L"
+            },
+            {
+              "name": "customer_age_band",
+              "source": "R"
+            },
+            {
+              "name": "customer_country",
+              "source": "R"
+            },
+            {
+              "name": "customer_currency",
+              "source": "R"
+            },
+            {
+              "name": "customer_email",
+              "source": "R"
+            },
+            {
+              "name": "customer_id",
+              "source": "R"
+            },
+            {
+              "name": "customer_name",
+              "source": "R"
+            },
+            {
+              "name": "loyalty_tier",
+              "source": "R"
+            },
+            {
+              "name": "region",
+              "source": "R"
+            },
+            {
+              "name": "segment",
+              "source": "R"
+            },
+            {
+              "name": "signup_date",
+              "source": "R"
+            }
+          ]
         }
       },
       "label_text": "",
@@ -1916,7 +2017,140 @@
             }
           ],
           "auto_accept_new_columns": true,
-          "known_columns": []
+          "known_columns": [
+            {
+              "name": "channel_id",
+              "source": "L"
+            },
+            {
+              "name": "currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_age_band",
+              "source": "L"
+            },
+            {
+              "name": "customer_country",
+              "source": "L"
+            },
+            {
+              "name": "customer_currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_email",
+              "source": "L"
+            },
+            {
+              "name": "customer_id",
+              "source": "L"
+            },
+            {
+              "name": "customer_name",
+              "source": "L"
+            },
+            {
+              "name": "discount_pct",
+              "source": "L"
+            },
+            {
+              "name": "is_returned",
+              "source": "L"
+            },
+            {
+              "name": "loyalty_tier",
+              "source": "L"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
+            },
+            {
+              "name": "order_ts",
+              "source": "L"
+            },
+            {
+              "name": "payment_method",
+              "source": "L"
+            },
+            {
+              "name": "product_id",
+              "source": "L"
+            },
+            {
+              "name": "quantity",
+              "source": "L"
+            },
+            {
+              "name": "region",
+              "source": "L"
+            },
+            {
+              "name": "segment",
+              "source": "L"
+            },
+            {
+              "name": "shipping_local",
+              "source": "L"
+            },
+            {
+              "name": "signup_date",
+              "source": "L"
+            },
+            {
+              "name": "status",
+              "source": "L"
+            },
+            {
+              "name": "supplier_id",
+              "source": "L"
+            },
+            {
+              "name": "tax_local",
+              "source": "L"
+            },
+            {
+              "name": "unit_price_local",
+              "source": "L"
+            },
+            {
+              "name": "brand",
+              "source": "R"
+            },
+            {
+              "name": "category",
+              "source": "R"
+            },
+            {
+              "name": "launch_date",
+              "source": "R"
+            },
+            {
+              "name": "product_id",
+              "source": "R"
+            },
+            {
+              "name": "product_name",
+              "source": "R"
+            },
+            {
+              "name": "sku",
+              "source": "R"
+            },
+            {
+              "name": "subcategory",
+              "source": "R"
+            },
+            {
+              "name": "unit_cost",
+              "source": "R"
+            },
+            {
+              "name": "unit_price",
+              "source": "R"
+            }
+          ]
         }
       },
       "label_text": "",
@@ -2130,7 +2364,156 @@
             }
           ],
           "auto_accept_new_columns": true,
-          "known_columns": []
+          "known_columns": [
+            {
+              "name": "brand",
+              "source": "L"
+            },
+            {
+              "name": "category",
+              "source": "L"
+            },
+            {
+              "name": "channel_id",
+              "source": "L"
+            },
+            {
+              "name": "currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_age_band",
+              "source": "L"
+            },
+            {
+              "name": "customer_country",
+              "source": "L"
+            },
+            {
+              "name": "customer_currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_email",
+              "source": "L"
+            },
+            {
+              "name": "customer_id",
+              "source": "L"
+            },
+            {
+              "name": "customer_name",
+              "source": "L"
+            },
+            {
+              "name": "discount_pct",
+              "source": "L"
+            },
+            {
+              "name": "is_returned",
+              "source": "L"
+            },
+            {
+              "name": "launch_date",
+              "source": "L"
+            },
+            {
+              "name": "loyalty_tier",
+              "source": "L"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
+            },
+            {
+              "name": "order_ts",
+              "source": "L"
+            },
+            {
+              "name": "payment_method",
+              "source": "L"
+            },
+            {
+              "name": "product_id",
+              "source": "L"
+            },
+            {
+              "name": "product_name",
+              "source": "L"
+            },
+            {
+              "name": "quantity",
+              "source": "L"
+            },
+            {
+              "name": "region",
+              "source": "L"
+            },
+            {
+              "name": "segment",
+              "source": "L"
+            },
+            {
+              "name": "shipping_local",
+              "source": "L"
+            },
+            {
+              "name": "signup_date",
+              "source": "L"
+            },
+            {
+              "name": "sku",
+              "source": "L"
+            },
+            {
+              "name": "status",
+              "source": "L"
+            },
+            {
+              "name": "subcategory",
+              "source": "L"
+            },
+            {
+              "name": "supplier_id",
+              "source": "L"
+            },
+            {
+              "name": "tax_local",
+              "source": "L"
+            },
+            {
+              "name": "unit_cost",
+              "source": "L"
+            },
+            {
+              "name": "unit_price",
+              "source": "L"
+            },
+            {
+              "name": "unit_price_local",
+              "source": "L"
+            },
+            {
+              "name": "country",
+              "source": "R"
+            },
+            {
+              "name": "lead_time_days",
+              "source": "R"
+            },
+            {
+              "name": "reliability_score",
+              "source": "R"
+            },
+            {
+              "name": "supplier_id",
+              "source": "R"
+            },
+            {
+              "name": "supplier_name",
+              "source": "R"
+            }
+          ]
         }
       },
       "label_text": "",
@@ -2352,7 +2735,168 @@
             }
           ],
           "auto_accept_new_columns": true,
-          "known_columns": []
+          "known_columns": [
+            {
+              "name": "brand",
+              "source": "L"
+            },
+            {
+              "name": "category",
+              "source": "L"
+            },
+            {
+              "name": "channel_id",
+              "source": "L"
+            },
+            {
+              "name": "country",
+              "source": "L"
+            },
+            {
+              "name": "currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_age_band",
+              "source": "L"
+            },
+            {
+              "name": "customer_country",
+              "source": "L"
+            },
+            {
+              "name": "customer_currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_email",
+              "source": "L"
+            },
+            {
+              "name": "customer_id",
+              "source": "L"
+            },
+            {
+              "name": "customer_name",
+              "source": "L"
+            },
+            {
+              "name": "discount_pct",
+              "source": "L"
+            },
+            {
+              "name": "is_returned",
+              "source": "L"
+            },
+            {
+              "name": "launch_date",
+              "source": "L"
+            },
+            {
+              "name": "lead_time_days",
+              "source": "L"
+            },
+            {
+              "name": "loyalty_tier",
+              "source": "L"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
+            },
+            {
+              "name": "order_ts",
+              "source": "L"
+            },
+            {
+              "name": "payment_method",
+              "source": "L"
+            },
+            {
+              "name": "product_id",
+              "source": "L"
+            },
+            {
+              "name": "product_name",
+              "source": "L"
+            },
+            {
+              "name": "quantity",
+              "source": "L"
+            },
+            {
+              "name": "region",
+              "source": "L"
+            },
+            {
+              "name": "reliability_score",
+              "source": "L"
+            },
+            {
+              "name": "segment",
+              "source": "L"
+            },
+            {
+              "name": "shipping_local",
+              "source": "L"
+            },
+            {
+              "name": "signup_date",
+              "source": "L"
+            },
+            {
+              "name": "sku",
+              "source": "L"
+            },
+            {
+              "name": "status",
+              "source": "L"
+            },
+            {
+              "name": "subcategory",
+              "source": "L"
+            },
+            {
+              "name": "supplier_id",
+              "source": "L"
+            },
+            {
+              "name": "supplier_name",
+              "source": "L"
+            },
+            {
+              "name": "tax_local",
+              "source": "L"
+            },
+            {
+              "name": "unit_cost",
+              "source": "L"
+            },
+            {
+              "name": "unit_price",
+              "source": "L"
+            },
+            {
+              "name": "unit_price_local",
+              "source": "L"
+            },
+            {
+              "name": "channel_group",
+              "source": "R"
+            },
+            {
+              "name": "channel_id",
+              "source": "R"
+            },
+            {
+              "name": "channel_name",
+              "source": "R"
+            },
+            {
+              "name": "is_digital",
+              "source": "R"
+            }
+          ]
         }
       },
       "label_text": "",
@@ -2582,7 +3126,176 @@
             }
           ],
           "auto_accept_new_columns": true,
-          "known_columns": []
+          "known_columns": [
+            {
+              "name": "brand",
+              "source": "L"
+            },
+            {
+              "name": "category",
+              "source": "L"
+            },
+            {
+              "name": "channel_group",
+              "source": "L"
+            },
+            {
+              "name": "channel_id",
+              "source": "L"
+            },
+            {
+              "name": "channel_name",
+              "source": "L"
+            },
+            {
+              "name": "country",
+              "source": "L"
+            },
+            {
+              "name": "currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_age_band",
+              "source": "L"
+            },
+            {
+              "name": "customer_country",
+              "source": "L"
+            },
+            {
+              "name": "customer_currency",
+              "source": "L"
+            },
+            {
+              "name": "customer_email",
+              "source": "L"
+            },
+            {
+              "name": "customer_id",
+              "source": "L"
+            },
+            {
+              "name": "customer_name",
+              "source": "L"
+            },
+            {
+              "name": "discount_pct",
+              "source": "L"
+            },
+            {
+              "name": "is_digital",
+              "source": "L"
+            },
+            {
+              "name": "is_returned",
+              "source": "L"
+            },
+            {
+              "name": "launch_date",
+              "source": "L"
+            },
+            {
+              "name": "lead_time_days",
+              "source": "L"
+            },
+            {
+              "name": "loyalty_tier",
+              "source": "L"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
+            },
+            {
+              "name": "order_ts",
+              "source": "L"
+            },
+            {
+              "name": "payment_method",
+              "source": "L"
+            },
+            {
+              "name": "product_id",
+              "source": "L"
+            },
+            {
+              "name": "product_name",
+              "source": "L"
+            },
+            {
+              "name": "quantity",
+              "source": "L"
+            },
+            {
+              "name": "region",
+              "source": "L"
+            },
+            {
+              "name": "reliability_score",
+              "source": "L"
+            },
+            {
+              "name": "segment",
+              "source": "L"
+            },
+            {
+              "name": "shipping_local",
+              "source": "L"
+            },
+            {
+              "name": "signup_date",
+              "source": "L"
+            },
+            {
+              "name": "sku",
+              "source": "L"
+            },
+            {
+              "name": "status",
+              "source": "L"
+            },
+            {
+              "name": "subcategory",
+              "source": "L"
+            },
+            {
+              "name": "supplier_id",
+              "source": "L"
+            },
+            {
+              "name": "supplier_name",
+              "source": "L"
+            },
+            {
+              "name": "tax_local",
+              "source": "L"
+            },
+            {
+              "name": "unit_cost",
+              "source": "L"
+            },
+            {
+              "name": "unit_price",
+              "source": "L"
+            },
+            {
+              "name": "unit_price_local",
+              "source": "L"
+            },
+            {
+              "name": "currency",
+              "source": "R"
+            },
+            {
+              "name": "currency_name",
+              "source": "R"
+            },
+            {
+              "name": "usd_rate",
+              "source": "R"
+            }
+          ]
         }
       },
       "label_text": "",
@@ -8144,9 +8857,9 @@
       "version": 2,
       "title": "Joins",
       "x": 637.244693756104,
-      "y": 1081.7636718749986,
-      "w": 1816.966243743897,
-      "h": 933.4470214843759,
+      "y": 1115.2636718749986,
+      "w": 1804.216243743897,
+      "h": 899.9470214843759,
       "collapsed": false,
       "children": [
         2607193616816,
@@ -8193,9 +8906,9 @@
       "version": 2,
       "title": "Enriched",
       "x": 1820.9780273437511,
-      "y": 81.74999999999994,
+      "y": 115.24999999999994,
       "w": 855.280761718748,
-      "h": 249.6560058593751,
+      "h": 216.1560058593751,
       "collapsed": false,
       "children": [
         2073979223760,
@@ -8230,6 +8943,6 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-26T09:27:26Z"
+    "saved_at": "2026-10-27T07:30:20Z"
   }
 }

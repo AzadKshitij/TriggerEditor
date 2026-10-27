@@ -6,7 +6,7 @@ Paths relative to `src/trigger_designer/qt/`. Evidence method: `git grep -w -- <
 
 1. `delete:` `helpers/file_opener.py` (154). Imports `tagstudio...` and `structlog`, neither a dependency, so it cannot import. If ever needed: `QDesktopServices.openUrl(QUrl.fromLocalFile(p))`.
 2. `delete:` `flowlayout.py` (156). Only self-references.
-3. `delete:` `models/settings_panel.py` (20, deprecated re-export of PreferencesDialog), `models/model_file_dialogue.py` (13, uses `QFileDialog.Options()` which does not exist in PyQt6), `widgets/clickable_label.py` (20), `tr_qt.py` (0 bytes), `translations.py` (0 bytes). `trigger.spec:166` matches a `/translations/` `.qm` path, not these files.
+3. `delete:` `models/settings_panel.py` (20, deprecated re-export of PreferencesDialog), `models/model_file_dialogue.py` (13, uses `QFileDialog.Options()` which does not exist in PyQt6/PySide6), `widgets/clickable_label.py` (20), `tr_qt.py` (0 bytes), `translations.py` (0 bytes). `trigger.spec:166` matches a `/translations/` `.qm` path, not these files.
 
 ## Batch B — select_table_widget legacy cluster (~330 lines) — risk medium-low
 
@@ -16,7 +16,7 @@ Steps: delete one method at a time, run after each. Tests: `tests/ui/test_select
 
 ## Batch C — design_window dead block (~75 lines) — risk low
 
-`design_window.py`: `test_execution_visuals`, `_process_next_node`, `_test_executed_state`, `_transition_to_executed`, `_test_cleanup` (~845-897, animation demo, 0 callers), `getNodeConnections` (~812-835), deprecated `topologicalSort` wrapper (callers only `tests/unit/test_graph_ordering.py:69,81`; use `nodeeditor.node_graph.topological_order` directly or drop that test since it tests the library), `onDragEnter` (~730-735), `logTrace` (661-663), `logCritical` (681-683; only a manual demo). Verify `_load_with_dialog` and `cancel_pending_config_edits` (1 mention each) before cutting. Keep `logDebug/Info/Warning/Error` (called).
+`design_window.py`: `test_execution_visuals`, `_process_next_node`, `_test_executed_state`, `_transition_to_executed`, `_test_cleanup` (~845-897, animation demo, 0 callers), `getNodeConnections` (~812-835), deprecated `topologicalSort` wrapper (callers only `tests/unit/test_graph_ordering.py:69,81`; retarget the two assertions at `tests/unit/test_graph_ordering.py:69,81` to `nodeeditor.node_graph.topological_order`, or drop them if they only test the library; decide when editing and say which in the commit), `onDragEnter` (~730-735), `logTrace` (661-663), `logCritical` (681-683; only a manual demo). Verify `_load_with_dialog` and `cancel_pending_config_edits` (1 mention each) before cutting. Keep `logDebug/Info/Warning/Error` (called).
 Tests: `tests/unit/test_graph_ordering.py`.
 
 ## Batch D — small dead surfaces (~230 lines) — risk low
@@ -34,6 +34,7 @@ Respects AGENTS.md design; only zero-caller pieces.
 - `undo/history.py:54-70` `history_stack`, `baseline_stamp`, `history_current_step` (0 callers, "kept for compatibility").
 - `TriggerSceneHistory.macro` (174-175) and `UndoController.begin_macro/end_macro/macro/in_macro` (151-187): no caller (`git grep "\.macro(\|begin_macro\|in_macro"`). YAGNI until a multi-step command exists; `QUndoStack.beginMacro` is native.
 - **Keep:** `push_edit` (used by `tests/e2e/test_undo_integration.py:160,205,246,294`), `history_stamp_callback` (nodeeditor snapshot restore calls it), the passthroughs on `TriggerSceneHistory` (nodeeditor API), `get_in` in `commands.py`.
+Never let an exception escape `undo()`/`redo()` (AGENTS.md): keep the `_guard` wrapper intact when editing `controller.py`.
 Tests: `tests/e2e/test_undo_integration.py`, `tests/unit/test_undo*.py`.
 
 ## Batch F — main.py logging sink (60-80 lines) — risk medium, verify first
