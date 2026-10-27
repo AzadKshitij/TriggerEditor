@@ -98,26 +98,6 @@ class ResourceManager:
 
         return ResourceManager._res_folder / "resources" / path_str  # type: ignore
 
-    @staticmethod
-    def get_icon_path(id: str) -> Optional[Path]:
-        """Get a resource's path from the ResourceManager.
-
-        Args:
-            id (str): The name of the resource.
-
-        Returns:
-            Path: The resource path if found, else None.
-        """
-        res: dict = ResourceManager._map.get(id, {})
-        if not res:
-            return None
-
-        path_str = res.get("path")
-        if not path_str:
-            return None
-
-        return path_str  # type: ignore
-
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
 

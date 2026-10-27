@@ -273,7 +273,6 @@ def main() -> None:
 
     # Heavy imports deferred until the splash is visible
     import trigger_designer.qt.darkstyle_rc  # noqa: F401
-    import trigger_designer.resources.icons_rc  # noqa: F401
     from trigger_designer.qt.main_window import TriggerWindow
     from trigger_designer.qt.node_editor_colors import (
         apply_node_editor_colors,

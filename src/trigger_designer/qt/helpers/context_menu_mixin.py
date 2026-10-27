@@ -65,10 +65,10 @@ class ContextMenuMixin:
     def _get_action_icon(self, category: str, icon_id: str):
         from qtpy.QtGui import QIcon, QPixmap  # Local import to avoid circular deps
 
-        icon = QIcon(f":{category}/{self.rsm.get_icon_path(icon_id)}")
+        path = self.rsm.get_full_path(icon_id)
+        icon = QIcon(str(path)) if path else QIcon()
         if icon.isNull():
-            # ponytail: filesystem fallback — icons.qrc may miss an entry
-            # (recompile icons_rc.py when adding icons permanently)
+            # Raster fallback when the SVG icon engine is unavailable
             pixmap = self.rsm.get(icon_id)
             if isinstance(pixmap, QPixmap) and not pixmap.isNull():
                 icon = QIcon(pixmap)

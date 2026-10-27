@@ -106,8 +106,7 @@ Where a doc disagrees with the code, the code is described and the doc is flagge
 | `qt/resource_manager.py` + `qt/resources.json` | Icon/id lookup (`ResourceManager().get("node_split")` -> `QPixmap`). |
 | `qt/dialogs/` | Preferences, About, Welcome, Theme editor. |
 | `qt/tr_qt.py`, `qt/translations.py` | 0 bytes. |
-| `qt/darkstyle_rc.py` (11k lines), `resources/icons_rc.py` | Compiled Qt resources - never hand-edit. |
-| `resources/icons.qrc` | Source for `icons_rc.py`; only feeds *menu* icons (`:Category/...`). |
+| `qt/darkstyle_rc.py` (11k lines) | Compiled Qt resources - never hand-edit. |
 | `resources/qt/themes/*.json`, `base.qss` | 12 theme token files + the QSS `str.format` template. |
 | `resources/qt/images/node_icons/` | SVG/PNG node + UI icons (`ui/` subfolder = monochrome glyphs re-coloured per theme). |
 | `qss/` | Legacy SCSS/QSS sources (`_style.scss` must stay in step with `base.qss`). |
@@ -120,7 +119,7 @@ Where a doc disagrees with the code, the code is described and the doc is flagge
 | 2 | `src/trigger_designer/qt/widgets/nodes/__init__.py` | Add `_LAZY_NODE_SPECS` entry |
 | 3 | `src/trigger_designer/qt/widgets/nodes/<Family>/<new>.py` | The node |
 | 4 | `src/trigger_designer/qt/resources.json` (+ SVG in `resources/qt/images/node_icons/`) | Node icon id |
-| 5 | `src/trigger_designer/resources/icons.qrc` (+ recompile `icons_rc.py`) | Menu icon (optional; falls back) |
+| 5 | `src/trigger_designer/qt/resources.json` (+ the SVG) | Menu icon (resolved by `ResourceManager`; nothing to compile) |
 | 6 | `src/trigger_designer/qt/node_base.py` | Base classes, `frame_schema`, eval flow, error tooltips |
 | 7 | `src/trigger_designer/core/ExecutionCheck/executor.py` | `ExecutionResult`, exec, error capture |
 | 8 | `src/trigger_designer/qt/helpers/workflow_execution_mixin.py` | Run orchestration; hook for run recording |
@@ -242,7 +241,7 @@ Worked examples: **Split** (`Preparation/split.py`, multi-output, 1 input), **No
 | Import sweep | `qt/widgets/nodes/__init__.py:161-186` | Every `.py` under `nodes/` **not** listed in `_LAZY_NODE_SPECS` or `_LAZY_HELPER_MODULES` is imported at startup (so an unlisted node still registers, just eagerly). Helper modules that are not nodes and import heavy deps (matplotlib) must be added to `_LAZY_HELPER_MODULES`. Node subfolders are **namespace packages** (no `__init__.py`). |
 | Unknown ops | `TriggerSubWindow.getNodeClassFromData` `design_window.py:306-325` | `"op"` present -> `get_class_from_op`; failure -> `TriggerNode_Unknown` (keeps raw content, shows validation warning). No `"op"` -> `migrate_v1_data` of `node_code`/`op_code`. |
 | Palette | `NodesDock` -> `QTRDragListbox.addMyItems` (`node_drag_listbox.py:~80`) | Iterates `NODE_REGISTRIES[family]` sorted by int key; shows `node_title` + icon id. Drag payload = `(pixmap, node_code int, family str)`; `onDrop` (`design_window.py:637-688`) calls `get_class_from_opcode(code, family)(scene)` then `scene.history.storeHistory("Created node ...")`. |
-| Shift+A menu | `context_menu_mixin.py:36-100` | Same registries; icons via `_get_action_icon` (compiled `icons_rc` first, `ResourceManager` fallback). |
+| Shift+A menu | `context_menu_mixin.py:36-100` | Same registries; icons via `_get_action_icon` (`ResourceManager` file path, pixmap fallback). |
 | Titles | `node_title` class attr; `TriggerNode.deserialize` (`node_base.py:966`) overwrites the saved title with the class title (except Unknown) | Renaming a node title is safe; `tests/unit/test_node_titles.py` pins the spec title == class title. |
 
 ### 3.2 Class structure
@@ -309,7 +308,7 @@ entry = input_values[0][socket_index]                                # {"data": 
 | Need | Edit |
 |---|---|
 | Canvas icon + palette icon | Add SVG under `src/trigger_designer/resources/qt/images/node_icons/<Family>/<Name>.svg`; add `"node_<name>": {"path": "qt/images/node_icons/<Family>/<Name>.svg", "mode": "rb"}` to `qt/resources.json`; set `icon = "node_<name>"` on the node and in the `_LAZY_NODE_SPECS` entry. Until a dedicated icon exists, reuse an existing id (Normalize reuses `node_select`). `ResourceManager().get(id)` renders SVG ("rb") to a `QPixmap`, caches it. A missing id returns `None`. |
-| Shift+A menu icon | Add the file to `resources/icons.qrc` under the right `<qresource prefix>`; **recompile `resources/icons_rc.py`** (no rcc in the venv; `docs/SESSION_HANDOFF.md` notes `Groupby.svg` was added to the qrc but `icons_rc.py` not regenerated). Without it the menu falls back to `ResourceManager` pixmaps; e2e tests print harmless `Cannot open file ':Input/Output/...'` Qt warnings because `icons_rc` is only imported in `main()`. |
+| Shift+A menu icon | Add the SVG and a `resources.json` entry; the menu resolves it through `ResourceManager`. No compile step. |
 | UI glyphs (buttons) | `resources.json` ids `icon_*` under `qt/images/node_icons/ui/*.svg` are monochrome and re-coloured per theme (`theme_icons.py`). Use `IconButton.themed(tooltip, rsm_icon=rsm.get("icon_x"), qss_fallback=":/qss_icons/dark/rc/<name>.png")`. |
 | Node status badge / ring | Automatic: `TriggerGraphicsNode.paint` picks the badge from `status_icons.png` (dirty / ok / invalid) and the ring colour from `setPenExecuting/Executed/Error` (`node_base.py:336-358`) using theme tokens `activity/success/danger`. |
 | Tooltip (error/status text on canvas) | `self._set_node_tooltip(text)` (None-safe, `node_base.py:775-789`) or `self.grNode.setToolTip(text)`. Empty string clears. |
@@ -325,7 +324,7 @@ Do the steps in order; every step names the exact file. "Family" = one of the fi
 3. **Register the class** with `@register_node(<Enum>.MY_NODE, NodeTypes.<FAMILY>)` directly above `class TriggerNode_MyNode(TriggerNode)`; set `node_code = <Enum>.MY_NODE`, `node_type`, `node_title`, `icon`, `content_label_objname`.
 4. **Lazy spec.** `src/trigger_designer/qt/widgets/nodes/__init__.py`: add to `_LAZY_NODE_SPECS`:
    `{"module_path": "<FolderName>.<module_stem>", "node_code": <Enum>.MY_NODE, "node_type": NodeTypes.<FAMILY>, "node_title": "<Title>", "icon": "node_<name>"}`. Title and icon **must equal the class attributes** (`tests/unit/test_node_titles.py`). If you skip this step the node still works (eager import) but loads at startup.
-5. **Icon.** Add SVG + `resources.json` entry (3.6), or reuse an existing icon id. Optionally `icons.qrc` + recompile `icons_rc.py`.
+5. **Icon.** Add SVG + `resources.json` entry (3.6), or reuse an existing icon id.
 6. **Sockets.** Choose `inputs=[...]`, `outputs=[...]` in `__init__`; multi-input => `MultiInputNode`.
 7. **State.** Declare `serialized_state_schema` (key + default) and give the content the attributes; implement `serialize/deserialize` exactly as in the skeleton (`validate_loaded_state` if loaded settings can go stale).
 8. **Live logic.** Implement `processInputs` (3.3) and the content's `update_data`; return `None` + tooltip on error; use `frame_schema()` for names/dtypes; keep frames lazy.
