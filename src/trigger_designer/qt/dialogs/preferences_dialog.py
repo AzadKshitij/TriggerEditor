@@ -75,6 +75,10 @@ _ACCENT_PRESETS = (
 )
 
 
+_FONT_SIZE_MIN = 8
+_FONT_SIZE_MAX = 20
+
+
 class PreferencesDialog(QDialog):
     """One dialog for every user preference."""
 
@@ -85,6 +89,7 @@ class PreferencesDialog(QDialog):
         self._manager = get_theme_manager()
         self._applied_theme = self._manager.requested_theme_id()
         self._applied_accent = self._manager.requested_accent()
+        self._applied_font_size = self._manager.requested_font_size()
         self._accent_swatches: list[ColorSwatchButton] = []
         self._node_swatches: dict[tuple[str, str], ColorSwatchButton] = {}
 
@@ -220,6 +225,26 @@ class PreferencesDialog(QDialog):
         accent_row.addWidget(reset_accent)
         accent_section.addLayout(accent_row)
         layout.addWidget(accent_section)
+
+        font_section = ConfigSection("Font size")
+        font_row = QHBoxLayout()
+        font_row.setSpacing(6)
+        font_label = QLabel("Application text")
+        font_label.setObjectName("FieldLabel")
+        font_row.addWidget(font_label)
+        self.font_size_spin = QSpinBox(self)
+        self.font_size_spin.setObjectName("FontSizeSpin")
+        self.font_size_spin.setRange(_FONT_SIZE_MIN, _FONT_SIZE_MAX)
+        self.font_size_spin.setSuffix(" pt")
+        self.font_size_spin.setValue(self._current_font_size())
+        self.font_size_spin.valueChanged.connect(self._set_font_size)
+        font_row.addWidget(self.font_size_spin)
+        font_row.addStretch(1)
+        reset_font = TextButton("Default", "Use the system font size")
+        reset_font.clicked.connect(lambda: self._set_font_size(0))
+        font_row.addWidget(reset_font)
+        font_section.addLayout(font_row)
+        layout.addWidget(font_section)
         layout.addStretch(1)
         return page
 
@@ -482,6 +507,7 @@ class PreferencesDialog(QDialog):
         )
         self.grid_size_spin.setValue(int(self._prefs.get("editor/grid_size", 20) or 20))
         self.show_grid_check.setChecked(bool(self._prefs.get("editor/show_grid", True)))
+        self.font_size_spin.setValue(self._current_font_size())
         self._load_render_settings()
         recent = RecentFilesManager()
         self.welcome_check.setChecked(recent.is_welcome_enabled())
@@ -657,6 +683,20 @@ class PreferencesDialog(QDialog):
         self.custom_accent.set_color(value or self._manager.token("accent_primary"))
         self._refresh_preview()
 
+    # -- font size --------------------------------------------------------
+    def _current_font_size(self) -> int:
+        size = self._manager.requested_font_size() or round(
+            self._manager.base_font_size()
+        )
+        return min(max(size, _FONT_SIZE_MIN), _FONT_SIZE_MAX)
+
+    def _set_font_size(self, size: int) -> None:
+        self._manager.set_font_size(size)
+        self.font_size_spin.blockSignals(True)
+        self.font_size_spin.setValue(self._current_font_size())
+        self.font_size_spin.blockSignals(False)
+        self._refresh_preview()
+
     # -- layout -----------------------------------------------------------
     def _save_layout(self) -> None:
         window = self._window
@@ -782,6 +822,7 @@ class PreferencesDialog(QDialog):
         self._manager.invalidate()
         self._manager.cancel_preview()
         self._manager.set_accent("", persist=True)
+        self._manager.set_font_size(0)
         apply_node_editor_colors(
             {"edges": dict(DEFAULT_EDGE_COLORS), "sockets": dict(DEFAULT_SOCKET_COLORS)}
         )
@@ -795,6 +836,7 @@ class PreferencesDialog(QDialog):
             refresh_open_scenes(window)
         self._applied_theme = "dark"
         self._applied_accent = ""
+        self._applied_font_size = 0
         self._load_pages()
         self._reload_theme_list("dark")
         self._refresh_preview()
@@ -804,6 +846,7 @@ class PreferencesDialog(QDialog):
         self._manager.commit_preview()
         self._applied_theme = self._manager.requested_theme_id()
         self._applied_accent = self._manager.requested_accent()
+        self._applied_font_size = self._manager.requested_font_size()
         self._refresh_preview()
 
     def accept(self) -> None:
@@ -816,5 +859,7 @@ class PreferencesDialog(QDialog):
         self._manager.cancel_preview()
         if self._manager.requested_accent() != self._applied_accent:
             self._manager.set_accent(self._applied_accent)
+        if self._manager.requested_font_size() != self._applied_font_size:
+            self._manager.set_font_size(self._applied_font_size)
         self._manager.apply(persist=False)
         super().reject()

@@ -21,6 +21,7 @@ from nodeeditor.utils import dumpException
 
 from typing import Any, Optional
 
+from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.core.node_configuration import (
     NodeTypes,
@@ -167,7 +168,9 @@ class ListWidgetItemWidget(QWidget):
 
         self.text_label = QLabel(name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.text_label.setFont(QFont("Arial", 8))
+        self.text_label.setFont(
+            QFont("Arial", round(8 * get_theme_manager().font_scale()))
+        )
         self.text_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.text_label.setMinimumWidth(self.icon_label.width())
 

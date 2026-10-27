@@ -418,9 +418,10 @@ class SQLFormulaEditor(QTextEdit):
     def setup_editor(self):
         """Configure the editor properties."""
         # Set font
-        font = QFont("Consolas", 11)
+        size = round(11 * get_theme_manager().font_scale())
+        font = QFont("Consolas", size)
         if not font.exactMatch():
-            font = QFont("Courier New", 11)
+            font = QFont("Courier New", size)
         font.setFixedPitch(True)
         self.setFont(font)
 

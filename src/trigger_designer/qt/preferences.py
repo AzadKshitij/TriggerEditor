@@ -40,6 +40,8 @@ DEFAULTS: dict[str, Any] = {
     "general/schema_version": SCHEMA_VERSION,
     "appearance/theme": "dark",
     "appearance/accent": "",
+    # Application font size in points; 0 keeps the system default.
+    "appearance/font_size": 0,
     "layout/restore": True,
     "layout/session": False,
     "editor/grid_size": 20,
