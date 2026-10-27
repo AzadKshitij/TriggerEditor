@@ -106,7 +106,7 @@ Where a doc disagrees with the code, the code is described and the doc is flagge
 | `qt/resource_manager.py` + `qt/resources.json` | Icon/id lookup (`ResourceManager().get("node_split")` -> `QPixmap`). |
 | `qt/dialogs/` | Preferences, About, Welcome, Theme editor. |
 | `qt/tr_qt.py`, `qt/translations.py` | 0 bytes. |
-| `qt/darkstyle_rc.py` (11k lines), `resources/icons_rc.py`, `rc_icon.py`, `rc_uicon.py` | Compiled Qt resources - never hand-edit. |
+| `qt/darkstyle_rc.py` (11k lines), `resources/icons_rc.py` | Compiled Qt resources - never hand-edit. |
 | `resources/icons.qrc` | Source for `icons_rc.py`; only feeds *menu* icons (`:Category/...`). |
 | `resources/qt/themes/*.json`, `base.qss` | 12 theme token files + the QSS `str.format` template. |
 | `resources/qt/images/node_icons/` | SVG/PNG node + UI icons (`ui/` subfolder = monochrome glyphs re-coloured per theme). |
