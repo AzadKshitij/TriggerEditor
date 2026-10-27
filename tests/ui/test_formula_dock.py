@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 from nodeeditor.node_edge import Edge
+from qtpy.QtWidgets import QPushButton
 
 from trigger_designer.core.node_configuration import (
     NodeTypes,
@@ -329,3 +330,50 @@ def test_serialize_round_trip(qtbot) -> None:
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
     assert out[0]["data"].collect().equals(node.value[0]["data"].collect())
+
+
+def test_dtype_change_through_the_real_signal_is_saved(qtbot) -> None:
+    """``activated`` carries the picked index; the slot must still be called."""
+    _window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting("sections", [_section("y", "[x] + 1")], "Baseline")
+    selector = content.section_widgets[0]["dtype_selector"]
+
+    index = selector.findText("Float")
+    selector.setCurrentIndex(index)
+    selector.activated.emit(index)
+
+    assert content.settings["sections"][0]["target_dtype"] == "Float"
+    assert content.section_widgets[0]["dtype_selector"].currentText() == "Float"
+    assert _output(node)["y"].dtype == pl.Float64
+
+
+def test_target_change_through_the_real_signal_is_saved(qtbot) -> None:
+    _window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    selector = content.section_widgets[0]["target_selector"]
+
+    index = selector.findText("x")
+    selector.setCurrentIndex(index)
+    selector.activated.emit(index)
+
+    assert content.settings["sections"][0]["target_column"] == "x"
+
+
+def test_remove_button_click_removes_the_card(qtbot) -> None:
+    _window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting(
+        "sections", [_section("a", "[x]"), _section("b", "[x]")], "Baseline"
+    )
+    assert len(content.section_widgets) == 2
+
+    card = content.section_widgets[1]["card"]
+    remove = next(
+        button
+        for button in card.findChildren(QPushButton)
+        if button.toolTip() == "Remove formula"
+    )
+    remove.click()
+
+    assert len(content.settings["sections"]) == 1

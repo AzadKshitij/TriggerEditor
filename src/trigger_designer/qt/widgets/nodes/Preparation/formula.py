@@ -322,8 +322,10 @@ class FormulaContent(ShapingContent):
             target = section["target_column"]
             found = target_selector.findText(target or EMPTY_TARGET_OPTION)
             target_selector.setCurrentIndex(max(0, found))
+            # PySide passes the signal's argument through a partial, so the
+            # slots are wrapped in lambdas that ignore it.
             target_selector.activated.connect(
-                partial(self._on_target_selected, index, target_selector)
+                lambda _i, i=index, s=target_selector: self._on_target_selected(i, s)
             )
 
             dtype_selector = NoWheelComboBox()
@@ -333,7 +335,7 @@ class FormulaContent(ShapingContent):
             dtype_selector.setCurrentText(label)
             dtype_selector.setEnabled(enabled)
             dtype_selector.activated.connect(
-                partial(self._on_dtype_selected, index, dtype_selector)
+                lambda _i, i=index, s=dtype_selector: self._on_dtype_selected(i, s)
             )
 
             remove_button = IconButton.themed(
