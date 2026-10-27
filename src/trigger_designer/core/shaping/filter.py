@@ -54,7 +54,7 @@ def operations_for(dtype: pl.DataType | None) -> list[str]:
 def _as_number(text: str) -> float:
     try:
         return float(text)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         raise ShapingError("TD-SHAPE-004", "Filter value must be a number") from None
 
 
@@ -126,10 +126,8 @@ def _expression_outputs(
             duck.register("df_filter", frame)
             # Eager .pl(): a lazy result streams from this connection after
             # the with-block closes, which fails. Materialise now.
-            matched = duck.execute(f"SELECT * FROM df_filter WHERE {prepared}").pl()
-            unmatched = duck.execute(
-                f"SELECT * FROM df_filter WHERE NOT ({prepared})"
-            ).pl()
+            matched = duck.sql(f"SELECT * FROM df_filter WHERE {prepared}").pl()
+            unmatched = duck.sql(f"SELECT * FROM df_filter WHERE NOT ({prepared})").pl()
     except Exception as exc:  # noqa: BLE001 - engine errors become a stable code
         raise ShapingError("TD-SHAPE-004", shorten_error(str(exc))) from None
     return [matched.lazy(), unmatched.lazy()]

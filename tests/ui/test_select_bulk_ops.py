@@ -31,7 +31,7 @@ def _make_content():
     node = cls(window.scene)
     window.scene.nodes.append(node)
     content = node.content
-    content.incom_data = pl.DataFrame(
+    content.frames[0] = pl.DataFrame(
         {
             "id": [1, 2],
             "price": ["10.5", "20.0"],
@@ -40,7 +40,7 @@ def _make_content():
             "name": ["a", "b"],
         }
     ).lazy()
-    content.incoming_variable = "var_in"
+    content.input_vars[0] = "var_in"
     host = QWidget()
     content.create_layout(QVBoxLayout(host))
     return parent, window, content, host
@@ -68,7 +68,7 @@ def test_bulk_prefix_composes_onto_existing_rename() -> None:
     assert content.table_data[0].rename == "p_key"
     assert content.table_data[1].rename == "p_price"
     assert content.table_data[2].rename == ""
-    assert content.changes["rename_mapping"]["id"] == "p_key"
+    assert content._table_changes()["rename_mapping"]["id"] == "p_key"
 
 
 def _no_dialog(content, affix):
@@ -77,7 +77,7 @@ def _no_dialog(content, affix):
         for row in rows:
             base = row.rename or row.text
             row.rename = f"{affix}{base}" if is_prefix else f"{base}{affix}"
-        content._bulk_commit()
+        content._commit_table()
 
     return _prompt
 
@@ -130,13 +130,14 @@ def test_bulk_ops_record_single_history_step() -> None:
     _parent, window, content, _host = _make_content()
     history = window.scene.history
     content.table_data[0].rename = "key"
-    content.handleDataChanged(content.table_widget.getData())
-    # First stamp is the baseline, not an undo step.
-    assert history.controller.stack.count() == 0
-    assert content.changes["rename_mapping"].get("id") == "key"
-    content.bulk_clear_renames(selected_only=False)
+    content._on_table_data()
+    # The first edit is already one undo step; undo restores the loaded state.
     assert history.controller.stack.count() == 1
-    assert content.changes["rename_mapping"] == {}
+    assert content._table_changes()["rename_mapping"].get("id") == "key"
+    before = history.controller.stack.count()
+    content.bulk_clear_renames(selected_only=False)
+    assert history.controller.stack.count() == before + 1
+    assert content._table_changes()["rename_mapping"] == {}
 
 
 def test_sequential_bulks_with_highlight_changes_do_not_crash() -> None:
@@ -150,12 +151,12 @@ def test_sequential_bulks_with_highlight_changes_do_not_crash() -> None:
     _highlight_rows(content, 0, 1, 2)
     for row in content._bulk_target_rows(selected_only=True):
         row.rename = "p_" + (row.rename or row.text)
-    content._bulk_commit()
+    content._commit_table()
     APP.processEvents()
     _highlight_rows(content, 3)
     for row in content._bulk_target_rows(selected_only=True):
         row.rename = "p_" + (row.rename or row.text)
-    content._bulk_commit()
+    content._commit_table()
     APP.processEvents()
-    assert content.changes["rename_mapping"]["day"] == "p_day"
-    assert len(content.changes["rename_mapping"]) == 4
+    assert content._table_changes()["rename_mapping"]["day"] == "p_day"
+    assert len(content._table_changes()["rename_mapping"]) == 4

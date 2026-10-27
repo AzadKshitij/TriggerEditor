@@ -101,7 +101,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         return QRectF((self.width - side) / 2.0, self.height - side / 2.0, side, side)
 
     def boundingRect(self) -> QRectF:
-        """The body, the status badge that hangs below it, and the state ring.
+        """The body, the badge below it, the state ring, and the floating label.
 
         Two things ``paint`` draws reach outside the body: the badge is centred
         on the bottom edge, so half of it is below, and the state ring strokes
@@ -110,6 +110,12 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         drew; Qt repaints by the declared rectangle, so what fell outside was
         never cleared and every frame of a drag left another copy behind - the
         trail of green check badges and ring fragments under a dragged node.
+
+        The label above the node counts for the same reason, and it cannot be
+        part of the cached rectangle because its text sets its width. Qt dirties
+        a moved item by its rectangle at the old position and its children only
+        at the new one, so a label left out of it stayed painted where the node
+        had been: the stack of plates above a dragged node.
         """
         if self._bounding_rect is None:
             margin = self.RING_PEN_WIDTH / 2.0 + 1.0
@@ -120,6 +126,10 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         # rewrite the item's bounds, and Qt then culled the item as if it sat at
         # twice its position.
         return QRectF(self._bounding_rect)
+        # label_rect = getattr(self, "labelRect", None)
+        # if label_rect is None:  # nodeeditor before 0.8.2
+        #     return self._bounding_rect
+        # return self._bounding_rect.united(label_rect())
 
     def shape(self) -> QPainterPath:
         """The node's hit/selection shape, built once.
@@ -479,10 +489,9 @@ class TriggerChangeHandler(TriggerContentUndoMixin):
         ``_dock_context_refresh`` while it owns this node's layout, and this is
         a no-op once the dock is gone or the node is destroyed.
         """
-        # ``__dict__`` rather than ``getattr``: on a widget whose C++ init never
-        # ran (a ``__new__``-built content in tests) or one already deleted,
-        # PyQt's attribute lookup itself raises RuntimeError, outside any
-        # default the two-argument form could fall back to.
+        # ``__dict__`` rather than ``getattr``: this callback is Python-side
+        # bookkeeping, so read it without resolving descriptors or other
+        # binding-provided attributes on an uninitialized or deleted widget.
         try:
             callback = self.__dict__.get("_dock_context_refresh")
         except RuntimeError:

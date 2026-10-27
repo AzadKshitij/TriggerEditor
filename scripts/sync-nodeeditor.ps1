@@ -53,13 +53,14 @@ if (-not (Test-Path $Source)) {
 }
 
 if (-not (Test-Path $dest)) {
-    # `uv sync` prunes nodeeditor if it is missing from the lock. Install
-    # it the same way scripts/build.bat does before copying the edits over.
+    # Normally unreachable: nodeeditor-qtpy is pinned in pyproject.toml and
+    # in uv.lock, so plain `uv sync` installs it like any other dependency.
+    # This branch only serves intentional work from the local checkout
+    # before a release. --no-deps keeps uv from re-resolving against the
+    # pinned Qt trio; nodeeditor 0.8's floors (qtpy>=2.4.3, orjson>=3.12.0)
+    # are already satisfied by the lock.
     Write-Host 'nodeeditor missing from .venv - installing from the local checkout'
     $python = Join-Path $PSScriptRoot '..\.venv\Scripts\python.exe'
-    # --no-deps keeps uv from touching the pinned Qt versions this project
-    # sets (pyqt6, pyqt6-qt6, pyqt6-sip). nodeeditor's own floor
-    # (qtpy>=2.4.3) is already satisfied by the locked qtpy.
     & uv pip install --python $python --no-deps --no-build-isolation $ProjectRoot
     if ($LASTEXITCODE -ne 0) {
         throw "failed to install nodeeditor from $ProjectRoot"

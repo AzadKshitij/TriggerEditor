@@ -65,7 +65,7 @@ def normalize(settings: dict) -> dict:
             continue
         try:
             editor_height = int(section.get("editor_height", DEFAULT_EDITOR_HEIGHT))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             editor_height = DEFAULT_EDITOR_HEIGHT
         target_dtype = str(section.get("target_dtype") or "")
         if target_dtype not in DTYPE_OPTIONS[1:]:
@@ -160,7 +160,7 @@ def _run_sequential(
             query, columns = section_query(section, columns, relation)
             duck.register(relation, frame)
             try:
-                frame = duck.execute(query).pl()
+                frame = duck.sql(query).pl()
             except Exception as exc:  # noqa: BLE001 - identify the section
                 errors[index] = shorten_error(str(exc))
                 break
@@ -183,7 +183,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     try:
         with connect_duckdb() as duck:
             duck.register("df_for_duck", frame)
-            result = duck.execute(query).pl()
+            result = duck.sql(query).pl()
     except Exception:  # noqa: BLE001 - fall back to identify the section
         result, _columns, errors = _run_sequential(frame, configured, available)
         if errors:
@@ -213,7 +213,7 @@ def validate_section(frames: list, settings: dict, section_index: int) -> list[d
             query, available = section_query(section, available, relation)
             duck.register(relation, current)
             try:
-                current = duck.execute(query).pl()
+                current = duck.sql(query).pl()
             except Exception:  # noqa: BLE001 - an earlier section's problem
                 return []
         section = sections[section_index]

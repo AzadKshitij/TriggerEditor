@@ -1,7 +1,6 @@
 from loguru import logger
 from nodeeditor.node_editor_widget import NodeEditorWidget
-from typing import Callable, Optional, cast
-from typing_extensions import override
+from typing import Callable, Optional, cast, override
 from qtpy.QtGui import (
     QBrush,
     QIcon,

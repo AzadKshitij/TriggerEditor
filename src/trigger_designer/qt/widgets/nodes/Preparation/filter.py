@@ -173,7 +173,7 @@ class FilterContent(ShapingContent):
     def _commit_expression(self, *, evaluate: bool = True) -> None:
         try:
             text = self.expression_input.get_text() or ""
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return
         self.set_setting(
             "expression",
@@ -198,7 +198,7 @@ class FilterContent(ShapingContent):
         """Read the expression into the model before the dock is destroyed."""
         try:
             text = self.expression_input.get_text() or ""
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return
         self.set_setting(
             "expression",

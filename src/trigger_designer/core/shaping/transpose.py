@@ -42,11 +42,23 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         # Warn/ignore with nothing left to transpose: keep downstream usable.
         return [frame]
 
-    out = frame.unpivot(
-        index=key_columns,
-        on=data_columns,
-        variable_name="Name",
-        value_name="Value",
+    # Polars 2.0's unpivot emits rows interleaved by row. The node has always
+    # emitted one block per data column, in input order, so restore that order
+    # explicitly instead of inheriting the engine's default.
+    block = {name: position for position, name in enumerate(data_columns)}
+    out = (
+        frame.with_row_index("__row")
+        .unpivot(
+            index=["__row", *key_columns],
+            on=data_columns,
+            variable_name="Name",
+            value_name="Value",
+        )
+        .with_columns(
+            __block=pl.col("Name").replace_strict(block, return_dtype=pl.Int64)
+        )
+        .sort(["__block", "__row"])
+        .drop("__row", "__block")
     )
     # Unpivot widens Value to a common supertype that is often outside the
     # Select dropdown (e.g. all-UInt32 in -> UInt32 out).

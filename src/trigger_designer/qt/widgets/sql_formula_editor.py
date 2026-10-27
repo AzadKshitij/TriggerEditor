@@ -516,7 +516,7 @@ class SQLFormulaEditor(QTextEdit):
         try:
             first = self.completer.completionModel().index(0, 0)
             popup.setCurrentIndex(first)
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
         # complete(rect) sizes the popup from the rect: a bare cursorRect()
         # is only a few px wide and renders as a thin sliver, so widen it
@@ -524,11 +524,11 @@ class SQLFormulaEditor(QTextEdit):
         rect = self.cursorRect()
         try:
             content_width = popup.sizeHintForColumn(0)
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             content_width = -1
         try:
             content_width += popup.verticalScrollBar().sizeHint().width()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             pass
         rect.setWidth(max(content_width + 12, 200))
         self.completer.complete(rect)
@@ -842,8 +842,6 @@ class SQLFormulaEditor(QTextEdit):
         return errors
 
     def update_error_highlights(self):
-        """Paint source spans without changing the document or undo history."""
-
         """Paint the error spans on the editor's extra selections.
         The underline is drawn with ``setExtraSelections`` and never by
         writing character formats into the document. A format write makes Qt
@@ -853,28 +851,14 @@ class SQLFormulaEditor(QTextEdit):
         A format write also pushes the document onto the undo stack for a
         change the user never made.
 
-        The selections are always applied, so the underline of a fixed error
-        does not linger.
+        The selections are always applied (an empty list clears them), so
+        the underline of a fixed error does not linger.
         """
-        selections = []
-        """Update the visual error highlights in the editor."""
-        # First, clear all existing error formatting
-        cursor = QTextCursor(self.document())
-        cursor.select(QTextCursor.SelectionType.Document)
-
-        # Create a clean format to clear existing error formatting
-        clean_format = QTextCharFormat()
-        clean_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.NoUnderline)
-        cursor.mergeCharFormat(clean_format)
-
-        # If there are no errors, we're done (everything is cleared)
         if not self.errors:
+            self.setExtraSelections([])
             return
 
-        # Create error format with a themed wave underline
-        error_format = QTextCharFormat()
-        error_format.setUnderlineColor(get_theme_manager().color("danger", "#e0686c"))
-        error_format.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
+        selections = []
         error_color = get_theme_manager().color("danger", "#e0686c")
 
         # Apply error highlights

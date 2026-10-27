@@ -13,6 +13,7 @@ DEFAULTS = {
     "color_column": "",
     "aggregation": "",
     "title": "",
+    "renderer": "matplotlib",
 }
 
 

@@ -90,6 +90,36 @@ def _log_dir() -> Path:
     return Path(__file__).resolve().parents[2] / "logs"
 
 
+_CLEAN_EXIT_MARKER = "Clean shutdown"
+
+
+def _mark_previous_crashes(log_dir: Path, current: Path) -> None:
+    """Rename the previous session's log to *_crashed if it never shut down cleanly.
+
+    A hard fault (access violation, qFatal) kills the process, so it cannot
+    rename its own log; the next start does it instead. Only the newest earlier
+    log is checked (older ones predate the marker). A log still held open by a
+    running instance cannot be renamed on Windows and is left alone.
+    """
+    earlier = sorted(
+        path
+        for path in log_dir.glob("trigger_designer_*.log")
+        if path != current and not path.stem.endswith("_crashed")
+    )
+    if not earlier:
+        return
+    path = earlier[-1]
+    try:
+        with path.open("rb") as handle:
+            handle.seek(0, os.SEEK_END)
+            handle.seek(max(0, handle.tell() - 4096))
+            if _CLEAN_EXIT_MARKER.encode() in handle.read():
+                return
+        path.rename(path.with_name(f"{path.stem}_crashed{path.suffix}"))
+    except OSError:
+        return
+
+
 def _configure_logging() -> Path | None:
     """Redirect stdout/stderr and loguru into one timestamped log file.
 
@@ -110,13 +140,14 @@ def _configure_logging() -> Path | None:
             continue
         try:
             reconfigure(errors="backslashreplace")
-        except (ValueError, OSError):
+        except ValueError, OSError:
             pass
 
     time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     log_dir = _log_dir()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file_path = log_dir / f"trigger_designer_{time}.log"
+    _mark_previous_crashes(log_dir, log_file_path)
 
     try:
         log_file_handle = log_file_path.open("a", encoding="utf-8")
@@ -293,10 +324,10 @@ def main() -> None:
 
     _wait_for_background_workers()
 
-    # Destroy every top-level window while Qt and PyQt are still fully alive.
-    # Letting the interpreter finalize with live widgets faults inside sip on
-    # Windows (0xC0000005 after the last log line), so run the deferred
-    # deletions here instead. Chart windows go first, in their own pass.
+    # Destroy every top-level window while Qt and its Python binding are alive.
+    # The old PyQt/SIP build faulted during interpreter finalization with live
+    # widgets on Windows (0xC0000005 after the last log line), so dispatch the
+    # deferred deletions here. Chart windows go first, in their own pass.
     from qtpy.QtCore import QCoreApplication, QEvent
 
     for widget in QApplication.topLevelWidgets():
@@ -316,6 +347,7 @@ def main() -> None:
     del main_window
     app.processEvents()
 
+    logger.info(_CLEAN_EXIT_MARKER)
     sys.exit(exit_code)
 
 

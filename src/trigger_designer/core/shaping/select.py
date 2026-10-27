@@ -124,7 +124,12 @@ def _boolean_expr(column: str) -> pl.Expr:
     )
 
 
-def build_dtype_expr(column: str, dtype: str, date_format: str = "") -> pl.Expr | None:
+def build_dtype_expr(
+    column: str,
+    dtype: str,
+    date_format: str = "",
+    source_dtype: pl.DataType | None = None,
+) -> pl.Expr | None:
     target = _map_dtype(dtype)
     if target is None:
         return None
@@ -133,13 +138,21 @@ def build_dtype_expr(column: str, dtype: str, date_format: str = "") -> pl.Expr 
     if target not in (pl.Date, pl.Datetime):
         return pl.col(column).cast(target, strict=False).alias(column)
 
+    # Polars 2.0 raises on String -> temporal casts instead of returning null,
+    # so the bare cast is only a fallback for sources that can use it: epoch
+    # numerics, or a Date/Datetime being re-typed. An unresolved source gets none.
+    base_fn = getattr(source_dtype, "base_type", None)
+    allow_raw_cast = (
+        source_dtype is not None
+        and (base_fn() if base_fn is not None else source_dtype) != pl.String
+    )
+
     text = pl.col(column).cast(pl.String, strict=False)
     if target == pl.Date:
         if date_format:
             expressions = [
                 text.str.strptime(pl.Date, date_format, strict=False, exact=True),
                 text.str.to_date(strict=False),
-                pl.col(column).cast(pl.Date, strict=False),
             ]
         else:
             expressions = [
@@ -152,19 +165,15 @@ def build_dtype_expr(column: str, dtype: str, date_format: str = "") -> pl.Expr 
                 )
                 for fmt in _datetime_parse_formats()
             )
-            expressions.extend(
-                [
-                    text.str.to_date(strict=False),
-                    pl.col(column).cast(pl.Date, strict=False),
-                ]
-            )
+            expressions.append(text.str.to_date(strict=False))
+        if allow_raw_cast:
+            expressions.append(pl.col(column).cast(pl.Date, strict=False))
         return pl.coalesce(expressions).alias(column)
 
     if date_format:
         expressions = [
             text.str.strptime(pl.Datetime, date_format, strict=False, exact=True),
             text.str.to_datetime(strict=False),
-            pl.col(column).cast(pl.Datetime, strict=False),
         ]
     else:
         expressions = [
@@ -177,12 +186,9 @@ def build_dtype_expr(column: str, dtype: str, date_format: str = "") -> pl.Expr 
             )
             for fmt in _date_parse_formats()
         )
-        expressions.extend(
-            [
-                text.str.to_datetime(strict=False),
-                pl.col(column).cast(pl.Datetime, strict=False),
-            ]
-        )
+        expressions.append(text.str.to_datetime(strict=False))
+    if allow_raw_cast:
+        expressions.append(pl.col(column).cast(pl.Datetime, strict=False))
     return pl.coalesce(expressions).alias(column)
 
 
@@ -198,20 +204,20 @@ def infer_dtype(values: Iterable[Any]) -> tuple[str | None, str | None]:
         for value in clean:
             int(str(value).strip())
         return "Int64", None
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         pass
     try:
         for value in clean:
             float(str(value).strip())
         return "Float64", None
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         pass
     for fmt in _date_parse_formats():
         try:
             for value in clean:
                 datetime.strptime(str(value).strip(), fmt)  # noqa: DTZ007 - date-only sample
             return "Date", fmt
-        except (TypeError, ValueError, re.error):
+        except TypeError, ValueError, re.error:
             continue
     return "String", None
 
@@ -242,7 +248,10 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         expression = pl.col(name)
         if dtype and not dtype_matches(schema[name], dtype):
             converted = build_dtype_expr(
-                name, dtype, str(column.get("date_format") or "")
+                name,
+                dtype,
+                str(column.get("date_format") or ""),
+                source_dtype=schema[name],
             )
             if converted is not None:
                 expression = converted

@@ -687,6 +687,6 @@ class TriggerNode_Select(ShapingNode):
             input_node = self.getInput(0)
             if input_node is not None:
                 self.content.apply_upstream_renames(upstream_rename_map(input_node))
-        except (AttributeError, ValueError, RuntimeError):
+        except AttributeError, ValueError, RuntimeError:
             pass
         return super().processInputs(input_values)

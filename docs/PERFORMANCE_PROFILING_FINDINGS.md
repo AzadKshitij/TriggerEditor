@@ -4,9 +4,38 @@ This document captures the profiling results, the fixes already applied, and the
 
 ## Profiling Setup
 
-- Session profiler: `python scripts/profile_app.py`
-- Visual report: `snakeviz profiles/latest.prof`
-- Sampling profiler: `scripts\run_pyspy.bat`
+| Question | Tool | How |
+| --- | --- | --- |
+| Which Python objects grew? | tracemalloc | `python scripts/profile_app.py --snapshot-diff` (depth 5; the diff answers "what did this session leave behind" — a single snapshot cannot tell a one-time cost from a leak) |
+| How much memory *really*? | psutil (RSS) | same script prints peak/final RSS; Polars' Rust heap, DuckDB's C++ heap, PyArrow buffers and Qt never pass through CPython's allocator, so never quote a tracemalloc total without the RSS number beside it |
+| Where does CPU time go? | py-spy / cProfile | `scripts\run_pyspy.bat` (sampling, no code changes) or `python scripts/profile_app.py` then `python -m pstats profiles/latest.prof` |
+| Native vs Python split, per-line memory, copy volume? | scalene | see recipe below (needs `PYTHONUTF8=1` and a *clean* program exit — `--profile-seconds`) |
+| How many of *what* leaked? | objgraph | `objgraph.show_most_common_types(limit=30)` against the running app (`QGraphicsItem` counts in a long session) |
+
+Session profiler:
+
+```bat
+.venv\Scripts\python.exe scripts\profile_app.py [--profile-seconds N] [--snapshot-diff] [--no-tracemalloc]
+```
+
+`--profile-seconds N` quits the app N seconds after its event loop starts, so
+the process exits on its own — required under scalene, where a killed process
+writes truncated JSON that `scalene view` rejects. `--no-tracemalloc` exists to
+measure the instrument's own overhead (numbers in the Phase-8 record below).
+
+Scalene recipe (run from a `cmd` shell; the tool is in the `profiling` uv
+group — `uv sync --all-groups`):
+
+```bat
+set PYTHONUTF8=1
+.venv\Scripts\python.exe -m scalene run --memory -o profiles\scalene.json scripts\profile_app.py --profile-seconds 60
+.venv\Scripts\python.exe -m scalene view --cli profiles\scalene.json
+```
+
+`memray` remains the Linux/macOS recommendation for the same native-vs-Python
+question (zero Windows wheels have ever shipped); it is queued as a Linux-CI
+addition (see `docs/alpha_deps_alternatives.md`, written in the Phase-9
+hygiene pass).
 
 Relevant implementation:
 
@@ -515,6 +544,88 @@ Pattern to reuse:
 - Against the paired baseline the canvas is still 2.80x overall and 10.63x on a
   zoomed-out node drag.
 
+## Seventh Round: The Node Label
+
+The node's badge stopped trailing, and the label above the node took over. The
+label is the plate that carries the node's name, and dragging a node left a
+vertical stack of plates above it.
+
+### 16. A label that painted its plate outside its text rectangle
+
+`QDMGraphicsNodeLabel` is a `QGraphicsTextItem`. Its `paint` draws a rounded box
+padded by 6px horizontally and 3px vertically around the text, plus a 1px border,
+so the visible plate is 14px wider and 8px taller than the text. `boundingRect`
+was the text alone.
+
+Fixing the label was only half of it, and the half that mattered was not obvious.
+A probe with the label's rectangle corrected still reported the plate's old
+position outside the region the scene repainted. The reason is how Qt dirties a
+move: the moved item is repainted by the rectangle *it* declared at its old
+position, and its children are dirtied only at the new position. The label is a
+child of the node, so its new plate was cleared and its old one was not, even
+though the plate itself now fitted inside the label's rectangle.
+
+The fix therefore has three parts:
+
+- `QDMGraphicsNodeLabel.boundingRect()` is the text united with the padding and
+  the border, and `textRect()` keeps the text rectangle on its own.
+- `QDMGraphicsNode` and `QDMIconGraphicsNode` expose `labelRect()` and unite it
+  into their own `boundingRect()`, so the old plate is part of the rectangle the
+  node declared when it moved.
+- Both `_updateLabelPos` implementations and `_refreshLabelVisibility` call
+  `prepareGeometryChange()` before changing the label, so the node's rectangle
+  follows the text, the offset and the level of detail.
+
+Positioning keeps using `textRect()`. Centring on the padded box would have
+shifted every label by 6px left and 3px up; the plate grew outward instead, and
+the drawn pixels did not move.
+
+`QDMGraphicsCutline` had the same defect one size smaller: it declared the bare
+polyline while stroking it with a 2px pen, so a moving cut line left the outer
+half of the stroke behind. Its rectangle now accounts for the pen.
+
+Evidence: `tests/test_210_label_geometry.py` in the package runs six assertions
+of the contract, and `tests/ui/test_label_geometry.py` covers the application:
+the label declares its plate, the node declares the label, hiding the label
+shrinks the node back to its body, and a one-step move dirties the plate's old
+and new positions. Against the pre-fix package the package tests fail with
+`QDMGraphicsNodeLabel has no attribute textRect`; with only the label fixed, the
+move assertion still fails on the old plate (`QRectF(208, 265, 104, 28)` outside
+the repainted region) until the node declares the label as well.
+
+Pattern to reuse:
+
+- Fixing a child's `boundingRect` clears the child's own repaints. It does not
+  clear what the child left behind when the *parent* moved. The parent has to
+  declare the child.
+- Keep the child's content rectangle available (`textRect`, `bodyRect`) and make
+  `boundingRect` the union with its decoration, rather than moving the content
+  to match a larger rectangle. The look stays, the geometry tells the truth.
+- Anything that changes what the parent declares while the child stays in place
+  needs `prepareGeometryChange()` on the parent.
+
+### Measured effect (seventh round)
+
+- The repaint area grows, so a drag step costs a little more: a paired A/B in one
+  process (120 labelled nodes, 45 steps per pass, four alternating passes) puts
+  the declared rectangle at 1.08x at 1:1 and 1.11x zoomed out, roughly 17.5
+  against 16.2 ms/step. With the labels the application actually draws, the old
+  rectangle was cheating: it was 14x8 px smaller than the plate, which is exactly
+  the area that stayed on screen.
+- The union itself had to be cached. A first version recomputed
+  `label.boundingRect().translated(...)` plus `united()` on every call; the node's
+  rectangle is asked for about 190 times per drag step, and that version measured
+  8.2-8.5 us per call, or 8-9% of the step. Caching the label box in
+  `_label_rect` and dropping it when the label moves, changes text or hides brings
+  it to 2.3-2.6 us per call, 2.4-2.6% of the step.
+- The cache has a trap: `QGraphicsItem.setVisible` and `setPos` both query the
+  item's rectangle while the change is still in flight, so the cache has to be
+  dropped after the call as well as before it. Dropping it only before made the
+  node keep the label in its rectangle after `setLabelVisible(False)`, which
+  `tests/test_210_label_geometry.py` caught.
+- A twelve-frame walk of a real node reports both the old and the new plate
+  inside the changed region on every frame.
+
 ## Remaining Major Hotspots
 
 After the first round of fixes, the main costs were:
@@ -602,6 +713,144 @@ If profiling shows many calls to edge/path or socket paint methods:
    - the touched function's cumulative time
    - any new hotspot that became visible
 5. Keep the change only if the profile moves in the right direction.
+
+## Eighth Round: Alpha Dependency Modernization (2026-10-25/26)
+
+The alpha moved the whole stack at once: Python 3.14, Qt 6.11.2, pyarrow 26,
+polars 2.0.0, duckdb 2.0.0, and a second chart renderer (Phase 7). This round
+records what the profiling stack became and what the re-measurement can and
+cannot say. Everything is offscreen on the same 9.9 GB machine as the earlier
+rounds; the repo's noise floor applies - a delta under +-10-25% is never a
+claim, in either direction.
+
+### The instrument, and why each part exists
+
+- **tracemalloc at depth 5** (was 25). Five frames attribute growth to its call
+  site; deeper traces mostly buy tracer memory.
+- **`--snapshot-diff`**: snapshot when the event loop starts, snapshot at exit,
+  print `after.compare_to(before)`. This is the question a leak hunt actually
+  asks - *what did this session leave behind*. A single snapshot cannot tell a
+  one-time cost from a leak.
+- **RSS peak/final (psutil) beside every Python number.** Polars' Rust heap,
+  DuckDB's C++ heap, PyArrow buffers and Qt never pass through CPython's
+  allocator. On an idle 20 s session: tracemalloc tracked ~49.8 MB inside a
+  ~144 MB process, i.e. **about a third**. A tracemalloc total quoted alone
+  understates the app by roughly 3x.
+- **`--profile-seconds N`**: self-exit N seconds after the event loop starts,
+  so scalene gets a *clean* process exit (a killed process writes truncated
+  JSON that `scalene view` rejects). Two traps found: the countdown must post
+  `quit` repeatedly (a modal dialog's nested event loop swallows a single
+  post), and automated runs must skip the welcome dialog, which otherwise
+  blocks on a human. Both are handled in `profile_app.py`.
+- **`--no-tracemalloc`**: the control half of the overhead measurement below.
+- `snakeviz` and `memory-profiler` are gone (dead: a 2022-era cProfile viewer
+  and a package with zero references). `python -m pstats` reads the same
+  `.prof` with no dependency. `py-spy` stays; `objgraph` 3.7.0 (object counts
+  by type) and `scalene` 2.4.0 (native-vs-Python split, per-line memory, copy
+  volume) joined the `profiling` group. `memray` stays a Linux/macOS
+  recommendation (no Windows wheels, ever) - see `docs/alpha_deps_alternatives.md`.
+
+### Instrument overhead (stated, or the instrumented run reads as a regression)
+
+Same 20 s window, two pairs, interleaved:
+
+| run | wall | profiled total | peak RSS |
+| --- | ---: | ---: | ---: |
+| tracemalloc on #1 | 23.2 s | 23.152 s | 204.0 MB |
+| tracemalloc on #2 | 23.5 s | 23.391 s | 199.3 MB |
+| tracemalloc off #1 | 20.6 s | 20.542 s | 143.9 MB |
+| tracemalloc off #2 | 21.6 s | 21.640 s | 144.1 MB |
+
+**Cost of tracemalloc: ~+10% wall and ~+56 MB RSS** on this workload (which
+includes the data-backend warm-up, the allocation-heaviest thing an idle
+session does). cProfile is on in both columns, so this is tracemalloc's share
+only. Scalene costs far more (272.6 MB peak RSS for the same session) - use it
+to answer a question, not to produce a baseline.
+
+Scale of the tracer's own bookkeeping relative to the app is also why the
+`objgraph`/RSS pair matters: CPython-side growth is a third of the story at
+best.
+
+### Snapshot-diff in practice
+
+A 20 s idle run grew ~33.5 MB *after* the event loop started. The diff's top
+lines were `<frozen importlib._bootstrap_external>` +19.1 MB and
+`importlib._bootstrap` +3.1 MB: the warm-up thread importing Polars/DuckDB/
+PyArrow. That is a one-time boot cost, not a leak - and it is exactly the
+distinction a single snapshot cannot make. Repeat the identical session; a
+leak keeps growing while a one-time cost shows a flat second diff.
+
+### Workflow re-measurement (isolated process per workflow, repeats 5)
+
+Per-workflow processes, as established in the Phase-5 measurement (the
+all-three-in-one-process mode has its own crash: see below). `after.json` now
+holds the Phase-8 stack; `after_phase5.json` preserves the Phase-5 record.
+
+| workflow | pre baseline | Phase-5 stack | Phase-8 stack | verdict |
+| --- | ---: | ---: | ---: | --- |
+| small_2node | 0.006 s | 0.005 s | 0.007 s (0.0066-0.0087) | noise (sub-10 ms) |
+| medium_14node | 0.059 s | 0.059 s | 0.149 s (0.1296-0.1895) | **not comparable** |
+| large_105node | 5.201 s | 5.410 s | 6.483 s (5.980-7.336) | unresolved, see below |
+
+`medium_14node` used to *fail* a Formula node (`Binder Error: no function
+matches 'year(VARCHAR)'`) and now completes all 70 node executions: commit
+`20a43ee` fixed the sample's day-first `order_date`, so the workflow finally
+does the work it was written to do. The 0.059 s figure timed a failure
+cascade; the new one times a successful 14-node run. Compare it to nothing.
+
+`large_105node` (different sample, unaffected by the fix) reads ~+20% against
+the Phase-5 stack. Do not file that as a regression yet: the machine was
+measurably slower for this whole measurement window (see the canvas result
+below) and the run set also produced hard crashes. Re-measure on an idle
+machine before reading anything into it.
+
+### Canvas re-measurement (defaults: 120 nodes, 3 passes)
+
+Paint counters are identical between all three runs (same `paint.background`/
+`paint.edge`/`paint.node.icon` per operation), so this is a like-for-like
+comparison for the first time.
+
+| total (sum of medians) | pre baseline | Phase-5 stack | Phase-8 stack |
+| --- | ---: | ---: | ---: |
+| 14 operations | 8434.8 ms | 9129.7 ms (0.92x) | 12553.8 ms (0.67x) |
+
+That 0.67x is not believable as a code result, and it is reported as
+**environment, not regression**:
+
+- The slowdown is uniform across all 14 operations (0.63x-0.72x) while the
+  work done is bit-identical.
+- Nothing this benchmark touches changed between the two runs. It builds nodes
+  and paints; it executes no workflow, and Polars/DuckDB/pyqtgraph are lazily
+  imported or unused. Qt stayed 6.11.2.
+- The in-run spread of the clean run is tight (pan runs 1861/1957/2020 ms,
+  8.5%), so it is a consistently slower machine, not noise.
+- The same suite measured 0.92x three hours earlier in the same session
+  profile, and the intervening window ran ~20 app launches, several crashed
+  processes left resident, and ~40% ambient CPU from the editor/browser.
+
+Practical lesson for the next measurement: **check for stray
+`trigger-designer`/`python` processes before trusting a canvas number.** Two
+stuck instances from cancelled runs (one at 76 MB, one at 35 MB) were alive
+during the first attempt, and killing them did not recover the original speed
+- the machine stayed slower for the rest of the night.
+
+### The Qt crash, re-opened
+
+`0xC0000409` (fail-fast) in **Qt6Core.dll 6.11.2.0 +0x1c8d8**, byte-identical
+across WER events. Previously 5 of 9 attempts in the *combined* harness mode
+and 0 of 9 isolated; this session it hit **isolated `large_105node` runs
+twice in three attempts** (once mid-build, once mid-execution), each time with
+the same module and offset. The surviving run is the only `large` datapoint.
+
+That makes it an alpha blocker candidate rather than a harness curiosity, and
+Phase 9's PySide6 swap changes the Qt build, so it gets re-tested there. If it
+survives the swap, file it before the alpha ships with the WER events as
+evidence.
+
+One more thing that log showed: a `nanobind` reference-leak warning at exit
+("this is likely caused by a reference counting issue in the binding code") in
+the run that completed. Not investigated; noted because it appears only
+sometimes and nanobind-backed extensions are present via the data stack.
 
 ## Notes For Future Work
 

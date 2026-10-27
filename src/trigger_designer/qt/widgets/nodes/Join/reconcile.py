@@ -6,6 +6,7 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.shaping import reconcile as core
+from trigger_designer.core.shaping.common import LIVE_SAMPLE_ROWS
 from trigger_designer.qt.helpers.shaping_support import (
     Field,
     FormSection,
@@ -170,7 +171,8 @@ class ReconcileContent(ShapingContent):
             (
                 Field(
                     "_limits",
-                    "Up to 5,000,000 candidate pairs. Above 200,000 live rows the preview returns typed empty frames; Run gives the full result.",
+                    "Up to 5,000,000 candidate pairs. The live preview uses the first "
+                    f"{LIVE_SAMPLE_ROWS} rows of each input; Run gives the full result.",
                     "note",
                 ),
             ),

@@ -16,6 +16,9 @@ not used as expectations.
 
 from __future__ import annotations
 
+from pathlib import Path
+from unittest.mock import patch
+
 import polars as pl
 import pytest
 from polars.testing import assert_series_equal
@@ -26,21 +29,23 @@ from tests.support.corpus import (
 )
 from tests.support.frames import assert_frame_golden, read_frame
 from tests.support.workflows import (
+    REPO_ROOT,
     WorkflowCase,
     executed_frame,
     materialize,
     nodes_titled,
     run_workflow_and_wait,
 )
+from trigger_designer.core.shaping.common import LIVE_SAMPLE_ROWS
 
 pytestmark = pytest.mark.e2e
 
 
-def _open_case(qtbot, tmp_path, dialogs, case: WorkflowCase):
+def _open_case(qtbot, tmp_path, dialogs, case: WorkflowCase, input_paths=None):
     """Materialize, load and validate one workflow; return (window, files)."""
     from trigger_designer.qt.design_window import TriggerSubWindow
 
-    materialized = materialize(case, tmp_path)
+    materialized = materialize(case, tmp_path, input_paths)
     # No parent QMainWindow: qtbot only keeps a weakref, and a collected
     # parent would delete this widget with it mid-test.
     window = TriggerSubWindow()
@@ -121,3 +126,54 @@ def test_all_node_workflow_runs_every_node(qtbot, tmp_path, no_modal_dialogs) ->
         if node.title != node.__class__.node_title
     ]
     assert stale == [], f"nodes kept a name their type no longer uses: {stale}"
+
+
+def _large_check_csv(path: Path) -> int:
+    """Write ``data/check.csv``'s rows repeated past 1,000; return the row count."""
+    lines = (REPO_ROOT / "data" / "check.csv").read_text(encoding="utf-8").splitlines()
+    header, rows = lines[0], [line for line in lines[1:] if line]
+    body = rows * (1_000 // len(rows) + 1)
+    path.write_text("\n".join([header, *body]) + "\n", encoding="utf-8")
+    return len(body)
+
+
+def _rows(frame) -> int:
+    if isinstance(frame, pl.LazyFrame):
+        return frame.select(pl.len()).collect().item()
+    return frame.height
+
+
+def test_load_samples_the_input_and_run_reads_every_row(
+    qtbot, tmp_path, no_modal_dialogs
+) -> None:
+    """Loading evaluates only the live sample; Run still reads every row."""
+    case = next(case for case in FILE_OUTPUT_CASES if case.name == "select")
+    csv_path = tmp_path / "check.csv"
+    total = _large_check_csv(csv_path)
+    assert total > LIVE_SAMPLE_ROWS
+
+    collected: list[int] = []
+    collect = pl.LazyFrame.collect
+
+    def counting_collect(self, *args, **kwargs):
+        frame = collect(self, *args, **kwargs)
+        collected.append(frame.height)
+        return frame
+
+    with patch.object(pl.LazyFrame, "collect", counting_collect):
+        window, _ = _open_case(
+            qtbot, tmp_path, no_modal_dialogs, case, input_paths={"check.csv": csv_path}
+        )
+
+    assert all(height <= LIVE_SAMPLE_ROWS for height in collected), collected
+    for node in window.getAllNodes():
+        outputs = node.value if isinstance(node.value, list) else [node.value]
+        for entry in outputs:
+            if isinstance(entry, dict) and entry.get("data") is not None:
+                assert _rows(entry["data"]) <= LIVE_SAMPLE_ROWS, node.title
+
+    run_workflow_and_wait(qtbot, window)
+    _assert_run_clean(window)
+    for title in ("File Input", "Select"):
+        frame = executed_frame(window, nodes_titled(window, title)[0])
+        assert frame.height == total, title

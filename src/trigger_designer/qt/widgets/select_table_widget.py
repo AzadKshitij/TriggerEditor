@@ -24,7 +24,6 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtCore import (
     QAbstractTableModel,
-    QVariant,
     QModelIndex,
     QEvent,
     QSortFilterProxyModel,
@@ -105,14 +104,14 @@ class SelectTableWidget(QAbstractTableModel):
         """Return data for the given index and role."""
         # Return data based on role
         if not index.isValid():
-            return QVariant()
+            return None
 
         row = index.row()
         col = index.column()
 
         # Handle filtered rows
         if self.filtered_rows and row not in self.filtered_rows:
-            return QVariant()
+            return None
 
         row_data: RowData = self._data[row]
 
@@ -155,7 +154,7 @@ class SelectTableWidget(QAbstractTableModel):
         ):
             return "Column not found in the current input"
 
-        return QVariant()
+        return None
 
     def setData(self, index, value, role=Qt.ItemDataRole.EditRole):
         if not index.isValid():
@@ -200,7 +199,7 @@ class SelectTableWidget(QAbstractTableModel):
                 return self._header_labels[section]
             elif orientation == Qt.Orientation.Vertical:
                 return str(section + 1)  # Row numbers
-        return QVariant()
+        return None
 
     def flags(self, index):
         # Define item flags (e.g., IsEditable, IsSelectable, IsUserCheckable)

@@ -7,6 +7,7 @@ import re
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
+    LIVE_SAMPLE_ROWS,
     Frame,
     ShapingError,
     as_lazy,
@@ -137,16 +138,17 @@ def changed_cell_counts(frame: Frame, settings: dict) -> dict[str, int]:
     suffix = str(s["suffix"] or "")
     head = lf.head(10_000)
     try:
-        original = head.select(columns).collect()
-        changed = (
-            head.with_columns(
-                [
-                    _expr(column, rules).alias(f"__chg_{i}")
-                    for i, column in enumerate(columns)
-                ]
-            )
-            .select([f"__chg_{i}" for i in range(len(columns))])
-            .collect()
+        # One collect for both projections, so the shared head is computed once.
+        original, changed = pl.collect_all(
+            [
+                head.select(columns),
+                head.with_columns(
+                    [
+                        _expr(column, rules).alias(f"__chg_{i}")
+                        for i, column in enumerate(columns)
+                    ]
+                ).select([f"__chg_{i}" for i in range(len(columns))]),
+            ]
         )
     except Exception:  # noqa: BLE001
         return {}
@@ -164,9 +166,10 @@ def describe(frames: list, settings: dict) -> list[tuple[str, str]]:
     except Exception:  # noqa: BLE001
         return []
     total = sum(counts.values())
+    scope = f"first {LIVE_SAMPLE_ROWS} rows"
     if not total:
-        return [("No cells change in the first 10,000 rows", "warning")]
-    return [(f"{total} cells change (first 10,000 rows)", "accent")]
+        return [(f"No cells change in the {scope}", "warning")]
+    return [(f"{total} cells change ({scope})", "accent")]
 
 
 def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:

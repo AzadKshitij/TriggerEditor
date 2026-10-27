@@ -148,3 +148,17 @@ def test_upstream_renames_remap_mapping_and_selection() -> None:
 def test_outputs_are_lazy() -> None:
     outs = core.run_node([_left(), _right()], _settings())
     assert all(isinstance(out, pl.LazyFrame) for out in outs)
+
+
+def test_run_node_never_materialises_the_join(monkeypatch) -> None:
+    """Outputs stay plans: nothing in the join path calls collect()."""
+    collects: list[int] = []
+    real_collect = pl.LazyFrame.collect
+
+    def counting_collect(self, *args, **kwargs):
+        collects.append(1)
+        return real_collect(self, *args, **kwargs)
+
+    monkeypatch.setattr(pl.LazyFrame, "collect", counting_collect)
+    core.run_node([_left(), _right()], _settings())
+    assert collects == []

@@ -1,0 +1,438 @@
+# Alpha dependency modernization — progress record
+
+Branch `alpha/deps-modernization`, from `main` @ `8e557fc` (identical to
+`origin/main` as of 2026-10-25). Plan: 10 phases (0–9), one commit per phase,
+no push. Phases 1–5 (the measured upgrade) execute first; phases 6–9 follow.
+
+## Machine + session state (every comparison must match this)
+
+| | |
+|---|---|
+| Date | 2026-10-25 (all Phase 0 runs, same session) |
+| CPU | AMD Ryzen 5 3500U (4c/8t, 2.1 GHz base) — budget laptop |
+| RAM | 9.9 GB |
+| OS | Windows 11 x64 |
+| Python (pre) | 3.13.12 (uv managed); 3.14.8 installed via uv 0.13.4, ready for Phase 1 |
+| uv | 0.13.4 (7456b60bc 2026-10-20) |
+| Other load | OpenChamber + this session running; no other heavy process during measurement |
+
+## Noise band (the number that gates every later claim)
+
+`docs/PERFORMANCE_PROFILING_FINDINGS.md` warns ±10–25%. Measured today with a
+same-tree, same-session baseline+after pair (5 runs each, fixed path-remap
+harness — see below):
+
+| workflow | baseline avg | after avg | same-tree speedup |
+|---|---|---|---|
+| small_2node | 0.006 s | 0.006 s | 1.00x |
+| medium_14node | 0.059 s | 0.056 s | 1.06x |
+| large_105node | 5.201 s | 4.868 s | 1.07x |
+
+**Rule adopted:** post-upgrade deltas below ~7% on `large_105node`, ~10% on
+`medium_14node`, or any delta on sub-10 ms workloads are reported as
+*within noise*, never as wins. Per-run spread on `small_2node` (0.004–0.011 s)
+is timer-dominated; only its mean-to-mean is meaningful.
+
+Pre-upgrade artefacts (all committed):
+`scripts/benchmark_results/pre_deps_baseline.json`, `pre_deps_after.json`,
+`canvas_deps_baseline_20261025_193404.json`.
+
+Canvas key medians (120 nodes, 119 edges, repeats=3, defaults):
+zoomed-out pan 35.15 ms/step, viewport repaint 42.18 ms, node drag 14.16 ms/
+step; full table in the JSON. Post-upgrade canvas run must use the identical
+command and be compared with
+`benchmark_canvas_perf.py --compare <pre> <post>`.
+
+## Phase 0 — Baseline — DONE 2026-10-25
+
+1. Tree synced: `alpha/deps-modernization` reset --hard to `origin/main`;
+   uncommitted app-resave churn in `savedfiles/*.tds` discarded (approved).
+2. **Measurement fix (committed `c09c635`):** the committed sample workflows
+   bake the authoring machine's absolute paths
+   (`C:/Users/KASHVINCHANDRASAN/...`, `docs/bugs.md` documents 16 files).
+   Before this fix the benchmark measured **failures**: `large_105node` ran
+   29 nodes in 0.08 s (File Inputs gave up after 5 retries → "no incoming
+   data"), and `small_2node`'s 1.01 s `last_execution_time` was the retry
+   sleep against a missing `check.csv`. Harness now localizes paths in a
+   scratch copy (foreign repo-root rewrite + repo-root basename→`data/`
+   fallback, same idea as `tests/support/corpus.py`); saved workflows are
+   never touched. Verified: 105/105 nodes, 4.9–5.5 s, +667 MB first-run RSS.
+3. Workflow pair + `--compare` captured (numbers above).
+4. Canvas `--label deps_baseline` captured (defaults; JSON committed).
+5. This doc committed.
+
+Session profile (`profile_app.py`, plan Phase 0 step 3) is **deferred**: it
+needs an interactive app close (or the Phase 8 `--profile-seconds` flag that
+does not exist yet); cProfile data across the upgrade without an automated
+diff is noise we do not need twice. Phase 8 captures profile evidence
+properly, before and after, with the self-exit flag.
+
+## Phase 1 — Python 3.14 — DONE 2026-10-25
+
+- Interpreter: 3.14.8 (uv-managed); `.python-version` pinned locally
+  (gitignored by design). `requires-python >=3.14,<3.15`, ruff
+  `target-version = "py314"`, ty `python-version = "3.14"`; README badge +
+  Requirements line updated.
+- **Qt trio pulled forward from Phase 5** (sanctioned exception): `pyqt6-sip`
+  13.9.1 has no cp314 wheel and its source build needs MSVC (absent), so
+  3.14 forces pyqt6 6.11.0 / pyqt6-qt6 6.11.2 / pyqt6-sip 13.13.0
+  (cp314/abi3 wheels).
+- `datetime.utcnow()` → `datetime.now(UTC)` in `performance_scene.py`.
+  PEP 758: `ruff format` under `py314` drops parens on multi-exception
+  `except` — valid 3.14 syntax, accepted deliberately.
+- Gate discovery: the `ui` layer crashed (0xC0000409) + 3 hard failures in
+  `test_formula_editor_loop.py`. Isolated by per-layer bisect, reproduced
+  standalone, and attributed with version probes: `mergeCharFormat` and
+  `QSyntaxHighlighter.setFormat` fire `textChanged` **identically on Qt
+  6.8.1 and 6.11.0** — a pre-existing repo bug (`78d438d` moved error
+  painting to `setExtraSelections` but left the old whole-document format
+  write in place; the write fired `textChanged`, the handler wiped
+  `self.errors` mid-paint, highlights never appeared). Fixed in its own
+  commit `8b3c40a`, not counted against the bump.
+- Gates: `uv sync` clean; all core imports OK; offscreen `TriggerSubWindow`
+  constructs; full pytest **803 passed / 6 skipped** (benchmarks skip as
+  designed); `scripts\build.bat` OK (`TriggerEditor.exe`, 13.3 MB); dist exe
+  launched — window "Trigger Designer" alive at 15 s (WS 172 MB), stopped
+  after smoke.
+- Commits: `8b3c40a` (bugfix), `2738e97` (Phase 1 deps).
+
+## Phase 2 — Unused runtime deps — DONE 2026-10-25
+
+- Dropped from `[project].dependencies`: `click`, `colorama`, `packaging`,
+  `python-dateutil`, `typing-extensions`, `tzdata` — zero imports repo-wide
+  (recursive ripgrep; an earlier non-recursive `Select-String -Path src\*`
+  check was meaningless, re-verified). They stay in the lock as transitive
+  deps of dev tooling (typer→click, pandas→dateutil/tzdata, pytest→
+  packaging); nothing in `src/` can reach those paths.
+- `typing-extensions` removal: `main_window.py` now takes `override` from
+  stdlib `typing` (3.12+).
+- `tzdata` pre-check: duckdb `TIMESTAMPTZ` round-trip runs on the **bundled
+  ICU extension** (`duckdb_extensions() → icu loaded=True`); the tzinfo it
+  returns (`DstTzInfo`) is duckdb-native, not Python `zoneinfo`; repo has
+  zero `zoneinfo` imports. Safe to drop on Windows.
+- Gate: full pytest 803 passed / 6 skipped.
+  Gotcha recorded for later phases: **bare `uv sync` prunes the `profiling`
+  group** — the project convention is `uv sync --all-groups`.
+
+## Phase 3 — Dev deps cleanup (pandas→polars etc.) — DONE 2026-10-25
+
+- dev group: dropped `pandas`, `pandas-stubs`, `autotyping`, `faker`,
+  `pkgsizer`, `pytest-xdist`. `uv sync` cascaded out `typer`/`rich`/`pytz`/
+  `tzdata`/`mdurl`/`shellingham` with them (they were all reached only via
+  `pkgsizer→typer` and `pandas→pytz/tzdata`) — the venv shrank accordingly.
+- `tests/unit/test_preview_sampling.py`: the pandas-branch test now builds a
+  stub class named `DataFrame` with `__module__ = "pandas.core.frame"` (what
+  `_is_pandas_dataframe` actually inspects — no pandas import involved) and
+  monkeypatches `pl.from_pandas`, so the conversion branch and the row cap
+  stay pinned without pandas installed.
+- `scripts/Compare.py`: dropped `import pandas`/`numpy`/`pathlib`, the
+  `test_pandas_read()` block (incl. its commented-out chunked/dtype variants)
+  and its call in `main()`. It still measures polars vs the stdlib `csv`
+  module. Ruff findings went 18 → 14 (the four in the deleted pandas block
+  left with it); the remaining ones (F541/BLE001/E722/S110) and ty's
+  `dask.dataframe` unresolved-import are pre-existing patterns in the
+  untouched helpers, verified by re-running both tools on `git show HEAD`
+  of the same path.
+- Deleted `scripts/check_output_pandas.py` (generated scratch: one workflow's
+  pandas code export) and `scripts/autotype.bat` (wrapper around the removed
+  `autotyping`). The polars equivalent, `scripts/check_output_polars.py`,
+  stays.
+- The app's *defensive* pandas duck-typing (`core/charts.py`,
+  `qt/models/preview_sampling.py`) is untouched by design: a user's custom
+  node may hand the preview a pandas frame from their own environment. The
+  pyproject comment block records this and the `uv add --dev pandas` escape
+  hatch for the `savedfiles/` reference pipelines.
+- Gate: full pytest 803 passed / 6 skipped; ruff format no-ops on touched
+  files.
+
+## Phase 4 — Clean-clone install + nodeeditor 0.8.2 — DONE 2026-10-25
+
+- `nodeeditor-qtpy` 0.8.1 → 0.8.2 (pure-Python patch). The self-tracking
+  pin gate (`test_installed_nodeeditor_matches_the_pinned_version`) re-reads
+  the pin and passed; all 10 nodeeditor API tests green.
+- **Clean-venv proof (the stranger test):** fresh venv under
+  `%TEMP%\opencode\clean_alpha_env` built by `uv venv --python 3.14` +
+  `UV_PROJECT_ENVIRONMENT=<venv> uv sync --all-groups` against the lockfile
+  — no manual installs. Result: python 3.14.8 / Qt 6.11.0 / nodeeditor 0.8.2;
+  **full suite 803 passed / 6 skipped on that interpreter**, which includes
+  the e2e layer that launches the real app, loads checked-in workflows and
+  runs them. (Gotcha: plain `VIRTUAL_ENV` is ignored by `uv sync` — it wants
+  `UV_PROJECT_ENVIRONMENT` or `--active`.)
+- `scripts/build.bat` header already states the lock-managed truth — no
+  change. `scripts/sync-nodeeditor.ps1`: the "uv sync prunes nodeeditor if
+  it is missing from the lock" comment was stale pre-pinning language;
+  replaced with why the `--no-deps` local-checkout branch exists at all
+  (0.8 floors qtpy/orjson are already locked; the branch is a pre-release
+  dev convenience only).
+- Gates: ps1 parses with 0 errors; full pytest 803 passed.
+
+## Phase 5 — Remaining bumps + duckdb cap + version 0.1.0 — DONE 2026-10-25
+
+- Runtime: `pyarrow` 25.0.1 → **26.0.0** (re-pinned, silent-jump rationale
+  kept in the comment), `numpy` → **2.5.4**, `duckdb` `>=1.2.1` →
+  **`>=1.5.6,<2`** (floor up, ceiling added — 2.0 gets its own Phase 6),
+  `sqlglot` floor → **30.24**, `pillow` → **13.0.0**, `orjson` → **3.13.0**;
+  floors aligned to the (already-current) lock: `fastexcel>=0.21.0`,
+  `openpyxl>=3.1.5`, `psutil>=7.2.2`. `polars` stays 1.44.2 for Phase 6.
+  All 22 installed versions verified via `uv pip list`.
+- Tooling: `ruff` → **0.17.2**, `ty` → **0.0.91**, `pre-commit` → **4.7.0**.
+- `pyproject version` 0.0.1 → **0.1.0**, now matching `core/constants.py`
+  (`VERSION = "0.1.0"`) and the Inno Setup `MyAppVersion` — what a stranger's
+  `pip show` reports.
+- Gate: `uv lock`/`uv sync --all-groups` clean; full pytest **803 passed /
+  6 skipped** on the bumped stack.
+- Recorded, deliberately deferred: repo-wide `ruff format --check` under
+  0.17 wants 20 files touched and `ruff check` counts 933 fixable findings —
+  pre-existing debt the per-file pre-commit flow normalizes lazily; a
+  drive-by sweep would pollute every later phase's diff. Batch cleanup is a
+  Phase 9 candidate.
+
+## Post-upgrade measurement — DONE 2026-10-25 (Phases 1–5 complete)
+
+Measured 20:43–21:04 on the full Phase-5 stack (3.14.8, Qt 6.11.0/6.11.2,
+pyarrow 26, duckdb 1.5.6, pillow 13, orjson 3.13, sqlglot 30.24), offscreen,
+same machine/session profile as Phase 0.
+
+**Workflow harness — one isolated process per workflow** (`--only <wf>
+--repeats 5`, then per-workflow JSONs merged into `after.json`; `baseline.json`
+is the pre-upgrade baseline copy). The all-three-in-one-process mode was
+abandoned mid-session because of the crash documented below; per-workflow
+processes are also a *cleaner* comparison (no cross-workflow memory churn).
+
+| workflow | pre baseline avg | post avg | delta | vs pre baseline |
+|---|---|---|---|---|
+| small_2node | 0.006 s | 0.005 s (0.0040–0.0060) | −0.001 s | 1.17x — sub-10 ms ⇒ **noise** |
+| medium_14node | 0.059 s | 0.059 s (0.0499–0.0745) | −0.000 s | **1.00x** |
+| large_105node | 5.201 s | 5.410 s (4.770–6.341) | +0.209 s | 0.96x (+4.0%) — **inside the ~7% gate** |
+
+Verdict: **no measurable change from Phases 1–5.** Every delta is smaller
+than the pre pair's own same-tree swing (1.00x/1.06x/1.07x) and far inside
+the documented ±10–25% band. Not claimed as wins or losses.
+Secondary observation, not a verdict: post `large` repeats drift upward
+(runs 2–5 at 5.13–6.34 s, pre spread was 4.64–4.97 s) — GC/allocator
+behaviour on this 9.9 GB machine is the candidate; Phase 8 profiling is the
+right place to look before reading anything into it.
+
+**Canvas (`benchmark_canvas_perf.py --label deps_after` vs the committed
+pre baseline, identical defaults):** `canvas_deps_after_20261025_210326.json`.
+Paint counts per operation are identical to pre, so the comparison is
+like-for-like. Key medians: repaint 421.8→411.7 ms (1.02x), pan 1406.1→1469.7
+(0.96x), node drag 424.9→454.3 (0.94x), rubber-band 1151.7→1393.7 (0.83x);
+sum-of-medians 8434.8→9129.7 ms (0.92x). 12/14 operations sit at 0.83–0.96x —
+a consistent slight-slower direction, but the total is inside the repo's ±10–25%
+band and there is no same-tree canvas pair to calibrate it. Recorded as
+**"no improvement, small canvas slowdown plausible — Phase 8 to profile,
+Phase 7 pyqtgraph renderer is the design lever"**; not reported as a regression.
+
+**Side findings (not measured against, filed for follow-up):**
+
+1. **Intermittent hard crash in combined multi-window harness mode.** Running
+   small→medium→large in one process fast-fails (exit 0xC0000409) in 5 of 9
+   attempts, always mid-`large_105node` build/run; all 5 fault in
+   **Qt6Core.dll 6.11.2.0 at offset 0x1c8d8** (WER Application Error events,
+   identical code+offset). Every other shape passed on repeat: each workflow
+   alone, small+large, medium+large, large×2, and a later trio rerun
+   (0/5 crashes after the pattern was known). The identical combined flow ran
+   zero-crash pre-upgrade (Phase 0 pair is that proof), so this is a **Qt
+   6.8→6.11 regression candidate in `TriggerSubWindow` teardown churn**
+   (`close()+deleteLater()` backlog processed inside the next run's
+   `QEventLoop`). Measurement unaffected (isolated processes). The interactive
+   app is not proven hit: e2e launches + the packaged exe smoke are green.
+   Action: open a follow-up issue before the alpha ships; Phase 8 profiling
+   work (py-spy, clean-exit flag) gives the tools to catch it.
+2. **`medium_14node` fails a Formula node on both sides of the upgrade**:
+   `Binder Error: no function matches 'year(VARCHAR)'` on `YEAR("order_date")`
+   — the sample data's ambiguous `05-01-2024` dates stay String through
+   polars' sniffed schema (polars is pinned 1.44.2 unchanged, so pre and post
+   runs execute the *same* failing partial workflow; averages match within
+   0.001 s). The before/after number stays apples-to-apples, but the medium
+   comparison measures a failure cascade, not a successful 14-node run. Fix
+   belongs to the sample data/polars-2.0 date-parsing work (Phase 6 note).
+
+## Phase 6 - polars 2.0 + duckdb 2.0 - DONE 2026-10-25
+
+Both major migrations landed. The plan's "stay on 1.x" exit was not needed:
+every break turned out to be a point migration, not a redesign. Gate for
+each: full suite, green at **803 passed / 6 skipped** (same count as the
+1.x baseline), zero deprecation warnings.
+
+**Sample fix first (`20a43ee`), before the bumps.** Side finding 2 above:
+`YEAR([order_date])` never bound on any duckdb — the CSV is `dd-mm-yyyy`
+strings, so it failed identically pre-upgrade. Test1.tds now reads
+`YEAR(strptime([order_date], '%d-%m-%Y'))`; 14/14 nodes complete at the
+same 0.056-0.061 s the failing run took, so the recorded medium
+before/after pair stays apples-to-apples and later medium numbers now
+measure a successful run.
+
+**6a polars 1.44.2 → 2.0.0 (`e9f0c0b`).** Two removals touched the app;
+both fixed result-preservingly:
+
+- `cast(String -> temporal)` now raises instead of yielding nulls with
+  `strict=False`. The Select node's strptime/coalesce builders emitted it
+  as the final fallback branch, which only ever mattered for **non-String**
+  sources (epoch numerics, Date/Datetime re-typing) — for a String source
+  it produced a null the earlier `to_date`/`to_datetime` branch already
+  produced. Both builders (`_build_dtype_conversion_expr` and its codegen
+  twin) take a new `source_dtype` and emit the bare cast only for resolved
+  non-String sources; live, bulk and generated-code paths pass the
+  incoming schema. Unknown source = no fallback (crash-safe,
+  result-identical).
+- `sort` lost tie-stability. `charts.py` line/scatter sorts use
+  `maintain_order=True` so tied x points keep the 1.x input draw order.
+
+Checklist decisions, all deliberate: `pl.Map` left un-normalised in
+`dtype_utils` (like `Object`, dropdown doesn't offer it); Parquet ENUM
+loading as `String` needs no change (Enum→Categorical normalisation
+stays; String-from-parquet converts like any String); 0-width frames
+verified by existing empty-frame tests + probe; `SQLContext`/`rechunk`
+unused.
+
+**6b duckdb 1.5.6 → 2.0.0.** One removal caused *all* 20 failures and the
+full-suite teardown abort: `.pl()`/`fetch_arrow_table()`/`arrow()` are
+gone from `execute()` results (the polars relinker now lives only on
+relations). Migrated per the official 2.0 Python migration doc to
+`con.sql(query).pl()` — 9 sites: `core/warmup.py`, both Filter live
+queries, the Filter codegen string pair, both Formula live queries, and
+the Formula codegen string, so **generated pipelines use the relation API
+too**. `rel.pl()` defaults to `lazy=False`, preserving the eager
+"materialize before the `with` block closes the connection" contract at
+`filter.py:821`. The abort was the failing-test cascade through the
+`deleteLater`/DeferredDelete leak guard (`conftest.py:175`), not a new Qt
+crash — green tests, no abort. Test fake `CountingConnection` learned
+`sql()` to keep its "all sections in one query" assertion meaningful.
+
+Other 2.0 changes probed (nothing in the app relied on them; these are
+behaviour notes for user-typed SQL): `AT TIME ZONE` works (ICU-as-needed
+extension is transparent here); `list_transform(x -> x * 2)` **raises**
+- the deprecated arrow syntax needs `lambda x: ...`; integer `//`/`%` by
+zero **raises** `InvalidInputException` where 1.x returned NULL (hint
+says use `TRY(...)`).
+
+Pins: `polars[pyarrow]==2.0.0`, `duckdb==2.0.0` — exact, the `<2` ceiling
+died with the migration as planned. Both majors are days-to-weeks old, so
+"latest" and "2.x LTS" currently coincide; revisit before beta.
+
+## Phase 7 - pyqtgraph renderer - DONE 2026-10-25
+
+The Graph window can now draw with either library. Chosen by a new
+`Renderer` combo in the dock (`"renderer"` in the node schema, default
+`matplotlib`, so every pre-phase-7 `.tds` opens exactly as before —
+verified by test). The window is renderer-agnostic: it resolves a
+renderer *name* to a module (`chart_window._RENDERER_MODULES`, importlib,
+lazy), and each module exposes `create_view`/`create_toolbar`. Selecting
+`pyqtgraph` on a live window disposes the old view and replays the last
+`ChartSpec` into the new one; the window title gains `(pyqtgraph)` and
+the dock chip strip shows the renderer — the matplotlib caption is
+unchanged.
+
+No drawing code is shared between the two renderers — on purpose. What
+*is* shared is the label logic that makes them agree: `chart_renderer.py`
+holds the `ChartRenderer` base (spec in, message-page behaviour, palette
+theme read) plus pure helpers (`SERIES_COLORS`, tick/label elision at
+18 chars and 40 labelled ticks, numeric-x detection, category ordering).
+A third renderer can exist without touching either existing one.
+
+pyqtgraph 0.14 API traps found by probe, each now a comment in the code:
+
+- `connect="all"` **bridges NaN points** (and the auto default resolves
+  to `'all'` even with NaNs in the data). Lines use explicit
+  `connect="finite"`, which splits at non-finite values — matplotlib's
+  gap behaviour.
+- `PlotWidget.setBackground()` lands on the QGraphicsView's own brush and
+  leaves the plot area black. Theme uses
+  `getViewBox().setBackgroundColor(QColor)`; it stores to `vb.state`
+  synchronously, which makes it assertable.
+- Hover has no mouse-move events offscreen: tooltips ride
+  `sigHovered` from invisible `ScatterPlotItem` overlays carrying
+  `(x_label, y, series_name)` tuples in their structured `data` field;
+  scatter series carry their own payload. Tests drive `_on_hover` with
+  duck-typed spot stubs implementing `pos()`/`data()`.
+- `AxisItem` has no `getPen` (pens live in `_pen`/`_textPen`), ticks in
+  `_tickLevels`, `BarGraphItem` has no `value()`, and there is no
+  `ImageExporter` here — the Save PNG button is `plot_page().grab()`.
+- `pi.clear()` does not remove the legend but does remove the tooltip
+  item, so the tooltip is rebuilt on every render.
+
+pyqtgraph was **missing the `_set_category_ticks` call in its bar path**
+— caught by the smoke script, not by types. The suite is the gate now.
+
+Library isolation verified in fresh processes: a matplotlib-only window
+never imports pyqtgraph and vice-versa (the four Report chart modules
+are in `nodes/__init__._LAZY_HELPER_MODULES`, so startup imports none of
+them). Toolbar parity is deliberately *not* identical — pyqtgraph has no
+`NavigationToolbar2QT`; it ships reset-view + save-PNG icon buttons per
+the design system, and the window title says which renderer is up.
+
+Gate: 831 passed / 6 skipped (23 new renderer tests + 3 new dock tests:
+schema round-trip incl. old-file default, undo of the combo via
+`push_property_change`, live window swap incl. title). Pin:
+`pyqtgraph==0.14.0`.
+
+## Phase 8 - Profiling stack + re-measurement - DONE 2026-10-26
+
+`scripts/profile_app.py` now answers four questions instead of one, and every
+Python-memory number sits beside the native one:
+
+- tracemalloc depth 25 -> 5; `--snapshot-diff` (before = event loop start,
+  after = exit) so "one-time cost" stops being read as "leak". A 20 s idle run
+  grew 33.5 MB after the loop started, top lines `<frozen importlib>` (+19.1,
+  +3.1 MB) - the warm-up thread importing Polars/DuckDB/PyArrow, i.e. exactly
+  the one-time cost the diff exists to expose.
+- psutil peak/final RSS always printed: tracemalloc tracked **49.8 MB inside a
+  144 MB process (~1/3)** on an idle session. Never quote the tracker alone.
+- `--profile-seconds N` self-exit for scalene (clean JSON), `--no-tracemalloc`
+  overhead control.
+- Two traps found the hard way: a modal welcome dialog's nested event loop
+  swallows a single `quit` (the countdown now re-posts every poll), and an
+  automated run must skip that dialog or it profiles an idle dialog forever
+  (process-local patch of the preference getter; nothing written).
+
+Tools: `snakeviz` + `memory-profiler` removed (dead; `python -m pstats` reads
+the same .prof with no dependency), `py-spy` kept, `objgraph==3.7.0` and
+`scalene==2.4.0` added. Scalene 2.4.0 does run on 3.14 (`run --memory`,
+`view --cli` per the plan's recipe); the *app's* cProfile must yield the
+profile hook or `pr.enable()` raises `ValueError: tool 2 is already in use` -
+`profile_app.py` now detects that and skips cProfile. Memray stays Linux-only.
+
+**Instrument overhead (stated, two pairs, 20 s window):** tracemalloc costs
+**+10% wall and +56 MB RSS** (23.2/23.5 s and 204/199 MB on; 20.6/21.6 s and
+144/144 MB off). Scalene costs ~273 MB peak - a question-answerer, not a
+baseline.
+
+**Re-measurement, honestly labelled:**
+
+| workflow | pre | Phase 5 | Phase 8 | verdict |
+|---|---|---|---|---|
+| small_2node | 0.006 s | 0.005 s | 0.007 s | noise (sub-10 ms) |
+| medium_14node | 0.059 s | 0.059 s | 0.149 s | **not comparable** |
+| large_105node | 5.201 s | 5.410 s | 6.483 s | unresolved |
+
+`medium` is not comparable by construction: it used to abort on
+`YEAR("order_date")` and now completes 70 node executions because `20a43ee`
+fixed the sample's day-first dates. It finally measures work, not a failure
+cascade.
+
+Canvas (identical paint counters, 120 nodes / 3 passes): 8434.8 baseline ->
+9129.7 (0.92x, Phase 5) -> 12553.8 (0.67x). Reported **environment, not
+regression**: uniform 0.63-0.72x across all 14 ops while the work is
+bit-identical, nothing it touches changed (Qt stayed 6.11.2, polars/duckdb are
+lazy and unused, no execution), tight in-run spread (8.5%) on a machine
+sitting at ~40% ambient CPU with 3.4 GB free. Two invalid attempts were
+discarded first: one used `--pan-steps 60 --drag-steps 45` against baselines
+measured at defaults (paint counts differed, so the 0.49x was step count), and
+one ran while two stuck `trigger-designer` processes from cancelled runs were
+resident. **Rule for next time: check for stray app processes before believing
+a canvas number.**
+
+**Crash finding, now the alpha's open risk:** `0xC0000409` in
+**Qt6Core.dll 6.11.2.0 +0x1c8d8**, byte-identical WER events, previously 5/9
+in combined-harness mode and 0/9 isolated - this session it hit **isolated
+`large_105node` twice in three attempts**, once mid-build and once
+mid-execution. Only the surviving run's numbers are used. Phase 9's PySide6
+swap changes the Qt build; re-test there, and file it before the alpha if it
+survives. A `nanobind` reference-count warning also appeared at exit in one
+run (unexplained, noted).
+
+Gate: 831 passed / 6 skipped (dependency swap is dev-only). Pins added:
+`objgraph==3.7.0`, `scalene==2.4.0`; removed `snakeviz==2.2.2`,
+`memory-profiler==0.61.0`.

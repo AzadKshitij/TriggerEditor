@@ -3,9 +3,9 @@ Create widget with available icons from qt and based on freedesktop.org
 https://specifications.freedesktop.org/icon-naming-spec/icon-naming-spec-latest.html
 """
 
-from PyQt6.QtCore import QSize
-from PyQt6.QtGui import QIcon
-from PyQt6.QtWidgets import (
+from qtpy.QtCore import QSize
+from qtpy.QtGui import QIcon
+from qtpy.QtWidgets import (
     QApplication,
     QMainWindow,
     QVBoxLayout,

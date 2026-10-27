@@ -414,7 +414,7 @@ class FormulaContent(ShapingContent):
         with self._hold_deferred_evaluation():
             while True:
                 name, accepted = QInputDialog.getText(
-                    None , "Add Column", "Column name:", text=text
+                    None, "Add Column", "Column name:", text=text
                 )
                 if not accepted:
                     pending = self._pending_evaluate
@@ -498,7 +498,7 @@ class FormulaContent(ShapingContent):
                 break
             try:
                 text = widgets["formula_input"].get_text() or ""
-            except (KeyError, RuntimeError):
+            except KeyError, RuntimeError:
                 continue
             if sections[index]["formula_text"] == text:
                 continue

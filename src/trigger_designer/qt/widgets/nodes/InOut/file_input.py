@@ -43,6 +43,7 @@ from trigger_designer.core.inputs import (
     to_stored_paths,
 )
 from trigger_designer.core.node_configuration import IONodes, NodeTypes, register_node
+from trigger_designer.core.shaping.common import live_sample
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import (
@@ -1591,7 +1592,7 @@ class FileInputContent(
             del self.data
 
         try:
-            # Full read (lazy for csv) so live matches Run output exactly
+            # Full read (lazy for csv); processInputs samples it for live use.
             full_df = self._read_file_based_on_type(fileName)
             preview_df = (
                 full_df.head(self.preview_rows).collect()
@@ -1828,8 +1829,12 @@ class TriggerNode_FileInput(TriggerNode):
         self.markDirty(False)
         self.markInvalid(False)
 
+        # Live evaluation reads the leading rows only; Run reads the file itself.
         self.param = [
-            {"data": self.content.data, "variable_name": self.content.variable_name}
+            {
+                "data": live_sample(self.content.data),
+                "variable_name": self.content.variable_name,
+            }
         ]
 
         return self.param

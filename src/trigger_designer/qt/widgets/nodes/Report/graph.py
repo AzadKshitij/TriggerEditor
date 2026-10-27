@@ -2,8 +2,8 @@
 
 The Graph configures *what* to chart; the shared
 :mod:`trigger_designer.core.charts` model decides what the data means, and
-:class:`~trigger_designer.qt.widgets.nodes.Report.chart_view.ChartView` draws
-it in the non-modal window.
+the window's renderer draws it in the non-modal window: matplotlib by
+default, or pyqtgraph when the node's Renderer is set to it.
 
 Two data paths feed the chart:
 
@@ -59,6 +59,16 @@ _AGGREGATION_ITEMS = (
     ("Max", "max"),
 )
 
+#: Display label -> stored value for the renderer combo. The values are the
+#: library names themselves: the tooltip has to describe the real difference.
+_RENDERER_ITEMS = (
+    ("matplotlib", "matplotlib"),
+    ("pyqtgraph", "pyqtgraph"),
+)
+
+#: The renderer every saved workflow drew with before this setting existed.
+_DEFAULT_RENDERER = "matplotlib"
+
 #: Color-by entry that clears the setting.
 _NO_COLOR_LABEL = "(none)"
 #: Placeholder for a column column setting with no value yet.
@@ -94,6 +104,7 @@ class GraphContent(ShapingContent):
     INPUTS = 1
     HISTORY = "Graph"
     SUMMARY = "chart, pass-through"
+    PRESENTATION_SETTINGS = ("renderer",)
 
     #: Carries the frame a workflow run passed through the node. Emitted from
     #: the executor's worker thread; the connection queues the slot onto the
@@ -114,6 +125,11 @@ class GraphContent(ShapingContent):
     # -- settings helpers -------------------------------------------------
     def _value(self, key: str, default: Any = "") -> Any:
         return self.settings.get(key, default)
+
+    @property
+    def renderer(self) -> str:
+        """The library that draws the window; matplotlib unless chosen."""
+        return str(self._value("renderer", _DEFAULT_RENDERER) or _DEFAULT_RENDERER)
 
     def _frame(self) -> Any:
         if self.frames and self.frames[0] is not None:
@@ -155,6 +171,22 @@ class GraphContent(ShapingContent):
             )
         )
         section.addWidget(FormRow("Type", self.graph_type_combo, label_width=72))
+
+        self.renderer_combo = self._make_choice_combo(_RENDERER_ITEMS)
+        self.renderer_combo.setToolTip(
+            "Library that draws the chart window. pyqtgraph replaces the "
+            "navigation toolbar with reset-view and save-PNG buttons."
+        )
+        self.renderer_combo.setAccessibleName("Chart renderer")
+        self.renderer_combo.currentIndexChanged.connect(
+            lambda _index: self.set_setting(
+                "renderer",
+                self.renderer_combo.currentData(),
+                "Graph Renderer Changed",
+                evaluate=False,
+            )
+        )
+        section.addWidget(FormRow("Renderer", self.renderer_combo, label_width=72))
 
         self.x_column_combo = self._make_column_combo()
         self.x_column_combo.currentIndexChanged.connect(
@@ -233,6 +265,8 @@ class GraphContent(ShapingContent):
         """Configuration summary for the dock context strip."""
         graph_type = str(self._value("graph_type", "line"))
         chips: list[tuple[str, str]] = [(graph_type, "accent")]
+        if self.renderer != _DEFAULT_RENDERER:
+            chips.append((self.renderer, ""))
         x_column = str(self._value("x_column", ""))
         y_column = str(self._value("y_column", ""))
         if x_column and y_column:
@@ -269,6 +303,10 @@ class GraphContent(ShapingContent):
         self._set_combo_value(
             getattr(self, "graph_type_combo", None),
             self._value("graph_type", "line"),
+        )
+        self._set_combo_value(
+            getattr(self, "renderer_combo", None),
+            self.renderer,
         )
         self.update_column_options()
         self._sync_aggregation_widget()
@@ -414,11 +452,21 @@ class GraphContent(ShapingContent):
             return
         try:
             if window.isVisible():
+                window.set_renderer(self.renderer)
+                window.setWindowTitle(self._window_title())
                 window.set_spec(self.build_spec())
         except RuntimeError:
             self._chart_window = None
 
     # -- actions and handlers --------------------------------------------
+    def _window_title(self) -> str:
+        """Window caption; a non-default renderer is named, per disclosure."""
+        title = str(self._value("title", "") or "")
+        base = f"Graph \u2014 {title}" if title else "Graph"
+        if self.renderer != _DEFAULT_RENDERER:
+            base += f" ({self.renderer})"
+        return base
+
     def open_graph_in_new_window(self) -> None:
         """Open (or re-show) the non-modal chart window."""
         if not self.workflow_ran_successfully:
@@ -426,13 +474,10 @@ class GraphContent(ShapingContent):
         if self._frame() is None and self._run_frame is not None:
             self.frames[0] = self._run_frame
         window = getattr(self, "_chart_window", None)
-        title = (
-            f"Graph \u2014 {self._value('title', '')}"
-            if self._value("title", "")
-            else "Graph"
-        )
+        title = self._window_title()
         if window is not None:
             try:
+                window.set_renderer(self.renderer)
                 window.setWindowTitle(title)
             except RuntimeError:
                 window = None
@@ -441,7 +486,7 @@ class GraphContent(ShapingContent):
                 ChartWindow,
             )
 
-            window = ChartWindow()
+            window = ChartWindow(renderer=self.renderer)
             self._chart_window = window
             window.setWindowTitle(title)
         window.set_spec(self.build_spec())

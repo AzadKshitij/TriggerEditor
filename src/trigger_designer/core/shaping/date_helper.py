@@ -8,6 +8,7 @@ from datetime import date
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
+    LIVE_SAMPLE_ROWS,
     Frame,
     ShapingError,
     as_lazy,
@@ -229,8 +230,9 @@ def describe(frames: list, settings: dict) -> list[tuple[str, str]]:
         failures = parse_failures(frames[0], settings)
     except Exception:  # noqa: BLE001
         return []
+    scope = f"first {LIVE_SAMPLE_ROWS} rows"
     return [
-        (f"{count:,} unreadable dates in {name}", "warning")
+        (f"{count:,} unreadable dates in {name} ({scope})", "warning")
         for name, count in failures.items()
     ]
 

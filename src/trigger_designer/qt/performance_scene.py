@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import tempfile
 from collections.abc import Callable
-from datetime import datetime
+from datetime import UTC, datetime
 
 import orjson
 from loguru import logger
@@ -217,7 +217,7 @@ class TriggerScene(Scene):
         data["workflow_metadata"] = {
             "schema_version": WORKFLOW_SCHEMA_VERSION,
             "app_version": VERSION,
-            "saved_at": datetime.utcnow().isoformat(timespec="seconds") + "Z",  # noqa: DTZ003
+            "saved_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         }
         return data
 
@@ -278,7 +278,7 @@ def _incomplete_collectors(scene: Scene) -> list[MultiInputNode]:
         try:
             expected = len(node.getOrderedEdges())
             actual = len(node.content.input_frames)
-        except (AttributeError, RuntimeError, TypeError):
+        except AttributeError, RuntimeError, TypeError:
             incomplete.append(node)
             continue
         if node.isDirty() or node.isInvalid() or actual != expected:
@@ -317,7 +317,7 @@ def settle_multi_input_nodes(scene: Scene) -> None:
             edges = len(node.getOrderedEdges())
             frames = len(node.content.input_frames)
             detail = f"{frames} frames for {edges} edges"
-        except (AttributeError, RuntimeError, TypeError):
+        except AttributeError, RuntimeError, TypeError:
             detail = "unreadable input state"
         logger.warning(
             "Multi-input collector {} did not settle after retry ({})",

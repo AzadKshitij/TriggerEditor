@@ -153,7 +153,7 @@ class SourceSettings:
             elif key in ("record_limit", "start_row", "max_files"):
                 try:
                     value = int(value)
-                except (TypeError, ValueError):
+                except TypeError, ValueError:
                     raise InputReadError(
                         "config",
                         f"'{key}' must be a whole number.",
@@ -639,7 +639,7 @@ def _read_db(path: str, settings: SourceSettings) -> pl.LazyFrame:
                 frame = pl.read_database(query, connection)
         else:
             with _open_duckdb_ro(path) as connection:
-                frame = connection.execute(query).pl()
+                frame = connection.sql(query).pl()
     except InputReadError:
         raise
     except Exception as exc:  # noqa: BLE001

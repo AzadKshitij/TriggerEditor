@@ -110,3 +110,44 @@ def test_validate_section_reports_bad_formula() -> None:
     bad = {"sections": [_section("y", "(((")]}
     errors = core.validate_section(frames, bad, 0)
     assert errors and errors[0]["message"]
+
+
+class _CountingDuck:
+    """Forwards to a real DuckDB connection and records each query it runs."""
+
+    def __init__(self, statements: list[str], connection) -> None:
+        self.statements = statements
+        self.connection = connection
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self.connection.close()
+
+    def register(self, *args):
+        return self.connection.register(*args)
+
+    def sql(self, query, *args, **kwargs):
+        self.statements.append(query)
+        return self.connection.sql(query, *args, **kwargs)
+
+    def execute(self, query, *args, **kwargs):
+        self.statements.append(query)
+        return self.connection.execute(query, *args, **kwargs)
+
+
+def test_chained_sections_run_as_one_duckdb_query(monkeypatch) -> None:
+    """The whole chain is one relation query, not one round trip per section."""
+    statements: list[str] = []
+    real_connect = core.connect_duckdb
+    monkeypatch.setattr(
+        core, "connect_duckdb", lambda: _CountingDuck(statements, real_connect())
+    )
+
+    out = _run(
+        [_section("a", "[x] + 1"), _section("b", "[a] * 2"), _section("c", "[b] - 1")]
+    )
+
+    assert out["c"].to_list() == [3, 5, 7]
+    assert len(statements) == 1

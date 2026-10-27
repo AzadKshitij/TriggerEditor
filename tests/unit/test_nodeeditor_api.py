@@ -128,11 +128,17 @@ def test_the_scene_carries_a_detail_lod_threshold() -> None:
 
 
 def test_installed_nodeeditor_matches_the_pinned_version() -> None:
-    """The installed distribution is the one the lock pins."""
-    import tomllib
-    from pathlib import Path
+    """The installed distribution is the one the lock pins.
 
-    import nodeeditor
+    Read the distribution metadata, not ``nodeeditor.__version__``: 0.8.2's
+    PySide6 branch does ``from PySide6 import __version__``, which shadows the
+    package's own version with the binding's (the PyQt6 branch assigns
+    ``PYQT_VERSION_STR`` to a different name and keeps it intact). Reported
+    upstream; the pin is what this test is about.
+    """
+    import tomllib
+    from importlib import metadata
+    from pathlib import Path
 
     pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
     with pyproject.open("rb") as handle:
@@ -142,8 +148,9 @@ def test_installed_nodeeditor_matches_the_pinned_version() -> None:
         dep for dep in dependencies if dep.lower().startswith("nodeeditor-qtpy==")
     )
     expected = requirement.split("==", 1)[1]
+    installed = metadata.version("nodeeditor-qtpy")
 
-    assert nodeeditor.__version__ == expected, (
-        f"nodeeditor {nodeeditor.__version__} is installed, but pyproject.toml "
+    assert installed == expected, (
+        f"nodeeditor-qtpy {installed} is installed, but pyproject.toml "
         f"pins {expected}. Run `uv sync` to install the pinned version."
     )
