@@ -377,3 +377,16 @@ def test_remove_button_click_removes_the_card(qtbot) -> None:
     remove.click()
 
     assert len(content.settings["sections"]) == 1
+
+
+def test_number_plus_empty_string_shows_a_live_error(qtbot) -> None:
+    """The card reports the conversion failure while typing, not only on Run."""
+    _window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting("sections", [_section("x", '[x] + ""')], "Baseline")
+
+    content._refresh_error(0)
+
+    assert 0 in content.section_errors
+    assert "Could not convert string" in content.section_errors[0]
+    assert not content.section_widgets[0]["error_label"].isHidden()

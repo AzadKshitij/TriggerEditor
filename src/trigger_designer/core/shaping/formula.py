@@ -26,6 +26,8 @@ MIN_EDITOR_HEIGHT = 60
 MAX_EDITOR_HEIGHT = 600
 DEFAULT_EDITOR_HEIGHT = 120
 AUTO_DTYPE_OPTION = "Auto"
+#: Rows of the live input a formula is trial-run on while it is being edited.
+VALIDATION_SAMPLE_ROWS = 100
 DTYPE_OPTIONS = [
     AUTO_DTYPE_OPTION,
     "String",
@@ -106,7 +108,12 @@ def shorten_error(message: str) -> str:
     if match:
         return match.group()
     first_line = text.split("\n", 1)[0].strip()
-    for prefix in ("Binder Error:", "Catalog Error:", "Parser Error:"):
+    for prefix in (
+        "Binder Error:",
+        "Catalog Error:",
+        "Conversion Error:",
+        "Parser Error:",
+    ):
         if first_line.startswith(prefix):
             first_line = first_line[len(prefix) :].strip()
     return first_line[:160]
@@ -195,17 +202,18 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     return [normalize_to_supported_dtypes(result).lazy()]
 
 
-def validate_section(frames: list, settings: dict, section_index: int) -> list[dict]:
-    """EXPLAIN one section against a zero-row copy of the live schema."""
-    if not frames or frames[0] is None:
-        return []
-    sections = normalize(settings)["sections"]
-    if not 0 <= section_index < len(sections):
-        return []
-    sample = pl.DataFrame(schema=schema_of(frames[0]))
-    available = list(sample.columns)
+def _first_error(
+    sections: list[dict], section_index: int, base: pl.DataFrame, *, explain: bool
+) -> list[dict]:
+    """Run sections up to ``section_index`` on ``base``; report the last one's error.
+
+    ``explain`` only binds the query (right for a zero-row schema copy);
+    otherwise the query really executes, which is what surfaces runtime
+    conversion errors such as a number plus ``""``.
+    """
+    available = list(base.columns)
     with connect_duckdb() as duck:
-        current = sample
+        current = base
         for index, section in enumerate(sections[:section_index]):
             if not is_configured(section):
                 continue
@@ -223,7 +231,10 @@ def validate_section(frames: list, settings: dict, section_index: int) -> list[d
         query, _available = section_query(section, available, relation)
         duck.register(relation, current)
         try:
-            duck.execute(f"EXPLAIN {query}").fetchall()
+            if explain:
+                duck.execute(f"EXPLAIN {query}").fetchall()
+            else:
+                duck.sql(query).pl()
         except Exception as exc:  # noqa: BLE001 - report on this section
             return [
                 {
@@ -234,3 +245,32 @@ def validate_section(frames: list, settings: dict, section_index: int) -> list[d
                 }
             ]
     return []
+
+
+def _sample_rows(frame) -> pl.DataFrame | None:
+    try:
+        return as_lazy(frame).head(VALIDATION_SAMPLE_ROWS).collect()
+    except Exception:  # noqa: BLE001 - validation must never break editing
+        return None
+
+
+def validate_section(frames: list, settings: dict, section_index: int) -> list[dict]:
+    """Check one section: EXPLAIN on the live schema, then run it on a row sample.
+
+    DuckDB binds ``[price] + ""`` without complaint and only fails when it
+    converts the string for a real row, so a zero-row check alone would let
+    that formula look valid until the workflow runs.
+    """
+    if not frames or frames[0] is None:
+        return []
+    sections = normalize(settings)["sections"]
+    if not 0 <= section_index < len(sections):
+        return []
+    schema_only = pl.DataFrame(schema=schema_of(frames[0]))
+    errors = _first_error(sections, section_index, schema_only, explain=True)
+    if errors:
+        return errors
+    rows = _sample_rows(frames[0])
+    if rows is None or rows.height == 0:
+        return []
+    return _first_error(sections, section_index, rows, explain=False)

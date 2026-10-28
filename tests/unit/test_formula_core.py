@@ -151,3 +151,31 @@ def test_chained_sections_run_as_one_duckdb_query(monkeypatch) -> None:
 
     assert out["c"].to_list() == [3, 5, 7]
     assert len(statements) == 1
+
+
+def test_validate_section_catches_a_runtime_conversion_error() -> None:
+    """``number + ""`` binds fine; only real rows make DuckDB reject it."""
+    frame = pl.DataFrame({"g": [1.234, 2.5]}).lazy()
+    settings = {"sections": [_section("g", 'ROUND([g], 2) + ""')]}
+
+    errors = core.validate_section([frame], settings, 0)
+
+    assert errors
+    assert "Could not convert string" in errors[0]["message"]
+
+
+def test_validate_section_accepts_a_good_formula_on_real_rows() -> None:
+    frame = pl.DataFrame({"g": [1.234, 2.5]}).lazy()
+    settings = {"sections": [_section("g", "ROUND([g], 2)")]}
+
+    assert core.validate_section([frame], settings, 0) == []
+
+
+def test_validate_section_survives_an_input_that_cannot_be_sampled() -> None:
+    def explode(_frame: pl.DataFrame) -> pl.DataFrame:
+        raise RuntimeError("upstream exploded")
+
+    frame = pl.DataFrame({"g": [1.0]}).lazy().map_batches(explode, schema={"g": pl.Float64})
+    settings = {"sections": [_section("y", "[g] + 1")]}
+
+    assert core.validate_section([frame], settings, 0) == []
