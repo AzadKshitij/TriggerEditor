@@ -1,4 +1,4 @@
-"""Preferences dialog: appearance, layout, editor, node editor colours, general.
+"""Preferences dialog: appearance, layout, editor, node editor colours, shortcuts.
 
 Replaces the old tabbed ``SettingsDialog``. Theme selection previews live;
 Cancel restores the theme and accent that were active when the dialog
@@ -13,17 +13,20 @@ from typing import TYPE_CHECKING
 
 from loguru import logger
 from qtpy.QtCore import QSize, Qt, QUrl
-from qtpy.QtGui import QDesktopServices
+from qtpy.QtGui import QDesktopServices, QKeySequence
 from qtpy.QtWidgets import (
     QCheckBox,
     QDialog,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QInputDialog,
+    QKeySequenceEdit,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
+    QScrollArea,
     QSpinBox,
     QStackedWidget,
     QVBoxLayout,
@@ -31,6 +34,8 @@ from qtpy.QtWidgets import (
 )
 
 from trigger_designer.qt.dialogs.theme_editor_dialog import ThemeEditorDialog
+from trigger_designer.qt.helpers import node_arrange
+from trigger_designer.qt.helpers import shortcuts as shortcut_store
 from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 from trigger_designer.qt.node_editor_colors import (
     DEFAULT_EDGE_COLORS,
@@ -51,6 +56,7 @@ from trigger_designer.qt.theme_manager import (
 )
 from trigger_designer.qt.widgets.common.config_widgets import (
     ConfigSection,
+    IconButton,
     NoWheelComboBox,
     TextButton,
 )
@@ -62,7 +68,14 @@ from trigger_designer.qt.widgets.common.theme_widgets import (
 if TYPE_CHECKING:
     from trigger_designer.qt.main_window import TriggerWindow
 
-_PAGES = ("Appearance", "Layout", "Editor", "Node Editor", "General")
+_PAGES = (
+    "Appearance",
+    "Layout",
+    "Editor",
+    "Node Editor",
+    "Shortcuts",
+    "General",
+)
 
 _ACCENT_PRESETS = (
     "#5680c2",
@@ -125,12 +138,14 @@ class PreferencesDialog(QDialog):
         self.layout_page = self._build_layout_page()
         self.editor_page = self._build_editor_page()
         self.node_editor_page = self._build_node_editor_page()
+        self.shortcuts_page = self._build_shortcuts_page()
         self.general_page = self._build_general_page()
         for page in (
             self.appearance_page,
             self.layout_page,
             self.editor_page,
             self.node_editor_page,
+            self.shortcuts_page,
             self.general_page,
         ):
             self.stack.addWidget(page)
@@ -319,6 +334,13 @@ class PreferencesDialog(QDialog):
         self.show_grid_check = QCheckBox("Show grid")
         self.show_grid_check.toggled.connect(self._on_show_grid_changed)
         canvas.addWidget(self.show_grid_check)
+
+        self.snap_to_grid_check = QCheckBox("Snap nodes to the grid while dragging")
+        self.snap_to_grid_check.setToolTip(
+            "Hold Alt while dragging a node to move it freely."
+        )
+        self.snap_to_grid_check.toggled.connect(self._on_snap_to_grid_changed)
+        canvas.addWidget(self.snap_to_grid_check)
         layout.addWidget(canvas)
 
         rendering = ConfigSection("Rendering")
@@ -412,6 +434,112 @@ class PreferencesDialog(QDialog):
         layout.addLayout(reset_row)
         layout.addStretch(1)
         return page
+
+    # -- Shortcuts --------------------------------------------------------
+    def _build_shortcuts_page(self) -> QWidget:
+        """One key sequence per Arrange command, edited in place.
+
+        The page scrolls: nine rows plus their reset buttons overflow a
+        520px dialog once the application font grows. Changes save and apply
+        as they are made (docs/DESIGN_SYSTEM.md §6); the reset button beside
+        a row only exists because a key sequence has no obvious "empty"
+        state once the field is filled.
+        """
+        page = QWidget()
+        page.setObjectName("PreferencesPage")
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        hint = QLabel(
+            "Click a field and press the keys. A shortcut needs Ctrl, Alt or "
+            "Shift, or a function key; function keys are allowed on their own. "
+            "Backspace clears one."
+        )
+        hint.setObjectName("FieldHint")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
+        scroll = QScrollArea(page)
+        scroll.setObjectName("PreferencesScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        content = QWidget()
+        content.setObjectName("PreferencesPage")
+        rows = QVBoxLayout(content)
+        rows.setContentsMargins(0, 0, 0, 0)
+        rows.setSpacing(6)
+
+        section = ConfigSection("Arranging nodes")
+        self.shortcut_editors: dict[str, QKeySequenceEdit] = {}
+        for command in node_arrange.SHORTCUT_COMMANDS:
+            row = QHBoxLayout()
+            row.setSpacing(6)
+            label = QLabel(command.label)
+            label.setObjectName("FieldLabel")
+            label.setMinimumWidth(180)
+            row.addWidget(label)
+
+            editor = QKeySequenceEdit(content)
+            editor.setObjectName("ShortcutEditor")
+            editor.setMaximumSequenceLength(1)
+            editor.setToolTip(f"Shortcut for {command.label}")
+            editor.setAccessibleName(f"Shortcut for {command.label}")
+            editor.keySequenceChanged.connect(
+                lambda _sequence, command_id=command.id: self._set_shortcut_error("")
+            )
+            editor.editingFinished.connect(
+                lambda command_id=command.id: self._commit_shortcut(command_id)
+            )
+            row.addWidget(editor, 1)
+            self.shortcut_editors[command.id] = editor
+
+            reset = IconButton.themed(
+                f"Restore the default shortcut for {command.label}",
+                rsm_icon=self._shortcut_icon(),
+                parent=content,
+            )
+            reset.clicked.connect(
+                lambda _checked=False, command_id=command.id: (
+                    self._restore_default_shortcut(command_id)
+                )
+            )
+            row.addWidget(reset)
+            section.addLayout(row)
+
+        rows.addWidget(section)
+
+        footer = QHBoxLayout()
+        footer.setSpacing(6)
+        reset_all = TextButton(
+            "Restore Defaults", "Put every Arrange shortcut back to its default"
+        )
+        reset_all.clicked.connect(self._restore_all_shortcuts)
+        footer.addWidget(reset_all)
+        footer.addStretch(1)
+        rows.addLayout(footer)
+
+        self.shortcut_error = QLabel("")
+        self.shortcut_error.setObjectName("ShortcutError")
+        self.shortcut_error.setWordWrap(True)
+        self.shortcut_error.hide()
+        rows.addWidget(self.shortcut_error)
+        rows.addStretch(1)
+        scroll.setWidget(content)
+        layout.addWidget(scroll, 1)
+        return page
+
+    def _shortcut_icon(self):
+        """The glyph shared by the per-row reset buttons."""
+        try:
+            from trigger_designer.qt.resource_manager import ResourceManager
+
+            return ResourceManager().get("icon_refresh")
+        except Exception as exc:  # noqa: BLE001 - icon lookup is advisory
+            logger.debug(f"Reset icon unavailable: {exc}")
+            return None
 
     # -- General ----------------------------------------------------------
     def _build_general_page(self) -> QWidget:
@@ -507,8 +635,12 @@ class PreferencesDialog(QDialog):
         )
         self.grid_size_spin.setValue(int(self._prefs.get("editor/grid_size", 20) or 20))
         self.show_grid_check.setChecked(bool(self._prefs.get("editor/show_grid", True)))
+        self.snap_to_grid_check.setChecked(
+            bool(self._prefs.get("editor/snap_to_grid", True))
+        )
         self.font_size_spin.setValue(self._current_font_size())
         self._load_render_settings()
+        self._load_shortcuts_page()
         recent = RecentFilesManager()
         self.welcome_check.setChecked(recent.is_welcome_enabled())
         self.recent_limit_spin.setValue(recent.max_items)
@@ -722,6 +854,93 @@ class PreferencesDialog(QDialog):
         self._prefs.set("editor/show_grid", bool(value))
         self._apply_canvas_settings()
 
+    def _on_snap_to_grid_changed(self, value: bool) -> None:
+        # Writes the preference and pushes the flag onto every open canvas;
+        # the drag handler reads the flag off the graphics scene, not prefs.
+        node_arrange.set_snap_enabled(enabled=bool(value))
+        window = self._window
+        if window is not None and hasattr(window, "syncSnapAction"):
+            window.syncSnapAction()
+
+    # -- shortcuts --------------------------------------------------------
+    def _load_shortcuts_page(self) -> None:
+        """Fill the editors from the stored map without recording edits."""
+        self._shortcuts = shortcut_store.load_shortcuts(self._prefs)
+        for command_id in self.shortcut_editors:
+            self._set_shortcut_sequence(command_id, self._shortcuts.get(command_id, ""))
+        self._set_shortcut_error("")
+
+    def _set_shortcut_sequence(self, command_id: str, text: str) -> None:
+        editor = self.shortcut_editors.get(command_id)
+        if editor is None:
+            return
+        editor.blockSignals(True)
+        editor.setKeySequence(shortcut_store.sequence(text))
+        editor.blockSignals(False)
+
+    def _commit_shortcut(self, command_id: str) -> bool:
+        """Save one editor's sequence, or put the previous one back.
+
+        :return: ``False`` when the sequence was refused, so ``accept`` can
+            keep the dialog open with the reason visible.
+        """
+        editor = self.shortcut_editors.get(command_id)
+        if editor is None:
+            return True
+        sequence = shortcut_store.normalize(
+            editor.keySequence().toString(QKeySequence.SequenceFormat.PortableText)
+        )
+        previous = self._shortcuts.get(command_id, "")
+        if sequence == previous:
+            self._set_shortcut_error("")
+            return True
+
+        assigned = dict(self._shortcuts)
+        assigned[command_id] = sequence
+        message = shortcut_store.conflict_message(
+            sequence,
+            command_id,
+            assigned,
+            shortcut_store.reserved_sequences(self._window),
+        )
+        if message:
+            self._set_shortcut_error(message)
+            self._set_shortcut_sequence(command_id, previous)
+            return False
+
+        self._shortcuts[command_id] = sequence
+        shortcut_store.save_shortcut(self._prefs, command_id, sequence)
+        self._set_shortcut_error("")
+        self._apply_shortcuts()
+        return True
+
+    def _commit_all_shortcuts(self) -> bool:
+        for command_id in self.shortcut_editors:
+            if not self._commit_shortcut(command_id):
+                return False
+        return True
+
+    def _restore_default_shortcut(self, command_id: str) -> None:
+        default = shortcut_store.defaults().get(command_id, "")
+        self._set_shortcut_sequence(command_id, default)
+        self._commit_shortcut(command_id)
+
+    def _restore_all_shortcuts(self) -> None:
+        shortcut_store.reset_shortcuts(self._prefs)
+        self._load_shortcuts_page()
+        self._apply_shortcuts()
+
+    def _apply_shortcuts(self) -> None:
+        if self._window is not None:
+            shortcut_store.apply_to_window(self._window, self._shortcuts)
+
+    def _set_shortcut_error(self, message: str) -> None:
+        label = getattr(self, "shortcut_error", None)
+        if label is None:
+            return
+        label.setText(message)
+        label.setVisible(bool(message))
+
     # -- rendering --------------------------------------------------------
     def _load_render_settings(self) -> None:
         """Fill the rendering controls without writing the values back."""
@@ -840,6 +1059,7 @@ class PreferencesDialog(QDialog):
         self._load_pages()
         self._reload_theme_list("dark")
         self._refresh_preview()
+        self._apply_shortcuts()
 
     # -- commit / discard -------------------------------------------------
     def _apply_changes(self) -> None:
@@ -850,6 +1070,8 @@ class PreferencesDialog(QDialog):
         self._refresh_preview()
 
     def accept(self) -> None:
+        if not self._commit_all_shortcuts():
+            return
         self._apply_changes()
         super().accept()
 

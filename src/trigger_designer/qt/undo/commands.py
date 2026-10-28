@@ -102,7 +102,7 @@ def get_in(target: Any, path: Sequence[str], default: Any = None) -> Any:
             if isinstance(target, MutableMapping)
             else getattr(target, head)
         )
-    except (AttributeError, KeyError, TypeError):
+    except AttributeError, KeyError, TypeError:
         return default
     if child is None:
         return default
@@ -317,6 +317,58 @@ class ListStructureCommand(_ContentEdit):
         self.new = other.new
         self.setText(other.text())
         return True
+
+
+class MoveNodesCommand(UndoableEdit):
+    """Several nodes changed position as one action.
+
+    Positions are the whole payload: an arrange command or a snap never
+    touches a node's settings, so the whole scene does not need serializing
+    to undo it. The nodes are kept by reference; a node deleted after the
+    move is caught by the guard rather than raising into Qt.
+    """
+
+    def __init__(
+        self,
+        moves: Iterable[tuple[Any, Any, Any]],
+        text: str,
+    ) -> None:
+        super().__init__(text)
+        #: ``(node, old_position, new_position)``. ``QPointF`` copies, so a
+        #: later drag cannot rewrite the history entry it produced.
+        self.moves: list[tuple[Any, Any, Any]] = [
+            (node, _copy_point(old), _copy_point(new)) for node, old, new in moves
+        ]
+
+    def _apply(self, index: int) -> None:
+        groups: list[Any] = []
+        for node, old, new in self.moves:
+            target = old if index == 0 else new
+            node.setPos(target.x(), target.y())
+            group = getattr(node, "parent_group", None)
+            if group is not None and group not in groups:
+                groups.append(group)
+        # A child's move normally refits its group from ``positionChanged``,
+        # which only the mouse drag emits. Programmatic moves have to ask.
+        for group in groups:
+            try:
+                group.updateBounds()
+            except Exception as exc:  # pragma: no cover - defensive
+                global_logger.debug(f"Could not refit a group after a move: {exc}")
+
+    def undo(self) -> None:
+        self._guard(lambda: self._apply(0))
+
+    def redo(self) -> None:
+        self._guard(lambda: self._apply(1))
+
+
+def _copy_point(value: Any) -> Any:
+    """Detach a position from the caller's object."""
+    try:
+        return type(value)(value.x(), value.y())
+    except Exception:  # pragma: no cover - defensive
+        return value
 
 
 class SceneSnapshotCommand(UndoableEdit):

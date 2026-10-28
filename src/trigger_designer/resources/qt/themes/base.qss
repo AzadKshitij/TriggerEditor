@@ -1313,6 +1313,28 @@ QLineEdit {{
     background-color: {accent_primary};
     color: {border_primary}; }}
 
+QKeySequenceEdit#ShortcutEditor {{
+  background: transparent;
+  border: 0px; }}
+  QKeySequenceEdit#ShortcutEditor QLineEdit {{
+    background-color: {background_primary};
+    border: 1px solid {border_primary};
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: {text_primary}; }}
+  QKeySequenceEdit#ShortcutEditor QLineEdit:hover {{
+    border: 1px solid {accent_primary}; }}
+  QKeySequenceEdit#ShortcutEditor QLineEdit:focus {{
+    border: 1px solid {accent_secondary}; }}
+
+QScrollArea#PreferencesScroll, QScrollArea#PreferencesScroll > QWidget#qt_scrollarea_viewport {{
+  background: transparent;
+  border: 0px; }}
+
+QLabel#ShortcutError {{
+  color: {danger};
+  font-size: 10px; }}
+
 /* QTabWiget --------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtabwidget-and-qtabbar

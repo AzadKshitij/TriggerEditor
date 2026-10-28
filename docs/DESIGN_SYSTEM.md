@@ -518,6 +518,30 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 - Canvas and grid colours are tokens — `canvas_background`, `canvas_grid_light`, `canvas_grid_dark` — applied by `apply_theme_to_scene()`; state rings read `node_selection` / `activity` / `success` / `danger` through `NodeBase._pen_role`. Keep paint methods token-driven; a literal `QColor("#...")` in a `paint()` is a bug.
 - The workspace frame behind the sub-windows is `canvas_background` too (`TriggerWindow._theme_mdi_background`), so the graph and the frame read as one surface. Edge and socket colours are user settings, not theme tokens (`qt/node_editor_colors.py`).
 
+### Snapping and arrangement
+
+- **Snapping** is a preference (`editor/snap_to_grid`) copied onto the graphics scene by
+  `apply_theme_to_scene()`, because the drag handler reads it once per mouse move.
+  The same value is the check item under **Edit › Arrange** and the node context menu;
+  hold `Alt` while dragging to bypass it. New nodes dropped from the palette land on the grid.
+- **Arrange commands** live in one table, `qt/helpers/node_arrange.py`: align horizontal /
+  vertical centres, distribute horizontally / vertically, arrange in row / column / grid,
+  snap selection. Both menus and the shortcut page read that table, so labels, minimum
+  selections and defaults cannot drift apart.
+- Geometry rules: align shares the selection's bounding-box centre; arrange starts at its
+  top-left with a 40-unit gap; a grid uses `ceil(sqrt(n))` columns; distribute keeps the
+  outer nodes fixed and evens the edge gaps (never negative). A command that changes
+  nothing records no undo step.
+- Each command is one `MoveNodesCommand` per press - positions only, not a scene snapshot.
+  A group whose child moved is refitted explicitly, since the vendored `Group` only refits
+  from a mouse-driven `positionChanged`.
+- **Shortcuts** are per-command, edited under **Preferences › Shortcuts**, and stored as a
+  JSON object under `editor/shortcuts` (INI holds scalars only). Missing key = default,
+  empty string = cleared. A sequence needs Ctrl/Alt/Shift or a function key, so it cannot
+  shadow typing in the node editors; clashes are checked against the window's live actions.
+- Known limitation: dragging a group by its header moves every child through the vendored
+  `Group.mouseMoveEvent`, which does not pass through the node's snap correction.
+
 ### Canvas chrome
 
 - Floating toolbar top-left, 30px actions, no background plate beyond their own buttons.

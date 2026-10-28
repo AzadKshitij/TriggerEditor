@@ -185,7 +185,6 @@ def _text_on(background: str) -> str:
     return "#10151a" if luminance > 0.6 else "#ffffff"
 
 
-
 class ThemeError(Exception):
     """Raised when a theme cannot be parsed or formatted into QSS."""
 
@@ -642,7 +641,7 @@ class ThemeManager(QObject):
         """The chosen application font size in points; 0 means the default."""
         try:
             return max(0, int(self._prefs.get("appearance/font_size", 0) or 0))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return 0
 
     def base_font_size(self) -> float:
@@ -884,6 +883,9 @@ def apply_theme_to_scene(scene: Any, manager: ThemeManager | None = None) -> Non
     try:
         gr_scene.gridSize = int(prefs.get("editor/grid_size", 20) or 20)
         gr_scene.showGrid = bool(prefs.get("editor/show_grid", True))
+        # The drag handler reads this off the graphics scene, not the
+        # preference, because it runs once per mouse move.
+        gr_scene.snap_to_grid = bool(prefs.get("editor/snap_to_grid", True))
     except Exception as exc:  # noqa: BLE001 - defensive
         logger.warning(f"Unable to apply the grid settings: {exc}")
 

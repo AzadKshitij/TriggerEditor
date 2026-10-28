@@ -45,6 +45,7 @@ from trigger_designer.qt.helpers.content_undo_mixin import (
     default_history_text,
     widget_accepts_tracking,
 )
+from trigger_designer.qt.helpers.node_arrange import EPSILON, nearest_multiple
 from trigger_designer.qt.undo.binding import (
     _BOUND_ATTR,
     DEFAULT_DEBOUNCE_MS,
@@ -121,11 +122,14 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         # ``moveTopLeft`` on it). Handing out the cached object let such a call
         # rewrite the item's bounds, and Qt then culled the item as if it sat at
         # twice its position.
-        return QRectF(self._bounding_rect)
-        # label_rect = getattr(self, "labelRect", None)
-        # if label_rect is None:  # nodeeditor before 0.8.2
-        #     return self._bounding_rect
-        # return self._bounding_rect.united(label_rect())
+        rect = QRectF(self._bounding_rect)
+        # Only the body/badge/ring rectangle is cached here. ``labelRect``
+        # caches itself in nodeeditor and drops that cache whenever the text,
+        # visibility or font changes, so the union stays cheap but current.
+        label_rect = getattr(self, "labelRect", None)
+        if label_rect is not None:  # nodeeditor before 0.8.2
+            rect = rect.united(label_rect())
+        return rect
 
     def shape(self) -> QPainterPath:
         """The node's hit/selection shape, built once.
@@ -198,6 +202,48 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         # fade to a sub-pixel line when the canvas is zoomed out.
         self._pen_selected.setCosmetic(True)
         self._pen_hovered.setCosmetic(True)
+
+    def mouseMoveEvent(self, event) -> None:
+        """Drag the node, then put it back on the grid.
+
+        Qt moves every selected item by the same delta before this returns,
+        so rounding only the grabbed node would shear the selection away from
+        its neighbours. The same correction is applied to the rest of the
+        selection, which keeps their relative offsets intact. Holding Alt
+        leaves the node wherever the pointer is.
+        """
+        super().mouseMoveEvent(event)
+
+        if not (event.buttons() & Qt.MouseButton.LeftButton):
+            return
+        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+            return
+
+        scene = self.scene()
+        if scene is None or not getattr(scene, "snap_to_grid", False):
+            return
+        try:
+            grid = float(getattr(scene, "gridSize", 0) or 0)
+        except TypeError, ValueError:
+            return
+        if grid <= 0:
+            return
+
+        position = self.pos()
+        dx = nearest_multiple(position.x(), grid) - position.x()
+        dy = nearest_multiple(position.y(), grid) - position.y()
+        if abs(dx) < EPSILON and abs(dy) < EPSILON:
+            return
+
+        targets = scene.selectedItems()
+        if self not in targets:
+            # A drag normally selects the node first, but the correction must
+            # not depend on that.
+            targets.append(self)
+        for item in targets:
+            if not isinstance(item, TriggerGraphicsNode) or not item.isVisible():
+                continue
+            item.moveBy(dx, dy)
 
     def paint(
         self,
@@ -925,7 +971,7 @@ class TriggerNode(Node):
     def _problems_store(self):
         try:
             view = self.scene.getView() if hasattr(self.scene, "getView") else None
-        except (IndexError, RuntimeError, AttributeError):
+        except IndexError, RuntimeError, AttributeError:
             view = None
         owner = view.parentWidget() if view is not None else None
         while owner is not None and not hasattr(owner, "problems"):

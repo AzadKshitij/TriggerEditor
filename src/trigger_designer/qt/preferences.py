@@ -46,6 +46,10 @@ DEFAULTS: dict[str, Any] = {
     "layout/session": False,
     "editor/grid_size": 20,
     "editor/show_grid": True,
+    "editor/snap_to_grid": True,
+    # JSON object of command id -> key sequence. Kept as text because the INI
+    # backend only stores scalars; see qt/helpers/shortcuts.py.
+    "editor/shortcuts": "{}",
     "editor/render_detail_threshold": 50,
     "editor/render_detail_card": "auto",
     "editor/render_detail_sockets": "auto",
@@ -100,7 +104,7 @@ def _coerce(raw: Any, default: Any) -> Any:
     if isinstance(default, int) and not isinstance(default, bool):
         try:
             return int(raw)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return default
     if isinstance(default, list):
         if isinstance(raw, str):
@@ -218,7 +222,7 @@ class Preferences(QObject):
         if grid_size is not None:
             try:
                 put("editor/grid_size", int(grid_size))
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 pass
 
         show_grid = first("show_grid")

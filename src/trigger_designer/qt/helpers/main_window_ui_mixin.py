@@ -16,6 +16,7 @@ from trigger_designer.qt.helpers.dock_chrome import (
     enable_tab_drag_out,
     install_tab_only_chrome,
 )
+from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 
 
@@ -34,6 +35,14 @@ class MainWindowMenuMixin:
         self._rebuild_recent_menu()
 
         self.editMenu.addSeparator()
+        self.arrangeMenu = self.editMenu.addMenu("&Arrange")
+        for command in node_arrange.COMMANDS:
+            action = getattr(self, command.action, None)
+            if action is not None:
+                self.arrangeMenu.addAction(action)
+        self.arrangeMenu.addSeparator()
+        self.arrangeMenu.addAction(self.actToggleSnap)
+        self.arrangeMenu.aboutToShow.connect(self.syncSnapAction)
         self.editMenu.addAction(self.actSettings)
 
         self.windowMenu = self.menuBar().addMenu("&Window")
@@ -78,8 +87,26 @@ class MainWindowMenuMixin:
             self.actUndo.setEnabled(has_mdi_child and active.canUndo())
             self.actRedo.setEnabled(has_mdi_child and active.canRedo())
             self._syncUndoRedoText(active)
+            self._updateArrangeActions(active, has_mdi_child)
         except Exception as exc:  # pragma: no cover - defensive logging
             dumpException(exc)
+
+    def _updateArrangeActions(self, active, has_mdi_child: bool) -> None:
+        """Light up only the arrangements the current selection can run."""
+        nodes = []
+        if has_mdi_child:
+            scene = getattr(active, "scene", None)
+            if scene is not None:
+                nodes = node_arrange.selected_nodes(scene)
+        for command in node_arrange.COMMANDS:
+            action = getattr(self, command.action, None)
+            if action is not None:
+                action.setEnabled(has_mdi_child and len(nodes) >= command.minimum)
+        toggle = getattr(self, "actToggleSnap", None)
+        if toggle is not None:
+            toggle.setEnabled(has_mdi_child)
+            if has_mdi_child:
+                self.syncSnapAction()
 
     def _syncUndoRedoText(self, active) -> None:
         """Label the undo/redo actions with the step they will apply.
@@ -348,7 +375,7 @@ class MainWindowDockMixin:
         if previous is not None:
             try:
                 previous.scenePosChanged.disconnect(self.onScenePosChanged)
-            except (TypeError, RuntimeError):
+            except TypeError, RuntimeError:
                 # The view is already gone (its sub-window was closed).
                 pass
             self._status_view = None
@@ -359,7 +386,7 @@ class MainWindowDockMixin:
             return
         try:
             view.scenePosChanged.connect(self.onScenePosChanged)
-        except (TypeError, RuntimeError):
+        except TypeError, RuntimeError:
             self.status_mouse_pos.setText("")
             return
         self._status_view = view

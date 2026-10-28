@@ -46,6 +46,7 @@ from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.helpers.problems_store import ProblemsStore
 from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
@@ -775,6 +776,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 node_type_enum = NodeTypes(node_type)
                 node = get_class_from_opcode(node_code, node_type_enum)(self.scene)  # type: ignore
                 node.setPos(scene_position.x(), scene_position.y())
+                node_arrange.snap_node_to_grid(node, node_arrange.grid_size(self.scene))
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__
                 )
