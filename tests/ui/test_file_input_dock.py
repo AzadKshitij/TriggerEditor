@@ -13,6 +13,7 @@ from tests.support.input_fixtures import (
     multi_sheet_xlsx,
     sqlite_db,
 )
+from tests.support.flush import flush
 from trigger_designer.core.node_configuration import (
     IONodes,
     NodeTypes,
@@ -56,6 +57,7 @@ def test_folder_pick_shows_files_section_and_table(qtbot, tmp_path) -> None:
     monthly = monthly_csvs(tmp_path)
     _window, node, content, _dock = _graph(qtbot)
     content._choose_folder(str(monthly))
+    flush(content)
     assert content.files_section.isHidden() is False
     assert content.filesTable.model().rowCount() == 3
     statuses = [content.filesTable.model().item(row, 1).text() for row in range(3)]
@@ -173,6 +175,8 @@ def test_path_edit_debounced(qtbot, tmp_path) -> None:
     for _index in range(5):
         content.filePathEdit.setText(source)
     qtbot.wait(420)
+    assert calls == []  # the run waits until the node is left
+    flush(content)
     assert len(calls) == 1
     assert history.controller.count == baseline + 1
     assert content.filePath == source
@@ -321,5 +325,6 @@ def test_error_tooltip_for_missing_folder(qtbot, tmp_path) -> None:
     empty.mkdir()
     _window, node, content, _dock = _graph(qtbot)
     content._choose_folder(str(empty))
+    flush(content)
     assert node.isInvalid() is True
     assert str(empty) in node.grNode.toolTip()

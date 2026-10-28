@@ -46,6 +46,7 @@ from trigger_designer.core.node_configuration import IONodes, NodeTypes, registe
 from trigger_designer.core.shaping.common import live_sample
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
@@ -86,7 +87,10 @@ if TYPE_CHECKING:
 
 
 class FileInputContent(
-    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+    DeferredEvaluation,
+    QDMNodeIconContentWidget,
+    TriggerChangeHandler,
+    SerializableContentMixin,
 ):
     max_missing_file_attempts = 5
     evaluate = Signal()
@@ -652,7 +656,7 @@ class FileInputContent(
         if not pushed:
             # A folded push does not run redo(), so the projection did not
             # re-evaluate the graph. Do it here instead.
-            self.evaluate.emit()
+            self.request_evaluation()
         self._apply_visibility()
 
     def _after_setting_changed(self, key: str) -> None:
