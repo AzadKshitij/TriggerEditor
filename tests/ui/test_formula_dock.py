@@ -426,3 +426,31 @@ def test_enrichment_still_applies_while_the_run_error_stands(qtbot) -> None:
     window._apply_enrichment(node, result, error)
 
     assert node._errors_dict()["run"].locate_status == "timeout"
+
+
+def test_node_recovers_as_soon_as_the_text_is_valid_again(qtbot) -> None:
+    """A red node must not wait for focus-out once the formula is fixed."""
+    _window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    assert node.current_error is not None
+    editor = content.section_widgets[0]["formula_input"]
+
+    editor.set_text("[x] + 1")
+    content._commit_text(0, evaluate=False)  # what the typing debounce does
+
+    assert node.current_error is None
+    assert _output(node)["y"].to_list() == [2, 3, 4]
+
+
+def test_node_still_defers_while_the_text_stays_invalid(qtbot, monkeypatch) -> None:
+    _window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    calls = _count_compute(monkeypatch, content)
+    editor = content.section_widgets[0]["formula_input"]
+
+    editor.set_text('[x] + "z"')
+    content._commit_text(0, evaluate=False)
+
+    assert calls == []

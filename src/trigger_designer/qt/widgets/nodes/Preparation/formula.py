@@ -490,6 +490,14 @@ class FormulaContent(ShapingContent):
                 self._refresh_error(changed_index)
         if evaluate:
             self._evaluate_pending()
+        elif (
+            self._pending_evaluate
+            and self.node.current_error is not None
+            and not self.section_errors
+        ):
+            # The text is valid again, so a node that is still red should not
+            # keep showing the old error until the editor loses focus.
+            self._evaluate_pending()
 
     def _editor_sections(self) -> tuple[list[dict], list[int]]:
         """Return the model sections with every editor's current text applied."""
