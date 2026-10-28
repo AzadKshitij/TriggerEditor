@@ -8,11 +8,13 @@ paths where loading Polars would be wasteful. Reading lives in
 
 from __future__ import annotations
 
+import glob
 import hashlib
 import os
 import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from functools import cache
 from typing import Any
 
 FILE_TYPES = ("csv", "txt", "excel", "parquet", "json", "ndjson", "sqlite", "duckdb")
@@ -154,36 +156,18 @@ def natural_key(text: str) -> tuple:
     ) + ((2, text),)
 
 
+@cache
 def glob_to_regex(pattern: str) -> re.Pattern:
     """Compile a shell-like pattern; ``**`` crosses directories, always ci."""
-    text = pattern.replace("\\", "/")
-    out: list[str] = []
-    index = 0
-    while index < len(text):
-        char = text[index]
-        if text.startswith("**/", index):
-            out.append("(?:.*/)?")
-            index += 3
-            continue
-        if text.startswith("**", index):
-            out.append(".*")
-            index += 2
-            continue
-        if char == "*":
-            out.append("[^/]*")
-        elif char == "?":
-            out.append("[^/]")
-        elif char == "[":
-            end = text.find("]", index + 1)
-            if end == -1:
-                out.append(re.escape(char))
-            else:
-                out.append("[" + text[index + 1 : end].replace("\\", "\\\\") + "]")
-                index = end
-        else:
-            out.append(re.escape(char))
-        index += 1
-    return re.compile("^" + "".join(out) + "$", re.IGNORECASE)
+    return re.compile(
+        glob.translate(
+            pattern.replace("\\", "/"),
+            recursive=True,
+            include_hidden=True,
+            seps="/",
+        ),
+        re.IGNORECASE,
+    )
 
 
 def has_glob(text: str) -> bool:
@@ -201,6 +185,9 @@ def effective_mode(path_text: str) -> str:
         return "empty"
     if os.path.isdir(io_path(text)):
         return "folder"
+    # An existing file wins over glob characters: "[" and "]" are legal in names.
+    if os.path.isfile(io_path(text)):
+        return "single"
     if has_glob(text):
         return "pattern"
     return "single"

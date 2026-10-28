@@ -59,3 +59,12 @@ def test_before_node_not_called_when_get_code_raises() -> None:
     result = executor.execute_node(Broken(""))
     assert result.success is False
     assert events == []
+
+
+def test_after_execution_receives_the_node_variables() -> None:
+    seen: list[dict] = []
+    node = StubNode("x = 1")
+    node.content = SimpleNamespace(after_execution=lambda ctx: seen.append(dict(ctx)))
+    result = NodeExecutor().execute_node(node)
+    assert result.success
+    assert seen == [{"x": 1}]

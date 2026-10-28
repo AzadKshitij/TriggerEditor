@@ -126,10 +126,8 @@ class ExecutionTimeoutError(NodeExecutionError):
     """Exception raised when code execution times out."""
 
 
-
 class ExecutionMemoryError(NodeExecutionError):
     """Exception raised when code execution exceeds memory limits."""
-
 
 
 class NodeExecutor:
@@ -391,6 +389,8 @@ class NodeExecutor:
 
                 result.success = True
 
+            # Before the hook: a node's after_execution reads these values.
+            result.variables = local_variables.copy()
             after_execution = getattr(
                 getattr(node, "content", None), "after_execution", None
             )
@@ -405,7 +405,6 @@ class NodeExecutor:
                     logger.warning(hook_message)
 
             self._call_hook(self.after_node, node, local_variables, result)
-            result.variables = local_variables.copy()
 
             # Update shared execution context with new variables
             self.execution_context.update(local_variables)
@@ -552,9 +551,7 @@ class NodeExecutor:
         """
         return self.stats
 
-    def get_execution_history(
-        self, limit: int | None = None
-    ) -> list[ExecutionResult]:
+    def get_execution_history(self, limit: int | None = None) -> list[ExecutionResult]:
         """Get execution history.
 
         Args:

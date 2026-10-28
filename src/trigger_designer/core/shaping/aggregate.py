@@ -162,7 +162,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         )
 
     if group_fields:
-        grouped = frame.group_by(group_fields)
+        grouped = frame.group_by(group_fields, maintain_order=True)
         result = (
             grouped.agg(expressions)
             if expressions

@@ -140,3 +140,23 @@ def test_outputs_are_lazy_in_both_modes() -> None:
         [_frame()], {"mode": "expression", "expression": "[n] = 10"}
     )
     assert all(isinstance(out, pl.LazyFrame) for out in builder + expression)
+
+
+def _frame_with_nulls() -> pl.LazyFrame:
+    return pl.DataFrame({"s": ["x", None, "y"]}).lazy()
+
+
+def test_builder_null_rows_go_to_the_unmatched_output() -> None:
+    matched, unmatched = core.run_node(
+        [_frame_with_nulls()], {"column": "s", "operation": "Equals", "value": "x"}
+    )
+    assert _rows(matched) == [("x",)]
+    assert _rows(unmatched) == [(None,), ("y",)]
+
+
+def test_expression_null_rows_go_to_the_unmatched_output() -> None:
+    matched, unmatched = core.run_node(
+        [_frame_with_nulls()], {"mode": "expression", "expression": "[s] = 'x'"}
+    )
+    assert _rows(matched) == [("x",)]
+    assert set(_rows(unmatched)) == {(None,), ("y",)}

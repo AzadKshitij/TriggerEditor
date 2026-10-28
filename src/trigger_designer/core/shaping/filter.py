@@ -110,7 +110,9 @@ def _builder_outputs(frame: pl.LazyFrame, settings: dict) -> list[pl.LazyFrame]:
         return [frame, frame.head(0)]
 
     expression = _builder_expression(column, schema[column], operation, value, value2)
-    return [frame.filter(expression), frame.filter(~expression)]
+    # A null comparison is neither true nor false; it belongs to the unmatched
+    # output so the two outputs always cover every input row.
+    return [frame.filter(expression), frame.filter((~expression).fill_null(True))]
 
 
 def _expression_outputs(
@@ -127,7 +129,10 @@ def _expression_outputs(
             # Eager .pl(): a lazy result streams from this connection after
             # the with-block closes, which fails. Materialise now.
             matched = duck.sql(f"SELECT * FROM df_filter WHERE {prepared}").pl()
-            unmatched = duck.sql(f"SELECT * FROM df_filter WHERE NOT ({prepared})").pl()
+            # IS NOT TRUE, not NOT (...): a null result must land here too.
+            unmatched = duck.sql(
+                f"SELECT * FROM df_filter WHERE ({prepared}) IS NOT TRUE"
+            ).pl()
     except Exception as exc:  # noqa: BLE001 - engine errors become a stable code
         raise ShapingError("TD-SHAPE-004", shorten_error(str(exc))) from None
     return [matched.lazy(), unmatched.lazy()]

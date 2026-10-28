@@ -821,13 +821,6 @@ def _build_rules() -> tuple[Rule, ...]:
         ),
         rule(6, ("TD-IN-003",), {"SheetNotFoundError"}, _rule_6),
         rule(
-            7,
-            ("TD-IN-006",),
-            {"CalamineError", "FastExcelError"},
-            _rule_io,
-            re.compile(r"\(os error (?P<n>\d+)\)"),
-        ),
-        rule(
             8,
             (
                 "TD-IN-001",

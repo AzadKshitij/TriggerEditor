@@ -341,3 +341,15 @@ def test_inputs_module_is_polars_free() -> None:
         [sys.executable, "-c", code], capture_output=True, text=True, check=True
     )
     assert result.stdout.strip() == "False"
+
+
+def test_existing_file_with_brackets_is_a_single_file(tmp_path) -> None:
+    path = write_text(tmp_path / "Report [draft].csv", "a,b\n1,2\n")
+    assert effective_mode(str(path)) == "single"
+    assert _names(list_source_files(str(path), "csv")) == ["Report [draft].csv"]
+
+
+def test_glob_negated_class() -> None:
+    pattern = glob_to_regex("[!a].csv")
+    assert pattern.match("b.csv")
+    assert not pattern.match("a.csv")
