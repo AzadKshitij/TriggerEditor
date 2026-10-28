@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import re
-import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -18,9 +17,6 @@ class LocateResult:
     status: str
     row_index: int | None = None
     values: tuple[str, ...] = ()
-    scanned_rows: int = 0
-    elapsed_s: float = 0.0
-    cap_hit: bool = False
 
 
 def polars_dtype_from_name(name: str) -> pl.DataType | None:
@@ -96,7 +92,6 @@ def locate_conversion_failures(
     max_values: int = 5,
     max_chars: int = 80,
 ) -> LocateResult:
-    started = time.monotonic()
     try:
         chosen = None
         schema = {}
@@ -108,7 +103,7 @@ def locate_conversion_failures(
                 chosen = frame
                 break
         if chosen is None:
-            return LocateResult("skipped", elapsed_s=time.monotonic() - started)
+            return LocateResult("skipped")
 
         if target is None:
             target = pl.Float64
@@ -149,14 +144,8 @@ def locate_conversion_failures(
             )
             hits.extend((int(row), value) for row, value in extra)
 
-        elapsed = time.monotonic() - started
         if not hits:
-            return LocateResult(
-                "not_found",
-                scanned_rows=row_cap,
-                elapsed_s=elapsed,
-                cap_hit=True,
-            )
+            return LocateResult("not_found")
 
         hits.sort(key=lambda item: item[0])
         row_index = hits[0][0]
@@ -171,9 +160,7 @@ def locate_conversion_failures(
             "found",
             row_index=row_index,
             values=tuple(values),
-            scanned_rows=max(row for row, _value in hits),
-            elapsed_s=elapsed,
         )
     except Exception as exc:  # noqa: BLE001 - locator never raises
         logger.debug("Row locator failed: %s", exc)
-        return LocateResult("error", elapsed_s=time.monotonic() - started)
+        return LocateResult("error")

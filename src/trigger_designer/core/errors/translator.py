@@ -180,6 +180,25 @@ def _single_input_path(ctx: ErrorContext) -> str:
     return ""
 
 
+def _owner(
+    mapping: dict[str, int], normalized: str, *, exact: bool = True
+) -> int | None:
+    """Node that owns a path: the exact entry, else one with the same file name."""
+    if exact and normalized in mapping:
+        return mapping[normalized]
+    if not normalized:
+        return None
+    basename = os.path.basename(normalized)
+    return next(
+        (
+            node_id
+            for candidate, node_id in mapping.items()
+            if os.path.basename(candidate) == basename
+        ),
+        None,
+    )
+
+
 def _io_rule(
     facts: Facts, ctx: ErrorContext, number: int, path: str
 ) -> tuple[str, dict] | None:
@@ -187,28 +206,8 @@ def _io_rule(
     normalized = normalise_path(path) if path else ""
     dirname = os.path.dirname(normalized) if normalized else ""
     output_dirs = {os.path.dirname(item) for item in ctx.output_paths if item}
-    input_owner = ctx.input_paths.get(normalized)
-    output_owner = ctx.output_paths.get(normalized)
-    if input_owner is None and normalized:
-        basename = os.path.basename(normalized)
-        input_owner = next(
-            (
-                node_id
-                for candidate, node_id in ctx.input_paths.items()
-                if os.path.basename(candidate) == basename
-            ),
-            None,
-        )
-    if output_owner is None and normalized:
-        basename = os.path.basename(normalized)
-        output_owner = next(
-            (
-                node_id
-                for candidate, node_id in ctx.output_paths.items()
-                if os.path.basename(candidate) == basename
-            ),
-            None,
-        )
+    input_owner = _owner(ctx.input_paths, normalized)
+    output_owner = _owner(ctx.output_paths, normalized)
     if output_owner is not None or (dirname and dirname in output_dirs):
         role = "out"
     elif input_owner is not None:
@@ -301,12 +300,13 @@ def _rule_2(facts, ctx, _m):
     return "TD-RUN-002", {"reason": reason}
 
 
-def _rule_3(facts, ctx, _m):
-    return "TD-SYS-998", {"reason": _reason(facts.text)}
+def _reason_rule(code: str) -> Callable[[Facts, ErrorContext, object], tuple]:
+    """A rule that only reports the exception's reason under a fixed code."""
 
+    def build(facts, ctx, _m):
+        return code, {"reason": _reason(facts.text)}
 
-def _rule_4(facts, ctx, _m):
-    return "TD-OUT-003", {"reason": _reason(facts.text)}
+    return build
 
 
 def _rule_5(facts, ctx, _m):
@@ -665,10 +665,6 @@ def _rule_25(facts, ctx, _m):
     }
 
 
-def _rule_26(facts, ctx, _m):
-    return "TD-SCH-005", {"reason": _reason(facts.text)}
-
-
 def _syntax_reason(text: str) -> str:
     value = _reason(text)
     low = value.lower()
@@ -731,14 +727,6 @@ def _rule_29(facts, ctx, _m):
     return "TD-EXP-004", {"reason": shorten(reason, 160)}
 
 
-def _rule_30(facts, ctx, _m):
-    return "TD-EXP-003", {"reason": _reason(facts.text)}
-
-
-def _rule_31(facts, ctx, _m):
-    return "TD-EXP-005", {"reason": _reason(facts.text)}
-
-
 def _rule_sqlglot_syntax(facts, ctx, _m):
     return "TD-EXP-001", {
         "reason": (
@@ -798,12 +786,12 @@ def _build_rules() -> tuple[Rule, ...]:
             {"MemoryError", "OutOfMemoryException"},
             _rule_2,
         ),
-        rule(3, ("TD-SYS-998",), {"PanicException"}, _rule_3),
+        rule(3, ("TD-SYS-998",), {"PanicException"}, _reason_rule("TD-SYS-998")),
         rule(
             4,
             ("TD-OUT-003",),
             {"ModuleNotFoundError", "ImportError"},
-            _rule_4,
+            _reason_rule("TD-OUT-003"),
             re.compile(r"xlsxwriter"),
         ),
         rule(
@@ -938,7 +926,7 @@ def _build_rules() -> tuple[Rule, ...]:
             _rule_25,
             re.compile(r"invalid dtype: expected", re.DOTALL),
         ),
-        rule(26, ("TD-SCH-005",), {"ShapeError"}, _rule_26),
+        rule(26, ("TD-SCH-005",), {"ShapeError"}, _reason_rule("TD-SCH-005")),
         rule(
             27,
             ("TD-EXP-001",),
@@ -959,12 +947,17 @@ def _build_rules() -> tuple[Rule, ...]:
             _rule_29,
             re.compile(r"regex error|regex parse error", re.DOTALL),
         ),
-        rule(30, ("TD-EXP-003",), {"BinderException", "CatalogException"}, _rule_30),
+        rule(
+            30,
+            ("TD-EXP-003",),
+            {"BinderException", "CatalogException"},
+            _reason_rule("TD-EXP-003"),
+        ),
         rule(
             31,
             ("TD-EXP-005",),
             {"InvalidInputException", "ConversionException"},
-            _rule_31,
+            _reason_rule("TD-EXP-005"),
         ),
         rule(
             32,
@@ -1005,15 +998,13 @@ def _owner_for_path(path: str | None, ctx: ErrorContext) -> int | None:
     if not path:
         return None
     normalized = normalise_path(path)
-    if normalized in ctx.input_paths:
-        return ctx.input_paths[normalized]
-    if normalized in ctx.output_paths:
-        return ctx.output_paths[normalized]
-    basename = os.path.basename(normalized)
     for mapping in (ctx.input_paths, ctx.output_paths):
-        for candidate, node_id in mapping.items():
-            if os.path.basename(candidate) == basename:
-                return node_id
+        if normalized in mapping:
+            return mapping[normalized]
+    for mapping in (ctx.input_paths, ctx.output_paths):
+        owner = _owner(mapping, normalized, exact=False)
+        if owner is not None:
+            return owner
     return None
 
 
@@ -1053,11 +1044,7 @@ def _passthrough(exc, ctx: ErrorContext) -> NodeError | None:
             title=shorten(message or "Unknown error", 90),
             technical=text[:100_000],
             exc_type=type(source).__name__ if not isinstance(source, str) else "",
-            node_id=ctx.node_id,
-            node_title=ctx.node_title,
-            op=ctx.op,
-            phase=ctx.phase,
-            node_label=ctx.node_label,
+            **ctx.error_fields(),
         )
     path = getattr(source, "path", None)
     owner = _owner_for_path(path, ctx)
@@ -1075,11 +1062,7 @@ def _passthrough(exc, ctx: ErrorContext) -> NodeError | None:
             exc_type=type(source).__name__ if not isinstance(source, str) else "",
             exc_module=type(source).__module__ if not isinstance(source, str) else "",
             severity=entry.get("severity", "error"),
-            node_id=ctx.node_id,
-            node_title=ctx.node_title,
-            op=ctx.op,
-            node_label=ctx.node_label,
-            phase=ctx.phase,
+            **ctx.error_fields(),
             columns=columns,
             path=str(path) if path else None,
             suggested_fixes=(SuggestedFix(text=hint),) if hint else (),
@@ -1108,12 +1091,8 @@ def _passthrough(exc, ctx: ErrorContext) -> NodeError | None:
         technical=text[:100_000],
         exc_type=type(source).__name__ if not isinstance(source, str) else "",
         severity=entry.get("severity", "error"),
-        node_id=ctx.node_id,
-        node_title=ctx.node_title,
-        op=ctx.op,
+        **ctx.error_fields(),
         path=str(path) if path else None,
-        phase=ctx.phase,
-        node_label=ctx.node_label,
         columns=columns,
         suggested_fixes=tuple(SuggestedFix(text=item) for item in fixes),
         culprit_node_id=owner,
@@ -1196,13 +1175,9 @@ def _finish(
         exc_type=exc_type,
         exc_module=exc_module,
         severity=severity,
-        node_id=ctx.node_id,
-        node_title=ctx.node_title,
-        op=ctx.op,
+        **ctx.error_fields(),
         columns=columns,
         path=str(path) if path else None,
-        phase=ctx.phase,
-        node_label=ctx.node_label,
         traceback=traceback_text[:100_000],
         suggested_fixes=tuple(suggested),
         row_index=int(row) if row is not None else None,
@@ -1273,27 +1248,3 @@ def translate_exception(
             exc_type=type(exc).__name__ if not isinstance(exc, str) else "",
             params={"reason": shorten(text, 160)},
         )
-
-
-def translate_sql_diagnostic(
-    exc: BaseException,
-    formula_text: str,
-    ctx: ErrorContext | None = None,
-) -> dict:
-    del formula_text
-    error = translate_exception(exc, ctx=ctx, phase="live")
-    name = type(exc).__name__
-    if name in {"ParserException", "SQLSyntaxError", "SQLInterfaceError"}:
-        return {
-            "message": _safe_str(exc),
-            "category": "syntax",
-            "code": "TD-EXP-001",
-            "hint": error.hint,
-        }
-    message = shorten(error.title + (f" {error.hint}" if error.hint else ""), 160)
-    return {
-        "message": message,
-        "category": "execution",
-        "code": error.code,
-        "hint": error.hint,
-    }

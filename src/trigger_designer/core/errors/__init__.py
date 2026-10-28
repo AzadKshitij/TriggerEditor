@@ -24,10 +24,7 @@ from trigger_designer.core.errors.model import (
     normalise_path,
     shorten,
 )
-from trigger_designer.core.errors.translator import (
-    translate_exception,
-    translate_sql_diagnostic,
-)
+from trigger_designer.core.errors.translator import translate_exception
 
 __all__ = [
     "CATALOGUE",
@@ -48,5 +45,4 @@ __all__ = [
     "render_entry",
     "shorten",
     "translate_exception",
-    "translate_sql_diagnostic",
 ]

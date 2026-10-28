@@ -305,7 +305,6 @@ class WorkflowExecutionMixin:
                 lambda result, failed=node, original=error: self._apply_enrichment(
                     failed, result, original
                 ),
-                store=getattr(self, "problems", None),
             )
         except Exception:  # noqa: BLE001, S110 - enrichment is optional
             pass

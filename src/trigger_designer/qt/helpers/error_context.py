@@ -185,17 +185,12 @@ def build_enrich_job(
     scene = getattr(node, "scene", None)
     nodes = list(getattr(scene, "nodes", ()) or ())
     labels: dict[int, str] = {}
-    titles: dict[int, str] = {}
-    ops: dict[int, str] = {}
     for item in nodes:
-        title, label, op = _node_identity(item)
+        _title, label, _op = _node_identity(item)
         node_id = getattr(item, "id", None)
         if node_id is None:
             continue
         labels[node_id] = label
-        titles[node_id] = title
-        if op:
-            ops[node_id] = op
 
     inputs_of: dict[int, tuple[Any, ...]] = {}
     target_id = getattr(node, "id", None)
@@ -220,8 +215,6 @@ def build_enrich_job(
         ancestors=tuple(ancestors),
         inputs_of=inputs_of,
         labels=labels,
-        titles=titles,
-        ops=ops,
         attribute=True,
         locate=bool(prefs.get("errors/locate_rows", True)),
         row_cap=int(prefs.get("errors/locate_row_cap", 5_000_000) or 5_000_000),

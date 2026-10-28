@@ -24,8 +24,6 @@ class EnrichJob:
     ancestors: tuple[Ancestor, ...] = ()
     inputs_of: dict[int, tuple[Any, ...]] = field(default_factory=dict)
     labels: dict[int, str] = field(default_factory=dict)
-    titles: dict[int, str] = field(default_factory=dict)
-    ops: dict[int, str] = field(default_factory=dict)
     attribute: bool = True
     locate: bool = True
     row_cap: int = 5_000_000

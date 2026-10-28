@@ -7,13 +7,11 @@ import sys
 from dataclasses import FrozenInstanceError
 from pathlib import Path
 
-import orjson
 import pytest
 
 from trigger_designer.core.errors import (
     ErrorContext,
     NodeError,
-    SuggestedFix,
     make_error,
     shorten,
 )
@@ -26,33 +24,6 @@ def test_node_error_is_frozen_and_has_defaults() -> None:
     assert error.suggested_fixes == ()
     with pytest.raises(FrozenInstanceError):
         error.title = "changed"  # type: ignore[misc]
-
-
-def test_to_dict_from_dict_roundtrip() -> None:
-    error = NodeError(
-        code="TD-TYP-001",
-        title="Column 'Amount' has values that cannot be read as whole numbers.",
-        detail="reason",
-        hint="Fix it.",
-        technical="technical",
-        exc_type="InvalidOperationError",
-        columns=("Amount",),
-        row_index=4210,
-        sample_values=("1,2O0.50",),
-        suggested_fixes=(SuggestedFix("Fix it.", kind="clean_data"),),
-        params={"column": "Amount"},
-    )
-    data = error.to_dict()
-    assert orjson.loads(orjson.dumps(data))["row_index"] == 4210
-    restored = NodeError.from_dict(data)
-    assert restored == error
-
-
-def test_from_dict_ignores_unknown_keys_and_fills_defaults() -> None:
-    error = NodeError.from_dict({"code": "TD-SYS-999", "title": "x", "future": 1})
-    assert error.code == "TD-SYS-999"
-    assert error.severity == "error"
-    assert error.columns == ()
 
 
 def test_fingerprint_ignores_row_and_values() -> None:

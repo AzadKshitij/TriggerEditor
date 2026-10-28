@@ -9,7 +9,7 @@ from __future__ import annotations
 import hashlib
 import os
 import re
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any
 
@@ -64,6 +64,16 @@ class ErrorContext:
     node_labels: dict[int, str] = field(default_factory=dict)
     variable_owners: dict[str, int] = field(default_factory=dict)
     date_format: str | None = None
+
+    def error_fields(self) -> dict[str, Any]:
+        """The node identity every NodeError built from this context carries."""
+        return {
+            "node_id": self.node_id,
+            "node_title": self.node_title,
+            "op": self.op,
+            "phase": self.phase,
+            "node_label": self.node_label,
+        }
 
     @classmethod
     def from_node(cls, node, phase: str = "run") -> ErrorContext:
@@ -244,41 +254,3 @@ class NodeError:
                 changed.exc_type,
             ),
         )
-
-    def to_dict(self) -> dict:
-        data = asdict(self)
-
-        def convert(value: Any) -> Any:
-            if isinstance(value, tuple):
-                return [convert(item) for item in value]
-            if isinstance(value, list):
-                return [convert(item) for item in value]
-            if isinstance(value, dict):
-                return {key: convert(item) for key, item in value.items()}
-            return value
-
-        return convert(data)
-
-    @classmethod
-    def from_dict(cls, data: dict) -> NodeError:
-        known = {field.name for field in cls.__dataclass_fields__.values()}
-        values = {key: value for key, value in (data or {}).items() if key in known}
-        fixes = []
-        for item in values.get("suggested_fixes") or ():
-            if isinstance(item, SuggestedFix):
-                fixes.append(item)
-            elif isinstance(item, dict):
-                fixes.append(
-                    SuggestedFix(
-                        text=str(item.get("text", "")),
-                        kind=str(item.get("kind", "manual")),
-                        params=dict(item.get("params") or {}),
-                    )
-                )
-        values["suggested_fixes"] = tuple(fixes)
-        for key in ("columns", "sample_values", "did_you_mean"):
-            if key in values:
-                values[key] = tuple(values[key] or ())
-        if "params" in values:
-            values["params"] = dict(values["params"] or {})
-        return cls(**values)

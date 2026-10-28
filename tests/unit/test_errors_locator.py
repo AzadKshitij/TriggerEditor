@@ -38,7 +38,6 @@ def test_locator_cap_respected_and_reports_not_found() -> None:
         (pl.LazyFrame({"Amount": values}),), "Amount", pl.Int64, row_cap=100
     )
     assert result.status == "not_found"
-    assert result.cap_hit is True
 
 
 def test_locator_known_value_exact_row() -> None:
