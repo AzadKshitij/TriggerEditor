@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 import polars as pl
-from qtpy.QtCore import QSortFilterProxyModel, Qt
+from qtpy.QtCore import QSortFilterProxyModel, QTimer
 from qtpy.QtWidgets import (
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
     QLineEdit,
     QMenu,
-    QStyledItemDelegate,
-    QTableView,
     QVBoxLayout,
     QWidget,
 )
@@ -25,15 +23,20 @@ from trigger_designer.core.shaping import select as core
 from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
 from trigger_designer.qt.node_base import upstream_rename_map
 from trigger_designer.qt.widgets.common import (
-    ConfigSection,
+    CONTROL_H,
+    TOOLBAR_H,
     EmptyStateLabel,
     IconButton,
     TextButton,
 )
 from trigger_designer.qt.widgets.select_table_widget import (
-    ComboBoxDelegate,
+    DtypeDelegate,
+    RenameDelegate,
     RowData,
-    SelectTableWidget,
+    SelectFilterProxy,
+    SelectTableModel,
+    SelectTableView,
+    TableEdit,
 )
 
 
@@ -57,11 +60,12 @@ class SelectContent(ShapingContent):
     def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
         self.table_data: list[RowData] = []
-        self.table_widget: SelectTableWidget | None = None
-        self.table_view: QTableView | None = None
-        self.proxy_model: QSortFilterProxyModel | None = None
+        self.table_widget: SelectTableModel | None = None
+        self.table_view: SelectTableView | None = None
+        self.proxy_model: SelectFilterProxy | None = None
         self._auto_accept_action = None
         self._suspend_table = False
+        self._search_timer: QTimer | None = None
 
     # ---- dock -----------------------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
@@ -71,25 +75,32 @@ class SelectContent(ShapingContent):
 
         self._reconcile_columns()
         self.table_data = self._rows_from_settings()
-        section = ConfigSection("")
 
         toolbar = QWidget()
+        # The toolbar holds no document state: search is a view filter and the
+        # buttons report through the table model, which records its own
+        # labelled step. Marking it a composite keeps the Config Dock sweep
+        # from binding the search box as an undoable setting.
+        toolbar._undo_composite = True
         toolbar_layout = QHBoxLayout(toolbar)
         toolbar_layout.setContentsMargins(0, 0, 0, 0)
         toolbar_layout.setSpacing(4)
-        toolbar.setFixedHeight(40)
+        toolbar.setFixedHeight(TOOLBAR_H)
 
         self.search_input = QLineEdit()
+        self.search_input.setObjectName("TableSearch")
         self.search_input.setPlaceholderText("Search columns...")
         self.search_input.setClearButtonEnabled(True)
-        self.search_input.setMinimumHeight(30)
+        self.search_input.setFixedHeight(CONTROL_H)
         toolbar_layout.addWidget(self.search_input, 1)
 
         self.all_btn = TextButton("All", "Select every column", toolbar)
         self.none_btn = TextButton("None", "Deselect every column", toolbar)
         for button in (self.all_btn, self.none_btn):
             button.setObjectName("BulkButton")
-            button.setFixedWidth(32)
+            # A minimum, not a fixed width: the label must still fit when the
+            # user raises the application font size.
+            button.setMinimumWidth(32)
         self.all_btn.clicked.connect(self.select_all_columns)
         self.none_btn.clicked.connect(self.select_no_columns)
         toolbar_layout.addWidget(self.all_btn)
@@ -121,46 +132,57 @@ class SelectContent(ShapingContent):
         )
         self.options_btn.setObjectName("OptionsButton")
         toolbar_layout.addWidget(self.options_btn)
-        section.addWidget(toolbar)
 
-        self.table_widget = SelectTableWidget(
+        dock_layout.addWidget(toolbar)
+
+        self.table_widget = SelectTableModel(
             self.table_data, self._table_changes(), parent=self
         )
-        self.table_widget._undo_composite = True
         self.table_widget.data_processed.connect(self._on_table_data)
 
-        self.proxy_model = QSortFilterProxyModel(self)
-        self.proxy_model.setFilterCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.proxy_model = SelectFilterProxy(self)
         self.proxy_model.setSourceModel(self.table_widget)
-        self.proxy_model.setFilterKeyColumn(-1)
 
-        self.table_view = QTableView()
-        self.table_view.setObjectName("ColumnTable")
+        self.table_view = SelectTableView()
         self.table_view.setModel(self.proxy_model)
-        self.table_view.verticalHeader().setDefaultSectionSize(22)
-        self.table_view.horizontalHeader().setFixedHeight(20)
-        self.table_view.setItemDelegateForColumn(2, ComboBoxDelegate(self.table_view))
-        self.table_view.setItemDelegateForColumn(3, QStyledItemDelegate())
-        self.table_view.setSelectionMode(QTableView.SelectionMode.ExtendedSelection)
-        self.table_view.setSelectionBehavior(QTableView.SelectionBehavior.SelectRows)
+        self.table_view.setItemDelegateForColumn(
+            SelectTableModel.COL_DTYPE, DtypeDelegate(self.table_view)
+        )
+        self.table_view.setItemDelegateForColumn(
+            SelectTableModel.COL_RENAME, RenameDelegate(self.table_view)
+        )
+        self.table_view.contextMenuRequested.connect(self._show_table_context_menu)
+
         header = self.table_view.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-        header.resizeSection(0, 40)
+        header.resizeSection(0, 50)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
         metrics = self.table_view.fontMetrics()
         dtype_width = max(
-            metrics.horizontalAdvance(name) for name in SelectTableWidget.DATA_TYPES
+            metrics.horizontalAdvance(name) for name in SelectTableModel.DATA_TYPES
         )
-        header.resizeSection(2, dtype_width + 30)
+        header.resizeSection(2, dtype_width + 34)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
         self.table_view.setMinimumHeight(220)
-        self.search_input.textChanged.connect(self.proxy_model.setFilterFixedString)
 
-        section.addWidget(self.table_view, 1)
-        dock_layout.addWidget(section, 1)
+        self._search_timer = QTimer(self)
+        self._search_timer.setSingleShot(True)
+        self._search_timer.setInterval(300)
+        self._search_timer.timeout.connect(self._apply_search_filter)
+        self.search_input.textChanged.connect(self._restart_search_timer)
+
+        dock_layout.addWidget(self.table_view, 1)
         self._setup_options_menu()
         self._refresh_select_counts()
+
+    def _restart_search_timer(self, _text: str = "") -> None:
+        if self._search_timer is not None:
+            self._search_timer.start()
+
+    def _apply_search_filter(self) -> None:
+        if self.proxy_model is not None and self.search_input is not None:
+            self.proxy_model.setFilterText(self.search_input.text())
 
     def _setup_options_menu(self) -> None:
         menu = QMenu(self.options_btn)
@@ -169,6 +191,14 @@ class SelectContent(ShapingContent):
         )
         menu.addAction("Uncheck Selected").triggered.connect(
             lambda _checked=False: self.table_widget.uncheckSelected(self.table_view)
+        )
+        menu.addAction("Move to Top").triggered.connect(
+            lambda _checked=False: self.table_widget.moveSelectedToTop(self.table_view)
+        )
+        menu.addAction("Move to Bottom").triggered.connect(
+            lambda _checked=False: self.table_widget.moveSelectedToBottom(
+                self.table_view
+            )
         )
         menu.addSeparator()
 
@@ -248,7 +278,7 @@ class SelectContent(ShapingContent):
         self.table_data = rows
         if self.table_widget is not None:
             self.table_widget.set_rows(rows)
-        self._commit_table()
+        self._commit_table("Columns Sorted")
 
     # ---- settings projection -------------------------------------------
     def _table_changes(self) -> dict:
@@ -322,28 +352,35 @@ class SelectContent(ShapingContent):
             )
         return columns
 
-    def _on_table_data(self, _payload=None) -> None:
+    def _on_table_data(self, payload=None) -> None:
         if self._suspend_table:
             return
-        if self.table_widget is not None:
-            self.table_data = self.table_widget.rows()
+        label = "Select Columns Changed"
+        rows = None
+        if isinstance(payload, TableEdit):
+            label = payload.label or label
+            rows = payload.rows
+        elif isinstance(payload, list) and payload and isinstance(payload[0], RowData):
+            rows = payload
+        if rows is None and self.table_widget is not None:
+            rows = self.table_widget.rows()
+        if rows is not None:
+            self.table_data = rows
         self.set_setting(
             "columns",
             self._columns_from_rows(self.table_data),
-            "Select Columns Changed",
+            label,
         )
         if self.table_widget is not None:
             self.table_widget.changes = self._table_changes()
         self.refresh_dock_context()
 
-    def _commit_table(self) -> None:
-        if self.table_widget is not None and self.table_data:
-            self.table_widget.dataChanged.emit(
-                self.table_widget.index(0, 0),
-                self.table_widget.index(len(self.table_data) - 1, 3),
-                [],
-            )
-        self._on_table_data()
+    def _commit_table(self, label: str = "Select Columns Changed") -> None:
+        if self.table_widget is not None:
+            self.table_widget.notify_rows_changed()
+            self._on_table_data(TableEdit(self.table_widget.rows(), label))
+        else:
+            self._on_table_data()
 
     def _refresh_table(self) -> None:
         rows = self._rows_from_settings()
@@ -522,6 +559,77 @@ class SelectContent(ShapingContent):
         except RuntimeError:
             return []
 
+    def _show_table_context_menu(self, global_pos) -> None:
+        rows = self._bulk_target_rows(True)
+        if not rows or self.table_widget is None:
+            return
+        menu = QMenu(self.table_view)
+        menu.addAction("Select Highlighted").triggered.connect(
+            lambda: self.table_widget.checkSelected(self.table_view)
+        )
+        menu.addAction("Deselect Highlighted").triggered.connect(
+            lambda: self.table_widget.uncheckSelected(self.table_view)
+        )
+        menu.addSeparator()
+        if len(rows) == 1:
+            row = rows[0]
+            menu.addAction(
+                "Deselect Column" if row.checked else "Select Column"
+            ).triggered.connect(
+                lambda: self.table_widget.toggle_row(self._row_index(row))
+            )
+            menu.addAction("Rename Column").triggered.connect(self._edit_current_rename)
+        menu.addSeparator()
+        menu.addAction("Move to Top").triggered.connect(
+            lambda: self.table_widget.moveSelectedToTop(self.table_view)
+        )
+        menu.addAction("Move Up").triggered.connect(
+            lambda: self.table_widget.moveSelectedRow("up", self.table_view)
+        )
+        menu.addAction("Move Down").triggered.connect(
+            lambda: self.table_widget.moveSelectedRow("down", self.table_view)
+        )
+        menu.addAction("Move to Bottom").triggered.connect(
+            lambda: self.table_widget.moveSelectedToBottom(self.table_view)
+        )
+        menu.addSeparator()
+        menu.addAction("Clear Renames").triggered.connect(
+            lambda: self._clear_renames_for(rows)
+        )
+        menu.addAction("Reset Types").triggered.connect(
+            lambda: self._reset_types_for(rows)
+        )
+        menu.exec(global_pos)
+
+    def _row_index(self, row_data: RowData) -> int:
+        for index, row in enumerate(self.table_data):
+            if row is row_data:
+                return index
+        return -1
+
+    def _edit_current_rename(self) -> None:
+        if self.table_view is None or self.proxy_model is None:
+            return
+        current = self.table_view.currentIndex()
+        if not current.isValid():
+            return
+        target = self.proxy_model.index(current.row(), SelectTableModel.COL_RENAME)
+        self.table_view.setCurrentIndex(target)
+        self.table_view.edit(target)
+
+    def _clear_renames_for(self, rows: list[RowData]) -> None:
+        for row in rows:
+            row.rename = ""
+        self._commit_table("Column Renames Cleared")
+
+    def _reset_types_for(self, rows: list[RowData]) -> None:
+        schema = self.schema(0)
+        for row in rows:
+            if row.text in schema:
+                row.dtype = core.display_dtype(schema[row.text])
+                row.date_format = ""
+        self._commit_table("Column Types Reset")
+
     def prompt_bulk_affix(self, selected_only: bool, is_prefix: bool) -> None:
         scope = "Selected" if selected_only else "All"
         kind = "Prefix" if is_prefix else "Suffix"
@@ -536,7 +644,9 @@ class SelectContent(ShapingContent):
         for row in rows:
             base = row.rename or row.text
             row.rename = f"{affix}{base}" if is_prefix else f"{base}{affix}"
-        self._commit_table()
+        self._commit_table(
+            "Column Prefix Added" if is_prefix else "Column Suffix Added"
+        )
 
     def bulk_clear_renames(self, selected_only: bool) -> None:
         rows = self._bulk_target_rows(selected_only)
@@ -544,7 +654,7 @@ class SelectContent(ShapingContent):
             return
         for row in rows:
             row.rename = ""
-        self._commit_table()
+        self._commit_table("Column Renames Cleared")
 
     def bulk_reset_dtypes(self, selected_only: bool) -> None:
         schema = self.schema(0)
@@ -555,7 +665,7 @@ class SelectContent(ShapingContent):
             if row.text in schema:
                 row.dtype = core.display_dtype(schema[row.text])
                 row.date_format = ""
-        self._commit_table()
+        self._commit_table("Column Types Reset")
 
     def bulk_auto_detect(self, selected_only: bool) -> None:
         schema = self.schema(0)
@@ -571,7 +681,7 @@ class SelectContent(ShapingContent):
             if dtype is not None:
                 row.dtype = dtype
                 row.date_format = date_format or ""
-        self._commit_table()
+        self._commit_table("Column Types Auto-Detected")
 
     def _sample_columns(self, columns: list[str]) -> dict[str, list]:
         if not columns or self.frames[0] is None:
@@ -591,7 +701,7 @@ class SelectContent(ShapingContent):
         self.set_setting(
             "auto_accept_new_columns",
             bool(checked),
-            "Select Auto Accept Changed",
+            "Auto-Accept Changed",
         )
 
     # ---- old saved workflow loader -------------------------------------
