@@ -703,6 +703,10 @@ class SelectTableView(QTableView):
 
     contextMenuRequested = Signal(object)
 
+    #: Floor for the auto-fitted name column; below this the table scrolls
+    #: instead of squeezing the only column that shows real content.
+    MIN_NAME_WIDTH = 110
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("ColumnTable")
@@ -720,6 +724,12 @@ class SelectTableView(QTableView):
         self.setSortingEnabled(False)
         self.setCornerButtonEnabled(False)
         self.clicked.connect(self._open_dtype_editor)
+        #: True while the view itself grows a column to fill spare width; the
+        #: content must not treat that as a user-chosen width.
+        self._auto_fitting = False
+        #: True until the user drags a column: the name column then absorbs
+        #: both spare width and overflow so the table stays flush.
+        self._auto_width = True
         header = self.horizontalHeader()
         header.setHighlightSections(False)
         header.setSectionsClickable(False)
@@ -740,6 +750,41 @@ class SelectTableView(QTableView):
         """Open the dtype dropdown on a single click, after the click lands."""
         if index.column() == SelectTableModel.COL_DTYPE:
             self.edit(index)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._fill_name_column()
+
+    def _fill_name_column(self) -> None:
+        """Keep the table flush with the viewport.
+
+        Before the user drags a column, the name column absorbs spare width
+        and overflow, so the table always fits. Afterwards their widths are
+        respected: spare width still goes to the name column, but a narrow
+        dock scrolls instead of silently shrinking a chosen width.
+        """
+        header = self.horizontalHeader()
+        count = header.count()
+        if count == 0:
+            return
+        total = sum(header.sectionSize(column) for column in range(count))
+        extra = self.viewport().width() - total
+        if extra == 0:
+            return
+        name = SelectTableModel.COL_NAME
+        current = header.sectionSize(name)
+        target = current + extra
+        if self._auto_width:
+            target = max(target, self.MIN_NAME_WIDTH)
+        elif target <= current:
+            return
+        if target == current:
+            return
+        self._auto_fitting = True
+        try:
+            header.resizeSection(name, target)
+        finally:
+            self._auto_fitting = False
 
     def keyPressEvent(self, event) -> None:
         index = self.currentIndex()

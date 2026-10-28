@@ -66,6 +66,8 @@ class SelectContent(ShapingContent):
         self._auto_accept_action = None
         self._suspend_table = False
         self._search_timer: QTimer | None = None
+        #: User-dragged column widths, kept across Config Dock rebuilds.
+        self._table_column_widths: list[int] | None = None
 
     # ---- dock -----------------------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
@@ -154,16 +156,24 @@ class SelectContent(ShapingContent):
         self.table_view.contextMenuRequested.connect(self._show_table_context_menu)
 
         header = self.table_view.horizontalHeader()
+        # The checkbox column stays fixed; every data column can be dragged.
+        # Widths live on the content so selecting another node and coming back
+        # does not throw away what the user chose.
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
         header.resizeSection(0, 50)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
         metrics = self.table_view.fontMetrics()
-        dtype_width = max(
-            metrics.horizontalAdvance(name) for name in SelectTableModel.DATA_TYPES
+        dtype_width = (
+            max(metrics.horizontalAdvance(name) for name in SelectTableModel.DATA_TYPES)
+            + 34
         )
-        header.resizeSection(2, dtype_width + 34)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+        defaults = (50, 150, dtype_width, 110)
+        widths = self._table_column_widths or defaults
+        for column in (1, 2, 3):
+            header.setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive)
+            width = widths[column] if column < len(widths) else defaults[column]
+            header.resizeSection(column, max(width, 40))
+        self.table_view._auto_width = self._table_column_widths is None
+        header.sectionResized.connect(self._remember_table_widths)
         self.table_view.setMinimumHeight(220)
 
         self._search_timer = QTimer(self)
@@ -183,6 +193,25 @@ class SelectContent(ShapingContent):
     def _apply_search_filter(self) -> None:
         if self.proxy_model is not None and self.search_input is not None:
             self.proxy_model.setFilterText(self.search_input.text())
+
+    def _remember_table_widths(self, *_args) -> None:
+        """Keep the user's column widths for the next dock rebuild."""
+        if self.table_view is None:
+            return
+        if getattr(self.table_view, "_auto_fitting", False):
+            # The view grew the name column to fill the dock; that is not a
+            # width the user chose, and saving it would force a scrollbar when
+            # the dock gets narrower again.
+            return
+        try:
+            header = self.table_view.horizontalHeader()
+            self._table_column_widths = [
+                header.sectionSize(column) for column in range(header.count())
+            ]
+            self.table_view._auto_width = False
+        except RuntimeError:
+            # The header was destroyed with the previous dock build.
+            return
 
     def _setup_options_menu(self) -> None:
         menu = QMenu(self.options_btn)
