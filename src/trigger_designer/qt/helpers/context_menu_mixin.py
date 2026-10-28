@@ -5,7 +5,6 @@ import time
 from typing import Any, Dict, Optional
 
 from loguru import logger
-from qtpy.QtCore import Qt
 from qtpy.QtGui import QContextMenuEvent, QCursor
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QInputDialog, QMenu
 
@@ -22,6 +21,7 @@ from trigger_designer.core.node_configuration import (
     NodeTypes,
     get_class_from_opcode,
 )
+from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 
 #: Show the cache-invalidation actions in the node context menu. They are
@@ -123,6 +123,9 @@ class ContextMenuMixin:
         cursor_pos = self.mapFromGlobal(QCursor.pos())
         scene_pos = self.scene.getView().mapToScene(cursor_pos)
         new_calc_node.setPos(scene_pos.x(), scene_pos.y())
+        node_arrange.snap_node_to_grid(
+            new_calc_node, node_arrange.grid_size(self.scene)
+        )
         self.scene.history.storeHistory("Created %s" % new_calc_node.__class__.__name__)
 
     # --- Context menu handlers -----------------------------------------------------
@@ -272,6 +275,17 @@ class ContextMenuMixin:
         if clicked_node is not None and clicked_node.parent_group is not None:
             detachAct = context_menu.addAction("Detach from Group")
 
+        arrange_menu = context_menu.addMenu("Arrange")
+        arrange_actions: Dict[Any, str] = {}
+        for command in node_arrange.COMMANDS:
+            arrange_action = arrange_menu.addAction(command.label)
+            arrange_action.setEnabled(len(candidates) >= command.minimum)
+            arrange_actions[arrange_action] = command.id
+        arrange_menu.addSeparator()
+        snapAct = arrange_menu.addAction("Snap to Grid")
+        snapAct.setCheckable(True)
+        snapAct.setChecked(node_arrange.snap_enabled(self.scene))
+
         groupAct = None
         if len(candidates) > 1:
             groupAct = context_menu.addAction("Group Selected Nodes")
@@ -312,6 +326,10 @@ class ContextMenuMixin:
             self.scene.history.storeHistory(
                 "Detached node from group", setModified=True
             )
+        if action is not None and action in arrange_actions and candidates:
+            node_arrange.apply_command(self.scene, arrange_actions[action], candidates)
+        if snapAct is not None and action == snapAct:
+            node_arrange.set_snap_enabled(self.scene, snapAct.isChecked())
         if candidates and groupAct and action == groupAct:
             self.createGroup(candidates)
 

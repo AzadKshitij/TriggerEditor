@@ -166,9 +166,22 @@ class TriggerSceneHistory(SceneHistory):
     # Convenience for node content
     # ------------------------------------------------------------------
 
-    def push_edit(self, edit: Any) -> bool:
-        """Record a fine grained command on the timeline."""
-        return self.controller.push(edit)
+    def push_edit(self, edit: Any, *, modified: bool = False) -> bool:
+        """Record a fine grained command on the timeline.
+
+        :param modified: flag the document dirty and refresh the listeners.
+            Snapshots do that through :meth:`storeHistory`; a command whose
+            change lives outside the node widgets has to say so itself.
+        """
+        pushed = self.controller.push(edit)
+        if pushed and modified:
+            self.mark_modified()
+        return pushed
+
+    def mark_modified(self) -> None:
+        """Flag the document dirty without recording a snapshot."""
+        self.scene.has_been_modified = True
+        self._fire_stored()
 
     def macro(self, text: str):
         """``with history.macro("Renamed Field"): ...``"""
