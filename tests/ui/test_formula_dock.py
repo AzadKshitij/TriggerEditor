@@ -390,3 +390,39 @@ def test_number_plus_empty_string_shows_a_live_error(qtbot) -> None:
     assert 0 in content.section_errors
     assert "Could not convert string" in content.section_errors[0]
     assert not content.section_widgets[0]["error_label"].isHidden()
+
+
+def test_late_error_enrichment_does_not_resurrect_a_fixed_error(qtbot) -> None:
+    """The enrichment job finishes in the background, after the user's fix."""
+    from trigger_designer.qt.helpers.error_enricher import EnrichResult
+
+    window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    error = node.current_error
+    assert error is not None
+    node.set_error(error, "run")  # what a failed Run records
+    result = EnrichResult(root=error, knock_on=None, culprit_node_id=None)
+
+    content.set_setting("sections", [_section("y", "[x] + 1")], "Fixed")
+    assert node.current_error is None
+
+    window._apply_enrichment(node, result, error)
+
+    assert node.current_error is None
+
+
+def test_enrichment_still_applies_while_the_run_error_stands(qtbot) -> None:
+    from trigger_designer.qt.helpers.error_enricher import EnrichResult
+
+    window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    error = node.current_error
+    node.set_error(error, "run")
+    enriched = error.with_updates(locate_status="timeout")
+    result = EnrichResult(root=enriched, knock_on=None, culprit_node_id=None)
+
+    window._apply_enrichment(node, result, error)
+
+    assert node._errors_dict()["run"].locate_status == "timeout"

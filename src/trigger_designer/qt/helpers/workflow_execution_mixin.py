@@ -302,13 +302,23 @@ class WorkflowExecutionMixin:
             job = build_enrich_job(node, self, error, "run")
             start_enrichment(
                 job,
-                lambda result, failed=node: self._apply_enrichment(failed, result),
+                lambda result, failed=node, original=error: self._apply_enrichment(
+                    failed, result, original
+                ),
                 store=getattr(self, "problems", None),
             )
         except Exception:  # noqa: BLE001, S110 - enrichment is optional
             pass
 
-    def _apply_enrichment(self, node: Any, result) -> None:
+    def _apply_enrichment(self, node: Any, result, original=None) -> None:
+        # The job runs in the background. If the node was edited and
+        # re-evaluated meanwhile its run error is gone, and applying the late
+        # result would bring a fixed error back.
+        errors = getattr(node, "_errors_dict", None)
+        if original is not None and callable(errors):
+            current = errors().get("run")
+            if current is None or current.fingerprint != original.fingerprint:
+                return
         clear = getattr(node, "clear_error", None)
         if callable(clear):
             clear("run")
