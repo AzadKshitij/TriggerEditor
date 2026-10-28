@@ -1950,11 +1950,20 @@ QComboBox#DataTypeCombo {{
   color: {text_primary};
   border: 1px solid {accent_primary};
   border-radius: 4px;
-  /* The editor is opened inside a 22px table row; a taller minimum would
+  /* The editor is opened inside a 28px table row; a taller minimum would
      make it overlap the row below. */
   min-height: 0px;
   padding: 0px 4px; }}
   QComboBox#DataTypeCombo:focus {{
+    border: 1px solid {accent_secondary}; }}
+QLineEdit#RenameEditor {{
+  background-color: {editor_background};
+  color: {text_primary};
+  border: 1px solid {accent_primary};
+  border-radius: 4px;
+  min-height: 0px;
+  padding: 0px 6px; }}
+  QLineEdit#RenameEditor:focus {{
     border: 1px solid {accent_secondary}; }}
 /* Data Preview dock and panel ------------------------------------------- */
 /* One strip of chrome over the table: node chip, socket chip, live search,

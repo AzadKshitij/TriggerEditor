@@ -104,9 +104,13 @@ Copy the shape of `SelectContent` when the node's editor is a table:
 
 - keep the table;
 - make the table rows a projection of one list setting;
-- one table action = one `set_setting`/`push_list_change`;
-- `_undo_composite = True`;
-- override `_sync_widgets_from_model` to reset rows without recording;
+- one table action = one `set_setting`/`push_list_change`, labelled through a
+  small `TableEdit` payload;
+- mark the table **view** `_undo_composite = True`; the model owns the change
+  signal and the dock sweep must not bind its editors;
+- commit rename edits on Enter/focus-out, not on every keystroke;
+- override `_sync_widgets_from_model` to reset rows without recording, and
+  keep `update_from_changes` silent;
 - parse/sanitize in one `_rows_to_setting` function;
 - keep a one-way legacy loader.
 

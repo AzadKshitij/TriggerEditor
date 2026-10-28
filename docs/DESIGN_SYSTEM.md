@@ -207,12 +207,14 @@ Docks must `dock_layout.addWidget(toolbar)` then `dock_layout.addWidget(view, 1)
 QVBoxLayout (dock_layout)
 ├─ QWidget toolbar [fixedH 40, QHBox margins 0]
 │   ├─ QLineEdit search ("Search columns...", clear button, minH 30)
+│   ├─ TextButton All / None
 │   ├─ IconButton up / down
 │   └─ IconButton options (menu)
-└─ QTableView [stretch 1] via QSortFilterProxyModel
-    ├─ CaseInsensitive, FilterKeyColumn -1
-    ├─ ExtendedSelection + SelectRows
-    └─ ComboBoxDelegate for dtype col (single-click edit)
+└─ SelectTableView [stretch 1] via SelectFilterProxy
+    ├─ CaseInsensitive over name, rename and dtype
+    ├─ ExtendedSelection + SelectRows, 28px rows, no row numbers
+    ├─ DtypeDelegate (single-click dropdown)
+    └─ RenameDelegate (Enter/focus-out commits, Escape cancels)
 ```
 
 Use for: Select, GroupBy, Join mappings, Unique lists.
@@ -247,7 +249,7 @@ Import from `qt/widgets/common/__init__.py`:
 - `NoWheelComboBox` — drops wheel events unless popup open. Use everywhere a combo sits in a scrollable dock.
 - `IconButton` / `TextButton` — see §4.
 
-Table helpers: `SelectTableWidget`, `RowData`, `ComboBoxDelegate` in `qt/widgets/select_table_widget.py` — reuse delegate painting (`QStyleOptionComboBox`) for any dtype/option column.
+Table helpers: `SelectTableModel`, `RowData`, `SelectFilterProxy`, `DtypeDelegate`, `RenameDelegate` and `SelectTableView` in `qt/widgets/select_table_widget.py` — reuse the model/delegate split for any editable column list. `SelectTableWidget` and `ComboBoxDelegate` remain aliases for older imports.
 
 **Target shared primitives:** `Chip`, `StatusBadge` and `ToolbarStrip` belong in `config_widgets.py`, not in a node. Do not fork them per dock.
 
