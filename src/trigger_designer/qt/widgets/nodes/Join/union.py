@@ -50,6 +50,7 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.shaping.common import live_sample
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
@@ -83,7 +84,7 @@ def _as_lazy(frame: Any) -> Any:
     return frame
 
 
-class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHandler):
     """Vertical stack of N ordered input frames (SQL UNION ALL)."""
 
     evaluate = Signal()

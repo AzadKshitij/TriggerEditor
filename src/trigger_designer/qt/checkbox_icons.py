@@ -14,7 +14,7 @@ from pathlib import Path
 
 from qtpy.QtGui import QColor, QGuiApplication
 
-_SIZE = 14
+_SIZE = 18
 
 # state -> (Material symbol, filled?, token holding its colour)
 _STATES = {
@@ -27,6 +27,10 @@ _STATES = {
     "indeterminate": ("indeterminate_check_box", True, "accent_primary"),
     "indeterminate_focus": ("indeterminate_check_box", True, "accent_secondary"),
     "indeterminate_disabled": ("indeterminate_check_box", True, "text_disabled"),
+    # On a selected (accent-filled) row the accent-coloured box would vanish.
+    "unchecked_selected": ("check_box_outline_blank", False, "text_on_accent"),
+    "checked_selected": ("check_box", True, "text_on_accent"),
+    "indeterminate_selected": ("indeterminate_check_box", True, "text_on_accent"),
 }
 
 TOKENS = frozenset(f"checkbox_{state}" for state in _STATES)

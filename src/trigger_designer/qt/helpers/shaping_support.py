@@ -36,6 +36,7 @@ from trigger_designer.qt.node_base import (
     TriggerNode,
     frame_schema,
 )
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.undo.protocol import is_syncing
 from trigger_designer.qt.widgets.common import (
     CONTROL_H,
@@ -229,7 +230,7 @@ class SuffixEditor(QWidget):
             self.changed.emit(self.value())
 
 
-class ShapingContent(ConfigContent, SerializableContentMixin):
+class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin):
     SETTINGS: dict = {}  # noqa: RUF012 - subclass defaults, never mutated
     MODULE = ""
     RUNNER = "run_node"
@@ -371,8 +372,12 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         merge_key: str | None = None,
         *,
         structural: bool = False,
-        evaluate: bool = True,
+        evaluate: bool | None = None,
     ) -> None:
+        """Store a setting. ``evaluate`` forces (True) or skips (False) the run.
+
+        Left as None the class decides: deferred classes mark the run pending.
+        """
         if is_syncing(self) or self.history.is_restoring_history:
             return
         old = self.settings.get(key)
@@ -383,11 +388,15 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         self._update_visibility()
         self.after_change()
         self.refresh_dock_context()
-        if evaluate:
+        if evaluate is None:
+            self.request_evaluation()
+        elif evaluate:
             self._pending_evaluate = False
+            self._show_changes_pending(False)
             self.evaluate.emit()
         else:
             self._pending_evaluate = True
+            self._show_changes_pending(True)
         push = (
             self.push_list_change
             if structural and isinstance(value, list)
@@ -444,27 +453,10 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
             return
         self._mark_scene_modified()
 
-    def _evaluate_pending(self) -> None:
-        """Apply one deferred evaluation, if the node is in a safe state."""
-        if not self._pending_evaluate:
-            return
-        if (
-            is_syncing(self)
-            or self.history.is_restoring_history
-            or getattr(self, "_suspend_node_evaluation", False)
-        ):
-            return
-        self._pending_evaluate = False
-        self.evaluate.emit()
-
-    def cancel_pending_evaluation(self) -> None:
-        """Drop deferred work and invalidate any queued focus-out callback."""
-        self._pending_evaluate = False
-        self._eval_generation += 1
-
     def _schedule_focus_out_evaluation(self) -> None:
         """Check focus on the next event turn and evaluate once it has left."""
-        if not self._pending_evaluate:
+        if self.DEFER_EVALUATION or not self._pending_evaluate:
+            # Deferred nodes run when the dock is left, not on editor focus-out.
             return
         self._eval_generation += 1
         generation = self._eval_generation

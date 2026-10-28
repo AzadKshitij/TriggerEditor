@@ -170,7 +170,7 @@ class FilterContent(ShapingContent):
         if self.settings.get("operation") not in operations:
             self.set_setting("operation", "Equals", "Filter Operation Changed")
 
-    def _commit_expression(self, *, evaluate: bool = True) -> None:
+    def _commit_expression(self, *, evaluate: bool | None = None) -> None:
         try:
             text = self.expression_input.get_text() or ""
         except AttributeError, RuntimeError:
@@ -209,8 +209,6 @@ class FilterContent(ShapingContent):
         )
         if evaluate:
             self._evaluate_pending()
-        else:
-            self.cancel_pending_evaluation()
 
     def _column_dtype(self, column: str):
         return self.schema(0).get(column) if column else None

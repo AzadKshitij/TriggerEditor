@@ -15,6 +15,7 @@ import polars as pl
 from nodeeditor.node_edge import Edge
 from qtpy.QtWidgets import QApplication
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -106,7 +107,9 @@ def test_commit_preserves_caret_position(qtbot) -> None:
     assert content.value_input.cursorPosition() == 1
 
 
-def test_expression_typing_defers_compute_until_focus_out(qtbot, monkeypatch) -> None:
+def test_expression_typing_defers_compute_until_the_node_is_left(
+    qtbot, monkeypatch
+) -> None:
     _window, content = _make_content(qtbot)
     content.mode_selector._buttons["Expression"].click()
     calls = _count_compute(monkeypatch, content)
@@ -117,20 +120,27 @@ def test_expression_typing_defers_compute_until_focus_out(qtbot, monkeypatch) ->
     assert calls == []
     assert content.settings["expression"] == "[order_value] > 100"
 
+    # Leaving the editor is not leaving the node.
     monkeypatch.setattr(content, "_sql_editor_has_focus", lambda: False)
     content._on_expression_finished()
     qtbot.wait(20)
+    assert calls == []
+
+    content.commit_pending_dock_edits()
+    qtbot.wait(20)
 
     assert calls == [1]
-    matched = content.node.value[0]["data"].collect()
+    matched = live_value(content.node)[0]["data"].collect()
     assert matched["order_value"].to_list() == [600, 250]
 
-    content._on_expression_finished()
+    content.commit_pending_dock_edits()
     qtbot.wait(20)
     assert calls == [1]
 
 
-def test_expression_pending_text_flushes_without_compute(qtbot, monkeypatch) -> None:
+def test_expression_pending_text_is_saved_and_the_run_stays_pending(
+    qtbot, monkeypatch
+) -> None:
     _window, content = _make_content(qtbot)
     calls = _count_compute(monkeypatch, content)
 
@@ -138,16 +148,18 @@ def test_expression_pending_text_flushes_without_compute(qtbot, monkeypatch) -> 
     content.commit_pending_dock_edits(evaluate=False)
 
     assert content.settings["expression"] == "[order_value] > 100"
-    assert content._pending_evaluate is False
+    assert content._pending_evaluate is True  # still runs when the node is left
     assert calls == []
 
 
-def test_builder_value_still_evaluates_immediately(qtbot, monkeypatch) -> None:
+def test_builder_value_waits_until_the_node_is_left(qtbot, monkeypatch) -> None:
     _window, content = _make_content(qtbot)
     calls = _count_compute(monkeypatch, content)
 
     content.set_setting("value", "250", "Filter Value Changed")
+    assert calls == []
 
+    content.commit_pending_dock_edits()
     assert calls == [1]
 
 

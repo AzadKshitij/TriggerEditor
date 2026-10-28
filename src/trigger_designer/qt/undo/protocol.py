@@ -133,8 +133,11 @@ def sync_from_model(
             syncer()
 
     if evaluate and not _is_restoring(content):
+        request = getattr(content, "request_evaluation", None)
         signal = getattr(content, "evaluate", None)
-        if signal is not None and hasattr(signal, "emit"):
+        if callable(request):
+            request()  # deferred until the dock is left
+        elif signal is not None and hasattr(signal, "emit"):
             signal.emit()
 
     return True

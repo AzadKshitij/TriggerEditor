@@ -295,7 +295,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
             )
 
     def set_error_badge(self, severity: str) -> None:
-        value = severity if severity in {"error", "warning"} else ""
+        value = severity if severity in {"error", "warning", "pending"} else ""
         if value == self._error_badge:
             return
         self._error_badge = value
@@ -313,6 +313,7 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         if not self._error_badge:
             return
         manager = get_theme_manager()
+        # "pending" (edited, not yet run) uses the warning colour too.
         token = "danger" if self._error_badge == "error" else "warning"
         fallback = "#e0686c" if token == "danger" else "#d9a441"
         fill = QColor(manager.color(token, fallback))
@@ -958,13 +959,29 @@ class TriggerNode(Node):
                 if current is not None and current.knock_on:
                     child.clear_error("run", _seen=seen)
 
+    _changes_pending: bool = False
+
+    def set_changes_pending(self, pending: bool) -> None:
+        """Show (or clear) the yellow "!" for edits that have not run yet."""
+        if pending == self._changes_pending:
+            return
+        self._changes_pending = pending
+        self._apply_error_state()
+
     def _apply_error_state(self) -> None:
         error = self.current_error
-        self._set_node_tooltip(error.render_tooltip() if error else "")
+        if error:
+            tooltip, badge = error.render_tooltip(), error.severity
+        elif self._changes_pending:
+            tooltip = "Changes pending - the node runs when you click away"
+            badge = "pending"
+        else:
+            tooltip, badge = "", ""
+        self._set_node_tooltip(tooltip)
         gr = getattr(self, "grNode", None)
         if gr is not None:
             try:
-                gr.set_error_badge(error.severity if error else "")
+                gr.set_error_badge(badge)
             except RuntimeError:
                 pass
 
@@ -1117,6 +1134,7 @@ class TriggerNode(Node):
             logger.debug(" _> returning cached {} value:", self.__class__.__name__)
             return self.value
 
+        self.set_changes_pending(False)
         self._evaluating = True
         if scene is not None:
             scene._eval_depth = getattr(scene, "_eval_depth", 0) + 1

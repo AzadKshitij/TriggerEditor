@@ -890,8 +890,15 @@ class ComboBoxDelegate(QStyledItemDelegate):
         # populated from the model's BackgroundRole the way it is for the
         # plain-QStyledItemDelegate columns -- read it explicitly instead.
         painter.save()
+        selected = bool(option.state & QStyle.StateFlag.State_Selected)
         role_bg = index.data(Qt.ItemDataRole.BackgroundRole)
-        if role_bg is not None:
+        if selected:
+            # The text below is HighlightedText, so the cell must be Highlight
+            # or it is light text on a light cell.
+            painter.fillRect(
+                option.rect, option.palette.color(QPalette.ColorRole.Highlight)
+            )
+        elif role_bg is not None:
             painter.fillRect(option.rect, QColor(role_bg))
         elif option.backgroundBrush.style() != Qt.BrushStyle.NoBrush:
             option.backgroundBrush.draw(painter, option.rect)
@@ -901,7 +908,6 @@ class ComboBoxDelegate(QStyledItemDelegate):
         text_rect = option.rect.adjusted(6, 0, -20, 0)
 
         # Text colour follows selection state, like every other cell.
-        selected = bool(option.state & QStyle.StateFlag.State_Selected)
         text_color = option.palette.color(
             QPalette.ColorRole.HighlightedText if selected else QPalette.ColorRole.Text
         )

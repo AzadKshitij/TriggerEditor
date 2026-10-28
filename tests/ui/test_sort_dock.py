@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 from nodeeditor.node_edge import Edge
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -80,11 +81,11 @@ def test_edit_key_and_order_then_undo(qtbot) -> None:
     combo = stack._cards[0].findChildren(NoWheelComboBox)[0]
     combo.setCurrentIndex(1)
     assert content.settings["keys"][0]["order"] == "Descending"
-    assert node.value[0]["data"].collect()["a"].to_list() == [3, 2, 1]
+    assert live_value(node)[0]["data"].collect()["a"].to_list() == [3, 2, 1]
 
     history.undo()
     assert content.settings["keys"][0]["order"] == "Ascending"
-    assert node.value[0]["data"].collect()["a"].to_list() == [1, 2, 3]
+    assert live_value(node)[0]["data"].collect()["a"].to_list() == [1, 2, 3]
 
     history.undo()
     assert content.settings["keys"][0]["column"] == ""
@@ -108,7 +109,7 @@ def test_generated_code_matches_live_for_multiple_keys(qtbot) -> None:
         "Sort Sort keys Added",
         structural=True,
     )
-    live = node.value[0]["data"].collect()
+    live = live_value(node)[0]["data"].collect()
 
     namespace = {"var_src": _frame().lazy()}
     exec(content.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
@@ -131,4 +132,4 @@ def test_serialize_round_trip(qtbot) -> None:
     fresh.markDirty(True)
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
-    assert out[0]["data"].collect().equals(node.value[0]["data"].collect())
+    assert out[0]["data"].collect().equals(live_value(node)[0]["data"].collect())

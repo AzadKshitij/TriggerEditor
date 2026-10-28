@@ -181,7 +181,7 @@ class FormulaContent(ShapingContent):
         *,
         structural: bool = False,
         merge_key: str | None = None,
-        evaluate: bool = True,
+        evaluate: bool | None = None,
     ) -> None:
         normalized = core.normalize({"sections": sections})["sections"]
         if normalized == self.settings.get("sections"):
@@ -472,7 +472,7 @@ class FormulaContent(ShapingContent):
         sections[index]["target_dtype"] = target_dtype
         self._commit(sections, "Formula Type Changed")
 
-    def _commit_text(self, index: int, *, evaluate: bool = True) -> None:
+    def _commit_text(self, index: int, *, evaluate: bool | None = None) -> None:
         # Capture every editor, not only the one whose debounce fired. A
         # model update re-projects the other cards, so committing one section
         # alone would write stale model text back into a sibling editor that
@@ -489,14 +489,6 @@ class FormulaContent(ShapingContent):
             for changed_index in changed:
                 self._refresh_error(changed_index)
         if evaluate:
-            self._evaluate_pending()
-        elif (
-            self._pending_evaluate
-            and self.node.current_error is not None
-            and not self.section_errors
-        ):
-            # The text is valid again, so a node that is still red should not
-            # keep showing the old error until the editor loses focus.
             self._evaluate_pending()
 
     def _editor_sections(self) -> tuple[list[dict], list[int]]:
@@ -544,8 +536,6 @@ class FormulaContent(ShapingContent):
 
         if evaluate:
             self._evaluate_pending()
-        else:
-            self.cancel_pending_evaluation()
 
     def _commit_height(self, index: int, height: int) -> None:
         sections = self._section_list()

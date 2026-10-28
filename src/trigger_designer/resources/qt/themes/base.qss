@@ -131,8 +131,8 @@ QCheckBox {{
     color: {text_disabled}; }}
   QCheckBox::indicator {{
     margin-left: 2px;
-    height: 14px;
-    width: 14px; }}
+    height: 18px;
+    width: 18px; }}
     QCheckBox::indicator:unchecked {{
       image: url("{checkbox_unchecked}"); }}
       QCheckBox::indicator:unchecked:hover, QCheckBox::indicator:unchecked:focus, QCheckBox::indicator:unchecked:pressed {{
@@ -1626,6 +1626,28 @@ QColumnView::indicator:indeterminate {{
   QColumnView::indicator:indeterminate:focus,
   QColumnView::indicator:indeterminate:pressed {{
     image: url("{checkbox_indeterminate_focus}"); }}
+
+QTreeView::indicator,
+QListView::indicator,
+QTableView::indicator,
+QColumnView::indicator {{
+  width: 18px;
+  height: 18px; }}
+QTreeView::indicator:unchecked:selected:active,
+QListView::indicator:unchecked:selected:active,
+QTableView::indicator:unchecked:selected:active,
+QColumnView::indicator:unchecked:selected:active {{
+  image: url("{checkbox_unchecked_selected}"); }}
+QTreeView::indicator:checked:selected:active,
+QListView::indicator:checked:selected:active,
+QTableView::indicator:checked:selected:active,
+QColumnView::indicator:checked:selected:active {{
+  image: url("{checkbox_checked_selected}"); }}
+QTreeView::indicator:indeterminate:selected:active,
+QListView::indicator:indeterminate:selected:active,
+QTableView::indicator:indeterminate:selected:active,
+QColumnView::indicator:indeterminate:selected:active {{
+  image: url("{checkbox_indeterminate_selected}"); }}
 
 QTreeView,
 QListView,
