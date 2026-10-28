@@ -12,7 +12,7 @@ import os
 import re
 import sqlite3
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
@@ -29,99 +29,38 @@ from trigger_designer.core.inputs import (
     list_source_files,
 )
 
-SOURCE_KEYS = (
-    "filePath",
-    "file_type",
-    "record_limit",
-    "output_filename_as_field",
-    "delimiter",
-    "first_row_contains_field_names",
-    "selected_sheet",
-    "start_row",
-    "include_patterns",
-    "exclude_patterns",
-    "recursive",
-    "file_order",
-    "file_name_column_name",
-    "file_name_value",
-    "schema_mismatch",
-    "on_file_error",
-    "max_files",
-    "encoding",
-    "read_as_text",
-    "json_nested",
-    "sheet_mode",
-    "selected_sheets",
-    "add_sheet_name_column",
-    "sheet_name_column_name",
-    "db_mode",
-    "db_table",
-    "db_query",
-)
-
-SOURCE_DEFAULTS: dict[str, Any] = {
-    "filePath": "",
-    "file_type": "csv",
-    "record_limit": 0,
-    "output_filename_as_field": False,
-    "delimiter": ",",
-    "first_row_contains_field_names": True,
-    "selected_sheet": "",
-    "start_row": 1,
-    "include_patterns": (),
-    "exclude_patterns": DEFAULT_EXCLUDE,
-    "recursive": False,
-    "file_order": "name",
-    "file_name_column_name": "FileName",
-    "file_name_value": "name",
-    "schema_mismatch": "union",
-    "on_file_error": "stop",
-    "max_files": 10000,
-    "encoding": "utf8",
-    "read_as_text": False,
-    "json_nested": "text",
-    "sheet_mode": "one",
-    "selected_sheets": (),
-    "add_sheet_name_column": False,
-    "sheet_name_column_name": "SheetName",
-    "db_mode": "table",
-    "db_table": "",
-    "db_query": "",
-}
-
-_DB_TYPES = ("sqlite", "duckdb")
 _COLUMN_RE = re.compile(r"column\s+[\"']([^\"']+)[\"']", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class SourceSettings:
-    filePath: str
-    file_type: str
-    record_limit: int
-    output_filename_as_field: bool
-    delimiter: str
-    first_row_contains_field_names: bool
-    selected_sheet: str
-    start_row: int
-    include_patterns: tuple[str, ...]
-    exclude_patterns: tuple[str, ...]
-    recursive: bool
-    file_order: str
-    file_name_column_name: str
-    file_name_value: str
-    schema_mismatch: str
-    on_file_error: str
-    max_files: int
-    encoding: str
-    read_as_text: bool
-    json_nested: str
-    sheet_mode: str
-    selected_sheets: tuple[str, ...]
-    add_sheet_name_column: bool
-    sheet_name_column_name: str
-    db_mode: str
-    db_table: str
-    db_query: str
+    filePath: str = ""
+    file_type: str = "csv"
+    record_limit: int = 0
+    output_filename_as_field: bool = False
+    delimiter: str = ","
+    first_row_contains_field_names: bool = True
+    selected_sheet: str = ""
+    start_row: int = 1
+    include_patterns: tuple[str, ...] = ()
+    exclude_patterns: tuple[str, ...] = DEFAULT_EXCLUDE
+    recursive: bool = False
+    file_order: str = "name"
+    file_name_column_name: str = "FileName"
+    file_name_value: str = "name"
+    schema_mismatch: str = "union"
+    on_file_error: str = "stop"
+    max_files: int = 10000
+    encoding: str = "utf8"
+    read_as_text: bool = False
+    json_nested: str = "text"
+    sheet_mode: str = "one"
+    selected_sheets: tuple[str, ...] = ()
+    add_sheet_name_column: bool = False
+    sheet_name_column_name: str = "SheetName"
+    db_mode: str = "table"
+    db_table: str = ""
+    db_query: str = ""
 
     @property
     def mode(self) -> str:
@@ -131,7 +70,7 @@ class SourceSettings:
     def from_state(cls, state: dict) -> SourceSettings:
         values: dict[str, Any] = {}
         for key in SOURCE_KEYS:
-            default = SOURCE_DEFAULTS[key]
+            default = getattr(cls, key)
             value = state.get(key, default)
             if value is None:
                 value = default
@@ -190,6 +129,10 @@ class SourceSettings:
         return cls(**values)
 
 
+#: Every File Input setting, in declaration order.
+SOURCE_KEYS = tuple(item.name for item in fields(SourceSettings))
+
+
 @dataclass
 class FileReport:
     path: str
@@ -203,21 +146,6 @@ class FileReport:
     warnings: list[str] = field(default_factory=list)
     error: dict | None = None
     size_bytes: int | None = None
-
-    def as_dict(self) -> dict:
-        return {
-            "path": self.path,
-            "relative_path": self.relative_path,
-            "sheet": self.sheet,
-            "status": self.status,
-            "columns": list(self.columns),
-            "missing_columns": list(self.missing_columns),
-            "extra_columns": list(self.extra_columns),
-            "dtype_conflicts": list(self.dtype_conflicts),
-            "warnings": list(self.warnings),
-            "error": self.error,
-            "size_bytes": self.size_bytes,
-        }
 
 
 @dataclass
@@ -234,18 +162,7 @@ class SourceReport:
     files: list[FileReport] = field(default_factory=list)
 
     def as_dict(self) -> dict:
-        return {
-            "mode": self.mode,
-            "root": self.root,
-            "file_count": self.file_count,
-            "ok_count": self.ok_count,
-            "skipped_count": self.skipped_count,
-            "excluded_count": self.excluded_count,
-            "union_columns": list(self.union_columns),
-            "reference_columns": list(self.reference_columns),
-            "warnings": list(self.warnings),
-            "files": [item.as_dict() for item in self.files],
-        }
+        return asdict(self)
 
     def differing_files(self) -> list[FileReport]:
         return [
@@ -400,105 +317,68 @@ def _sql_for(settings: SourceSettings, dialect: str) -> str:
     return base
 
 
+def _read_error(
+    kind: str, message: str, exc: BaseException, path: str, **extra: Any
+) -> InputReadError:
+    """An InputReadError that carries the original exception as technical text."""
+    return InputReadError(
+        kind,
+        message,
+        path=path,
+        technical=str(exc),
+        cause_type=type(exc).__name__,
+        **extra,
+    )
+
+
 def _classify(
     exc: BaseException, path: str, sheet: str | None = None
 ) -> InputReadError:
     if isinstance(exc, InputReadError):
         return exc
     message = str(exc)
-    technical = message
     cause_type = type(exc).__name__
+
+    def error(kind: str, text: str, **extra: Any) -> InputReadError:
+        return _read_error(kind, text, exc, path, sheet=sheet, **extra)
+
     if isinstance(exc, FileNotFoundError):
-        return InputReadError(
-            "file_not_found",
-            f"Cannot find the input file '{path}'.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
+        return error("file_not_found", f"Cannot find the input file '{path}'.")
     winerror = getattr(exc, "winerror", None)
     if (
         isinstance(exc, PermissionError)
         or winerror in (5, 32)
         or ("being used by another process" in message)
     ):
-        return InputReadError(
+        return error(
             "locked",
             f"Cannot read '{path}': the file is open in another program or not allowed.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
         )
     if isinstance(exc, pl.exceptions.NoDataError):
-        return InputReadError(
-            "empty_file",
-            f"'{path}' is empty.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
+        return error("empty_file", f"'{path}' is empty.")
     lowered = message.lower()
     if "invalid utf-8" in lowered or ("utf8" in lowered and "invalid" in lowered):
-        return InputReadError(
+        return error(
             "encoding",
             f"'{path}' is not UTF-8 text. Set Encoding to 'UTF-8 (replace bad bytes)'.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
         )
     column = _extract_column(message)
     if cause_type == "SheetNotFoundError" or (
         "sheet" in lowered and "not found" in lowered
     ):
-        return InputReadError(
+        return error(
             "sheet_missing",
             f"Worksheet '{sheet or 'requested'}' is missing from '{path}'.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
         )
     if "invalid Zip archive" in message or "EOCD" in message:
-        return InputReadError(
-            "parse",
-            f"'{path}' is not a valid Excel workbook.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
+        return error("parse", f"'{path}' is not a valid Excel workbook.")
     if isinstance(exc, pl.exceptions.PolarsError):
-        return InputReadError(
-            "parse",
-            f"Cannot read the data in '{path}': {message}",
-            path=path,
-            sheet=sheet,
-            column=column,
-            technical=technical,
-            cause_type=cause_type,
+        return error(
+            "parse", f"Cannot read the data in '{path}': {message}", column=column
         )
     if isinstance(exc, OSError):
-        return InputReadError(
-            "unreadable",
-            f"Cannot open '{path}': {message}",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
-    return InputReadError(
-        "parse",
-        f"Cannot read '{path}': {message}",
-        path=path,
-        sheet=sheet,
-        column=column,
-        technical=technical,
-        cause_type=cause_type,
-    )
+        return error("unreadable", f"Cannot open '{path}': {message}")
+    return error("parse", f"Cannot read '{path}': {message}", column=column)
 
 
 def _extract_column(message: str) -> str | None:
@@ -510,12 +390,11 @@ def _sql_error(exc: BaseException, path: str) -> InputReadError:
     message = str(exc)
     lowered = message.lower()
     if "could not set lock" in lowered or "being used by another process" in lowered:
-        return InputReadError(
+        return _read_error(
             "locked",
             f"Cannot read '{path}': the database is open for writing in another program.",
-            path=path,
-            technical=message,
-            cause_type=type(exc).__name__,
+            exc,
+            path,
         )
     if any(
         marker in lowered
@@ -528,19 +407,14 @@ def _sql_error(exc: BaseException, path: str) -> InputReadError:
             "not allowed",
         )
     ):
-        return InputReadError(
+        return _read_error(
             "db_forbidden",
             f"The query on '{path}' tried to change data or use files. Only SELECT is read.",
-            path=path,
-            technical=message,
-            cause_type=type(exc).__name__,
+            exc,
+            path,
         )
-    return InputReadError(
-        "db_error",
-        f"Cannot read the database '{path}': {message}",
-        path=path,
-        technical=message,
-        cause_type=type(exc).__name__,
+    return _read_error(
+        "db_error", f"Cannot read the database '{path}': {message}", exc, path
     )
 
 
@@ -835,13 +709,6 @@ def build_source(state: dict) -> SourceResult:
         max_files=settings.max_files,
     )
 
-    if settings.file_type in _DB_TYPES and listing.mode != "single":
-        raise InputReadError(
-            "unsupported_source",
-            "Database sources take exactly one file.",
-            path=settings.filePath,
-        )
-
     parts: list[_Part] = []
     reports: list[FileReport] = []
     cache: dict[str, Any] = {}
@@ -886,12 +753,8 @@ def build_source(state: dict) -> SourceResult:
                         cache,
                         multi_file=multi_file,
                     )
-                elif settings.file_type in _DB_TYPES:
+                else:  # sqlite / duckdb: SourceSettings validated the type
                     frame = _read_db(listed.path, settings)
-                else:  # pragma: no cover - SourceSettings validates the type
-                    raise InputReadError(
-                        "config", f"Unsupported file type '{settings.file_type}'."
-                    )
                 columns = dict(frame.collect_schema())
             except Exception as exc:  # noqa: BLE001
                 error = (
