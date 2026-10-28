@@ -1216,28 +1216,6 @@ class PolarsTableViewer(QWidget):
         """Handle model errors."""
         logger.error(f"Model error: {error_message}")
 
-    def get_selected_data(self) -> Optional[pl.DataFrame]:
-        """
-        Get the currently selected rows as a new DataFrame.
-
-        Returns:
-            Selected data as Polars DataFrame or None if no selection
-        """
-        selection = self.table_view.selectionModel().selectedRows()
-        if not selection:
-            return None
-
-        current_df = (
-            self.filtered_dataframe
-            if self.filtered_dataframe is not None
-            else self.dataframe
-        )
-        if current_df is None:
-            return None
-
-        selected_indices = [index.row() for index in selection]
-        return current_df[selected_indices]
-
     def refresh(self):
         """Refresh the view and clear caches."""
         self.model._clear_caches()
@@ -1245,12 +1223,3 @@ class PolarsTableViewer(QWidget):
         self.model.endResetModel()
         self._update_info_display()
         logger.debug("View refreshed")
-
-    def get_table_view(self):
-        """
-        Get direct access to the underlying QTableView for custom styling or operations.
-
-        Returns:
-            QTableView: The table view widget
-        """
-        return self.table_view

@@ -44,10 +44,6 @@ ACTION_TO_FUNCTION = {
     "List": "list",
 }
 
-FUNCTION_TO_ACTION = {
-    function: action for action, function in ACTION_TO_FUNCTION.items()
-}
-
 PREFIX_MAP = {
     "GroupBy": "",
     "Count": "Count_",

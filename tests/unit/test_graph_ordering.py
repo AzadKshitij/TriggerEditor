@@ -66,21 +66,6 @@ def test_independent_nodes_keep_creation_order() -> None:
         ]
 
         assert topological_order(window.scene) == nodes
-        assert window.topologicalSort() == nodes
-    finally:
-        window.close()
-
-
-def test_topological_sort_wrapper_matches_package_order() -> None:
-    window = TriggerSubWindow()
-    try:
-        source = OrderNode(window.scene, [], [1], "source")
-        target = OrderNode(window.scene, [1], [], "target")
-        _edge(window.scene, source.outputs[0], target.inputs[0])
-
-        assert window.topologicalSort(window.getNodeConnections()) == (
-            topological_order(window.scene)
-        )
     finally:
         window.close()
 

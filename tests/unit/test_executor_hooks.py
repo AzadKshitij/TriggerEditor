@@ -68,3 +68,18 @@ def test_after_execution_receives_the_node_variables() -> None:
     result = NodeExecutor().execute_node(node)
     assert result.success
     assert seen == [{"x": 1}]
+
+
+def test_memory_growth_does_not_fail_a_node(monkeypatch) -> None:
+    # The old post-run check compared process RSS, which other threads inflate.
+    readings = iter(range(0, 10_000_000, 1000))
+    monkeypatch.setattr(
+        NodeExecutor, "_get_memory_usage", lambda self: next(readings), raising=False
+    )
+    result = NodeExecutor().execute_node(StubNode("x = 1"))
+    assert result.success
+
+
+def test_node_print_reaches_stdout(capsys) -> None:
+    NodeExecutor().execute_node(StubNode("print('from node')"))
+    assert "from node" in capsys.readouterr().out

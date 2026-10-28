@@ -840,11 +840,6 @@ def get_theme_manager() -> ThemeManager:
     return _instance
 
 
-def reset_theme_manager_instance() -> None:
-    global _instance
-    _instance = None
-
-
 def _set_grid_colour(gr_scene: Any, colour: QColor, *, light: bool) -> None:
     """Set one grid colour on ``gr_scene`` without tripping the vendored print.
 

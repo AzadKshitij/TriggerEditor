@@ -232,8 +232,6 @@ class InspectorHeader(QFrame):
         layout.addWidget(self._title)
         layout.addStretch(1)
 
-        self._badge: StatusBadge | None = None
-
     def set_icon(self, icon: QIcon | QPixmap | None) -> None:
         if icon is None or (isinstance(icon, QIcon) and icon.isNull()):
             self._icon.clear()
@@ -251,21 +249,6 @@ class InspectorHeader(QFrame):
 
     def set_title(self, title: str) -> None:
         self._title.setText(title)
-
-    def set_status(self, text: str, tone: str = "") -> None:
-        """Show a status badge; pass an empty ``text`` to hide it again."""
-        if not text:
-            if self._badge is not None:
-                self._badge.hide()
-            return
-        if self._badge is None:
-            self._badge = StatusBadge("", tone, self)
-            self.layout().addWidget(self._badge)
-        self._badge.setText(text)
-        self._badge.setProperty("tone", tone)
-        self._badge.style().unpolish(self._badge)
-        self._badge.style().polish(self._badge)
-        self._badge.show()
 
 
 class ContextStrip(QFrame):
@@ -419,23 +402,6 @@ class ConfigSection(QFrame):
         and the header row cannot afford it at this dock height. The method
         stays so count call sites do not need re-plumbing.
         """
-
-    def add_header_action(self, widget: QWidget) -> None:
-        """Place an action (e.g. Add) at the right end of the section header.
-
-        The header is a 20px row; a 30px control dropped into it is taller
-        than its parent and draws over the body below (reading as two
-        controls overlapping). Grow the header to whatever the action needs
-        instead of letting the action escape its row.
-        """
-        if self._header is None:
-            return
-        # ``sizeHint`` alone under-reports a button that pins its own size
-        # (IconButton is fixed 30x30), so take the fixed minimum too.
-        needed = max(widget.sizeHint().height(), widget.minimumHeight())
-        if needed > self._header.height():
-            self._header.setFixedHeight(needed)
-        self._header.layout().addWidget(widget)
 
     def set_title(self, title: str) -> None:
         if self._title is not None:
@@ -817,9 +783,6 @@ class ElidedLabel(QLabel):
         self.setToolTip(self._full_text)
         super().setText(self._full_text)
         self.update()
-
-    def full_text(self) -> str:
-        return self._full_text
 
     def sizeHint(self) -> QSize:
         hint = super().sizeHint()

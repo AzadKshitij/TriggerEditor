@@ -50,25 +50,6 @@ class TriggerSceneHistory(SceneHistory):
         self._baseline = None
         self.undo_selection_has_changed = False
 
-    @property
-    def history_stack(self) -> list:
-        """Commands on the timeline. Read-only; kept for compatibility."""
-        return [self.controller.stack.command(i) for i in range(self.controller.count)]
-
-    @property
-    def baseline_stamp(self) -> Optional[dict]:
-        """The state the document was opened in. Not an undo step."""
-        return self._baseline
-
-    @property
-    def history_current_step(self) -> int:
-        """Index of the currently applied command, or ``-1`` at the bottom.
-
-        Matches the old list-based meaning so the name still reads true, even
-        though the controller underneath counts applied commands instead.
-        """
-        return self.controller.index - 1
-
     def storeHistory(
         self,
         desc: str,
@@ -182,7 +163,3 @@ class TriggerSceneHistory(SceneHistory):
         """Flag the document dirty without recording a snapshot."""
         self.scene.has_been_modified = True
         self._fire_stored()
-
-    def macro(self, text: str):
-        """``with history.macro("Renamed Field"): ...``"""
-        return self.controller.macro(text)

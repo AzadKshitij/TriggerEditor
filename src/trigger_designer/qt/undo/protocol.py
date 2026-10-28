@@ -14,7 +14,7 @@ things mandatory for undo to behave.
 from __future__ import annotations
 
 from contextlib import contextmanager
-from typing import Any, Iterator, Optional, Protocol, runtime_checkable
+from typing import Any, Iterator, Optional
 
 #: Attribute holding the per-content re-entrancy depth for model -> widget
 #: writes. Kept as a string constant so node code and the undo layer agree.
@@ -25,32 +25,16 @@ SYNC_DEPTH_ATTR = "_undo_sync_depth"
 SUSPEND_ATTR = "_suspend_input_tracking"
 
 
-@runtime_checkable
-class SyncableContent(Protocol):
-    """What a content widget must offer to participate in undo."""
-
-    def _sync_widgets_from_model(self) -> None:
-        """Refresh widget values from the model, preserving identity."""
-
-    def _rebuild_widgets(self) -> None:
-        """Rebuild widget *structure* from the model (rows, sections)."""
-
-
-def get_sync_depth(target: Any) -> int:
-    """Re-entrancy depth of ``target``'s content widget."""
-    content = content_of(target)
-    if content is None:
-        return 0
-    return int(getattr(content, SYNC_DEPTH_ATTR, 0) or 0)
-
-
 def is_syncing(target: Any) -> bool:
     """``True`` while widgets are being written from the model.
 
     Bindings must check this and return early: a widget signal fired by our
     own write-back is not a user edit.
     """
-    return get_sync_depth(target) > 0
+    content = content_of(target)
+    if content is None:
+        return False
+    return int(getattr(content, SYNC_DEPTH_ATTR, 0) or 0) > 0
 
 
 def content_of(target: Any) -> Optional[Any]:
@@ -132,7 +116,9 @@ def sync_from_model(
         if callable(syncer):
             syncer()
 
-    if evaluate and not _is_restoring(content):
+    history = getattr(content, "history", None)
+    restoring = bool(getattr(history, "is_restoring_history", False))
+    if evaluate and not restoring:
         request = getattr(content, "request_evaluation", None)
         signal = getattr(content, "evaluate", None)
         if callable(request):
@@ -141,14 +127,6 @@ def sync_from_model(
             signal.emit()
 
     return True
-
-
-def _is_restoring(content: Any) -> bool:
-    """``True`` when the content's scene history is mid-restore."""
-    history = getattr(content, "history", None)
-    if history is None:
-        return False
-    return bool(getattr(history, "is_restoring_history", False))
 
 
 def history_of(target: Any):

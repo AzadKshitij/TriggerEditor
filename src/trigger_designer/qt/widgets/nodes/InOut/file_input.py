@@ -1,7 +1,6 @@
 import copy
 import os
 from collections import Counter, OrderedDict
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import fastexcel
@@ -38,7 +37,6 @@ from trigger_designer.core.inputs import (
     effective_mode,
     io_path,
     list_source_files,
-    resolve_input_files,
     resolve_stored_path,
     to_stored_paths,
 )
@@ -286,7 +284,7 @@ class FileInputContent(
             else:
                 self._load_via_builder()
         self._refresh_files_table()
-        self._refresh_file_input_counts()
+        self.refresh_dock_context()
 
     # -- dock construction -------------------------------------------------
     def _build_source_section(self) -> None:
@@ -879,13 +877,6 @@ class FileInputContent(
             if key in value:
                 setattr(self, key, copy.deepcopy(value[key]))
 
-    def resolved_input_files(self, *, hash: bool = False):
-        state = dict(self.get_serialized_state())
-        state["filePath"] = self.filePath
-        return resolve_input_files(
-            state, base_dir=_workflow_dir(self.node.scene), hash=hash
-        )
-
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
         """Configuration summary for the pane tooltip."""
         chips: list[tuple[str, str]] = []
@@ -913,9 +904,6 @@ class FileInputContent(
         if self.filePath:
             label = os.path.basename(self.filePath.rstrip("\\/")) or self.filePath
         return chips, label
-
-    def _refresh_file_input_counts(self) -> None:
-        self.refresh_dock_context()
 
     # -- visibility and projections ---------------------------------------
     def _apply_visibility(self) -> None:
@@ -962,12 +950,6 @@ class FileInputContent(
 
         self.db_table_row.setVisible(has_path and is_db and self.db_mode == "table")
         self.db_query_row.setVisible(has_path and is_db and self.db_mode == "query")
-
-    def _hide_all_options(self) -> None:
-        self._apply_visibility()
-
-    def _update_ui_visibility(self, _file_type: str) -> None:
-        self._apply_visibility()
 
     def _refresh_files_table(self) -> None:
         if not hasattr(self, "filesTable"):
@@ -1269,25 +1251,27 @@ class FileInputContent(
                 "size_bytes": file_stat.st_size,
                 "modified_time": int(file_stat.st_mtime),
             }
-        resolved = [item for item in self.resolved_input_files() if item.exists]
-        if not resolved:
+        try:
+            files = list_source_files(
+                self.filePath,
+                self.file_type,
+                include=self.include_patterns,
+                exclude=self.exclude_patterns,
+                recursive=self.recursive,
+                order=self.file_order,
+                max_files=self.max_files,
+            ).files
+        except InputReadError:
             return {}
-        epochs: list[int] = []
-        for item in resolved:
-            if item.modified_time:
-                try:
-                    epochs.append(
-                        int(datetime.fromisoformat(item.modified_time).timestamp())
-                    )
-                except ValueError:
-                    continue
-        first = resolved[0]
+        if not files:
+            return {}
         return {
-            "size_bytes": first.size_bytes or 0,
-            "modified_time": epochs[0] if epochs else 0,
-            "file_count": len(resolved),
-            "total_size_bytes": sum(item.size_bytes or 0 for item in resolved),
-            "newest_modified_time": max(epochs) if epochs else 0,
+            "size_bytes": files[0].size_bytes,
+            "modified_time": files[0].mtime_ns // 1_000_000_000,
+            "file_count": len(files),
+            "total_size_bytes": sum(item.size_bytes for item in files),
+            "newest_modified_time": max(item.mtime_ns for item in files)
+            // 1_000_000_000,
         }
 
     def _refresh_saved_input_metadata(
@@ -1427,7 +1411,8 @@ class FileInputContent(
         self._type_user_set = False
         self._apply_setting("source_state", new_state, "Source Chosen", rebuild=True)
         if detected == "excel":
-            self._show_sheet_selection_dialog(fileName)
+            self._refresh_sheets()
+            self._apply_visibility()
         self._apply_visibility()
 
     def _choose_folder(self, folder: str) -> None:
@@ -1447,15 +1432,8 @@ class FileInputContent(
         self._type_user_set = False
         self._apply_setting("source_state", new_state, "Source Chosen", rebuild=True)
         if chosen == "excel":
-            self._show_sheet_selection_dialog(folder)
-        self._apply_visibility()
-
-    def _auto_detect_file_type(self, fileName: str) -> str:
-        return detect_file_type(fileName)
-
-    def _show_sheet_selection_dialog(self, _fileName: str = "") -> None:
-        """Populate the sheet controls without discarding the chosen source."""
-        self._refresh_sheets()
+            self._refresh_sheets()
+            self._apply_visibility()
         self._apply_visibility()
 
     def _read_excel(self, fileName: str, n_rows: int | None = None) -> pl.DataFrame:
@@ -1572,15 +1550,6 @@ class FileInputContent(
             logger.error(f"Error reading file {fileName}: {e}")
             # Return empty DataFrame on error
             return pl.DataFrame()
-
-    def _preview_frame(self) -> pl.DataFrame:
-        """Small eager sample for the table viewer (live data stays lazy)."""
-        data = getattr(self, "data", None)
-        if data is None:
-            return pl.DataFrame()
-        if isinstance(data, pl.LazyFrame):
-            return data.head(self.preview_rows).collect()
-        return data.head(self.preview_rows)
 
     def loadFile(self, fileName: str) -> None:
         """Load file: full data for processing, preview sample for the viewer"""
@@ -1838,16 +1807,6 @@ class TriggerNode_FileInput(TriggerNode):
         ]
 
         return self.param
-
-    def cleanup_memory(self):
-        """Explicit memory cleanup to reduce memory usage"""
-        if hasattr(self.content, "data") and self.content.data is not None:
-            del self.content.data
-            self.content.data = None
-        # Force garbage collection
-        import gc
-
-        gc.collect()
 
     def get_code(self):
         return self.content.get_code()

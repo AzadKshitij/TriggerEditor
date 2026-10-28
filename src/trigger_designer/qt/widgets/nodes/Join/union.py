@@ -725,12 +725,6 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
                 break
         section.deleteLater()
 
-    def _report_warnings(self) -> None:
-        try:
-            self.node.grNode.setToolTip("\n".join(self.coercion_warnings))
-        except RuntimeError:
-            pass
-
     # ------------------------------------------------------------------
     # Undo projection
     # ------------------------------------------------------------------

@@ -1,27 +1,22 @@
 """Enhanced Python code executor for TriggerEditor nodes.
 
-This module provides a robust Python code executor with timeout handling,
-memory monitoring, execution statistics, and comprehensive error reporting.
+This module provides a robust Python code executor with timeout handling and
+comprehensive error reporting.
 All imports and functions are allowed for maximum flexibility.
 """
 
 import gc
-import io
 import os
 import queue
 import re
-import sys
 import threading
-import time
 import traceback
 from collections.abc import Callable
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
-import psutil
 from loguru import logger
 
 from trigger_designer.qt.helpers import global_logger
@@ -35,67 +30,18 @@ class ExecutionResult:
     """Detailed result of code execution."""
 
     success: bool
-    output: str = ""
     error: str = ""
     variables: dict[str, Any] = field(default_factory=dict)
-    execution_time: float = 0.0
-    memory_used: float = 0.0
-    peak_memory: float = 0.0
-    lines_executed: int = 0
-    warnings: list[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.now)
     exception: BaseException | None = None
     traceback_text: str = ""
     exception_type: str = ""
     code: str = ""
     started_at: str = ""
     finished_at: str = ""
-    policy_violation: bool = False
-
-    def without_frames(self) -> "ExecutionResult":
-        """A copy whose ``variables`` describe values instead of holding them.
-
-        The executor keeps the last 100 results for debugging; the frames
-        there duplicate every output of the run and keep temporary frames
-        (``df_for_duck``, closed DuckDB handles) alive. Keep the variable
-        names and a short descriptor, drop the objects.
-        """
-        return replace(
-            self,
-            variables={
-                name: _describe_value(value) for name, value in self.variables.items()
-            },
-            exception=None,
-        )
 
 
 def _utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-
-
-def _describe_value(value: Any) -> str:
-    """A short, frame-free descriptor of an executed variable."""
-    type_name = type(value).__name__
-    shape = getattr(value, "shape", None)
-    if shape is None:
-        return type_name
-    try:
-        return f"{type_name}{tuple(shape)}"
-    except TypeError:
-        return type_name
-
-
-@dataclass
-class ExecutionStats:
-    """Statistics for tracking execution performance."""
-
-    total_executions: int = 0
-    successful_executions: int = 0
-    failed_executions: int = 0
-    total_execution_time: float = 0.0
-    average_execution_time: float = 0.0
-    max_memory_used: float = 0.0
-    last_execution: datetime | None = None
 
 
 @dataclass
@@ -103,7 +49,6 @@ class SecurityConfig:
     """Configuration for code execution limits."""
 
     max_execution_time: float = 30.0  # seconds
-    max_memory_mb: float = 512.0  # megabytes
 
 
 class NodeExecutionError(Exception):
@@ -126,14 +71,9 @@ class ExecutionTimeoutError(NodeExecutionError):
     """Exception raised when code execution times out."""
 
 
-class ExecutionMemoryError(NodeExecutionError):
-    """Exception raised when code execution exceeds memory limits."""
-
-
 class NodeExecutor:
-    """Enhanced Python code executor with timeout monitoring, memory tracking, and error handling."""
+    """Python code executor with timeout monitoring and error handling."""
 
-    max_missing_dependency_attempts = 5
     # gc.collect() is expensive (full cyclic GC pass) and buys little per
     # call since polars/pyarrow objects are refcounted, not cycle-heavy;
     # run it periodically instead of after every single node execution.
@@ -143,17 +83,11 @@ class NodeExecutor:
         """Initialize the NodeExecutor.
 
         Args:
-            security_config: Configuration for execution limits (timeout, memory)
+            security_config: Configuration for execution limits (timeout)
         """
         self.execution_context: dict[str, Any] = {}
         self._seed_base_globals()
         self.security_config = security_config or SecurityConfig()
-        self.stats = ExecutionStats()
-        self.execution_history: list[ExecutionResult] = []
-        self._cancel_event = threading.Event()
-        self._current_task_done: threading.Event | None = None
-        self._missing_dependency_attempts: dict[str, int] = {}
-        self._process = psutil.Process(os.getpid())
         self._executions_since_gc = 0
         # One daemon worker thread reused for every node execution in this
         # NodeExecutor's lifetime, instead of spawning+joining a fresh OS
@@ -208,67 +142,23 @@ class NodeExecutor:
             {"pl": pl, "os": os, "datetime": datetime, "timedelta": timedelta}
         )
 
-    def _track_missing_dependency(self, dependency_type: str, identifier: str) -> int:
-        key = f"{dependency_type}:{identifier}"
-        attempts = self._missing_dependency_attempts.get(key, 0) + 1
-        self._missing_dependency_attempts[key] = attempts
-        return attempts
-
-    def _log_missing_dependency(
-        self,
-        node_name: str,
-        dependency_type: str,
-        identifier: str,
-    ) -> None:
-        attempts = self._track_missing_dependency(dependency_type, identifier)
-
-        if attempts > self.max_missing_dependency_attempts:
-            return
-
-        warning_message = (
-            f"{node_name}: {dependency_type} '{identifier}' not found "
-            f"(attempt {attempts}/{self.max_missing_dependency_attempts})"
-        )
-        logger.warning(warning_message)
-        global_logger.warning(warning_message)
-
-        if attempts == self.max_missing_dependency_attempts:
-            give_up_message = (
-                f"{node_name}: giving up after {self.max_missing_dependency_attempts} attempts "
-                f"because {dependency_type} '{identifier}' was not found."
-            )
-            logger.error(give_up_message)
-            global_logger.error(give_up_message)
-
     def _report_missing_dependency(self, node_name: str, error: Exception) -> None:
         source_error = getattr(error, "original_exception", None) or error
 
         if isinstance(source_error, NameError):
             match = re.search(r"name '([^']+)' is not defined", str(source_error))
-            variable_name = match.group(1) if match else str(source_error)
-            self._log_missing_dependency(node_name, "variable", variable_name)
+            kind, identifier = (
+                "variable",
+                match.group(1) if match else str(source_error),
+            )
         elif isinstance(source_error, FileNotFoundError):
-            file_name = getattr(source_error, "filename", None) or str(source_error)
-            self._log_missing_dependency(node_name, "file", file_name)
-
-    @contextmanager
-    def _capture_output(self):
-        """Context manager to capture stdout and stderr."""
-        stdout_buffer = io.StringIO()
-        stderr_buffer = io.StringIO()
-
-        try:
-            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
-                yield stdout_buffer, stderr_buffer
-        finally:
-            pass
-
-    def _get_memory_usage(self) -> float:
-        """Get current process memory usage in MB."""
-        try:
-            return self._process.memory_info().rss / (1024 * 1024)
-        except Exception:  # noqa: BLE001
-            return 0.0
+            kind = "file"
+            identifier = getattr(source_error, "filename", None) or str(source_error)
+        else:
+            return
+        message = f"{node_name}: {kind} '{identifier}' not found"
+        logger.warning(message)
+        global_logger.warning(message)
 
     def _execute_with_timeout(
         self, code: str, local_vars: dict[str, Any], timeout: float
@@ -295,11 +185,9 @@ class NodeExecutor:
 
             except BaseException as e:  # noqa: BLE001
                 exception_container[0] = e
-                exception_container[0] = e
             finally:
                 done.set()
 
-        self._current_task_done = done
         self._node_task_queue.put(target)
 
         if not done.wait(timeout):
@@ -325,13 +213,6 @@ class NodeExecutor:
         Returns:
             ExecutionResult containing detailed execution information
         """
-        start_time = time.time()
-        start_memory = self._get_memory_usage()
-        peak_memory = start_memory
-
-        # Reset cancellation flag
-        self._cancel_event.clear()
-
         # Create result object
         result = ExecutionResult(success=False)
         result.started_at = _utc_now_iso()
@@ -345,49 +226,22 @@ class NodeExecutor:
                 code = self.code_filter(code)
             self._call_hook(self.before_node, node)
 
-            # Count lines of code
-            result.lines_executed = len(
-                [line for line in code.splitlines() if line.strip()]
-            )
-
             # Prepare local variables
             local_variables = {}
 
-            # Capture output during execution
-            with self._capture_output() as (stdout_buffer, stderr_buffer):
-                # Execute with timeout
-                success, exception = self._execute_with_timeout(
-                    code, local_variables, self.security_config.max_execution_time
-                )
-
-                # Monitor memory usage during execution
-                current_memory = self._get_memory_usage()
-                peak_memory = max(peak_memory, current_memory)
-
-                # Check memory limits
-                if peak_memory - start_memory > self.security_config.max_memory_mb:
-                    raise ExecutionMemoryError(
-                        f"Memory usage exceeded limit: {peak_memory - start_memory:.2f}MB",
+            success, exception = self._execute_with_timeout(
+                code, local_variables, self.security_config.max_execution_time
+            )
+            if not success or exception:
+                if isinstance(exception, ExecutionTimeoutError):
+                    raise exception
+                elif exception:
+                    raise NodeExecutionError(
+                        str(exception),
                         node_name=node_name,
-                    )
-
-                if not success or exception:
-                    if isinstance(exception, ExecutionTimeoutError):
-                        raise exception
-                    elif exception:
-                        raise NodeExecutionError(
-                            str(exception),
-                            node_name=node_name,
-                            original_exception=exception,
-                        ) from exception
-
-                # Collect results
-                result.output = stdout_buffer.getvalue()
-                stderr_content = stderr_buffer.getvalue()
-                if stderr_content:
-                    result.warnings.append(f"stderr: {stderr_content}")
-
-                result.success = True
+                        original_exception=exception,
+                    ) from exception
+            result.success = True
 
             # Before the hook: a node's after_execution reads these values.
             result.variables = local_variables.copy()
@@ -398,11 +252,9 @@ class NodeExecutor:
                 try:
                     after_execution(result.variables)
                 except Exception as hook_error:  # noqa: BLE001
-                    hook_message = (
+                    logger.warning(
                         f"after_execution hook failed for {node_name}: {hook_error}"
                     )
-                    result.warnings.append(hook_message)
-                    logger.warning(hook_message)
 
             self._call_hook(self.after_node, node, local_variables, result)
 
@@ -427,7 +279,6 @@ class NodeExecutor:
                 f"{type(source).__module__}.{type(source).__qualname__}"
             )
             result.traceback_text = "".join(traceback.format_exception(source))
-            result.policy_violation = bool(getattr(source, "policy_violation", False))
             source.__traceback__ = None
 
             # Log error
@@ -435,24 +286,6 @@ class NodeExecutor:
 
         finally:
             result.finished_at = _utc_now_iso()
-            # Calculate final statistics
-            result.execution_time = time.time() - start_time
-            result.memory_used = self._get_memory_usage() - start_memory
-            result.peak_memory = peak_memory - start_memory
-
-            # Update statistics
-            self._update_stats(result)
-
-            # Add to history (keep last 100 executions). Store the frame-free
-            # copy: the history is for debugging, and holding the run's frames
-            # here would duplicate every output and keep temp objects alive.
-            self.execution_history.append(result.without_frames())
-            if len(self.execution_history) > 100:
-                self.execution_history.pop(0)
-
-            # Clean up task-done-event reference
-            self._current_task_done = None
-
             # Periodic garbage collection instead of every node (see
             # gc_collect_interval) - a full gc.collect() per call was
             # measured as one of the largest fixed per-node costs.
@@ -462,113 +295,3 @@ class NodeExecutor:
                 self._executions_since_gc = 0
 
         return result
-
-    def execute_node_legacy(self, node: "TriggerNode") -> tuple[str, dict[str, Any]]:
-        """Legacy method for backward compatibility.
-
-        Args:
-            node: The TriggerNode to execute
-
-        Returns:
-            Tuple of (output_string, variables_dict)
-        """
-        result = self.execute_node(node)
-
-        if result.success:
-            return result.output, result.variables
-        else:
-            return f"Error: {result.error}", self.execution_context
-
-    def _update_stats(self, result: ExecutionResult) -> None:
-        """Update execution statistics.
-
-        Args:
-            result: ExecutionResult to incorporate into stats
-        """
-        self.stats.total_executions += 1
-        self.stats.last_execution = result.timestamp
-
-        if result.success:
-            self.stats.successful_executions += 1
-        else:
-            self.stats.failed_executions += 1
-
-        self.stats.total_execution_time += result.execution_time
-        self.stats.average_execution_time = (
-            self.stats.total_execution_time / self.stats.total_executions
-        )
-
-        self.stats.max_memory_used = max(self.stats.max_memory_used, result.peak_memory)
-
-    def cancel_execution(self) -> bool:
-        """Cancel currently running execution.
-
-        Returns:
-            True if cancellation was attempted, False if no execution running
-        """
-        if self._current_task_done and not self._current_task_done.is_set():
-            self._cancel_event.set()
-            return True
-        return False
-
-    def clear_context(self) -> None:
-        """Clear the shared execution context."""
-        self.execution_context.clear()
-        self._seed_base_globals()
-        logger.debug("Execution context cleared")
-
-    def get_context_info(self) -> dict[str, Any]:
-        """Get information about the current execution context.
-
-        Returns:
-            Dictionary with context variable information
-        """
-        context_info = {}
-
-        for name, value in self.execution_context.items():
-            try:
-                context_info[name] = {
-                    "type": type(value).__name__,
-                    "size": sys.getsizeof(value),
-                    "repr": repr(value)[:100] + "..."
-                    if len(repr(value)) > 100
-                    else repr(value),
-                }
-            except Exception:  # noqa: BLE001
-                context_info[name] = {
-                    "type": type(value).__name__,
-                    "size": 0,
-                    "repr": "<unable to represent>",
-                }
-
-        return context_info
-
-    def get_statistics(self) -> ExecutionStats:
-        """Get execution statistics.
-
-        Returns:
-            ExecutionStats object with current statistics
-        """
-        return self.stats
-
-    def get_execution_history(self, limit: int | None = None) -> list[ExecutionResult]:
-        """Get execution history.
-
-        Args:
-            limit: Maximum number of results to return (None for all)
-
-        Returns:
-            List of ExecutionResult objects
-        """
-        if limit is None:
-            return self.execution_history.copy()
-        return self.execution_history[-limit:] if limit > 0 else []
-
-    def set_config(self, config: SecurityConfig) -> None:
-        """Update execution configuration.
-
-        Args:
-            config: New SecurityConfig to apply (timeout and memory limits)
-        """
-        self.security_config = config
-        logger.debug("Execution configuration updated")

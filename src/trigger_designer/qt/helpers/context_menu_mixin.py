@@ -374,20 +374,6 @@ class ContextMenuMixin:
                 dumpException(exc)
 
     # --- Helpers -------------------------------------------------------------------
-    def determine_target_socket_of_node(self, was_dragged_flag, new_calc_node):
-        target_socket = None
-        if was_dragged_flag:
-            if len(new_calc_node.inputs) > 0:
-                target_socket = new_calc_node.inputs[0]
-        else:
-            if len(new_calc_node.outputs) > 0:
-                target_socket = new_calc_node.outputs[0]
-        return target_socket
-
-    def finish_new_node_state(self, new_calc_node: Any) -> None:
-        self.scene.doDeselectItems()
-        new_calc_node.grNode.doSelect(True)
-        new_calc_node.grNode.onSelected()
 
     def createGroup(self, nodes=None):
         """Group ``nodes`` in an upstream visual ``Group``.

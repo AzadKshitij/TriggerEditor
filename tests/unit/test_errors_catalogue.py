@@ -92,7 +92,7 @@ def test_all_plan_codes_are_present() -> None:
         "TD-SCH-001",
         "TD-SCH-011",
         "TD-AUDIT-001",
-        "TD-SHAPE-110",
+        "TD-SHAPE-003",
         "TD-OUT-010",
         "TD-CLI-018",
         "TD-RUN-008",

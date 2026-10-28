@@ -819,23 +819,6 @@ class TriggerNode(Node):
 
         super().setPos(x, y)
 
-    def getSocketValue(
-        self, socket_list: list["Socket"], target_node: "TriggerNode"
-    ) -> int:
-        """Get value based on socket connection"""
-        for i, socket in enumerate(socket_list):
-            if socket.edges:
-                for edge in list(socket.edges):
-                    other_socket = self._get_connected_socket(socket, edge)
-                    if other_socket is None:
-                        continue
-                    if other_socket.node == target_node:
-                        return i
-        raise ValueError(
-            f"No edge from {self.__class__.__name__} reaches "
-            f"{target_node.__class__.__name__}"
-        )
-
     def _get_connected_socket(
         self, socket: "Socket", edge: "Edge"
     ) -> Optional["Socket"]:
@@ -1006,9 +989,6 @@ class TriggerNode(Node):
             global_logger.error(error.render_summary())
         except Exception:  # noqa: BLE001, S110 - dock may not exist in tests
             pass
-
-    def evalOperation(self, input1: Any, input2: Any) -> int:
-        return 123
 
     def processInputs(self, input_values: list[Any]) -> Optional[Any]:
         # Override this method in subclasses to process the input values

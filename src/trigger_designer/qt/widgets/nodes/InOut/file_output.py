@@ -142,7 +142,7 @@ class FileOutputContent(ShapingContent):
         dock_layout.addWidget(options)
         dock_layout.addStretch()
         self._apply_visibility()
-        self._refresh_counts()
+        self.refresh_dock_context()
 
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
         file_format = str(self.settings.get("file_format") or "csv")
@@ -152,12 +152,9 @@ class FileOutputContent(ShapingContent):
             chips.append(("path set", ""))
         return chips, os.path.basename(path)
 
-    def _refresh_counts(self) -> None:
-        self.refresh_dock_context()
-
     def after_change(self) -> None:
         self._sync_widgets_from_model()
-        self._refresh_counts()
+        self.refresh_dock_context()
 
     def _sync_widgets_from_model(self) -> None:
         """Project settings onto the custom controls (undo/redo/load)."""

@@ -41,8 +41,3 @@ def _sequential(ranked: pl.DataFrame) -> pl.DataFrame:
     return ranked.filter(
         pl.col("__rank").is_in(pl.Series(keep, dtype=pl.UInt32).implode())
     )
-
-
-def greedy_sequential(cand: pl.DataFrame) -> pl.DataFrame:
-    """Reference implementation used by tests."""
-    return _sequential(cand.with_row_index("__rank")).sort("__rank").drop("__rank")

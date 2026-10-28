@@ -22,11 +22,9 @@ from trigger_designer.core.errors.model import (
 from trigger_designer.core.errors.redact import redact_error
 from trigger_designer.core.errors.suggest import suggest_names
 
-_ANY = None
 _CODE_RE = re.compile(r"(?:^|\[)(?P<code>TD-[A-Z]+-\d{3})(?:\]|:)")
 _OS_RE = re.compile(r"\(os error (?P<n>\d+)\)(?::\s*(?P<path>.+?))?\s*$", re.DOTALL)
 _NUMERIC = re.compile(r"^(?:[iu]\d+|f\d+)$")
-_DUCK_NUMERIC = re.compile(r"^[A-Z0-9_]+$")
 _PLAN_NOISE = (
     "Resolved plan",
     "Candidate bindings",
@@ -51,10 +49,6 @@ class Rule:
     names: frozenset[str] | None
     pattern: re.Pattern[str] | None
     build: Callable[[Facts, ErrorContext, re.Match[str] | None], tuple | None]
-
-
-class _TextError(Exception):
-    pass
 
 
 def _safe_str(exc: object) -> str:
@@ -103,7 +97,7 @@ def _unwrap(exc: BaseException | str | None):
             return current
         seen.add(ident)
         name = type(current).__name__
-        if name in ("ExecutionTimeoutError", "ExecutionMemoryError"):
+        if name == "ExecutionTimeoutError":
             return current
         nxt = getattr(current, "original_exception", None)
         if nxt is None:
@@ -801,7 +795,7 @@ def _build_rules() -> tuple[Rule, ...]:
         rule(
             2,
             ("TD-RUN-002",),
-            {"ExecutionMemoryError", "MemoryError", "OutOfMemoryException"},
+            {"MemoryError", "OutOfMemoryException"},
             _rule_2,
         ),
         rule(3, ("TD-SYS-998",), {"PanicException"}, _rule_3),

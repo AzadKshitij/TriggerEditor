@@ -13,7 +13,6 @@ from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any
 
-SEVERITIES = ("error", "warning")
 KNOCK_ON_CODES = frozenset({"TD-RUN-003", "TD-RUN-005", "TD-RUN-008"})
 
 _WS = re.compile(r"\s+")

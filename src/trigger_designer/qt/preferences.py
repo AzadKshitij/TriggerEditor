@@ -276,9 +276,3 @@ def get_preferences() -> Preferences:
     if _instance is None:
         _instance = Preferences()
     return _instance
-
-
-def reset_preferences_instance() -> None:
-    """Drop the cached store (tests that swap ``TRIGGER_DESIGNER_DATA_DIR``)."""
-    global _instance
-    _instance = None

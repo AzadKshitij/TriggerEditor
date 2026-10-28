@@ -212,10 +212,6 @@ class LayoutState:
             active = None
         return existing, active
 
-    def clear_session(self) -> None:
-        self._prefs.remove(SESSION_FILES_KEY)
-        self._prefs.remove(SESSION_ACTIVE_KEY)
-
     # -- reset ------------------------------------------------------------
     def clear(self) -> None:
         """Forget the saved layout (used by Reset Layout)."""

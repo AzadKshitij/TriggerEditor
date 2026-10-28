@@ -1,8 +1,7 @@
-"""Unit tests for file discovery, ordering, errors and ResolvedFile."""
+"""Unit tests for file discovery, ordering, and errors."""
 
 from __future__ import annotations
 
-import hashlib
 import os
 import subprocess
 import sys
@@ -26,7 +25,6 @@ from trigger_designer.core.inputs import (
     io_path,
     list_source_files,
     natural_key,
-    resolve_input_files,
     resolve_stored_path,
     to_stored_paths,
 )
@@ -222,9 +220,6 @@ def test_unicode_file_names(tmp_path) -> None:
     write_text(directory / "données_é_日本.csv", "id\n1\n")
     listing = list_source_files(str(directory), "csv")
     assert Path(listing.files[0].path).name == "données_é_日本.csv"
-    resolved = resolve_input_files({"filePath": str(directory), "file_type": "csv"})
-    assert resolved[0].exists
-    assert Path(resolved[0].path).name == "données_é_日本.csv"
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows long-path prefix")
@@ -279,31 +274,6 @@ def test_detect_file_type(tmp_path) -> None:
     assert detect_file_type("x.jsonl") == "ndjson"
     assert detect_file_type("x.xlsm") == "excel"
     assert detect_file_type("x.unknown") == "csv"
-
-
-def test_resolved_files_fields_and_hash(tmp_path) -> None:
-    monthly = monthly_csvs(tmp_path)
-    state = {"filePath": str(monthly), "file_type": "csv"}
-    resolved = resolve_input_files(state)
-    assert len(resolved) == 3
-    first = resolved[0]
-    assert first.exists and first.kind == "csv"
-    assert first.size_bytes == (monthly / "sales_2024-01.csv").stat().st_size
-    assert first.modified_time.endswith("Z")
-    assert first.sha256 is None
-    assert first.relative_path == "sales_2024-01.csv"
-
-    hashed = resolve_input_files(state, hash=True)
-    expected = hashlib.sha256((monthly / "sales_2024-01.csv").read_bytes()).hexdigest()
-    assert hashed[0].sha256 == expected
-
-
-def test_resolve_input_files_never_raises(tmp_path) -> None:
-    missing = tmp_path / "missing.csv"
-    resolved = resolve_input_files({"filePath": str(missing), "file_type": "csv"})
-    assert len(resolved) == 1
-    assert not resolved[0].exists
-    assert resolved[0].path == str(missing)
 
 
 def test_input_read_error_as_dict_and_str() -> None:

@@ -1,21 +1,13 @@
 import dataclasses
-from typing import Optional
 from loguru import logger
 from qtpy.QtGui import QColor, QPalette, QPainter, QPen
 from qtpy.QtWidgets import (
     QTableView,
-    QWidget,
-    QPushButton,
-    QCheckBox,
     QComboBox,
     QStyledItemDelegate,
     QStyleOptionComboBox,
     QStyle,
     QAbstractItemView,
-    QMenu,
-    QLineEdit,
-    QHBoxLayout,
-    QTableWidgetItem,
 )
 from qtpy.QtCore import (
     QAbstractTableModel,
@@ -62,14 +54,9 @@ class SelectTableWidget(QAbstractTableModel):
     dataChanged = Signal(QModelIndex, QModelIndex, list)
     data_processed = Signal(list)  # Add new signal for processed data
 
-    # Add new signals for selection changes
-    selectionChanged = Signal()
-    moveRowRequested = Signal(int, int)
-
     def __init__(self, data: list, changes: dict, parent=None) -> None:
         super().__init__(parent)
         self._data = data
-        self.filtered_rows = []  # For search functionality
         self.changes = changes or {
             "selected_columns": [],
             "rename_mapping": {},
@@ -77,10 +64,6 @@ class SelectTableWidget(QAbstractTableModel):
         }
         self._header_labels = ["", "Column", "Data Type", "Rename"]
         self._data_types = list(self.DATA_TYPES)
-
-        # self.initUI()
-        # self.populateTable()
-        # self.setupConnections()
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows in the model
@@ -102,10 +85,6 @@ class SelectTableWidget(QAbstractTableModel):
 
         row = index.row()
         col = index.column()
-
-        # Handle filtered rows
-        if self.filtered_rows and row not in self.filtered_rows:
-            return None
 
         row_data: RowData = self._data[row]
 
@@ -217,167 +196,6 @@ class SelectTableWidget(QAbstractTableModel):
 
         return default_flags
 
-    def swapRows(self, row1, row2):
-        # Method to swap rows in the model
-        if 0 <= row1 < len(self._data) and 0 <= row2 < len(self._data):
-            # Determine source and destination rows for the signal
-            source_row = row1
-            destination_row = row2
-
-            # If moving a row to an earlier position, the destination index needs adjustment
-            if row1 < row2:
-                destination_row = (
-                    row2 + 1
-                )  # Signal moving row1 to the position *after* row2
-
-            # Notify the view that rows are about to move
-            if self.beginMoveRows(
-                QModelIndex(), source_row, source_row, QModelIndex(), destination_row
-            ):
-                # Perform the data swap in the model's internal list
-                self._data[row1], self._data[row2] = self._data[row2], self._data[row1]
-                # End the move operation
-                self.endMoveRows()
-
-                # Although begin/endMoveRows should handle the visual update,
-                # sometimes explicitly signaling data changed for the affected rows
-                # can help ensure all delegates refresh correctly.
-                top_left = self.index(min(row1, row2), 0)
-                bottom_right = self.index(max(row1, row2), self.columnCount() - 1)
-                self.dataChanged.emit(
-                    top_left,
-                    bottom_right,
-                    [
-                        Qt.ItemDataRole.DisplayRole,
-                        Qt.ItemDataRole.EditRole,
-                        Qt.ItemDataRole.CheckStateRole,
-                        Qt.ItemDataRole.UserRole,
-                    ],
-                )
-
-                logger.debug(f"Swapped Row {row1 + 1} and Row {row2 + 1}")
-                return True
-            else:
-                logger.warning("Failed to begin row move operation.")
-                return False
-        logger.warning("Invalid row indices for swapping.")
-        return False
-
-    def setupOptionsMenu(self, button: QPushButton, view: QTableView) -> None:
-        """Setup the options dropdown menu.
-
-        Args:
-            button (QPushButton): Button that will show the menu
-        """
-        menu = QMenu(button)
-
-        # Selection actions
-        select_all = menu.addAction("Check Selected")
-        select_all.triggered.connect(lambda: self.checkSelected(view))
-
-        deselect_all = menu.addAction("Uncheck Selected")
-        deselect_all.triggered.connect(lambda: self.uncheckSelected(view))
-
-        menu.addSeparator()
-
-        # Sorting submenu
-        sort_menu = menu.addMenu("Sort")
-
-        sort_original = sort_menu.addAction("Original Order")
-        sort_original.triggered.connect(lambda: self.sortColumns("original"))
-
-        sort_name_asc = sort_menu.addAction("Name (A-Z)")
-        sort_name_asc.triggered.connect(lambda: self.sortColumns("name_asc"))
-
-        sort_name_desc = sort_menu.addAction("Name (Z-A)")
-        sort_name_desc.triggered.connect(lambda: self.sortColumns("name_desc"))
-
-        sort_type = sort_menu.addAction("By Type")
-        sort_type.triggered.connect(lambda: self.sortColumns("type"))
-
-        button.setMenu(menu)
-
-    def setupConnections(self) -> None:
-        """Setup all signal connections"""
-        self.search_input.textChanged.connect(self.filterTable)
-        self.up_btn.clicked.connect(lambda: self.moveSelectedRow("up"))
-        self.down_btn.clicked.connect(lambda: self.moveSelectedRow("down"))
-
-        # Connect to checkbox state changes
-        for row in range(self.table.rowCount()):
-            checkbox_container = self.table.cellWidget(row, 0)
-            checkbox: QCheckBox = checkbox_container.layout().itemAt(0).widget()
-            checkbox.stateChanged.connect(self.onDataChanged)
-
-            # Connect to combobox changes
-            combo_box: QComboBox = self.table.cellWidget(row, 2)
-            combo_box.currentTextChanged.connect(self.onDataChanged)
-
-            # Connect to rename field changes
-            rename_item: QLineEdit = self.table.cellWidget(row, 3)
-            rename_item.textChanged.connect(self.onDataChanged)
-
-    def populateTable(self) -> None:
-        data_types = [
-            "String",
-            "Int64",
-            "Float64",
-            "Boolean",
-            "Date",
-            "Datetime",
-            "List",
-            "Struct",
-            "Categorical",
-            "Binary",
-            "Decimal",
-            "Duration",
-        ]
-        row_count = len(self._data)
-        # self.table.setRowCount(row_count)
-
-        for i in range(row_count):
-            self.table.insertRow(i)
-            column_name = self._data[i]["column_name"]
-
-            # Create container widget for checkbox
-            checkbox_container = QWidget()
-            checkbox_layout = QHBoxLayout(checkbox_container)
-            checkbox_layout.setContentsMargins(0, 0, 0, 0)
-            checkbox_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            # Checkbox for isSelected
-            checkbox = QCheckBox()
-            checkbox.setChecked(column_name in self.changes["selected_columns"])
-            checkbox_layout.addWidget(checkbox)
-
-            self.table.setCellWidget(i, 0, checkbox_container)
-
-            # Column name (non-editable)
-            column_name_item = QTableWidgetItem(column_name)
-            column_name_item.setFlags(column_name_item.flags() ^ ~Qt.ItemIsEditable)
-            self.table.setItem(i, 1, column_name_item)
-
-            # Dropdown for data_type
-            combo_box = QComboBox()
-            combo_box.addItems(data_types)
-            # Set saved dtype if exists, otherwise use original
-            saved_dtype = self.changes["dtype_mapping"].get(column_name)
-            current_dtype = saved_dtype if saved_dtype else str(self._data[i]["dtype"])
-            combo_box.setCurrentText(current_dtype)
-            self.table.setCellWidget(i, 2, combo_box)
-
-            # Line edit for rename
-            rename_item = QLineEdit()
-            # Set saved rename if exists
-            saved_rename = self.changes["rename_mapping"].get(column_name, "")
-            rename_item.setText(saved_rename)
-            self.table.setCellWidget(i, 3, rename_item)
-
-    def onDataChanged(self) -> None:
-        # Emit the updated data whenever changes occur
-        data = self.getData()
-        self._dataChanged.emit(data)
-
     def update_from_changes(self, changes: dict) -> None:
         """Update model state from changes dictionary"""
         # Restore display order first so undo/redo of a move repaints.
@@ -442,41 +260,6 @@ class SelectTableWidget(QAbstractTableModel):
         bottom_right = self.index(len(self._data) - 1, 0)
         self.dataChanged.emit(top_left, bottom_right, [Qt.ItemDataRole.CheckStateRole])
         self.data_processed.emit(self.getData())
-
-    def toggleRowSelection(self, index: QModelIndex, state: bool) -> None:
-        """Toggle selection state for a row or multiple rows
-
-        Args:
-            index (QModelIndex): The index being toggled
-            state (bool): The new state to set
-        """
-        if not index.isValid():
-            return
-
-        row = index.row()
-        if 0 <= row < len(self._data):
-            self._data[row].checked = state
-            checkbox_index = self.index(row, 0)
-            self.dataChanged.emit(
-                checkbox_index, checkbox_index, [Qt.ItemDataRole.CheckStateRole]
-            )
-            self.data_processed.emit(self.getData())
-
-    def get_renamed_columns(self) -> dict:
-        """Extract renamed columns from the table widget."""
-        rename_dict = {}
-
-        for row in range(self.table.rowCount()):  # Changed from table_widget to table
-            original_name = self.table.item(row, 1).text()
-            rename_edit = self.table.cellWidget(row, 3)
-
-            if rename_edit:  # Check if rename widget exists
-                new_name = rename_edit.text().strip()
-                if new_name and new_name != original_name:
-                    # Store rename mapping
-                    rename_dict[original_name] = new_name
-
-        return rename_dict
 
     def checkSelected(self, view: QTableView) -> None:
         """Check only the selected rows in the view
@@ -545,88 +328,6 @@ class SelectTableWidget(QAbstractTableModel):
         self.data_processed.emit(self.getData())
         logger.debug(f"Checked {len(selected_indexes)} selected rows")
 
-    def sortColumns(self, sort_type: str) -> None:
-        """Sort columns based on specified criteria"""
-        rows_data = []
-        for row in range(self.table.rowCount()):
-            column_name = self.table.item(row, 1).text()
-            dtype = self.table.cellWidget(row, 2).currentText()
-            rows_data.append((row, column_name, dtype))
-
-        # Sort based on criteria
-        if sort_type == "original":
-            rows_data.sort(key=lambda x: x[0])
-        elif sort_type == "name_asc":
-            rows_data.sort(key=lambda x: x[1].lower())
-        elif sort_type == "name_desc":
-            rows_data.sort(key=lambda x: x[1].lower(), reverse=True)
-        elif sort_type == "type":
-            rows_data.sort(key=lambda x: x[2])
-
-        # Reorder rows
-        for new_idx, (old_idx, _, _) in enumerate(rows_data):
-            if new_idx != old_idx:
-                self.swapRows(new_idx, old_idx)
-
-        self.onDataChanged()
-
-    def onSelectAllChanged(self, state: int) -> None:
-        """Handle select all checkbox changes"""
-        for row in range(self.table.rowCount()):
-            checkbox_container: Optional[QWidget] = self.table.cellWidget(row, 0)
-            checkbox: Optional[QCheckBox] = (
-                checkbox_container.layout().itemAt(0).widget()
-            )
-            checkbox.setChecked(bool(state))
-
-        self.onDataChanged()
-
-    def filterRows(self, text: str) -> None:
-        """Filter rows based on search text"""
-        search_text = text.lower()
-        self.filtered_rows = []
-
-        for row in range(len(self._data)):
-            row_data = self._data[row]
-            if (
-                search_text in row_data.text.lower()
-                or search_text in row_data.option.lower()
-                or (row_data.rename and search_text in row_data.rename.lower())
-            ):
-                self.filtered_rows.append(row)
-
-        # Notify view that data has changed
-        self.layoutChanged.emit()
-
-    # def filterTable(self, text: str) -> None:
-    #     """Filter table rows based on search text"""
-    #     search_text = text.lower()
-    #     for row in range(self.table.rowCount()):
-    #         matches = False
-    #         # Search in column name, rename, and description
-    #         # Column name, rename, description columns
-    #         for col in range(self.table.columnCount()):
-    #             print(f"Row: {row}, Column: {col}")
-    #             widget = self.table.cellWidget(row, col)
-    #             print(f"Widget type: {type(widget)}")
-    #             cell_text = ""
-    #             if widget:
-    #                 # Print widget type(widget)
-    #                 if isinstance(widget, QCheckBox):
-    #                     print("Checkbox found")
-    #                     cell_text = widget.text()
-    #                 elif isinstance(widget, QLineEdit):
-    #                     print("LineEdit found")
-    #                     cell_text = widget.text()
-    #                 # else:
-    #                 #     cell_text = widget.text()
-    #                 print(f"Searching in {cell_text}")
-    #                 # Check if search text is in cell text
-    #                 if search_text in cell_text.lower():
-    #                     matches = True
-    #                     break
-    #         self.table.setRowHidden(row, not matches)
-
     def _move_data(self, source_row: int, target_row: int) -> bool:
         """Reorder ``_data`` with proper model notifications, without emitting."""
         if not (
@@ -648,22 +349,6 @@ class SelectTableWidget(QAbstractTableModel):
             self._data.insert(target_row, item)
             self.endMoveRows()
             return True
-        return False
-
-    def moveRow(self, source_row: int, target_row: int) -> bool:
-        """Move a row from source to target position
-
-        Args:
-            source_row (int): Current row index
-            target_row (int): Target row index
-        """
-        if self._move_data(source_row, target_row):
-            # Single-row moves emit unless the caller is batching a block.
-            if source_row != target_row:
-                self.data_processed.emit(self.getData())
-            return True
-        if 0 <= source_row < len(self._data) and 0 <= target_row < len(self._data):
-            return source_row == target_row
         return False
 
     def moveSelectedRow(self, direction: str, view: QTableView = None) -> None:
@@ -781,12 +466,6 @@ class SelectTableWidget(QAbstractTableModel):
         except RuntimeError:
             pass
 
-    def onColumnMoved(
-        self, logicalIndex: int, oldVisualIndex: int, newVisualIndex: int
-    ) -> None:
-        """Handle column reordering"""
-        self.onDataChanged()
-
     def getData(self) -> list:
         data = []
         for row in range(self.rowCount()):
@@ -804,19 +483,6 @@ class SelectTableWidget(QAbstractTableModel):
         self.beginResetModel()
         self._data = rows
         self.endResetModel()
-
-    # for row in range(self.table.rowCount()):
-    #     # Get checkbox from container
-    #     checkbox_container = self.table.cellWidget(row, 0)
-    #     checkbox = checkbox_container.layout().itemAt(0).widget()
-    #     is_selected = checkbox.isChecked()
-    #     # is_selected = self.table.cellWidget(row, 0).isChecked()
-    #     if is_selected:
-    #         column_name = self.table.item(row, 1).text()
-    #         data_type = self.table.cellWidget(row, 2).currentText()
-    #         rename = self.table.cellWidget(row, 3).text()
-    #         data.append((column_name, data_type, rename))
-    # return data
 
 
 # Custom delegate for the ComboBox column

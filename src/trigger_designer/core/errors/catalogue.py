@@ -621,57 +621,6 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Add key columns or narrow the tolerance.",
         "error",
     ),
-    "TD-SHAPE-081": (
-        "Too many possible fuzzy pairs",
-        "Add a blocking key or filter earlier.",
-        "error",
-    ),
-    "TD-SHAPE-082": (
-        "Too many rows to compare without blocking",
-        "Add a blocking column.",
-        "error",
-    ),
-    "TD-SHAPE-091": (
-        "The column must be a number",
-        "Convert the column with a Select node.",
-        "error",
-    ),
-    "TD-SHAPE-101": (
-        "The split pattern can match nothing",
-        "Change the split pattern.",
-        "error",
-    ),
-    "TD-SHAPE-110": (
-        "Only one SQL statement is allowed",
-        "Remove the extra statements.",
-        "error",
-    ),
-    "TD-SHAPE-111": (
-        "Only SELECT queries are allowed",
-        "Rewrite it as a SELECT.",
-        "error",
-    ),
-    "TD-SHAPE-112": (
-        "A file, system or random function is not allowed",
-        "Remove that function.",
-        "error",
-    ),
-    "TD-SHAPE-113": (
-        "The SQL could not be parsed or run",
-        "Check the SQL near the reported text.",
-        "error",
-    ),
-    "TD-SHAPE-114": ("The SQL is too long", "Shorten the statement.", "error"),
-    "TD-SHAPE-115": (
-        "The query took too long",
-        "Filter the data before the query.",
-        "error",
-    ),
-    "TD-SHAPE-120": (
-        "The formula must contain {col}",
-        "Add {col} to the formula.",
-        "error",
-    ),
     "TD-CLI-001": (
         "The workflow file could not be read.",
         "Check the path and that it is a .tds file.",
@@ -869,23 +818,3 @@ def render_entry(
         if rendered and rendered not in fixes:
             fixes.append(rendered)
     return shorten(title, 90), detail, tuple(fixes)
-
-
-def main_markdown() -> str:
-    lines = [
-        "# Error codes",
-        "",
-        "| Code | Severity | Title | Fix |",
-        "|---|---|---|---|",
-    ]
-    for code in sorted(CATALOGUE):
-        entry = CATALOGUE[code]
-        lines.append(
-            "| {code} | {severity} | {title} | {fix} |".format(
-                code=code,
-                severity=entry.get("severity", "error"),
-                title=str(entry.get("title", "")).replace("|", "\\|"),
-                fix=str(entry.get("hint", "")).replace("|", "\\|"),
-            )
-        )
-    return "\n".join(lines) + "\n"

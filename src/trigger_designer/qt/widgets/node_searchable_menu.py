@@ -146,11 +146,6 @@ class SearchableMenu(QMenu):
             parent.add_node_to_scene()
             self.hide()
 
-    def filterNodes(self, text: str) -> None:
-        if not self.is_flat_view:
-            return
-        self._apply_filter(text)
-
     def hideEvent(self, event: QHideEvent) -> None:
         # Disconnect all actions when hiding
         for action in self._connected_actions:

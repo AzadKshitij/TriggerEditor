@@ -17,8 +17,7 @@ undo step.
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from typing import Any, Callable, Iterator, Optional
+from typing import Any, Callable, Optional
 
 from qtpy.QtGui import QUndoStack
 
@@ -29,10 +28,6 @@ from trigger_designer.qt.undo.commands import SceneSnapshotCommand, UndoableEdit
 #: session while still bounding memory.
 DEFAULT_UNDO_LIMIT = 200
 
-#: Nesting depth beyond which macros are refused, to catch a begin without a
-#: matching end rather than silently swallowing every later undo.
-_MAX_MACRO_DEPTH = 8
-
 
 class UndoController:
     """Owns the :class:`QUndoStack` for one scene's history."""
@@ -41,7 +36,6 @@ class UndoController:
         self.history = history
         self.stack = QUndoStack()
         self.stack.setUndoLimit(-1 if limit is None else limit)
-        self._macro_depth = 0
 
     # ------------------------------------------------------------------
     # Pushing
@@ -145,44 +139,6 @@ class UndoController:
         return True
 
     # ------------------------------------------------------------------
-    # Macros
-    # ------------------------------------------------------------------
-
-    def begin_macro(self, text: str) -> bool:
-        """Group everything up to :meth:`end_macro` into one undo step."""
-        if self._macro_depth >= _MAX_MACRO_DEPTH:
-            return False
-        if self._macro_depth == 0:
-            self.stack.beginMacro(text)
-        self._macro_depth += 1
-        return True
-
-    def end_macro(self) -> None:
-        if self._macro_depth == 0:
-            return
-        self._macro_depth -= 1
-        if self._macro_depth == 0:
-            self.stack.endMacro()
-
-    @property
-    def in_macro(self) -> bool:
-        return self._macro_depth > 0
-
-    @contextmanager
-    def macro(self, text: str) -> Iterator[bool]:
-        """``with controller.macro("Renamed Field"): ...``
-
-        Yields ``False`` when the macro was refused, so the body can skip work
-        that would otherwise be orphaned inside a macro that never closes.
-        """
-        started = self.begin_macro(text)
-        try:
-            yield started
-        finally:
-            if started:
-                self.end_macro()
-
-    # ------------------------------------------------------------------
     # Traversal
     # ------------------------------------------------------------------
 
@@ -231,8 +187,6 @@ class UndoController:
         return self.stack.command(nxt).text()
 
     def clear(self) -> None:
-        # An unbalanced macro would otherwise leave the stack wedged.
-        self._macro_depth = 0
         self.stack.clear()
 
     @property

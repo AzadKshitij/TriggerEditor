@@ -38,13 +38,6 @@ DEFAULT_SOCKET_COLORS: dict[str, str] = {
 }
 
 
-def default_node_editor_colors() -> dict[str, dict[str, str]]:
-    return {
-        "edges": dict(DEFAULT_EDGE_COLORS),
-        "sockets": dict(DEFAULT_SOCKET_COLORS),
-    }
-
-
 def load_node_editor_colors(
     settings: QSettings | None = None,
 ) -> dict[str, dict[str, str]]:
