@@ -6,6 +6,7 @@ import polars as pl
 from nodeeditor.node_edge import Edge
 from qtpy.QtWidgets import QCheckBox
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -56,7 +57,7 @@ def _node(qtbot, frame=None):
 
 
 def _columns(node) -> list[str]:
-    return node.value[0]["data"].collect_schema().names()
+    return live_value(node)[0]["data"].collect_schema().names()
 
 
 def test_dock_shows_rule_controls_and_columns(qtbot) -> None:
@@ -124,7 +125,7 @@ def test_generated_code_matches_live(qtbot) -> None:
     content.set_setting(
         "selected_columns", ["Customer_Id"], "Normalize Normalize Changed"
     )
-    live = node.value[0]["data"].collect()
+    live = live_value(node)[0]["data"].collect()
 
     namespace = {"var_src": _frame().lazy()}
     exec(content.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
@@ -170,4 +171,4 @@ def test_serialize_round_trip(qtbot) -> None:
     fresh.markDirty(True)
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
-    assert out[0]["data"].collect().equals(node.value[0]["data"].collect())
+    assert out[0]["data"].collect().equals(live_value(node)[0]["data"].collect())

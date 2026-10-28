@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 from nodeeditor.node_edge import Edge
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -53,7 +54,7 @@ def _node(qtbot, frame=None):
 
 
 def _outputs(node):
-    return node.value[0]["data"].collect(), node.value[1]["data"].collect()
+    return live_value(node)[0]["data"].collect(), live_value(node)[1]["data"].collect()
 
 
 def test_dock_shows_schema_columns(qtbot) -> None:
@@ -140,4 +141,4 @@ def test_serialize_round_trip(qtbot) -> None:
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
     for index in (0, 1):
-        assert out[index]["data"].collect().equals(node.value[index]["data"].collect())
+        assert out[index]["data"].collect().equals(live_value(node)[index]["data"].collect())

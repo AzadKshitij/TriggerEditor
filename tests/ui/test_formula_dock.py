@@ -6,6 +6,7 @@ import polars as pl
 from nodeeditor.node_edge import Edge
 from qtpy.QtWidgets import QPushButton
 
+from tests.support.flush import flush, live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -54,7 +55,7 @@ def _node(qtbot):
 
 
 def _output(node) -> pl.DataFrame:
-    return node.value[0]["data"].collect()
+    return live_value(node)[0]["data"].collect()
 
 
 def _section(target: str, formula: str, dtype: str = "") -> dict:
@@ -102,7 +103,9 @@ def test_target_and_text_edits_change_output(qtbot) -> None:
     assert _output(node)["x"].to_list() == [2, 3, 4]
 
 
-def test_text_editing_defers_compute_until_focus_out(qtbot, monkeypatch) -> None:
+def test_text_editing_defers_compute_until_the_node_is_left(
+    qtbot, monkeypatch
+) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", "")], "Baseline")
@@ -115,20 +118,27 @@ def test_text_editing_defers_compute_until_focus_out(qtbot, monkeypatch) -> None
     assert calls == []
     assert content.settings["sections"][0]["formula_text"] == "[x] + 1"
 
+    # Leaving the editor is not leaving the node.
     monkeypatch.setattr(content, "_sql_editor_has_focus", lambda: False)
     content._on_editor_finished(0)
+    qtbot.wait(20)
+    assert calls == []
+
+    content.commit_pending_dock_edits()
     qtbot.wait(20)
 
     assert calls == [1]
     assert _output(node)["y"].to_list() == [2, 3, 4]
 
-    # A second focus-out with no pending text must not compute again.
-    content._on_editor_finished(0)
+    # A second flush with nothing pending must not compute again.
+    content.commit_pending_dock_edits()
     qtbot.wait(20)
     assert calls == [1]
 
 
-def test_formula_editors_coalesce_until_all_lose_focus(qtbot, monkeypatch) -> None:
+def test_formula_editors_coalesce_into_one_run_when_the_node_is_left(
+    qtbot, monkeypatch
+) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting(
@@ -153,6 +163,9 @@ def test_formula_editors_coalesce_until_all_lose_focus(qtbot, monkeypatch) -> No
     monkeypatch.setattr(content, "_sql_editor_has_focus", lambda: False)
     content._on_editor_finished(1)
     qtbot.wait(20)
+    assert calls == []
+
+    content.commit_pending_dock_edits()
 
     assert calls == [1]
     output = _output(node)
@@ -170,7 +183,7 @@ def test_typing_marks_the_document_dirty_before_the_debounce(qtbot) -> None:
     assert window.scene.has_been_modified is True
 
 
-def test_pending_text_is_flushed_without_evaluating(qtbot, monkeypatch) -> None:
+def test_pending_text_is_saved_and_the_run_stays_pending(qtbot, monkeypatch) -> None:
     window, _source, node, dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", "")], "Baseline")
@@ -183,7 +196,7 @@ def test_pending_text_is_flushed_without_evaluating(qtbot, monkeypatch) -> None:
 
     assert content.settings["sections"][0]["formula_text"] == "[x] + 1"
     assert content.serialize()["settings"]["sections"][0]["formula_text"] == "[x] + 1"
-    assert content._pending_evaluate is False
+    assert content._pending_evaluate is True  # still runs when the node is left
     assert calls == []
 
 
@@ -213,7 +226,8 @@ def test_new_column_dialog_cancel_keeps_deferred_evaluation(qtbot, monkeypatch) 
     assert selector.currentText() == "y"
     assert rebuilds == []
     assert content.settings["sections"][0]["formula_text"] == "[x] + 1"
-    assert calls == [1]
+    assert content._pending_evaluate is True
+    assert calls == []
 
 
 def test_rebuild_cards_survives_a_deleted_layout(qtbot) -> None:
@@ -244,17 +258,22 @@ def test_new_column_accept_sets_the_target(qtbot, monkeypatch) -> None:
 
     assert content.settings["sections"][0]["target_column"] == "new_col"
     assert content.section_widgets[0]["target_selector"].currentText() == "new_col"
+    assert calls == []
+
+    content.commit_pending_dock_edits()
     assert calls == [1]
 
 
-def test_structural_change_still_evaluates_immediately(qtbot, monkeypatch) -> None:
+def test_structural_change_waits_until_the_node_is_left(qtbot, monkeypatch) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", "")], "Baseline")
     calls = _count_compute(monkeypatch, content)
 
     content.add_section_button.click()
+    assert calls == []
 
+    content.commit_pending_dock_edits()
     assert calls == [1]
 
 
@@ -329,7 +348,7 @@ def test_serialize_round_trip(qtbot) -> None:
     fresh.markDirty(True)
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
-    assert out[0]["data"].collect().equals(node.value[0]["data"].collect())
+    assert out[0]["data"].collect().equals(live_value(node)[0]["data"].collect())
 
 
 def test_dtype_change_through_the_real_signal_is_saved(qtbot) -> None:
@@ -399,12 +418,14 @@ def test_late_error_enrichment_does_not_resurrect_a_fixed_error(qtbot) -> None:
     window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    flush(content)
     error = node.current_error
     assert error is not None
     node.set_error(error, "run")  # what a failed Run records
     result = EnrichResult(root=error, knock_on=None, culprit_node_id=None)
 
     content.set_setting("sections", [_section("y", "[x] + 1")], "Fixed")
+    flush(content)
     assert node.current_error is None
 
     window._apply_enrichment(node, result, error)
@@ -418,6 +439,7 @@ def test_enrichment_still_applies_while_the_run_error_stands(qtbot) -> None:
     window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    flush(content)
     error = node.current_error
     node.set_error(error, "run")
     enriched = error.with_updates(locate_status="timeout")
@@ -428,16 +450,20 @@ def test_enrichment_still_applies_while_the_run_error_stands(qtbot) -> None:
     assert node._errors_dict()["run"].locate_status == "timeout"
 
 
-def test_node_recovers_as_soon_as_the_text_is_valid_again(qtbot) -> None:
-    """A red node must not wait for focus-out once the formula is fixed."""
+def test_red_node_recovers_when_the_node_is_left(qtbot) -> None:
+    """The fix is saved at once; the node clears its error when it is left."""
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", '[x] + ""')], "Bad")
+    flush(content)
     assert node.current_error is not None
     editor = content.section_widgets[0]["formula_input"]
 
     editor.set_text("[x] + 1")
     content._commit_text(0, evaluate=False)  # what the typing debounce does
+    assert node.current_error is not None  # not run yet
+
+    flush(content)
 
     assert node.current_error is None
     assert _output(node)["y"].to_list() == [2, 3, 4]

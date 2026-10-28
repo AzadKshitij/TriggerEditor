@@ -6,6 +6,7 @@ import polars as pl
 from nodeeditor.node_edge import Edge
 from qtpy.QtWidgets import QSpinBox
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -64,7 +65,7 @@ def test_dock_builds_mode_percent_and_seed(qtbot) -> None:
         "random_seed": 42,
         "is_random": True,
     }
-    estimation, validation = (entry["data"].collect() for entry in node.value)
+    estimation, validation = (entry["data"].collect() for entry in live_value(node))
     assert estimation.height + validation.height == 10
 
 
@@ -76,7 +77,7 @@ def test_sequential_mode_reorders_and_hides_the_seed(qtbot) -> None:
     assert content.settings["is_random"] is False
     assert content._rows["random_seed"].isHidden() is True
 
-    estimation, validation = (entry["data"].collect() for entry in node.value)
+    estimation, validation = (entry["data"].collect() for entry in live_value(node))
     assert estimation["v"].to_list() == [0, 1, 2, 3, 4, 5, 6]
     assert validation["v"].to_list() == [7, 8, 9]
 
@@ -92,7 +93,7 @@ def test_percent_change_is_one_undo_step(qtbot) -> None:
     qtbot.wait(350)
     assert content.settings["estimation_percent"] == 50
     assert node.content._widgets["estimation_percent"].value() == 50
-    estimation, validation = (entry["data"].collect() for entry in node.value)
+    estimation, validation = (entry["data"].collect() for entry in live_value(node))
     assert estimation.height == 5
     assert validation.height == 5
 
@@ -109,7 +110,7 @@ def test_generated_code_matches_both_live_outputs(qtbot) -> None:
     content = node.content
     content.set_setting("is_random", False, "Split Method Changed")
     content.set_setting("estimation_percent", 60, "Split Estimation % Changed")
-    live = [entry["data"].collect() for entry in node.value]
+    live = [entry["data"].collect() for entry in live_value(node)]
 
     namespace = {"var_src": _frame().lazy()}
     exec(content.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
@@ -135,4 +136,4 @@ def test_serialize_round_trip(qtbot) -> None:
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
     for index in (0, 1):
-        assert out[index]["data"].collect().equals(node.value[index]["data"].collect())
+        assert out[index]["data"].collect().equals(live_value(node)[index]["data"].collect())

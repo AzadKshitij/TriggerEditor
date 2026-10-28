@@ -284,7 +284,7 @@ class RowsContent(ShapingContent):
             self.set_setting("field_type", value, "Rows Field type Changed")
         finally:
             self._suspend_node_evaluation = previous
-        self.evaluate.emit()
+        self.request_evaluation()
 
     def _converted_values(self, target: str) -> dict:
         settings = self.settings
