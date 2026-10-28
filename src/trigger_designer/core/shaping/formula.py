@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 
 import polars as pl
 
@@ -13,11 +12,9 @@ from trigger_designer.core.shaping.common import (
     schema_of,
 )
 from trigger_designer.core.shaping.sql_expression import (
-    apply_outside_string_literals,
-    normalize_string_literals,
+    prepare_expression_sql,
     quote_identifier,
-    replace_column_names,
-    translate_function_aliases,
+    shorten_error,
 )
 from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 
@@ -94,36 +91,13 @@ def is_configured(section: dict) -> bool:
     )
 
 
-def prepare_formula_for_sql(formula_text: str, available_columns: list[str]) -> str:
-    sql_formula = normalize_string_literals(formula_text)
-    sql_formula = apply_outside_string_literals(sql_formula, translate_function_aliases)
-    for column_name in available_columns:
-        sql_formula = replace_column_names(sql_formula, column_name)
-    return sql_formula
-
-
-def shorten_error(message: str) -> str:
-    text = (message or "").strip().replace("\r\n", "\n")
-    match = re.search(r'Referenced column "[^"]+" not found', text)
-    if match:
-        return match.group()
-    first_line = text.split("\n", 1)[0].strip()
-    for prefix in (
-        "Binder Error:",
-        "Catalog Error:",
-        "Conversion Error:",
-        "Parser Error:",
-    ):
-        if first_line.startswith(prefix):
-            first_line = first_line[len(prefix) :].strip()
-    return first_line[:160]
-
-
 def section_query(
     section: dict, available_columns: list[str], relation_name: str
 ) -> tuple[str, list[str]]:
     target = section["target_column"]
-    sql_formula = prepare_formula_for_sql(section["formula_text"], available_columns)
+    sql_formula = prepare_expression_sql(
+        section["formula_text"], available_columns, in_between=False
+    )
     columns = list(available_columns)
     if target in columns:
         query = (

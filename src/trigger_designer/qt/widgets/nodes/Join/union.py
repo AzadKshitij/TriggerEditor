@@ -51,6 +51,7 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.core.shaping.common import live_sample
 from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
+from trigger_designer.qt.helpers.shaping_support import clear_layout
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
@@ -439,7 +440,7 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
         if section is None:
             return
         for layout in self._order_row_layouts:
-            self._delete_layout(layout)
+            clear_layout(layout, delete=True)
         self._order_row_layouts = []
         try:
             edges = self.node.getOrderedEdges()
@@ -700,23 +701,10 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
             return
         old = [dict(r, sources=list(r["sources"])) for r in self.column_map]
         self._map_rows.remove(entry)
-        self._delete_layout(entry["layout"])
+        clear_layout(entry["layout"], delete=True)
         new = self._read_mapping()
         self.column_map = new
         self.push_list_change(("column_map",), old, new, "Union Column Removed")
-
-    @staticmethod
-    def _delete_layout(layout: Optional[QLayout]) -> None:
-        if layout is None:
-            return
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-            elif item.layout() is not None:
-                UnionContent._delete_layout(item.layout())
-        layout.deleteLater()
 
     def _delete_section(self, parent: QVBoxLayout, section: ConfigSection) -> None:
         for i in range(parent.count()):

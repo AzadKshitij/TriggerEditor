@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
@@ -230,6 +231,28 @@ class SuffixEditor(QWidget):
             self.changed.emit(self.value())
 
 
+def clear_layout(layout: QLayout | None, *, delete: bool = False) -> bool:
+    """Delete the widgets and nested layouts in ``layout``; keep it unless ``delete``.
+
+    False when there is nothing to clear or its C++ object is already gone
+    (the Config Dock cleared while a modal dialog was open).
+    """
+    if layout is None:
+        return False
+    try:
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+            elif item.layout() is not None:
+                clear_layout(item.layout(), delete=True)
+        if delete:
+            layout.deleteLater()
+    except RuntimeError:
+        return False
+    return True
+
+
 class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin):
     SETTINGS: dict = {}  # noqa: RUF012 - subclass defaults, never mutated
     MODULE = ""
@@ -237,7 +260,6 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
     OUTPUT_KINDS: tuple = ("out",)
     INPUTS = 1
     OPTIONAL_INPUTS: frozenset = frozenset()
-    LIVE_CAP_ROWS = 0
     FORM: tuple = ()
     HISTORY = "Node"
     SUMMARY = ""
@@ -289,47 +311,18 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
         schema = self.schema(spec.input)
         return [(name, dtype_label(schema[name])) for name in self.names(spec)]
 
-    def _rows_in(self, limit: int | None = None) -> int:
-        """Rows across the inputs; with ``limit``, lazy inputs stop past it.
-
-        Reading at most ``limit + 1`` rows from each lazy input is enough to
-        tell whether the total exceeds ``limit``, so the cap check never scans
-        a whole source just to count it.
-        """
-        total = 0
-        for frame in self.frames:
-            if isinstance(frame, pl.LazyFrame):
-                source = frame if limit is None else frame.head(limit + 1)
-                total += source.select(pl.len()).collect().item()
-            elif frame is not None:
-                total += frame.height
-        return total
-
     def compute(self) -> list:
         module = importlib.import_module(self.MODULE)
         settings = copy.deepcopy(self.settings)
         frames = list(self.frames)
         self.chips = []
-        capped = bool(self.LIVE_CAP_ROWS) and (
-            self._rows_in(self.LIVE_CAP_ROWS) > self.LIVE_CAP_ROWS
-        )
-        if capped:
-            frames = [
-                None
-                if frame is None
-                else pl.DataFrame(schema=frame_schema(frame)).lazy()
-                for frame in frames
-            ]
-            self.chips = [
-                (f"Over {self.LIVE_CAP_ROWS:,} rows: full result at Run", "warning")
-            ]
         runner = getattr(module, self.RUNNER)
         outs = runner(frames, settings)
         self.outputs = [
             out.lazy() if isinstance(out, pl.DataFrame) else out for out in outs
         ]
         describe = getattr(module, "describe", None)
-        if describe is not None and not capped:
+        if describe is not None:
             try:
                 self.chips += describe(frames, settings)
             except Exception:  # noqa: BLE001, S110 - chips are advisory

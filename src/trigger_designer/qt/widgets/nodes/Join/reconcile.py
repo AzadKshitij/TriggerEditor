@@ -24,7 +24,6 @@ class ReconcileContent(ShapingContent):
     MODULE = "trigger_designer.core.shaping.reconcile"
     OUTPUT_KINDS = ("recon_matched", "recon_left", "recon_right", "recon_summary")
     INPUTS = 2
-    LIVE_CAP_ROWS = 200_000
     HISTORY = "Reconcile"
     SUMMARY = "M matched \u00b7 L left \u00b7 R right \u00b7 S summary"
     FORM = (

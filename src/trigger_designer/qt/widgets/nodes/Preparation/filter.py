@@ -170,11 +170,12 @@ class FilterContent(ShapingContent):
         if self.settings.get("operation") not in operations:
             self.set_setting("operation", "Equals", "Filter Operation Changed")
 
-    def _commit_expression(self, *, evaluate: bool | None = None) -> None:
+    def _commit_expression(self, *, evaluate: bool | None = None) -> bool:
+        """Read the editor into the model; False when the editor is gone."""
         try:
             text = self.expression_input.get_text() or ""
         except AttributeError, RuntimeError:
-            return
+            return False
         self.set_setting(
             "expression",
             text,
@@ -184,6 +185,7 @@ class FilterContent(ShapingContent):
         )
         if evaluate:
             self._evaluate_pending()
+        return True
 
     def _on_expression_finished(self) -> None:
         """Commit on focus-out; evaluate when the SQL editor is left."""
@@ -196,18 +198,7 @@ class FilterContent(ShapingContent):
 
     def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
         """Read the expression into the model before the dock is destroyed."""
-        try:
-            text = self.expression_input.get_text() or ""
-        except AttributeError, RuntimeError:
-            return
-        self.set_setting(
-            "expression",
-            text,
-            "Filter Expression Changed",
-            "filter-expression",
-            evaluate=False,
-        )
-        if evaluate:
+        if self._commit_expression(evaluate=False) and evaluate:
             self._evaluate_pending()
 
     def _column_dtype(self, column: str):
