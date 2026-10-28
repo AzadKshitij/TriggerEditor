@@ -45,15 +45,13 @@ def apply_record_id(frame: Frame, settings: dict) -> pl.LazyFrame:
     order_cols = [item["column"] for item in s["order_by"]]
     require_columns(schema, s["group_by"] + order_cols)
 
+    number = pl.int_range(pl.len(), dtype=pl.Int64) + s["start"]
     if not s["group_by"] and not order_cols:
-        out = lf.with_row_index(s["name"], offset=s["start"]).with_columns(
-            pl.col(s["name"]).cast(pl.Int64)
-        )
+        out = lf.with_columns(number.alias(s["name"]))
     else:
         lf = lf.with_row_index(POS)
         keys = order_cols + [POS]
         descending = [bool(item.get("descending")) for item in s["order_by"]] + [False]
-        number = pl.int_range(pl.len(), dtype=pl.Int64) + s["start"]
         if s["group_by"]:
             number = number.over(s["group_by"])
         out = (
