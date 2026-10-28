@@ -213,6 +213,7 @@ QVBoxLayout (dock_layout)
 └─ SelectTableView [stretch 1] via SelectFilterProxy
     ├─ CaseInsensitive over name, rename and dtype
     ├─ ExtendedSelection + SelectRows, 28px rows, no row numbers
+    ├─ Interactive data columns (checkbox fixed at 50), widths kept on the content
     ├─ DtypeDelegate (single-click dropdown)
     └─ RenameDelegate (Enter/focus-out commits, Escape cancels)
 ```
@@ -458,6 +459,9 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 
 - Do not draw vertical grid lines. The row separator is enough.
 - `QHeaderView::section` must use the theme tokens; no default Fusion header.
+- Editable tables keep the checkbox column fixed and every data column
+  `Interactive`; keep the widths on the content so a dock rebuild does not
+  reset them, and let spare width grow the name column.
 - Delegates must paint from `option.palette`/`option.font`; never hand a bare `QStyleOptionComboBox` to `drawComplexControl`.
 - The Preview table is dense (24px); editable tables are 28px. Do not mix densities in one view.
 - Copy/export menus stay in the strip's Options menu; no table footer.

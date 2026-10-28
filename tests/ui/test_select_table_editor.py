@@ -18,6 +18,7 @@ from qtpy.QtTest import QTest
 from qtpy.QtWidgets import (
     QApplication,
     QComboBox,
+    QHeaderView,
     QLineEdit,
     QMainWindow,
     QMenu,
@@ -151,6 +152,30 @@ def test_f2_opens_the_rename_editor():
     editor = content.table_view.findChild(QLineEdit, "RenameEditor")
     assert editor is not None
     host.hide()
+
+
+# ---- column widths ---------------------------------------------------------
+
+
+def test_data_columns_are_resizable_and_the_checkbox_is_fixed():
+    _parent, _window, content, _host = _make_content()
+    header = content.table_view.horizontalHeader()
+    assert header.sectionResizeMode(0) == QHeaderView.ResizeMode.Fixed
+    for column in (1, 2, 3):
+        assert header.sectionResizeMode(column) == QHeaderView.ResizeMode.Interactive
+
+
+def test_column_widths_survive_a_dock_rebuild():
+    _parent, _window, content, _host = _make_content()
+    content.table_view.horizontalHeader().resizeSection(3, 190)
+    assert content._table_column_widths[3] == 190
+
+    second_host = QWidget()
+    content.create_layout(QVBoxLayout(second_host))
+    restored = content.table_view.horizontalHeader()
+    # The name column may absorb spare viewport width; the rename column is
+    # the one the user set, so it must come back exactly as chosen.
+    assert restored.sectionSize(3) == 190
 
 
 # ---- edges -----------------------------------------------------------------

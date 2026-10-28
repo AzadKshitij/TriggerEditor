@@ -108,6 +108,8 @@ Copy the shape of `SelectContent` when the node's editor is a table:
   small `TableEdit` payload;
 - mark the table **view** `_undo_composite = True`; the model owns the change
   signal and the dock sweep must not bind its editors;
+- keep the checkbox column fixed and the data columns `Interactive`, and
+  remember the widths on the content so a dock rebuild keeps them;
 - commit rename edits on Enter/focus-out, not on every keystroke;
 - override `_sync_widgets_from_model` to reset rows without recording, and
   keep `update_from_changes` silent;
