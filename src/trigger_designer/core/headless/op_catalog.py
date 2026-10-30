@@ -3,7 +3,8 @@
 Qt-free by design: reading the real registry imports Qt (``node_configuration``
 ends by importing every node). ``tests/unit/test_op_catalog_matches_registry.py``
 fails when this table and the registry drift, so a new node must add its row
-here (and ``output_keys`` when its content holds an output path).
+here (and ``output_keys``/``input_keys`` when its content holds a file path:
+``approve``, ``info`` and ``paths`` list files from these keys).
 """
 
 from __future__ import annotations
@@ -19,6 +20,8 @@ class OpInfo:
     custom_code: bool = False
     #: Content keys that hold an output path; the patcher stages these.
     output_keys: tuple[str, ...] = ()
+    #: Content keys that hold an input path (read before the run).
+    input_keys: tuple[str, ...] = ()
     #: True while the node is planned but may not be registered in this build.
     planned: bool = False
 
@@ -29,7 +32,7 @@ def _row(op: str, title: str, **kw) -> tuple[str, OpInfo]:
 
 OPS: dict[str, OpInfo] = dict(
     [
-        _row("input.file_input", "File Input"),
+        _row("input.file_input", "File Input", input_keys=("filePath",)),
         _row("input.file_output", "File Output", output_keys=("filePath",)),
         _row("preparation.cleansing", "Cleansing"),
         _row("preparation.filter", "Filter"),

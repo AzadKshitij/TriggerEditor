@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -192,3 +193,49 @@ def test_file_nodes_read_settings_or_top_level_path():
 
 def test_op_counts():
     assert op_counts(_doc(_simple())) == {"input.file_input": 1, "input.file_output": 1}
+
+
+def _file_touching_ops():
+    from trigger_designer.core.headless.op_catalog import OPS
+
+    return [
+        (info, key, kind)
+        for info in OPS.values()
+        for kind, keys in (
+            ("input", getattr(info, "input_keys", ())),
+            ("output", info.output_keys),
+        )
+        for key in keys
+    ]
+
+
+def test_every_file_touching_op_in_the_catalogue_is_listed():
+    """C3: approve/info/paths must show every path the run reads or writes."""
+    from trigger_designer.cli.commands.approve import review_block
+    from trigger_designer.core.headless.op_catalog import OPS
+
+    if "input.workpaper_output" not in OPS:
+        pytest.skip("input.workpaper_output is not registered in this build")
+    ops = _file_touching_ops()
+    assert {i.op for i, _, _ in ops} >= {
+        "input.file_input",
+        "input.file_output",
+        "input.workpaper_output",
+    }
+    nodes = [
+        _node(
+            100 + n,
+            info.op,
+            content={"settings": {key: f"C:/data/{info.op}_{key}.xlsx"}},
+        )
+        for n, (info, key, _) in enumerate(ops)
+    ]
+    doc = _doc(_wf(nodes, []))
+    listed = {(f.kind, f.raw_path) for f in file_nodes(doc)}
+    assert listed == {
+        (kind, f"C:/data/{info.op}_{key}.xlsx") for info, key, kind in ops
+    }
+    _text, reads, writes = review_block(doc)
+    for info, key, kind in ops:
+        want = str(Path(f"C:/data/{info.op}_{key}.xlsx"))
+        assert want in (reads if kind == "input" else writes)

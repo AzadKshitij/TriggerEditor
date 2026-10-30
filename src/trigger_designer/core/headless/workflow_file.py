@@ -12,7 +12,7 @@ from typing import Any
 
 from trigger_designer.core.constants import WORKFLOW_SCHEMA_VERSION
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
-from trigger_designer.core.headless.op_catalog import known_op, node_op
+from trigger_designer.core.headless.op_catalog import OPS, known_op, node_op
 
 
 @dataclass(frozen=True)
@@ -61,6 +61,7 @@ class FileNode:
     raw_path: str
     title: str
     op: str | None = None
+    key: str = "filePath"
 
 
 def _decode(raw: bytes) -> tuple[str, str]:
@@ -236,26 +237,45 @@ def settings_holder(content: dict, key: str) -> dict | None:
     return None
 
 
+def _file_keys(op: str | None, title: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """(input keys, output keys) of a node, from the op catalogue; a legacy
+    node without an op id is recognised by its title."""
+    info = known_op(op or "")
+    if info is None and op is None:
+        info = next((i for i in OPS.values() if i.title == title), None)
+    if info is None:
+        return (), ()
+    return info.input_keys, info.output_keys
+
+
 def file_nodes(doc: WorkflowDoc) -> list[FileNode]:
-    """File Input / File Output nodes with their saved path."""
+    """Every node that reads or writes a file, one row per path key.
+
+    Driven by ``op_catalog`` (``input_keys`` / ``output_keys``), so a new
+    file-touching op shows up in ``approve``, ``info`` and ``paths``.
+    """
     found: list[FileNode] = []
     for node in doc.nodes:
         op = node_op(node)
         title = _title(node)
-        if op == "input.file_input" or (op is None and title == "File Input"):
-            kind = "input"
-        elif op == "input.file_output" or (op is None and title == "File Output"):
-            kind = "output"
-        else:
-            continue
+        in_keys, out_keys = _file_keys(op, title)
         content = node.get("content")
         content = content if isinstance(content, dict) else {}
-        holder = settings_holder(content, "filePath")
-        raw_path = str(holder.get("filePath") or "") if holder else ""
         nid = node.get("id")
-        found.append(
-            FileNode(nid if isinstance(nid, int) else -1, kind, raw_path, title, op)
-        )
+        for kind, keys in (("input", in_keys), ("output", out_keys)):
+            for key in keys:
+                holder = settings_holder(content, key)
+                raw_path = str(holder.get(key) or "") if holder else ""
+                found.append(
+                    FileNode(
+                        nid if isinstance(nid, int) else -1,
+                        kind,
+                        raw_path,
+                        title,
+                        op,
+                        key,
+                    )
+                )
     return found
 
 
