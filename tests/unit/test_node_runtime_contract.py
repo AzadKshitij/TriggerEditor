@@ -356,3 +356,18 @@ def test_trigger_content_is_a_config_content_adapter() -> None:
 
     assert LegacyConfigContent is ConfigContent
     assert issubclass(TriggerContent, ConfigContent)
+
+
+def test_node_base_reexports_every_moved_name() -> None:
+    from trigger_designer.core import frames
+    from trigger_designer.qt import node_base, node_content, node_graphics
+    from trigger_designer.qt.helpers import rename_map
+
+    assert node_base.TriggerGraphicsNode is node_graphics.TriggerGraphicsNode
+    assert node_base.TriggerContent is node_content.TriggerContent
+    assert node_base.TriggerChangeHandler is node_content.TriggerChangeHandler
+    assert node_base.ConfigContent is node_content.ConfigContent
+    assert node_base.DockBinding is node_content.DockBinding
+    assert node_base.frame_schema is frames.frame_schema
+    assert node_base.frame_shape is frames.frame_shape
+    assert node_base.upstream_rename_map is rename_map.upstream_rename_map

@@ -238,7 +238,6 @@ class NodeEvaluator:
             node.set_error(build_error(), "live")
         if refresh:
             node._refresh_selected_node_config()
-        return None
 
     def succeed(self, result: Any) -> Any:
         node = self.node
