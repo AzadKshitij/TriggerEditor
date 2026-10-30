@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import re
 
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
-    connect_duckdb,
     schema_of,
 )
 from trigger_designer.core.shaping.sql_expression import (
@@ -16,6 +16,11 @@ from trigger_designer.core.shaping.sql_expression import (
     quote_identifier,
     shorten_error,
 )
+
+# Formula text is SQL: every query is checked by the read-only guard and runs on
+# a locked connection (BUG-029/030), never on a plain DuckDB connection.
+from trigger_designer.core.sql_guard import check_select_only
+from trigger_designer.core.sql_guard import connect_for_shaping as connect_duckdb
 from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 
 MAX_FORMULA_SECTIONS = 5
@@ -141,7 +146,11 @@ def _run_sequential(
             query, columns = section_query(section, columns, relation)
             duck.register(relation, frame)
             try:
+                check_select_only(query, allow_unparsable=True)
                 frame = duck.sql(query).pl()
+            except ShapingError as exc:
+                errors[index] = str(exc)
+                break
             except Exception as exc:  # noqa: BLE001 - identify the section
                 errors[index] = shorten_error(str(exc))
                 break
@@ -162,6 +171,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     available = list(schema_of(frame))
     query, _columns = build_combined_query(configured, available, "df_for_duck")
     try:
+        check_select_only(query, allow_unparsable=True)
         with connect_duckdb() as duck:
             duck.register("df_for_duck", frame)
             result = duck.sql(query).pl()
@@ -169,9 +179,10 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         result, _columns, errors = _run_sequential(frame, configured, available)
         if errors:
             index = min(errors)
-            raise ShapingError(
-                "TD-SHAPE-004", f"Section {index + 1}: {errors[index]}"
-            ) from None
+            # A guard rejection keeps its own code (TD-SHAPE-110..115).
+            guard = re.match(r"\[(TD-SHAPE-11\d)\] (.*)", errors[index])
+            code, detail = guard.groups() if guard else ("TD-SHAPE-004", errors[index])
+            raise ShapingError(code, f"Section {index + 1}: {detail}") from None
 
     return [normalize_to_supported_dtypes(result).lazy()]
 
@@ -195,6 +206,7 @@ def _first_error(
             query, available = section_query(section, available, relation)
             duck.register(relation, current)
             try:
+                check_select_only(query, allow_unparsable=True)
                 current = duck.sql(query).pl()
             except Exception:  # noqa: BLE001 - an earlier section's problem
                 return []
@@ -205,6 +217,7 @@ def _first_error(
         query, _available = section_query(section, available, relation)
         duck.register(relation, current)
         try:
+            check_select_only(query, allow_unparsable=True)
             if explain:
                 duck.execute(f"EXPLAIN {query}").fetchall()
             else:

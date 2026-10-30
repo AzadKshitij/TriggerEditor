@@ -7,12 +7,20 @@ import polars as pl
 from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
-    connect_duckdb,
     schema_of,
 )
 from trigger_designer.core.shaping.sql_expression import (
     prepare_expression_sql,
     shorten_error,
+)
+
+# The user's expression is SQL: it runs only after the read-only guard and on a
+# locked connection (BUG-029/030), never on a plain DuckDB connection.
+from trigger_designer.core.sql_guard import (
+    check_select_only,
+)
+from trigger_designer.core.sql_guard import (
+    connect_for_shaping as connect_duckdb,
 )
 
 DEFAULTS = {
@@ -124,15 +132,19 @@ def _expression_outputs(
 
     try:
         prepared = prepare_expression_sql(text, list(schema_of(frame)))
+        query_t = f"SELECT * FROM df_filter WHERE {prepared}"
+        # IS NOT TRUE, not NOT (...): a null result must land here too.
+        query_f = f"SELECT * FROM df_filter WHERE ({prepared}) IS NOT TRUE"
+        check_select_only(query_t, allow_unparsable=True)
+        check_select_only(query_f, allow_unparsable=True)
         with connect_duckdb() as duck:
             duck.register("df_filter", frame)
             # Eager .pl(): a lazy result streams from this connection after
             # the with-block closes, which fails. Materialise now.
-            matched = duck.sql(f"SELECT * FROM df_filter WHERE {prepared}").pl()
-            # IS NOT TRUE, not NOT (...): a null result must land here too.
-            unmatched = duck.sql(
-                f"SELECT * FROM df_filter WHERE ({prepared}) IS NOT TRUE"
-            ).pl()
+            matched = duck.sql(query_t).pl()
+            unmatched = duck.sql(query_f).pl()
+    except ShapingError:
+        raise
     except Exception as exc:  # noqa: BLE001 - engine errors become a stable code
         raise ShapingError("TD-SHAPE-004", shorten_error(str(exc))) from None
     return [matched.lazy(), unmatched.lazy()]

@@ -110,10 +110,10 @@ REJECTED = [
     ('SELECT * FROM "dir/x"', "TD-SHAPE-112"),
     ('SELECT * FROM "*.parquet"', "TD-SHAPE-112"),
     # unsupported quoting forms that could hide text from the masker
-    ("SELECT $$ ' $$ ; COPY t1 TO 'x' -- '", "TD-SHAPE-113"),
-    ("SELECT $tag$ x $tag$", "TD-SHAPE-113"),
-    ("SELECT E'a\\'b'", "TD-SHAPE-113"),
-    ("SELECT 1\x00; DROP TABLE t1", "TD-SHAPE-113"),
+    ("SELECT $$ ' $$ ; COPY t1 TO 'x' -- '", "TD-SHAPE-112"),
+    ("SELECT $tag$ x $tag$", "TD-SHAPE-112"),
+    ("SELECT E'a\\'b'", "TD-SHAPE-112"),
+    ("SELECT 1\x00; DROP TABLE t1", "TD-SHAPE-112"),
     ("SELEC 1", "TD-SHAPE-111"),
     ("SELECT FROM WHERE", "TD-SHAPE-113"),
     ("SELECT 1 " + "x" * MAX_SQL_CHARS, "TD-SHAPE-114"),
@@ -131,6 +131,15 @@ def test_rejected_queries(sql: str, code: str) -> None:
         check_select_only(sql)
     assert info.value.code == code, str(info.value)
     assert isinstance(info.value, ValueError)
+
+
+def test_allow_unparsable_defers_to_the_engine() -> None:
+    assert check_select_only("SELECT FROM WHERE", allow_unparsable=True) is None
+    # ...but only for text that does not parse: everything else is still checked
+    with pytest.raises(ShapingError):
+        check_select_only("SELECT 1; SELECT 2", allow_unparsable=True)
+    with pytest.raises(ShapingError):
+        check_select_only("SELECT * FROM read_csv('x') WHERE", allow_unparsable=True)
 
 
 def test_non_string_is_rejected() -> None:

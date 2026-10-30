@@ -107,12 +107,16 @@ def _tidy(sql: str) -> str:
     return sql.strip().rstrip(";").strip()
 
 
-def check_select_only(sql: str) -> None:
+def check_select_only(sql: str, *, allow_unparsable: bool = False) -> None:
     """Raise ``ShapingError`` unless ``sql`` is exactly one read-only SELECT.
 
     Codes: ``TD-SHAPE-001`` empty, ``-110`` several statements, ``-111`` not a
-    SELECT, ``-112`` forbidden function/file, ``-113`` unparsable or unsupported
-    syntax, ``-114`` too long.
+    SELECT, ``-112`` forbidden function/file/syntax, ``-113`` unparsable,
+    ``-114`` too long.
+
+    ``allow_unparsable`` lets text DuckDB cannot parse through (return ``None``):
+    the engine then fails on it with its own message, which Formula and Filter
+    show to the user. Nothing that does not parse can run.
     """
     if not isinstance(sql, str) or not sql.strip():
         raise ShapingError("TD-SHAPE-001", "SQL is empty")
@@ -121,7 +125,7 @@ def check_select_only(sql: str) -> None:
             "TD-SHAPE-114", f"SQL is longer than {MAX_SQL_CHARS:,} characters"
         )
     if _CONTROL.search(sql):
-        raise ShapingError("TD-SHAPE-113", "SQL contains control characters")
+        raise ShapingError("TD-SHAPE-112", "SQL contains control characters")
     # Compatibility forms (fullwidth letters, ligatures) must not dodge the rules.
     normal = unicodedata.normalize("NFKC", sql)
     masked = _tidy(mask(normal))
@@ -129,7 +133,7 @@ def check_select_only(sql: str) -> None:
         raise ShapingError("TD-SHAPE-001", "SQL is empty")
     if _DOLLAR_QUOTE.search(masked) or _ESCAPE_STRING.search(masked):
         raise ShapingError(
-            "TD-SHAPE-113", "Dollar-quoted and escape strings are not supported"
+            "TD-SHAPE-112", "Dollar-quoted and escape strings are not allowed"
         )
     if ";" in masked:
         raise ShapingError("TD-SHAPE-110", "Only one statement is allowed")
@@ -148,6 +152,8 @@ def check_select_only(sql: str) -> None:
     try:
         statements = probe.extract_statements(_tidy(sql))
     except duckdb.Error as exc:
+        if allow_unparsable:
+            return
         raise ShapingError(
             "TD-SHAPE-113", f"SQL could not be parsed: {str(exc)[:120]}"
         ) from exc
@@ -196,6 +202,16 @@ def make_locked_connection(
         con.close()
         raise
     return con
+
+
+def connect_for_shaping() -> duckdb.DuckDBPyConnection:
+    """Locked connection for the Formula and Filter nodes (no inputs, no memory cap).
+
+    Those nodes register their own frames and process whole tables, so DuckDB's
+    default memory limit stays; everything else is as in
+    :func:`make_locked_connection`. Usable as a context manager.
+    """
+    return make_locked_connection(memory_limit=None)
 
 
 def run_select(
