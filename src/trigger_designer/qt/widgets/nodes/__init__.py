@@ -2,6 +2,7 @@ import os
 from os.path import dirname, join
 
 from trigger_designer.core.node_configuration import (
+    AuditNodes,  # noqa: F401 - used by the Audit node specs
     IONodes,
     JoinNodes,
     NodeTypes,
@@ -212,6 +213,8 @@ _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
 #: is the shared contract and ``pyqtgraph_view`` the opt-in renderer: neither
 #: belongs to a node, and neither may drag a plotting library into startup.
 _LAZY_HELPER_MODULES = {
+    "Audit._base",
+    "Audit.benford_chart",
     "Report.chart_renderer",
     "Report.chart_view",
     "Report.chart_window",

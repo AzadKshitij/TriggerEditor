@@ -9,6 +9,7 @@ __all__ = [
     "JoinNodes",
     "TransformNodes",
     "ReportNodes",
+    "AuditNodes",
     "register_node",
     "register_lazy_node",
     "get_class_from_opcode",
@@ -26,6 +27,7 @@ class NodeTypes(StrEnum):
     JOIN = "join"
     TRANSFORM = "transform"
     REPORT = "report"
+    AUDIT = "audit"
 
 
 class IONodes(IntEnum):
@@ -73,6 +75,14 @@ class ReportNodes(IntEnum):
     DATA_PROFILE = auto()
 
 
+class AuditNodes(IntEnum):
+    DUPLICATES = auto()
+    GAPS = auto()
+    BENFORD = auto()
+    SAMPLE = auto()
+    RISK_FILTERS = auto()
+
+
 # Node registries
 NODE_REGISTRIES: Dict[NodeTypes, Dict[int, "TriggerNode"]] = {
     NodeTypes.IO: {},
@@ -80,6 +90,7 @@ NODE_REGISTRIES: Dict[NodeTypes, Dict[int, "TriggerNode"]] = {
     NodeTypes.JOIN: {},
     NodeTypes.TRANSFORM: {},
     NodeTypes.REPORT: {},
+    NodeTypes.AUDIT: {},
 }
 
 # Opcode enums keyed by family. Used to resolve stable op ids
@@ -90,6 +101,7 @@ _OPCODE_ENUMS = {
     NodeTypes.JOIN: JoinNodes,
     NodeTypes.TRANSFORM: TransformNodes,
     NodeTypes.REPORT: ReportNodes,
+    NodeTypes.AUDIT: AuditNodes,
 }
 
 # Frozen v1 numbering (pre-stable-op). Maps (family, int code) as stored

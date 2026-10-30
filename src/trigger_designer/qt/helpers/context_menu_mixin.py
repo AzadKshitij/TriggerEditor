@@ -43,6 +43,7 @@ class ContextMenuMixin:
             "Join": NODE_REGISTRIES[NodeTypes.JOIN],
             "Transform": NODE_REGISTRIES[NodeTypes.TRANSFORM],
             "Report": NODE_REGISTRIES[NodeTypes.REPORT],
+            "Audit": NODE_REGISTRIES[NodeTypes.AUDIT],
         }
 
     # --- Node actions --------------------------------------------------------------
