@@ -21,6 +21,7 @@ This page is the guide. The short command reference for developers and IT is [`d
 - [params](#params)
 - [paths](#paths)
 - [Parameters and path overrides](#parameters-and-path-overrides)
+- [Workpaper Output on the command line](#workpaper-output-on-the-command-line)
 - [Run records and verify-log](#run-records-and-verify-log)
 - [Exit codes](#exit-codes)
 - [Logs and events](#logs-and-events)
@@ -223,8 +224,8 @@ Runs the workflow. All outputs are first written to temporary files next to thei
 |---|---|---|
 | `WORKFLOW` | required | The `.tds` file. |
 | `--param NAME=VALUE` | none | Set a parameter defined in the workflow. Repeat for more. Split at the first `=`. See [Parameters and path overrides](#parameters-and-path-overrides). |
-| `--input-dir DIR` | none | Read every File Input from `DIR`, using the file name saved in the workflow. |
-| `--output-dir DIR` | none | Write every File Output into `DIR`, using the file name saved in the workflow. |
+| `--input-dir DIR` | none | Read every File Input from `DIR`, using the file name saved in the workflow. The Workpaper Output's **Source files** list follows it too. |
+| `--output-dir DIR` | none | Write every File Output and every Workpaper Output into `DIR`, using the file name saved in the workflow. |
 | `--create-output-dirs` | off | Create output folders that do not exist. Without it a missing folder is an error (exit 2). |
 | `--dry-run` | off | Check everything and print the plan. Runs nothing and writes nothing. |
 | `--timeout SEC` | `3600` | Stop the whole run after `SEC` seconds. `0` means no limit. Exit 4. |
@@ -281,6 +282,7 @@ Checks a workflow without running it. The default check is instant and does not 
 | `--no-files` | off | Skip the "input file exists" check. Useful on a build server that does not have the data. |
 | `--strict` | off | Treat warnings as errors. |
 | `--param`, `--input-dir`, `--output-dir` | none | Same meaning as for `run`; used by `--deep`. A required parameter must be given for `--deep` to pass. |
+| `-v`, `-vv` | off | With `--deep`: show the editor's own warnings (`-vv`: everything it logs) on stderr. Hidden by default. |
 | `--format {text,json}` | `text` | `json` prints `{"ok": ..., "findings": [...]}`. |
 
 Exit `0` means no errors (and, with `--strict`, no warnings). Exit `2` means invalid. Note that in the quick check a missing input file is a warning (exit 0), while with `--deep` it is an error (exit 2), because `--deep` resolves the inputs the way a run would. If a gate must fail on any warning, always pass `--strict`.
@@ -404,6 +406,7 @@ Only a short list of safe settings can be changed from the command line, because
 | File Input | `db_table` | `string` | a plain table name (`orders`, `main.orders`) |
 | File Input | `record_limit` | `int` | 0 to 2000000000 |
 | File Output | `filePath` | `path_out` | a local path |
+| Workpaper Output | `output_path` | `path_out` | a local path ending in `.xlsx` |
 | Filter | `value`, `value2` | `string` | only when the Filter is in builder mode; no quotes, backslash or line breaks |
 | Split | `random_seed` | `int` | 0 to 2147483647 |
 | Split | `estimation_percent` | `int` | 1 to 99 |
@@ -473,6 +476,17 @@ Two things follow:
 (Here `in\check.csv` was resolved from the current folder `Y:\audit`; `output_file` has a default, so `--output-dir` put `select_default.csv` into `out2`.)
 
 The program also refuses these before any node runs (exit 2, `TD-CLI-014`): two File Outputs with the same file, a File Output that would overwrite one of the inputs, and an output folder that cannot be written. Remote paths such as `http://...` or `s3://...` are not supported (`TD-CLI-006`); the program never touches the network.
+
+## Workpaper Output on the command line
+
+A [Workpaper Output](nodes/input-output.md#workpaper-output) node runs the same way as in the editor, with these points:
+
+- **Where it is written.** `--output-dir DIR` puts the workbook into `DIR` under the file name saved in the node, and `--param NAME=PATH` can set its `output_path` (add the parameter with `params add ... --setting output_path`). Both go through the same precedence as for a File Output; see [Parameters and path overrides](#parameters-and-path-overrides).
+- **If the file exists** is honoured. With **New version** (the default) the CLI picks the first free name before it starts, so a second run writes `name (2).xlsx` and keeps `name.xlsx`. **Replace** keeps the name. **Stop with error** refuses an existing file before any node runs: exit 2, `TD-OUT-010`.
+- **The full exceptions list.** When the Row limit cuts the listing, the file `<name>_exceptions_full.csv` is written next to the final workbook (with the final name, not the temporary one). Unlike the workbook it is written straight to its place, not as part of the all-or-nothing move at the end of the run.
+- **Source files.** The node's **Source files** (one path per line) follow `--input-dir` like a File Input, and relative lines are relative to the workflow's folder. They are listed by `info`, `approve`, `validate` and `paths`, and `paths --relativize --write` rewrites them like any other path.
+- **No Run log sheet.** The command-line run does not give the workpaper the run's record, so the workbook has no **Run log** sheet and the Summary says that no run record is available. The run record is still written next to the workflow (or in `--record-dir`), and it lists the workpaper with its SHA-256.
+- **Workflow sheet.** It shows the nodes that feed the workpaper. A File Input moved with `--input-dir` appears with the path that was actually read.
 
 ## Run records and verify-log
 

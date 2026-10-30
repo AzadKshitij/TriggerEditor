@@ -257,7 +257,24 @@ run. Precedence for a path setting is `--param`, then `--input-dir/--output-dir`
 saved value. File Input uses `filePathRel` first when the relative file exists
 (`_saved_input_path`), and drops `filePathRel` from the copy when the path is
 overridden. `_resolve_node_path` also handles every node whose catalogue row lists
-`output_keys` (this is how Workpaper Output is staged).
+`output_keys` (this is how Workpaper Output is staged). The `input.workpaper_output`
+`output_path` is itself a `PARAM_TARGETS` entry (`path_out`).
+
+`_finish_workpapers` (end of `apply_params`) handles the settings that only the
+Workpaper Output has, on the work copy: (1) every `OpInfo.list_keys` setting
+(`source_files`, one path per line, split by `split_path_lines`) is remapped with
+`remap_into_dir` under `--input-dir`, else resolved against the workflow folder;
+(2) `if_exists` is decided *here*, before staging, because the staged name is always
+fresh and the writer could not see the final name: `version` picks the first free
+`name (2).xlsx` with `params.unique_path` (a copy of `core.workpaper.paths.unique_path`,
+kept apart so `params` does not import Polars; `test_versioning_rule_matches_the_writer`
+pins the two together), `fail` raises `CliError(INVALID, TD-OUT-010)` for an existing
+file, `replace` keeps the name; (3) `publish_path` is set to the final path, so the
+writer names `<name>_exceptions_full.csv` next to the final workbook and not after the
+staging name (the CSV is written straight to its place, outside the atomic commit).
+`workflow_file.file_nodes` also lists the `list_keys` lines as inputs, and
+`paths.relativize_workflow` rewrites them. Tests: `tests/unit/test_headless_workpaper_paths.py`,
+`tests/e2e/test_cli_workpaper.py`.
 
 `paths.resolve_workflow_path` is the only resolver: no `~` or environment
 expansion, URLs refused, relative against the workflow folder (never the CWD),
@@ -454,8 +471,8 @@ A new node needs three things to run headless. All three are enforced by tests.
 If the node reads or writes through a new File-Input-like setting that should be a
 parameter, add a `PARAM_TARGETS` rule (section 6). If it writes a file, check the
 node's output path appears in the approval review: `approve`, `info` and
-`paths` list files through `workflow_file.file_nodes`, which only knows File Input
-and File Output (section 17).
+`paths` list files through `workflow_file.file_nodes`, which reads the op catalogue (`input_keys`, `output_keys`,
+and `list_keys` for multi-line path settings) (section 17).
 
 Also add the node to an e2e parity or golden case if it produces a file (add a
 `WorkflowCase` to `tests/support/corpus.FILE_OUTPUT_CASES` with a frozen golden).
@@ -467,6 +484,7 @@ Also add the node to an e2e parity or golden case if it produces a file (add a
 | Unit, pure | `tests/unit/test_headless_{workflow_file,paths,params,approvals,atomic,locks,events,plan,verify,schedule,code_policy}.py`, `test_cli_parser.py` | Every `core/headless` module on its own with `tmp_path`; exit codes; XML; policy attack tables. No Qt. |
 | Unit, discipline | `test_cli_import_discipline.py`, `test_op_catalog_matches_registry.py`, `test_packaging_spec.py` | Light commands stay light; catalogue tracks the registry; frozen build covers generated imports. |
 | Unit, Qt | `test_headless_session.py` | `HeadlessSession` hooks, test hooks inert without the switch. |
+| E2E, workpaper | `tests/e2e/test_cli_workpaper.py` | A Workpaper Output run as a subprocess: `--output-dir`, rerun with New version (`name (2).xlsx`), the full-exceptions CSV beside the final file, `--param` and `paths --relativize` for `output_path`, no staging names on the Workflow sheet, `--input-dir` shown. |
 | E2E, process | `tests/e2e/test_cli_run.py` | Real `python -m trigger_designer.cli` subprocess against checked-in workflows: goldens, JSON stdout, text stderr, approval flow, dry run, injected code refused, parameters, remapping, relative paths, unicode paths, cp1252 workflow, strict, keep-going, collisions, concurrent run (exit 7), killed run leaves no partial output, Workpaper Output staging. |
 | E2E, parity | `tests/e2e/test_cli_parity.py` | The same workflow through the editor (`TriggerSubWindow` + `WorkflowWorker`) and the CLI: output files byte-identical (frames compared sorted for unordered cases), same node statuses, ops, row counts, input hashes, output hashes. Also `test_corpus_passes_policy`. |
 | E2E, signals | `tests/e2e/test_cli_signals.py` | Ctrl+Break graceful and forced (130), second signal, timeout (4), memory (5). Uses `CREATE_NEW_PROCESS_GROUP` on Windows. |
@@ -552,6 +570,8 @@ vendored editor's `print`s go to the debug log (`events.route_stray_stdout`) and
 the console-prints guard exempts `cli/commands` and `cli/output.py`;
 `schedule list` shows `daily at 02:30`, not a dict.
 
+**Fixed later** (`0593b8e`, tests above): a Workpaper Output now follows `--output-dir`, `--param`, `--input-dir` (`source_files`) and `paths --relativize`, and obeys `if_exists` and the CSV sidecar rule under the CLI (section 6, `_finish_workpapers`). A Workpaper Output run from the CLI has no Run log sheet: the headless runner installs no run-record provider (`set_run_record_provider`), so `core.workpaper` gets no record and omits the sheet with the reason `NO_RECORD_REASON`. Installing a provider in `core/headless/runner.py` would add it.
+
 **Open:**
 
 1. `validate` without `--deep` reports a missing input as a warning and exits 0, while
@@ -574,3 +594,5 @@ against copies of `savedfiles/` and `data/` in a scratch folder, and
 `tests/e2e/test_cli_signals.py` (5 passed) were run. Pages name modules and
 functions rather than line numbers; if a page and the code disagree, fix the page in
 the same change that fixed the code.
+
+Added 2026-10-31 (as of `38e71d8`): the Workpaper Output handling in section 6. `tests/unit/test_headless_workpaper_paths.py`, `tests/e2e/test_cli_workpaper.py`, `tests/unit/test_file_output.py` and `tests/ui/test_file_output_dock.py` were run together: 54 passed, 1 failed (`test_workflow_sheet_never_shows_staging_names_and_follows_input_dir` compares a forward-slash path with the Workflow sheet text, which holds the Windows path with backslashes; see the CHANGELOG known issues).
