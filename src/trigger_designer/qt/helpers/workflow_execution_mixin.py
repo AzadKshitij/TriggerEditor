@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Union
+from typing import Any
 
 from loguru import logger
 from nodeeditor.node_graph import GraphCycleError, topological_order
@@ -56,6 +56,21 @@ def wait_for_orphaned_workflow_workers(timeout_ms: int = 5000) -> bool:
     return not _ORPHANED_WORKERS
 
 
+def _direct_upstream(nodes: list[Any]) -> dict[Any, list[Any]]:
+    """Map each node to the nodes feeding its input sockets directly."""
+    upstream: dict[Any, list[Any]] = {}
+    for node in nodes:
+        parents: list[Any] = []
+        for socket in getattr(node, "inputs", None) or []:
+            for edge in getattr(socket, "edges", None) or []:
+                other = edge.getOtherSocket(socket)
+                parent = getattr(other, "node", None)
+                if parent is not None and parent is not node and parent not in parents:
+                    parents.append(parent)
+        upstream[node] = parents
+    return upstream
+
+
 class WorkflowExecutionMixin:
     """Mixin providing workflow execution orchestration and statistics tracking."""
 
@@ -70,9 +85,9 @@ class WorkflowExecutionMixin:
         self.workflow_start_time: float = 0.0
         self.total_workflow_time: float = 0.0
         self.last_execution_time: float = 0.0
-        self.execution_results: Dict[Any, Dict[str, Any]] = {}
-        self._workflow_worker: Union[WorkflowWorker, None] = None
-        self._workflow_sorted_nodes: List[Any] = []
+        self.execution_results: dict[Any, dict[str, Any]] = {}
+        self._workflow_worker: WorkflowWorker | None = None
+        self._workflow_sorted_nodes: list[Any] = []
 
     def _log_to_dock(self, message: str) -> None:
         """Report a message in the Logging dock.
@@ -89,7 +104,7 @@ class WorkflowExecutionMixin:
             logger.info(message)
 
     # --- Workflow execution helpers -------------------------------------------------
-    def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
+    def executeWorkflow(self) -> None:
         """Run the current workflow on a single background thread while
         updating execution visuals from signals it emits."""
         if self._workflow_worker_is_running():
@@ -150,10 +165,16 @@ class WorkflowExecutionMixin:
         self._workflow_sorted_nodes = sorted_nodes
 
         _prune_finishing_workers()
-        worker = WorkflowWorker(sorted_nodes, executor)
+        worker = WorkflowWorker(
+            sorted_nodes,
+            executor,
+            continue_on_error=bool(self._run_policy().get("continue_on_error", False)),
+            upstream=_direct_upstream(sorted_nodes),
+        )
         worker.nodeStarted.connect(self._on_node_started)
         worker.nodeFinished.connect(self._on_node_finished)
         worker.nodeErrored.connect(self._on_node_errored)
+        worker.nodeSkipped.connect(self._on_node_skipped)
         worker.workflowFinished.connect(self._on_workflow_finished)
         worker.finished.connect(worker.deleteLater)
         self._workflow_worker = worker
@@ -171,6 +192,14 @@ class WorkflowExecutionMixin:
             if coordinator is not None:
                 coordinator.resume()
             raise
+
+    def _run_policy(self) -> dict[str, Any]:
+        """Run options handed to the worker (``continue_on_error``)."""
+        return {"continue_on_error": False}
+
+    def _on_node_skipped(self, node: Any, blocker: Any) -> None:
+        """Slot: a node was not executed because ``blocker`` failed or was
+        skipped, or (``blocker is None``) because the run was cancelled."""
 
     def _workflow_worker_is_running(self) -> bool:
         """Whether a run is in flight, tolerating a deleted Qt wrapper."""
@@ -210,8 +239,11 @@ class WorkflowExecutionMixin:
                 worker.nodeStarted,
                 worker.nodeFinished,
                 worker.nodeErrored,
+                getattr(worker, "nodeSkipped", None),
                 worker.workflowFinished,
             ):
+                if signal is None:
+                    continue
                 try:
                     signal.disconnect()
                 except RuntimeError, TypeError:
@@ -448,7 +480,7 @@ class WorkflowExecutionMixin:
             self.run_button.setEnabled(True)
 
     # --- Statistics helpers ---------------------------------------------------------
-    def get_workflow_statistics(self) -> Dict[str, Union[int, float]]:
+    def get_workflow_statistics(self) -> dict[str, int | float]:
         """Return aggregated workflow execution statistics."""
         average_execution = (
             self.total_workflow_time / self.workflow_execution_count
@@ -552,7 +584,7 @@ class WorkflowExecutionMixin:
             if name in node_results
         ]
 
-    def getSocketData(self, node: Any, socket_index: int) -> Any:  # noqa: N802
+    def getSocketData(self, node: Any, socket_index: int) -> Any:
         """Return the execution result bound to a socket after workflow run."""
         if not self.execution_results:
             self._log_to_dock("No execution results available. Run the workflow first.")
