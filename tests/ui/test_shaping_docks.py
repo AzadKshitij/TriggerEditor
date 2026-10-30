@@ -142,3 +142,32 @@ def test_select_records_mode_is_one_step(qtbot) -> None:
     assert history.canUndo()
     history.undo()
     assert node.content.settings["mode"] == "first_n"
+
+
+def test_leaving_the_dock_flushes_and_cancels_debounce_timers(qtbot) -> None:
+    """A pending text edit is committed when the dock is left, and no timer that
+    captured a destroyed editor is left running."""
+    _window, node, dock = _node(
+        qtbot, PreparationNodes.RECORD_ID, NodeTypes.PREPARATION
+    )
+    content = node.content
+    field = content._widgets["name"]
+    field.setText("typed_before_leaving")
+    assert any(t.isActive() for t in content._timers)
+    dock.updateConfig([])  # the user clicks the canvas inside the debounce
+    assert content.settings["name"] == "typed_before_leaving"
+    assert not any(t.isActive() for t in content._timers)
+    qtbot.wait(450)  # a stale timer would fire on the deleted editor here
+
+
+def test_rebuilding_the_dock_drops_timers_of_the_old_widgets(qtbot) -> None:
+    _window, node, dock = _node(
+        qtbot, PreparationNodes.RECORD_ID, NodeTypes.PREPARATION
+    )
+    content = node.content
+    dock.updateConfig([])
+    dock.updateConfig([node.grNode])
+    first = list(content._timers)
+    dock.updateConfig([])
+    dock.updateConfig([node.grNode])
+    assert not set(first) & set(content._timers)  # old timers are gone, not piled up

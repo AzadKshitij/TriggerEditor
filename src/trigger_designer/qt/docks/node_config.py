@@ -197,6 +197,12 @@ class ConfigDock(QDockWidget):
                 commit()
             except Exception as e:
                 logger.trace(e)
+        release = getattr(content, "release_dock_timers", None)
+        if callable(release):  # debounce timers must not outlive the editors
+            try:
+                release()
+            except Exception as e:
+                logger.trace(e)
 
     def _disconnect_label_sync(self) -> None:
         """Drop the floating-label sync installed by the previous rebuild."""
@@ -206,7 +212,7 @@ class ConfigDock(QDockWidget):
             return
         try:
             target.labelChanged.disconnect(slot)
-        except (RuntimeError, TypeError):
+        except RuntimeError, TypeError:
             pass
 
     def _detach_context_refresh(self) -> None:
@@ -278,7 +284,7 @@ class ConfigDock(QDockWidget):
 
         try:
             logic.labelChanged.connect(_sync_from_canvas)
-        except (RuntimeError, TypeError):
+        except RuntimeError, TypeError:
             pass
         else:
             # updateConfig disconnects the previous rebuild's slot first,

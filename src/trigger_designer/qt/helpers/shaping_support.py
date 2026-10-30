@@ -31,13 +31,13 @@ from qtpy.QtWidgets import (
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.shaping.common import ShapingError, live_sample
 from trigger_designer.qt.helpers.config_content import ConfigContent
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
     TriggerNode,
     frame_schema,
 )
-from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.undo.protocol import is_syncing
 from trigger_designer.qt.widgets.common import (
     CONTROL_H,
@@ -511,6 +511,7 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
         if not self.ready():
             dock_layout.addWidget(EmptyStateLabel())
             return
+        self.release_dock_timers()  # timers of the previous dock's editors
         self._widgets, self._rows, self._stacks = {}, {}, {}
         for section_spec in self._sections():
             section = ConfigSection(
@@ -687,11 +688,19 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.setInterval(300)
-        timer.timeout.connect(fire)
+
+        def guarded() -> None:
+            try:
+                fire()
+            except RuntimeError:  # the editor it captured was destroyed
+                pass
+
+        timer.timeout.connect(guarded)
         signal.connect(lambda *_args, t=timer: t.start())
         self._timers.append(timer)
 
     def flush_pending(self) -> None:
+        """Commit every edit still inside its debounce."""
         for timer in list(self._timers):
             try:
                 if timer.isActive():
@@ -699,6 +708,25 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
                     timer.timeout.emit()
             except RuntimeError:
                 continue
+
+    def release_dock_timers(self) -> None:
+        """Stop and drop every debounce timer (the dock's editors are going away).
+
+        A timer holds a callback that reads its editor; one that fires after the
+        dock was destroyed would touch a deleted widget.
+        """
+        timers, self._timers = self._timers, []
+        for timer in timers:
+            try:
+                timer.stop()
+                timer.deleteLater()
+            except RuntimeError:
+                continue
+
+    def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
+        """Commit text edits still inside their debounce, then the deferred run."""
+        self.flush_pending()
+        super().commit_pending_dock_edits(evaluate=evaluate)
 
     @staticmethod
     def _set_combo(widget: NoWheelComboBox, value: Any) -> None:
