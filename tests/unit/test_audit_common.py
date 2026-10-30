@@ -64,9 +64,21 @@ def test_core_audit_imports_no_qt() -> None:
     assert done.returncode == 0, done.stderr
 
 
-def test_audit_package_init_has_no_imports() -> None:
-    text = (AUDIT_DIR / "__init__.py").read_text(encoding="utf-8")
-    assert "import " not in text.replace("importing", "")
+def test_audit_package_init_imports_nothing_eagerly() -> None:
+    """Plan 02 owns the package init: lazy re-exports only (no eager import).
+
+    Generated code may import one submodule, so the init may only use
+    ``importlib`` (inside ``__getattr__``) and ``TYPE_CHECKING``-guarded imports.
+    """
+    import ast
+
+    tree = ast.parse((AUDIT_DIR / "__init__.py").read_text(encoding="utf-8"))
+    allowed = {"__future__", "importlib", "typing"}
+    for node in tree.body:
+        if isinstance(node, ast.Import):
+            assert {a.name for a in node.names} <= allowed
+        elif isinstance(node, ast.ImportFrom):
+            assert node.module in allowed
 
 
 def test_amount_expr_reads_accounting_text() -> None:
