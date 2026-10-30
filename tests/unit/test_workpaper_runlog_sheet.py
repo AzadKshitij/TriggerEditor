@@ -269,3 +269,51 @@ def test_run_workpaper_explicit_test_name_wins(tmp_path):
         "Summary"
     ]
     assert ws.cell(find_label(ws, "Test performed"), 2).value == "Quarter close review"
+
+
+# ---------------------------------------------------------------- in-flight gaps
+def _running(record=RECORD, **overrides):
+    return {**record, "status": "running", "finished_at": "", **overrides}
+
+
+def _rows_read(wb):
+    ws = wb["Summary"]
+    return ws.cell(find_label(ws, "Source files") + 2, 3).value
+
+
+def test_rows_read_uses_the_record_input_row_count(tmp_path):
+    _, wb = _write(tmp_path, record=_running())
+    assert _rows_read(wb) == 10
+
+
+def test_rows_read_falls_back_to_the_source_nodes_rows_out(tmp_path):
+    inputs = [{**RECORD["inputs"][0], "row_count": None, "node_id": 1}]
+    _, wb = _write(tmp_path, record=_running(inputs=inputs))
+    assert _rows_read(wb) == 10  # File Input (node 1) finished with rows_out 10
+
+
+def test_rows_read_stays_not_recorded_when_unknowable(tmp_path):
+    inputs = [{**RECORD["inputs"][0], "row_count": None, "node_id": 99}]
+    _, wb = _write(tmp_path, record=_running(inputs=inputs))
+    assert _rows_read(wb) == "not recorded"
+
+
+def test_running_snapshot_adds_a_labelled_row_for_the_workpaper_step(tmp_path):
+    record = _running(nodes=RECORD["nodes"][:2])
+    _, wb = _write(tmp_path, record=record)
+    ws = wb["Run log"]
+    first = find_label(ws, "Step") + 1
+    last = first + 2
+    assert ws.cell(last, 1).value == 3
+    assert ws.cell(last, 2).value == "Workpaper Output (this workpaper)"
+    assert ws.cell(last, 4).value == "in progress"
+    assert "being written" in ws.cell(last, 8).value
+    assert ws.cell(last + 1, 1).value is None
+    assert "this step is listed as in progress" in ws["A2"].value
+
+
+def test_completed_record_gets_no_in_progress_row(tmp_path):
+    _, wb = _write(tmp_path)
+    ws = wb["Run log"]
+    values = [c.value for c in ws["B"]]
+    assert "Workpaper Output (this workpaper)" not in values

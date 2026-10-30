@@ -8,6 +8,7 @@ built by ``qt/helpers/workflow_snapshot.py``.
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from datetime import UTC, datetime
 from typing import Any
 
 from trigger_designer.core.audit.view import total_rows_out
@@ -69,8 +70,21 @@ def _merge(
     ws.write_string(r, c0, text, fmt)
 
 
-def write_runlog_sheet(ws: Any, book: FormatBook, record: Mapping[str, Any]) -> None:
-    """Sheet ``Run log``; rows are written in ascending order."""
+IN_PROGRESS_TITLE = "Workpaper Output (this workpaper)"
+
+
+def write_runlog_sheet(
+    ws: Any,
+    book: FormatBook,
+    record: Mapping[str, Any],
+    *,
+    in_progress_step: bool = False,
+) -> None:
+    """Sheet ``Run log``; rows are written in ascending order.
+
+    ``in_progress_step`` (the Workpaper Output node, written while it runs) adds a
+    labelled last row for that step, which the in-flight record cannot list yet.
+    """
     _setup(ws, book, RUNLOG_WIDTHS)
     ws.protect("", {"autofilter": True})
     write_text(ws, 0, 0, "Run log", book, "rl_title")
@@ -85,7 +99,12 @@ def write_runlog_sheet(ws: Any, book: FormatBook, record: Mapping[str, Any]) -> 
         )
         banner = (
             "Snapshot taken while the workflow was running: steps up to and including "
-            f"{last} are listed; this step and later steps are not."
+            f"{last} are listed; "
+            + (
+                "this step is listed as in progress at the end; later steps are not."
+                if in_progress_step
+                else "this step and later steps are not."
+            )
         )
     else:
         banner = "Completed run."
@@ -194,6 +213,30 @@ def write_runlog_sheet(ws: Any, book: FormatBook, record: Mapping[str, Any]) -> 
             ws.write_number(r, 6, rows, book.get(num))
         write_text(ws, r, 7, message, book, wrap)
         r += 1
+    if in_progress_step and status in (None, "", "running"):
+        ws.write_number(r, 0, len(nodes) + 1, book.get("rl_num"))
+        write_text(ws, r, 1, IN_PROGRESS_TITLE, book, "rl_wrap")
+        write_text(ws, r, 2, "Workpaper Output", book, "rl_wrap")
+        write_text(ws, r, 3, "in progress", book, "rl_wrap")
+        write_text(
+            ws,
+            r,
+            4,
+            datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            book,
+            "rl_wrap",
+        )
+        write_text(ws, r, 5, "in progress", book, "rl_wrap")
+        write_text(ws, r, 6, "not counted", book, "rl_wrap")
+        write_text(
+            ws,
+            r,
+            7,
+            "This workbook is being written by this step; its final status and "
+            "duration are in the run record saved when the run ends.",
+            book,
+            "rl_wrap",
+        )
 
 
 def _short(value: Any) -> str:

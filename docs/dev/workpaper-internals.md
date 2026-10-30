@@ -146,7 +146,11 @@ Consequences:
 
 - The record is a **snapshot of the run in flight**: `status` is `running`, `finished_at` is
   missing, the workpaper node itself is not yet in `nodes`. The Run log sheet detects this
-  (`status in (None, "", "running")`) and prints the "Snapshot taken while..." banner.
+  (`status in (None, "", "running")`), prints the "Snapshot taken while..." banner and, for the
+  node (`write_runlog_sheet(..., in_progress_step=True)`), appends a labelled "Workpaper Output
+  (this workpaper)" row with status "in progress". The whole-run export never adds it.
+  `gather_sources` fills a missing `row_count` of an input from its node's `rows_out`
+  (`_rows_from_node`, only when that node read one file).
 - Input files are in `record["inputs"]` with the fingerprints taken before they were read, so
   the Summary's source hashes are the run-time ones (`gather_sources` prefers a record entry
   that has a hash over a configured entry without one).
@@ -493,8 +497,8 @@ These were found while writing the guide, by running the code. They are not fixe
    sheet is omitted ("no run record is available"). (The CLI writes its own record.)
 4. ~~Run workpaper "Test performed" always read "Exceptions workpaper"~~ (fixed: "Whole run: N tests").
 5. ~~The Workflow sheet's File Input row listed internal keys~~ (fixed: `describe_settings()` hook).
-6. **In-flight Run log:** the workpaper node's own step is not in the log and `Rows read` of a
-   source can say "not recorded" (the count is added to the record only after the step).
+6. ~~In-flight Run log gaps~~ (fixed: labelled in-progress row; `Rows read` from `rows_out`).
+   Still "not recorded" for a folder/pattern input of several files.
 7. **Time limit:** the 30 second per-step limit makes lists of about 400,000 rows and more fail in the
    editor (see section 13).
 

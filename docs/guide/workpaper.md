@@ -215,7 +215,7 @@ Every figure has a **cached value** as well as the formula, so previewers that d
 
 **Tick marks** are fixed: **✓** Agreed to source document, **X** Exception confirmed, **E** Explained - see comment, **F** Follow-up required, **N/A** Not applicable. You choose them from a drop-down in the Exceptions sheet; the Summary counts them with `COUNTIF`.
 
-**Source files** columns: **File**, **Sheet**, **Rows read**, **Size (bytes)**, **Modified (UTC)**, **SHA-256**. The list is the input files recorded by the run (their fingerprints are taken *before* the file is read), then your *Extra source files*, de-duplicated. A file that has since been moved keeps its row, and the SHA-256 cell says "file not found or not computed". Files larger than 4 GB are not hashed. *Rows read* says "not recorded" when the run record had no count yet (a single-test workpaper is written while the run is still going).
+**Source files** columns: **File**, **Sheet**, **Rows read**, **Size (bytes)**, **Modified (UTC)**, **SHA-256**. The list is the input files recorded by the run (their fingerprints are taken *before* the file is read), then your *Extra source files*, de-duplicated. A file that has since been moved keeps its row, and the SHA-256 cell says "file not found or not computed". Files larger than 4 GB are not hashed. *Rows read* comes from the run record; while the run is still going (a single-test workpaper) the count is taken from the rows the input step produced, and says "not recorded" only when that is not known either (for example a folder of several files, where one count cannot be split).
 
 ### Exceptions
 
@@ -242,7 +242,7 @@ The evidence of the run: who ran what, with what, and what each step did.
 
 | Block | What it shows |
 |---|---|
-| **Banner** | "Completed run." or "Snapshot taken while the workflow was running: steps up to and including *X* are listed; this step and later steps are not." The node's workpaper is written *during* the run, so it is a snapshot (status `running`, no finish time). |
+| **Banner** | "Completed run." or "Snapshot taken while the workflow was running: steps up to and including *X* are listed; this step is listed as in progress at the end; later steps are not." The node's workpaper is written *during* the run, so it is a snapshot (status `running`, no finish time); the last row, **Workpaper Output (this workpaper)**, has the status "in progress" and stands for the workpaper step itself. |
 | **Run header** | Run ID, Status, Started and Finished (UTC), Run by (`user@machine`), Application version, Python, Polars, Workflow file, **Workflow SHA-256**. |
 | **Files** | One row per file: Role (`input` or `output`), Path, Sheet, Size, Modified (UTC), SHA-256. |
 | **Steps** | **Step**, **Node**, **Type**, **Status**, **Started (UTC)**, **Duration (s)**, **Rows out**, **Message** (the warnings, or for a failed step its plain-language error and hint; failed steps are shaded red). *Rows out* is "not counted" when the run did not count rows for that step. |
@@ -372,7 +372,7 @@ Tick marks   ✓ Agreed to source document 0 | X Exception confirmed 0 | E Expla
              F Follow-up required 0 | N/A Not applicable 0
 
 Source files
-  File: .../in/payments.csv   Rows read: not recorded   Size: 425
+  File: .../in/payments.csv   Rows read: 10   Size: 425
   Modified: 2026-10-30T18:54:32Z   SHA-256: 80f16f0f4b8c9db80f150b4ecb11a79d26b94eb89c1239162b699789ba1e48a6
 
 Notes and limitations: Values are summed as floating point numbers.
@@ -400,7 +400,7 @@ Ref  Tick mark  Auditor comment  vendor    invoice_no  amount  paid_on     note 
 
 ```text
 A2  Snapshot taken while the workflow was running: steps up to and including Duplicates are listed;
-    this step and later steps are not.
+    this step is listed as in progress at the end; later steps are not.
 Run ID 7f65b31a2ec1481c94bbbf2359c6d8df   Status running   Started (UTC) 2026-10-30T18:54:34.890001Z
 Run by kashvinchandrasan@USMUMKASHVIM2    Application version 0.1.0   Python 3.14.8   Polars 2.0.0
 Workflow SHA-256  552818fbaf33ac0b7a1df9a9fbc5bf74289b7a4711518925cfdbfac934ce1555
@@ -411,6 +411,7 @@ input  .../in/payments.csv  425  2026-10-30T18:54:32.205544Z  80f16f0f4b8c9db80f
 Step  Node        Type        Status  Started (UTC)                Duration (s)  Rows out
 1     File Input  File Input  ok      2026-10-30T18:54:34.941898Z  0.00626       10
 2     Duplicates  Duplicates  ok      2026-10-30T18:54:34.948224Z  0.00917       11
+3     Workpaper Output (this workpaper)  in progress  (time of writing)  in progress  not counted
 ```
 
 (*Rows out* of Duplicates is 11: 6 duplicates, 4 unique rows and the one-row summary.)

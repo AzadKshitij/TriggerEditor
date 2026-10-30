@@ -156,6 +156,31 @@ def _iso_utc(timestamp: float) -> str:
     return datetime.fromtimestamp(timestamp, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _rows_from_node(record: Mapping[str, Any], item: Mapping[str, Any]) -> int | None:
+    """Rows a source file gave, from its input node's ``rows_out`` (in-flight records
+    get ``inputs[].row_count`` only when the run ends). Only when the node read
+    exactly one file, so the count is not shared between files."""
+    node_id = item.get("node_id")
+    if node_id is None:
+        return None
+    siblings = [
+        i
+        for i in record.get("inputs") or []
+        if isinstance(i, Mapping) and i.get("node_id") == node_id
+    ]
+    if len(siblings) != 1:
+        return None
+    for node in record.get("nodes") or []:
+        if isinstance(node, Mapping) and node.get("node_id") == node_id:
+            counts = [
+                v
+                for v in (node.get("rows_out") or {}).values()
+                if isinstance(v, int) and not isinstance(v, bool)
+            ]
+            return counts[0] if len(counts) == 1 else None
+    return None
+
+
 def gather_sources(
     spec: WorkpaperSpec, run_record: Mapping[str, Any] | None
 ) -> list[SourceFile]:
@@ -166,9 +191,13 @@ def gather_sources(
     """
     found: dict[str, SourceFile] = {}
     sheets_seen: list[SourceFile] = []
-    for item in (run_record or {}).get("inputs") or []:
+    record = run_record or {}
+    for item in record.get("inputs") or []:
         if isinstance(item, Mapping) and item.get("path"):
-            sheets_seen.append(SourceFile.from_mapping(item))
+            src = SourceFile.from_mapping(item)
+            if src.rows is None:
+                src = replace(src, rows=_rows_from_node(record, item))
+            sheets_seen.append(src)
     sheets_seen.extend(spec.source_files)
     for src in sheets_seen:
         key = os.path.normcase(os.path.normpath(src.path)) + "|" + str(src.sheet or "")
@@ -374,7 +403,12 @@ def write_workpaper(
                 info.notes.append(f"The {sheet} sheet was omitted: {reason}.")
             warnings = write_summary_sheet(wb, sheets["Summary"], book, info)
             if names.runlog:
-                write_runlog_sheet(sheets[names.runlog], book, run_record or {})
+                write_runlog_sheet(
+                    sheets[names.runlog],
+                    book,
+                    run_record or {},
+                    in_progress_step=True,
+                )
             if names.workflow:
                 write_workflow_sheet(sheets[names.workflow], book, workflow or [])
             sha = _finish(wb, tmp_xlsx, final)
