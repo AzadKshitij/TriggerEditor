@@ -478,9 +478,17 @@ These were found while writing the guide, by running the code. They are not fixe
    amount `12,5` becomes 125 and `1.234,50` becomes 1.2345, silently, in the Exceptions sheet's
    amount column and in the totals. The audit nodes use the shared decimal-comma aware
    parser `core/utils/amounts.py` (commit `b3a955d`); the workpaper should use it.
-2. **CLI run, truncated list.** The CSV sidecar is derived from the staged output name:
-   `.<name>.tdtmp-<id>_exceptions_full.csv` is left in the output folder, hidden, and the Summary
-   names that file. The staged workbook's path is renamed on commit but the sidecar is not.
+2. **CLI run, truncated list (fixed in the working tree, not yet committed when this page was
+   written).** The CLI stages every output under a temporary name, and the sidecar used to be named
+   after it (`.<name>.tdtmp-<id>_exceptions_full.csv`, left hidden in the output folder, and quoted
+   on the Summary). The fix adds `WorkpaperSpec.publish_path` (the final path; used only to name
+   the CSV, `writer._sidecar_target(spec.publish_path or final, ...)`), set by
+   `core/headless/params.py::_finish_workpapers`, which also decides `if_exists` before the write
+   (the staged name is always fresh, so the writer cannot see the final one) and remaps
+   `source_files` with `--input-dir` (`OpInfo.list_keys`). Verified by hand: `--output-dir` gives
+   `x.xlsx` + `x_exceptions_full.csv`, a second run gives `x (2).xlsx` + `x (2)_exceptions_full.csv`.
+   Check `git log` for the commit and its tests (`tests/e2e/test_cli_workpaper.py`,
+   `tests/unit/test_headless_workpaper_paths.py`).
 3. **CLI run, no Run log.** `core/headless` installs no run-record provider, so the Run log
    sheet is omitted ("no run record is available"). (The CLI writes its own record.)
 4. **Run workpaper, "Test performed"** shows the fixed text "Exceptions workpaper" because

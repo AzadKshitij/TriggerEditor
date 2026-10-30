@@ -16,7 +16,8 @@ was tested, how many rows were in scope, how many were flagged, and whether the 
 
 All five icons are amber, the colour of the Audit family. Preview: [audit_icons_preview.png](../assets/audit_icons_preview.png).
 
-<!-- workpaper: see ../workpaper.md -->
+The Excel workpaper of a test (Summary, Exceptions, Run log, Workflow) is described in the
+[Workpapers guide](../guide/workpaper.md) and the developer page [workpaper-internals.md](../dev/workpaper-internals.md).
 
 ## Common to every audit node
 
@@ -123,8 +124,7 @@ the Selection log) is turned into a *test summary*: test id (`audit.duplicates#<
 A node that failed has no test summary. Recording is on by default (*Preferences > Record every run*) and
 the record is saved beside the workflow; the Run History dock lists the runs. Today the dock shows
 each node's status, row counts and errors; the test results themselves live in the saved record
-and in the Excel workpaper. A preview (live) result is never recorded, only a Run.
-<!-- workpaper: see ../workpaper.md -->
+and in the Excel workpaper ([guide](../guide/workpaper.md)). A preview (live) result is never recorded, only a Run.
 
 ---
 

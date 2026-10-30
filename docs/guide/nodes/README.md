@@ -5,7 +5,7 @@ appear in the `Shift+A` menu). Click a family page for every setting, worked exa
 
 | Family | Page | Nodes |
 |---|---|---|
-| Input / Output | [input-output.md](input-output.md) | File Input, File Output |
+| Input / Output | [input-output.md](input-output.md) | File Input, File Output, Workpaper Output |
 | Preparation | [preparation.md](preparation.md) | 16 nodes: clean, filter, calculate, sort, select |
 | Join | [join.md](join.md) | Join, Append, Union, Reconcile, Fuzzy Match |
 | Transform | [transform.md](transform.md) | Count, Running Total, Transpose, Pivot, Unpivot, Window, SQL Query |

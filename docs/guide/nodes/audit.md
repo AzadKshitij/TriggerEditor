@@ -29,7 +29,7 @@ All five icons are amber, the colour of the Audit family.
   audit nodes re-test as soon as you change a setting; they do not wait for you to click away.
 - **Recorded in the run history.** After a Run, each test's result is stored in the run record (the
   `test_summary` of that node), with its settings and, for Sample, its seed. The Excel workpaper presents
-  them. <!-- workpaper: see ../workpaper.md -->
+  them; see [Workpapers](../workpaper.md).
 
 ## Full guide
 

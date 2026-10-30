@@ -315,6 +315,7 @@ A Comment is a note on the canvas. It never runs, has no inputs or outputs, and 
 - Explain why a filter or a tolerance was chosen ("tolerance 0.50 agreed with client, see email of 3 March").
 - Mark a step as "to be reviewed", or leave a question for the reviewer.
 - Describe a group of nodes.
+- Explain the process in an Excel workpaper: every Comment on the canvas is copied word for word to the **Workflow** sheet of a [workpaper](../workpaper.md).
 
 ### Inputs and outputs
 

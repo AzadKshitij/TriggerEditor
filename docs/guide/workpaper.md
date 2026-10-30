@@ -471,7 +471,9 @@ What was checked in a real run:
 - **`approve` and `info` list the workbook** under `writes`, so a reviewer approving the workflow sees where it will write.
 - **The Exceptions, Summary and Workflow sheets are the same as from the editor.** The workflow still carries the Comment notes. The Engagement defaults come from the Preferences of the Windows user who runs the command, unless the node has its own values.
 - **There is no Run log sheet.** The command line does not give the workpaper a snapshot of the run in flight, so the sheet is left out and the Summary says "The Run log sheet was omitted: no run record is available (run recording is off or not installed)". The command line writes its own run record (`record_path` on the `run.finished` line); use that, or produce the whole-run workpaper later from the editor.
-- **A truncated list is not fully supported.** When the exceptions exceed the **Row limit**, the full CSV is written next to the temporary staging name of the workbook, not next to the final file: the CSV is left in the output folder as a hidden file named like `.duplicate_payments.tdtmp-xxxxxxxx_exceptions_full.csv`, and the Summary quotes that name. Until this is fixed, set the **Row limit** high enough for the CLI run, or run workpapers that may be truncated from the editor.
+- **A truncated list works as in the editor.** When the exceptions exceed the **Row limit**, `duplicate_payments_exceptions_full.csv` is written next to the final workbook (in the `--output-dir` folder) and the Summary names it.
+- **Versions work too.** A second run with **If it exists** on **New version** writes `duplicate_payments (2).xlsx` and `duplicate_payments (2)_exceptions_full.csv` beside the first ones. The numbered name is chosen before the write, and **Stop with error** refuses an existing file before anything runs.
+- **Extra source files follow `--input-dir`**, like a File Input.
 
 ---
 

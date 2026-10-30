@@ -21,7 +21,7 @@ Read order for a new contributor: this page, `architecture.md`,
 | [testing.md](testing.md) | You write or fix tests, update a golden, or need the baselines. |
 | [conventions.md](conventions.md) | You write UI, undo code, or commit. |
 | [cli-internals.md](cli-internals.md) | You touch the command line: parser and commands, exit codes, the headless runner, approvals, the code policy and `GENERATED_IMPORTS`, adding a command or a node's op row, the CLI tests, packaging, and what is not verified. Users read `../guide/cli.md`; the short reference is `../CLI.md`. |
-| `workpaper-internals.md` | *To be added* (workpaper writer and the shared Excel engine in `core/excel`). |
+| [workpaper-internals.md](workpaper-internals.md) | You touch the Excel workpaper or the shared Excel writer: `core/excel`, `core/workpaper`, the Workpaper Output node, File > Export Workpaper..., the run-record provider, the generated-code contract, tests and benchmarks, how to add a sheet. Users read `../guide/workpaper.md`. |
 
 Related, not owned here: `../CHANGELOG.md` (what changed on this branch and what
 may break saved workflows), `../NODE_REFERENCE.md`, `../guide/` (user guide),

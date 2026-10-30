@@ -14,7 +14,7 @@ shaping framework and the undo stack were merged to `main` earlier (plans 01, 03
 
 Sections: [Added](#added) · [Changed](#changed) ·
 [Behaviour changes that may affect saved workflows](#behaviour-changes-that-may-affect-saved-workflows) ·
-[In progress](#in-progress) · [Fixes and maintenance](#fixes-and-maintenance) ·
+[Fixes and maintenance](#fixes-and-maintenance) ·
 [Known issues](#known-issues)
 
 ## Added
@@ -96,6 +96,34 @@ Runs a saved workflow with no window, for schedulers, scripts and CI. User guide
   `MERGE` build, `build.bat` smoke test, installer `addtopath` task). [`891120a`](https://github.com/AzadKshitij/TriggerEditor/commit/891120a) Runbook
   `docs/CLI.md`. [`75c825b`](https://github.com/AzadKshitij/TriggerEditor/commit/75c825b) Generated-code imports must be covered by `trigger.spec`
   (test). [`774f5f8`](https://github.com/AzadKshitij/TriggerEditor/commit/774f5f8)
+
+### Excel workpaper (Workpaper Output node)
+
+Guide: `docs/guide/workpaper.md`. Internals: `docs/dev/workpaper-internals.md`.
+
+- **Shared streaming Excel writer** (`core/excel`, the only importer of `xlsxwriter`): one
+  place that decides cell types, so text from data is stored as text and never as a
+  formula; frames are spooled to a temporary Parquet file and written in 50,000-row
+  batches in `constant_memory` mode. **File Output** (Excel) and the Data Preview export now
+  use it. [`e2b610a`](https://github.com/AzadKshitij/TriggerEditor/commit/e2b610a)
+- **Workpaper writer** (`core/workpaper`, Qt-free): **Summary** (engagement block, results tied
+  to the exception list by formulas with cached values, conclusion drop-down, tick-mark
+  legend, source files with SHA-256, notes), **Exceptions** (Ref, tick mark and comment
+  columns, frozen header, filter), **Run log** and **Workflow** sheets; New version / Replace
+  / Stop with error; rows above the limit are listed with a TRUNCATED banner and written in
+  full to a CSV next to the workbook; the whole-run workpaper. [`1604afe`](https://github.com/AzadKshitij/TriggerEditor/commit/1604afe)
+- **Engagement defaults** in Preferences > General (client, engagement, period, prepared by,
+  logo). [`d7fbcde`](https://github.com/AzadKshitij/TriggerEditor/commit/d7fbcde)
+- **Workpaper Output node** on the Input tab (inputs E exceptions, P population, S summary; a
+  Config Dock of six sections), the workflow snapshot taken on the GUI thread before the Run,
+  and the CLI's op-catalogue row. [`87eeb4c`](https://github.com/AzadKshitij/TriggerEditor/commit/87eeb4c) [`f6bdef5`](https://github.com/AzadKshitij/TriggerEditor/commit/f6bdef5)
+- **File > Export Workpaper...** (a workpaper of the last recorded run), the workbook's
+  SHA-256 in the run record, an end-to-end test and the benchmarks (500,000 rows x 8 columns
+  in bounded memory). [`b4c333f`](https://github.com/AzadKshitij/TriggerEditor/commit/b4c333f)
+- Spooled batches are read with Polars only (no pyarrow). [`eda6906`](https://github.com/AzadKshitij/TriggerEditor/commit/eda6906)
+- The CLI lists the workbook under `writes` in `approve`, `info` and `paths`. [`7495285`](https://github.com/AzadKshitij/TriggerEditor/commit/7495285)
+- Known gaps: decimal-comma text amounts are misread by the workpaper's amount parser; from the
+  CLI the Run log sheet is omitted. See `docs/dev/workpaper-internals.md`, section 15.
 
 ### New nodes (shaping and report)
 
@@ -187,14 +215,6 @@ Read these before opening an old `.tds` file or re-running an old workflow.
 12. Audit amount parsing: decimal-comma amounts are read correctly and
     mixed forms are treated as unreadable (warning `TD-AUDIT-102`) rather than
     mis-read. [`1c0a7f9`](https://github.com/AzadKshitij/TriggerEditor/commit/1c0a7f9)
-
-## In progress
-
-Not final; internals documented later (`docs/dev/workpaper-internals.md`).
-
-- **Workpaper**: Qt-free writer (Summary, Exceptions, Run log, Workflow, run
-  workpaper) [`1604afe`](https://github.com/AzadKshitij/TriggerEditor/commit/1604afe), Engagement defaults in Preferences (client, engagement,
-  period, preparer, logo) [`d7fbcde`](https://github.com/AzadKshitij/TriggerEditor/commit/d7fbcde), shared streaming Excel writer [`e2b610a`](https://github.com/AzadKshitij/TriggerEditor/commit/e2b610a).
 
 ## Fixes and maintenance
 
