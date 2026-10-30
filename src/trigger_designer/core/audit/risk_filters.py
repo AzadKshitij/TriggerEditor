@@ -191,8 +191,13 @@ def criteria_text(p: RiskParams) -> str:
                 f"an amount within {p.below_pct:g}% below an approval limit ({limits})"
             )
         elif test == "keyword":
-            words = join_and([f"'{k}'" for k in p.keywords if k.strip()])
-            parts.append(f"a description containing {words}")
+            words = [f"'{k}'" for k in p.keywords if k.strip()]
+            # Any one word flags the entry, so it is "any of", never "and".
+            parts.append(
+                f"a description containing {words[0]}"
+                if len(words) == 1
+                else f"a description containing any of {join_and(words, 'or')}"
+            )
         elif test == "after_period_end":
             text = f"posted after the period end {p.period_end}"
             if p.effective_date_column:
@@ -309,8 +314,10 @@ def run_risk_filters(frame, params: RiskParams) -> AuditResult:
     hit = pl.col("risk_score") > 0
 
     amount = pl.col("__td_amt").abs() if p.amount_column else pl.lit(None, pl.Float64)
+    # One per row, however many of its cells were unreadable: the Summary
+    # column is called unparseable_*rows*.
     bad_cells = (
-        pl.sum_horizontal([pl.col(b).cast(pl.Int64) for b in bad])
+        pl.any_horizontal([pl.col(b) for b in bad]).cast(pl.Int64)
         if bad
         else pl.lit(0, dtype=pl.Int64)
     )

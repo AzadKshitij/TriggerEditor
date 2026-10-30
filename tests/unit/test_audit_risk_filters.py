@@ -13,6 +13,7 @@ from trigger_designer.core.audit.risk_filters import (
     LABELS,
     TEST_IDS,
     RiskParams,
+    criteria_text,
     run_risk_filters,
 )
 
@@ -155,8 +156,8 @@ def test_criteria_sentence_lists_only_switched_on_tests_in_table_order() -> None
         "Entries are flagged when any of these apply: posted on a Saturday or "
         "Sunday (date); posted on a listed public holiday (date; 1 date); a round "
         "amount: a whole multiple of 1,000 (amount); an amount within 2% below an "
-        "approval limit (5,000, 10,000); a description containing 'reversal' and "
-        "'plug'; posted after the period end 2024-03-31; a manual journal "
+        "approval limit (5,000, 10,000); a description containing any of 'reversal' "
+        "or 'plug'; posted after the period end 2024-03-31; a manual journal "
         "(source is one of manual)."
     )
     _f, _c, s = _only("weekend")
@@ -397,7 +398,8 @@ def test_unreadable_amounts_and_dates_are_counted_and_warn() -> None:
         RiskParams(date_column="d", amount_column="a", weekend=True, round_amount=True),
     )
     assert flagged.height == 2  # Saturday and 1,000; "abc" / "inf" fire nothing
-    assert s["unparseable_rows"] == 3  # "nope", "abc", "inf"
+    # Rows, not cells: row 2 has two unreadable cells ("nope" and "inf").
+    assert s["unparseable_rows"] == 2
     assert s["status"] == "warn" and s["exception_rows"] == 2
     # A clean run with unreadable cells downgrades pass to warn with the note.
     frame = pl.DataFrame({"a": ["abc", "1"]})
@@ -716,3 +718,12 @@ def test_serialized_state_round_trips_and_old_files_get_defaults() -> None:
     # A file written before a weight existed falls back to 1 for that test.
     other.content.deserialize({"weights": {"weekend": 3}})
     assert other.content.params().weight("holiday") == 1
+
+
+def test_criteria_wording_for_one_and_for_several_keywords() -> None:
+    one = RiskParams(description_column="d", keyword=True, keywords=["plug"])
+    assert criteria_text(one).endswith("a description containing 'plug'.")
+    many = RiskParams(description_column="d", keyword=True, keywords=["a", "b", "c"])
+    assert criteria_text(many).endswith(
+        "a description containing any of 'a', 'b' or 'c'."
+    )

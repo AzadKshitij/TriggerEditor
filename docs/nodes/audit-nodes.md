@@ -419,7 +419,7 @@ An empty or unreadable cell never trips a test.
   tests tripped, separated by `; `) and `risk_score` (the sum of the weights of the tests tripped).
 - `N` Not flagged: the other rows, input columns only.
 - `S` Summary: the eleven standard columns (values are gross absolute amounts when an Amount column is
-  chosen) plus `flagged_two_or_more`, `total_score`, `unparseable_rows` and one count per test:
+  chosen) plus `flagged_two_or_more`, `total_score`, `unparseable_rows` (rows with at least one unreadable amount or date; a row with two bad cells counts once) and one count per test:
   `n_weekend`, `n_holiday`, `n_round_amount`, `n_just_below_limit`, `n_keyword`, `n_after_period_end`,
   `n_manual_journal` (blank for a test that is switched off). Status is `warn` when anything is flagged and never
   `fail`; unreadable dates or amounts add the TD-AUDIT-102 note.

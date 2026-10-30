@@ -77,11 +77,11 @@ def json_params(params: dict) -> str:
     return json.dumps(params, sort_keys=True, ensure_ascii=False, default=str)
 
 
-def join_and(items: list[str]) -> str:
+def join_and(items: list[str], word: str = "and") -> str:
     items = [str(i) for i in items]
     if len(items) == 1:
         return items[0]
-    return ", ".join(items[:-1]) + " and " + items[-1]
+    return ", ".join(items[:-1]) + f" {word} " + items[-1]
 
 
 # ---- typed list parsing (used by the dock; Qt-free so it is testable) ------
