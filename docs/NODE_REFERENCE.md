@@ -21,6 +21,7 @@ op id is the stable identifier stored in saved workflows
 | Append | ![Append](assets/node_icons/append.png) | Stacks the rows of the right input underneath the left input. |
 | Union | ![Union](assets/node_icons/union.png) | Stack two or more inputs vertically (columns matched by name or manual mapping). |
 | Reconcile | ![Reconcile](assets/node_icons/reconcile.png) | Matches two inputs on key columns plus an amount tolerance and/or date window, emitting matched pairs, both unmatched sides, and a summary. |
+| Fuzzy Match | ![Fuzzy Match](assets/node_icons/fuzzymatch.png) | Pairs similar text (for example vendor and supplier names) from two inputs by Jaro-Winkler or Levenshtein score, emitting matched pairs and both unmatched sides. |
 
 ## Preparation
 

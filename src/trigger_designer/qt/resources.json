@@ -102,6 +102,11 @@
         "path":"qt/images/node_icons/Join/Reconcile.svg",
         "mode": "rb"
     },
+    "node_fuzzy_match":{
+        "path":"qt/images/node_icons/Join/FuzzyMatch.svg",
+        "mode": "rb"
+    },
+
 
     "node_count":{
         "path":"qt/images/node_icons/Transform/Count.svg",

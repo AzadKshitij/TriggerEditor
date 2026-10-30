@@ -656,6 +656,16 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Add key columns or narrow the tolerance.",
         "error",
     ),
+    "TD-SHAPE-081": (
+        "Too many possible pairs",
+        "Use a longer prefix or add a 'Must also match' column.",
+        "error",
+    ),
+    "TD-SHAPE-082": (
+        "Too many rows to compare without a blocking key",
+        "Turn on prefix or first-word blocking.",
+        "error",
+    ),
     "TD-SHAPE-091": (
         "The column must be a number",
         "Pick a numeric column, or a text column that holds numbers.",

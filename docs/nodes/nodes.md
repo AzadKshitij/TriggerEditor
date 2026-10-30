@@ -137,6 +137,12 @@ Each entry gives: the Qt module and core module, today's classification, the tar
 - **Target:** the candidate plan lazy, with row indexes. The pair-count guard as a lazy aggregate of key-group products, giving one scalar (B1). The summary as lazy aggregates. Unmatched rows as anti joins. The assignment stays as boundary B3, over candidate key columns only (D5).
 - **Phase:** P7. **Effort:** L.
 
+### Fuzzy Match
+- **Qt:** `qt/widgets/nodes/Join/fuzzy_match.py`. **Core:** `core/shaping/fuzzy.py`, `core/shaping/assign.py`, `core/shaping/common.py` (`estimate_pairs`).
+- **Today:** EAGER. Both inputs are collected; only the normalised text and block keys are scored (DuckDB `jaro_winkler_similarity`, or a Levenshtein ratio). Rows are blocked on a text prefix, first word or nothing, plus optional exact-match columns. Outputs are matched pairs, left unmatched and right unmatched. Errors are `TD-SHAPE-001/003/004/081/082`.
+- **Target:** as Reconcile (P7): keep the candidate guard as a scalar aggregate and the assignment as boundary B3.
+- **Phase:** P7. **Effort:** M.
+
 ## Transform
 
 ### Count

@@ -40,6 +40,7 @@ What that means in practice:
 | Filter, Formula | The SQL result is materialised with `.pl()`. DuckDB spills its own operators, but the output still has to fit in RAM. | `core/shaping/filter.py`, `core/shaping/formula.py` |
 | Cleansing | Collects the whole input. `DataCleansing` works on DataFrames. | `core/shaping/cleansing.py` |
 | Reconcile | Collects both inputs. Matching needs materialised candidates. | `core/shaping/reconcile.py` |
+| Fuzzy Match | Collects both inputs. Only the normalised text and block keys are scored, in DuckDB. | `core/shaping/fuzzy.py` |
 | Pivot | Collects the grouped result, one row per index and header combination. | `core/shaping/reshape.py` |
 | Transpose | The ordering sort may need the whole table. Spilling is not verified. | `core/shaping/transpose.py` |
 | Excel, JSON-array and SQLite inputs | Read whole, including while editing. As far as known, Polars has no lazy scan for these formats. | `core/input_source.py` |
@@ -49,6 +50,7 @@ What that means in practice:
 ## Explicit caps
 
 - **Reconcile:** more than 5,000,000 candidate pairs raises `TD-SHAPE-072` (`MAX_CANDIDATE_PAIRS`, `core/shaping/reconcile.py`). This check runs at Run.
+- **Fuzzy Match:** more than 5,000,000 candidate pairs raises `TD-SHAPE-081` (`MAX_CANDIDATE_PAIRS`, `core/shaping/fuzzy.py`); `blocking=none` on more than 1,000,000 row pairs raises `TD-SHAPE-082`. Both checks run before any scoring. Fuzzy Match has no live cap constant: live inputs are already 100 rows.
 - **Pivot:** more than 500 distinct header values raises `TD-SHAPE-061` (`MAX_PIVOT_COLUMNS`, `core/shaping/reshape.py`).
 - **Old live caps:** Pivot's 5,000,000-row and Reconcile's 200,000-row live limits can no longer trigger, because live inputs are capped at 100 rows. `LIVE_CAP_ROWS` remains in the code and is unused in practice.
 - **Charts:** aggregated charts aggregate the whole frame they receive, then cap the distinct X groups at 2,000. Unaggregated charts show the first 2,000 rows and report the truncation (`MAX_CHART_POINTS`, `core/charts.py`). A chart built from a live frame covers the 100-row sample.

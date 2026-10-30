@@ -225,6 +225,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_reconcile",
     },
     {
+        "module_path": "Join.fuzzy_match",
+        "node_code": JoinNodes.FUZZY_MATCH,
+        "node_type": NodeTypes.JOIN,
+        "node_title": "Fuzzy Match",
+        "icon": "node_fuzzy_match",
+    },
+    {
         "module_path": "Audit.benford",
         "node_code": AuditNodes.BENFORD,
         "node_type": NodeTypes.AUDIT,
