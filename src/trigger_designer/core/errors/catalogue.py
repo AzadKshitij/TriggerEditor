@@ -406,7 +406,7 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-RUN-003": {
         "severity": "error",
-        "reserved": True,
+        "direct": True,
         "title": "Stopped because '{culprit_label}' has a problem.",
         "detail": "The problem is in the earlier step, not in this one.",
         "fixes": (("Fix '{culprit_label}' first, then run again.", ""),),
@@ -419,13 +419,12 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-RUN-005": {
         "severity": "warning",
-        "reserved": True,
+        "direct": True,
         "title": "Input {input_number} is not connected.",
         "fixes": (("Connect a node to this input.", ""),),
     },
     "TD-RUN-006": {
         "severity": "error",
-        "reserved": True,
         "title": "This step needs the result of an earlier step that is not available.",
         "detail": "{reason}",
         "fixes": (
@@ -445,7 +444,6 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-SYS-001": {
         "severity": "error",
-        "reserved": True,
         "title": "{message}",
         "fixes": (("Check this node's settings.", ""),),
     },
@@ -670,12 +668,12 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "error",
     ),
     "TD-SHAPE-081": (
-        "Too many possible pairs",
+        "Too many possible fuzzy pairs",
         "Use a longer prefix or add a 'Must also match' column.",
         "error",
     ),
     "TD-SHAPE-082": (
-        "Too many rows to compare without a blocking key",
+        "Too many rows to compare without blocking",
         "Turn on prefix or first-word blocking.",
         "error",
     ),

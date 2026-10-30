@@ -48,3 +48,19 @@ def test_every_shape_code_literal_is_in_error_codes() -> None:
 
 def test_shaping_error_codes_have_catalogue_entries() -> None:
     assert not [c for c in ERROR_CODES if c not in CATALOGUE]
+
+
+def test_shaping_titles_agree_with_the_catalogue() -> None:
+    differ = {
+        code: (title, CATALOGUE[code].get("title"))
+        for code, title in ERROR_CODES.items()
+        if code in CATALOGUE and CATALOGUE[code].get("title") != title
+    }
+    assert not differ, f"ERROR_CODES title != catalogue title: {differ}"
+
+
+def test_raised_codes_are_not_flagged_reserved() -> None:
+    """``reserved`` means nothing produces the code; these are produced."""
+    raised = {"TD-RUN-003", "TD-RUN-005", "TD-RUN-006", "TD-RUN-008", "TD-SYS-001"}
+    flagged = {c for c in raised if CATALOGUE[c].get("reserved")}
+    assert not flagged, sorted(flagged)

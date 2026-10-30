@@ -120,7 +120,7 @@ Add `--check` to see whether the page is out of date without changing it.
 
 <!-- BEGIN GENERATED ERROR TABLE (scripts/gen_error_reference.py) -->
 
-_115 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
+_116 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
 
 #### Reading input files (TD-IN)
 
@@ -202,8 +202,8 @@ Select, Formula, Filter, SQL Query, Pivot, Reconcile, Fuzzy Match and the other 
 | `TD-SHAPE-070` | Amount or date column is set on one side only | Pick it on both sides, or on neither. |
 | `TD-SHAPE-071` | Add a key column pair or a date column | Add a key pair or a date window. |
 | `TD-SHAPE-072` | Too many possible matches | Add key columns or narrow the tolerance. |
-| `TD-SHAPE-081` | Too many possible pairs _(node note: Too many possible fuzzy pairs)_ | Use a longer prefix or add a 'Must also match' column. |
-| `TD-SHAPE-082` | Too many rows to compare without a blocking key _(node note: Too many rows to compare without blocking)_ | Turn on prefix or first-word blocking. |
+| `TD-SHAPE-081` | Too many possible fuzzy pairs | Use a longer prefix or add a 'Must also match' column. |
+| `TD-SHAPE-082` | Too many rows to compare without blocking | Turn on prefix or first-word blocking. |
 | `TD-SHAPE-091` | The column must be a number | Pick a numeric column, or a text column that holds numbers. |
 | `TD-SHAPE-101` | The split pattern can match nothing | Use a pattern that needs at least one character, such as \s+ not \s*. |
 | `TD-SHAPE-110` | Only one statement is allowed | Remove everything after the first statement. |
@@ -213,6 +213,7 @@ Select, Formula, Filter, SQL Query, Pivot, Reconcile, Fuzzy Match and the other 
 | `TD-SHAPE-114` | The SQL is too long | Shorten the SQL. |
 | `TD-SHAPE-115` | The query took too long | Simplify the query or filter the data first. |
 | `TD-SHAPE-120` | The formula must use the column placeholder | Write {col} where the column goes, for example UPPER({col}). |
+| `TD-SHAPE-130` | The generated rows do not match the input rows | Set Start, Increment and End so the number of generated values equals the number of input rows, or remove the input. |
 
 #### Writing output files (TD-OUT)
 
@@ -240,11 +241,11 @@ Problems found while a run executes.
 |---|---|---|
 | `TD-RUN-001` | This step took longer than {seconds} seconds and was stopped. | 1. Filter or sample the data earlier in the workflow.<br>2. Write large results to Parquet instead of CSV or Excel. |
 | `TD-RUN-002` | This step ran out of memory. | 1. Filter rows or drop unused columns earlier in the workflow.<br>2. Close other programs and run again. |
-| `TD-RUN-003` | Stopped because '{culprit_label}' has a problem. _(flagged reserved in the catalogue)_ | Fix '{culprit_label}' first, then run again. |
+| `TD-RUN-003` | Stopped because '{culprit_label}' has a problem. | Fix '{culprit_label}' first, then run again. |
 | `TD-RUN-004` | The run was cancelled before this step. _(warning, flagged reserved in the catalogue)_ | Run the workflow again. |
-| `TD-RUN-005` | Input {input_number} is not connected. _(warning, flagged reserved in the catalogue)_ | Connect a node to this input. |
-| `TD-RUN-006` | This step needs the result of an earlier step that is not available. _(flagged reserved in the catalogue)_ | 1. Fix the earlier step ('{culprit_label}') and run again.<br>2. Open the earlier step so it is calculated, then run again. |
-| `TD-RUN-008` | Skipped because '{culprit_label}' failed. _(warning, flagged reserved in the catalogue)_ | Fix '{culprit_label}' and run again. |
+| `TD-RUN-005` | Input {input_number} is not connected. _(warning)_ | Connect a node to this input. |
+| `TD-RUN-006` | This step needs the result of an earlier step that is not available. | 1. Fix the earlier step ('{culprit_label}') and run again.<br>2. Open the earlier step so it is calculated, then run again. |
+| `TD-RUN-008` | Skipped because '{culprit_label}' failed. _(warning)_ | Fix '{culprit_label}' and run again. |
 
 #### Expressions and formulas (TD-EXP)
 
@@ -264,7 +265,7 @@ Memory, time and environment.
 
 | Code | What it says | How to fix it |
 |---|---|---|
-| `TD-SYS-001` | {message} _(flagged reserved in the catalogue)_ | Check this node's settings. |
+| `TD-SYS-001` | {message} | Check this node's settings. |
 | `TD-SYS-100` | The data engine could not run this step. | Check the node settings and the upstream data; copy the details if you need help. |
 | `TD-SYS-998` | The data engine stopped unexpectedly. | Run again; if it repeats, copy the details and report it. |
 | `TD-SYS-999` | Something unexpected went wrong. | Copy the details and report it if it repeats. |
