@@ -10,6 +10,7 @@ from qtpy.QtCore import QTimer
 
 from trigger_designer.core.audit.recorder import set_run_record_provider
 from trigger_designer.core.errors import translate_exception
+from trigger_designer.core.errors.builders import make_error
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers.audit_bridge import RunSession
@@ -107,6 +108,7 @@ class WorkflowExecutionMixin:
         self._run_session = None
         self._pending_enrichments = 0
         self._enrichment_listeners: list[Callable[[], None]] = []
+        self._skipped_nodes: list[tuple[Any, Any]] = []
 
     def _log_to_dock(self, message: str) -> None:
         """Report a message in the Logging dock.
@@ -191,6 +193,7 @@ class WorkflowExecutionMixin:
             executor = NodeExecutor()
             self._workflow_executor = executor
             self._run_cancelled = False
+            self._skipped_nodes = []
             self._start_run_session(sorted_nodes, executor)
 
             # Start timing and increment execution counters
@@ -430,12 +433,56 @@ class WorkflowExecutionMixin:
         return active
 
     def _run_policy(self) -> dict[str, Any]:
-        """Run options handed to the worker (``continue_on_error``)."""
-        return {"continue_on_error": False}
+        """Run options handed to the worker (``continue_on_error``).
+
+        Preferences "Keep running independent branches after a failure"
+        (``errors/continue_past_failure``, on by default): after a failure the
+        nodes that do not depend on it still run and its dependents are
+        skipped. Off: the Run stops at the first failed node.
+        """
+        keep_going = get_preferences().get("errors/continue_past_failure", True)
+        return {"continue_on_error": bool(keep_going)}
 
     def _on_node_skipped(self, node: Any, blocker: Any) -> None:
         """Slot: a node was not executed because ``blocker`` failed or was
-        skipped, or (``blocker is None``) because the run was cancelled."""
+        skipped, or (``blocker is None``) because the run was cancelled.
+
+        A node skipped behind a failure gets the knock-on warning ``TD-RUN-008``
+        (it is never marked invalid: nothing is wrong with the node itself).
+        """
+        if blocker is not None:
+            self._skipped_nodes.append((node, blocker))
+
+    def _mark_skipped_nodes(self) -> None:
+        """Give every node skipped behind a failure its ``TD-RUN-008`` warning.
+
+        Deferred until error enrichment has settled: applying an enriched error
+        clears the failed node's "run" error, and ``clear_error`` cascades to
+        the knock-on errors of its children.
+        """
+        pending = list(getattr(self, "_skipped_nodes", []))
+        self._skipped_nodes = []
+        for node, blocker in pending:
+            set_error = getattr(node, "set_error", None)
+            if not callable(set_error):
+                continue
+            try:
+                ctx = build_context(node, self, "run")
+                label = ctx.node_labels.get(getattr(blocker, "id", None)) or str(
+                    getattr(blocker, "node_title", "an earlier step")
+                )
+                set_error(
+                    make_error(
+                        "TD-RUN-008",
+                        ctx,
+                        culprit_label=label,
+                        culprit_node_id=getattr(blocker, "id", None),
+                        culprit_node_title=label,
+                    ),
+                    "run",
+                )
+            except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                logger.exception("Could not mark the skipped node")
 
     def _workflow_worker_is_running(self) -> bool:
         """Whether a run is in flight, tolerating a deleted Qt wrapper."""
@@ -671,6 +718,11 @@ class WorkflowExecutionMixin:
         except Exception:  # noqa: BLE001 - the export must never skip the cleanup
             logger.exception("Could not write the generated script")
         self._seal_run_record(success)
+        if getattr(self, "_skipped_nodes", None):
+            if self.is_enrichment_settled():
+                self._mark_skipped_nodes()
+            else:
+                self.add_enrichment_settled_listener(self._mark_skipped_nodes)
 
         if success and not self._run_cancelled:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))

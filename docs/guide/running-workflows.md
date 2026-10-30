@@ -62,9 +62,12 @@ Green rings fade about a second after a successful Run. Red rings stay until the
 
 ## When a step fails
 
-The window **stops at the first failed node**. Nodes after it do not run, and they are not marked individually as skipped. Files written by nodes that finished before the failure stay on disk.
+What happens next depends on **Edit > Settings > General > Error messages > "Keep running independent branches after a failure"** (on by default).
 
-The Preferences window has a checkbox **Edit > Settings > General > Error messages > "Keep running independent branches after a failure"** (on by default). In the version this guide describes, that setting is stored but the workflow window does not read it, so a failure always stops the Run. The shared run loop does implement the "keep going" behaviour (a node whose upstream failed or was skipped is skipped, and independent branches carry on) and the command-line runner can use it; see [cli.md](cli.md). Do not rely on this checkbox in the window.
+- **On (default).** The Run carries on with every node that does not depend on the failed one. A node whose upstream failed, or was itself skipped, is **not executed**: it gets the warning `TD-RUN-008` "Skipped because 'X' failed" (not a red error; the node is not marked invalid) and its status in the run record is `skipped`. The failed node is recorded as `failed`, the independent branches as `ok`, and the Run as a whole is `failed`. Files written by the independent branches stay on disk.
+- **Off.** The Run **stops at the first failed node**. Nodes after it do not run and are not marked as skipped (in the run record they are listed as `skipped`). Files written by nodes that finished before the failure stay on disk.
+
+The Problems dock lists the failed node as the problem; the skipped nodes' `TD-RUN-008` warnings are knock-on entries that clear when you fix the first node and Run again. The command-line runner has its own flag for the same behaviour; see [cli.md](cli.md).
 
 After a failed Run:
 
@@ -134,7 +137,7 @@ When you only want to look at results, select a node and use the [Data Preview](
 |---|---|
 | Pressing Run does nothing | A Run is already in progress (look for the stop button), or the workflow has a loop (check the Logs and the selected edges). |
 | "The workflow has a cycle" | Delete one of the connections in the selected loop. |
-| The Run stops at the first red node | By design; see [When a step fails](#when-a-step-fails). Fix that node and Run again. |
+| The Run stops at the first red node | The preference "Keep running independent branches after a failure" is off (see [When a step fails](#when-a-step-fails)). Fix that node and Run again, or turn the preference on. |
 | "This step took longer than 30 seconds" | Reduce the data earlier in the workflow (a Filter or Select Records near the input), or write to Parquet instead of CSV or Excel. |
 | The preview is still showing 100 rows after Run | The node was edited after the Run, so the preview went back to the sample. Run again. |
 | The Run finished but the output file is missing | Check that the File Output node has a path and is connected to a node; check the Logs for "Run log saved" and open Problems. |

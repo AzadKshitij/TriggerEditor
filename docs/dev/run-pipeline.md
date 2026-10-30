@@ -79,9 +79,16 @@ on_node_skipped) -> LoopOutcome(success, cancelled, executed, failed, skipped)`
 
 ## Policies
 
-* **Policy** today is one knob: `_run_policy()` returns
-  `{"continue_on_error": False}`. The GUI always stops at the first failure; the
-  headless runner (`qt/headless.py`, in progress) passes its own.
+* **Policy** is one knob: `_run_policy()` returns `{"continue_on_error": bool}`
+  from the preference `errors/continue_past_failure` (default `True`). With it
+  on the GUI skips only the dependents of a failed node; the worker re-emits
+  `on_node_skipped` as `nodeSkipped`, and `_on_node_skipped(node, blocker)`
+  queues the node. Once the run has finished and error enrichment has settled
+  (`_mark_skipped_nodes`) each queued node gets a `TD-RUN-008` warning in the
+  "run" slot. It is deferred because applying an enriched error calls
+  `clear_error("run")` on the failed node, which cascades to the knock-on
+  errors of its children. A cancelled run (`blocker is None`) marks nothing.
+  The headless runner passes its own flag.
 * **Timeout**: `SecurityConfig.max_execution_time = 30.0` seconds per node. On
   timeout the stuck worker thread cannot be killed; a sentinel is queued for it
   and a **fresh worker is started**, so later nodes (continue-on-error) do not

@@ -107,7 +107,7 @@ Defaults: **Align Horizontal Centers** `Ctrl+Shift+H`, **Align Vertical Centers*
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Keep running independent branches after a failure | On | Intended to let a Run continue with branches that do not depend on the failed node. **In this version the workflow window does not read it: a Run always stops at the first failed node** (see [Running workflows](running-workflows.md#when-a-step-fails)). (`errors/continue_past_failure`) |
+| Keep running independent branches after a failure | On | When on, a Run continues with the branches that do not depend on the failed node; nodes that do depend on it are skipped with `TD-RUN-008`. When off, a Run stops at the first failed node. See [Running workflows](running-workflows.md#when-a-step-fails). (`errors/continue_past_failure`) |
 | Hide data values in error messages | Off | Messages, copied details and stored errors show the code, column and row but not the offending values. See [Errors and problems](errors-and-problems.md#privacy-hiding-data-values-in-messages). (`errors/redact_values`) |
 | Find the offending row for conversion errors | On | Run a bounded second search to name the first bad row and a few bad values. (`errors/locate_rows`) |
 | Row search limit | 5,000,000 | How many rows that search may look at (100,000 to 100,000,000). (`errors/locate_row_cap`) |

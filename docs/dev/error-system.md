@@ -79,7 +79,9 @@ live" (115 codes today). Two sources, merged at import:
   `TD-JOI`, `TD-OUT`, `TD-RUN`, `TD-SYS`): `severity`, `title` (and
   `title_located` for when a row is known), `detail`, `fixes`
   (`((text, condition_param), ...)`; a fix whose condition param is empty is
-  dropped), optional `reserved` (code exists but no rule produces it yet).
+  dropped), optional `reserved` (the code exists but nothing produces it yet), optional
+  `direct` (built straight with `make_error` on the run/eval path, e.g.
+  `TD-RUN-003/005/008`, so no translator rule lists it).
 * **`_PASSTHROUGH`**: `code -> (title, hint, severity)` for codes raised by other
   feature cores with their own message (`TD-AUDIT-*`, `TD-SHAPE-*`, `TD-CLI-*`,
   and a few `TD-IN/TD-OUT` extensions). Each becomes
@@ -187,9 +189,5 @@ settled error.
 
 ## Known gaps
 
-* `errors/continue_past_failure` is stored and shown in Preferences but **not
-  read by the Run**: `WorkflowExecutionMixin._run_policy()` returns
-  `{"continue_on_error": False}` unconditionally. Only the headless runner
-  passes its own policy.
 * A `TD-SHAPE` catalogue entry that is not in `ERROR_CODES` and is never written
   as a literal in source (reserved for later) is not caught by any test.

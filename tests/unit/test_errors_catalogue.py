@@ -49,7 +49,9 @@ def test_every_non_reserved_code_has_a_rule() -> None:
     missing = {
         code
         for code, entry in CATALOGUE.items()
-        if code not in reserved and not entry.get("passthrough")
+        if code not in reserved
+        and not entry.get("passthrough")
+        and not entry.get("direct")
     } - rule_codes
     assert not missing, sorted(missing)
 

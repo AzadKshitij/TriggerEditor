@@ -22,6 +22,8 @@ class Entry(TypedDict, total=False):
     fixes: tuple[tuple[str, str], ...]
     hint: str
     reserved: bool
+    #: Built directly with ``make_error`` (run or eval path), not by a rule.
+    direct: bool
     passthrough: bool
 
 
@@ -436,7 +438,7 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-RUN-008": {
         "severity": "warning",
-        "reserved": True,
+        "direct": True,
         "title": "Skipped because '{culprit_label}' failed.",
         "detail": "Independent branches of the workflow still ran.",
         "fixes": (("Fix '{culprit_label}' and run again.", ""),),
