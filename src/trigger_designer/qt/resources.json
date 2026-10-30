@@ -99,7 +99,6 @@
         "mode": "rb"
     },
 
-
     "node_count":{
         "path":"qt/images/node_icons/Transform/Count.svg",
         "mode": "rb"
@@ -129,6 +128,11 @@
 
     "node_data_profile":{
         "path":"qt/images/node_icons/Report/Data Profile.svg",
+        "mode": "rb"
+    },
+
+    "node_comment":{
+        "path":"qt/images/node_icons/Report/Comment.svg",
         "mode": "rb"
     },
 

@@ -134,6 +134,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_data_profile",
     },
     {
+        "module_path": "Report.comment",
+        "node_code": ReportNodes.COMMENT,
+        "node_type": NodeTypes.REPORT,
+        "node_title": "Comment",
+        "icon": "node_comment",
+    },
+    {
         "module_path": "Transform.count_records",
         "node_code": TransformNodes.COUNT_RECORDS,
         "node_type": NodeTypes.TRANSFORM,
