@@ -78,7 +78,7 @@ class InProc:
 
 def call_main(argv, *, env: dict | None = None) -> InProc:
     """Run ``main(argv)`` in this process, capturing stdout/stderr and exit code."""
-    from trigger_designer.cli import main
+    from trigger_designer.cli.app import main
 
     out, err = io.StringIO(), io.StringIO()
     saved = {k: os.environ.get(k) for k in (env or {})}
@@ -86,7 +86,7 @@ def call_main(argv, *, env: dict | None = None) -> InProc:
     try:
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
             try:
-                code = int(main([str(a) for a in argv]))
+                code = int(main([str(a) for a in argv], hard_exit=False))
             except SystemExit as exc:
                 code = int(exc.code or 0)
     finally:

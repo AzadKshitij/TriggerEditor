@@ -17,12 +17,14 @@ def make_context(args) -> CliContext:
     return CliContext(state=state_dir(getattr(args, "state_dir", None)))
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None, *, hard_exit: bool = True) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)  # SystemExit(64) on usage errors
     try:
         module = importlib.import_module(COMMAND_MODULES[args.command])
-        return int(module.execute(args, make_context(args)))
+        ctx = make_context(args)
+        ctx.extra["hard_exit"] = hard_exit
+        return int(module.execute(args, ctx))
     except CliError as exc:
         print_error(args, exc)
         return int(exc.code)

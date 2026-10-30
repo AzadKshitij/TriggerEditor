@@ -522,6 +522,11 @@ def make_safe_builtins() -> dict:
     # (plan 08 X6); the validator forbids the *name* so generated code cannot
     # reach it.
     namespace["__import__"] = _b.__import__
+    # PySide6 (shiboken) replaces ``__import__`` and looks the original up in the
+    # calling frame's builtins; without it the process aborts on first import.
+    original = getattr(_b, "__orig_import__", None)
+    if original is not None:
+        namespace["__orig_import__"] = original
     return namespace
 
 
