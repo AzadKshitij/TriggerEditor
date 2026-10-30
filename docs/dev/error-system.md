@@ -99,12 +99,13 @@ tests, `TD-SHAPE` shaping nodes and SQL guard, `TD-CLI` command line.
 
 **Every code a node can raise must exist in the catalogue, and a `TD-SHAPE`
 code must also be in `core/shaping/common.py::ERROR_CODES`.** Never reuse or
-renumber a code (they appear in saved run records and docs). Today the two
-`TD-SHAPE` sets are identical (checked while writing this page); nothing fails
-globally if they drift, only the per-node tests (`code in ERROR_CODES and code in
-CATALOGUE`) do, so add that assertion to the tests of any node that raises a new
-code. A code missing from the catalogue still works (title = the message) but has
-no hint and no tooltip text.
+renumber a code (they appear in saved run records and docs). `tests/unit/test_error_code_registry.py` scans every source file for quoted
+`"TD-XXX-nnn"` literals and fails if one is missing from `CATALOGUE`, if a
+`TD-SHAPE-*` literal is missing from `ERROR_CODES`, or if an `ERROR_CODES` key has
+no catalogue entry. It matches *literals*, so a code assembled at run time
+(`f"TD-SHAPE-{n}"`) escapes it: always write the full literal. A code missing from
+the catalogue still works (title = the message) but has no hint and no tooltip
+text.
 
 Also covered by tests (`tests/unit/test_errors_catalogue.py`): every rule's codes
 exist in the catalogue; every non-reserved, non-passthrough code has a rule;
@@ -190,5 +191,5 @@ settled error.
   read by the Run**: `WorkflowExecutionMixin._run_policy()` returns
   `{"continue_on_error": False}` unconditionally. Only the headless runner
   passes its own policy.
-* A `TD-SHAPE` code that is in the catalogue but not in `ERROR_CODES` (or vice
-  versa) is not caught by any global test.
+* A `TD-SHAPE` catalogue entry that is not in `ERROR_CODES` and is never written
+  as a literal in source (reserved for later) is not caught by any test.

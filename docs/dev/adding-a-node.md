@@ -371,9 +371,11 @@ plain sentence, not a traceback.
 * **Audit nodes**: `AuditConfigError("TD-AUDIT-nnn", ...)`; the code goes in
   `_PASSTHROUGH` (there is no separate `ERROR_CODES` for audit). `TD-AUDIT-101`
   .. `103` are Summary warnings, not exceptions.
-* Tests that pin it: `test_error_codes_are_registered`-style checks per node
-  (`code in ERROR_CODES` and `code in CATALOGUE`). Today nothing fails if you
-  forget the catalogue entry for a code no test raises; write the test.
+* Tests that pin it: `tests/unit/test_error_code_registry.py` (every quoted
+  `"TD-..."` literal in `src/` must be in the catalogue; every `TD-SHAPE-*` literal
+  in `ERROR_CODES`). It only sees literals, so never build a code with an f-string.
+  Per-node tests still assert `code in ERROR_CODES and code in CATALOGUE` for the
+  codes the node raises.
 * More: `error-system.md`.
 
 ## Tests to write
