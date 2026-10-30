@@ -179,23 +179,34 @@ def column_plan(
 
 
 class FormatBook:
-    """Workbook formats, created once per (key, quoted) pair."""
+    """Workbook formats, created once per (key, quoted) pair.
+
+    ``define`` registers a named style; ``get`` then serves it (and its
+    quote-prefixed twin for text that Excel could read as a formula).
+    """
 
     def __init__(self, workbook: Any) -> None:
         self._wb = workbook
+        self._defs: dict[str, dict[str, Any]] = {k: dict(v) for k, v in FORMATS.items()}
         self._cache: dict[tuple[str, bool], Any] = {}
 
+    def define(self, name: str, props: Mapping[str, Any]) -> str:
+        self._defs[name] = dict(props)
+        return name
+
     def get(self, key: str, quoted: bool = False) -> Any:
-        return self.custom(key, FORMATS.get(key, {}), quoted)
+        slot = (key, quoted)
+        if slot not in self._cache:
+            props = dict(self._defs.get(key, {}))
+            if quoted:
+                props["quote_prefix"] = True
+            self._cache[slot] = self._wb.add_format(props)
+        return self._cache[slot]
 
     def custom(self, name: str, props: Mapping[str, Any], quoted: bool = False) -> Any:
-        slot = (name, quoted)
-        if slot not in self._cache:
-            merged = dict(props)
-            if quoted:
-                merged["quote_prefix"] = True
-            self._cache[slot] = self._wb.add_format(merged)
-        return self._cache[slot]
+        if name not in self._defs:
+            self.define(name, props)
+        return self.get(name, quoted)
 
 
 def column_values(series: pl.Series, plan: ColumnPlan) -> list:
@@ -222,6 +233,8 @@ def write_text(
     stats: dict[str, int] | None = None,
 ) -> int:
     """Write ``text`` as a string cell (never a formula); danger text is quote-prefixed."""
+    if text == "":
+        return ws.write_blank(row, col, None, book.get(base))
     text, flags = guard_text(text)
     if flags & FLAG_CONTROL:
         _count(stats, "control")

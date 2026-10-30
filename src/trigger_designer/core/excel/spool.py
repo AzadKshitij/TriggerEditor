@@ -46,7 +46,10 @@ class Spooled:
 
         for batch in pq.ParquetFile(self.path).iter_batches(batch_size=size):
             frame = pl.from_arrow(batch)
-            yield frame if isinstance(frame, pl.DataFrame) else frame.to_frame()
+            if not isinstance(frame, pl.DataFrame):
+                frame = frame.to_frame()
+            frame.columns = list(self.schema)  # from_arrow renames an empty name
+            yield frame
 
 
 def frame_schema(frame: pl.LazyFrame | pl.DataFrame) -> dict[str, Any]:
