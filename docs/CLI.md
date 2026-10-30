@@ -249,8 +249,9 @@ writable.
 * Exit 8: close the output file in Excel, check free disk space; previous files are unchanged.
 * Exit 2 with `TD-IN-001`: `paths wf.tds` shows which saved path is missing; remap with `--input-dir`.
 * A scheduled task that does nothing: tasks created without `--run-whether-logged-on` do not run when nobody is logged on.
-* Exit 3 with `UnicodeEncodeError`: the console code page (cp1252 when output is
-  piped) cannot print a character of a path; set `PYTHONUTF8=1`.
+* Characters the console cannot show (a cp1252 pipe and a Cyrillic path) are printed
+  as `?`; piped output is UTF-8 unless you set `PYTHONIOENCODING`. Set `PYTHONUTF8=1`
+  to keep them.
 * More in [guide/cli.md](guide/cli.md#troubleshooting).
 
 ## For developers

@@ -262,8 +262,9 @@ overridden. `_resolve_node_path` also handles every node whose catalogue row lis
 `paths.resolve_workflow_path` is the only resolver: no `~` or environment
 expansion, URLs refused, relative against the workflow folder (never the CWD),
 `/` and `\` both split on Windows paths. `relativize` returns forward-slash paths
-inside the base or None. `WorkflowDoc.base_dir` is `Path(path).resolve().parent`,
-which is the source of a limitation on mapped drives (section 17).
+inside the base or None. `WorkflowDoc.base_dir` is `dirname(abspath(path))`
+(not `resolve()`, which would turn a `subst` or mapped drive into its target);
+`relativize` compares as spelled first, then by `realpath`.
 
 `params add/remove` and `paths --relativize --write` rewrite the user's file with
 `write_workflow_with_backup`: `.bak` once (never overwritten), then an atomic
@@ -321,9 +322,9 @@ and `announce` guarantees one `run.finished`.
 `capture_stdout_channel` is a file-descriptor trick: `os.dup(1)` for our lines,
 `os.dup2(2, 1)` and `sys.stdout = sys.stderr` so a stray `print` from node or
 vendored code lands on stderr. That is why stdout in JSON mode is clean (checked by
-`test_stdout_is_only_json_lines`) and why in text mode stdout is empty. Known
-consequence: the editor's own prints (for example `icon: <QPixmap ...>`) appear on
-stderr. `attach_loguru_bridge` replaces loguru's sinks with a `log` event sink.
+`test_stdout_is_only_json_lines`) and why in text mode stdout is empty. The
+vendored editor prints (for example `icon: <QPixmap ...>`) are routed by
+`events.route_stray_stdout` into `logger.debug`, so they show only with `-vv`. `attach_loguru_bridge` replaces loguru's sinks with a `log` event sink.
 
 ## 10. Approvals and the code policy
 
@@ -539,37 +540,29 @@ As the CLI author reported, and as checked while writing the docs:
 * Exit 9 on a non-Windows system and signal behaviour on Linux are untested.
 * Exit 130 and the memory and timeout exits are covered by `test_cli_signals.py` on Windows only.
 
-**Found while verifying the docs (source not changed):**
+**Fixed after the docs were written** (tests in `tests/e2e/test_cli_defects.py`,
+`tests/unit/test_headless_workflow_file.py`, `tests/unit/test_headless_schedule.py`,
+`tests/ui/test_no_console_prints.py`): `approve` with a `NUL` stdin now exits 64;
+`cli.app.configure_streams` makes piped output UTF-8 (or `errors="replace"` when
+`PYTHONIOENCODING` chose an encoding); `file_nodes` is driven by `OpInfo.input_keys` /
+`output_keys` so `approve`, `info` and `paths` list Workpaper Output; `base_dir` uses
+`abspath` and `relativize` falls back to real paths (subst and mapped drives); the
+vendored editor's `print`s go to the debug log (`events.route_stray_stdout`) and
+`quiet_loguru(verbosity)` adds no stderr sink (and no ANSI) unless `-v`/`-vv`;
+the console-prints guard exempts `cli/commands` and `cli/output.py`;
+`schedule list` shows `daily at 02:30`, not a dict.
 
-1. `approve` without `--yes` when stdin is Windows `NUL`. `sys.stdin.isatty()` is true
-   for `NUL`, so `input()` raises `EOFError` and the command exits 3 with a traceback
-   instead of 64 (a Task Scheduler or CI job with stdin redirected from `NUL`). Fix:
-   catch `EOFError` in `commands/approve.py`.
-2. Console encoding. With a cp1252 stdout (output piped, no `PYTHONUTF8`) a command that
-   prints a path with a character outside cp1252 (e.g. Cyrillic) dies with
-   `UnicodeEncodeError` and exit 3 (reproduced with `info`). Fix: reconfigure
-   `sys.stdout`/`sys.stderr` with `errors="replace"` (or UTF-8) in `cli.main`.
-3. Approval review is incomplete for nodes that write through `output_keys` other than
-   File Output. `workflow_file.file_nodes` only recognises File Input/File Output, so
-   `approve`, `info` and `paths` do not list the path of a Workpaper Output node
-   (`output_path`), although `plan.py` stages it. An approver does not see that write.
-4. Mapped and `subst` drives. `WorkflowDoc.base_dir` is `Path.resolve().parent`, which
-   turns a mapped or substituted drive letter into its target path. `paths --relativize`
-   then compares different spellings and reports "nothing to change" for paths that are
-   inside the folder. Use `os.path.abspath` (no symlink or mapping resolution) or compare
-   resolved values on both sides.
-5. Stray editor prints on stderr (`icon: <PySide6.QtGui.QPixmap ...>`, `<class ...>`)
-   appear on every `run` in text mode, and the `validate --deep` of a workflow with an
-   incomplete node prints loguru error blocks with ANSI colours on stderr. Harmless
-   (stdout stays clean) but noisy for a log reader. Related: `tests/ui/test_no_console_prints.py`
-   flags every `print(` under `src/`, including the CLI commands' deliberate output
-   (`testing.md` counts 5 failures); its `ALLOWED_PRINTS` set needs the `cli/commands`
-   files, or the commands should print through `cli/output.py`.
-6. `validate` without `--deep` reports a missing input as a warning and exits 0, while
-   `--deep` reports it as an error and exits 2. Documented, but surprising; consider
-   making the quick check consistent.
-7. `schedule list` text output prints the trigger as a Python dict. `--format json` is
-   fine.
+**Open:**
+
+1. `validate` without `--deep` reports a missing input as a warning and exits 0, while
+   `--deep` (and `run`) report it as an error and exit 2. The plan (`08`) only says a
+   run with a missing input exits 2 and that static `validate` prints findings; it does
+   not say which level the quick check uses. Options: keep (the quick check is for a
+   file that is checked on another machine than the one that runs it), make it an error
+   unless `--no-files`, or make it a warning that `--strict` promotes (already true).
+   Left as documented.
+2. `route_stray_stdout` also captures a deliberate `print` of generated node code; with
+   `-vv` it appears as `stdout: ...` debug lines, not on stdout.
 
 ## 18. Verified against
 

@@ -349,9 +349,10 @@ b90b21cab1f9  2026-10-30T17:51:26Z  kashvinchandrasan  Y:\audit\proj\filter.tds
 
 Rules to remember:
 
+- `approve` asks `Approve? [y/N]` only on a terminal. With no terminal, or no input (stdin redirected from a file or `NUL`, as in a scheduled task or CI job), it prints the review block, says to pass `--yes` and exits 64 instead of failing.
 - An interactive `run` may use `--allow-unapproved` to skip this once. A scheduled run (`--trigger schedule`) ignores that option; it always needs approval.
 - The approvals file is not signed. It stops accidents and casual changes, not someone who can edit your files. On a build server, create the approval as part of the pipeline (`approve --yes`) from a reviewed commit, and keep the state folder read-only afterwards.
-- The review block and `info` list the paths of File Input and File Output nodes. The output path of a **Workpaper Output** node is not listed there yet (a known gap), although the run does write it; open such a workflow in the editor to see where it writes before you approve it.
+- The review block, `info` and `paths` list every file a node reads or writes: File Input, File Output and Workpaper Output (its `output_path`). New file-touching nodes appear there once they are in the op catalogue.
 - `--input-dir`, `--output-dir` and `--param` are typed by you, so they are trusted. What the file itself says is not. Approving a workflow approves the paths it contains; pointing it at other folders from the command line is your decision.
 
 ## params
@@ -669,7 +670,7 @@ Times are your computer's local time. Records and log timestamps are UTC.
 5. **Create it.** The same command without `--print-only`. It prints `Scheduled 'nightly' (TriggerDesigner\nightly).` If a task of that name exists it refuses; add `--force` to replace.
 6. **Try it once from Task Scheduler.** Open Task Scheduler, find `TriggerDesigner` in the Task Scheduler Library, right-click the task and choose **Run**. Then read the log `logs\nightly.jsonl` in the state folder. Do this before you rely on the schedule.
 7. **Look after it.**
-   - `trigger-designer-cli schedule list` shows each task with its next run time, status and the exit code of the last run (the `last result`; `0` is success, other numbers are the [exit codes](#exit-codes)).
+   - `trigger-designer-cli schedule list` shows each task with when it runs (for example `daily at 02:30`), its next run time, status and the exit code of the last run (the `last result`; `0` is success, other numbers are the [exit codes](#exit-codes)).
    - `trigger-designer-cli schedule show nightly` prints one task as JSON (its definition and the live state).
    - `trigger-designer-cli schedule remove nightly` deletes the task and its stored files. Removing a task that Windows no longer has only warns.
 
@@ -764,7 +765,7 @@ A run never modifies the workflow file. It works on a private copy in the `work`
 | A scheduled task that never ran | Without `--run-whether-logged-on` the task only runs while you are logged on. Open Task Scheduler and check its History, and `schedule list` for the last result. Also check `logs\NAME.jsonl`. |
 | A scheduled task ends with exit 6 (`TD-CLI-009`) | The workflow was edited after it was scheduled. Approve it again; no need to recreate the task. |
 | `could not query Windows` in `schedule list` | `schtasks` was not available or was refused. Your own task definitions are still shown. |
-| Lines such as `icon: <PySide6.QtGui.QPixmap ...>` on stderr | The editor's node code prints these while it loads. They are harmless. They never reach stdout, so `--log-format json` stays clean. |
+| You want to see what the editor's node code prints or logs while loading | Run with `-vv` (`run` and `validate --deep`): its `print` output and log lines are shown as debug lines. By default they are hidden, and `stdout` is never touched, so `--log-format json` stays clean. |
 | Nothing at all appears and the exit code is 64 | The command line was wrong. The usage and the reason are on stderr. |
 
 ### Headless Qt and "no display"
@@ -781,7 +782,7 @@ If the computer lost power during a run, the next run of the same workflow remov
 
 ### cp1252 and other console encodings
 
-Older Windows consoles, redirected output and scheduled tasks use a "code page" such as cp1252 that cannot show every character. A workflow path or a message that contains a character outside it (Cyrillic or Chinese file names, for example) can stop a command that prints it with exit 3 and a `UnicodeEncodeError`. Tell Python to use UTF-8 before you start the program:
+Older Windows consoles, redirected output and scheduled tasks use a "code page" such as cp1252 that cannot show every character. The program now prints UTF-8 when its output is piped or redirected, and replaces (with `?`) a character the console cannot show, so a Cyrillic or Chinese file name no longer stops a command. If you choose the encoding yourself with `PYTHONIOENCODING` (for example `cp1252`) the program honours it and replaces what does not fit. To keep every character on a console or in a pipe that reads a code page, tell Python to use UTF-8 before you start the program:
 
 ```text
 set PYTHONUTF8=1
@@ -793,7 +794,7 @@ set PYTHONUTF8=1
 
 - Put paths with spaces in double quotes. In Command Prompt and PowerShell a backslash before the closing quote swallows the quote: write `--input-dir "D:\in"` or `--input-dir D:/in`, not `--input-dir "D:\in\"`.
 - Both `/` and `\` work in paths given to the program.
-- If the workflow lives on a drive that Windows maps to another path (a mapped network drive or one made with `subst`), the program works with the real location. `paths --relativize` can then report "nothing to change" even though the paths look like they are inside the folder. Use the real (UNC or physical) path for a deployment copy. This is a known limitation.
+- A workflow on a mapped network drive or a `subst` drive works: `paths --relativize` compares the paths as saved first and, if that finds them apart, their real locations, so both spellings of the folder are recognised.
 
 ### Something is slow
 

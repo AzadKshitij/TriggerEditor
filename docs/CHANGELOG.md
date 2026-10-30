@@ -247,15 +247,12 @@ As of the commit above. Details and evidence in `docs/dev/*.md`.
    `docs/SESSION_HANDOFF.md`, `docs/ENHANCED_EXECUTOR_GUIDE.md`,
    `.github/skills/create-node/SKILL.md` (corrections in `docs/dev/architecture.md`
    and `docs/dev/adding-a-node.md`).
-7. Test-suite state and flaky areas: see `docs/dev/testing.md` (unit 2233 passed, e2e 102 passed and 1 stale golden since regenerated, ui 974 passed and 5 failed on the in-progress CLI print guard, all measured on e2b610a).
+7. Test-suite state and flaky areas: see `docs/dev/testing.md` (unit 2233 passed, e2e 102 passed and 1 stale golden since regenerated, ui 974 passed and 5 failed on the CLI print guard when measured, since fixed; all measured on e2b610a).
 8. Generated code is not standalone: the exported run script imports
    `trigger_designer.core.*` and needs this source tree on `sys.path`.
 9. Truncating the tail of a run-record chain is undetectable by design; note the
    `head_hash` printed by verify.
-10. Command line, found while writing its docs (see `docs/dev/cli-internals.md` section 17):
-    `approve` without `--yes` and with stdin from `NUL` exits 3 instead of 64; a
-    console code page that cannot print a path character (cp1252 pipe) makes a
-    command exit 3 unless `PYTHONUTF8=1`; `approve`, `info` and `paths` do not list the
-    Workpaper Output path; `paths --relativize` finds nothing on a mapped or `subst`
-    drive; the Task Scheduler cycle, the installer's PATH task and the packaged exe on
-    a machine without Python have not been run.
+10. Command line (see `docs/dev/cli-internals.md` section 17): quick `validate`
+    reports a missing input as a warning (exit 0) while `--deep` and `run` report an
+    error (exit 2); the Task Scheduler cycle, the installer's PATH task and the
+    packaged exe on a machine without Python have not been run.
