@@ -2,11 +2,9 @@ from collections.abc import Mapping
 
 from qtpy.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from qtpy.QtWidgets import (
-    QScrollArea,
     QWidget,
     QGraphicsItem,
     QStyleOptionGraphicsItem,
-    QLayout,
 )
 from qtpy.QtCore import QRectF, Qt
 from qtpy.QtWidgets import (
@@ -15,7 +13,6 @@ from qtpy.QtWidgets import (
 
 from nodeeditor.node_node import Node
 
-from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from nodeeditor.node_icon_graphics_node import QDMIconGraphicsNode
 from nodeeditor.node_socket import Socket
 from nodeeditor.node_edge import Edge
@@ -36,24 +33,12 @@ from trigger_designer.qt.helpers.rename_map import (
 )
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
-from trigger_designer.qt.helpers.content_undo_mixin import (
-    _COMPOSITE_ATTR,
-    _IMMEDIATE_WIDGET_TYPES,
-    _TRACKED_ATTR,
-    _UNTRACKED,
-    TriggerContentUndoMixin,
-    default_history_text,
-    widget_accepts_tracking,
+from trigger_designer.qt.node_content import (
+    DockBinding as DockBinding,
+    TriggerChangeHandler as TriggerChangeHandler,
+    TriggerContent as TriggerContent,
 )
 from trigger_designer.qt.helpers.node_arrange import EPSILON, nearest_multiple
-from trigger_designer.qt.undo.binding import (
-    _BOUND_ATTR,
-    DEFAULT_DEBOUNCE_MS,
-    bind,
-    is_missing,
-    safe_value_of,
-    unbind,
-)
 
 from typing import TYPE_CHECKING, Any, List, Optional, OrderedDict
 
@@ -461,289 +446,6 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._pen_role = "default"
         self._pen = self._default_pen
         self.update()
-
-
-class TriggerContent(TriggerContentUndoMixin, QDMNodeIconContentWidget):
-    """Base for node content widgets.
-
-    :class:`TriggerContentUndoMixin` supplies the undo protocol methods, so
-    every node can be restored without writing per-node bookkeeping. It is
-    listed *before* the Qt base deliberately: ``QDMNodeContentWidget`` defines
-    a no-op ``history_stamp_callback``, and a Qt base listed first would win
-    the MRO and silently disable the real one.
-    """
-
-    # _node: 'TriggerNode'  # Define the actual storage
-
-    def initUI(self, icon: Optional[QPixmap] = None) -> Any:
-        #: Recorded here as well as in the base: nodes that build on
-        #: ``TriggerContent`` override the base's ``initUI``, and the low-zoom
-        #: repaint blits this pixmap instead of rendering the widget.
-        self.icon = icon
-        lbl = QLabel(self.node.content_label, self)  # type: ignore
-        lbl.setObjectName(self.node.content_label_objname)  # type: ignore
-
-
-class TriggerChangeHandler(TriggerContentUndoMixin):
-    """Wires a node's Config Dock widgets into the undo system.
-
-    Also the carrier for :class:`TriggerContentUndoMixin`: every content class
-    inherits this, and the mixin supplies ``sync_from_model``,
-    ``history_stamp_callback`` and the ``push_*_change`` helpers. Keeping that
-    on this base means new nodes get undo support without opting in.
-
-    The Config Dock builds a node's widgets from scratch on every selection,
-    so registrations here are re-made constantly and die with their widgets.
-    There is nothing to tear down.
-    """
-
-    def __init__(self, scene: "Scene", node: "TriggerNode") -> None:
-        self._scene = scene
-        self._input_widgets_store: list = []
-        self._suspend_input_tracking = False
-        self.node = node
-
-    @property
-    def _input_widgets(self) -> list:
-        """Widgets registered for change tracking.
-
-        Lazy rather than set in ``__init__`` because not every content class
-        cooperates with cooperative ``super().__init__()`` - several build on
-        ``(QDMNodeIconContentWidget, TriggerChangeHandler)`` and override
-        ``__init__`` without chaining, so attributes set here never run.
-        Reading a plain attribute then raised ``AttributeError`` from inside
-        ``create_layout``, which ``ConfigDock`` catches broadly, leaving that
-        node's config panel silently blank.
-        """
-        store = self.__dict__.get("_input_widgets_store")
-        if store is None:
-            store = []
-            self.__dict__["_input_widgets_store"] = store
-        return store
-
-    # ------------------------------------------------------------------
-    # Registration
-    # ------------------------------------------------------------------
-
-    def refresh_dock_context(self) -> None:
-        """Recompute the open dock's context strip from the model.
-
-        The strip is a projection, like every other widget: the dock installs
-        ``_dock_context_refresh`` while it owns this node's layout, and this is
-        a no-op once the dock is gone or the node is destroyed.
-        """
-        # ``__dict__`` rather than ``getattr``: this callback is Python-side
-        # bookkeeping, so read it without resolving descriptors or other
-        # binding-provided attributes on an uninitialized or deleted widget.
-        try:
-            callback = self.__dict__.get("_dock_context_refresh")
-        except RuntimeError:
-            return
-        if callback is None:
-            return
-        try:
-            callback()
-        except RuntimeError:
-            # Widget already deleted (dock rebuilt or node removed).
-            pass
-
-    def registerInputWidget(
-        self,
-        widget: QWidget,
-        text: Optional[str] = None,
-        immediate: Optional[bool] = None,
-        debounce_ms: Optional[int] = None,
-        merge_key: Optional[str] = None,
-    ) -> bool:
-        """Make edits to ``widget`` undoable.
-
-        Each widget is seeded with its current value, so the first edit records
-        a genuine before/after pair rather than an entry with nothing to
-        return to.
-
-        :param text: ``"Noun Verbed"`` label for the history entry. Defaults to
-            ``Modified <Node Title>``, which at least names the node.
-        :param immediate: commit on every change instead of debouncing.
-            Defaults to ``True`` for buttons, spins, sliders and combos, which
-            have no intermediate states worth keeping.
-        :param debounce_ms: override the pause before committing.
-        :param merge_key: fold a burst of edits into one undo step. Give each
-            control its own key.
-        """
-        if widget in self._input_widgets:
-            return False
-
-        seed = safe_value_of(widget)
-        if is_missing(seed):
-            # Cannot read a starting value for this control, so a real diff is
-            # impossible. Skipping keeps it untracked rather than letting the
-            # failure escape create_layout and blank the node's whole panel.
-            logger.debug(
-                f"Skipping undo tracking for {type(widget).__name__}: unreadable value"
-            )
-            return False
-
-        tracked = self._tracked_values()
-        key = id(widget)
-        if debounce_ms is None:
-            debounce_ms = DEFAULT_DEBOUNCE_MS if immediate is None else None
-        if immediate is None:
-            immediate = isinstance(widget, _IMMEDIATE_WIDGET_TYPES)
-
-        label = text or default_history_text(self.node)
-        tracked[key] = seed
-
-        connected = bind(
-            self,
-            widget,
-            read=lambda k=key: tracked.get(k, _UNTRACKED),
-            write=None,  # the node's own slot already mutated the model
-            text=label,
-            immediate=bool(immediate),
-            debounce_ms=debounce_ms,
-            merge_key=merge_key,
-        )
-        if connected:
-            self._input_widgets.append(widget)
-        return connected
-
-    def _tracked_values(self) -> dict:
-        """Per-content map of last recorded widget values."""
-        tracked = getattr(self, _TRACKED_ATTR, None)
-        if tracked is None:
-            tracked = {}
-            setattr(self, _TRACKED_ATTR, tracked)
-        return tracked
-
-    def is_input_widget(self, widget: QWidget) -> bool:
-        """Check if a widget is an input widget we track."""
-        return widget_accepts_tracking(widget)
-
-    def iter_dock_widgets(self, layout: Optional[QLayout]):
-        """Yield every widget in a layout tree, depth first.
-
-        Descends into a scroll area's ``widget()`` as well as nested layouts.
-        Several nodes wrap their whole panel in a ``QScrollArea``, whose
-        children live under ``scrollArea.widget()`` and are not reachable from
-        any layout on the dock - without this their controls are invisible to
-        the registration sweep and stay untracked.
-        """
-        if layout is None:
-            return
-        for i in range(layout.count()):
-            item = layout.itemAt(i)
-            if item is None:
-                continue
-            widget = item.widget()
-            if widget is not None:
-                yield widget
-                yield from self.iter_dock_widgets(widget.layout())
-                inner = self._scroll_content(widget)
-                if inner is not None:
-                    yield inner
-                    yield from self.iter_dock_widgets(inner.layout())
-            elif item.layout() is not None:
-                yield from self.iter_dock_widgets(item.layout())
-
-    @staticmethod
-    def _scroll_content(widget: QWidget) -> Optional[QWidget]:
-        """The content widget of a scroll area, or ``None``.
-
-        Deliberately ``QScrollArea`` and not ``QAbstractScrollArea``: the
-        ``widget()`` accessor only exists on the former, and the latter is also
-        the base of ``QTextEdit`` and ``QTableView``, which have no content
-        widget to descend into.
-        """
-        if isinstance(widget, QScrollArea):
-            return widget.widget()
-        return None
-
-    def registerUnboundDockWidgets(self, layout: Optional[QLayout]) -> int:
-        """Register any control the node did not register itself.
-
-        Run by ``ConfigDock`` after ``create_layout`` so *every* Config Dock
-        control is undoable by default, including in nodes that never opted
-        in. Without this a node with no explicit registration - cleansing,
-        groupby, count_records, graph, dynamic_row_builder - silently had no
-        undo path at all.
-
-        Widgets already bound are skipped, so a node that registered a
-        control with a specific ``"Noun Verbed"`` label keeps that label and
-        this sweep only picks up the ones it missed. Anything nested inside a
-        composite is skipped too, because the composite owns its own signal
-        and binding its children as well would record the same edit twice.
-        """
-        added = 0
-        for widget in self.iter_dock_widgets(layout):
-            if not widget_accepts_tracking(widget):
-                continue
-            if getattr(widget, _BOUND_ATTR, False):
-                continue
-            if self._inside_composite(widget):
-                continue
-            if self.registerInputWidget(widget):
-                added += 1
-        return added
-
-    @staticmethod
-    def _inside_composite(widget: QWidget) -> bool:
-        """``True`` if ``widget`` is part of a composite that owns its signal."""
-        parent = widget.parent()
-        while parent is not None:
-            if getattr(parent, _COMPOSITE_ATTR, False):
-                return True
-            parent = parent.parent()
-        return False
-
-    def recursively_find_widgets(self, layout: Optional[QLayout]) -> None:
-        """Register every trackable widget in a layout tree.
-
-        Cheap enough to call unconditionally at the end of ``create_layout``.
-        """
-        for widget in self.iter_dock_widgets(layout):
-            if widget_accepts_tracking(widget):
-                self.registerInputWidget(widget)
-
-    def onInputChanged(self, *args: list) -> None:
-        """Fallback for widgets with no specific model binding.
-
-        Bound via :meth:`registerInputWidget` only where a node has not given
-        a control an explicit label. Records a real diff against the last
-        known value rather than an unconditional "Input Modified", and honours
-        the debounce and the restore guard, so it can no longer flood the
-        timeline or re-record its own restore.
-        """
-        del args
-        if self._suspend_input_tracking:
-            return
-
-        scene = getattr(self.node, "scene", None)
-        if scene is None:
-            return
-        history = getattr(scene, "history", None)
-        if history is None or history.is_restoring_history:
-            return
-
-        scene.has_been_modified = True
-        history.storeHistory(default_history_text(self.node), setModified=False)
-
-    def _disconnect_input_widget(self, widget: QWidget) -> None:
-        try:
-            unbind(widget)
-        except RuntimeError:
-            return
-
-    def clearInputWidgets(self) -> None:
-        """Drop tracked widgets and their pending debounces.
-
-        Nodes that manage their own commit timing - the formula editor, for
-        one - call this so the generic tracker does not also record their
-        edits.
-        """
-        for widget in self._input_widgets:
-            self._disconnect_input_widget(widget)
-        self._input_widgets.clear()
-        self._tracked_values().clear()
 
 
 class TriggerNode(Node):

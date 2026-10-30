@@ -626,7 +626,7 @@ def test_register_input_widget_skips_unreadable_widget(node):
 
     hostile = Hostile()
     # Force it down the trackable branch.
-    import trigger_designer.qt.node_base as nb
+    import trigger_designer.qt.node_content as nb
 
     original = nb.widget_accepts_tracking
     nb.widget_accepts_tracking = lambda w: isinstance(w, QWidget) and w is hostile
