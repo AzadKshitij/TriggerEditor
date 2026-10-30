@@ -26,7 +26,7 @@ There is **no fixed limit on rows or file size**. The practical limit is your co
 |---|---|---|---|
 | Rows read while you edit (live evaluation) | **100 rows** per input; at most 100 rows shown per output | Only a sample is processed while editing; **Run processes everything**. | [Running workflows](running-workflows.md#live-evaluation-and-the-100-row-sample) |
 | Data Preview after a Run | **1,000 rows or 2 MB**, whichever is smaller | A window onto the result. Exports from the preview write only these rows. | [Data Preview](config-dock-and-preview.md#data-preview) |
-| Time per step in a Run | **30 seconds** | The step stops with `TD-RUN-001`; the Run stops. | [Time and memory limits](running-workflows.md#time-and-memory-limits) |
+| Time per step in a Run | **30 seconds** (Workpaper Output: **10 minutes**) | The step stops with `TD-RUN-001`; the Run stops. | [Time and memory limits](running-workflows.md#time-and-memory-limits) |
 | SQL Query run time | **25 seconds** | Interrupted with `TD-SHAPE-115`. | [Security and privacy](security-and-privacy.md#sql-is-read-only-and-locked-down) |
 | SQL text length | 20,000 characters | `TD-SHAPE-114`. | same |
 | SQL Query memory | 2 GB | `TD-SHAPE-113` with the engine's message. | same |
@@ -79,7 +79,7 @@ The [run record](run-history-and-audit-trail.md) costs a little time:
 2. **Convert Excel inputs once.** An Excel file is read in full every time the workflow opens. For a very large workbook, save the sheet as CSV or Parquet and read that.
 3. **Filter and select early.** Put a **Select** (drop the columns you do not need) and a **Filter** or **Select Records** as close to the input as you can. Fewer rows and columns make every later step quicker and smaller.
 4. **Keep an eye on text columns.** CSV columns are read as text. Converting only the columns you need, once, is cheaper than converting everything.
-5. **Split a heavy step.** If one step is near 30 seconds on your data, put a **Filter** before it, or split the work in two workflows, writing the first stage to Parquet.
+5. **Split a heavy step.** If one step is near its time limit (30 seconds) on your data, put a **Filter** before it, or split the work in two workflows, writing the first stage to Parquet.
 6. **Sample for audit tests.** For a first look, a **Sample** node (with a seed) over the population lets you try tests quickly. Run the tests over the whole population when you are happy.
 7. **Close what you do not need.** Each open workflow keeps its own previews and logs. Close finished ones.
 8. **Avoid joining on text keys with different cases or spaces.** Clean them first (Cleansing or Normalize), or a join can multiply or lose rows.

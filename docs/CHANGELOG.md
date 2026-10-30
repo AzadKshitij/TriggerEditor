@@ -282,6 +282,10 @@ Read these before opening an old `.tds` file or re-running an old workflow.
 - Tests: `no_modal_dialogs` applied by default to `tests/e2e` [`2bdefa8`](https://github.com/AzadKshitij/TriggerEditor/commit/2bdefa8); goldens
   for the audit workflows [`2113a6e`](https://github.com/AzadKshitij/TriggerEditor/commit/2113a6e); Split goldens regenerated [`c3035e5`](https://github.com/AzadKshitij/TriggerEditor/commit/c3035e5).
 
+- Per-node time limit: a node may declare `execution_timeout` (seconds, capped at 1,800); Workpaper Output
+  now gets 10 minutes instead of the 30-second default so a 500,000-row workpaper can finish in
+  the editor. `TD-RUN-001` states the limit that applied. The CLI `--timeout` is unchanged.
+
 ## Known issues
 
 As of the commit above. Details and evidence in `docs/dev/*.md`.

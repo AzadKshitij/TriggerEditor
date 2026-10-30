@@ -47,11 +47,17 @@ def _utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
+#: Hard ceiling for a node's own ``execution_timeout`` (seconds).
+MAX_NODE_TIMEOUT = 1800.0
+
+
 @dataclass
 class SecurityConfig:
     """Configuration for code execution limits."""
 
     max_execution_time: float = 30.0  # seconds
+    #: Ceiling for a per-node ``execution_timeout`` declaration (seconds).
+    max_node_timeout: float = MAX_NODE_TIMEOUT
 
 
 def _node_worker_loop(tasks: queue.Queue[Callable[[], None] | None]) -> None:
@@ -274,10 +280,30 @@ class NodeExecutor:
             self._node_task_queue.put(None)
             self._start_worker()
             return False, ExecutionTimeoutError(
-                f"Code execution timed out after {timeout} seconds"
+                f"Code execution timed out after {timeout:g} seconds"
             )
 
         return True, exception_container[0]
+
+    def effective_timeout(self, node: Any) -> float:
+        """The time limit for ``node``: its declared ``execution_timeout`` or the default.
+
+        A node (read first) or its content may set the class attribute
+        ``execution_timeout`` (seconds, ``None`` = use the default). The value is
+        capped at ``SecurityConfig.max_node_timeout``. A default that is already
+        at or above that cap (the CLI's "no limit" and ``--timeout`` budgets) is
+        never lowered by a declaration; the CLI total deadline still wins.
+        """
+        default = self.security_config.max_execution_time
+        cap = self.security_config.max_node_timeout
+        for owner in (node, getattr(node, "content", None)):
+            declared = getattr(owner, "execution_timeout", None)
+            if isinstance(declared, bool) or not isinstance(declared, (int, float)):
+                continue
+            if declared <= 0 or default >= cap:
+                continue
+            return float(min(declared, cap))
+        return default
 
     def execute_node(self, node: TriggerNode) -> ExecutionResult:
         """Execute a node's code with comprehensive monitoring and error handling.
@@ -307,7 +333,7 @@ class NodeExecutor:
             self._node_running = True
             try:
                 success, exception = self._execute_with_timeout(
-                    code, local_variables, self.security_config.max_execution_time
+                    code, local_variables, self.effective_timeout(node)
                 )
             finally:
                 self._node_running = False

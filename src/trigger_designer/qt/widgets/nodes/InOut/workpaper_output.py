@@ -134,7 +134,7 @@ class WorkpaperOutputContent(ShapingContent):
                     "int",
                     minimum=1,
                     maximum=1_048_574,
-                    hint="Large workpapers may exceed the 30 second per-node limit; lower the row limit.",
+                    hint="Large workpapers can take minutes; this step may run up to 10 minutes.",
                 ),
                 _text("exceptions_sheet_name", "Exceptions sheet"),
                 Field("include_run_log", "Include run log", "check"),
@@ -303,6 +303,8 @@ class TriggerNode_WorkpaperOutput(TriggerNode):
     node_type = NodeTypes.IO
     content_label_objname = "trigger_node_workpaper_output"
     style = {}  # noqa: RUF012 - shared empty node style
+    #: Seconds the editor waits for this step (a 500k-row workbook takes 35-47 s).
+    execution_timeout = 600.0
     #: Population and Summary may stay unconnected; Exceptions may not.
     optional_inputs = frozenset({1, 2})
 

@@ -89,7 +89,7 @@ Cancel is **cooperative**:
 - Files that earlier nodes had already finished writing stay on disk. A node that was in the middle of writing a file when you pressed Cancel completes its write.
 - The run record is sealed with status `cancelled`.
 
-Cancel is only looked at **between** steps, never inside one. If a single step is very long (for example a very large write), Cancel will seem to do nothing until that step ends or hits the 30 second step limit (see below). A step that hits the limit is *abandoned*, not stopped: the app stops waiting for it and reports `TD-RUN-001`, but the work it was doing carries on in the background until it finishes by itself, and it may still write its output file after the Run has been reported as failed. After a timeout, wait for the computer to go quiet before starting another Run that writes the same files.
+Cancel is only looked at **between** steps, never inside one. If a single step is very long (for example a very large write), Cancel will seem to do nothing until that step ends or hits its time limit (30 seconds for most steps; see below). A step that hits the limit is *abandoned*, not stopped: the app stops waiting for it and reports `TD-RUN-001`, but the work it was doing carries on in the background until it finishes by itself, and it may still write its output file after the Run has been reported as failed. After a timeout, wait for the computer to go quiet before starting another Run that writes the same files.
 
 Closing the workflow window or the app during a Run cancels it the same way and waits up to five seconds for the current step.
 
@@ -113,7 +113,7 @@ The script reads the same files and writes the same output paths as the workflow
 
 | Limit | Value | What happens |
 |---|---|---|
-| Time per node | **30 seconds** | The node is stopped from the app's point of view and reports `TD-RUN-001` "This step took longer than 30 seconds and was stopped". The Run stops with that failure. The work already in progress on the background thread cannot be forcibly ended, so it may keep using the CPU until it finishes; start a new Run only after it has quietened, and consider filtering earlier or writing to Parquet. |
+| Time per node | **30 seconds** (**Workpaper Output: 10 minutes**) | The node is stopped from the app's point of view and reports `TD-RUN-001` "This step took longer than 30 seconds and was stopped" (the message states the limit that applied to that step). Workpaper Output is given 10 minutes because writing a very long Excel exception list can take well over 30 seconds. The Run stops with that failure. The work already in progress on the background thread cannot be forcibly ended, so it may keep using the CPU until it finishes; start a new Run only after it has quietened, and consider filtering earlier or writing to Parquet. |
 | Time for a SQL Query | 25 seconds | Interrupted cleanly with `TD-SHAPE-115`. |
 | SQL Query memory | 2 GB | `TD-SHAPE-113` with the engine's message. |
 | Out of memory | No fixed cap | If the computer runs out of memory the step fails with `TD-RUN-002`. |

@@ -33,7 +33,7 @@ Run button -> TriggerSubWindow.run_workflow() -> WorkflowExecutionMixin.executeW
                   code = code_filter(code)                  (optional seam)
                   before_node(node)                          (audit: fingerprint inputs)
                   exec(code, {**execution_context, "__name__": "__main__"}, locals)
-                    on the pooled "NodeExecutorWorker" thread, 30 s timeout
+                    on the pooled "NodeExecutorWorker" thread, 30 s default timeout
                   verify_plans: collect_schema() of every LazyFrame local
                   content.after_execution(variables)         (warnings only on failure)
                   after_node(node, locals, result)           (audit: count rows, hash outputs)
@@ -89,7 +89,12 @@ on_node_skipped) -> LoopOutcome(success, cancelled, executed, failed, skipped)`
   `clear_error("run")` on the failed node, which cascades to the knock-on
   errors of its children. A cancelled run (`blocker is None`) marks nothing.
   The headless runner passes its own flag.
-* **Timeout**: `SecurityConfig.max_execution_time = 30.0` seconds per node. On
+* **Timeout**: `SecurityConfig.max_execution_time = 30.0` seconds per node. A node
+  (or its content) may declare `execution_timeout: float | None` (seconds; `None`/absent =
+  default); `NodeExecutor.effective_timeout(node)` reads it with `getattr`, caps it at
+  `SecurityConfig.max_node_timeout` (`MAX_NODE_TIMEOUT = 1800`), and never lowers a default
+  that is already at the cap (the CLI's "no limit"). Workpaper Output declares 600. The
+  `TD-RUN-001` message carries the limit that applied. On
   timeout the stuck worker thread cannot be killed; a sentinel is queued for it
   and a **fresh worker is started**, so later nodes (continue-on-error) do not
   wait on a queue nobody reads. A run can therefore leak at most one thread per

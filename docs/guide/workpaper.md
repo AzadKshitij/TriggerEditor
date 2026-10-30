@@ -122,7 +122,7 @@ These fill the header of the Summary sheet. **A box you leave empty uses the mat
 
 | Control | Default | What it does |
 |---|---|---|
-| **Row limit** | 100,000 | The most exception rows listed in the workbook (1 to 1,048,574). More than that is not cut silently: see [Excel's limits](#excels-limits-and-what-happens-at-them). Hint under the box: "Large workpapers may exceed the 30 second per-node limit; lower the row limit." |
+| **Row limit** | 100,000 | The most exception rows listed in the workbook (1 to 1,048,574). More than that is not cut silently: see [Excel's limits](#excels-limits-and-what-happens-at-them). Hint under the box: "Large workpapers can take minutes; this step may run up to 10 minutes." |
 | **Exceptions sheet** | `Exceptions` | The name of the listing sheet. Illegal characters (`[ ] : * ? / \`) become spaces, it is cut to 31 characters, and it cannot be `Summary`, `Run log`, `Workflow` or `Tests` (a number is added, for example `Summary (2)`). |
 | **Include run log** | On | Adds the **Run log** sheet. |
 | **Include workflow** | On | Adds the **Workflow** sheet. |
@@ -292,7 +292,7 @@ You can see it in the [worked example](#worked-example): a note `=1+1` in the da
 
 The workpaper never refuses for rows: it lists what fits and writes the rest to the CSV. `TD-OUT-013` applies to the one-sheet exports only.
 
-Size and time: a 500,000-row exception list (8 columns) took between 34 and 47 seconds and about 205 MB extra memory in the benchmark on the developer's machine (more than the editor's per-step limit below); memory stays bounded however long the list is, because rows are written in batches. The editor stops any single step at **30 seconds** (`TD-RUN-001`); see [Time and memory limits](running-workflows.md#time-and-memory-limits). For a very long list, lower the **Row limit**, which keeps the workbook small and quick to open; the CSV still carries every row.
+Size and time: a 500,000-row exception list (8 columns) took between 34 and 47 seconds and about 205 MB extra memory in the benchmark on the developer's machine (more than the editor's usual 30-second step limit, which is why this step gets 10 minutes); memory stays bounded however long the list is, because rows are written in batches. The editor stops most steps at **30 seconds** but waits up to **10 minutes** for Workpaper Output (`TD-RUN-001` if even that is exceeded); see [Time and memory limits](running-workflows.md#time-and-memory-limits). For a very long list, lower the **Row limit**, which keeps the workbook small and quick to open; the CSV still carries every row.
 
 ---
 
@@ -493,7 +493,7 @@ What was checked in a real run:
 | `TD-OUT-015` | **Excel output must use the .xlsx extension** (File Output with Excel selected and a name ending in `.xls`; not raised by Workpaper Output, which reports `TD-OUT-012`). | Rename the file to end in `.xlsx`. |
 | `TD-OUT-005` | The disk is full. | Free space or use another drive. |
 
-Also: *Workpaper Output has no output file; choose one before running.* (a workflow with an empty **File** is flagged when it is opened and before Run). A Run that takes more than 30 seconds in the editor stops with `TD-RUN-001` ([Running workflows](running-workflows.md#time-and-memory-limits)); the workpaper step notices that the run has given up on it and does not write the workbook afterwards, so no file appears from a failed run. Lower the **Row limit** and run again.
+Also: *Workpaper Output has no output file; choose one before running.* (a workflow with an empty **File** is flagged when it is opened and before Run). A Workpaper Output step that takes more than 10 minutes in the editor (30 seconds for other steps) stops with `TD-RUN-001` ([Running workflows](running-workflows.md#time-and-memory-limits)); the workpaper step notices that the run has given up on it and does not write the workbook afterwards, so no file appears from a failed run. Lower the **Row limit** and run again.
 
 ---
 

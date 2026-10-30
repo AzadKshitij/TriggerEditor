@@ -438,9 +438,10 @@ sampled by a thread every 50 ms. Reported numbers:
 | over limit (100,000 listed, CSV of 500,000) | passes (CSV has 500,001 lines) | passes |
 
 The asserted budgets are +400 MB and 120 s. Memory is the stable figure; wall time varies with
-the machine. **Mind the editor's per-step limit of 30 seconds** (`SecurityConfig.max_execution_time` in `core/ExecutionCheck/executor.py`):
-a 500k-row workpaper takes longer than that, so the node's dock carries the hint "Large workpapers
-may exceed the 30 second per-node limit; lower the row limit". The timed-out step is abandoned,
+the machine. **Mind the editor's per-step limit** (`SecurityConfig.max_execution_time`, 30 seconds, in `core/ExecutionCheck/executor.py`):
+a 500k-row workpaper takes longer than that, so `TriggerNode_WorkpaperOutput` declares
+`execution_timeout = 600.0` (see section 15) and the dock hint reads "Large workpapers can take
+minutes; this step may run up to 10 minutes". The timed-out step is abandoned,
 not stopped (the executor has no way to interrupt a thread inside `exec`). The workpaper no
 longer publishes after that: the generated code passes `node_id=` to `run_workpaper`, which
 builds an `abandoned()` poll from the run record (`node_runner._abandon_check`: this node is
@@ -507,9 +508,11 @@ These were found while writing the guide, by running the code. They are not fixe
 5. ~~The Workflow sheet's File Input row listed internal keys~~ (fixed: `describe_settings()` hook).
 6. ~~In-flight Run log gaps~~ (fixed: labelled in-progress row; `Rows read` from `rows_out`).
    Still "not recorded" for a folder/pattern input of several files.
-7. **Time limit (partly mitigated):** the 30 second per-step limit still makes lists of about
-   400,000 rows and more fail in the editor (see section 13); an abandoned step no longer
-   publishes the workbook. Fixing the limit needs `core/ExecutionCheck/executor.py`. Options:
+7. **Time limit (fixed):** the node declares `execution_timeout = 600.0` and
+   `NodeExecutor.effective_timeout` reads it, so a 500k-row list (35-47 s) finishes in the editor.
+   A step that still runs past its limit is abandoned, and an abandoned step does not publish the
+   workbook (`node_runner._abandon_check`, unchanged: the executor records the step as failed when
+   it gives up, whatever the limit was). Options considered before the fix:
    (a) a per-node timeout declaration the executor reads (for example a `max_execution_time`
    attribute on the node content, 120 s for Workpaper Output); (b) a progress heartbeat the node
    calls so the executor treats it as alive; (c) lower the work per step (the node's row limit
