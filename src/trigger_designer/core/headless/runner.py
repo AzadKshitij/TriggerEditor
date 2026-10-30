@@ -728,8 +728,9 @@ def deep_validate(doc: WorkflowDoc, args: Any, ctx: CliContext) -> list[Finding]
         findings.append(Finding("error", exc.td_code, exc.message))
         return findings
     try:
-        from trigger_designer.qt.headless import HeadlessSession
+        from trigger_designer.qt.headless import HeadlessSession, quiet_loguru
 
+        quiet_loguru()
         session = HeadlessSession()
         try:
             report = session.load(

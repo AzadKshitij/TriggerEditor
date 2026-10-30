@@ -67,13 +67,12 @@ OPS: dict[str, OpInfo] = dict(
         _row("audit.benford", "Benford"),
         _row("audit.sample", "Sample"),
         _row("audit.risk_filters", "Risk Filters"),
-        # Planned (plan 06): the workpaper node holds its output path in
-        # ``output_path``; listing it here lets the patcher stage it.
+        # The workpaper node holds its output path in ``output_path``; listing
+        # it here lets the patcher stage it like a File Output.
         _row(
             "input.workpaper_output",
             "Workpaper Output",
             output_keys=("output_path",),
-            planned=True,
         ),
     ]
 )

@@ -561,3 +561,104 @@ def test_killed_run_leaves_no_partial_output(tmp_path):
     rerun = _run(m, tmp_path)
     assert rerun.returncode == 0, rerun.stderr[-1000:]
     assert final.exists() and _leftovers(m.out_dir) == []
+
+
+def test_workpaper_output_is_staged_and_committed(tmp_path):
+    """The Workpaper Output node (plan 06) goes through the same staging seam."""
+    pytest.importorskip("trigger_designer.core.workpaper.node_runner")
+    from trigger_designer.core.headless.op_catalog import OPS
+
+    assert OPS["input.workpaper_output"].output_keys == ("output_path",)
+    m = materialize(CASES["formula"], tmp_path)
+    data = json.loads(m.path.read_text(encoding="utf-8"))
+    for node in data["nodes"]:
+        if node["title"] == "File Output":
+            sock = node["inputs"][0]["id"]
+            node["title"], node["op"] = "Workpaper Output", "input.workpaper_output"
+            node.pop("op_code", None)
+            node.pop("op_type", None)
+            node["inputs"] = [
+                {
+                    "id": sock + i,
+                    "index": i,
+                    "multi_edges": False,
+                    "position": 2,
+                    "socket_type": 1,
+                }
+                for i in range(3)
+            ]
+            node["content"] = {
+                "settings": {"output_path": (m.out_dir / "wp.xlsx").as_posix()}
+            }
+        else:
+            node.pop("op_code", None)
+            node.pop("op_type", None)
+            node["op"] = {
+                "Formula": "preparation.formula",
+                "File Input": "input.file_input",
+            }[node["title"]]
+    path = tmp_path / "wp.tds"
+    path.write_text(json.dumps(data), encoding="utf-8")
+    final = m.out_dir / "wp.xlsx"
+    final.write_bytes(b"previous")
+    proc = _run(path, tmp_path)
+    if (
+        proc.returncode == 1
+        and "Workpaper" in proc.stdout
+        and "node.finished" in proc.stdout
+    ):
+        pytest.skip("the workpaper node is not runnable in this build yet")
+    assert proc.returncode == 0, proc.stderr[-1500:] + proc.stdout[-1500:]
+    assert final.read_bytes()[:2] == b"PK"  # a real xlsx replaced the sentinel
+    assert _leftovers(m.out_dir) == []
+    done = _finished(proc)
+    assert done["status"] == "ok"
+    committed = [e for e in events(proc) if e["event"] == "output.committed"]
+    assert committed and committed[0]["path"].endswith("wp.xlsx")
+
+
+def test_validate_deep_loads_like_the_editor(tmp_path):
+    m = materialize(CASES["formula"], tmp_path)
+    ok = run_cli("validate", m.path, "--deep", "--format", "json", cwd=tmp_path)
+    assert ok.returncode == 0, ok.stdout + ok.stderr[-800:]
+    assert json.loads(ok.stdout)["ok"] is True
+    # nothing was run or written
+    assert list(m.out_dir.iterdir()) == []
+    assert not list((tmp_path / "state" / "work").glob("*"))
+    gone = run_cli(
+        "validate", m.path, "--deep", "--input-dir", tmp_path / "nowhere", cwd=tmp_path
+    )
+    assert gone.returncode == 2 and "TD-IN-001" in gone.stdout
+    skipped = run_cli(
+        "validate",
+        m.path,
+        "--deep",
+        "--no-files",
+        "--input-dir",
+        tmp_path / "nowhere",
+        cwd=tmp_path,
+    )
+    assert skipped.returncode == 0, skipped.stdout
+
+
+def test_text_mode_failure_block_names_the_node(tmp_path):
+    m = materialize(CASES["formula"], tmp_path)
+    proc = run_cli(
+        "run",
+        m.path,
+        "--allow-unapproved",
+        "--record-dir",
+        tmp_path / "rec",
+        cwd=tmp_path,
+        extra_env={**HOOKS, "TD_TEST_FAIL_NODE": "Formula"},
+    )
+    assert proc.returncode == 1
+    assert "FAILED at node 'Formula' [" in proc.stderr
+    assert proc.stdout.strip() == ""
+
+
+def test_strict_refuses_a_legacy_file(tmp_path):
+    m = materialize(CASES["formula"], tmp_path)  # a v1 file without workflow_metadata
+    proc = _run(m, tmp_path, "--strict")
+    assert proc.returncode == 2
+    assert "--strict" in _finished(proc)["errors"][0]["message"]

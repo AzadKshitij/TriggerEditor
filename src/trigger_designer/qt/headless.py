@@ -20,6 +20,13 @@ from loguru import logger
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 
 
+def quiet_loguru(level: str = "WARNING") -> None:
+    """Node and editor code logs a lot at DEBUG/INFO; a command that prints a
+    report on stdout must not be drowned by it."""
+    logger.remove()
+    logger.add(sys.stderr, level=level)
+
+
 def ensure_app():
     """The process-wide ``QApplication`` on the offscreen platform."""
     os.environ["QT_QPA_PLATFORM"] = os.environ.get("TRIGGER_CLI_QPA", "offscreen")

@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import contextlib
 import os
+import sys
 
 from trigger_designer.cli.output import print_json
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
@@ -44,7 +46,9 @@ def execute(args, ctx) -> int:
     if args.deep:
         from trigger_designer.core.headless.runner import deep_validate
 
-        findings = deep_validate(doc, args, ctx)
+        # The editor's node classes print to stdout; keep it for the report.
+        with contextlib.redirect_stdout(sys.stderr):
+            findings = deep_validate(doc, args, ctx)
     else:
         findings = static_findings(doc, args)
     errors = [f for f in findings if f.level == "error"]

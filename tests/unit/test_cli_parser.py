@@ -74,3 +74,10 @@ def test_schedule_requires_one_trigger():
         ).code
         == 64
     )
+
+
+def test_every_command_module_is_loadable_by_name():
+    from trigger_designer.cli.app import load_command
+
+    for command, module_name in COMMAND_MODULES.items():
+        assert load_command(command).__name__ == module_name

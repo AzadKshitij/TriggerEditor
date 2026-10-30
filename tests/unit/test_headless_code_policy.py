@@ -83,21 +83,29 @@ def test_benign_table(code):
 
 
 FUTURE = [
-    "from trigger_designer.core.input_source import build_source\n"
-    "df = build_source({'filePath': 'C:/data/in.csv'})",
+    (
+        "from trigger_designer.core.input_source import build_source\n"
+        "df = build_source({'filePath': 'C:/data/in.csv'})"
+    ),
     "from trigger_designer.core.audit.duplicates import DuplicatesParams, run_duplicates\n",
     "from trigger_designer.core.audit.gaps import GapsParams, run_gaps\n",
     "from trigger_designer.core.audit.benford import BenfordParams, run_benford\n",
     "from trigger_designer.core.audit.sampling import SamplingParams, run_sample\n",
     "from trigger_designer.core.audit.risk_filters import RiskParams, run_risk_filters\n",
     "from trigger_designer.core.profile import profile_table, empty_profile_frame\n",
-    "from trigger_designer.core.excel.frame_export import write_frame_xlsx\n"
-    "write_frame_xlsx(df, 'C:/data/.out.tdtmp-ab12cd34.csv')",
+    (
+        "from trigger_designer.core.excel.frame_export import write_frame_xlsx\n"
+        "write_frame_xlsx(df, 'C:/data/.out.tdtmp-ab12cd34.csv')"
+    ),
     "from trigger_designer.core.workpaper.node_runner import run_workpaper\n",
-    "import json\nfrom trigger_designer.core.shaping.window import run_node as _run_node\n"
-    "_run_node([df], json.loads('{\"a\": 1}'))",
-    "import json\nfrom trigger_designer.core.shaping.file_output import write_node as _w\n"
-    '_w([df], json.loads(\'{"filePath": "C:/data/.out.tdtmp-ab12cd34.csv"}\'))',
+    (
+        "import json\nfrom trigger_designer.core.shaping.window import run_node as _run_node\n"
+        "_run_node([df], json.loads('{\"a\": 1}'))"
+    ),
+    (
+        "import json\nfrom trigger_designer.core.shaping.file_output import write_node as _w\n"
+        '_w([df], json.loads(\'{"filePath": "C:/data/.out.tdtmp-ab12cd34.csv"}\'))'
+    ),
     "from datetime import datetime, timedelta\nimport os",
 ]
 
@@ -113,8 +121,10 @@ TAMPERED = [
     'import json\njson.loads(\'{"filePath": "C:/elsewhere/x.csv"}\')',
     "from trigger_designer.core.shaping.Evil import run_node",
     "from trigger_designer.core.input_source import open_anything",
-    "from trigger_designer.core.excel.frame_export import write_frame_xlsx\n"
-    "write_frame_xlsx(df, 'C:/elsewhere/x.xlsx')",
+    (
+        "from trigger_designer.core.excel.frame_export import write_frame_xlsx\n"
+        "write_frame_xlsx(df, 'C:/elsewhere/x.xlsx')"
+    ),
     "from json import loads",
     "import datetime",
 ]
