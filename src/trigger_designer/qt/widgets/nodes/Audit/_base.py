@@ -67,6 +67,7 @@ from trigger_designer.qt.widgets.common import (
     IconButton,
     NoWheelComboBox,
     SegmentedControl,
+    TextButton,
     dtype_label,
 )
 
@@ -82,6 +83,17 @@ COUNT_TOOLTIP = "Count exceptions now"
 
 #: Kinds of control ``bind`` understands, and the signal each one is read from.
 _DEBOUNCED_KINDS = frozenset({"text", "lines", "numlist", "sizelist"})
+
+
+def _checklist_kwargs(
+    label_fn: Callable[[str], str] | None, max_height: int | None
+) -> dict[str, Any]:
+    kwargs: dict[str, Any] = {}
+    if label_fn is not None:
+        kwargs["label_fn"] = label_fn
+    if max_height is not None:
+        kwargs["max_height"] = max_height
+    return kwargs
 
 
 def _signal_of(widget: QWidget, kind: str):
@@ -148,6 +160,7 @@ class AuditContentMixin(SerializableContentMixin):
         self.incoming_variable: str = ""
         self.incom_data: Any = None  # LazyFrame (or DataFrame) of the input
         self.test_summary: TestSummary | None = None
+        self._live_notice: str = ""
         self.last_result: AuditResult | None = None  # last live evaluation
         self.output_variables: list[str] = [
             f"var_{kind}_{self.id}" for kind in self.OUTPUT_KINDS
@@ -195,9 +208,39 @@ class AuditContentMixin(SerializableContentMixin):
         return self.RUN(self.incom_data, self.params())
 
     def on_result(self, result: AuditResult) -> None:
-        """Called after every successful live evaluation."""
-        if self.LIVE_SUMMARY:
+        """Called after every successful live evaluation.
+
+        A result flagged ``extras["live_skipped"]`` (the node chose not to compute
+        on a big live input) carries its explanation in ``extras["message"]``;
+        that becomes the ``live_notice`` and no summary is built.
+        """
+        skipped = bool(result.extras.get("live_skipped"))
+        self._live_notice = str(result.extras.get("message", "")) if skipped else ""
+        if skipped:
+            self.test_summary = None
+        elif self.LIVE_SUMMARY:
             self.collect_test_summary(result)
+        self._show_summary()
+
+    def live_notice(self) -> str:
+        """A non-error note for the node tooltip and the Result text, or ``""``.
+
+        ``AuditNode.evalImplementation`` sets it after a successful evaluation
+        has cleared the tooltip (a skipped live draw is not an error).
+        """
+        return self._live_notice
+
+    def on_live_failed(self) -> None:
+        """Called after a live evaluation that produced no outputs.
+
+        The default drops the stale result and summary so nothing keeps showing
+        numbers of settings that no longer run. Override to clear result widgets
+        (a chart) too; call ``super()`` first.
+        """
+        self.last_result = None
+        self.test_summary = None
+        self._live_notice = ""
+        self._show_summary()
 
     # ---- the one place a user edit enters the model ----------------------
     def set_setting(
@@ -521,15 +564,66 @@ class AuditContentMixin(SerializableContentMixin):
         self.bind(name, edit, "lines", text, burst=True)
         return edit
 
+    def add_checklist(
+        self,
+        name: str,
+        text: str,
+        names: Iterable[str] | None = None,
+        *,
+        label_fn: Callable[[str], str] | None = None,
+        max_height: int | None = None,
+    ) -> ColumnChecklist:
+        """A ``ColumnChecklist`` bound to a ``list[str]`` setting.
+
+        ``names`` defaults to the input columns (plus any saved name the input no
+        longer has, shown as ``missing``).
+        """
+        value = list(getattr(self, name) or [])
+        if names is None:
+            names = [col for col, _ in self.column_items(value)]
+        checklist = ColumnChecklist(
+            list(names), value, **_checklist_kwargs(label_fn, max_height)
+        )
+        self.bind(name, checklist, "checklist", text)
+        return checklist
+
     def add_digits(
-        self, name: str, text: str, digits: Iterable[int]
+        self,
+        name: str,
+        text: str,
+        digits: Iterable[int],
+        *,
+        label_fn: Callable[[str], str] | None = None,
+        max_height: int | None = None,
     ) -> ColumnChecklist:
         """A checklist of digits bound to a ``list[int]`` setting."""
         checklist = ColumnChecklist(
-            [str(d) for d in digits], [str(v) for v in getattr(self, name)]
+            [str(d) for d in digits],
+            [str(v) for v in getattr(self, name)],
+            **_checklist_kwargs(label_fn, max_height),
         )
         self.bind(name, checklist, "digitlist", text)
         return checklist
+
+    def bulk_toolbar(
+        self, checklist: ColumnChecklist, *, all_tip: str, none_tip: str
+    ) -> QWidget:
+        """The paired ``All`` / ``None`` toggles above a checklist."""
+        toolbar = QWidget()
+        toolbar._undo_composite = True  # the checklist records the change
+        row = QHBoxLayout(toolbar)
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
+        row.addStretch(1)
+        for label, tip, checked in (("All", all_tip, True), ("None", none_tip, False)):
+            button = TextButton(label, tip, toolbar)
+            button.setObjectName("BulkButton")
+            button.setMinimumWidth(32)
+            button.clicked.connect(
+                lambda _=False, c=checked: checklist.set_all_checked(c)
+            )
+            row.addWidget(button)
+        return toolbar
 
     # ---- undo projection (runs inside syncing(); brief 6.3) ---------------
     def _sync_widgets_from_model(self) -> None:
@@ -624,11 +718,18 @@ class AuditContentMixin(SerializableContentMixin):
         return section
 
     def summary_text(self) -> str:
+        notice = self.live_notice()
+        if notice:
+            return notice
         summary = self.test_summary
         if summary is None:
             if self.count_button is not None:
                 return "Not counted yet. Use the refresh button to count."
             return ""
+        return self.format_summary(summary)
+
+    def format_summary(self, summary: TestSummary) -> str:
+        """The Result sentence of a summary. Override to add node-specific facts."""
         return f"{summary.status.upper()}: {summary.message}"
 
     def _show_summary(self) -> None:
@@ -640,26 +741,43 @@ class AuditContentMixin(SerializableContentMixin):
         except RuntimeError:  # dock rebuilt
             self.summary_label = None
 
-    def collect_test_summary(self, result: AuditResult | None = None) -> bool:
-        """Build ``test_summary`` from the Summary frame of ``result``.
+    def summary_from_frame(self, frame: pl.DataFrame) -> TestSummary | None:
+        """The ``TestSummary`` of a summary (or log) frame, or None if unusable.
 
-        Collects the one-row summary on the calling (GUI) thread with the
-        streaming engine. Returns False when there is nothing to count.
+        The default reads a one-row Summary frame. A node whose frame is a
+        multi-row log (Sample's Selection log) overrides this one method.
         """
-        result = result or self.last_result
-        if result is None or self.SUMMARY_INDEX is None:
-            return False
-        frame = result.frames[self.SUMMARY_INDEX]
-        if isinstance(frame, pl.LazyFrame):
-            frame = frame.collect(engine="streaming")
-        if not isinstance(frame, pl.DataFrame) or frame.height != 1:
-            return False
-        self.test_summary = TestSummary.from_summary_frame(
+        if frame.height != 1:
+            return None
+        return TestSummary.from_summary_frame(
             frame,
             op=self.OP,
             node_id=getattr(self.node, "id", None),
             exceptions_var=self.exceptions_var_name(),
         )
+
+    def collect_test_summary(self, result: AuditResult | None = None) -> bool:
+        """Build ``test_summary`` from the summary/log frame of ``result``.
+
+        The frame is ``AuditResult.log_index`` when the result names one, else
+        ``SUMMARY_INDEX``. It is collected on the calling (GUI) thread with the
+        streaming engine. Returns False when there is nothing to count.
+        """
+        result = result or self.last_result
+        if result is None or result.extras.get("live_skipped"):
+            return False
+        index = result.log_index if result.log_index is not None else self.SUMMARY_INDEX
+        if index is None:
+            return False
+        frame = result.frames[index]
+        if isinstance(frame, pl.LazyFrame):
+            frame = frame.collect(engine="streaming")
+        if not isinstance(frame, pl.DataFrame):
+            return False
+        summary = self.summary_from_frame(frame)
+        if summary is None:
+            return False
+        self.test_summary = summary
         return True
 
     def count_exceptions(self) -> None:
@@ -679,13 +797,10 @@ class AuditContentMixin(SerializableContentMixin):
         frame = variables.get(self.summary_variable_name)
         if isinstance(frame, pl.LazyFrame):
             frame = frame.collect()
-        if isinstance(frame, pl.DataFrame) and frame.height == 1:
-            self.test_summary = TestSummary.from_summary_frame(
-                frame,
-                op=self.OP,
-                node_id=getattr(self.node, "id", None),
-                exceptions_var=self.exceptions_var_name(),
-            )
+        if isinstance(frame, pl.DataFrame):
+            summary = self.summary_from_frame(frame)
+            if summary is not None:
+                self.test_summary = summary
 
     def on_run_result(self, variables: dict) -> None:
         """GUI thread after a Run: refresh the Result text."""
@@ -779,6 +894,19 @@ class AuditNode(TriggerNode):
         self.grNode = TriggerGraphicsNode(self)
         self.content.evaluate.connect(self.onInputChanged)
         self.param: list = []
+
+    def evalImplementation(self):
+        value = super().evalImplementation()
+        content = self.content
+        if value is None:
+            content.on_live_failed()
+        else:
+            # A successful evaluation clears the tooltip; a notice (a skipped
+            # live draw) is not an error, so it goes on afterwards.
+            notice = content.live_notice()
+            if notice:
+                self._set_node_tooltip(notice)
+        return value
 
     def _fail(self, exc: BaseException) -> None:
         self.set_error(translate_exception(exc, node=self, phase="live"), "live")

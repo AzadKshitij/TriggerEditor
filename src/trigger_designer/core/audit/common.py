@@ -174,7 +174,8 @@ def check_date_format(fmt: str) -> None:
     if fmt not in SUPPORTED_DATE_FORMATS:
         raise AuditConfigError(
             "TD-AUDIT-007",
-            f"Date format '{fmt}' is not supported.",
+            f"Date format '{fmt}' is not supported. "
+            f"Use one of: {', '.join(SUPPORTED_DATE_FORMATS)}.",
             field="date_format",
         )
 
@@ -362,7 +363,9 @@ def warn_unreadable(
     return (
         pl.when((bad > 0) & (status == "pass")).then(pl.lit("warn")).otherwise(status),
         message
-        + pl.when(bad > 0)
+        + pl.when(bad == 1)
+        .then(pl.lit(" 1 value could not be read as " + kind + " and was skipped."))
+        .when(bad > 1)
         .then(
             pl.format(
                 " {} values could not be read as " + kind + " and were skipped.",

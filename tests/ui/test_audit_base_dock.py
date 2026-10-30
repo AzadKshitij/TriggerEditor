@@ -248,3 +248,27 @@ def test_the_dock_uses_icon_buttons_not_text_buttons(qtbot) -> None:
     _window, _source, _node, dock = _dock(qtbot, column="amount")
     assert dock.dock_widget.findChildren(IconButton)
     assert not dock.dock_widget.findChildren(TextButton)
+
+
+def test_failed_live_evaluation_clears_result_and_summary(qtbot) -> None:
+    """The base drops a stale result after a failed evaluation (hook for nodes)."""
+    _window, _source, node, _dock_unused = _dock(qtbot, column="amount")
+    content = node.content
+    assert content.last_result is not None
+    seen: list[bool] = []
+    content.on_live_failed = lambda: seen.append(True)  # type: ignore[method-assign]
+    content.column = "no_such_column"
+    node.markDirty(True)
+    node.eval()
+    assert seen == [True]
+    type(content).on_live_failed(content)
+    assert content.last_result is None and content.test_summary is None
+
+
+def test_add_checklist_binds_a_list_setting(qtbot) -> None:
+    _window, _source, node, _dock_unused = _dock(qtbot, column="amount")
+    content = node.content
+    content.keys = ["key"]
+    checklist = content.add_checklist("keys", "Keys Changed")
+    assert list(checklist.checkboxes) == ["amount", "key", "other"]
+    assert checklist.checked() == ["key"]

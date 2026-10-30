@@ -25,6 +25,7 @@ from trigger_designer.core.audit.sampling import (
     run_sample,
     sample_test_summary,
 )
+from trigger_designer.core.audit.test_summary import TestSummary
 from trigger_designer.core.node_configuration import (
     AuditNodes,
     NodeTypes,
@@ -58,7 +59,6 @@ class SampleContent(AuditContent):
 
     def __init__(self, node, parent=None) -> None:
         super().__init__(node, parent)
-        self._skip_message = ""
         self._rows: dict[str, FormRow] = {}
         self._size_section = None
         self._strata_section = None
@@ -67,50 +67,19 @@ class SampleContent(AuditContent):
     def build_result(self) -> AuditResult:
         return run_sample(self.incom_data, self.params(), live=True)
 
-    def on_result(self, result: AuditResult) -> None:
-        self._skip_message = (
-            result.extras.get("message", "")
-            if result.extras.get("live_skipped")
-            else ""
-        )
-        if self._skip_message:
-            self.test_summary = None
-        else:
-            super().on_result(result)
-        self._show_summary()
-
     # ---- summary -----------------------------------------------------------
-    def _summary_from_log(self, log: pl.DataFrame, params: SamplingParams):
+    def summary_from_frame(self, log: pl.DataFrame) -> TestSummary | None:
+        """The Selection log has one row per scope (a stratified draw has several)."""
+        if log.is_empty():
+            return None
         return sample_test_summary(
             log,
-            params,
+            self.params(),
             node_id=getattr(self.node, "id", None),
             sample_var=self.exceptions_var_name(),
         )
 
-    def collect_test_summary(self, result: AuditResult | None = None) -> bool:
-        result = result or self.last_result
-        if result is None or result.extras.get("live_skipped"):
-            return False
-        log = result.extras.get("log")
-        if not isinstance(log, pl.DataFrame) or log.is_empty():
-            return False
-        self.test_summary = self._summary_from_log(log, self.params())
-        return True
-
-    def after_execution(self, variables: dict) -> None:
-        log = variables.get(self.summary_variable_name)
-        if isinstance(log, pl.LazyFrame):
-            log = log.collect()
-        if isinstance(log, pl.DataFrame) and not log.is_empty():
-            self.test_summary = self._summary_from_log(log, self.params())
-
-    def summary_text(self) -> str:
-        if self._skip_message:
-            return self._skip_message
-        summary = self.test_summary
-        if summary is None:
-            return ""
+    def format_summary(self, summary: TestSummary) -> str:
         text = summary.message
         interval = summary.details.get("interval")
         if interval is not None:
@@ -242,11 +211,3 @@ class TriggerNode_Sample(AuditNode):
     OUTPUT_TYPES = (3, 3, 1)
     output_text = ("S", "N", "L")
     content_label_objname = "trigger_node_sample"
-
-    def evalImplementation(self):
-        value = super().evalImplementation()
-        # A successful evaluation clears the tooltip; a skipped live draw is not
-        # an error, so the notice goes on afterwards.
-        if value is not None and self.content._skip_message:
-            self._set_node_tooltip(self.content._skip_message)
-        return value

@@ -404,7 +404,7 @@ def test_unreadable_amounts_and_dates_are_counted_and_warn() -> None:
     flagged, _c, s = _run(frame, RiskParams(amount_column="a", round_amount=True))
     assert flagged.height == 0
     assert s["status"] == "warn" and s["code"] == "TD-AUDIT-102"
-    assert "1 values could not be read as dates or amounts" in s["message"]
+    assert "1 value could not be read as dates or amounts" in s["message"]
 
 
 def test_empty_input_passes_with_empty_outputs() -> None:

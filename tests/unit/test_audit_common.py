@@ -13,6 +13,7 @@ import pytest
 
 from trigger_designer.core.audit.common import (
     BASE_SUMMARY,
+    SUPPORTED_DATE_FORMATS,
     AuditConfigError,
     AuditResult,
     ParamsBase,
@@ -323,6 +324,20 @@ def test_summary_frame_columns_and_order() -> None:
 def test_summary_rate_is_null_for_an_empty_population() -> None:
     row = _summary(0, 0).row(0, named=True)
     assert row["exception_rate"] is None
+
+
+def test_warn_unreadable_uses_singular_for_one_value() -> None:
+    one = _summary(10, 0, unread=1).row(0, named=True)
+    assert one["message"].endswith(
+        " 1 value could not be read as numbers and was skipped."
+    )
+
+
+def test_unsupported_date_format_lists_the_supported_ones() -> None:
+    with pytest.raises(AuditConfigError) as info:
+        check_date_format("%y")
+    for fmt in SUPPORTED_DATE_FORMATS:
+        assert fmt in str(info.value)
 
 
 def test_warn_unreadable_downgrades_pass_and_keeps_fail() -> None:

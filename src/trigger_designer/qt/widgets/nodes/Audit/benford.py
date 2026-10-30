@@ -17,7 +17,7 @@ from trigger_designer.core.audit.benford import (
     digit_range,
     run_benford,
 )
-from trigger_designer.core.audit.common import AuditConfigError, AuditResult
+from trigger_designer.core.audit.common import AuditResult
 from trigger_designer.core.node_configuration import (
     AuditNodes,
     NodeTypes,
@@ -58,15 +58,12 @@ class BenfordContent(AuditContent):
 
     def build_result(self) -> AuditResult:
         """Live: the first ``LIVE_ROW_LIMIT`` rows; only digit counts are collected."""
-        try:
-            return run_benford(self.incom_data, self.params(), row_limit=LIVE_ROW_LIMIT)
-        except AuditConfigError:
-            # The node is about to fail: blank the chart instead of keeping a
-            # picture of settings that no longer run.
-            self.last_result = None
-            self.test_summary = None
-            self._show_summary()
-            raise
+        return run_benford(self.incom_data, self.params(), row_limit=LIVE_ROW_LIMIT)
+
+    def on_live_failed(self) -> None:
+        # Blank the chart instead of keeping a picture of settings that no
+        # longer run (the base clears the result and summary and re-shows).
+        super().on_live_failed()
 
     # ---- dock --------------------------------------------------------------
     def build_dock(self, dock_layout: QVBoxLayout) -> None:
@@ -112,20 +109,15 @@ class BenfordContent(AuditContent):
             "Digits that stand out (automatic)",
             "Benford Drill-down Mode Changed",
         )
-        self.drill_list = ColumnChecklist(
-            [str(d) for d in digit_range(self.digits)],
-            [str(d) for d in self.drill_digits],
+        self.drill_list = self.add_digits(
+            "drill_digits",
+            "Benford Drill-down Digits Changed",
+            digit_range(self.digits),
             label_fn=self._digit_label,
             max_height=200,
         )
         self.drill_list.setAccessibleName("Drill-down digits")
         self.drill_list.setToolTip("Digits whose rows go to the drill-down output")
-        self.bind(
-            "drill_digits",
-            self.drill_list,
-            "digitlist",
-            "Benford Drill-down Digits Changed",
-        )
         drill.addWidget(self.drill_auto_check)
         drill.addWidget(self.drill_list)
         dock_layout.addWidget(drill)

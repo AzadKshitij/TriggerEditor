@@ -6,7 +6,7 @@ Sockets: ``G`` the findings (one row per gap range), ``S`` the one-row summary.
 
 from __future__ import annotations
 
-from qtpy.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from qtpy.QtWidgets import QVBoxLayout
 
 from trigger_designer.core.audit.common import SUPPORTED_DATE_FORMATS
 from trigger_designer.core.audit.gaps import GapsParams, run_gaps
@@ -17,9 +17,7 @@ from trigger_designer.core.node_configuration import (
 )
 from trigger_designer.qt.widgets.common import (
     CONTROL_H,
-    ColumnChecklist,
     FormRow,
-    TextButton,
 )
 from trigger_designer.qt.widgets.nodes.Audit._base import AuditContent, AuditNode
 
@@ -56,27 +54,14 @@ class GapsContent(AuditContent):
         dock_layout.addWidget(self.sequence_section)
 
         self.group_section = self.section("Group by")
-        names = [name for name, _ in self.column_items(self.group_columns)]
-        self.group_list = ColumnChecklist(names, self.group_columns)
-        self.bind("group_columns", self.group_list, "checklist", "Gaps Groups Changed")
-        toolbar = QWidget()
-        toolbar._undo_composite = True
-        row = QHBoxLayout(toolbar)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(4)
-        row.addStretch(1)
-        for label, tip, checked in (
-            ("All", "Group by every column", True),
-            ("None", "Do not group", False),
-        ):
-            button = TextButton(label, tip, toolbar)
-            button.setObjectName("BulkButton")
-            button.setMinimumWidth(32)
-            button.clicked.connect(
-                lambda _=False, c=checked: self.group_list.set_all_checked(c)
+        self.group_list = self.add_checklist("group_columns", "Gaps Groups Changed")
+        self.group_section.addWidget(
+            self.bulk_toolbar(
+                self.group_list,
+                all_tip="Group by every column",
+                none_tip="Do not group",
             )
-            row.addWidget(button)
-        self.group_section.addWidget(toolbar)
+        )
         self.group_section.addWidget(self.group_list)
         dock_layout.addWidget(self.group_section)
 

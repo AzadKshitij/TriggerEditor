@@ -89,7 +89,7 @@ def test_reference_b_number_mode_with_unreadable_values() -> None:
     assert summary["unparseable_rows"] == 1  # the null is not unreadable
     assert summary["status"] == "fail" and summary["code"] == "TD-AUDIT-102"
     assert summary["message"].endswith(
-        " 1 values could not be read as numbers and were skipped."
+        " 1 value could not be read as numbers and was skipped."
     )
 
 
@@ -117,7 +117,7 @@ def test_reference_c_date_mode_calendar_business_and_min_gap() -> None:
     assert summary["message"].startswith("3 gap ranges covering 10 days.")
     assert summary["code"] == "TD-AUDIT-102"
     assert summary["message"].endswith(
-        " 1 values could not be read as dates and were skipped."
+        " 1 value could not be read as dates and was skipped."
     )
 
     business, _ = _run(frame, sequence_column="d", mode="date", business_days_only=True)

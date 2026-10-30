@@ -120,7 +120,7 @@ def test_near_amount_and_window_reference() -> None:
     assert s["unparseable_rows"] == 1
     assert s["status"] == "fail" and s["code"] == "TD-AUDIT-102"
     assert s["message"].endswith(
-        " 1 values could not be read as numbers or dates and were skipped."
+        " 1 value could not be read as numbers or dates and was skipped."
     )
     assert s["message"].startswith("4 of 10 rows are in 2 duplicate groups.")
 
