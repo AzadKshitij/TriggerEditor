@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Audit-trail golden fixtures are hashed byte for byte: never rewrite line endings
+tests/e2e/fixtures/audit/*.csv -text

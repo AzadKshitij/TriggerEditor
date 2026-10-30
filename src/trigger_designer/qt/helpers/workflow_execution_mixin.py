@@ -8,9 +8,11 @@ from loguru import logger
 from nodeeditor.node_graph import GraphCycleError, topological_order
 from qtpy.QtCore import QTimer
 
+from trigger_designer.core.audit.recorder import set_run_record_provider
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.audit_bridge import RunSession
 from trigger_designer.qt.helpers.edge_validators import (
     cycle_message,
     select_cycle_edges,
@@ -79,10 +81,15 @@ class WorkflowExecutionMixin:
     #: not a QObject (tests instantiate it directly), so announcing the end of
     #: a run has to stay optional.
     executionResultsChanged = None
+    #: ``TriggerSubWindow`` shadows this with ``Signal(str)``: the path of the
+    #: run record that was just sealed.
+    runRecorded = None
 
     #: Defaults for hosts that never call ``init_workflow_execution`` (tests).
     _run_cancelled: bool = False
     _workflow_executor: NodeExecutor | None = None
+    _run_session: RunSession | None = None
+    _pending_enrichments: int = 0
 
     def init_workflow_execution(self) -> None:
         """Initialise workflow execution state tracking."""
@@ -97,6 +104,9 @@ class WorkflowExecutionMixin:
         self._run_cancelled: bool = False
         self._cancel_listeners: list[Callable[[], None]] = []
         self._last_run_codes: dict[Any, str] = {}
+        self._run_session = None
+        self._pending_enrichments = 0
+        self._enrichment_listeners: list[Callable[[], None]] = []
 
     def _log_to_dock(self, message: str) -> None:
         """Report a message in the Logging dock.
@@ -181,6 +191,7 @@ class WorkflowExecutionMixin:
             executor = NodeExecutor()
             self._workflow_executor = executor
             self._run_cancelled = False
+            self._start_run_session(sorted_nodes, executor)
 
             # Start timing and increment execution counters
             self.workflow_start_time = time.time()
@@ -226,11 +237,83 @@ class WorkflowExecutionMixin:
                 raise
         except Exception as exc:  # noqa: BLE001 - never leave Run disabled
             self._workflow_worker = None
+            self._abort_run_session()
             self._show_run_controls(False)
             logger.exception("Cannot start the run")
             self._log_to_dock(f"Cannot start the run: {exc}")
             return False
         return True
+
+    # --- Run record (docs/plan/02-audit-trail.md) -------------------------------
+    def _start_run_session(self, sorted_nodes: list[Any], executor: Any) -> None:
+        """Begin the run record; a recording problem never stops the run."""
+        self._run_session = None
+        try:
+            self._run_session = RunSession.start(self, sorted_nodes, executor)
+        except Exception:  # noqa: BLE001 - recording must not fail the run
+            logger.exception("Run recording is unavailable for this run")
+            self._run_session = None
+            executor.before_node = None
+            executor.after_node = None
+            set_run_record_provider(None)
+
+    def _abort_run_session(self) -> None:
+        session = self._run_session
+        self._run_session = None
+        set_run_record_provider(None)
+        if session is not None:
+            try:
+                session.abort()
+            except Exception:  # noqa: BLE001, S110
+                pass
+
+    def _seal_run_record(self, success: bool) -> None:
+        """Seal the record (after error enrichment settled, for failed runs)."""
+        session = self._run_session
+        if session is None:
+            return
+
+        def done(path: str | None) -> None:
+            if self._run_session is session:
+                self._run_session = None
+                set_run_record_provider(None)
+            if path:
+                self._log_to_dock(f"Run log saved: {path}")
+                signal = self.runRecorded
+                if signal is not None:
+                    signal.emit(path)
+            else:
+                self._log_to_dock("The run log could not be saved (see the log file)")
+
+        try:
+            session.finish_when_settled(success and not self._run_cancelled, done)
+        except Exception:  # noqa: BLE001 - recording must not break the run's end
+            logger.exception("Could not seal the run record")
+            if self._run_session is session:
+                self._run_session = None
+            set_run_record_provider(None)
+
+    def is_enrichment_settled(self) -> bool:
+        """True when no failed-node error is still being enriched."""
+        return self._pending_enrichments <= 0
+
+    def add_enrichment_settled_listener(self, callback: Callable[[], None]) -> None:
+        """Run ``callback`` once, the next time error enrichment settles."""
+        if not hasattr(self, "_enrichment_listeners"):
+            self._enrichment_listeners = []
+        self._enrichment_listeners.append(callback)
+
+    def _enrichment_finished(self) -> None:
+        self._pending_enrichments = max(0, self._pending_enrichments - 1)
+        if self._pending_enrichments:
+            return
+        listeners = list(getattr(self, "_enrichment_listeners", []))
+        self._enrichment_listeners = []
+        for callback in listeners:
+            try:
+                callback()
+            except Exception:  # noqa: BLE001 - one listener must not block the rest
+                logger.exception("enrichment listener failed")
 
     def _reevaluate_for_run(self, sorted_nodes: list[Any]) -> None:
         """Make every node's live state current immediately before Run.
@@ -426,6 +509,9 @@ class WorkflowExecutionMixin:
     def _on_node_finished(self, node: Any, result: Any) -> None:
         """Slot: a node finished executing (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
+        session = self._run_session
+        if session is not None:
+            session.node_finished(node, result)
 
         # The exported script reuses the code that actually ran, instead of
         # asking every node for it a second time.
@@ -481,6 +567,9 @@ class WorkflowExecutionMixin:
         """Slot: node raised unexpectedly outside NodeExecutor's own error
         handling (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
+        session = self._run_session
+        if session is not None:
+            session.node_errored(node, exc)
         if callable(getattr(node, "set_error", None)):
             logger.debug("Unexpected error for node {}", node_name)
             error = translate_exception(
@@ -501,16 +590,19 @@ class WorkflowExecutionMixin:
         node.grNode.update()
 
     def _start_error_enrichment(self, node: Any, error) -> None:
+        self._pending_enrichments += 1
+
+        def applied(result, failed=node, original=error) -> None:
+            try:
+                self._apply_enrichment(failed, result, original)
+            finally:
+                self._enrichment_finished()
+
         try:
             job = build_enrich_job(node, self, error, "run")
-            start_enrichment(
-                job,
-                lambda result, failed=node, original=error: self._apply_enrichment(
-                    failed, result, original
-                ),
-            )
-        except Exception:  # noqa: BLE001, S110 - enrichment is optional
-            pass
+            start_enrichment(job, applied)
+        except Exception:  # noqa: BLE001 - enrichment is optional
+            self._enrichment_finished()
 
     def _apply_enrichment(self, node: Any, result, original=None) -> None:
         # The job runs in the background. If the node was edited and
@@ -578,6 +670,7 @@ class WorkflowExecutionMixin:
             self.getPyFile(self._workflow_sorted_nodes)
         except Exception:  # noqa: BLE001 - the export must never skip the cleanup
             logger.exception("Could not write the generated script")
+        self._seal_run_record(success)
 
         if success and not self._run_cancelled:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))

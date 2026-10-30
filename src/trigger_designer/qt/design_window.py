@@ -109,6 +109,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     #: Emitted when a run published fresh ``execution_results``: preview data
     #: for a node lives there, not in ``node.value``.
     executionResultsChanged = Signal()
+    #: Emitted with the saved path once a Run's record is sealed on disk.
+    runRecorded = Signal(str)
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)

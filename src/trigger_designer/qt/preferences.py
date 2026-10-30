@@ -60,6 +60,18 @@ DEFAULTS: dict[str, Any] = {
     "errors/locate_rows": True,
     "errors/locate_row_cap": 5_000_000,
     "errors/show_technical": False,
+    # Audit trail (docs/plan/02-audit-trail.md 3.14): one sealed record per Run.
+    "audit/record_runs": True,
+    "audit/run_log_dir": "",
+    "audit/record_identity": True,
+    "audit/hash_inputs": True,
+    "audit/hash_outputs": True,
+    "audit/hash_max_mb": 2048,
+    # auto / all / sink / off (see core/audit/counting.py)
+    "audit/row_counts": "auto",
+    "audit/exact_counts_max_mb": 256,
+    "audit/embed_code": True,
+    "audit/warn_on_input_change": True,
 }
 
 _MISSING = object()

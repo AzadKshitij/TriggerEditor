@@ -167,3 +167,105 @@ def drive(recorder, record, nodes, variables, results=None):
             recorder.after_node(node, local, result)
         out.append(recorder.node_finished(record, node, result))
     return out
+
+
+# ---------------------------------------------------------------------------
+# Real workflows (Qt): File Input -> Normalize -> File Output
+# ---------------------------------------------------------------------------
+def store_dir_of(tds: Path) -> Path:
+    return tds.with_suffix(".runs")
+
+
+def write_orders(path: Path, rows: int = 3, *, via_fixture: bool = True) -> Path:
+    """The 25-byte golden CSV, or ``rows`` generated rows (id, id * 2)."""
+    if via_fixture:
+        path.write_bytes((FIXTURE_DIR / "orders.csv").read_bytes())
+    else:
+        lines = ["id,amount", *(f"{i},{i * 2}" for i in range(1, rows + 1))]
+        path.write_bytes(("\n".join(lines) + "\n").encode())
+    return path
+
+
+def build_workflow(
+    tmp_path: Path,
+    rows: int = 3,
+    *,
+    input_name: str = "orders.csv",
+    via_fixture: bool = True,
+    save: bool = True,
+    name: str = "wf.tds",
+):
+    """File Input -> Normalize -> File Output saved as ``tmp_path/name``.
+
+    Returns ``(tds, input_csv, output_csv)``. With ``save=False`` the workflow
+    is not written (the caller keeps the returned window via ``build_window``).
+    """
+    window, input_csv, output_csv = build_window(
+        tmp_path, rows, input_name=input_name, via_fixture=via_fixture
+    )
+    tds = tmp_path / name
+    if save:
+        window.scene.saveToFile(str(tds))
+    window.close()
+    return tds, input_csv, output_csv
+
+
+def build_window(
+    tmp_path: Path,
+    rows: int = 3,
+    *,
+    input_name: str = "orders.csv",
+    via_fixture: bool = True,
+    input_path: Path | None = None,
+):
+    from nodeeditor.node_edge import Edge
+
+    from trigger_designer.core.node_configuration import (
+        IONodes,
+        NodeTypes,
+        PreparationNodes,
+        get_class_from_opcode,
+    )
+    from trigger_designer.qt.design_window import TriggerSubWindow
+
+    input_csv = input_path or write_orders(
+        tmp_path / input_name, rows, via_fixture=via_fixture
+    )
+    output_csv = tmp_path / "out" / "orders_clean.csv"
+    output_csv.parent.mkdir(exist_ok=True)
+
+    window = TriggerSubWindow()
+    scene = window.scene
+    fin = get_class_from_opcode(IONodes.FILE_INPUT, NodeTypes.IO)(scene)
+    norm = get_class_from_opcode(
+        PreparationNodes.NORMALIZE_COLUMNS, NodeTypes.PREPARATION
+    )(scene)
+    fout = get_class_from_opcode(IONodes.FILE_OUTPUT, NodeTypes.IO)(scene)
+    fin.content.filePath = str(input_csv)
+    fin.content.file_type = "csv"
+    fout.content.settings["filePath"] = str(output_csv)
+    fout.content.settings["file_format"] = "csv"
+    Edge(scene, fin.outputs[0], norm.inputs[0])
+    Edge(scene, norm.outputs[0], fout.inputs[0])
+    return window, input_csv, output_csv
+
+
+def newest_record(directory: Path) -> dict:
+    """The raw dict of the newest sealed record in a store folder."""
+    import orjson
+
+    lines = (directory / "index.jsonl").read_bytes().splitlines()
+    entry = orjson.loads(lines[-1])
+    return orjson.loads((directory / entry["file"]).read_bytes())
+
+
+def run_and_load_record(qtbot, tds: Path):
+    """Open ``tds``, Run it, return ``(window, newest raw record dict)``."""
+    from tests.support.workflows import run_workflow_and_wait
+    from trigger_designer.qt.design_window import TriggerSubWindow
+
+    window = TriggerSubWindow()
+    qtbot.addWidget(window)
+    assert window.fileLoad(str(tds)) is True
+    run_workflow_and_wait(qtbot, window)
+    return window, newest_record(store_dir_of(tds))
