@@ -42,14 +42,18 @@ class Spooled:
             for start in range(0, self.frame.height, size):
                 yield self.frame.slice(start, size)
             return
-        import pyarrow.parquet as pq
-
-        for batch in pq.ParquetFile(self.path).iter_batches(batch_size=size):
-            frame = pl.from_arrow(batch)
-            if not isinstance(frame, pl.DataFrame):
-                frame = frame.to_frame()
-            frame.columns = list(self.schema)  # from_arrow renames an empty name
-            yield frame
+        # Polars only (no pyarrow): each slice reads the row groups it needs, so
+        # memory stays bounded by the batch (and one row group) whatever the size.
+        lazy = pl.scan_parquet(self.path)
+        offset = 0
+        while True:
+            batch = lazy.slice(offset, size).collect()
+            if batch.height == 0:
+                return
+            yield batch
+            if batch.height < size:
+                return
+            offset += size
 
 
 def frame_schema(frame: pl.LazyFrame | pl.DataFrame) -> dict[str, Any]:
