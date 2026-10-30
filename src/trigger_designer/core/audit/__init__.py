@@ -78,14 +78,13 @@ _EXPORTS: dict[str, str] = {
 }
 
 if TYPE_CHECKING:  # pragma: no cover - static analysis only
-    from trigger_designer.core.audit.recorder import (  # noqa: F401
-        AuditOptions,
-        RunRecorder,
-    )
-
     from trigger_designer.core.audit.canonical import (  # noqa: F401
         GENESIS_HASH,
         canonical_json,
+    )
+    from trigger_designer.core.audit.recorder import (  # noqa: F401
+        AuditOptions,
+        RunRecorder,
     )
     from trigger_designer.core.audit.schema import RunRecord  # noqa: F401
 
