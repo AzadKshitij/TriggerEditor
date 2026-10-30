@@ -33,6 +33,17 @@ ALLOWED_PRINTS = {
     os.path.join("qt", "helpers", "global_logger.py"),
 }
 
+#: The headless CLI's stdout is its product (``print`` in its commands and the
+#: helpers in ``cli/output.py`` is the interface, not debug output).
+ALLOWED_PREFIXES = (
+    os.path.join("cli", "commands") + os.sep,
+    os.path.join("cli", "output.py"),
+)
+
+
+def _allowed(relative: str) -> bool:
+    return relative in ALLOWED_PRINTS or relative.startswith(ALLOWED_PREFIXES)
+
 
 def _print_lines(path: str) -> list[tuple[int, str]]:
     with open(path, encoding="utf-8") as handle:
@@ -55,7 +66,7 @@ def _python_files() -> list[str]:
 
 @pytest.mark.parametrize(
     "path",
-    [p for p in _python_files() if os.path.relpath(p, SRC_ROOT) not in ALLOWED_PRINTS],
+    [p for p in _python_files() if not _allowed(os.path.relpath(p, SRC_ROOT))],
 )
 def test_no_file_prints_to_the_console(path: str) -> None:
     offenders = _print_lines(path)
@@ -63,6 +74,13 @@ def test_no_file_prints_to_the_console(path: str) -> None:
         f"{os.path.relpath(path, SRC_ROOT)} still prints: "
         + "; ".join(f"{n}: {t}" for n, t in offenders)
     )
+
+
+def test_the_cli_exemption_covers_only_the_cli() -> None:
+    assert _allowed(os.path.join("cli", "commands", "info.py"))
+    assert not _allowed(os.path.join("cli", "parser.py"))
+    assert not _allowed(os.path.join("core", "headless", "runner.py"))
+    assert not _allowed(os.path.join("qt", "headless.py"))
 
 
 def test_the_remaining_prints_are_the_fallbacks() -> None:
