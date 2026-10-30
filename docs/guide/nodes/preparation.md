@@ -186,14 +186,14 @@ Typical fixes:
 
 | Section | Control | Default | Effect |
 |---|---|---|---|
-| Fields | **Clean** (column checklist) | none ticked | The columns the **text rules** apply to (whitespace, characters, case) and "Remove rows null in selected". With nothing ticked the text rules do nothing. The null replacement rules are **not** limited to these columns. |
+| Fields | **Clean** (column checklist) | none ticked | The columns the **text rules** apply to (whitespace, characters, case) and "Remove rows null in selected". With nothing ticked the text rules do nothing, and a warning chip says so. The null replacement rules are **not** limited to these columns. |
 | Nulls | Remove all-null rows | off | Deletes rows where every cell is empty. |
 | Nulls | Remove rows null in selected | off | Deletes rows where any ticked **Clean** column is empty. Greyed out until you tick a column. |
 | Nulls | Remove all-null columns | off | Deletes columns where every cell is empty. |
 | Nulls | Replace null text with '' | **on** | Every empty cell in a **text** column becomes an empty text. |
 | Nulls | Replace null numbers with 0 | **on** | Every empty cell in a number column becomes 0. |
 | Whitespace and characters | Trim whitespace | **on** | Removes spaces at the start and end of the text in the ticked columns. |
-| Whitespace and characters | Collapse inner spaces | **on** | Turns runs of spaces inside the text into one space (this also trims the ends, even if Trim is off). |
+| Whitespace and characters | Collapse inner spaces | **on** | Turns runs of spaces inside the text into one space. It does not trim the ends; that is Trim's job. |
 | Whitespace and characters | Remove all whitespace | off | Deletes every space, tab and line break. Wins over collapsing. |
 | Whitespace and characters | Remove letters | off | Deletes letters (Latin including accented letters, and basic Cyrillic). |
 | Whitespace and characters | Remove numbers | off | Deletes digits. |

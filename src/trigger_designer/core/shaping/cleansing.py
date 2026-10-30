@@ -55,6 +55,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
                 remove_all=bool(settings["remove_all_whitespace"]),
                 normalize_spaces=bool(settings["normalize_spaces"]),
                 fields=fields,
+                trim=bool(settings["strip_whitespace"]),
             )
         if (
             settings["remove_letters"]
@@ -71,3 +72,26 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             cleaner.modify_case(str(settings["case_modification"]), fields=fields)
 
     return [cleaner.get_result().lazy()]
+
+
+_TEXT_RULES = (
+    "strip_whitespace",
+    "normalize_spaces",
+    "remove_all_whitespace",
+    "remove_letters",
+    "remove_numbers",
+    "remove_punctuation",
+)
+
+
+def describe(frames: list, settings: dict) -> list[tuple[str, str]]:
+    """Warn when text rules are on but no column is ticked to receive them."""
+    settings = {**DEFAULTS, **(settings or {})}
+    if settings.get("selected_fields"):
+        return []
+    active = any(settings.get(key) for key in _TEXT_RULES) or (
+        settings.get("case_modification") not in (None, "none")
+    )
+    if not active:
+        return []
+    return [("No columns ticked: the text rules do nothing", "warning")]
