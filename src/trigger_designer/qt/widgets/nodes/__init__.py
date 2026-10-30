@@ -224,6 +224,13 @@ _LAZY_NODE_SPECS = [
         "node_title": "Duplicates",
         "icon": "node_duplicates",
     },
+    {
+        "module_path": "Audit.sample",
+        "node_code": AuditNodes.SAMPLE,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Sample",
+        "icon": "node_sample",
+    },
 ]
 
 _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
