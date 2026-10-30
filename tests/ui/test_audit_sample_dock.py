@@ -287,3 +287,17 @@ def test_save_and_reload_keep_every_setting(qtbot, tmp_path) -> None:
     assert (
         loaded.content.output_variable_names()[0] == f"var_sample_{loaded.content.id}"
     )
+
+
+def test_pending_text_edit_survives_another_controls_commit(qtbot) -> None:
+    """A debounced edit in one field must not be overwritten by the model sync
+    that follows another control's commit (here: edges typed, then the method
+    combo changed before the 300 ms debounce fires)."""
+    _window, _source, node, dock = _dock(qtbot, method="stratified")
+    content = node.content
+    dock.updateConfig([node.grNode])
+    content.edges_edit.setText("1000, 5000")  # starts the debounce timer
+    assert content._timers["band_edges"].isActive()
+    content.method_combo.setCurrentIndex(0)  # commits at once -> model sync
+    assert content.edges_edit.text() == "1000, 5000"
+    qtbot.waitUntil(lambda: content.band_edges == [1000.0, 5000.0], timeout=2000)

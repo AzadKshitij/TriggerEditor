@@ -39,7 +39,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.audit.common import (
     AuditConfigError,
     AuditResult,
@@ -51,6 +50,7 @@ from trigger_designer.core.audit.common import (
     parse_size_list,
 )
 from trigger_designer.core.audit.test_summary import TestSummary
+from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.frames import frame_schema
 from trigger_designer.qt.helpers.config_content import ConfigContent
@@ -534,6 +534,8 @@ class AuditContentMixin(SerializableContentMixin):
     # ---- undo projection (runs inside syncing(); brief 6.3) ---------------
     def _sync_widgets_from_model(self) -> None:
         for name, (w, kind, opts) in list(self._bindings.items()):
+            if self._edit_pending(name):
+                continue  # the user is still typing here: keep their text
             try:
                 if self._read_widget(w, kind, opts) != getattr(self, name):
                     self._write_widget(w, kind, opts, getattr(self, name))
@@ -546,6 +548,14 @@ class AuditContentMixin(SerializableContentMixin):
                     self._bindings.pop(name, None)
         self._apply_visibility()
         self._show_summary()
+
+    def _edit_pending(self, name: str) -> bool:
+        """True while a debounced edit of setting ``name`` has not committed yet."""
+        timer = self._timers.get(name)
+        try:
+            return timer is not None and timer.isActive()
+        except RuntimeError:  # dock rebuilt: the timer died with its widget
+            return False
 
     def _apply_visibility(self) -> None:
         """Override: show or hide option rows for the current mode."""
