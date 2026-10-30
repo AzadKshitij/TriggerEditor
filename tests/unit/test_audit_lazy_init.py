@@ -62,3 +62,26 @@ def test_every_lazy_export_resolves():
         "assert not missing, missing"
     )
     assert proc.returncode == 0, proc.stderr
+
+
+def test_every_core_module_is_qt_free_and_executor_free():
+    modules = [
+        "schema",
+        "canonical",
+        "fingerprint",
+        "counting",
+        "store",
+        "recorder",
+        "compare",
+        "view",
+        "export",
+        "errors_adapter",
+    ]
+    imports = ";".join(f"import {PKG}.{name}" for name in modules)
+    proc = _run(
+        f"import sys;{imports};"
+        "qt=[m for m in sys.modules if m.startswith(('qtpy','PyQt','PySide'))];"
+        "ex=[m for m in sys.modules if 'ExecutionCheck' in m or '.qt.' in m];"
+        "assert not qt and not ex, (qt, ex)"
+    )
+    assert proc.returncode == 0, proc.stderr

@@ -348,3 +348,55 @@ def test_request_run_cancel_entry_point_marks_the_session(qtbot, tmp_path):
     run_workflow_and_wait(qtbot, window)
     assert window.request_run_cancel() is False  # nothing in flight any more
     assert newest_record(store_dir_of(tds))["status"] == "ok"
+
+
+def test_failed_run_record_carries_the_settled_error(qtbot, tmp_path):
+    from trigger_designer.core.audit.errors_adapter import node_error_to_dict
+
+    window, _src, _out = build_window(tmp_path)
+    qtbot.addWidget(window)
+    sink = next(n for n in window.getAllNodes() if n.node_title == "File Output")
+    sink.content.settings["filePath"] = str(tmp_path / "nope" / "x.csv")
+    tds = tmp_path / "wf.tds"
+    window.scene.saveToFile(str(tds))
+    window.fileLoad(str(tds))
+    with qtbot.waitSignal(window.runRecorded, timeout=60_000):
+        window.executeWorkflow()
+    rec = newest_record(store_dir_of(tds))
+    node = next(n for n in window.getAllNodes() if n.node_title == "File Output")
+    failed = next(n for n in rec["nodes"] if n["status"] == "failed")
+    settled = node_error_to_dict(node.current_error)
+    assert {k: failed["error"][k] for k in settled} == settled
+    assert window.is_enrichment_settled()
+
+
+def test_unreadable_input_is_flagged_not_fatal(qtbot, tmp_path, monkeypatch):
+    from trigger_designer.core.audit import fingerprint as fp_mod
+
+    tds, _src, out = build_workflow(tmp_path)
+
+    def locked(*_a, **_k):
+        raise PermissionError("the file is locked")
+
+    monkeypatch.setattr(fp_mod, "sha256_stream", locked)
+    _w, rec = run_and_load_record(qtbot, tds)
+    assert rec["status"] == "ok" and out.exists()
+    assert rec["inputs"][0]["sha256_status"] == "error"
+    assert rec["inputs"][0]["error"].startswith("PermissionError")
+    assert any(w.startswith("input not hashed (error)") for w in rec["warnings"])
+    assert verify_store(store_dir_of(tds)).ok
+
+
+def test_missing_input_is_recorded_as_missing(qtbot, tmp_path):
+    tds, src, _out = build_workflow(tmp_path)
+    src.unlink()
+    window = TriggerSubWindow()
+    qtbot.addWidget(window)
+    window.fileLoad(str(tds))
+    with qtbot.waitSignal(window.runRecorded, timeout=60_000):
+        window.executeWorkflow()
+    rec = newest_record(store_dir_of(tds))
+    assert rec["inputs"][0]["sha256_status"] == "missing"
+    assert rec["inputs"][0]["size_bytes"] is None
+    assert any("input file not found" in w for w in rec["warnings"])
+    assert verify_store(store_dir_of(tds)).ok
