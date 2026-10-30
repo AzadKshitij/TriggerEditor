@@ -132,6 +132,11 @@
         "mode": "rb"
     },
 
+    "node_duplicates":{
+        "path":"qt/images/node_icons/Audit/Duplicates.svg",
+        "mode": "rb"
+    },
+
     "icon_add":{ "mode": "material", "name": "add" },
     "icon_remove":{ "mode": "material", "name": "remove" },
     "icon_move_up":{ "mode": "material", "name": "arrow_upward" },

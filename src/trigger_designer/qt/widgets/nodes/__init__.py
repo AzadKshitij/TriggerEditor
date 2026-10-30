@@ -2,7 +2,7 @@ import os
 from os.path import dirname, join
 
 from trigger_designer.core.node_configuration import (
-    AuditNodes,  # noqa: F401 - used by the Audit node specs
+    AuditNodes,
     IONodes,
     JoinNodes,
     NodeTypes,
@@ -202,6 +202,13 @@ _LAZY_NODE_SPECS = [
         "node_type": NodeTypes.JOIN,
         "node_title": "Reconcile",
         "icon": "node_reconcile",
+    },
+    {
+        "module_path": "Audit.duplicates",
+        "node_code": AuditNodes.DUPLICATES,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Duplicates",
+        "icon": "node_duplicates",
     },
 ]
 
