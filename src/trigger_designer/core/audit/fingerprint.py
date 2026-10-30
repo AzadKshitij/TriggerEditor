@@ -75,7 +75,7 @@ class FingerprintCache:
             data = orjson.loads(self._path.read_bytes())
             entries = data.get("entries") if isinstance(data, dict) else None
             if not isinstance(entries, dict):
-                raise ValueError("no entries")
+                raise TypeError("no entries")
             for key, value in entries.items():
                 if isinstance(key, str) and isinstance(value, str):
                     self._entries.setdefault(key, value)

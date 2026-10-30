@@ -82,6 +82,6 @@ def count_frame(frame: Any, mode: str, *, is_source: bool) -> tuple[Any, str, An
 
             rows = frame.select(pl.len()).collect(engine="streaming").item()
             return int(rows), "scan_plan", frame
-    except Exception as exc:  # noqa: BLE001 - never let counting fail a run
+    except Exception as exc:
         raise CountError(f"{type(exc).__name__}: {exc}") from exc
     return None, "none", frame
