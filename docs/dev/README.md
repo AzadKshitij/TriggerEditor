@@ -20,7 +20,7 @@ Read order for a new contributor: this page, `architecture.md`,
 | [security-model.md](security-model.md) | You touch SQL, generated code, file access or exports. |
 | [testing.md](testing.md) | You write or fix tests, update a golden, or need the baselines. |
 | [conventions.md](conventions.md) | You write UI, undo code, or commit. |
-| `cli-internals.md` | *To be added* (command line: parser, exit codes, headless runner, approvals, code policy). |
+| [cli-internals.md](cli-internals.md) | You touch the command line: parser and commands, exit codes, the headless runner, approvals, the code policy and `GENERATED_IMPORTS`, adding a command or a node's op row, the CLI tests, packaging, and what is not verified. Users read `../guide/cli.md`; the short reference is `../CLI.md`. |
 | `workpaper-internals.md` | *To be added* (workpaper writer and the shared Excel engine in `core/excel`). |
 
 Related, not owned here: `../CHANGELOG.md` (what changed on this branch and what
@@ -35,14 +35,14 @@ may break saved workflows), `../NODE_REFERENCE.md`, `../guide/` (user guide),
 AGENTS.md  CONTRIBUTING.md(stale in places)  README.md  pyproject.toml  uv.lock  trigger.spec
 src/trigger_designer/
   main.py                 GUI entry (configures loguru at import: a CLI must not import it)
-  cli_entry.py, cli/      command line entry and commands (in progress)
+  cli_entry.py, cli/      command line entry and commands (see cli-internals.md)
   core/                   Qt-free logic (see architecture.md section 2)
     node_configuration.py   enums, registries, lazy loading, op ids, v1 migration
     shaping/                one Qt-free module per shaping node + common.py
     audit/                  audit tests + run-record machinery
     errors/                 NodeError, catalogue, translator, enrichment
     ExecutionCheck/         executor.py, run_loop.py
-    excel/, headless/       Excel engine, CLI foundations (in progress)
+    excel/, headless/       Excel engine, headless CLI logic (op catalogue, runner, approvals, code policy)
     sql_guard.py  codegen_safe.py  inputs.py  input_source.py  profile*.py  frames.py ...
   qt/                     GUI
     node_base.py  design_window.py  main_window.py  performance_scene.py

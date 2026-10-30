@@ -69,6 +69,34 @@ Sections: [Added](#added) · [Changed](#changed) ·
 - `trigger-designer-cli` script entry, the Qt-free core packages listed for
   PyInstaller, and a warning dialog when the Data Preview Excel export fails. [`0c89206`](https://github.com/AzadKshitij/TriggerEditor/commit/0c89206)
 
+### Command line (`trigger-designer-cli`)
+
+Runs a saved workflow with no window, for schedulers, scripts and CI. User guide
+`docs/guide/cli.md`, reference `docs/CLI.md`, developer page `docs/dev/cli-internals.md`.
+
+- Front end and read-only commands: argparse tree with exit 64 for usage errors, the
+  frozen exit-code contract (0 to 10, 64, 130), the Qt-free op catalogue and
+  tolerant workflow reader, `info` and `validate`. [`efe94bf`](https://github.com/AzadKshitij/TriggerEditor/commit/efe94bf)
+- Run-time parameters (`params list|add|remove`, an allow-list of 12 settings),
+  path remapping (`--input-dir`, `--output-dir`, relative paths and `filePathRel`),
+  `paths --relativize`, and `approve` (SHA-256 pinning of the exact file). [`27d3c5c`](https://github.com/AzadKshitij/TriggerEditor/commit/27d3c5c)
+- Safety and supervision: generated-code policy (allowed syntax and imports, no
+  file/OS/network access, only declared paths, SELECT-only SQL), per-workflow run
+  lock with stale-run recovery, JSON-lines event stream, timeout, memory limit and
+  cancel handling. [`10bb241`](https://github.com/AzadKshitij/TriggerEditor/commit/10bb241)
+- `run` and `--dry-run`: the editor's own nodes on Qt's offscreen platform, the
+  shared run loop and run recorder, outputs staged and moved into place only when
+  every node succeeded, `--keep-going`, run records and `<id>.cli.json` sidecars,
+  `verify-log`, Ctrl+C / Ctrl+Break / SIGTERM. [`b74095c`](https://github.com/AzadKshitij/TriggerEditor/commit/b74095c) Tests: editor/CLI parity,
+  policy corpus, plan, session and verify. [`2564af4`](https://github.com/AzadKshitij/TriggerEditor/commit/2564af4)
+- `schedule add|list|show|remove` for Windows Task Scheduler (task XML, `S4U` option,
+  no stored password, `--print-only`). [`306fe79`](https://github.com/AzadKshitij/TriggerEditor/commit/306fe79)
+- Frozen-build safe command loading, quiet `validate --deep`, the workpaper output
+  seam. [`f6bdef5`](https://github.com/AzadKshitij/TriggerEditor/commit/f6bdef5) `trigger-designer-cli.exe` ships beside the editor (PyInstaller
+  `MERGE` build, `build.bat` smoke test, installer `addtopath` task). [`891120a`](https://github.com/AzadKshitij/TriggerEditor/commit/891120a) Runbook
+  `docs/CLI.md`. [`75c825b`](https://github.com/AzadKshitij/TriggerEditor/commit/75c825b) Generated-code imports must be covered by `trigger.spec`
+  (test). [`774f5f8`](https://github.com/AzadKshitij/TriggerEditor/commit/774f5f8)
+
 ### New nodes (shaping and report)
 
 - **Text to Columns** [`f15ef8a`](https://github.com/AzadKshitij/TriggerEditor/commit/f15ef8a), **Window** (look-back/ahead, rank, running and
@@ -162,16 +190,11 @@ Read these before opening an old `.tds` file or re-running an old workflow.
 
 ## In progress
 
-Not final; internals documented later (`docs/dev/cli-internals.md`,
-`docs/dev/workpaper-internals.md`).
+Not final; internals documented later (`docs/dev/workpaper-internals.md`).
 
 - **Workpaper**: Qt-free writer (Summary, Exceptions, Run log, Workflow, run
   workpaper) [`1604afe`](https://github.com/AzadKshitij/TriggerEditor/commit/1604afe), Engagement defaults in Preferences (client, engagement,
   period, preparer, logo) [`d7fbcde`](https://github.com/AzadKshitij/TriggerEditor/commit/d7fbcde), shared streaming Excel writer [`e2b610a`](https://github.com/AzadKshitij/TriggerEditor/commit/e2b610a).
-- **Command line** (`trigger-designer-cli`): argparse front end, exit codes, op
-  catalogue, tolerant workflow reader, `info` and `validate` [`efe94bf`](https://github.com/AzadKshitij/TriggerEditor/commit/efe94bf); parameters,
-  path remapping, `params`/`paths`/`approve` [`27d3c5c`](https://github.com/AzadKshitij/TriggerEditor/commit/27d3c5c); generated-code policy, run
-  lock, event stream, supervisor [`10bb241`](https://github.com/AzadKshitij/TriggerEditor/commit/10bb241).
 
 ## Fixes and maintenance
 
@@ -229,3 +252,10 @@ As of the commit above. Details and evidence in `docs/dev/*.md`.
    `trigger_designer.core.*` and needs this source tree on `sys.path`.
 9. Truncating the tail of a run-record chain is undetectable by design; note the
    `head_hash` printed by verify.
+10. Command line, found while writing its docs (see `docs/dev/cli-internals.md` section 17):
+    `approve` without `--yes` and with stdin from `NUL` exits 3 instead of 64; a
+    console code page that cannot print a path character (cp1252 pipe) makes a
+    command exit 3 unless `PYTHONUTF8=1`; `approve`, `info` and `paths` do not list the
+    Workpaper Output path; `paths --relativize` finds nothing on a mapped or `subst`
+    drive; the Task Scheduler cycle, the installer's PATH task and the packaged exe on
+    a machine without Python have not been run.
