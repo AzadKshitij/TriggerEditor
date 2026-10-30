@@ -80,7 +80,16 @@ def execute(args, ctx) -> int:
                 "approve: not a terminal; review the block above and pass --yes to approve.\n"
             )
             return int(ExitCode.USAGE)
-        answer = input("Approve? [y/N] ").strip().lower()
+        try:
+            answer = input("Approve? [y/N] ").strip().lower()
+        except EOFError:
+            # Windows NUL reports isatty() but has nothing to read. Ctrl-C is
+            # left to ``main`` (exit 130).
+            sys.stderr.write(
+                "approve: no input available on stdin; review the block above "
+                "and pass --yes to approve.\n"
+            )
+            return int(ExitCode.USAGE)
         if answer not in ("y", "yes"):
             print("Not approved.")
             return int(ExitCode.REFUSED)
