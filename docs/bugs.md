@@ -31,38 +31,38 @@ Set `PYTHONUTF8=1` for runs whose stdout is piped, otherwise emoji log lines rai
 
 | ID | Title | Severity | Area | Status | Affects plans |
 |---|---|---|---|---|---|
-| BUG-001 | Polars `PanicException` reported as success; executor worker dies; later nodes time out | Critical | Executor | Verified | 02, 03, 04, 05, 08 |
-| BUG-002 | Saving a workflow truncates the `.tds` to 0 bytes on any serialize/encoding failure; save uses locale encoding | Critical | Persistence (vendored nodeeditor) | Verified | 01, 02, 08 |
-| BUG-003 | Hostile or unusual `.tds` text becomes code in the generated script (code injection into `exec`) | High | Codegen / security | Verified | 01, 04, 08 |
-| BUG-004 | Run never collects lazy plans when the graph has no sink; broken plans "succeed" | High | Run | Verified | 02, 03, 04, 05 |
-| BUG-005 | Run executes `get_code()` from stale or never-evaluated live state; fallback code emits empty frames silently | High | Run | Verified | 02, 04, 08 |
-| BUG-006 | Excel export is broken: `xlsxwriter` not installed or declared (File Output "excel", Data Preview) | High | I/O dependency | Verified | 05, 06 |
+| BUG-001 | Polars `PanicException` reported as success; executor worker dies; later nodes time out | Critical | Executor | **Fixed** (2026-10-24, `39f0159`) | 02, 03, 04, 05, 08 |
+| BUG-002 | Saving a workflow truncates the `.tds` to 0 bytes on any serialize/encoding failure; save uses locale encoding | Critical | Persistence (vendored nodeeditor) | **Fixed** (2026-10-23, `6b2ab57`; legacy read `db8e430`) | 01, 02, 08 |
+| BUG-003 | Hostile or unusual `.tds` text becomes code in the generated script (code injection into `exec`) | High | Codegen / security | **Fixed** (2026-10-30, `f881de6`) | 01, 04, 08 |
+| BUG-004 | Run never collects lazy plans when the graph has no sink; broken plans "succeed" | High | Run | **Fixed** (2026-10-30, `d3d49c6`) | 02, 03, 04, 05 |
+| BUG-005 | Run executes `get_code()` from stale or never-evaluated live state; fallback code emits empty frames silently | High | Run | **Fixed** (2026-10-30, `d3d49c6`) | 02, 04, 08 |
+| BUG-006 | Excel export is broken: `xlsxwriter` not installed or declared (File Output "excel", Data Preview) | High | I/O dependency | **Fixed** (2026-10-30, `c006735`, `0c89206`) | 05, 06 |
 | BUG-007 | Installed `qtpy-nodeeditor` lacked APIs the repo calls (`setPositions`, detail-LOD); edge updates raise at runtime | High | Environment / canvas | **Fixed** (2026-10-22) | all UI plans |
 | BUG-008 | `getSocketValue` resolves only the first matching output socket (two outputs of one node into one node break) | High | Evaluation | Verified | 04, 05, 06 |
 | BUG-009 | Run failures: no node tooltip, exception type lost, "Original traceback" is useless | Medium | Errors | Verified | 03, 02 |
-| BUG-010 | `execute_node` raises `UnboundLocalError` when `get_code()` raises | Medium | Executor | Verified (latent) | 03, 08 |
-| BUG-011 | Cancellation is not wired anywhere; timeouts abandon threads; load progress dialog has no Cancel | Medium | Run / UX | Verified | 08, 01 |
+| BUG-010 | `execute_node` raises `UnboundLocalError` when `get_code()` raises | Medium | Executor | **Fixed** (2026-10-24, `39f0159`) | 03, 08 |
+| BUG-011 | Cancellation is not wired anywhere; timeouts abandon threads; load progress dialog has no Cancel | Medium | Run / UX | **Partially fixed** (2026-10-30, `5791a4a`) | 08, 01 |
 | BUG-012 | A cyclic graph leaves the Run button disabled for good (and re-raises into the Qt slot) | Medium | Run / UX | **Fixed** (2026-10-25) | 08 |
-| BUG-013 | `getPyFile` writes `check_output.py` into the CWD on every Run; file is git-tracked; contents non-deterministic and contain a personal path | Medium | Run / repo hygiene | Verified | 02, 08 |
+| BUG-013 | `getPyFile` writes `check_output.py` into the CWD on every Run; file is git-tracked; contents non-deterministic and contain a personal path | Medium | Run / repo hygiene | **Partially fixed** (2026-10-30, `3a7eebb`) | 02, 08 |
 | BUG-014 | Absolute file paths stored in `.tds`; tracked workflows embed a developer's home path | Medium | Persistence | Verified | 01, 02, 08 |
-| BUG-015 | No workflow version check on open; `workflow_metadata` extras are dropped on save | Medium | Persistence | Verified | 02, 08 |
+| BUG-015 | No workflow version check on open; `workflow_metadata` extras are dropped on save | Medium | Persistence | **Fixed** (2026-10-30, `db8e430`) | 02, 08 |
 | BUG-016 | File Output `check_file_path` is never called | Low | I/O node | Verified | 03 |
 | BUG-017 | `scene.serialize()` re-reads the input file on every save and every undo snapshot; `registerInputWidget` records whole-scene snapshots | Medium | Performance / undo | Verified | 01, 02 |
 | BUG-018 | SQL editor erases its own diagnostics (repaint fires `textChanged`) and revalidates every 800 ms forever | Medium | Formula/Filter editor | **Fixed** (2026-10-22) | 03 |
 | BUG-019 | `exec()` of generated code has no sandbox; `ENHANCED_EXECUTOR_GUIDE.md` documents features that do not exist | Medium | Security / docs | Verified | 08 |
 | BUG-020 | Test-suite health: 20 failed + 7 errors in `tests/ui`; full `pytest` aborts (exit 139) | Medium | Tests | **Fixed** (2026-10-22) - 793 passed, 0 failed, no abort | all |
 | BUG-021 | Error-translation hazards: Windows `OSError` has `errno=None`; Polars "out of N values" is a batch size | Low | Errors | Verified | 03 |
-| BUG-022 | Stale or incorrect docs (SESSION_HANDOFF, NODE_REFERENCE, README, CONTRIBUTING, AGENTS, placeholders) | Low | Docs | Verified | all |
+| BUG-022 | Stale or incorrect docs (SESSION_HANDOFF, NODE_REFERENCE, README, CONTRIBUTING, AGENTS, placeholders) | Low | Docs | **Partially fixed** (2026-10-30, `3a7eebb`) | all |
 | BUG-023 | Empty stub node files and enum members with no node | Low | Registry | Verified | - |
 | BUG-024 | README claims Windows/macOS/Linux; build and run tooling is Windows-only with hard-coded paths | Low | Packaging / docs | Verified | 08 |
 | BUG-025 | Bundled sample `savedfiles/3. in-formula-out.json` fails on Run | Low | Samples | Verified | - |
 | BUG-026 | DynamicRowBuilder datetime increment uses a date-time widget where seconds are required | Low | Node | Partially verified | - |
 | BUG-027 | Working-tree state: concurrent edits, dead and non-importable `file_opener.py`, unguarded `__main__.py` | Low | Repo hygiene | Verified (facts) | - |
 | BUG-028 | Logging hazards: fallback `print` can raise on non-UTF-8 stdout; logging dock off-thread access | Low | Logging | Partially verified | 02, 08 |
-| BUG-029 | Filter expression and Formula run user SQL on an unrestricted DuckDB connection: file reads and multi-statement writes (e.g. `COPY ... TO`) from workflow text, also during live evaluation | High | Security / DuckDB nodes | Verified | 07, 08 |
-| BUG-030 | DuckDB `extract_statements` type and `lock_configuration` are not a read-only guard (PRAGMA, DESCRIBE, `FROM 'x'`, `read_*()` are typed `SELECT`; in-memory DDL still runs after the lock) | Medium | DuckDB hazard (blocks plan 07 SQL nodes) | Verified | 07 |
-| BUG-031 | `TriggerNode.evalImplementation` requires every input to be connected; optional inputs need an override (only `union.py` has one) | Low | Evaluation | Verified (code) | 07 |
-| BUG-032 | Generated Formula code embeds the query in `'''...'''`: a formula containing `'''` is a `SyntaxError` at Run; `duck.close()` is skipped on error | Low | Codegen | Verified | 07 |
+| BUG-029 | Filter expression and Formula run user SQL on an unrestricted DuckDB connection: file reads and multi-statement writes (e.g. `COPY ... TO`) from workflow text, also during live evaluation | High | Security / DuckDB nodes | **Fixed** (2026-10-30, `92e8332`, `3580284`) | 07, 08 |
+| BUG-030 | DuckDB `extract_statements` type and `lock_configuration` are not a read-only guard (PRAGMA, DESCRIBE, `FROM 'x'`, `read_*()` are typed `SELECT`; in-memory DDL still runs after the lock) | Medium | DuckDB hazard (blocks plan 07 SQL nodes) | **Fixed** (2026-10-30, `92e8332`, `3580284`) | 07 |
+| BUG-031 | `TriggerNode.evalImplementation` requires every input to be connected; optional inputs need an override (only `union.py` has one) | Low | Evaluation | **Fixed** (2026-10-24, `9a416bc`) | 07 |
+| BUG-032 | Generated Formula code embeds the query in `'''...'''`: a formula containing `'''` is a `SyntaxError` at Run; `duck.close()` is skipped on error | Low | Codegen | **Fixed** (2026-10-30, `f881de6`) | 07 |
 | BUG-033 | A diamond join recomputes once per branch while it is already evaluating; edge connect and split notify both endpoints | Medium | Evaluation | **Fixed** (2026-10-25) | 04, 05 |
 
 Claims from the task brief that could not be confirmed are in the section "Claims not confirmed" at the end
@@ -76,7 +76,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 
 * **Severity:** Critical. A node that panics is marked successful (no error, no red ring) and its output variables are
   simply missing. Every later node then waits the full 30 s timeout. For an audit tool, "step passed" when it did not run is the worst failure class.
-* **Status:** Verified (reproduced).
+* **Status:** **Fixed** (2026-10-24, `39f0159`) - executor: BaseException handling keeps the worker alive and records the failure (`39f0159`). Originally: Verified (reproduced).
 * **Symptoms:** Run shows a green node where the node actually died; the next node fails with
   "Code execution timed out after 30.0 seconds"; the next-next node would too, but the run stops at the first failure.
 * **Root cause:** `src/trigger_designer/core/ExecutionCheck/executor.py:262-269`
@@ -134,7 +134,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
   exception while serializing or encoding destroys the user's previous save. On Windows the default text encoding is
   cp1252, so a workflow containing any character outside cp1252 (for example `→`, CJK, emoji in a node title, label,
   formula text or path) cannot be saved at all and wipes the existing file.
-* **Status:** Verified (reproduced). The faulty code is in the *installed* `nodeeditor`
+* **Status:** **Fixed** (2026-10-23, `6b2ab57`; legacy read `db8e430`) - `TriggerScene.saveToFile` serializes first, writes UTF-8 to a temp file and `os.replace`s it (`6b2ab57`); `loadFromFile` reads UTF-8 with legacy fallbacks (`db8e430`). Originally: Verified (reproduced). The faulty code is in the *installed* `nodeeditor`
   (`.venv/Lib/site-packages/nodeeditor/node_scene.py:621-636`), not in the repo; the repo has no override of `saveToFile`.
   Plan 08 (F10) independently notes the locale-encoding half.
 * **Symptoms:** "Save" appears to fail (or silently does something odd); reopening the file reports an invalid file
@@ -181,7 +181,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 
 * **Severity:** High (security). A crafted or merely unusual workflow file runs arbitrary Python when the user clicks Run.
   Plain apostrophes also break nodes by accident (SyntaxError at Run).
-* **Status:** Verified (reproduced with a harmless marker file). Plan 08 (experiment X3) reproduced the same hole headless.
+* **Status:** **Fixed** (2026-10-30, `f881de6`) - `core/codegen_safe` keeps user text inert in generated code (`f881de6`). Originally: Verified (reproduced with a harmless marker file). Plan 08 (experiment X3) reproduced the same hole headless.
 * **Symptoms:** Delimiter `'`, a sheet name, a column name or a filter value containing `'` makes the node fail at Run with a `SyntaxError`
   that names generated code the user never wrote. A deliberate payload executes.
 * **Root cause (exact sites):**
@@ -225,7 +225,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-004 - Run never collects lazy plans when the graph has no sink
 
 * **Severity:** High. A Run on a graph with no File Output / Graph / Count reports success regardless of whether the Polars plan is valid.
-* **Status:** Verified (reproduced).
+* **Status:** **Fixed** (2026-10-30, `d3d49c6`) - the executor resolves `collect_schema()` of every lazy output after exec (`d3d49c6`). Originally: Verified (reproduced).
 * **Symptoms:** All nodes turn green; opening the preview later (a `collect()`) then fails. Nothing in Run told the user.
 * **Root cause:** Generated code only builds `LazyFrame`s (for example `select.py:1661-1664` emits `var.select([...])`); the executor
   (`executor.py:289-417`) never collects results. Only sink-type nodes materialise data (brief 4.3). A bad column in a lazy `select` raises only at `collect()`.
@@ -252,7 +252,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 
 * **Severity:** High. Generated code depends on attributes that only the live `processInputs()` pass sets (`incoming_variable`, `incom_data`, `data`).
   If a node was never live-evaluated, or its upstream is currently invalid, Run silently executes the fallback code, which defines an **empty** frame.
-* **Status:** Verified (reproduced).
+* **Status:** **Fixed** (2026-10-30, `d3d49c6`) - `executeWorkflow` re-evaluates every node in topological order before the worker starts (`d3d49c6`). Originally: Verified (reproduced).
 * **Symptoms:** Run succeeds and downstream nodes receive `pl.DataFrame()` (0 rows, 0 columns); outputs are empty with no error.
 * **Root cause:** `src/trigger_designer/qt/helpers/workflow_execution_mixin.py:47-89` (`executeWorkflow`) never calls `eval()` (grep for `.eval(` in the file: no match).
   Example fallback: `select.py:1643-1651`
@@ -279,7 +279,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-006 - Excel export is broken because `xlsxwriter` is neither installed nor declared
 
 * **Severity:** High. File Output "excel" fails at Run; Data Preview "Export Excel" silently does nothing.
-* **Status:** Verified (reproduced).
+* **Status:** **Fixed** (2026-10-30, `c006735`, `0c89206`) - `xlsxwriter` is pinned in `pyproject.toml` (`c006735`) and a failed Data Preview Excel export now shows a warning (`0c89206`). Originally: Verified (reproduced).
 * **Product decision (recorded):** Excel *writing* will use `xlsxwriter` (plan 06 step 1). `pyfastexcel` was evaluated and rejected: no real streaming, about 1.27 GB for 500k x 6. The bug stands until that lands: the current code path is broken.
 * **Symptoms:** File Output node with `.xlsx` target: Run fails with `Excel export requires 'xlsxwriter' not found.` (shown as a raw string). Data Preview: user picks a filename,
   nothing is written, no message (the exception is only logged).
@@ -407,7 +407,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-010 - `execute_node` raises `UnboundLocalError` when `get_code()` raises
 
 * **Severity:** Medium (latent today: no shipped node's `get_code()` raises at present, File Output now emits `raise ValueError(...)` *inside* the generated code; plan 08 plans a code filter that raises).
-* **Status:** Verified (reproduced with a stub node); the plan 08 document (F7) reports the same.
+* **Status:** **Fixed** (2026-10-24, `39f0159`) - `node_name` is assigned before the `try` in `execute_node` (`39f0159`). Originally: Verified (reproduced with a stub node); the plan 08 document (F7) reports the same.
 * **Symptoms:** the real error is replaced by `cannot access local variable 'node_name' where it is not associated with a value`; the exception escapes `execute_node` into `WorkflowWorker.run` (`nodeErrored` path, `# pragma: no cover`).
 * **Root cause:** `executor.py:310-311`
   ```python
@@ -434,7 +434,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-011 - Cancellation is not wired; a timed-out node's thread is abandoned; load progress dialog has no Cancel
 
 * **Severity:** Medium. No way to stop a long Run or a long file load.
-* **Status:** Verified (grep of callers, code reading).
+* **Status:** **Partially fixed** (2026-10-30, `5791a4a`) - Run now has one cancel entry point and a Cancel button, cancelling between nodes (`5791a4a`). Still open: the load progress dialog has no Cancel button (`eval_progress.py` calls `setCancelButton(None)`). Originally: Verified (grep of callers, code reading).
 * **Evidence:**
   * `grep -rn "request_cancel\|cancel_execution\|_cancel_event\|_cancel_requested" src tests` -> only definitions (`workflow_worker.py:37-41`, `executor.py:146,303,457-464`). `execute_node` even does `self._cancel_event.clear()` (`:303`); nothing reads the event in the exec thread.
   * The worker checks `_cancel_requested` only between nodes (`workflow_worker.py:46-49`).
@@ -470,7 +470,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-013 - `getPyFile` writes `check_output.py` into the CWD on every Run; the file is git-tracked, non-deterministic, and holds a personal path
 
 * **Severity:** Medium (repo hygiene, privacy, reproducibility; also a problem for headless/service use).
-* **Status:** Verified.
+* **Status:** **Partially fixed** (2026-10-30, `3a7eebb`) - `getPyFile` writes to `<app data>/last_run/check_output.py` instead of the working directory (`3a7eebb`). Still open: `check_output.py` is still tracked in git (`git rm --cached` is left to the owner). Originally: Verified.
 * **Evidence:**
   * `src/trigger_designer/qt/design_window.py:698-706`: `with open("check_output.py", "w") as file:` - relative path, default encoding; called from `workflow_execution_mixin.py:133` after every Run (also after failures). Probe in a temp CWD: `S3 files in cwd: ['check_output.py']`.
   * `git ls-files check_output.py` lists it although `.gitignore:295` (`check_output.py`, "Generated by a workflow run") ignores it - it was committed before the ignore. `git status` shows it modified; `git diff --ignore-cr-at-eol --numstat check_output.py` -> `377 377` (only regenerated variable names and CRLF).
@@ -500,7 +500,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 ## BUG-015 - No workflow version check on open; metadata extras are dropped on save
 
 * **Severity:** Medium (ToDo item; becomes important as plans add state).
-* **Status:** Verified (code reading).
+* **Status:** **Fixed** (2026-10-30, `db8e430`) - `serialize()` keeps unknown metadata, adds `workflow_uuid`, and `validateLoadedWorkflow` warns on a newer schema version (`db8e430`). Originally: Verified (code reading).
 * **Evidence:** `design_window.py:461-467` `validateLoadedWorkflow` only does `self.logDebug(f"Loaded workflow schema version: {schema_version}")`; no branch compares the version (`WORKFLOW_SCHEMA_VERSION = 2`, `core/constants.py:8`). A file written by a newer app (schema 99) loads silently and unknown keys are ignored. `Todo.todo` line 1 asks for exactly this check.
   `performance_scene.py:166-173` `serialize()` **overwrites** `workflow_metadata` with `{schema_version, app_version, saved_at}`, so any extra key a plan adds (`workflow_uuid`, plan 08 `parameters`) is lost on the next GUI save (plan 08 F9). `performance_scene.py:171` also uses deprecated `datetime.utcnow()`.
 * **Recommended fix (S):** in `validateLoadedWorkflow` compare `schema_version` to `WORKFLOW_SCHEMA_VERSION`; newer -> warning dialog "saved by a newer version"; carry unknown `workflow_metadata` keys forward in `serialize()` (`{**self.loaded_workflow_metadata, ...}`); use `datetime.now(timezone.utc)`.
@@ -626,7 +626,7 @@ Claims from the task brief that could not be confirmed are in the section "Claim
 
 ## BUG-022 - Stale or incorrect docs
 
-* **Severity:** Low. Status: Verified (each quoted).
+* **Severity:** Low. Status: **Partially fixed** (2026-10-30, `3a7eebb`): docs truth pass in `3a7eebb`; the dead `assets/node_icons/*.png` links in `NODE_REFERENCE.md` now point at the real SVG files. Other items below are not re-checked.
 * **Items:**
   * `docs/SESSION_HANDOFF.md:12` says "**No pytest** installed" - pytest 9.1.1 + pytest-qt 4.5.0 are in the dev group (`pyproject.toml:154-155`) and about 785 tests exist. `:165-166` says `Join/union.py` is a 0-byte stub and "Union registered in enum but unimplemented" - it is 956 lines (`wc -l` verified) and tested by `tests/unit/test_union_node.py`. Lines 61 and 114 list Batch B (executor import seeding) as pending although `executor.py:174` `_seed_base_globals` exists. `:7` standing instructions reference `run.bat self` with `C:\Projects\TriggerEditor`.
   * `docs/NODE_REFERENCE.md:76-77` says `Join/union.py` is empty and Union has no implementation; the node table omits Union (only the icon row at `:71`). `README.md` has no mention of Union (grep: no match).
@@ -715,7 +715,7 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 ## BUG-029 - Filter expression and Formula run user SQL on an unrestricted DuckDB connection (file read and write from workflow text)
 
 * **Severity:** High (security). Medium if workflows are only ever authored by the user; High because `.tds` files are shared and the Filter runs on open.
-* **Status:** Verified (DuckDB behaviour reproduced with the exact query shapes the nodes build; the live-on-open path is by code reading).
+* **Status:** **Fixed** (2026-10-30, `92e8332`, `3580284`) - Formula and Filter-expression SQL go through `core/sql_guard.check_select_only` and a locked connection (`92e8332`, `3580284`). Originally: Verified (DuckDB behaviour reproduced with the exact query shapes the nodes build; the live-on-open path is by code reading).
 * **Symptoms:** A Filter expression or Formula section can read any local file the process can read (`read_csv`, `read_text`, `glob`) and, because the Filter query is pasted after `WHERE` and executed as a string, can append a second statement (`COPY ... TO 'file'`, `ATTACH`, `INSTALL`) that DuckDB also executes.
 * **Root cause:** user text goes into a plain `duckdb.connect(":memory:")` with default settings (external access on, no `lock_configuration`) and no statement check:
   * `src/trigger_designer/qt/widgets/nodes/Preparation/filter.py:819-831`
@@ -746,7 +746,7 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 ## BUG-030 - DuckDB statement typing and `lock_configuration` are not a read-only guard
 
 * **Severity:** Medium (hazard; it decides whether the plan 07 SQL nodes are safe and applies to any future DuckDB-executing node).
-* **Status:** Verified (DuckDB 1.5.5).
+* **Status:** **Fixed** (2026-10-30, `92e8332`, `3580284`) - the shared read-only guard rejects PRAGMA, DESCRIBE, `FROM 'x'` and `read_*()`, and runs on a locked in-memory connection (`92e8332`, `3580284`). Originally: Verified (DuckDB 1.5.5).
 * **Evidence:** `con.extract_statements(q)[0].type` is `StatementType.SELECT` for `pragma version`, `describe select 1`, `from range(3)` and `select * from read_csv('x.csv')`. After `SET enable_external_access=false; SET lock_configuration=true`: `select * from read_csv('x.csv')` raises `PermissionException` and `SET enable_external_access=true` raises `InvalidInputException`, but `create table t as select 1 a` and `pragma database_list` still run.
 * **Impact:** a "must be a SELECT statement" check is bypassed by PRAGMA/DESCRIBE/FROM-file forms; the config lock stops file and extension access but not in-memory DDL, so a connection that outlives one query keeps state. Any fix for BUG-029 must combine: lock, one fresh connection per run, single-statement check, and a leading-keyword allow-list.
 * **Recommended fix (S):** see BUG-029; document the two facts in the helper's docstring so the allow-list is not "simplified" to a statement-type test.
@@ -756,7 +756,7 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 ## BUG-031 - `evalImplementation` requires every input; optional inputs need a per-node override
 
 * **Severity:** Low (latent; affects nodes that want optional inputs, plan 07 F2: SQL `t2`/`t3`).
-* **Status:** Verified (code reading).
+* **Status:** **Fixed** (2026-10-24, `9a416bc`) - `TriggerNode.optional_inputs` lets `evalImplementation` skip an unconnected optional input (`9a416bc`). Originally: Verified (code reading).
 * **Root cause:** `src/trigger_designer/qt/node_base.py:816-834`
   ```python
   for i in range(len(self.inputs)):
@@ -775,7 +775,7 @@ Source: `docs/plan/07-shaping-nodes.md`. Already covered (not repeated): `getSoc
 ## BUG-032 - Generated Formula code embeds the query in `'''...'''`; error path leaks the connection
 
 * **Severity:** Low.
-* **Status:** Verified (the generated-code shape executed with a harmless formula).
+* **Status:** **Fixed** (2026-10-30, `f881de6`) - Formula runs through `core.shaping` with no triple-quoted query and a `with`-closed connection (`f881de6`). Originally: Verified (the generated-code shape executed with a harmless formula).
 * **Root cause:** `qt/widgets/nodes/Preparation/formula.py:1313`: ``f"df_for_duck = duck.execute('''{combined_query}''').pl()"``. The Filter node already switched to `{query!r}` for this reason (`filter.py:1023-1025` comment); Formula did not. `duck.close()` (`:1321`) is the last emitted line, so a failing query leaves the connection open for the rest of the shared execution context.
 * **Reproduce / verified output:** formula text `'''x'''`: the live DuckDB path returns `"'x'"`; the generated line raises `SyntaxError` at Run. (A formula with backslashes was also compared; results matched in the cases tried, but escapes in a non-raw triple-quoted string are interpreted by Python first, so use `!r` rather than reason about each case.)
 * **Impact:** Live result and Run result diverge (live works, Run fails); one more route for BUG-003-style injection into `exec`.
