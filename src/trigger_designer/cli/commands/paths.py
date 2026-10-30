@@ -14,7 +14,11 @@ from trigger_designer.core.headless.params import (
     write_workflow_with_backup,
 )
 from trigger_designer.core.headless.paths import relativize, resolve_workflow_path
-from trigger_designer.core.headless.workflow_file import file_nodes, read_workflow
+from trigger_designer.core.headless.workflow_file import (
+    file_nodes,
+    read_workflow,
+    split_path_lines,
+)
 
 
 def _rows(doc) -> list[dict]:
@@ -64,6 +68,24 @@ def relativize_workflow(data: dict, base_dir: str) -> list[dict]:
             ):
                 keys = ("filePath",)
             is_input = False
+        info = known_op(op)
+        for key in info.list_keys if info else ():
+            raw_text = get_setting(content, key)
+            lines = split_path_lines(raw_text)
+            new_lines = []
+            for raw in lines:
+                new = raw
+                try:
+                    resolved = resolve_workflow_path(raw, base_dir=base_dir)
+                    rel = relativize(resolved, base_dir)
+                    new = rel if rel else raw
+                except CliError:
+                    pass
+                if new != raw:
+                    changed.append({"node_id": node.get("id"), "from": raw, "to": new})
+                new_lines.append(new)
+            if new_lines != lines:
+                set_setting(content, key, "\n".join(new_lines))
         for key in keys:
             raw = get_setting(content, key)
             if not raw:

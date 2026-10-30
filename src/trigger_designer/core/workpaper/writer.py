@@ -75,6 +75,11 @@ def _validated(spec: WorkpaperSpec) -> tuple[WorkpaperSpec, date | None, list[st
         raise WorkpaperError(
             f"'{os.path.basename(path)}' must end in .xlsx.", path=path
         )
+    publish = (spec.publish_path or "").strip()
+    if publish and not publish.lower().endswith(".xlsx"):
+        raise WorkpaperError(
+            f"'{os.path.basename(publish)}' must end in .xlsx.", path=publish
+        )
     if spec.if_exists not in IF_EXISTS_MODES:
         raise WorkpaperError(
             f"'If the file exists' must be one of {', '.join(IF_EXISTS_MODES)}."
@@ -96,7 +101,13 @@ def _validated(spec: WorkpaperSpec) -> tuple[WorkpaperSpec, date | None, list[st
         )
         limit = MAX_LISTED
     return (
-        replace(spec, value_decimals=decimals, row_limit=limit, output_path=path),
+        replace(
+            spec,
+            value_decimals=decimals,
+            row_limit=limit,
+            output_path=path,
+            publish_path=publish,
+        ),
         prepared,
         notes,
     )
@@ -303,7 +314,7 @@ def write_workpaper(
         csv_final: str | None = None
         csv_tmp: str | None = None
         if truncated or too_long:
-            csv_final = _sidecar_target(final, spec.if_exists)
+            csv_final = _sidecar_target(spec.publish_path or final, spec.if_exists)
             csv_tmp = os.path.join(tmp, "full.csv")
             csv_rows = write_csv_sidecar(spooled, plans, csv_tmp)
             csv_sha = sha256_file(csv_tmp)

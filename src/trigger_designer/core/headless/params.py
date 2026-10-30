@@ -24,6 +24,7 @@ from trigger_designer.core.headless.paths import (
 from trigger_designer.core.headless.workflow_file import (
     WorkflowDoc,
     settings_holder,
+    split_path_lines,
 )
 
 NAME_RE = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
@@ -58,6 +59,7 @@ PARAM_TARGETS: dict[tuple[str, str], Rule] = {
     ("input.file_input", "selected_sheet"): Rule("string", forbid=_BAD_TEXT),
     ("input.file_input", "record_limit"): Rule("int", 0, 2_000_000_000),
     ("input.file_output", "filePath"): Rule("path_out"),
+    ("input.workpaper_output", "output_path"): Rule("path_out"),
     ("preparation.filter", "value"): Rule(
         "string", forbid=_BAD_TEXT, needs=(("mode", "builder"),)
     ),
@@ -392,7 +394,87 @@ def apply_params(
             )
             if ref:
                 applied.outputs.append(ref)
+    _finish_workpapers(applied, in_dir, base)
     return applied
+
+
+def unique_path(path: str) -> str:
+    """``path``, or the first free ``name (2).ext``, ``name (3).ext`` ...
+
+    Same rule as ``core.workpaper.paths.unique_path`` (the writer's own);
+    repeated here because importing ``core.workpaper`` pulls in Polars and the
+    CLI keeps ``params``/``paths`` light (test_cli_import_discipline).
+    """
+    stem, ext = os.path.splitext(path)
+    candidate, n = path, 2
+    while os.path.exists(candidate):
+        candidate = f"{stem} ({n}){ext}"
+        n += 1
+    return candidate
+
+
+def _finish_workpapers(applied: AppliedParams, in_dir: str | None, base: str) -> None:
+    """Workpaper Output specifics, applied to the work copy.
+
+    * ``source_files`` (one input path per line) follows ``--input-dir`` like a
+      File Input, and relative lines resolve against the workflow folder.
+    * ``if_exists`` is decided here, before the write is staged: the staged
+      name is always fresh, so the writer cannot see the final name.
+      ``version`` picks the first free ``name (2).xlsx`` up front, ``fail``
+      refuses an existing file, ``replace`` keeps the name.
+    * ``publish_path`` records the final (unstaged) workbook path so the
+      writer names the full-exceptions CSV beside the final file.
+    """
+    for node in applied.data.get("nodes", []):
+        content = node.get("content") if isinstance(node, dict) else None
+        info = known_op(node_op(node) or "") if isinstance(content, dict) else None
+        if info is None:
+            continue
+        for key in info.list_keys:
+            lines = split_path_lines(get_setting(content, key))
+            if not lines:
+                continue
+            fixed = []
+            for line in lines:
+                try:
+                    fixed.append(
+                        remap_into_dir(line, in_dir)
+                        if in_dir
+                        else resolve_workflow_path(line, base_dir=base)
+                    )
+                except CliError:
+                    fixed.append(line)
+            set_setting(content, key, "\n".join(fixed))
+        if info.op != "input.workpaper_output":
+            continue
+        ref = next(
+            (
+                r
+                for r in applied.outputs
+                if r.node_id == node.get("id") and r.key == "output_path"
+            ),
+            None,
+        )
+        if ref is None:
+            continue
+        mode = get_setting(content, "if_exists") or "version"
+        final = ref.path
+        if mode == "version":
+            final = unique_path(final)
+        elif mode == "fail" and os.path.exists(final):
+            raise CliError(
+                ExitCode.INVALID,
+                "TD-OUT-010",
+                f"A workpaper named '{os.path.basename(final)}' already exists.",
+                "Choose another name, or set 'If the file exists' to New version "
+                "or Replace.",
+            )
+        if final != ref.path:
+            ref.path = final
+            set_setting(content, "output_path", final)
+            if ref.bound:
+                applied.resolved[ref.bound] = final
+        set_setting(content, "publish_path", final)
 
 
 def _resolve_node_path(

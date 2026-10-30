@@ -241,6 +241,11 @@ def settings_holder(content: dict, key: str) -> dict | None:
     return None
 
 
+def split_path_lines(value) -> list[str]:
+    """The non-empty, stripped lines of a multi-line path setting."""
+    return [line.strip() for line in str(value or "").splitlines() if line.strip()]
+
+
 def _file_keys(op: str | None, title: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
     """(input keys, output keys) of a node, from the op catalogue; a legacy
     node without an op id is recognised by its title."""
@@ -275,6 +280,20 @@ def file_nodes(doc: WorkflowDoc) -> list[FileNode]:
                         nid if isinstance(nid, int) else -1,
                         kind,
                         raw_path,
+                        title,
+                        op,
+                        key,
+                    )
+                )
+        info = known_op(op or "")
+        for key in info.list_keys if info else ():
+            holder = settings_holder(content, key)
+            for line in split_path_lines(holder.get(key) if holder else ""):
+                found.append(
+                    FileNode(
+                        nid if isinstance(nid, int) else -1,
+                        "input",
+                        line,
                         title,
                         op,
                         key,

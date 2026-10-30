@@ -67,6 +67,10 @@ class WorkpaperSpec:
     include_tests: bool = True  # reserved, ignored
     include_profile: bool = False  # reserved, ignored
     output_path: str = ""
+    #: The path the workbook is finally moved to when ``output_path`` is a
+    #: staging name (the CLI stages every output). Only used to name the
+    #: full-exceptions CSV; empty when the workbook is written in place.
+    publish_path: str = ""
     format: str = "xlsx"
     workpaper_ref: str = ""
     client: str = ""

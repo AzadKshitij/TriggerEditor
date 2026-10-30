@@ -22,6 +22,9 @@ class OpInfo:
     output_keys: tuple[str, ...] = ()
     #: Content keys that hold an input path (read before the run).
     input_keys: tuple[str, ...] = ()
+    #: Content keys holding several input paths, one per line (documentation
+    #: sources such as the workpaper's ``source_files``).
+    list_keys: tuple[str, ...] = ()
     #: True while the node is planned but may not be registered in this build.
     planned: bool = False
 
@@ -76,6 +79,7 @@ OPS: dict[str, OpInfo] = dict(
             "input.workpaper_output",
             "Workpaper Output",
             output_keys=("output_path",),
+            list_keys=("source_files",),
         ),
     ]
 )

@@ -588,7 +588,11 @@ def test_workpaper_output_is_staged_and_committed(tmp_path):
                 for i in range(3)
             ]
             node["content"] = {
-                "settings": {"output_path": (m.out_dir / "wp.xlsx").as_posix()}
+                "settings": {
+                    "output_path": (m.out_dir / "wp.xlsx").as_posix(),
+                    # the default (version) would keep the sentinel and add wp (2)
+                    "if_exists": "replace",
+                }
             }
         else:
             node.pop("op_code", None)

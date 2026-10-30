@@ -75,6 +75,7 @@ def effective_spec(
         preparer=preparer,
         purpose=str(s["objective"] or ""),
         output_path=str(s["output_path"] or "").replace("\\", "/"),
+        publish_path=str(s.get("publish_path") or "").replace("\\", "/"),
         workpaper_ref=str(s["workpaper_ref"] or ""),
         client=str(s["client"] or eng.get("client_name") or ""),
         engagement=str(s["engagement"] or eng.get("engagement_name") or ""),

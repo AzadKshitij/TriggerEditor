@@ -290,3 +290,33 @@ def test_provider_failure_never_breaks_the_workpaper(tmp_path):
     finally:
         set_run_record_provider(None)
     assert "Run log" not in out["sheets"]
+
+
+# -- publish_path: the CLI writes to a staging name, the file lands elsewhere ----
+def _staged_spec(tmp_path, publish: str, **kw):
+    staged = tmp_path / ".wp.tdtmp-abc12345.xlsx"
+    return make_spec(
+        tmp_path, output_path=str(staged), publish_path=publish, row_limit=1, **kw
+    )
+
+
+def test_full_csv_is_named_after_the_publish_path(tmp_path):
+    final = tmp_path / "ledger_wp.xlsx"
+    result = write_workpaper(
+        _staged_spec(tmp_path, str(final)), EXCEPTIONS, now=FIXED_NOW
+    )
+    assert Path(result.path).name == ".wp.tdtmp-abc12345.xlsx"
+    assert result.csv_path == str(tmp_path / "ledger_wp_exceptions_full.csv")
+    assert os.path.exists(result.csv_path)
+    assert not [p for p in os.listdir(tmp_path) if "tdtmp" in p and p.endswith(".csv")]
+    text = " ".join(
+        str(c.value) for row in load(result.path)["Summary"].iter_rows() for c in row
+    )
+    assert "ledger_wp_exceptions_full.csv" in text
+
+
+def test_publish_path_must_be_xlsx_like_the_output_path(tmp_path):
+    with pytest.raises(WorkpaperError, match="xlsx"):
+        write_workpaper(
+            _staged_spec(tmp_path, str(tmp_path / "x.txt")), EXCEPTIONS, now=FIXED_NOW
+        )
