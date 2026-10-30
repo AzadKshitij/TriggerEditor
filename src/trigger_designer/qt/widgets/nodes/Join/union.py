@@ -44,6 +44,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.node_configuration import (
     JoinNodes,
     NodeTypes,
@@ -406,7 +407,7 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
         if section is not None:
             try:
                 inputs = len(self.node.getOrderedEdges())
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 inputs = 0
             section.set_count(
                 f"{inputs} input{'s' if inputs > 1 else ''}" if inputs else ""
@@ -421,7 +422,7 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
     def _ordered_edge_labels(self) -> List[str]:
         try:
             edges = self.node.getOrderedEdges()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return []
         labels = []
         for pos, edge in enumerate(edges):
@@ -431,7 +432,7 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
                     labels.append(f"#{pos + 1} {other.node.title} [out {other.index}]")
                 else:
                     labels.append(f"#{pos + 1} ?")
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 labels.append(f"#{pos + 1} ?")
         return labels
 
@@ -444,7 +445,7 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
         self._order_row_layouts = []
         try:
             edges = self.node.getOrderedEdges()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             edges = []
         labels = self._ordered_edge_labels()
         for pos, (edge, label) in enumerate(zip(edges, labels)):
@@ -627,7 +628,7 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
             return
         try:
             changed = self.node.moveEdgeTo(edge, position)
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return
         if not changed:
             return
@@ -759,13 +760,15 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
         if self.mode == "manual":
             return self._manual_code()
         lines = ["import polars as pl"]
-        lines.append(f"_union_inputs_{self.id} = [{', '.join(self.input_variables)}]")
+        lines.append(
+            f"_union_inputs_{ident_part(self.id)} = [{', '.join(self.input_variables)}]"
+        )
         lines.append(
             f"{self.variable_name} = pl.concat("
             f"[(f.lazy() if isinstance(f, pl.DataFrame) else f) "
-            f"for f in _union_inputs_{self.id}], how='diagonal_relaxed')"
+            f"for f in _union_inputs_{ident_part(self.id)}], how='diagonal_relaxed')"
         )
-        lines.append(f"del _union_inputs_{self.id}")
+        lines.append(f"del _union_inputs_{ident_part(self.id)}")
         return "\n".join(lines) + "\n"
 
     def _position_code(self) -> str:
@@ -848,7 +851,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
     def evalImplementation(self) -> Optional[List[Dict[str, Any]]]:
         try:
             ordered = self.getOrderedEdges()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             ordered = []
         if not ordered:
             self.markDirty(True)
@@ -862,7 +865,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
         for edge in ordered:
             try:
                 other = edge.getOtherSocket(socket)
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 continue
             if other is None or getattr(other, "node", None) is None:
                 continue
@@ -893,7 +896,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
         self.content.input_variables = variables
         try:
             self.content.order_description = self.describeInputOrder()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             self.content.order_description = ""
 
         # New edge while the dock is open: rebuild the mapping grid so the

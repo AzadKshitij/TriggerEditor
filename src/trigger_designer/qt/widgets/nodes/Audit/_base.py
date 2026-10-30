@@ -39,6 +39,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.audit.common import (
     AuditConfigError,
     AuditResult,
@@ -697,7 +698,7 @@ class AuditContentMixin(SerializableContentMixin):
             return "import polars as pl\n" + "".join(
                 f"{v} = pl.DataFrame()\n" for v in out_vars
             )
-        uid = self.id
+        uid = ident_part(self.id)
         return (
             "import polars as pl\n"
             f"from {module} import {params_cls}, {run_fn}\n"

@@ -24,6 +24,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.core.codegen_safe import ident_part, safe_comment
 from trigger_designer.core.input_source import (
     SOURCE_KEYS,
     build_source,
@@ -1605,10 +1606,10 @@ class FileInputContent(
         return (
             "import polars as pl\n"
             "from trigger_designer.core.input_source import build_source\n"
-            f"# File Input ({spec['file_type']}, builder path)\n"
-            f"_spec_{self.id} = {spec!r}\n"
+            f"# File Input ({safe_comment(spec['file_type'])}, builder path)\n"
+            f"_spec_{ident_part(self.id)} = {spec!r}\n"
             f"{self.variable_name} = pl.DataFrame()\n"
-            f"{self.variable_name} = build_source(_spec_{self.id}).frame\n"
+            f"{self.variable_name} = build_source(_spec_{ident_part(self.id)}).frame\n"
         )
 
     def get_code(self) -> str:
@@ -1635,12 +1636,12 @@ class FileInputContent(
             # Excel file code generation using fastexcel with LazyFrame conversion
             code_lines.append("import fastexcel")
             code_lines.append(
-                f"reader_{self.id} = fastexcel.read_excel({self.filePath!r})"
+                f"reader_{ident_part(self.id)} = fastexcel.read_excel({self.filePath!r})"
             )
 
             # Build load_sheet parameters
             load_params = []
-            load_params.append(f"idx_or_name='{self.selected_sheet}'")
+            load_params.append(f"idx_or_name={str(self.selected_sheet)!r}")
 
             # Handle start row and header row logic
             skip_rows = self.start_row - 1
@@ -1655,27 +1656,31 @@ class FileInputContent(
             if self.record_limit > 0:
                 load_params.append(f"n_rows={self.record_limit}")
 
-            load_call = f"reader_{self.id}.load_sheet({', '.join(load_params)})"
+            load_call = (
+                f"reader_{ident_part(self.id)}.load_sheet({', '.join(load_params)})"
+            )
 
             # Generate code for conversion to LazyFrame
-            code_lines.append(f"excel_df_{self.id} = {load_call}")
+            code_lines.append(f"excel_df_{ident_part(self.id)} = {load_call}")
             code_lines.append("# Convert to polars LazyFrame for memory efficiency")
             code_lines.append("try:")
             code_lines.append(
-                f"    eager_df_{self.id} = excel_df_{self.id}.to_polars()"
+                f"    eager_df_{ident_part(self.id)} = excel_df_{ident_part(self.id)}.to_polars()"
             )
             code_lines.append("except AttributeError:")
             code_lines.append(
-                f"    eager_df_{self.id} = pl.from_arrow(excel_df_{self.id}.to_arrow())"
+                f"    eager_df_{ident_part(self.id)} = pl.from_arrow(excel_df_{ident_part(self.id)}.to_arrow())"
             )
             code_lines.append("# Convert to LazyFrame immediately")
-            code_lines.append(f"{self.variable_name} = eager_df_{self.id}.lazy()")
+            code_lines.append(
+                f"{self.variable_name} = eager_df_{ident_part(self.id)}.lazy()"
+            )
 
         elif self.file_type in ["csv", "txt"]:
             # CSV/TXT file code generation with LazyFrame
             read_params = ["infer_schema=False"]
             if self.delimiter != ",":
-                read_params.append(f"separator='{self.delimiter}'")
+                read_params.append(f"separator={str(self.delimiter)!r}")
             if not self.first_row_contains_field_names:
                 read_params.append("has_header=False")
 
@@ -1706,7 +1711,7 @@ class FileInputContent(
 
         # Add filename as field if requested - using lazy operations
         if self.output_filename_as_field:
-            filename_var = f"filename_{self.id}"
+            filename_var = f"filename_{ident_part(self.id)}"
             code_lines.append("# Add filename field using lazy operations")
             code_lines.append(f"{filename_var} = os.path.basename({self.filePath!r})")
             code_lines.append(
