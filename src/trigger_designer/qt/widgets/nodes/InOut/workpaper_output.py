@@ -296,7 +296,7 @@ class WorkpaperOutputContent(ShapingContent):
 
 @register_node(IONodes.WORKPAPER_OUTPUT, NodeTypes.IO)
 class TriggerNode_WorkpaperOutput(TriggerNode):
-    icon = "node_file_output"
+    icon = "node_workpaper_output"
     node_code = IONodes.WORKPAPER_OUTPUT
     node_title = "Workpaper Output"
     node_type = NodeTypes.IO

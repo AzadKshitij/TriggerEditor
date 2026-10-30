@@ -32,7 +32,7 @@ _LAZY_NODE_SPECS = [
         "node_code": IONodes.WORKPAPER_OUTPUT,
         "node_type": NodeTypes.IO,
         "node_title": "Workpaper Output",
-        "icon": "node_file_output",
+        "icon": "node_workpaper_output",
     },
     {
         "module_path": "Join.Append",

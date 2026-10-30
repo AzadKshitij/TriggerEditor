@@ -25,6 +25,10 @@
         "path":"qt/images/node_icons/Input/File Output.svg",
         "mode": "rb"
     },
+    "node_workpaper_output":{
+        "path":"qt/images/node_icons/Input/Workpaper Output.svg",
+        "mode": "rb"
+    },
 
 
 
