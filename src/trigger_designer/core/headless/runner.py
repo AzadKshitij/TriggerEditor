@@ -524,7 +524,10 @@ class _Run:
 
         runner = threading.Thread(target=target, daemon=True, name="td-runner")
         runner.start()
-        sup.poll(runner)
+        try:
+            sup.poll(runner)
+        finally:
+            executor.shutdown()
         self._finish_run(report, result, ok_ids, codes)
 
     def _finish_run(self, report, result: dict, ok_ids: set, codes: dict) -> None:

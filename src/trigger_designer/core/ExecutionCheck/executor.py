@@ -5,12 +5,12 @@ comprehensive error reporting.
 All imports and functions are allowed for maximum flexibility.
 """
 
-import gc
 import os
 import queue
 import re
 import threading
 import traceback
+import weakref
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
@@ -54,6 +54,19 @@ class SecurityConfig:
     max_execution_time: float = 30.0  # seconds
 
 
+def _node_worker_loop(tasks: queue.Queue[Callable[[], None] | None]) -> None:
+    """Pooled worker body. Deliberately holds no reference to the executor."""
+    while True:
+        task = tasks.get()
+        if task is None:
+            return
+        try:
+            task()
+        except BaseException:  # noqa: BLE001 - the worker must outlive any task
+            logger.exception("Node executor task raised unexpectedly")
+        del task
+
+
 class NodeExecutionError(Exception):
     """Custom exception for node execution errors."""
 
@@ -77,11 +90,6 @@ class ExecutionTimeoutError(NodeExecutionError):
 class NodeExecutor:
     """Python code executor with timeout monitoring and error handling."""
 
-    # gc.collect() is expensive (full cyclic GC pass) and buys little per
-    # call since polars/pyarrow objects are refcounted, not cycle-heavy;
-    # run it periodically instead of after every single node execution.
-    gc_collect_interval = 20
-
     def __init__(self, security_config: SecurityConfig | None = None) -> None:
         """Initialize the NodeExecutor.
 
@@ -91,7 +99,6 @@ class NodeExecutor:
         self.execution_context: dict[str, Any] = {}
         self._seed_base_globals()
         self.security_config = security_config or SecurityConfig()
-        self._executions_since_gc = 0
         # One daemon worker thread reused for every node execution in this
         # NodeExecutor's lifetime, instead of spawning+joining a fresh OS
         # thread per node. Kept as a plain daemon thread + queue (rather
@@ -115,26 +122,57 @@ class NodeExecutor:
         self._start_worker()
 
     def _start_worker(self) -> None:
-        """Start a fresh pooled worker with its own queue."""
+        """Start a fresh pooled worker with its own queue.
+
+        The worker target is a module-level function that sees only its queue,
+        never ``self``: a bound method would keep the executor alive for as
+        long as the thread idles, so a discarded executor could never be
+        collected and its thread would live until process exit (one leaked
+        thread per Run click - hundreds across a test session).
+        ``weakref.finalize`` posts the stop sentinel when the executor is
+        garbage collected, as a backstop for owners that never call
+        :meth:`shutdown`.
+        """
+        old_finalizer = getattr(self, "_worker_finalizer", None)
+        if old_finalizer is not None:
+            old_finalizer.detach()
         tasks: queue.Queue[Callable[[], None] | None] = queue.Queue()
         self._node_task_queue = tasks
         self._node_worker_thread = threading.Thread(
-            target=self._node_worker_loop,
+            target=_node_worker_loop,
             args=(tasks,),
             daemon=True,
             name="NodeExecutorWorker",
         )
         self._node_worker_thread.start()
+        self._worker_finalizer = weakref.finalize(self, tasks.put, None)
 
-    def _node_worker_loop(self, tasks: queue.Queue[Callable[[], None] | None]) -> None:
-        while True:
-            task = tasks.get()
-            if task is None:
+    def shutdown(self, timeout: float = 2.0) -> None:
+        """Stop the pooled worker thread; idempotent and never raises.
+
+        Posts the stop sentinel and waits at most ``timeout`` seconds. A worker
+        stuck inside a node (the case ``_execute_with_timeout`` abandons) is
+        not killed: it is a daemon, exits once the node returns, and the wait
+        is bounded so the GUI never hangs. A later ``execute_node`` starts a
+        fresh worker, so a shut-down executor stays usable.
+        """
+        try:
+            finalizer = getattr(self, "_worker_finalizer", None)
+            if finalizer is not None:
+                finalizer.detach()
+            thread = getattr(self, "_node_worker_thread", None)
+            if thread is None:
                 return
-            try:
-                task()
-            except BaseException:  # noqa: BLE001 - the worker must outlive any task
-                logger.exception("Node executor task raised unexpectedly")
+            self._node_task_queue.put(None)
+            if thread.is_alive() and thread is not threading.current_thread():
+                thread.join(timeout)
+        except Exception:  # noqa: BLE001 - shutdown runs from slots/destructors
+            logger.exception("Node executor shutdown failed")
+
+    def _ensure_worker(self) -> None:
+        thread = self._node_worker_thread
+        if not thread.is_alive():
+            self._start_worker()
 
     def reset_cancel(self) -> None:
         """Forget an earlier cancel request (called when a run starts)."""
@@ -224,6 +262,7 @@ class NodeExecutor:
             finally:
                 done.set()
 
+        self._ensure_worker()
         self._node_task_queue.put(target)
 
         if not done.wait(timeout):
@@ -330,12 +369,11 @@ class NodeExecutor:
 
         finally:
             result.finished_at = _utc_now_iso()
-            # Periodic garbage collection instead of every node (see
-            # gc_collect_interval) - a full gc.collect() per call was
-            # measured as one of the largest fixed per-node costs.
-            self._executions_since_gc += 1
-            if self._executions_since_gc >= self.gc_collect_interval:
-                gc.collect()
-                self._executions_since_gc = 0
+            # No gc.collect() here. This runs on the run's worker thread, and
+            # a full collection there also destroys any unreachable Qt
+            # wrappers (graphics items, widgets of discarded windows) on a
+            # non-GUI thread: an intermittent Windows access violation, 0/24
+            # crashes with this removed against ~40% before. Frames are
+            # refcounted, so the automatic collector is enough.
 
         return result

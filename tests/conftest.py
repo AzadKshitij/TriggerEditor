@@ -212,6 +212,48 @@ def _no_leaked_qt_windows(qapp):
     GlobalLogger.get_instance().set_main_window(None)
 
 
+_POOLED_THREAD_NAMES = ("NodeExecutorWorker",)
+
+
+def _pooled_threads() -> list:
+    import threading
+
+    return [
+        t
+        for t in threading.enumerate()
+        if t.is_alive() and t.name.startswith(_POOLED_THREAD_NAMES)
+    ]
+
+
+@pytest.fixture(autouse=True)
+def _no_leaked_worker_threads():
+    """Fail a test that leaves a ``NodeExecutorWorker`` thread running.
+
+    Every ``NodeExecutor`` owns one pooled daemon thread. Hundreds were left
+    idle across a session (one per Run click, never stopped), so a test or a
+    product path that discards an executor without releasing it is reported
+    here, by name.
+    """
+    before = {id(t) for t in _pooled_threads()}
+    yield
+    import time
+
+    gc.collect()
+    deadline = time.monotonic() + 2.0
+    while True:
+        leaked = [t for t in _pooled_threads() if id(t) not in before]
+        if not leaked or time.monotonic() > deadline:
+            break
+        time.sleep(0.02)
+        gc.collect()
+    if leaked:
+        pytest.fail(
+            f"{len(leaked)} NodeExecutorWorker thread(s) outlived the test: "
+            + ", ".join(f"{t.name}#{t.ident}" for t in leaked),
+            pytrace=False,
+        )
+
+
 @pytest.fixture()
 def no_modal_dialogs(monkeypatch):
     """Keep file-load and run UI out of tests, and capture what it would show.

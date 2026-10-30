@@ -67,6 +67,16 @@ class WorkflowWorker(QThread):
         self._cancel.set()
 
     def run(self) -> None:
+        try:
+            self._run()
+        finally:
+            # The executor is per run: release its pooled thread here, on the
+            # worker thread, so the GUI never waits on it.
+            shutdown = getattr(self._executor, "shutdown", None)
+            if callable(shutdown):
+                shutdown()
+
+    def _run(self) -> None:
         outcome = run_nodes(
             self._nodes,
             self._executor,
