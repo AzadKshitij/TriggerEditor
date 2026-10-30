@@ -33,6 +33,7 @@ from trigger_designer.qt.helpers.rename_map import (
 )
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
+from trigger_designer.qt.node_runtime import NodeErrorState
 from trigger_designer.qt.node_content import (
     ConfigContent as ConfigContent,
     DockBinding as DockBinding,
@@ -597,101 +598,35 @@ class TriggerNode(Node):
         except RuntimeError:
             return ""
 
-    # -- structured error state -------------------------------------------
-    _errors_by_source: dict[str, NodeError] | None = None
+    # -- structured error state (see NodeErrorState in node_runtime) --------
+    @property
+    def errors(self) -> NodeErrorState:
+        """Created on first use, so a subclass that touches errors before
+        ``super().__init__`` finishes still works."""
+        state = self.__dict__.get("_error_state")
+        if state is None:
+            state = NodeErrorState(self)
+            self.__dict__["_error_state"] = state
+        return state
 
     def _errors_dict(self) -> dict[str, NodeError]:
-        if self._errors_by_source is None:
-            self._errors_by_source = {}
-        return self._errors_by_source
+        return self.errors.by_source
 
     @property
     def current_error(self) -> NodeError | None:
-        store = self._errors_dict()
-        return store.get("run") or store.get("live")
+        return self.errors.current
 
     def set_error(self, error: NodeError, source: str = "live") -> None:
-        store = self._errors_dict()
-        old = store.get(source)
-        store[source] = error
-        self._apply_error_state()
-        if old is None or old.fingerprint != error.fingerprint:
-            self._log_new_error(error)
-        problems = self._problems_store()
-        if problems is not None and not (error.knock_on and source == "live"):
-            problems.upsert(error, source)
+        self.errors.set(error, source)
 
     def clear_error(
         self, source: str | None = None, *, _seen: set[int] | None = None
     ) -> None:
-        seen = set() if _seen is None else _seen
-        if id(self) in seen:
-            return
-        seen.add(id(self))
-        store = self._errors_dict()
-        if source is None:
-            removed = list(store)
-            store.clear()
-        else:
-            removed = [source] if store.pop(source, None) is not None else []
-        self._apply_error_state()
-        problems = self._problems_store()
-        if problems is not None:
-            for item in removed:
-                problems.remove(self.id, item)
-        if source in (None, "run"):
-            for child in self.getChildrenNodes():
-                current = getattr(child, "current_error", None)
-                if current is not None and current.knock_on:
-                    child.clear_error("run", _seen=seen)
-
-    _changes_pending: bool = False
+        self.errors.clear(source, _seen=_seen)
 
     def set_changes_pending(self, pending: bool) -> None:
         """Show (or clear) the yellow "!" for edits that have not run yet."""
-        if pending == self._changes_pending:
-            return
-        self._changes_pending = pending
-        self._apply_error_state()
-
-    def _apply_error_state(self) -> None:
-        error = self.current_error
-        if error:
-            tooltip, badge = error.render_tooltip(), error.severity
-        elif self._changes_pending:
-            tooltip = "Changes pending - the node runs when you click away"
-            badge = "pending"
-        else:
-            tooltip, badge = "", ""
-        self._set_node_tooltip(tooltip)
-        gr = getattr(self, "grNode", None)
-        if gr is not None:
-            try:
-                gr.set_error_badge(badge)
-            except RuntimeError:
-                pass
-
-    def _problems_store(self):
-        try:
-            view = self.scene.getView() if hasattr(self.scene, "getView") else None
-        except IndexError, RuntimeError, AttributeError:
-            view = None
-        owner = view.parentWidget() if view is not None else None
-        while owner is not None and not hasattr(owner, "problems"):
-            owner = owner.parentWidget()
-        return getattr(owner, "problems", None)
-
-    def _log_new_error(self, error: NodeError) -> None:
-        try:
-            logger.error(error.render_text(include_technical=True))
-        except Exception:  # noqa: BLE001, S110 - logging must never break eval
-            pass
-        try:
-            from trigger_designer.qt.helpers import global_logger
-
-            global_logger.error(error.render_summary())
-        except Exception:  # noqa: BLE001, S110 - dock may not exist in tests
-            pass
+        self.errors.set_changes_pending(pending)
 
     def processInputs(self, input_values: list[Any]) -> Optional[Any]:
         # Override this method in subclasses to process the input values
