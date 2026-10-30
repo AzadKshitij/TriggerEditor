@@ -280,4 +280,4 @@ The brief described `main` at `71b4041`. These statements no longer hold on
 | "registerInputWidget records a whole-scene snapshot" | Still true for `registerInputWidget`; but shaping/audit nodes use `set_setting` -> `push_property_change`/`push_list_change`. No node subclass now relies on `history_stamp_callback`. |
 | `tests/integration` holds tests (CONTRIBUTING) | Empty directory (only `__pycache__`). |
 | Dock icon buttons `30x30 / 12px` | `IconButton` default glyph is 16 px (caption buttons 12 px); AGENTS.md says 16 px. Icons are Material Symbols (`qt-material-icons`), not the old `ui/` SVGs. |
-| `ruff check` baseline not clean (76 errors) | Not re-measured in this pass; run ruff only on the files you touch. |
+| `ruff check` baseline not clean (76 errors in `core`) | At `e2b610a`, `ruff check src tests scripts` reports 562 errors (436 auto-fixable) and `ruff format --check` would reformat 20 files. Run ruff only on the files you touch and compare before/after. |
