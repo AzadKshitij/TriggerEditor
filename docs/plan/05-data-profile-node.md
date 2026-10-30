@@ -2,7 +2,15 @@
 
 Status: implementation plan, no source changed. Read `docs/plan/00-codebase-brief.md` first
 (sections 3.7 recipe, 4 evaluation, 5 dock, 6 undo, 9 tests, 10.3 summary outputs, 11.3 `DataProfile`).
-Every decision below is final; implement exactly as written. Polars 1.44.2, Python 3.13.12.
+Every decision below is final; implement exactly as written, **except where section 11 supersedes it**.
+Written against Polars 1.44.2 / Python 3.13.12; revalidated 2026-10-28 on Polars 2.0.0 / Python 3.14.8 (section 11).
+
+> **Revalidated 2026-10-28 (branch `feature` @ `984a1fc`). Read section 11 before coding.**
+> * Engine (`core/profile.py`, sections 3.2-3.7, 3.12, commit 1): verified on Polars 2.0.0 / Python 3.14. One fix applied below (`is_in(...implode())`).
+> * Node layer (3.8 data flow, 3.9-3.11 dock/undo, commits 2-4): **superseded by 11.3.** The node base was refactored into `ShapingNode`/`ShapingContent` (plan 07) after this plan was written; hand-written `TriggerNode` + content classes are no longer the pattern.
+> * Line numbers in section 2 are from `71b4041` and have drifted; 11.2 lists the re-verified anchors.
+> * Excel export depends on plan 06, which has not landed (11.4).
+> * Three new flags, a flag severity map and a changed `min_value`/`max_value` rule for text columns that look numeric or date-like (11.5) amend 3.3 and 3.7 and the expected values in 6.1 and 6.4.
 Commands use `.venv\Scripts\python.exe` (the brief explains why not bare `uv run`).
 
 ## 1. Goal and non-goals
@@ -236,7 +244,7 @@ updates the six widgets with `blockSignals` and re-applies enabled state (`rows`
 The view root is `_undo_composite = True`, so the dock sweep binds nothing (no duplicate snapshot entries, search text is not undoable).
 Do **not** add `history_stamp_callback`. Table sort/selection/search are UI state.
 
-### 3.12 Verified Polars snippets (all executed on 1.44.2; they are the code in step 1)
+### 3.12 Verified Polars snippets (executed on 1.44.2; the commit-1 code was re-run on 2.0.0, see 11.1)
 
 ```python
 lf.select(pl.len(), c.null_count(), (c == "").sum(), (st == "").sum(), (c != st).sum())     # st = c.str.strip_chars()
@@ -580,7 +588,7 @@ def _prepare(lf: pl.LazyFrame, s: ProfileSettings, coll: _Collector):
         while tag in lf.collect_schema().names():
             tag += "_"
         sampled = lf.with_row_index(tag).filter(
-            pl.col(tag).cast(pl.Int64).is_in(keep)).drop(tag)
+            pl.col(tag).cast(pl.Int64).is_in(keep.implode())).drop(tag)
         df = coll.one(sampled)
         return df.lazy(), df.height, True
     return lf, total, False
@@ -1128,3 +1136,196 @@ Never run bare `pytest` (brief 2.4: full run aborts). Manual: `.venv\Scripts\pyt
 * Plan 06 (workpaper): `build_workpaper(..., profiles: list[DataProfile])` may call `profile_frame` itself or take the Run frame; the `flags` column is the stable key for a "data quality observations" sheet; `profile_to_tsv` /
   `write_profile_xlsx` is an adapter: plan 06 owns `core/excel/write_frame_xlsx` and the `xlsxwriter` dependency. Expected shape: `from trigger_designer.core.excel import write_frame_xlsx`; `write_frame_xlsx(frame: pl.DataFrame, path: str, *, sheet_name: str = "Sheet1") -> None` (raises on failure; `None` -> blank cell). If plan 06 names it differently only the import line in `write_profile_xlsx` changes. This plan never imports plan 06 code elsewhere.
 * Plan 04 (audit tests) may reuse `NUM_RE`, `INT_RE`, `DATE_FORMATS` for text-to-number tests so both agree on what "looks numeric" means.
+
+## 11. Revalidation 2026-10-28 (Polars 2.0.0, Python 3.14.8, branch `feature` @ `984a1fc`)
+
+Supersedes the sections named in the banner. Everything here was checked by reading current code or running it, unless marked **unverified**.
+
+### 11.1 Engine check: what was run and what it showed
+
+The commit-1 code block (`core/profile.py`) was extracted verbatim and run with the project's own `.venv` (`polars 2.0.0`, `python 3.14.8`) on a
+50,000-row, 19-column frame (number/zero-padded/decimal-comma/date/mixed/whitespace text; float, int, bool, date, datetime, duration,
+categorical, enum, decimal, list, struct, binary, all-null, NaN-containing float), in all three sample modes, plus a `pl.defer` socket and an
+all-String `scan_csv(infer_schema=False)` input.
+
+| Check | Result |
+|---|---|
+| `profile_frame` in `full` / `head` / `random` | runs; `passes` = 4 / 4 / 5 as budgeted in 3.5; output schema equals `PROFILE_SCHEMA` (42 columns) |
+| Dtypes incl. Duration, List, Struct, Binary, Null, Decimal, Enum | no exception; nested columns get null count only (3.4) |
+| Suggested types / flags on the test frame | digit text -> `Int64` + `numeric_as_text`; zero-padded -> `String` + `leading_zeros`; `1,5` text -> `Float64` + `decimal_comma_suspected`; ISO dates -> `Date` + `date_as_text`; mixed -> `mixed_numeric_text`; padded text -> `leading_trailing_whitespace`; all-null -> `all_null`; NaN float -> `nan_values` |
+| `pl.defer(fn, schema=PROFILE_SCHEMA)` | works; `collect_schema()` returns all 42 columns without calling `fn` |
+| `scan_csv(infer_schema=False)` all-String | works; same suggestions as the in-memory frame |
+| Deprecations | **one**: `is_in` with a same-dtype collection is "ambiguous and deprecated; use `implode`" (the `random` mode index filter). **Fixed in the commit-1 block above** (`is_in(keep.implode())`); after the fix the run emits no warnings |
+
+Timing on this frame was ~0.2 s, but the 1M-row figures in 3.5 and pitfall 4 (7.8 s, 22.3 s, 4.3 s) are **from 1.44.2 / 3.13 and were not re-measured**; re-run `tests/benchmarks/test_data_profile_perf.py` before trusting them.
+Not run: the unit tests of section 6.1 (they do not exist yet), and any Qt code.
+
+### 11.2 Anchors re-verified against the current tree (use these, not the section 2 line numbers)
+
+| Fact | Now |
+|---|---|
+| `ReportNodes` has one member `GRAPH`; append `DATA_PROFILE` after it | `core/node_configuration.py:71-72` |
+| Lazy spec for Graph (add ours after it); helper-module exclusion set | `qt/widgets/nodes/__init__.py:122-128`; `_LAZY_HELPER_MODULES` at `:207-211` (now includes `Report.pyqtgraph_view`) |
+| Shift+A menu reads `NODE_REGISTRIES` (unchanged mechanism) | `qt/helpers/context_menu_mixin.py:41-45` |
+| `frame_schema` lives in `core/frames.py` (re-exported by `node_base`) | `core/frames.py:9` |
+| Run executor per-node cap | `SecurityConfig.max_execution_time: float = 30.0` at `core/ExecutionCheck/executor.py:51` (enforced in `_execute_with_timeout`, `:163`) |
+| `iter_dock_widgets`, `registerUnboundDockWidgets`, `_inside_composite` | `qt/node_base.py:622`, `:661`, `:689` |
+| `ConfigDock.updateConfig(nodes, force=False)`; `_current_key` | `qt/docks/node_config.py:82`, `:29` (short-circuit body not re-read; **unverified**) |
+| `is_previewable` accepts LazyFrame/DataFrame | `qt/models/preview_sampling.py:26` |
+| Data Preview unwraps `entry["data"]` | `qt/docks/data_preview.py:346` |
+| Off-thread pattern | `qt/models/preview_worker.py`: `_keep_alive` `:34`, `PreviewCollectWorker` `:71` |
+| Table viewer export methods (still call `write_excel`; still do not reuse) | `qt/models/polars_table_viewer.py:1161` (`export_csv`), `:1186` (`export_excel`, `write_excel` at `:1205`) |
+| Theme colour access | `qt/theme_manager.py:604` (`color`), `:836` (`get_theme_manager`) |
+| `IconButton`, `TextButton`, `NoWheelComboBox` | `qt/widgets/common/config_widgets.py:56`, `:123`, `:146`; `Chip`, `ConfigSection`, `FormRow`, `EmptyStateLabel` **not re-located** (**unverified**; import them from `qt.widgets.common` as `shaping_support.py` does) |
+| UI icon ids | `qt/resources.json`: `icon_copy` `:136`, `icon_save` `:138`, `icon_options` `:140`, `icon_refresh` `:141`, `icon_search` `:144`. These are `"mode": "material"` names, not SVG paths. **`icon_copy` now exists: drop the new `ui/copy.svg` of 3.10.** No Excel/export icon id was found: still new |
+| `QTableView#ColumnTable` QSS | `resources/qt/themes/base.qss:2404-2410` (was `:2178`) |
+| Report node icons present | `resources/qt/images/node_icons/Report/Graph.svg`, `Image.svg`; a `Profile` icon is still new |
+| Count precedent (3.8) | gone: `Transform/count_records.py` is now a 50-line `ShapingNode` and the logic is `core/shaping/count.py` (it collects inside `run_node`, then `.lazy()`, plus a `describe` chip). Same idea, new shape |
+
+### 11.3 Node layer: what replaces 3.8, 3.9 (hand-wiring), 3.11 and commits 2-4
+
+**What changed.** Plan 07 landed. Nodes are now declarative:
+
+* Qt-free logic lives in `core/shaping/<name>.py` with `DEFAULTS: dict`, `run_node(frames, settings) -> list[LazyFrame]` (one per output socket) and optional `describe(frames, settings) -> list[(text, tone)]` (dock chips).
+* The Qt side is `class XContent(ShapingContent)` (class attrs `SETTINGS`, `MODULE`, `OUTPUT_KINDS`, `INPUTS`, `HISTORY`, `SUMMARY`, `FORM`, `PRESENTATION_SETTINGS`) and `class TriggerNode_X(ShapingNode)` with `content_class`, `output_text`. Reference implementations: `Transform/count_records.py`, `Report/graph.py` (Graph overrides `create_layout`, `after_execution`, and adds its own signals).
+* **Generated code is generic**: `ShapingContent.get_code()` emits `from <MODULE> import run_node as _run_node` plus `json.loads(<settings json>)` and assigns every output variable (`var_<kind>_<id>`; unwired input -> `pl.DataFrame().lazy()` for all outputs). Live evaluation and Run call the same `run_node`.
+* **Settings undo** is `ShapingContent.set_setting(key, value, text, merge_key)` (one undo step each); `FORM` builds the dock controls and is swept by the existing undo bindings. Settings persist under one key, `settings`.
+* **Errors** are raised as `ShapingError` and shown through `translate_exception` / `node.set_error(...)` (plan 03 package `core/errors/` exists); the old "tooltip string + markInvalid" idiom in 3.8 is obsolete.
+
+**Mapping for Data Profile (decided; replaces the cited sections):**
+
+| Old plan | New |
+|---|---|
+| `core/profile.py` engine (3.2-3.7, commit 1) | **Unchanged.** Keep it; plans 02/06 depend on its interfaces (section 10). It is not itself a shaping module. |
+| Hand-written `TriggerNode_DataProfile` + `DataProfileContent`, `processInputs`, `get_code` (3.8, commits 2-3) | New thin adapter `core/shaping/data_profile.py`: `DEFAULTS = {the six settings of 3.2}`; `run_node(frames, settings)` returns `[as_lazy(frames[0]), profile_table(frames[0], **settings).lazy()]` (collects inside `run_node`, so Run fails loudly, as Count does); `describe` returns the Full/Sample chip text of 3.6. Then `DataProfileContent(ShapingContent)` with `OUTPUT_KINDS = ("data", "profile")`, `INPUTS = 1`, `HISTORY = "Profile"`, `FORM` = one collapsible **Options** `FormSection` (`combo` sample_mode; `int` fields for rows, seed, top N, approx threshold, bins; `show_if` hides rows unless mode != `full` and seed unless `random`), and `TriggerNode_DataProfile(ShapingNode)` with `output_text = ("D", "P")`. Register as `@register_node(ReportNodes.DATA_PROFILE, NodeTypes.REPORT)`; op id `report.data_profile` is unchanged. |
+| Settings undo texts / merge keys (3.11) | Replaced by `set_setting` with the same texts (`"Profile Sample Changed"`, `"Profile Rows Changed"` ...) passed as `text`; use `Field` bursts for the spin boxes. No bespoke `_sync_widgets_from_model` for the six settings. |
+| `ProfileDockView`, worker, cache, `_undo_composite` (3.9-3.10, commit 4) | **Still needed**, but appended by overriding `create_layout`: call `super().create_layout(dock_layout)` for the Options form, then add the view (root `_undo_composite = True`, as before). `ProfileWorker` and `get_or_compute` are unchanged in design. |
+
+**Decision needed in implementation (not optional): the dock must profile the full input, but the node base samples it.** `ShapingNode.processInputs`
+passes `live_sample(entry["data"])` to the content, i.e. `frame.head(LIVE_SAMPLE_ROWS)` with `LIVE_SAMPLE_ROWS = 100` (`core/shaping/common.py:73`),
+and it sets `param` to `live_sample` of every output. Consequences, and the resolution chosen here:
+
+1. `TriggerNode_DataProfile` overrides `processInputs`: before delegating to `super().processInputs(...)`, store the **unsampled** upstream frame on the content (`content.full_frame = entry["data"]`, found the same way the base does with `getInputWithSocket(0)`). The dock worker and the `sample_mode` logic of 3.5-3.6 read `full_frame`. The 100-row `frames[0]` is used only for the output sockets and chips.
+2. Live socket `D` is therefore the first 100 rows (like every shaping node); Run's `D` is the whole input. The plan's earlier "same object, unchanged, live" (3.8) no longer holds live. Say so in the chip: `describe` returns `("Live output: first 100 rows. Dock and Run profile the whole input.", "warning")`, same idiom as Count.
+3. Live socket `P` is `head(100)` of the profile frame, which has one row per input column: **inputs with more than 100 columns show a truncated profile live**; Run is not truncated. Document in `NODE_REFERENCE.md`; do not work around it.
+4. `get_code` is the generic one: Run recomputes from `_run_node([var], settings)`, inside the executor's 30 s cap (`executor.py:51`; pitfall 4 still applies, and the 22 s figure is a 1.44.2 measurement).
+
+If implementers would rather keep the node entirely generic (no `full_frame`), the fallback is "dock profiles the 100-row sample and labels it so"; that makes the node much less useful on real files and is **not** the plan.
+
+### 11.4 Other drift to handle
+
+* **Plan 06 has not landed.** `core/excel/` does not exist and `xlsxwriter` is not declared in `pyproject.toml` (the string appears only in `core/errors/catalogue.py:356` and `translator.py:795`, which translate the missing-module error). Pitfall 11 already says what to do: the Excel button must degrade to a chip message and the Excel tests must skip until `core.excel.write_frame_xlsx` exists. Do not add `xlsxwriter` from this plan.
+* **Icons.** Use `icon_copy`, `icon_save`, `icon_refresh`, `icon_search` (all exist, material-mode). Add one new id for Excel export and the node icon SVG under `Report/`. Whether a suitable Material name exists in `qt-material-icons` was **not checked**.
+* **Charts.** `pyqtgraph` 0.14.0 is a declared dependency and `Report/pyqtgraph_view.py` exists. The decision in 3.1 (painted `MiniBarChart`, no plotting library) is unchanged; a pyqtgraph bar chart is a possible alternative if the owner prefers, but is not adopted here.
+* **Environment strings.** `pyproject.toml` now requires `>=3.14.0,<3.15`, pins `polars[pyarrow]==2.0.0`, `numpy==2.5.4`, ruff targets `py314`. Replace "Polars 1.44.2, Python 3.13.12" wherever commands or expectations are stated. The test baselines in section 7/8 ("334+ unit, 20 failed + 7 errors in ui") and the PyQt6 assumptions in the brief predate this and must be re-measured; the app now uses PySide6 through `qtpy` (`pyproject.toml`). `docs/plan/00-codebase-brief.md` has the same stale versions (not edited here).
+* **Not re-verified** (still as originally written, so treat with care): sections 5, 6, 9 pitfalls 5-8, and the section 4 steps for commit 5 (e2e golden paths, `TRIGGER_UPDATE_E2E_GOLDENS`). The test files named in section 6 do not exist.
+
+### 11.5 Amendments from the first real-data run (2026-10-28)
+
+Running the engine on `savedfiles/Example_2_Retail_Ledger/data/orders.csv` (40,800 rows, read as all-String) showed four weaknesses. They are fixed as follows; the output
+schema (`PROFILE_SCHEMA`, 42 columns) does **not** change.
+
+1. **`mixed_date_text`** (new flag). String column, `base > 0`, `0.5 <= date_like/base < 0.98` (constant `DATE_MIXED_MIN = 0.5`) and `integer_like/base < 0.98`
+   (so 8-digit `yyyymmdd`-looking ids never fire it). Meaning: mostly dates, but a real share are not (blank, a second format, a sentinel). The `Order TS` column in `orders.csv` (about 91% date-like) is the motivating case.
+2. **`negative_values`** (new flag, info). `numeric_basis != ""` and `negative_count >= 1`. Native and parsed-text columns alike; a trailing-minus value like `123-` is **not** a negative (it is counted by `trailing_minus`).
+3. **`outlier_suspected`** (new flag, warning). `numeric_basis != ""`, at least 20 non-null rows, `std > 0`, and `max(max_numeric - mean, mean - min_numeric) / std >= 10.0` (constant `OUTLIER_Z`). It needs no extra pass: it uses figures P1 already has.
+   A uniform column peaks near z = 1.7 and a normal one of 40,000 rows near 4, so 10 means "look at this", not "this is wrong".
+4. **Flag severity.** New module constant `FLAG_TONE: dict[str, str]` maps every flag to `"info"` or `"warning"`; the dock draws `info` chips muted and `warning` chips in the `warning` theme colour. `info`:
+   `numeric_as_text`, `date_as_text`, `high_cardinality`, `constant`, `negative_values`. Everything else is `warning`. The `flags` column keeps the plain comma list (no tones in data). *Reason:* on a CSV every numeric column carries `numeric_as_text`; that is true and useful but must not look like a defect.
+5. **`min_value` / `max_value` for text that looks numeric or date-like.** After the suggestion is made, if `suggested_type` is `Int64`/`Float64` the two texts are the **parsed** min and max (`f"{x:.15g}"`, so `884297`, `1002.89`);
+   if it is `Date`/`Datetime` they are the parsed min/max as ISO text (`%Y-%m-%d` / `%Y-%m-%d %H:%M:%S`; the first matching format wins per value, so `dd/mm` vs `mm/dd` ambiguity is not resolved). Any other String column keeps the lexicographic min/max of 3.3.
+   *Reason:* lexicographic order of `1002.89` / `999.54` / `31-12-2024` is misleading. The numeric range comes from P1 figures that already exist. The date range is computed in the **detail pass (P2)**, only for columns whose suggestion is `Date`/`Datetime`: adding four parse aggregates to P1 for every text column was measured at +54% on that pass (4.3 s to 6.6 s for ten 1M-row text columns), so it was moved. No extra collect.
+
+6. **Stable floats.** `mean_value`, `median_value`, `std_value` and `sum_value` are rounded to 12 significant digits (`_stable`). Found by test: Polars adds floats across threads, so two runs over identical data differed in the last bit of `std_value` (`...37343` vs `...37344`). Min/max are exact and unrounded. *Reason:* the product promise is reperformance; the same file must give a byte-identical profile table.
+
+`FLAG_ORDER` becomes: `all_null, all_blank, constant, high_cardinality, mostly_null, mixed_numeric_text, mixed_date_text, leading_zeros, trailing_minus, decimal_comma_suspected, leading_trailing_whitespace, numeric_as_text, date_as_text, negative_values, outlier_suspected, nan_values, inf_values`.
+
+**Changed expectations in 6.1** (fixture `FX`): `qty` flags `["negative_values"]` (not `[]`); `price` flags `["negative_values","nan_values","inf_values"]`;
+`test_flags_have_no_false_positives` asserts `flag == []` and that `qty` has **no warning-tone flag**. `amount`, `sap`, `id`, `when`, `locale` flags are unchanged. New tests: `test_mixed_date_text_flag`, `test_negative_values_flag`, `test_outlier_flag`, `test_text_min_max_is_parsed`, `test_flag_tone_covers_every_flag`.
+**Changed expectation in 6.4** (`MESSY_CSV`): `posted` is 5 of 6 date-like (83%), so its flags are `mixed_date_text` (not `""`).
+
+### 11.6 Implementation status (2026-10-28, uncommitted on `feature`)
+
+Built as section 11.3 describes, with these differences from the original text:
+
+| Area | What exists | Deviation from the plan |
+|---|---|---|
+| Engine | `core/profile.py` (+ `profile_to_tsv`, `write_profile_xlsx`, `profile_summary`, `FLAG_TONE`) | 11.5 amendments; floats rounded to 12 digits; `is_in(...implode())` |
+| Runner | `core/shaping/data_profile.py`: `DEFAULTS`, `LIMITS`, `normalize`, `run_node`, `mode_text`, `describe` | new (the shaping contract replaces the hand-written node) |
+| Node | `qt/widgets/nodes/Report/data_profile.py`: `DataProfileContent(ShapingContent)`, `TriggerNode_DataProfile(ShapingNode)`; enum `ReportNodes.DATA_PROFILE`, lazy spec, `node_data_profile` icon | `DEFER_EVALUATION = False`; overrides `processInputs` to keep the unsampled frame and to fail on a broken upstream plan |
+| Settings | The six settings are a collapsed **Options** `FormSection` built by `ShapingContent`; undo is `set_setting` | No `settingChanged` signal, no per-setting handlers, no `apply_settings` on the view (11.3 table) |
+| View | `qt/widgets/profile_view.py`: `ProfileDockView`, `ProfileTableModel`, `NullBarDelegate`, `MiniBarChart` and the pure helpers `detail_rows`, `status_text`, `chart_for`, `suggested_text`, `FLAG_LABELS` | Rows start in **input column order** (header click sorts); fixed starting column widths (`COLUMN_WIDTHS`), found necessary by rendering the real dock; chip tone `warning` added to `base.qss` |
+| Worker | **removed** (see 11.8): the live profile is computed on the GUI thread | the plan's `ProfileWorker`, request ids and stale-result handling no longer exist |
+| Icons | node SVG `Report/Data Profile.svg`; `icon_export_excel` (Material `table_view`; confirmed to render in the dock, see `docs/plan/examples/data_profile/dock_default.png`) | `icon_copy` already existed; no new `ui/copy.svg` |
+| Excel | `write_profile_xlsx` calls `core.excel.write_frame_xlsx`; the button degrades to a chip message | plan 06 has not landed; the workbook tests skip until it does |
+| Docs | `docs/NODE_REFERENCE.md` row | - |
+
+**Tests:** `tests/unit/test_profile_core.py` (42, one skipped for the Excel helper), `tests/unit/test_data_profile_node.py` (15), `tests/ui/test_data_profile_dock.py` (18, one skipped), `tests/e2e/test_data_profile_golden.py` (2) with golden `tests/e2e/fixtures/expected/data_profile_messy.csv`, fixtures in `tests/support/profile_fixtures.py`.
+Not written: the opt-in benchmark file of 6.5 (figures below were measured with throwaway scripts).
+
+**Measured on Polars 2.0.0 / Python 3.14.8 (replaces the 1.44.2 figures in 3.5 and pitfall 4):**
+
+| Case | Time | Passes |
+|---|---|---|
+| 1M rows x 30 columns, in memory | 9.5 s | 4 |
+| 1M x 30 all-String CSV (344 MB), `full` | 42.9 s (measured before the date range moved to P2; not re-measured) | 4 |
+| same CSV, `head` 100k | 2.6 s | 4 |
+| same CSV, `random` 100k | 3.7 s | 5 |
+
+**Known limitation, a Polars 2.0 regression, not an engine cost: wide frames.** The same code takes 1.0 s on Polars 1.44.2 and 27 s on 2.0.0 for 1,500 columns; time grows roughly quadratically in the column count on 2.0.0:
+
+| Columns | Polars 2.0.0 (int / text columns) | Polars 1.44.2 |
+|---|---|---|
+| 30 | 0.15 s / 0.17 s | 0.02 s / 0.09 s |
+| 100 | 0.41 s / 0.51 s | 0.04 s / 0.20 s |
+| 200 | 0.99 s / 1.29 s | 0.08 s / 0.40 s |
+| 400 | 2.8 s / 3.7 s | 0.15 s / 0.88 s |
+| 800 | 8.8 s / 10.3 s | 0.38 s / 2.1 s |
+
+Tried and **not** helpful: turning off any single optimizer pass, turning all of them off (16 s), splitting the select into 25 to 250-column chunks run through `collect_all` (about 10 s), projecting each chunk to its own columns first (about 10 s). Up to a few hundred columns this is well under a few seconds and the dock computes off the GUI thread, so nothing is mitigated here. Run has the 30 s per-node cap (`SecurityConfig.max_execution_time`), so an input of about 1,000+ columns can time out in Run in `full` mode.
+Worth reporting upstream with the `bench6` pattern (a `select` of ~14 aggregate expressions per column over an N-column frame).
+
+**Other finding:** Polars adds floats across threads, so the last bit of a mean/std/sum varied between identical runs; all float aggregates are rounded to 12 significant digits (`_stable`), pinned by `test_profile_is_byte_identical_across_runs` and `test_two_runs_give_the_same_profile`.
+
+**Pre-existing, unrelated:** `tests/e2e/test_workflow_goldens.py::test_file_outputs_match_golden[split]` fails identically on a clean `HEAD` (checked in a temporary worktree): the sample input has a leading unnamed index column, which Polars 2.0 names `column_1`, while `tests/support/frames.read_frame` only strips `""`/`Unnamed:*`.
+
+### 11.7 Changes after first use (2026-10-28)
+
+First use of the dock showed it profiling 100 rows ("Data: 100 rows") and offering too little. What changed:
+
+**A premise in 11.3 was wrong and is corrected.** 11.3 said the node could keep "the unsampled upstream frame" for the dock. It cannot: File Input and every shaping node already trim their live output (`file_input.py:1804`, `ShapingNode.processInputs`), so the node only ever receives the first 100 rows during live evaluation. The only place the whole input exists is a workflow **Run**. `full_frame` therefore holds whatever the upstream emitted (100 rows in practice) and is kept only so a test source that emits more is profiled in full.
+
+| Request | What was built |
+|---|---|
+| Show the full report after a Run | The Run executes `run_node` over the whole input and leaves the profile table in `var_profile_<id>`. `DataProfileContent.on_run_result` (called on the GUI thread by `TriggerSubWindow._on_node_finished`, a small additive hook in the shared run code) rebuilds a `DataProfile` with `profile_from_frame` and the dock switches to it (`view.source == "run"`, tooltip "Result of the workflow run at HH:MM:SS"). It stays until a setting changes (the key no longer matches), the Refresh button is pressed, or the next Run replaces it. It is **not** invalidated by upstream edits after the Run; the tooltip's run time is the cue. |
+| ... which needs the table to carry the chart data | `PROFILE_SCHEMA` gained `histogram` (JSON list of bin counts, after `top_count`): **43 columns**, additive. The table a user exports is now exactly what the dock and the report render. `profile_from_frame(frame, settings)` is the inverse of `profile_to_frame`; both are round-trip tested. |
+| Chip wording | `status_text`: "Data: 40,800 rows" (was "Full data: ..."); samples still read "Sample: first N rows" / "Sample: random N rows (seed S)". The Sample option's first choice is "All rows". |
+| Remove the "1 input - 2 outputs - profile table" line | `DataProfileContent.dock_summary()` returns `""`; the dock hides the line for this node only. |
+| Are we saving the report as HTML? | Not before; now yes. `core/profile_report.py` (Qt-free) holds the wording helpers and `profile_to_html`: one self-contained page (no scripts, no external files; offline-safe), a summary table that links to a card for **every** column (stats, flags, histogram or top values). Stray leading/trailing spaces are shown as amber dots. |
+| A button to see the full report | Toolbar button "Open the full report" writes the HTML to a temp file and opens it in the default browser (`QDesktopServices.openUrl`); temp files are removed at exit. Chosen over an in-app window because the app ships no WebEngine and one renderer then serves both the button and the export. |
+| One export button: CSV, HTML, Excel | One Export button with a menu: Copy to clipboard, CSV file..., HTML report..., Excel workbook.... The separate copy/CSV/Excel buttons are gone. Toolbar is now: filter, Full report, Export, Refresh. |
+| No Excel write | `xlsxwriter==3.3.0` added to `pyproject.toml` and `uv.lock` (the lock diff is the new package only). New `core/excel/__init__.py: write_frame_xlsx` (Polars `write_excel`: an Excel table with filter buttons, bold frozen header, fitted widths, nulls blank). This also fixes File Output's Excel format, which called the same missing library. Plan 06 still owns any richer workbook. |
+| "What is bins?" | Renamed **Chart bars** ("Number of bars in a number column's distribution chart"). Every option now has a hint; "Approx above" became **Estimate over**, "Rows" became **Rows (N)**. |
+
+**Refresh button** now discards the last Run's result and re-profiles the live rows (its job was always "recompute from what the canvas has").
+
+**Intermittent crash found while testing (open, unexplained):** see 11.8.
+
+### 11.8 No background thread; one open crash (2026-10-28)
+
+**Decision (owner): the profile does not run on another thread.** The live profile is computed on the GUI thread (`request_profile` calls `get_or_compute` directly). That is cheap because while you edit the canvas holds at most 100 rows; the profile of all rows is the workflow Run's, delivered by `after_execution` with nothing recomputed. Removed: `qt/models/profile_worker.py`, request ids and stale-result handling, `ProfileDockView.set_loading`, and a garbage-collection pause that had been added for the worker. This supersedes the threading text in 3.9 and pitfalls 3 and 6.
+Cost: the Polars 2.0 per-column overhead (11.6) now blocks the GUI instead of a worker: about 0.5 s at 100 columns, 1.3 s at 200, 3.7 s at 400, 10 s at 800 (live rows only; the Run's cost is unchanged).
+
+**Open: intermittent access violation in `tests/e2e/test_data_profile_golden.py`.** Two Run tests back to back (`test_run_gives_the_node_the_whole_input`, then `test_open_dock_switches_to_the_run_result`, which has the dock open) end in `Windows fatal exception: access violation` (exit 139) about 1 run in 15-45. The fault is always in the second test, inside `run_workflow_and_wait`: the main thread is in Qt's event loop, the executor threads are idle, and no Python frame is active at the fault. It still happens with no thread of this node in the process (2 of 45 after removal).
+Ruled out by experiment (each followed by a serial loop that still crashed): the profile worker thread; garbage collection during a profile; the `destroyed` handler capturing the view; a DataFrame carried through a queued cross-thread signal (now payload-free); the worker's cleanup running on its own thread; a slow live profile overwriting the Run result (a real race, fixed, but not the crash).
+Not reproduced: the second test alone (0/100); a Run with the dock open for Count or Data Profile, with or without File Output sinks (0/100 each); an unrelated Graph run test before my dock test (0/100); the dock view hammered 1,500 times on its own. **Caveat:** those controls ran 2-4 processes in parallel, which can hide a timing race; the fair serial control (the same two-test sequence for the plain Count node) was cancelled. So it is **not known whether the crash is specific to this node or already in the app's Run path.**
+If it needs settling: write two back-to-back Run tests for Count, the second with the dock open, and loop them serially (about 100 runs, ~5 minutes). A crash there makes it pre-existing; none makes it this node's.
+
+**Addendum (same day): nothing of this node runs off the GUI thread.** The first Run hand-off used `after_execution` (executor thread) plus a signal. It now uses `on_run_result`, which `TriggerSubWindow._on_node_finished` (`qt/helpers/workflow_execution_mixin.py`, GUI thread) calls with the node's variables after a successful run: an 11-line additive hook in shared code, wrapped so a raising node cannot abort the process. The content has no signal, no queued payload and no thread of its own (`test_the_content_has_no_executor_thread_hook`). The only threads left are the app's own: every node's generated code, including this node's `run_node`, executes on the workflow executor thread, as it does for all nodes.
+**The crash is not explained by any of this:** after the change it still happened in 3 of 60 serial runs of the two-test sequence (a batch of 45 before it was clean, which was luck at about a 3-5% rate). Counting every serial loop with a crash-prone configuration: 11 crashes in about 250 runs. Treat `test_open_dock_switches_to_the_run_result` as flaky until the Count-node control in this section has been run.
+
+### 11.9 Follow-ups (2026-10-30)
+
+* **Wide inputs.** Because the live profile runs on the GUI thread and Polars 2.0 plans it in roughly quadratic time in the column count (11.6), the live preview is skipped above `LIVE_MAX_COLUMNS = 150` columns (about 1 s at the limit). The dock shows "Live preview skipped" and a note ("N columns: ... Run the workflow to profile every column."); a Run still profiles every column and the dock then shows it. Inputs of about 1,000+ columns can still hit the Run's 30 s per-node cap.
+* **HTML report checked.** Rendered and inspected structurally (no horizontal overflow at 1,100 px or 375 px, every summary row links to its card, every column has a card with its chart). Not judged visually: the review pane was too small to see.
+* **File Output's Excel format** (same missing `xlsxwriter`) now has a regression test, as does the declared dependency.

@@ -58,6 +58,7 @@ op id is the stable identifier stored in saved workflows
 | Node Name | Node Image | Description |
 |---|---|---|
 | Graph | ![Graph](assets/node_icons/graph.png) | Charts the incoming data in a matplotlib window that unlocks after a successful run; passes its input through unchanged. |
+| Data Profile | ![Data Profile](../src/trigger_designer/resources/qt/images/node_icons/Report/Data%20Profile.svg) | Profiles every column of the whole input: nulls, blanks, distinct counts, min/max, numeric statistics and a histogram, the most frequent values, and a suggested type with quality flags (numbers or dates stored as text, mixed dates, leading zeros, stray whitespace, negatives, outliers). Socket `D` passes the input through; socket `P` is a one-row-per-column table (`PROFILE_SCHEMA`, see `docs/plan/05-data-profile-node.md`). The dock shows a sortable table and a per-column detail pane, a **Full report** button (opens an HTML report with a card for every column in the browser) and one **Export** menu (copy, CSV, HTML report, Excel). While you edit, the dock profiles only the first 100 rows the canvas holds (like every node); **run the workflow** and it switches to the profile of all rows, until a setting changes or the next run. Inputs over 150 columns skip the live preview (run the workflow to profile them). Options: sample (all rows, first N, random N with seed), top values, estimate-over threshold for distinct counts, chart bars. |
 
 ## Internal (not in the palette)
 

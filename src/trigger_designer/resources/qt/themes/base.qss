@@ -2309,6 +2309,9 @@ QLabel#Chip {{
     color: {accent_secondary};
     border: 1px solid {accent_primary}; }}
   QLabel#Chip[tone="muted"] {{ color: {text_inactive}; }}
+  QLabel#Chip[tone="warning"] {{
+    color: {warning};
+    border: 1px solid {warning}; }}
 QLabel#ContextLabel {{
   color: {text_inactive};
   font-size: 10px; }}

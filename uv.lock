@@ -1033,6 +1033,7 @@ dependencies = [
     { name = "qtpy" },
     { name = "shiboken6" },
     { name = "sqlglot" },
+    { name = "xlsxwriter" },
 ]
 
 [package.dev-dependencies]
@@ -1071,6 +1072,7 @@ requires-dist = [
     { name = "qtpy", specifier = "==2.4.3" },
     { name = "shiboken6", specifier = "==6.12.0" },
     { name = "sqlglot", specifier = ">=30.24,<31" },
+    { name = "xlsxwriter", specifier = "==3.3.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1157,4 +1159,13 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/b3/8f/705086c9d734d3b663af0e9bb3d4de6578d08f46b1b101c2442fd9aecaa2/win32_setctime-1.2.0.tar.gz", hash = "sha256:ae1fdf948f5640aae05c511ade119313fb6a30d7eabe25fef9764dca5873c4c0", size = 4867, upload-time = "2024-12-07T15:28:28.314Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e1/07/c6fe3ad3e685340704d314d765b7912993bcb8dc198f0e7a89382d37974b/win32_setctime-1.2.0-py3-none-any.whl", hash = "sha256:95d644c4e708aba81dc3704a116d8cbc974d70b3bdb8be1d150e36be6e9d1390", size = 4083, upload-time = "2024-12-07T15:28:26.465Z" },
+]
+
+[[package]]
+name = "xlsxwriter"
+version = "3.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/93/f2/98b45e52bc0330256bd4bb039cc44b28f838ad85602ce4f358f355d501bb/xlsxwriter-3.3.0.tar.gz", hash = "sha256:0a6bf2e4dcec8b29dd9b86d1e622132134c48bb6fd10f925fdfb229f0447199a", size = 221380, upload-time = "2026-10-22T00:26:03.317Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ce/9d/3d30eaaa7e06bdb6172f938b2661d64f8d899bdca54120384ecf3759488a/xlsxwriter-3.3.0-py3-none-any.whl", hash = "sha256:5f04772d43281da5109af66f39b65153359a203e896847c416476e709b024469", size = 179548, upload-time = "2026-10-22T00:26:02.009Z" },
 ]

@@ -40,6 +40,9 @@ dependencies = [
     # File handling
     "fastexcel>=0.21.0",
     "openpyxl>=3.1.5",
+    # Writes .xlsx: Polars' DataFrame.write_excel needs it, so File Output's
+    # Excel format and the Data Profile export fail without it.
+    "xlsxwriter==3.3.0",
     "orjson==3.13.0",
     # GUI framework: PySide6 (LGPLv3), not PyQt6 (GPLv3-or-commercial). The
     # application is MIT, and a bundle that ships Qt6 cannot honestly declare

@@ -251,6 +251,17 @@ class WorkflowExecutionMixin:
             )
             node.grNode.setPenExecuted()
             node.grNode.update()
+            # GUI-thread counterpart of ``content.after_execution`` (which runs
+            # on the executor thread): a node that wants its run result on screen
+            # reads it here, with no cross-thread hand-off.
+            on_run_result = getattr(
+                getattr(node, "content", None), "on_run_result", None
+            )
+            if callable(on_run_result):
+                try:
+                    on_run_result(result.variables)
+                except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                    logger.exception("on_run_result failed for {}", node_name)
         elif callable(getattr(node, "set_error", None)):
             logger.debug("Run failed for node {}", node_name)
             error = translate_exception(

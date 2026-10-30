@@ -126,6 +126,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_graph",
     },
     {
+        "module_path": "Report.data_profile",
+        "node_code": ReportNodes.DATA_PROFILE,
+        "node_type": NodeTypes.REPORT,
+        "node_title": "Data Profile",
+        "icon": "node_data_profile",
+    },
+    {
         "module_path": "Transform.count_records",
         "node_code": TransformNodes.COUNT_RECORDS,
         "node_type": NodeTypes.TRANSFORM,

@@ -127,6 +127,11 @@
         "mode": "rb"
     },
 
+    "node_data_profile":{
+        "path":"qt/images/node_icons/Report/Data Profile.svg",
+        "mode": "rb"
+    },
+
     "icon_add":{ "mode": "material", "name": "add" },
     "icon_remove":{ "mode": "material", "name": "remove" },
     "icon_move_up":{ "mode": "material", "name": "arrow_upward" },
@@ -134,6 +139,7 @@
     "icon_folder_open":{ "mode": "material", "name": "folder_open" },
     "icon_files":{ "mode": "material", "name": "folder_copy" },
     "icon_copy":{ "mode": "material", "name": "content_copy" },
+    "icon_report":{ "mode": "material", "name": "summarize" },
     "icon_technical":{ "mode": "material", "name": "expand_more" },
     "icon_save":{ "mode": "material", "name": "save" },
     "icon_external":{ "mode": "material", "name": "open_in_new" },

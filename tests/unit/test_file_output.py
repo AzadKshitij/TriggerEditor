@@ -161,3 +161,35 @@ def test_check_output_header_puts_src_on_path(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(sys, "path", list(sys.path))
     exec(compile(CHECK_OUTPUT_HEADER, "<header>", "exec"), {"__file__": fake_script})  # noqa: S102
     assert str(tmp_path / "src") in sys.path
+
+
+def test_excel_format_writes_a_readable_workbook(tmp_path):
+    """Excel output needs xlsxwriter; it was undeclared, so this used to fail."""
+    import polars as pl
+    import pytest
+
+    from trigger_designer.core.shaping import file_output
+
+    pytest.importorskip("xlsxwriter")
+    openpyxl = pytest.importorskip("openpyxl")
+    path = tmp_path / "out.xlsx"
+    frame = pl.DataFrame({"a": [1, 2, None], "b": ["x", None, "z"]}).lazy()
+    file_output.write_node([frame], {"filePath": str(path), "file_format": "excel"})
+    sheet = openpyxl.load_workbook(path).active
+    assert [[c.value for c in row] for row in sheet.iter_rows()] == [
+        ["a", "b"],
+        [1, "x"],
+        [2, None],
+        [None, "z"],
+    ]
+
+
+def test_xlsxwriter_is_a_declared_dependency():
+    import tomllib
+    from pathlib import Path
+
+    project = tomllib.loads(
+        (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text("utf-8")
+    )
+    declared = " ".join(project["project"]["dependencies"])
+    assert "xlsxwriter" in declared
