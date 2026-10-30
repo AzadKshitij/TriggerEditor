@@ -218,7 +218,7 @@ def no_modal_dialogs(monkeypatch):
 
     Returns a dict with ``warnings`` (validation messages that would have
     opened a QMessageBox) and ``run_code`` (the node lists ``getPyFile``
-    would have written to ``check_output.py`` in the working directory).
+    would have written to the last-run script).
     """
     from trigger_designer.qt import design_window
     from trigger_designer.qt.helpers import eval_progress, workflow_execution_mixin
@@ -243,8 +243,9 @@ def no_modal_dialogs(monkeypatch):
 
     monkeypatch.setattr(design_window, "QMessageBox", _RecordingMessageBox)
 
-    def _capture_code(_self, nodes):
+    def _capture_code(_self, nodes, path=None):
         captured["run_code"].append(nodes)
+        return ""
 
     monkeypatch.setattr(design_window.TriggerSubWindow, "getPyFile", _capture_code)
     monkeypatch.setattr(workflow_execution_mixin, "QTimer", _ImmediateQTimer)

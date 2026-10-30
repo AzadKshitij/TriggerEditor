@@ -1,7 +1,9 @@
 from loguru import logger
 from contextlib import contextmanager, nullcontext
 import os
+import sys
 import time
+from pathlib import Path
 
 from qtpy.QtGui import (
     QPixmap,
@@ -22,6 +24,7 @@ from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_graph import GraphCycleError, cycles, topological_order
 from nodeeditor.utils import dumpException
 
+from trigger_designer.core.codegen_safe import safe_comment
 from trigger_designer.core.constants import WORKFLOW_SCHEMA_VERSION
 from trigger_designer.core.node_configuration import (
     NodeTypes,
@@ -82,6 +85,22 @@ CHECK_OUTPUT_HEADER = (
     '        _td_os.path.join(_td_os.path.dirname(_td_os.path.abspath(__file__)), "src"),\n'
     "    )\n"
 )
+
+
+def _source_root() -> "str | None":
+    """The ``src`` folder holding the package, or None in a frozen build."""
+    if getattr(sys, "frozen", False):
+        return None
+    root = Path(__file__).resolve().parents[2]
+    return str(root) if (root / "trigger_designer").is_dir() else None
+
+
+def check_output_header(src_root: "str | None") -> str:
+    """The exported script's header; adds ``src`` so a script run from the data
+    folder (not next to ``src``) can still ``import trigger_designer``."""
+    if not src_root:
+        return CHECK_OUTPUT_HEADER
+    return CHECK_OUTPUT_HEADER + f"_td_sys.path.insert(0, {src_root!r})\n"
 
 
 class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
@@ -838,15 +857,33 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             # A Qt slot must not raise: the Run button was already restored.
             self.logError(f"Workflow execution failed: {str(e)}")
 
-    def getPyFile(self, sorted_nodes) -> None:
-        code = CHECK_OUTPUT_HEADER
-        for node in sorted_nodes:
-            code += node.get_code()
-            # print(code)
+    def getPyFile(
+        self, sorted_nodes, path: "str | os.PathLike | None" = None
+    ) -> str:
+        """Write the run's generated script and return its path.
 
-        with open("check_output.py", "w") as file:
-            # Write the string to the file
-            file.write(code)
+        Never writes into the working directory: the default target is
+        ``<app data>/last_run/check_output.py``. Node code comes from the run
+        that just finished (``_last_run_codes``); a node that did not run is
+        asked once, and a node that cannot produce code never aborts the export.
+        """
+        from trigger_designer.qt.preferences import app_data_dir
+
+        target = Path(path) if path else app_data_dir() / "last_run" / "check_output.py"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        codes = getattr(self, "_last_run_codes", {}) or {}
+        parts = [check_output_header(_source_root())]
+        for node in sorted_nodes:
+            code = codes.get(node)
+            if code is None:
+                try:
+                    code = node.get_code()
+                except Exception as exc:  # noqa: BLE001
+                    title = safe_comment(getattr(node, "node_title", "node"))
+                    code = f"# {title}: no code ({safe_comment(exc)})\n"
+            parts.append(code)
+        target.write_text("".join(parts), encoding="utf-8", newline="\n")
+        return str(target)
 
     def getAllNodes(self) -> list["TriggerNode"]:
         return self.scene.nodes

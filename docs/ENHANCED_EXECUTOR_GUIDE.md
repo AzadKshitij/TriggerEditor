@@ -1,290 +1,83 @@
-# Enhanced NodeExecutor - Usage Guide
+# Node executor guide
 
-The enhanced NodeExecutor provides a robust, secure, and feature-rich Python code execution environment for TriggerEditor nodes.
+`NodeExecutor` (`src/trigger_designer/core/ExecutionCheck/executor.py`) runs the
+Python that each node generates. The GUI's Run button and any future headless
+runner drive it through the same loop (`core/ExecutionCheck/run_loop.py`).
 
-## Key Features
-
-### 🛡️ Security Features
-- **Execution Timeouts**: Prevent infinite loops and runaway code
-- **Memory Limits**: Protect against memory exhaustion
-- **Sandbox Execution**: Restricted built-in functions and imports
-- **Code Validation**: Pre-execution security checks
-
-### 📊 Monitoring & Analytics
-- **Execution Statistics**: Track performance metrics over time
-- **Memory Usage**: Monitor memory consumption per execution
-- **Execution History**: Keep detailed logs of past executions
-- **Performance Profiling**: Detailed timing and resource usage
-
-### 🔧 Advanced Execution
-- **Context Management**: Shared variables between node executions
-- **Error Handling**: Comprehensive error reporting with stack traces
-- **Output Capture**: Capture both stdout and stderr
-- **Cancellation Support**: Interrupt long-running executions
-
-## Quick Start
-
-### Basic Usage
+## Basic use
 
 ```python
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 
-# Create executor with default settings
 executor = NodeExecutor()
-
-# Execute node code
-result = executor.execute_node(node)
+result = executor.execute_node(node)      # anything with get_code() -> str
 
 if result.success:
-    print(f"Output: {result.output}")
-    print(f"Variables: {result.variables}")
+    print(result.variables)               # names the node's code defined
 else:
-    print(f"Error: {result.error}")
+    print(result.error)                   # message (+ original traceback text)
 ```
 
-### With Custom Security Configuration
+`execute_node` never raises for a failing node: the failure comes back in the
+result. Variables a node defines are added to a shared `execution_context`, so
+later nodes see earlier results. `pl`, `os`, `datetime` and `timedelta` are
+pre-seeded in that context.
+
+## Limits that exist
+
+| What | How it works |
+|---|---|
+| Time | `SecurityConfig(max_execution_time=30.0)`, seconds. This is the **only** setting in `SecurityConfig`. |
+| Timeout | A node that exceeds it is reported as failed, but its thread cannot be killed. The executor abandons that worker thread and starts a fresh one, so the next node does not wait behind it. The abandoned code may still be running and writing. |
+| Failures | `except BaseException`: `SystemExit`, `KeyboardInterrupt` and Polars `PanicException` raised by generated code are node failures, not crashes, and the worker survives. |
+| Cancellation | Cooperative and between nodes only: `cancel_execution()` sets a latch (`cancel_requested`); the run loop stops before the next node. A node already inside `exec` is not interrupted. |
+
+There is no memory limit, no import allow-list, no function deny-list and no file
+access policy. Generated code runs with **full builtins and no sandbox**: whatever
+a node's `get_code()` emits is executed with the user's rights. Treat a workflow
+file like a script. (A restricted-code policy is planned for the command-line
+runner only; it does not exist in the GUI executor.)
+
+## Result object
+
+`ExecutionResult` (all fields after `error` and `variables` are filled by
+`execute_node`):
+
+| Field | Meaning |
+|---|---|
+| `success`, `error`, `variables` | outcome, message, the node's local variables |
+| `exception` | the source exception (unwrapped), or `None` |
+| `exception_type` | `"module.QualName"` of the source exception |
+| `traceback_text` | formatted traceback of the source exception |
+| `code` | the node's code as generated, **before** `code_filter` |
+| `started_at`, `finished_at` | UTC ISO-8601 timestamps |
+| `policy_violation` | `True` when the failing exception has the class attribute `policy_violation = True` (a `code_filter` refusing code) |
+
+## Hooks
+
+All are plain attributes, `None` by default. A hook that raises is logged and
+never fails a node.
+
+| Attribute | Signature | When |
+|---|---|---|
+| `code_filter` | `(code) -> code` | right after `get_code()`; may raise to refuse the code (a normal node failure) |
+| `before_node` | `(node)` | after the filter, before `exec`; not called when `get_code()` or the filter raised |
+| `after_node` | `(node, local_variables, result)` | after a **successful** `exec`; variables it adds or replaces reach `result.variables` and the shared context |
+| `verify_plans` | `bool`, default `True` | after `exec`, every `pl.LazyFrame` the node defined has its schema resolved (`collect_schema()`), so a bad column or join key fails the node that caused it, without reading data |
+
+## The run loop
 
 ```python
-from trigger_designer.core.ExecutionCheck.executor import (
-    NodeExecutor, SecurityConfig
-)
+from trigger_designer.core.ExecutionCheck.run_loop import run_nodes
 
-# Create custom security config
-security_config = SecurityConfig(
-    max_execution_time=10.0,  # 10 second timeout
-    max_memory_mb=256.0,      # 256MB memory limit
-    allow_file_access=False,  # No file operations
-    allowed_imports={'pandas', 'numpy', 'math'}  # Limited imports
-)
-
-executor = NodeExecutor(security_config=security_config)
-```
-
-### Monitoring Execution Statistics
-
-```python
-# Execute several nodes
-for node in nodes:
-    result = executor.execute_node(node)
-    print(f"Execution time: {result.execution_time:.4f}s")
-
-# Get overall statistics
-stats = executor.get_statistics()
-print(f"Total executions: {stats.total_executions}")
-print(f"Success rate: {stats.successful_executions / stats.total_executions * 100:.1f}%")
-print(f"Average execution time: {stats.average_execution_time:.4f}s")
-
-# Get execution history
-history = executor.get_execution_history(limit=10)  # Last 10 executions
-for result in history:
-    print(f"{result.timestamp}: {'✅' if result.success else '❌'}")
-```
-
-## ExecutionResult Object
-
-The `execute_node()` method returns a comprehensive `ExecutionResult` object:
-
-```python
-@dataclass
-class ExecutionResult:
-    success: bool                    # Whether execution succeeded
-    output: str                      # Captured stdout
-    error: str                       # Error message if failed
-    variables: Dict[str, Any]        # Variables created during execution
-    execution_time: float            # Time taken (seconds)
-    memory_used: float              # Memory used (MB)
-    peak_memory: float              # Peak memory during execution (MB)
-    lines_executed: int             # Number of code lines
-    warnings: List[str]             # Security/other warnings
-    timestamp: datetime             # When execution occurred
-```
-
-## Security Configuration
-
-```python
-@dataclass
-class SecurityConfig:
-    max_execution_time: float = 30.0        # Max execution time (seconds)
-    max_memory_mb: float = 512.0            # Max memory usage (MB)
-    allowed_imports: Set[str] = {...}       # Allowed import modules
-    forbidden_functions: Set[str] = {...}   # Forbidden function calls
-    allow_file_access: bool = False         # Allow file operations
-    allow_network_access: bool = False      # Allow network operations
-```
-
-### Default Allowed Imports
-- **Math/Utilities**: `math`, `random`, `datetime`, `json`, `csv`, `re`
-- **Collections**: `collections`, `itertools`, `functools`, `operator`
-- **Data Science**: `pandas`, `numpy`, `polars`, `matplotlib`, `seaborn`
-- **Statistics**: `statistics`
-
-### Default Forbidden Functions
-- **Code Execution**: `exec`, `eval`, `compile`
-- **File Operations**: `open`, `file`
-- **System Access**: `__import__`, `globals`, `locals`
-- **User Input**: `input`, `raw_input`
-- **System Control**: `exit`, `quit`, `reload`
-
-## Context Management
-
-The executor maintains a shared execution context between node executions:
-
-```python
-# First node creates variables
-node1_code = """
-shared_list = [1, 2, 3, 4, 5]
-multiplier = 2
-"""
-result1 = executor.execute_node(create_node(node1_code))
-
-# Second node uses variables from first
-node2_code = """
-processed_list = [x * multiplier for x in shared_list]
-print(f"Result: {processed_list}")
-"""
-result2 = executor.execute_node(create_node(node2_code))
-
-# Get context information
-context_info = executor.get_context_info()
-for name, info in context_info.items():
-    print(f"{name}: {info['type']} ({info['size']} bytes)")
-
-# Clear context when needed
-executor.clear_context()
-```
-
-## Error Handling
-
-The executor provides detailed error information:
-
-```python
-result = executor.execute_node(node_with_error)
-
-if not result.success:
-    print(f"Error Type: {type(result.error)}")
-    print(f"Error Message: {result.error}")
-    
-    # Check for specific error types
-    if "timeout" in result.error.lower():
-        print("Execution timed out")
-    elif "memory" in result.error.lower():
-        print("Memory limit exceeded")
-    elif "security" in result.error.lower():
-        print("Security violation detected")
-```
-
-## Best Practices
-
-### 1. Configure Security Appropriately
-```python
-# For data processing nodes
-data_security = SecurityConfig(
-    max_execution_time=60.0,
-    max_memory_mb=1024.0,
-    allowed_imports={'pandas', 'numpy', 'polars', 'matplotlib'}
-)
-
-# For simple calculation nodes  
-calc_security = SecurityConfig(
-    max_execution_time=5.0,
-    max_memory_mb=128.0,
-    allowed_imports={'math', 'statistics'}
+outcome = run_nodes(
+    nodes, executor,
+    continue_on_error=False,       # True: keep going, skip the nodes below a failure
+    upstream={node: [parents]},    # needed for skipping
+    cancel=threading.Event(),      # checked between nodes
+    on_node_started=..., on_node_finished=..., on_node_errored=..., on_node_skipped=...,
 )
 ```
 
-### 2. Monitor Performance
-```python
-# Regular statistics checking
-if executor.stats.total_executions % 10 == 0:
-    stats = executor.get_statistics()
-    if stats.average_execution_time > 1.0:
-        print("Warning: Average execution time is high")
-```
-
-### 3. Handle Long-Running Operations
-```python
-import threading
-
-def execute_with_progress(executor, node):
-    # Start execution in background
-    result_container = [None]
-    
-    def execute():
-        result_container[0] = executor.execute_node(node)
-    
-    thread = threading.Thread(target=execute)
-    thread.start()
-    
-    # Show progress while waiting
-    while thread.is_alive():
-        print(".", end="", flush=True)
-        time.sleep(0.5)
-    
-    return result_container[0]
-```
-
-### 4. Context Cleanup
-```python
-# Clear context periodically to prevent memory buildup
-if len(executor.get_context_info()) > 50:  # Too many variables
-    executor.clear_context()
-
-# Or clear after major operations
-executor.execute_node(large_data_processing_node)
-executor.clear_context()  # Clean up large datasets
-```
-
-## Backward Compatibility
-
-The legacy `execute_node_legacy()` method maintains compatibility with existing code:
-
-```python
-# Old API still works
-output, variables = executor.execute_node_legacy(node)
-
-# But new API is recommended
-result = executor.execute_node(node)
-output = result.output
-variables = result.variables
-```
-
-## Performance Tips
-
-1. **Memory Management**: Clear context after processing large datasets
-2. **Timeout Tuning**: Set appropriate timeouts based on expected operation complexity
-3. **Import Restrictions**: Limit allowed imports to reduce attack surface
-4. **Statistics Monitoring**: Use execution statistics to identify performance bottlenecks
-5. **History Limits**: The executor automatically limits history to 100 entries
-
-## Example: Data Processing Pipeline
-
-```python
-# Setup executor for data processing
-security_config = SecurityConfig(
-    max_execution_time=120.0,  # 2 minutes for complex operations
-    max_memory_mb=2048.0,      # 2GB for large datasets
-    allowed_imports={'pandas', 'numpy', 'polars', 'matplotlib', 'seaborn'}
-)
-
-executor = NodeExecutor(security_config=security_config)
-
-# Execute pipeline nodes
-nodes = [load_node, clean_node, transform_node, analyze_node, visualize_node]
-
-for i, node in enumerate(nodes):
-    print(f"Executing step {i+1}: {node.__class__.__name__}")
-    
-    result = executor.execute_node(node)
-    
-    if result.success:
-        print(f"✅ Success in {result.execution_time:.2f}s")
-        if result.warnings:
-            print(f"⚠️  Warnings: {'; '.join(result.warnings)}")
-    else:
-        print(f"❌ Failed: {result.error}")
-        break
-
-# Final statistics
-stats = executor.get_statistics()
-print(f"Pipeline completed: {stats.successful_executions}/{stats.total_executions} steps successful")
-```
+`outcome` is a `LoopOutcome(success, cancelled, executed, failed, skipped)`. The
+loop imports no Qt.

@@ -19,6 +19,7 @@ op id is the stable identifier stored in saved workflows
 |---|---|---|
 | Join | ![Join](assets/node_icons/join.png) | Joins two inputs on a user-defined column mapping using the selected join type. |
 | Append | ![Append](assets/node_icons/append.png) | Stacks the rows of the right input underneath the left input. |
+| Union | ![Union](assets/node_icons/union.png) | Stack two or more inputs vertically (columns matched by name or manual mapping). |
 | Reconcile | ![Reconcile](assets/node_icons/reconcile.png) | Matches two inputs on key columns plus an amount tolerance and/or date window, emitting matched pairs, both unmatched sides, and a summary. |
 
 ## Preparation
@@ -60,6 +61,20 @@ op id is the stable identifier stored in saved workflows
 | Graph | ![Graph](assets/node_icons/graph.png) | Charts the incoming data in a matplotlib window that unlocks after a successful run; passes its input through unchanged. |
 | Data Profile | ![Data Profile](../src/trigger_designer/resources/qt/images/node_icons/Report/Data%20Profile.svg) | Profiles every column of the whole input: nulls, blanks, distinct counts, min/max, numeric statistics and a histogram, the most frequent values, and a suggested type with quality flags (numbers or dates stored as text, mixed dates, leading zeros, stray whitespace, negatives, outliers). Socket `D` passes the input through; socket `P` is a one-row-per-column table (`PROFILE_SCHEMA`, see `docs/plan/05-data-profile-node.md`). The dock shows a sortable table and a per-column detail pane, a **Full report** button (opens an HTML report with a card for every column in the browser) and one **Export** menu (copy, CSV, HTML report, Excel). While you edit, the dock profiles only the first 100 rows the canvas holds (like every node); **run the workflow** and it switches to the profile of all rows, until a setting changes or the next run. Inputs over 150 columns skip the live preview (run the workflow to profile them). Options: sample (all rows, first N, random N with seed), top values, estimate-over threshold for distinct counts, chart bars. |
 
+## What Run verifies
+
+Run recomputes every node first, in graph order, so no step executes with stale
+or never-evaluated settings; a step that is still invalid keeps its red state and
+is listed in the Logging dock. After each step runs, the plan of every lazy output
+is schema-checked: an unknown column, a bad join key or a duplicate output name
+fails the step that caused it, with or without a File Output downstream. Errors
+that depend on the data itself (for example one value that cannot be cast)
+surface only where data is read: File Output, Graph, Count and the Data Preview.
+
+The **Cancel** button replaces Run while a run is in flight. Cancelling is
+cooperative: the step that is executing finishes, and the remaining steps are not
+started. A loop in the graph refuses to run and leaves Run available.
+
 ## Internal (not in the palette)
 
 | Node Name | Node Image | Description |
@@ -76,14 +91,13 @@ These SVGs ship in the icon folder but no registered node references them.
 
 | Icon | Source file |
 |---|---|
-| ![Union](assets/node_icons/union.png) | `node_icons/Join/Union.svg` |
 | ![Image](assets/node_icons/image.png) | `node_icons/Report/Image.svg` |
 | ![InOut](assets/node_icons/inout.png) | `node_icons/INOUT.svg` |
 | ![Browse](assets/node_icons/browse.png) | `node_icons/Input/Browse.svg` |
 
-`Join/union.py` and `Documentation/comment.py` are empty placeholder files, so
-`JoinNodes.UNION` and `IONodes.BROWSER` / `IONodes.TEXT_INPUT` are registered
-enum members with no implementation behind them. The reusable canvas note lives
+`Join/find_replace.py` and `Documentation/comment.py` are empty placeholder
+files, and `IONodes.BROWSER` / `IONodes.TEXT_INPUT` are registered enum members
+with no implementation behind them. The reusable canvas note lives
 in the `qtpy-nodeeditor` library instead of an app-specific Report node.
 
 ## Regenerating the icons

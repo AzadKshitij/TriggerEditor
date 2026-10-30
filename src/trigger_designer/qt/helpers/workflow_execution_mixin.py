@@ -427,6 +427,13 @@ class WorkflowExecutionMixin:
         """Slot: a node finished executing (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
 
+        # The exported script reuses the code that actually ran, instead of
+        # asking every node for it a second time.
+        codes = getattr(self, "_last_run_codes", None)
+        ran_code = getattr(result, "code", "")
+        if isinstance(codes, dict) and ran_code:
+            codes[node] = ran_code
+
         if result.success:
             clear = getattr(node, "clear_error", None)
             if callable(clear):
@@ -567,7 +574,10 @@ class WorkflowExecutionMixin:
                 coordinator.resume()
             except Exception:  # noqa: BLE001 - a raising slot aborts the process
                 logger.exception("Failed to resume live evaluation after a run")
-        self.getPyFile(self._workflow_sorted_nodes)
+        try:
+            self.getPyFile(self._workflow_sorted_nodes)
+        except Exception:  # noqa: BLE001 - the export must never skip the cleanup
+            logger.exception("Could not write the generated script")
 
         if success and not self._run_cancelled:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))

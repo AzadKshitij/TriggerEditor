@@ -2,16 +2,16 @@
 
 ## Standing instructions from user
 - **After every completed task, launch the app**: `run.bat self` (detached via
-  `Start-Process`, working dir `C:\Projects\TriggerEditor`). Do this even for
+  `Start-Process`), run from the repo root. Do this even for
   verification-only turns.
 - **Work one thing at a time**: implement incrementally, each item with an
   **automated offscreen test + manual test card** in the reply.
 - Planning/approval mode is over — build mode is active.
 
 ## Environment & tooling notes (Windows, PowerShell 5.1)
-- venv: `.venv\Scripts\python` (py3.13). **No pytest** installed — tests are
-  throwaway scripts in `C:\Users\azadk\AppData\Local\Temp\opencode\`, run them,
-  then delete.
+- venv: `.venv\Scripts\python` (py3.13). pytest 9.x + pytest-qt are in the dev
+  group; run the layers separately (`tests/unit`, `tests/e2e`, `tests/ui`; see
+  CONTRIBUTING.md).
 - GUI tests: `$env:PYTHONUTF8="1"` (else emoji logs crash on cp1252) and
   `os.environ["QT_QPA_PLATFORM"]="offscreen"` at the top of every script.
 - **Never instantiate `QApplication` twice** in one script (second instance =
@@ -111,14 +111,6 @@
   transform rework), `a1e51ed` (icons). Manual test cards for each item are in
   the chat history above.
 
-## PENDING — Batch B: executor import seeding (next recommended)
-Seed `polars` (and `os`) into `NodeExecutor.execution_context` globals so
-generated code doesn't depend on FileInput-first import leakage. Files:
-`core/ExecutionCheck/executor.py` (`execute_node`, `_execute_with_timeout`).
-Test: workflow whose first node isn't FileInput + a standalone `check_output.py`
-run. (~6 nodes' get_code use bare `pl` today: filter, groupby, select-dtype
-branch, genrows, split?, unique.)
-
 ## PENDING — P1: contracts + error UX
 - `unique.py:570` returns `[None,None]` (fake-green success) — return `None`.
 - `getSocketValue` (`node_base.py:312`) silently defaults to socket 0 and
@@ -162,8 +154,8 @@ should check parent dir).
 - DynamicRowBuilder **datetime increment widget** is a QDateTimeEdit where a
   seconds-spinner belongs (`timedelta(seconds=<datetime>)` TypeErrors; node
   goes invalid — no regression, was already broken).
-- `Join/union.py`, `Join/find_replace.py`, `Documentation/comment.py` are
-  0-byte stubs (Union registered in enum but unimplemented).
+- `Join/find_replace.py` and `Documentation/comment.py` are 0-byte stubs;
+  `Join/union.py` is implemented (956 lines, `tests/unit/test_union_node.py`).
 - `run.bat :COMP` points at a stale absolute path on another machine.
 
 ## Manual smoke (after any node change)
