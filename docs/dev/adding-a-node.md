@@ -346,7 +346,7 @@ lines) and `core/audit/duplicates.py` side by side.
 
 Two classes in one module: `TriggerNode_X(TriggerNode)` and
 `XContent(QDMNodeIconContentWidget, TriggerChangeHandler[, SerializableContentMixin])`
-(or subclass `ConfigContent`, which supplies the `evaluate` signal, `node`
+(or subclass `ConfigContent` from `qt/node_content.py`, which supplies the `evaluate` signal, `node`
 property, `history`, `initUI`). You then own: `initInnerClasses`,
 `processInputs` (return a list of `{"data", "variable_name"}` or `None` after
 setting an error), `get_code` (rules in `architecture.md` section 6),

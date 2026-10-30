@@ -55,7 +55,10 @@ registering a package.
 
 | Module | Role |
 |---|---|
-| `node_base.py` | `TriggerNode`, `TriggerGraphicsNode`, `TriggerChangeHandler`, `TriggerContent`. Eval, dirty/invalid state, errors on the node (`set_error`, `current_error`), serialize. |
+| `node_base.py` | `TriggerNode`: identity, sockets, persistence, `get_code`. Delegates evaluation to `NodeEvaluator` and errors to `NodeErrorState`. Re-exports every name that moved out, so `from trigger_designer.qt.node_base import ...` keeps working. |
+| `node_runtime.py` | `NodeEvaluator` (cache and re-entrancy checks, progress, input collection, the one `fail` transition, the one `invalidate`) and `NodeErrorState` (per-source error map, tooltip and badge, Problems dock bridge, knock-on clear). |
+| `node_content.py` | `ConfigContent` (canonical content base), `DockBinding` (Config Dock undo registration), `TriggerChangeHandler` (thin mixin over `DockBinding`), `TriggerContent` (legacy adapter over `ConfigContent`). |
+| `node_graphics.py` | `TriggerGraphicsNode`: geometry, painting, state-ring pens, badges, low-detail fallback. |
 | `design_window.py` | `TriggerSubWindow`: one per open workflow. Load/save, `doEvalOutputs`, `getPyFile`, node drop, logging helpers. |
 | `performance_scene.py` | `TriggerScene`: scene serialize (adds `workflow_metadata`), atomic UTF-8 save, `workflow_uuid`, bulk-load flag. |
 | `main_window.py` | `TriggerWindow` (MDI), docks, recents, session restore. |
@@ -63,7 +66,7 @@ registering a package.
 | `helpers/evaluation.py` | `EvaluationCoordinator`: coalesced, topologically ordered live evaluation. |
 | `helpers/deferred_evaluation.py` | `DeferredEvaluation`: a Config Dock edit marks the node "pending" and it runs when the user leaves it. |
 | `helpers/shaping_support.py` | `ShapingContent`, `ShapingNode`, `Field`, `FormSection`. See `adding-a-node.md`. |
-| `helpers/config_content.py` | `ConfigContent`: shared plumbing (`evaluate` signal, `node`, `history`). |
+| `helpers/config_content.py` | Alias of `node_content.ConfigContent` (old import path). |
 | `helpers/audit_bridge.py`, `audit_tasks.py` | `RunSession` (the recorder as the Run button sees it), background tasks for the Run History dock. |
 | `helpers/problems_store.py`, `error_context.py`, `error_enricher.py` | Problems dock state, translator context, background enrichment. |
 | `helpers/content_undo_mixin.py`, `undo/` | `QUndoStack`-based undo (AGENTS.md has the rules; see `conventions.md`). |
@@ -119,8 +122,10 @@ thing to understand before changing a node.
 ### Live
 
 * `TriggerNode.eval` returns the cached `self.value` unless the node is dirty
-  or invalid. `evalImplementation` evaluates the inputs and calls the node's
-  `processInputs(input_values)`.
+  or invalid (`NodeEvaluator.evaluate`). The base `evalImplementation` evaluates
+  the inputs and calls the node's `processInputs(input_values)`; a subclass may
+  override `evalImplementation` and still gets the same cache, guard and error
+  handling.
 * `input_values[i]` is the list of output dicts of the node wired to input `i`
   (`[{"data": frame, "variable_name": "var_..."}, ...]`). Pick your entry with
   `getInputWithSocket(i)` (returns node and socket) and index with

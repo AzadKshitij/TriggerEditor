@@ -151,6 +151,7 @@ Guide: `docs/guide/workpaper.md`. Internals: `docs/dev/workpaper-internals.md`.
 
 ## Changed
 
+- Internal: `qt/node_base.py` (1,241 lines) is split into `node_runtime` (`NodeEvaluator`, `NodeErrorState`), `node_content` (`ConfigContent`, `DockBinding`), `node_graphics` and the frame/rename helpers, with one failure transition and one invalidation path. Old `node_base` imports still work; no saved-file change (plan 08).
 - **A node now runs when you leave it**, not on every edit: Config Dock edits
   reach the model, the undo stack and the checkbox at once; the pipeline runs when
   another node is selected or the canvas is clicked. Applies to all shaping nodes,

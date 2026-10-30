@@ -1,6 +1,6 @@
 ﻿# 08 - Redesign the BaseNode, not just split it
 
-**Status:** proposal, awaiting approval. No implementation yet.
+**Status:** implemented, phases 0-6 (phase 7, the optional import migration, is not done). `node_base.py` went from 1,241 to under 300 lines; old imports are re-exported.
 
 ## Why the current file is hard
 

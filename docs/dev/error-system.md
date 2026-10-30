@@ -2,7 +2,7 @@
 
 Goal: a failure reaches the user as a stable code, one plain sentence and a
 fix, tied to the node that caused it, instead of a Polars/DuckDB traceback.
-Code: `core/errors/` (Qt-free) plus the Qt glue in `qt/node_base.py`,
+Code: `core/errors/` (Qt-free) plus the Qt glue in `qt/node_runtime.py` (`NodeErrorState`),
 `qt/helpers/problems_store.py`, `error_context.py`, `error_enricher.py` and
 `qt/docks/problems_dock.py`.
 
@@ -135,10 +135,10 @@ placeholders are allowed; no emoji; rendering is safe with sample params.
 ## Where errors live on a node, and how they are shown
 
 * `TriggerNode.set_error(error, source="live"|"run")` stores one error per
-  source in `_errors_by_source`. `current_error` is `run` if present, else `live`.
+  source in `NodeErrorState` (`node.errors`). `current_error` is `run` if present, else `live`.
   `clear_error(source=None)` clears one or both; clearing `run` also clears
   the *knock-on* run errors of child nodes (cycle-safe).
-* `_apply_error_state`: tooltip = `error.render_tooltip()` (or "Changes pending
+* `NodeErrorState.apply`: tooltip = `error.render_tooltip()` (or "Changes pending
   - the node runs when you click away"), and the node badge: `error`, `warning`
   or `pending` (one glyph in the status slot; an error outranks pending).
 * A new error (different `fingerprint`) is logged once with the full
