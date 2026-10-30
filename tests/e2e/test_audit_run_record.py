@@ -400,3 +400,13 @@ def test_missing_input_is_recorded_as_missing(qtbot, tmp_path):
     assert rec["inputs"][0]["size_bytes"] is None
     assert any("input file not found" in w for w in rec["warnings"])
     assert verify_store(store_dir_of(tds)).ok
+
+
+def test_run_record_has_real_node_durations(qtbot, tmp_path):
+    tds, _src, _out = build_workflow(tmp_path)
+    _window, rec = run_and_load_record(qtbot, tds)
+    assert validate_record_dict(rec) == []
+    assert all(n["duration_s"] > 0 for n in rec["nodes"])
+    assert all(n["peak_memory_mb"] is None for n in rec["nodes"])
+    assert compute_record_hash(rec) == rec["record_hash"]
+    assert verify_store(store_dir_of(tds)).ok

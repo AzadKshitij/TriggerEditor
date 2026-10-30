@@ -182,6 +182,28 @@ class _NodeCounts:
     count_seconds: float = 0.0
 
 
+def _parse_iso(value: Any) -> datetime | None:
+    if not isinstance(value, str) or not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _duration_of(result: Any) -> float:
+    """Seconds between the result's ``started_at`` and ``finished_at``.
+
+    ``ExecutionResult`` carries no duration field; the executor stamps both
+    instants (UTC ISO) around the whole node: code, hooks and row counting.
+    """
+    start = _parse_iso(getattr(result, "started_at", None))
+    end = _parse_iso(getattr(result, "finished_at", None))
+    if start is None or end is None:
+        return 0.0
+    return round(max((end - start).total_seconds(), 0.0), 6)
+
+
 def _cap_warning(text: str) -> str:
     return (
         text
@@ -622,9 +644,7 @@ class RunRecorder:
                 seq=self._seq_of(spec.node_id),
                 label=spec.label,
                 started_at=getattr(result, "started_at", None) or None,
-                duration_s=round(
-                    float(getattr(result, "execution_time", 0.0) or 0.0), 6
-                ),
+                duration_s=_duration_of(result),
                 count_seconds=round(counts.count_seconds, 6),
                 settings=sanitize(spec.settings),
                 seed=extract_seed(spec.settings),
@@ -634,9 +654,6 @@ class RunRecorder:
                 columns_out=dict(counts.columns_out),
                 dtypes_out=dict(counts.dtypes_out),
                 count_method=dict(counts.count_method),
-                peak_memory_mb=round(
-                    float(getattr(result, "peak_memory", 0.0) or 0.0), 3
-                ),
                 warnings=warnings,
                 error=error,
                 test_summary=self._test_summary_of(node, test_summary) if ok else None,

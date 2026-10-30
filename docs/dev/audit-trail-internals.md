@@ -61,7 +61,7 @@ cancelled`), `sheet`, `node_id`, `row_count`, `row_count_method`, `error`.
 `NodeRunRecord`: `node_id`, `op`, `title`, `label`, `status`
 (`ok | failed | skipped`), `seq`, `started_at`, `duration_s`, `count_seconds`,
 `settings` (sanitised), `seed`, `code_sha256`, `rows_in[]`, `rows_out{var:
-n}`, `columns_out`, `dtypes_out`, `count_method`, `peak_memory_mb`,
+n}`, `columns_out`, `dtypes_out`, `count_method`, `peak_memory_mb` (always `null`: not measured),
 `warnings`, `error` (stored error dict: `code`, `title` required), `test_summary`.
 
 `graph_sha256` = SHA-256 of the canonical JSON of
@@ -304,12 +304,9 @@ added with defaults.
 
 ## Known gaps (found while writing this page)
 
-* `RunRecorder.node_finished` reads `execution_result.execution_time` and
-  `.peak_memory` and `.warnings`, but `ExecutionResult` has none of those fields
-  (the post-run memory check was removed in `5ae3826`). In a real run
-  `NodeRunRecord.duration_s` and `peak_memory_mb` are therefore always `0.0`,
-  and per-node timing in the Run History dock and HTML export is empty.
-  `started_at`/`finished_at` are available on the result and could supply the
-  duration. Unit tests drive the recorder with fakes that do carry these fields,
-  so they do not catch it.
+* `NodeRunRecord.duration_s` is derived from the `ExecutionResult`'s
+  `started_at`/`finished_at` stamps (it covers the whole node: code, hooks and
+  row counting). `peak_memory_mb` is `null`: the executor does not measure
+  memory (the post-run memory check was removed in `5ae3826`). Earlier builds
+  recorded `0.0` for both.
 * Truncating the end of the chain is undetectable by design (note `head_hash`).

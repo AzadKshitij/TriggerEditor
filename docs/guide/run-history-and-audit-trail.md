@@ -171,7 +171,7 @@ Times, durations and run ids are never compared, so two runs of the same workflo
 | `node_id`, `op`, `title`, `label` | Which node. `op` is a stable name such as `audit.duplicates`. |
 | `seq` | Its position in the run order. |
 | `status` | `ok`, `failed` or `skipped`. |
-| `started_at`, `duration_s`, `peak_memory_mb` | Timing and memory. **In this version `duration_s` and `peak_memory_mb` are always 0** for nodes; use `started_at` and the run's own `duration_s`. |
+| `started_at`, `duration_s`, `peak_memory_mb` | Timing and memory. `duration_s` is the node's wall time (code plus row counting). `peak_memory_mb` is empty (`null`): memory is not measured. Records written by earlier builds show `0` for both. |
 | `settings` | The node's settings as they were. |
 | `seed` | The random seed, for nodes that use one (Sample, Split). |
 | `code_sha256` | Fingerprint of the node's generated code. |

@@ -78,7 +78,8 @@ class NodeRunRecord:
     columns_out: dict = field(default_factory=dict)
     dtypes_out: dict = field(default_factory=dict)
     count_method: dict = field(default_factory=dict)
-    peak_memory_mb: float = 0.0
+    #: ``None`` = not measured (the executor does not measure memory).
+    peak_memory_mb: float | None = None
     warnings: list = field(default_factory=list)
     error: dict | None = None
     test_summary: dict | None = None

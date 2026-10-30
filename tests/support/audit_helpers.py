@@ -129,9 +129,6 @@ class FakeNode:
 class FakeResult:
     def __init__(self, success: bool = True, **over):
         self.success = success
-        self.execution_time = over.pop("execution_time", 0.01)
-        self.peak_memory = over.pop("peak_memory", 0.5)
-        self.warnings = over.pop("warnings", [])
         self.code = over.pop("code", "x = 1\n")
         self.started_at = over.pop("started_at", "2026-10-21T09:14:03.121000Z")
         self.finished_at = over.pop("finished_at", "2026-10-21T09:14:03.131000Z")

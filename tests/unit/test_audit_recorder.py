@@ -514,3 +514,23 @@ def test_file_output_row_count_variants(tmp_path):
     final = recorder.finish(record, True)
     assert final.outputs[0].row_count == 4
     assert final.outputs[0].sha256 and final.outputs[0].sha256 != ORDERS_SHA256
+
+
+def test_node_duration_comes_from_a_real_execution_result(tmp_path):
+    """A real ``ExecutionResult`` has no duration field; the stamps supply it."""
+    from trigger_designer.core.ExecutionCheck.executor import ExecutionResult
+
+    specs, edges, *_ = _specs(tmp_path)
+    recorder = make_recorder(tmp_path)
+    record = recorder.begin(None, specs, app_version="x", edges=edges)
+    node = FakeNode(specs[0].node_id, specs[0].title)
+    result = ExecutionResult(
+        success=True,
+        started_at="2026-10-21T09:14:03.100000Z",
+        finished_at="2026-10-21T09:14:03.350000Z",
+    )
+    recorder.before_node(node)
+    recorder.after_node(node, {}, result)
+    rec = recorder.node_finished(record, node, result)
+    assert rec.duration_s == 0.25
+    assert rec.peak_memory_mb is None  # not measured by the executor
