@@ -51,9 +51,9 @@ op id is the stable identifier stored in saved workflows
 
 | Node Name | Node Image | Description |
 |---|---|---|
-| Count | ![Count](../src/trigger_designer/resources/qt/images/node_icons/Transform/Count.svg) | Counts rows, overall or per group, and emits the total as a new frame. |
+| Count | ![Count](../src/trigger_designer/resources/qt/images/node_icons/Transform/Count.svg) | Counts the rows of the input and returns a one-row table with a single `Count` column. There is no grouping and no settings; for a count per group use GroupBy (Aggregate). The live preview counts only the first 100 rows; Run counts all of them. |
 | Running Total | ![Running Total](../src/trigger_designer/resources/qt/images/node_icons/Transform/Running%20Total.svg) | Adds a column with a cumulative sum of a numeric column, optionally per group. |
-| Transpose | ![Transpose](../src/trigger_designer/resources/qt/images/node_icons/Transform/Transpose.svg) | Flips the frame so rows become columns and columns become rows. |
+| Transpose | ![Transpose](../src/trigger_designer/resources/qt/images/node_icons/Transform/Transpose.svg) | Goes from wide to long: the chosen data columns become rows. The output keeps the chosen key columns and adds `Name` (the old column name) and `Value` (the cell), one block of rows per data column. It does not swap rows and columns. |
 | Pivot | ![Pivot](../src/trigger_designer/resources/qt/images/node_icons/Transform/Pivot.svg) | Turns distinct header values into columns, aggregating a value column per index group. |
 | Unpivot | ![Unpivot](../src/trigger_designer/resources/qt/images/node_icons/Transform/Unpivot.svg) | Stacks selected value columns into a name/value pair while keeping the chosen ID columns. |
 | SQL Query | ![SQL Query](../src/trigger_designer/resources/qt/images/node_icons/Transform/SQL%20Query.svg) | Runs one read-only `SELECT` over up to three inputs, which appear as the tables `t1` (required), `t2` and `t3` (optional). The query goes through the SQL guard (`TD-SHAPE-110` to `-115`): one statement, no files, extensions, `PRAGMA`/`COPY`/`ATTACH`, no random functions, 20,000 characters, 25 s. Table names are fixed, so a referenced input that is not connected is `TD-SHAPE-113`. File Input columns are text, so cast numbers with `try_cast`. |

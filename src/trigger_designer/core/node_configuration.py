@@ -66,7 +66,7 @@ class JoinNodes(IntEnum):
 
 
 class TransformNodes(IntEnum):
-    ARRANGE = auto()
+    ARRANGE = auto()  # reserved: no node class; keeps the numbers below stable
     COUNT_RECORDS = auto()
     RUNNING_TOTAL = auto()
     TRANSPOSE = auto()
