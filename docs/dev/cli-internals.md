@@ -595,4 +595,4 @@ against copies of `savedfiles/` and `data/` in a scratch folder, and
 functions rather than line numbers; if a page and the code disagree, fix the page in
 the same change that fixed the code.
 
-Added 2026-10-31 (as of `38e71d8`): the Workpaper Output handling in section 6. `tests/unit/test_headless_workpaper_paths.py`, `tests/e2e/test_cli_workpaper.py`, `tests/unit/test_file_output.py` and `tests/ui/test_file_output_dock.py` were run together: 54 passed, 1 failed (`test_workflow_sheet_never_shows_staging_names_and_follows_input_dir` compares a forward-slash path with the Workflow sheet text, which holds the Windows path with backslashes; see the CHANGELOG known issues).
+Added 2026-10-31 (as of `511db02`): the Workpaper Output handling in section 6. `tests/unit/test_headless_workpaper_paths.py`, `tests/e2e/test_cli_workpaper.py`, `tests/unit/test_file_output.py` and `tests/ui/test_file_output_dock.py` were run: 54 passed, 1 failed in total (`test_workflow_sheet_never_shows_staging_names_and_follows_input_dir` compares a forward-slash path with the Workflow sheet text, which holds the Windows path with backslashes; see the CHANGELOG known issues).

@@ -52,6 +52,22 @@ seconds per test with a thread dump (`timeout_method = "thread"`). `pytest-xdist
 | `pytest tests/e2e` | **102 passed, 1 failed** (`test_workflow_goldens.py::test_file_outputs_match_golden[split]`: the output has a new `column_1`; the golden was regenerated afterwards in `c3035e5`) | 42 s |
 | `pytest tests/ui` | **974 passed, 5 failed** (all `test_no_console_prints.py::test_no_file_prints_to_the_console[...]` for CLI modules such as `cli/commands/validate.py`; the CLI was in progress, prints on purpose, and the guard has to learn that) | 4 min 24 s |
 
+### Focused sets, as of `511db02` (2026-10-31, working tree with other people's uncommitted edits)
+
+The executor thread-leak fix was in progress, so the full layers were not re-run. These
+files were run in two sets with `uv run --project . pytest <files> -q`:
+
+| Files | Result |
+|---|---|
+| `tests/unit/test_file_output.py`, `tests/ui/test_file_output_dock.py` | 39 passed in 9 s |
+| `tests/unit/test_headless_workpaper_paths.py`, `tests/e2e/test_cli_workpaper.py` | 15 passed, 1 failed in 24 s. The failure is `test_cli_workpaper.py::test_workflow_sheet_never_shows_staging_names_and_follows_input_dir` (it compares an `as_posix()` path with the Windows path stored in the sheet). |
+
+What these cover: Parquet compression (`test_file_output.py`: codec written, `None` read as
+Snappy, unknown codec an error, old `use_streaming` key tolerated), the `.xls` rule (writer and
+CLI run raise `TD-OUT-015`, dock rewrites the name), the CLI's Workpaper Output handling
+(`--output-dir`, `--param`, versioning, CSV sidecar, `source_files`, `paths --relativize`).
+Re-measure the full layers once the executor change is committed.
+
 Skips: `test_headless_paths.py` (a drive path is native on Windows / POSIX only),
 `test_inputs_listing.py` (symlinks need privileges). The `xpass`
 (`test_audit_store.py::test_record_file_is_read_only`) is expected for an

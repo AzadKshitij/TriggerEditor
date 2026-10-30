@@ -392,7 +392,7 @@ What each format writes:
 | **NDJSON** | JSON Lines: one record per line. |
 | **Arrow IPC** | An Arrow file that other data tools read quickly; keeps column types. |
 
-**Excel is `.xlsx` only.** The writer cannot produce the old `.xls` format. When you type a path that ends in `.xls` and leave the field, the dock changes it to `.xlsx` and shows the new name; the Save dialog only offers `*.xlsx`. An old workflow file that still holds an `.xls` name for Excel output does not write a wrong file: the Run stops before anything is written, asking for a name that ends in `.xlsx` (see `TD-OUT-012` below).
+**Excel is `.xlsx` only.** The writer cannot produce the old `.xls` format. When you type a path that ends in `.xls` and leave the field, the dock changes it to `.xlsx` and shows the new name; the Save dialog only offers `*.xlsx`. An old workflow file that still holds an `.xls` name for Excel output does not write a wrong file: the Run stops before anything is written, asking for a name that ends in `.xlsx` (see `TD-OUT-015` below).
 
 **Streaming is not an option.** CSV, Parquet, NDJSON and Arrow IPC are always written in a streaming way (a table bigger than memory can still be written), so there is no switch for it. Workflow files saved by an earlier version that carry a streaming setting still open; the setting is ignored. A file that stored no compression (or an empty one) is read as Snappy. An unknown compression name in a hand-edited file stops the Run with a message that lists the valid choices.
 
@@ -423,7 +423,7 @@ With **Delimiter** `;` and **Include BOM** on, the same data is written as `Invo
 - **The folder is not created.** If the folder does not exist, the Run stops with `TD-OUT-001`. Create it first.
 - **Nothing connected.** With no input the node shows the tooltip "Input is not connected" and the Run stops with `TD-OUT-006`.
 - **No path.** The Run stops with the message `File Output: choose an output path`.
-- **Excel is `.xlsx` only.** A file name ending in `.xls` is refused (`TD-OUT-012`) with Excel selected; rename it to `.xlsx`.
+- **Excel is `.xlsx` only.** A file name ending in `.xls` is refused (`TD-OUT-015`) with Excel selected; rename it to `.xlsx`.
 - **Excel limits.** An Excel sheet holds at most 1,048,575 data rows and 16,384 columns. A larger table is refused, never cut short (`TD-OUT-013` for rows, `TD-OUT-011` for columns). Write it as CSV or Parquet instead, or select fewer columns first.
 - **Table with no columns** cannot be written as Excel.
 - **JSON** loads the entire table into memory before writing.
@@ -442,9 +442,9 @@ With **Delimiter** `;` and **Include BOM** on, the same data is written as `Invo
 | `TD-OUT-005` | The disk is full. | Free space or write to another drive. |
 | `TD-OUT-006` | Nothing is connected to this output. | Connect the node whose result you want to save. |
 | `TD-OUT-011` | The table has more than 16,384 columns, the Excel maximum. | Select fewer columns before writing. |
-| `TD-OUT-012` | Excel output was given a file name ending in `.xls`. The writer only creates `.xlsx` files. | Change the name to end in `.xlsx`. |
 | `TD-OUT-013` | The table has more than 1,048,575 data rows, which an Excel sheet cannot hold. | Save as CSV or Parquet instead. |
 | `TD-OUT-014` | Excel could not create the workbook (for example, unusable cell content). | Shorten or fix the offending text and try again. |
+| `TD-OUT-015` | Excel output was given a file name ending in `.xls`. The writer only creates `.xlsx` files. | Change the name to end in `.xlsx`. |
 
 ### Tips
 

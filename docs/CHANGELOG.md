@@ -77,7 +77,7 @@ Runs a saved workflow with no window, for schedulers, scripts and CI. User guide
 - Front end and read-only commands: argparse tree with exit 64 for usage errors, the
   frozen exit-code contract (0 to 10, 64, 130), the Qt-free op catalogue and
   tolerant workflow reader, `info` and `validate`. [`efe94bf`](https://github.com/AzadKshitij/TriggerEditor/commit/efe94bf)
-- Run-time parameters (`params list|add|remove`, an allow-list of 12 settings),
+- Run-time parameters (`params list|add|remove`, an allow-list of 12 settings, 13 with the Workpaper Output path),
   path remapping (`--input-dir`, `--output-dir`, relative paths and `filePathRel`),
   `paths --relativize`, and `approve` (SHA-256 pinning of the exact file). [`27d3c5c`](https://github.com/AzadKshitij/TriggerEditor/commit/27d3c5c)
 - Safety and supervision: generated-code policy (allowed syntax and imports, no
@@ -96,6 +96,7 @@ Runs a saved workflow with no window, for schedulers, scripts and CI. User guide
   `MERGE` build, `build.bat` smoke test, installer `addtopath` task). [`891120a`](https://github.com/AzadKshitij/TriggerEditor/commit/891120a) Runbook
   `docs/CLI.md`. [`75c825b`](https://github.com/AzadKshitij/TriggerEditor/commit/75c825b) Generated-code imports must be covered by `trigger.spec`
   (test). [`774f5f8`](https://github.com/AzadKshitij/TriggerEditor/commit/774f5f8)
+- **Fix pass** (found while testing the guide): `approve` without a terminal and without `--yes` exits 64, not a traceback [`681a482`](https://github.com/AzadKshitij/TriggerEditor/commit/681a482); output never crashes on a character the console code page cannot show (`configure_streams`: UTF-8 when piped, `errors="replace"` otherwise) [`28f8a92`](https://github.com/AzadKshitij/TriggerEditor/commit/28f8a92); `approve`, `info` and `paths` list every file-touching op from the op catalogue, so a Workpaper Output is reviewed [`7495285`](https://github.com/AzadKshitij/TriggerEditor/commit/7495285); `paths --relativize` works on `subst` and mapped drives [`b6fba01`](https://github.com/AzadKshitij/TriggerEditor/commit/b6fba01); the editor's stray `print`s go to the debug log and stderr has no loguru sink or colour unless `-v`/`-vv` (`-v` also on `validate --deep`) [`429512c`](https://github.com/AzadKshitij/TriggerEditor/commit/429512c); `schedule list` shows `daily at 02:30` and the supervisor deadline comment is corrected [`9884090`](https://github.com/AzadKshitij/TriggerEditor/commit/9884090); the console-prints guard exempts the CLI commands [`811ad1e`](https://github.com/AzadKshitij/TriggerEditor/commit/811ad1e); guide, CLI.md and internals updated [`caad96a`](https://github.com/AzadKshitij/TriggerEditor/commit/caad96a).
 
 ### Excel workpaper (Workpaper Output node)
 
@@ -122,7 +123,8 @@ Guide: `docs/guide/workpaper.md`. Internals: `docs/dev/workpaper-internals.md`.
   in bounded memory). [`b4c333f`](https://github.com/AzadKshitij/TriggerEditor/commit/b4c333f)
 - Spooled batches are read with Polars only (no pyarrow). [`eda6906`](https://github.com/AzadKshitij/TriggerEditor/commit/eda6906)
 - The CLI lists the workbook under `writes` in `approve`, `info` and `paths`. [`7495285`](https://github.com/AzadKshitij/TriggerEditor/commit/7495285)
-- Known gaps: from the CLI the Run log sheet is omitted. See `docs/dev/workpaper-internals.md`, section 15.
+- **Workpaper Output under the CLI**: `--output-dir` and `--param` (`output_path`) redirect the workbook; "If the file exists" is decided before the write is staged (a second CLI run makes `name (2).xlsx`, Stop with error gives `TD-OUT-010`, exit 2); a row-limited workpaper's `<name>_exceptions_full.csv` lands beside the final workbook instead of under the staging name; `source_files` follows `--input-dir` and is listed by `approve`, `info`, `validate` and `paths` and rewritten by `paths --relativize --write` (`OpInfo.list_keys`). [`0593b8e`](https://github.com/AzadKshitij/TriggerEditor/commit/0593b8e) A dedicated Workpaper Output icon and a NODE_REFERENCE row. [`38e71d8`](https://github.com/AzadKshitij/TriggerEditor/commit/38e71d8)
+- Known gap: from the CLI the Run log sheet is omitted (the headless runner installs no run-record provider). See `docs/dev/workpaper-internals.md`, section 15.
 
 ### New nodes (shaping and report)
 
@@ -214,6 +216,44 @@ Read these before opening an old `.tds` file or re-running an old workflow.
 12. Audit amount parsing: decimal-comma amounts are read correctly and
     mixed forms are treated as unreadable (warning `TD-AUDIT-102`) rather than
     mis-read. [`1c0a7f9`](https://github.com/AzadKshitij/TriggerEditor/commit/1c0a7f9)
+13. **File Output, Parquet compression.** The dock has a **Compression** choice for
+    Parquet (Snappy, the default, Zstandard, Gzip, LZ4, None); it was in the settings but
+    Parquet was always written with Snappy. An unknown name is an error. The `use_streaming`
+    key was never read and is gone (sinks always stream); old `.tds` files that carry it, or a
+    null compression (read as Snappy), still load. The generated code renders the settings
+    with `codegen_safe.lit`. [`ec3395b`](https://github.com/AzadKshitij/TriggerEditor/commit/ec3395b)
+14. **File Output, Excel is `.xlsx` only.** A path ending in `.xls` used to select Excel and
+    write `.xlsx` content under the `.xls` name, which Excel refused. The dock now changes a
+    typed `.xls` to `.xlsx` when the field is left and in the Save dialog (filter `*.xlsx`); a
+    stale `.xls` name in an old workflow stops the Run before anything is written, with
+    `TD-OUT-015` ("Excel output must use the .xlsx extension"). [`8e37ac6`](https://github.com/AzadKshitij/TriggerEditor/commit/8e37ac6) [`511db02`](https://github.com/AzadKshitij/TriggerEditor/commit/511db02)
+15. **Run: "Keep running independent branches after a failure"** is honoured (on by default):
+    the nodes that depend on a failed node are skipped with the warning `TD-RUN-008` and
+    recorded as `skipped`; independent branches run and their files stay. Off stops at the first
+    failure. [`1347e24`](https://github.com/AzadKshitij/TriggerEditor/commit/1347e24)
+16. **Node results that changed** (check saved workflows that relied on the old result):
+    Filter Simple mode **Contains** is literal text (`.` and `(` are no longer pattern
+    characters) and Date, Date-time and Time columns compare as dates, with `TD-SHAPE-004` for
+    an unreadable value [`1dfa414`](https://github.com/AzadKshitij/TriggerEditor/commit/1dfa414); Formula refuses more than five sections with
+    `TD-SHAPE-004` instead of dropping the extra ones, and applies **Data type** when it
+    replaces a column made by an earlier card [`4b37d36`](https://github.com/AzadKshitij/TriggerEditor/commit/4b37d36); Cleansing **Collapse inner
+    spaces** no longer trims the ends and a warning chip shows when text rules have no columns
+    [`1733b38`](https://github.com/AzadKshitij/TriggerEditor/commit/1733b38); Find and Replace only validates switched-on rules [`133426d`](https://github.com/AzadKshitij/TriggerEditor/commit/133426d); Running
+    Total offers and sums text columns that hold numbers, as Window does [`d5f0833`](https://github.com/AzadKshitij/TriggerEditor/commit/d5f0833); Gaps
+    findings sort by the numeric value of `from` inside a prefix (`6..7` before `11..12`)
+    [`c353900`](https://github.com/AzadKshitij/TriggerEditor/commit/c353900); Risk Filters' keyword criterion reads "any of" and
+    `unparseable_rows` counts rows, not cells [`6268d46`](https://github.com/AzadKshitij/TriggerEditor/commit/6268d46); Reconcile reads text amounts with
+    the decimal-comma aware parser [`b3a955d`](https://github.com/AzadKshitij/TriggerEditor/commit/b3a955d); Rows stops with `TD-SHAPE-130` when the
+    generated count differs from the input row count [`58cd3da`](https://github.com/AzadKshitij/TriggerEditor/commit/58cd3da); the Append (Vertical) mismatch
+    message names the columns and types, and the `TD-SHAPE-072` hint names key pairs and the date
+    window [`67b8612`](https://github.com/AzadKshitij/TriggerEditor/commit/67b8612); Transpose **Ignore** shows no missing-column chip [`1bd2c83`](https://github.com/AzadKshitij/TriggerEditor/commit/1bd2c83); File Input has a
+    **Max files** control (1 to 100,000) and **Skip and report** test-reads the first 2,000 rows
+    of CSV, text and JSON Lines files [`d206045`](https://github.com/AzadKshitij/TriggerEditor/commit/d206045)
+17. **Run records**: `duration_s` of a node is its real wall time and `peak_memory_mb` is `null`
+    (memory is not measured) [`31b7831`](https://github.com/AzadKshitij/TriggerEditor/commit/31b7831); the required keys depend on the record's
+    `schema_version`, so adding an optional field no longer makes older records
+    `schema_invalid` [`4aec340`](https://github.com/AzadKshitij/TriggerEditor/commit/4aec340); the Run History dock also lists the fallback store and shows
+    each audit test's result (dock and HTML report) [`8c598cd`](https://github.com/AzadKshitij/TriggerEditor/commit/8c598cd)
 
 ## Fixes and maintenance
 
@@ -246,17 +286,18 @@ Read these before opening an old `.tds` file or re-running an old workflow.
 
 As of the commit above. Details and evidence in `docs/dev/*.md`.
 
-1. **Per-node duration and peak memory in run records are always 0.0.**
-   `RunRecorder.node_finished` reads `execution_time`/`peak_memory` that
-   `ExecutionResult` no longer has (the post-run memory check was removed in
-   [`5ae3826`](https://github.com/AzadKshitij/TriggerEditor/commit/5ae3826)); the Run History dock and HTML export show no per-node timing. The
-   unit tests use fakes that carry the fields.
-2. **Preferences > Errors > "continue past failure" has no effect**: the Run always
-   stops at the first failed node (`WorkflowExecutionMixin._run_policy`).
-3. **Adding a field to `RunRecord` makes `verify` report older records as
-   `schema_invalid`** (the required-key list is derived from the dataclass).
+1. **Peak memory per node is not measured**: `peak_memory_mb` in run records is
+   `null` (durations are real since [`31b7831`](https://github.com/AzadKshitij/TriggerEditor/commit/31b7831)). Records from earlier builds show `0.0` for both.
+2. **A node that times out leaks its worker thread**; the executor fix is in progress and
+   not committed yet (uncommitted `core/ExecutionCheck/executor.py`,
+   `tests/unit/test_executor_shutdown.py`). The "continue past failure" preference and the
+   `schema_invalid` problem of old records that were listed here are fixed (see the
+   behaviour list above).
+3. **From the command line a Workpaper Output has no Run log sheet** (the headless runner
+   installs no run-record provider), and its `<name>_exceptions_full.csv` is written straight
+   to its place, not inside the all-or-nothing move at the end of the run.
 4. **Cancel is cooperative**: the node that is executing finishes (bounded by its
-   30 s timeout); a timed-out node leaks its worker thread.
+   30 s timeout); see item 2 for the timed-out node.
 5. **Run records are not git-ignored** (`*.runs/`), and `check_output.py` /
    `dataframe_export.csv` are tracked although generated. Tracked
    `savedfiles/Example_2_Retail_Ledger/app_workflow/1.tds` is rewritten by saving.
@@ -271,7 +312,12 @@ As of the commit above. Details and evidence in `docs/dev/*.md`.
    `trigger_designer.core.*` and needs this source tree on `sys.path`.
 9. Truncating the tail of a run-record chain is undetectable by design; note the
    `head_hash` printed by verify.
-10. Command line (see `docs/dev/cli-internals.md` section 17): quick `validate`
+10. Command line (see `docs/dev/cli-internals.md` section 17; the defects found in the
+    guide pass are fixed): quick `validate`
     reports a missing input as a warning (exit 0) while `--deep` and `run` report an
     error (exit 2); the Task Scheduler cycle, the installer's PATH task and the
     packaged exe on a machine without Python have not been run.
+11. `tests/e2e/test_cli_workpaper.py::test_workflow_sheet_never_shows_staging_names_and_follows_input_dir`
+    fails on Windows as of `511db02`: it looks for a forward-slash path
+    (`Path.as_posix()`) in the Workflow sheet, which holds the same path with backslashes.
+    The workbook is right; the assertion needs to compare normalised paths.
