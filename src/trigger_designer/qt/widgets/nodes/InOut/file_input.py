@@ -923,6 +923,98 @@ class FileInputContent(
             label = os.path.basename(self.filePath.rstrip("\\/")) or self.filePath
         return chips, label
 
+    def describe_settings(self) -> list[tuple[str, str]]:
+        """Curated ``(label, value)`` rows for the workpaper's Workflow sheet.
+
+        Only what a reviewer needs to know how the data was read; internal
+        bookkeeping (schema snapshot, file metadata, versions) is left out.
+        """
+        rows: list[tuple[str, str]] = []
+        if not self.filePath:
+            return [("Source", "not set")]
+        mode = effective_mode(self.filePath)
+        kind = str(self.file_type)
+        rows.append(("Source", self.filePath))
+        rows.append(("Source type", kind))
+        if mode in ("folder", "pattern"):
+            rows.append(
+                (
+                    "Reads",
+                    "all files in a folder"
+                    if mode == "folder"
+                    else "files matching a pattern",
+                )
+            )
+            if self.include_patterns:
+                rows.append(("Include", ", ".join(self.include_patterns)))
+            if self.exclude_patterns:
+                rows.append(("Exclude", ", ".join(self.exclude_patterns)))
+            if mode == "folder":
+                rows.append(("Sub-folders", "yes" if self.recursive else "no"))
+            rows.append(("File order", str(self.file_order)))
+            rows.append(("Max files", str(self.max_files)))
+            rows.append(("If columns differ", str(self.schema_mismatch)))
+            rows.append(
+                (
+                    "Bad file",
+                    "skip and report"
+                    if self.on_file_error == "skip"
+                    else "stop with error",
+                )
+            )
+        if kind in ("csv", "txt"):
+            rows.append(
+                (
+                    "Delimiter",
+                    "tab" if self.delimiter == "	" else str(self.delimiter),
+                )
+            )
+            rows.append(
+                (
+                    "First row is the header",
+                    "yes" if self.first_row_contains_field_names else "no",
+                )
+            )
+            rows.append(("Encoding", str(self.encoding)))
+        elif kind == "excel":
+            if self.sheet_mode == "all":
+                rows.append(("Sheets", "all sheets"))
+            elif self.sheet_mode == "chosen":
+                rows.append(
+                    ("Sheets", ", ".join(self.selected_sheets) or "none chosen")
+                )
+            else:
+                rows.append(("Sheet", str(self.selected_sheet or "first sheet")))
+            if int(self.start_row or 1) != 1:
+                rows.append(("Start row", str(self.start_row)))
+            if self.add_sheet_name_column:
+                rows.append(("Sheet name column", str(self.sheet_name_column_name)))
+        elif kind in ("json", "ndjson"):
+            rows.append(
+                (
+                    "Nested values",
+                    "kept as is" if self.json_nested == "keep" else "as text",
+                )
+            )
+        elif kind in ("sqlite", "duckdb"):
+            if self.db_mode == "query":
+                rows.append(("Query", str(self.db_query)))
+            else:
+                rows.append(("Table", str(self.db_table)))
+        if self.read_as_text:
+            rows.append(("Columns read as", "text"))
+        rows.append(
+            ("Row limit", str(self.record_limit) if self.record_limit else "all rows")
+        )
+        if self.output_filename_as_field:
+            rows.append(
+                (
+                    "File name column",
+                    f"{self.file_name_column_name} ({self.file_name_value})",
+                )
+            )
+        return rows
+
     # -- visibility and projections ---------------------------------------
     def _apply_visibility(self) -> None:
         if not hasattr(self, "source_section"):

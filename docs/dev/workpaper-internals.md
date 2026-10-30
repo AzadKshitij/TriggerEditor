@@ -262,8 +262,11 @@ sheet is **not** protected.
 `core/audit/view` gives *Rows out* (`None` prints "not counted"). Workflow settings come from
 `workflow_snapshot.describe_settings(node)`: the content's `describe_settings()` hook if it has
 one, else `snapshot_settings(content)` with labels derived from the keys; values are cut at 600
-characters in the snapshot and 300 on the sheet. (File Input has no hook yet, so its row lists
-raw keys such as `Filepathrel` and `Input schema version`.)
+characters in the snapshot and 300 on the sheet. File Input has the hook
+(`FileInputContent.describe_settings`): Source, Source type, folder/pattern options, then the
+options of the type (CSV delimiter/header/encoding, Excel sheet(s)/start row, JSON nested values,
+database table/query), Row limit and the file name column; bookkeeping keys (`Filepathrel`,
+`Input schema version`, `schema_snapshot`, `file_metadata`) are omitted.
 
 Sheet names: `Summary`, the (sanitised) Exceptions name, `Run log`, `Workflow`.
 `RESERVED_SHEETS = ("summary", "run log", "workflow", "tests")` keeps a user's name from colliding
@@ -489,8 +492,7 @@ These were found while writing the guide, by running the code. They are not fixe
 3. **CLI run, no Run log.** `core/headless` installs no run-record provider, so the Run log
    sheet is omitted ("no run record is available"). (The CLI writes its own record.)
 4. ~~Run workpaper "Test performed" always read "Exceptions workpaper"~~ (fixed: "Whole run: N tests").
-5. **The Workflow sheet's File Input row** lists internal keys (`Filepathrel`, `Input schema
-   version`) because File Input has no `describe_settings()` hook.
+5. ~~The Workflow sheet's File Input row listed internal keys~~ (fixed: `describe_settings()` hook).
 6. **In-flight Run log:** the workpaper node's own step is not in the log and `Rows read` of a
    source can say "not recorded" (the count is added to the record only after the step).
 7. **Time limit:** the 30 second per-step limit makes lists of about 400,000 rows and more fail in the

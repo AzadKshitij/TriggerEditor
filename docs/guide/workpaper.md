@@ -251,7 +251,7 @@ The sheet is protected like the Summary. When the run was not recorded, the shee
 
 ### Workflow
 
-"Steps that produced the data in this workpaper, in the order they ran." One row per step upstream of the node: **Step**, **Node**, **Type**, **What it does (settings)** (one `Label: value` line per setting, long values cut at 300 characters) and **Takes data from** (the nodes feeding it). Below, under **Notes in the workflow**, every **Comment** node on the canvas is copied word for word, so your explanations travel with the evidence. Protected like the Summary. If no workflow information is supplied the sheet is left out with the reason on the Summary.
+"Steps that produced the data in this workpaper, in the order they ran." One row per step upstream of the node: **Step**, **Node**, **Type**, **What it does (settings)** (one `Label: value` line per setting, long values cut at 300 characters; a **File Input** step reads, for example, `Source`, `Source type`, `Delimiter`, `Encoding`, `Sheet` or `Sheets`, `Row limit` and the folder or pattern options, and leaves out internal bookkeeping) and **Takes data from** (the nodes feeding it). Below, under **Notes in the workflow**, every **Comment** node on the canvas is copied word for word, so your explanations travel with the evidence. Protected like the Summary. If no workflow information is supplied the sheet is left out with the reason on the Summary.
 
 ---
 

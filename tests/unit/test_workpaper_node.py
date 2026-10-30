@@ -277,3 +277,91 @@ def test_predict_output_path_has_no_side_effects(tmp_path):
     assert unique_path(str(target)).endswith("a (3).xlsx")
     assert predict_output_path("", "version") == ""
     assert sorted(p.name for p in tmp_path.iterdir()) == ["a (2).xlsx", "a.xlsx"]
+
+
+_INTERNAL_LABELS = {
+    "Filepathrel",
+    "Input schema version",
+    "Schema snapshot",
+    "File metadata",
+}
+
+
+def _file_input_rows(qtbot, **attrs):
+    window = TriggerSubWindow()
+    qtbot.addWidget(window)
+    fin = get_class_from_opcode(IONodes.FILE_INPUT, NodeTypes.IO)(window.scene)
+    for key, value in attrs.items():
+        setattr(fin.content, key, value)
+    wp = get_class_from_opcode(IONodes.WORKPAPER_OUTPUT, NodeTypes.IO)(window.scene)
+    Edge(window.scene, fin.outputs[0], wp.inputs[0])
+    rows = dict(collect_workflow(wp)[0]["settings"])
+    assert not _INTERNAL_LABELS & set(rows)
+    return rows
+
+
+def test_workflow_file_input_csv_is_curated(qtbot, tmp_path):
+    csv = tmp_path / "in.csv"
+    csv.write_text("a;b\n1;2\n")
+    rows = _file_input_rows(
+        qtbot,
+        filePath=str(csv),
+        file_type="csv",
+        delimiter=";",
+        record_limit=50,
+        encoding="utf8-lossy",
+        schema_snapshot=[{"name": "a", "dtype": "Int64"}],
+        file_metadata={"size": 9},
+    )
+    assert rows["Source"] == str(csv) and rows["Source type"] == "csv"
+    assert rows["Delimiter"] == ";" and rows["Row limit"] == "50"
+    assert rows["Encoding"] == "utf8-lossy"
+    assert rows["First row is the header"] == "yes"
+
+
+def test_workflow_file_input_excel_sheets(qtbot, tmp_path):
+    path = tmp_path / "book.xlsx"
+    path.write_bytes(b"x")
+    rows = _file_input_rows(
+        qtbot, filePath=str(path), file_type="excel", selected_sheet="Ledger"
+    )
+    assert rows["Sheet"] == "Ledger" and rows["Row limit"] == "all rows"
+    rows = _file_input_rows(
+        qtbot,
+        filePath=str(path),
+        file_type="excel",
+        sheet_mode="chosen",
+        selected_sheets=["A", "B"],
+        start_row=3,
+    )
+    assert rows["Sheets"] == "A, B" and rows["Start row"] == "3"
+
+
+def test_workflow_file_input_folder_options_and_json_db(qtbot, tmp_path):
+    rows = _file_input_rows(
+        qtbot,
+        filePath=str(tmp_path),
+        file_type="csv",
+        include_patterns=["*.csv"],
+        recursive=True,
+        on_file_error="skip",
+    )
+    assert rows["Reads"] == "all files in a folder"
+    assert rows["Include"] == "*.csv" and rows["Sub-folders"] == "yes"
+    assert rows["Bad file"] == "skip and report"
+    js = tmp_path / "d.json"
+    js.write_text("[]")
+    rows = _file_input_rows(
+        qtbot, filePath=str(js), file_type="json", json_nested="keep"
+    )
+    assert rows["Nested values"] == "kept as is"
+    db = tmp_path / "d.sqlite"
+    db.write_bytes(b"x")
+    rows = _file_input_rows(
+        qtbot, filePath=str(db), file_type="sqlite", db_mode="table", db_table="gl"
+    )
+    assert rows["Table"] == "gl"
+
+
+def test_workflow_file_input_without_a_path(qtbot):
+    assert _file_input_rows(qtbot) == {"Source": "not set"}
