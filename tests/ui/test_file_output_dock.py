@@ -157,3 +157,31 @@ def test_legacy_settings_load_without_use_streaming(qtbot) -> None:
     assert content.settings["file_format"] == "parquet"
     assert "use_streaming" not in content.settings
     assert content.settings.get("compression") in (None, "snappy")
+
+
+def test_typing_an_xls_path_is_normalised_to_xlsx(qtbot) -> None:
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    content.filePathEdit.setText("C:/reports/ledger.XLS")
+    content.filePathEdit.editingFinished.emit()
+    assert content.settings["filePath"] == "C:/reports/ledger.xlsx"
+    assert content.settings["file_format"] == "excel"
+    assert content.filePathEdit.text() == "C:/reports/ledger.xlsx"
+
+
+def test_save_dialog_offers_xlsx_only(qtbot, monkeypatch) -> None:
+    from trigger_designer.qt.widgets.nodes.InOut import file_output as module
+
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    content.settings["file_format"] = "excel"
+    seen = {}
+
+    def fake(parent, title, directory, filter_str):
+        seen["filter"] = filter_str
+        return "", ""
+
+    monkeypatch.setattr(module.QFileDialog, "getSaveFileName", staticmethod(fake))
+    content.openFileDialog()
+    assert "*.xls)" not in seen["filter"] and ".xls " not in seen["filter"]
+    assert "*.xlsx" in seen["filter"]

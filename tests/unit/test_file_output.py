@@ -293,3 +293,38 @@ def test_generated_code_uses_safe_literals_for_hostile_text(tmp_path) -> None:
 
     ast.parse(code)
     assert code.count("\n") <= 3  # still a single call, value stayed a value
+
+
+# -- .xls extension (D2) ------------------------------------------------------
+def test_xls_path_is_refused_with_a_plain_td_out_code(tmp_path) -> None:
+    from trigger_designer.core.excel.errors import ExcelWriteError
+
+    out = tmp_path / "old.xls"
+    with pytest.raises(ExcelWriteError) as caught:
+        core.write_node(
+            [pl.DataFrame({"a": [1]})],
+            {"filePath": str(out), "file_format": "excel"},
+        )
+    assert caught.value.code == "TD-OUT-012"
+    assert ".xlsx" in str(caught.value)
+    assert not out.exists()
+
+
+def test_xls_name_is_refused_for_excel_but_not_for_other_formats(tmp_path) -> None:
+    out = tmp_path / "data.xls"
+    core.write_node(
+        [pl.DataFrame({"a": [1]})],
+        {"filePath": str(out), "file_format": "csv"},
+    )
+    assert out.exists()
+
+
+def test_generated_code_for_xls_raises_the_plain_error(tmp_path) -> None:
+    from trigger_designer.core.excel.errors import ExcelWriteError
+
+    out = tmp_path / "gen.xls"
+    code = _make_content(filePath=str(out), file_format="excel").get_code()
+    with pytest.raises(ExcelWriteError, match="xlsx"):
+        scope = {"var_in": pl.LazyFrame({"a": [1]})}
+        exec(compile(code, "<file_output>", "exec"), scope)  # noqa: S102
+    assert not out.exists()

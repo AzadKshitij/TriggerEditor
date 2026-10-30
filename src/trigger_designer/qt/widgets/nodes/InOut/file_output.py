@@ -61,6 +61,11 @@ _EXTENSION_FORMATS = {
 }
 
 
+def _xlsx_name(path: str) -> str:
+    """``report.xls`` -> ``report.xlsx``: Excel would refuse xlsx content in an .xls name."""
+    return path[:-4] + ".xlsx" if path.lower().endswith(".xls") else path
+
+
 class FileOutputContent(ShapingContent):
     """Destination and format settings for the sink."""
 
@@ -85,6 +90,7 @@ class FileOutputContent(ShapingContent):
             self.filePathEdit.textChanged,
             lambda: self._commit_path(self.filePathEdit.text()),
         )
+        self.filePathEdit.editingFinished.connect(self._finish_path_edit)
         self.saveButton = IconButton.themed(
             "Browse for save location",
             rsm_icon=self.node.rsm.get("icon_save"),
@@ -249,6 +255,18 @@ class FileOutputContent(ShapingContent):
         self.compression_row.setVisible(self.settings.get("file_format") == "parquet")
 
     # -- commits ----------------------------------------------------------
+    def _finish_path_edit(self) -> None:
+        """Leaving the field: .xls becomes .xlsx (the writer only makes xlsx)."""
+        text = self.filePathEdit.text()
+        fixed = _xlsx_name(text)
+        if fixed != text:
+            blocked = self.filePathEdit.blockSignals(True)
+            try:
+                self.filePathEdit.setText(fixed)
+            finally:
+                self.filePathEdit.blockSignals(blocked)
+        self._commit_path(fixed)
+
     def _commit_path(self, path: str) -> None:
         self.set_setting(
             "filePath", path, "File Output Path Changed", "File Output-path"
@@ -262,7 +280,7 @@ class FileOutputContent(ShapingContent):
         file_format = str(self.settings.get("file_format") or "csv")
         filters = {
             "csv": "CSV Files (*.csv);;Text Files (*.txt)",
-            "excel": "Excel Files (*.xlsx *.xls)",
+            "excel": "Excel Files (*.xlsx)",
             "parquet": "Parquet Files (*.parquet)",
             "json": "JSON Files (*.json)",
             "ndjson": "NDJSON Files (*.ndjson)",
@@ -274,6 +292,7 @@ class FileOutputContent(ShapingContent):
             self.parent(), f"Save {file_format.upper()} File", "", filter_str
         )
         if path:
+            path = _xlsx_name(path)
             self.filePathEdit.setText(path)
             self._commit_path(path)
 
