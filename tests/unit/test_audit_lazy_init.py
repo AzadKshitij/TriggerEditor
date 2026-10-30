@@ -53,3 +53,12 @@ def test_existing_submodule_imports_still_work():
         f"from {PKG} import store; assert store.RunStore"
     )
     assert proc.returncode == 0, proc.stderr
+
+
+def test_every_lazy_export_resolves():
+    proc = _run(
+        f"import {PKG} as a\n"
+        "missing=[n for n in a._EXPORTS if getattr(a, n, None) is None]\n"
+        "assert not missing, missing"
+    )
+    assert proc.returncode == 0, proc.stderr
