@@ -75,7 +75,7 @@ def test_node_is_registered_with_stable_op_id():
 
 
 def test_op_id_serialises_as_input_workpaper_output(qtbot):
-    window, node = _new(qtbot)
+    window, _node = _new(qtbot)
     data = window.scene.serialize()
     entry = next(n for n in data["nodes"] if n["title"] == "Workpaper Output")
     assert entry.get("op") == "input.workpaper_output"
@@ -252,3 +252,28 @@ def test_before_run_snapshots_on_the_gui_thread(qtbot, clean_preferences):
     assert node.content._sources == []
     clean_preferences.set("engagement/client_name", "Later")
     assert node.content.effective_spec().client == "Snap"  # the run uses the snapshot
+
+
+def test_audit_output_files_predicts_the_versioned_name(qtbot, tmp_path):
+    _w, node = _new(qtbot)
+    assert node.content.audit_output_files() == []
+    target = tmp_path / "wp.xlsx"
+    node.content.settings["output_path"] = str(target)
+    (only,) = node.content.audit_output_files()
+    assert only["path"] == target.as_posix() and only["format"] == "xlsx"
+    target.write_bytes(b"x")
+    assert node.content.audit_output_files()[0]["path"].endswith("wp (2).xlsx")
+    node.content.settings["if_exists"] = "replace"
+    assert node.content.audit_output_files()[0]["path"] == target.as_posix()
+
+
+def test_predict_output_path_has_no_side_effects(tmp_path):
+    from trigger_designer.core.workpaper.paths import predict_output_path, unique_path
+
+    target = tmp_path / "a.xlsx"
+    assert predict_output_path(str(target), "version") == str(target)
+    target.write_bytes(b"x")
+    (tmp_path / "a (2).xlsx").write_bytes(b"x")
+    assert unique_path(str(target)).endswith("a (3).xlsx")
+    assert predict_output_path("", "version") == ""
+    assert sorted(p.name for p in tmp_path.iterdir()) == ["a (2).xlsx", "a.xlsx"]

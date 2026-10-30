@@ -20,6 +20,7 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.workpaper import node_logic
+from trigger_designer.core.workpaper.paths import predict_output_path
 from trigger_designer.qt.helpers.shaping_support import (
     Field,
     FormSection,
@@ -178,6 +179,20 @@ class WorkpaperOutputContent(ShapingContent):
         if engagement is None and threading.current_thread() is threading.main_thread():
             engagement = engagement_from_preferences()
         return node_logic.effective_spec(self.settings, engagement, app_version=VERSION)
+
+    def audit_output_files(self) -> list[dict]:
+        """The workbook this Run will write, for the run record (versioned name)."""
+        path = str(self.settings.get("output_path") or "").replace("\\", "/")
+        if not path:
+            return []
+        mode = str(self.settings.get("if_exists") or "version")
+        return [
+            {
+                "path": predict_output_path(path, mode),
+                "format": "xlsx",
+                "delimiter": None,
+            }
+        ]
 
     def get_code(self) -> str:
         if (

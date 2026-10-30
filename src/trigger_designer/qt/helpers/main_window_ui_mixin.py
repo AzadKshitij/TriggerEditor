@@ -35,6 +35,9 @@ class MainWindowMenuMixin:
         self.openRecentMenu.aboutToShow.connect(self._rebuild_recent_menu)
         self._rebuild_recent_menu()
 
+        self.fileMenu.insertAction(self.actExit, self.actExportWorkpaper)
+        self.fileMenu.insertSeparator(self.actExit)
+
         self.editMenu.addSeparator()
         self.arrangeMenu = self.editMenu.addMenu("&Arrange")
         for command in node_arrange.COMMANDS:
@@ -63,6 +66,7 @@ class MainWindowMenuMixin:
 
         self.actSave.setEnabled(has_mdi_child)
         self.actSaveAs.setEnabled(has_mdi_child)
+        self.actExportWorkpaper.setEnabled(has_mdi_child)
         self.actClose.setEnabled(has_mdi_child)
         self.actCloseAll.setEnabled(has_mdi_child)
         self.actTile.setEnabled(has_mdi_child)

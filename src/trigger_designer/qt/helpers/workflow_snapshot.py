@@ -85,25 +85,22 @@ def ancestors(node: Any) -> list[Any]:
     return order
 
 
-def collect_workflow(node: Any) -> list[dict]:
-    steps: list[dict] = []
-    for number, parent in enumerate(ancestors(node), start=1):
-        steps.append(
-            {
-                "step": number,
-                "node_id": int(getattr(parent, "id", 0) or 0),
-                "title": str(getattr(parent, "node_title", "") or ""),
-                "label": str(getattr(parent, "label_text", "") or "").strip() or None,
-                "op": _op_of(parent),
-                "kind": "node",
-                "settings": describe_settings(parent),
-                "inputs": [
-                    str(getattr(up, "node_title", "") or "") for up in _upstream(parent)
-                ],
-                "comment": None,
-            }
-        )
-    scene = getattr(node, "scene", None)
+def _step(node: Any, number: int) -> dict:
+    return {
+        "step": number,
+        "node_id": int(getattr(node, "id", 0) or 0),
+        "title": str(getattr(node, "node_title", "") or ""),
+        "label": str(getattr(node, "label_text", "") or "").strip() or None,
+        "op": _op_of(node),
+        "kind": "node",
+        "settings": describe_settings(node),
+        "inputs": [str(getattr(up, "node_title", "") or "") for up in _upstream(node)],
+        "comment": None,
+    }
+
+
+def _comment_steps(scene: Any) -> list[dict]:
+    steps = []
     for note in comments_from_nodes(list(getattr(scene, "nodes", ()) or ())):
         steps.append(
             {
@@ -119,6 +116,28 @@ def collect_workflow(node: Any) -> list[dict]:
             }
         )
     return steps
+
+
+def collect_workflow(node: Any) -> list[dict]:
+    """Ancestors of ``node`` in run order, then every Comment node of the scene."""
+    steps = [_step(parent, number) for number, parent in enumerate(ancestors(node), 1)]
+    return steps + _comment_steps(getattr(node, "scene", None))
+
+
+def collect_scene_workflow(
+    scene: Any, order_ids: list[int] | None = None
+) -> list[dict]:
+    """Every executable node of ``scene`` (``order_ids`` first, as the run ordered
+    them), then the Comment nodes. Used by the whole-run workpaper."""
+    nodes = [
+        n for n in getattr(scene, "nodes", ()) or () if _op_of(n) != "report.comment"
+    ]
+    rank = {node_id: i for i, node_id in enumerate(order_ids or [])}
+    if order_ids:
+        nodes = [n for n in nodes if getattr(n, "id", None) in rank]
+        nodes.sort(key=lambda n: rank[n.id])
+    steps = [_step(node, number) for number, node in enumerate(nodes, 1)]
+    return steps + _comment_steps(scene)
 
 
 def collect_sources(node: Any) -> list[dict]:

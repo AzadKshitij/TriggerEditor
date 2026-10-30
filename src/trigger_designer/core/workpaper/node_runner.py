@@ -58,7 +58,7 @@ def run_workpaper(
         run_record=current_run_record() if spec.include_run_record else None,
         workflow=workflow,
     )
-    print(f"[SUCCESS] Workpaper written to {result.path}")
+    logger.success("Workpaper written to {}", result.path)
     for line in result.warnings:
         logger.info("Workpaper: {}", line)
     for sheet, reason in result.omitted.items():

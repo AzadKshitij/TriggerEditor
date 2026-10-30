@@ -30,6 +30,7 @@ from trigger_designer.core.excel.errors import (
 )
 from trigger_designer.core.excel.frame_export import check_target_folder, publish
 from trigger_designer.core.excel.spool import spool_parquet
+from trigger_designer.core.workpaper.paths import unique_path
 from trigger_designer.core.workpaper.sanitize import (
     MAX_DATA_COLUMNS,
     MAX_LISTED,
@@ -101,22 +102,12 @@ def _validated(spec: WorkpaperSpec) -> tuple[WorkpaperSpec, date | None, list[st
     )
 
 
-def _unique_path(path: str) -> str:
-    stem, ext = os.path.splitext(path)
-    n = 2
-    candidate = path
-    while os.path.exists(candidate):
-        candidate = f"{stem} ({n}){ext}"
-        n += 1
-    return candidate
-
-
 def _choose_path(path: str, mode: str) -> str:
     """The final workbook path for ``if_exists`` mode ``mode``."""
     check_target_folder(path)
     name = os.path.basename(path)
     if mode == "version":
-        return _unique_path(path)
+        return unique_path(path)
     if mode == "fail" and os.path.exists(path):
         raise WorkpaperError(
             f"A workpaper named '{name}' already exists. Choose another name or set "
@@ -145,7 +136,7 @@ def _sidecar_target(final: str, mode: str) -> str:
                 path=target,
             )
         if mode == "version":
-            target = _unique_path(target)
+            target = unique_path(target)
     return target
 
 

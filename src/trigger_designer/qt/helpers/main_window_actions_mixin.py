@@ -27,6 +27,13 @@ class MainWindowActionsMixin:
             triggered=self.showSettings,
         )
 
+        self.actExportWorkpaper = QAction(
+            "Export &Workpaper...",
+            self,
+            statusTip="Write an Excel workpaper of the last recorded run",
+            triggered=self.exportWorkpaper,
+        )
+
         self.actSaveLayout = QAction(
             "&Save Current Layout",
             self,
@@ -91,6 +98,12 @@ class MainWindowActionsMixin:
         )
 
         self.createArrangeActions()
+
+    def exportWorkpaper(self) -> None:
+        """File > Export Workpaper...: summary, run log and workflow of the last run."""
+        from trigger_designer.qt.helpers.workpaper_export import export_workpaper
+
+        export_workpaper(self)
 
     def createArrangeActions(self) -> None:
         """Build the Arrange menu's actions, one per arrangement command.
