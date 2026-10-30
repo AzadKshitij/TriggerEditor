@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from trigger_designer.core.shaping.common import as_lazy, schema_of
+from trigger_designer.core.shaping.common import as_lazy, numeric_expr, schema_of
 from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 
 DEFAULTS = {
@@ -18,7 +18,13 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     settings = settings or {}
     frame = as_lazy(frames[0])
     schema = schema_of(frame)
-    numeric = [name for name, dtype in schema.items() if dtype.is_numeric()]
+    # Like Window: a text column is read as numbers (an unreadable value is
+    # empty), because a CSV arrives with every column as text.
+    numeric = [
+        name
+        for name, dtype in schema.items()
+        if dtype.is_numeric() or dtype == pl.String
+    ]
     sums = [name for name in settings.get("sum_columns") or [] if name in numeric]
     groups = [name for name in settings.get("group_by_columns") or [] if name in schema]
     if not sums:
@@ -26,7 +32,10 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
 
     expressions: list[pl.Expr] = []
     for name in sums:
-        expression = pl.col(name).cum_sum()
+        if schema[name] == pl.String:
+            expression = numeric_expr(name, schema[name]).cum_sum()
+        else:
+            expression = pl.col(name).cum_sum()
         if groups:
             expression = expression.over(groups)
         expressions.append(expression.alias(f"RunTot_{name}"))

@@ -53,14 +53,15 @@ def _node(qtbot, frame=None):
     return window, source, node, dock
 
 
-def test_dock_offers_numeric_sums_and_all_groups(qtbot) -> None:
+def test_dock_offers_numbers_and_text_as_sums_and_all_groups(qtbot) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     sums = content._widgets["sum_columns"]
     groups = content._widgets["group_by_columns"]
     assert isinstance(sums, ColumnPicker)
     assert isinstance(groups, ColumnPicker)
-    assert sums.column_names() == ["n"]
+    # Text columns are offered too: a CSV arrives as text and is read as numbers.
+    assert sums.column_names() == ["a", "n", "s"]
     assert groups.column_names() == ["a", "n", "s"]
     assert content.dock_summary() == "0 sums \u00b7 0 groups"
 

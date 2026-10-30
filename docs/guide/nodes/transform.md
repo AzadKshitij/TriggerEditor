@@ -33,8 +33,8 @@ Pivot may be missing a header that appears later in the file, and a running tota
 Check the full result after a Run: the Data Preview dock labels a table *evaluated · not run* (preview) or
 *from Run*.
 
-**Column types.** A CSV or text file arrives with every column as text. Pivot, Window and SQL Query can read
-text that holds numbers; Running Total cannot (see its section). Use a *Select* node to change a column's type.
+**Column types.** A CSV or text file arrives with every column as text. Pivot, Window, Running Total and SQL Query can read
+text that holds numbers. Use a *Select* node to change a column's type.
 
 **Errors.** A mistake in the settings turns the node red. The Problems dock shows a short message, a hint
 and a code. The codes you can meet in this family:
@@ -110,7 +110,7 @@ per chosen sum column.
 
 | Label | Default | Effect |
 |---|---|---|
-| **Sum** | none chosen | The number columns to total. Only columns that are already numbers are offered. Each one adds a column named `RunTot_<column>`. |
+| **Sum** | none chosen | The columns to total: number columns and text columns (read as numbers, like Window; a value that is not a number becomes empty). Each one adds a column named `RunTot_<column>`. |
 | **Group by** | none chosen | The columns that define a group (account, branch). The total restarts at each new value. With none chosen, one total runs down the whole table. |
 
 **Worked example.** Sum `Amount`, Group by `Account`, on the table above:
@@ -129,8 +129,10 @@ With no Group by, the last column reads 100, 70, 120, 145, 70.
 
 - **Row order matters.** The total accumulates in the order the rows arrive. Sort first (a *Sort* node) if you
   want it in date order. Rows are never reordered.
-- **Text columns are not offered.** A CSV has no number columns until you convert them, so the Sum list may
-  look empty. Convert the column with a *Select* node, or use Window's *Running sum*, which reads text as numbers.
+- **Text columns are read as numbers.** A CSV arrives as text, so its columns are offered too. A comma in the
+  text is dropped (`1,000` is 1000), spaces are trimmed, and a value that is not a number stays empty in the
+  new column (it is not an error). The result column is a decimal number. Columns that are neither numbers nor
+  text (dates, yes/no) are not offered.
 - With no Sum column chosen, the node passes the table through unchanged (no error).
 - An empty cell stays empty in the new column and the total carries on past it (1, empty, 3 gives 1, empty, 4).
 
