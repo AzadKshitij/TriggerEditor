@@ -218,30 +218,38 @@ def amount_expr(name: str, dtype: pl.DataType) -> pl.Expr:
             .str.replace_all(r"[\s$£€'’]", "")
             .str.replace(r"^\((.*)\)$", "-$1")
         )
-        us_both = s.str.contains(r"\.[^,]*$") & s.str.contains(",")
-        eu_both = s.str.contains(r",[^.]*$") & s.str.contains(r"\.")
-        eu_ok = s.str.contains(r"^-?\d{1,3}(\.\d{3})*,\d+$")
-        thousands = s.str.contains(r"^-?[1-9]\d{0,2}(,\d{3})+$")
-        dec_comma = s.str.contains(r"^-?\d+,\d+$")
-        only_comma = s.str.contains(",") & ~s.str.contains(r"\.")
+        # Almost every amount has no comma. Everything after this line works on
+        # ``sc`` (null for those rows), so the regexes only see the rare rows and
+        # the common case costs two cheap passes (see tests/benchmarks).
+        has_c = s.str.contains(",", literal=True)
+        sc = pl.when(has_c).then(s)
+        has_d = sc.str.contains(".", literal=True)
+        rev = sc.str.reverse()
+        dot_last = rev.str.find(".", literal=True) < rev.str.find(",", literal=True)
+        eu_ok = sc.str.contains(r"^-?\d{1,3}(\.\d{3})*,\d+$")
+        thousands = sc.str.contains(r"^-?[1-9]\d{0,2}(,\d{3})+$")
+        dec_comma = sc.str.contains(r"^-?\d+,\d+$")
+        unreadable_text = pl.lit(None, dtype=pl.String)
         col = (
-            pl.when(us_both)
-            .then(s.str.replace_all(",", ""))
-            .when(eu_both)
+            pl.when(~has_c)
+            .then(s)
+            .when(has_d & dot_last)  # 1,234.50
+            .then(sc.str.replace_all(",", "", literal=True))
+            .when(has_d)  # 1.234,50
             .then(
                 pl.when(eu_ok)
-                .then(s.str.replace_all(r"\.", "").str.replace(",", "."))
-                .otherwise(pl.lit(None, dtype=pl.String))
+                .then(
+                    sc.str.replace_all(".", "", literal=True).str.replace(
+                        ",", ".", literal=True
+                    )
+                )
+                .otherwise(unreadable_text)
             )
-            .when(only_comma)
-            .then(
-                pl.when(thousands)
-                .then(s.str.replace_all(",", ""))
-                .when(dec_comma)
-                .then(s.str.replace(",", "."))
-                .otherwise(pl.lit(None, dtype=pl.String))
-            )
-            .otherwise(s)
+            .when(thousands)  # 1,234 / 1,234,567
+            .then(sc.str.replace_all(",", "", literal=True))
+            .when(dec_comma)  # 1234,5
+            .then(sc.str.replace(",", ".", literal=True))
+            .otherwise(unreadable_text)
         )
     return col.cast(pl.Float64, strict=False)
 
