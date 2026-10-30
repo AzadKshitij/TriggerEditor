@@ -12,6 +12,7 @@ from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
 from trigger_designer.qt.docks.problems_dock import ProblemsDock
+from trigger_designer.qt.docks.run_history_dock import RunHistoryDock
 from trigger_designer.qt.helpers.dock_chrome import (
     enable_tab_drag_out,
     install_tab_only_chrome,
@@ -153,6 +154,11 @@ class MainWindowMenuMixin:
             problems_action = self.problemsDock.toggleViewAction()
             problems_action.setText("Problems")
             self.windowMenu.addAction(problems_action)
+
+        if hasattr(self, "runHistoryDock") and self.runHistoryDock is not None:
+            history_action = self.runHistoryDock.toggleViewAction()
+            history_action.setText("Run History")
+            self.windowMenu.addAction(history_action)
 
         if hasattr(self, "configDock") and self.configDock is not None:
             config_action = self.configDock.toggleViewAction()
@@ -313,6 +319,18 @@ class MainWindowDockMixin:
         self.tabifyDockWidget(self.loggingDock, self.problemsDock)
         install_tab_only_chrome(self.problemsDock)
 
+    def createRunHistoryDock(self) -> None:
+        """Create the Run History dock, tabified with the other bottom docks."""
+        self.runHistoryDock = RunHistoryDock(self)
+        self.runHistoryDock.setObjectName("RunHistoryDock")
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.runHistoryDock)
+        self.tabifyDockWidget(self.loggingDock, self.runHistoryDock)
+        install_tab_only_chrome(self.runHistoryDock)
+
+    def switchRunHistoryDock(self, design_window) -> None:
+        if hasattr(self, "runHistoryDock") and self.runHistoryDock:
+            self.runHistoryDock.switch_to_design_window(design_window)
+
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""
         return getattr(self, "loggingDock", None)
@@ -346,6 +364,8 @@ class MainWindowDockMixin:
             self.dataPreviewDock.remove_design_window(design_window_id)
         if hasattr(self, "problemsDock") and self.problemsDock:
             self.problemsDock.remove_design_window(design_window_id)
+        if hasattr(self, "runHistoryDock") and self.runHistoryDock:
+            self.runHistoryDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
         """Build the status bar with the scene-position readout.

@@ -52,6 +52,19 @@ class ResourceManager:
             # logger.info(
             #     f"{self.__class__.__name__} Resources: {ResourceManager._map.items()}")
 
+    @classmethod
+    def register_material(cls, id: str, name: str, fill: bool = False) -> None:
+        """Add a Material Symbol under ``id`` unless resources.json has it.
+
+        Lets a feature that needs one more glyph ship without editing the map;
+        an entry that exists in ``resources.json`` always wins.
+        """
+        cls()  # load the map first: loading replaces ``_map``
+        entry: dict = {"mode": "material", "name": name}
+        if fill:
+            entry["fill"] = True
+        cls._map.setdefault(id, entry)
+
     def get_theme_color(self, key: str, default: str = "#000000") -> QColor:
         """Resolve one theme token to a QColor, for a data-driven paint.
 
