@@ -97,6 +97,17 @@ def test_horizontal_concat_with_input() -> None:
     ]
 
 
+@pytest.mark.parametrize("stop", [2, 5])
+def test_row_count_mismatch_is_a_plain_error(stop) -> None:
+    frame = pl.DataFrame({"a": [1, 2, 3]}).lazy()
+    with pytest.raises(ShapingError) as error:
+        core.run_node(
+            [frame], {"initial_value": 1, "increment_value": 1, "max_value": stop}
+        )
+    assert error.value.code == "TD-SHAPE-130"
+    assert "zip" not in str(error.value)
+
+
 def test_custom_column_name() -> None:
     out = core.run_node(
         [None],

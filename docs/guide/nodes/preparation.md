@@ -814,13 +814,13 @@ With Type Date/time, Start 2024-01-01 00:00, Increment 86400, End 2024-01-03 00:
 
 **Edge cases and limits.**
 
-- **The number of generated values must equal the number of input rows.** The new column is attached side by side with the input. With a different count the node fails with a technical message ("zip node received non-equal length inputs") instead of a numbered code. Set Start, Increment and End so the count matches, and remember the live preview only sees the first 100 input rows.
+- **The number of generated values must equal the number of input rows.** The new column is attached side by side with the input. With a different count the node stops with `TD-SHAPE-130` ("The generated rows do not match the input rows"), which states both counts. Set Start, Increment and End so the count matches, and remember the live preview only sees the first 100 input rows.
 - At most **10,000 values** are generated; the chip "Reached 10,000 rows" warns when the cap is hit (for example Increment 0).
 - **Text** type has no End: it keeps appending the Increment text (`A`, `A1`, `A11`, ...) up to the 10,000 cap, so it only fits an input of exactly 10,000 rows. Use Int, Float or Date/time in practice.
 - Int and Float stop when the value goes past End. If Start is already past End no values are produced.
 - Date/time values have no time zone.
 
-**Messages you may see.** `TD-SHAPE-001` (empty name), `TD-SHAPE-004` (unknown type), `TD-SHAPE-005` (no input data).
+**Messages you may see.** `TD-SHAPE-001` (empty name), `TD-SHAPE-004` (unknown type), `TD-SHAPE-005` (no input data), `TD-SHAPE-130` (generated count differs from the input row count).
 
 **Tips.** Count the input rows first (an [Aggregate](#aggregate) with Count) before you set End.
 

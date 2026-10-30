@@ -53,6 +53,7 @@ ERROR_CODES: dict[str, str] = {
     "TD-SHAPE-114": "The SQL is too long",
     "TD-SHAPE-115": "The query took too long",
     "TD-SHAPE-120": "The formula must use the column placeholder",
+    "TD-SHAPE-130": "The generated rows do not match the input rows",
 }
 
 

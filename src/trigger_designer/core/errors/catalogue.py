@@ -599,6 +599,12 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Write {col} where the column goes, for example UPPER({col}).",
         "error",
     ),
+    "TD-SHAPE-130": (
+        "The generated rows do not match the input rows",
+        "Set Start, Increment and End so the number of generated values equals "
+        "the number of input rows, or remove the input.",
+        "error",
+    ),
     "TD-SHAPE-005": (
         "A required input has no data",
         "Connect and fix the upstream node.",
