@@ -20,12 +20,7 @@ from nodeeditor.node_edge import Edge
 from nodeeditor.node_socket import LEFT_CENTER, RIGHT_CENTER
 from nodeeditor.utils import dumpException
 
-from trigger_designer.core.errors import (
-    ErrorContext,
-    NodeError,
-    make_error,
-    translate_exception,
-)
+from trigger_designer.core.errors import NodeError
 from trigger_designer.core.frames import frame_schema as frame_schema
 from trigger_designer.core.frames import frame_shape as frame_shape
 from trigger_designer.qt.helpers.rename_map import (
@@ -33,7 +28,7 @@ from trigger_designer.qt.helpers.rename_map import (
 )
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
-from trigger_designer.qt.node_runtime import NodeErrorState
+from trigger_designer.qt.node_runtime import NodeErrorState, NodeEvaluator
 from trigger_designer.qt.node_content import (
     ConfigContent as ConfigContent,
     DockBinding as DockBinding,
@@ -641,207 +636,26 @@ class TriggerNode(Node):
             return
         super().evalChildren()
 
+    @property
+    def evaluator(self) -> NodeEvaluator:
+        """Created on first use, like :attr:`errors`."""
+        runner = self.__dict__.get("_node_evaluator")
+        if runner is None:
+            runner = NodeEvaluator(self)
+            self.__dict__["_node_evaluator"] = runner
+        return runner
+
     def evalImplementation(self) -> Any:
-        input_values = []
-        for i in range(len(self.inputs)):
-            input_node = self.getInput(i)
-            if not input_node:
-                if i in self.optional_inputs:
-                    input_values.append(None)
-                    continue
-                self.markInvalid()
-                self.markDescendantsDirty()
-                self.set_error(
-                    make_error(
-                        "TD-RUN-005",
-                        ErrorContext.from_node(self, "live"),
-                        input_number=i + 1,
-                    ),
-                    "live",
-                )
-                self._refresh_selected_node_config()
-                return None
-
-            val = input_node.eval()
-            if val is None:
-                self.markInvalid()
-                self.markDescendantsDirty()
-                upstream = ErrorContext.from_node(input_node, "live")
-                self.set_error(
-                    make_error(
-                        "TD-RUN-003",
-                        ErrorContext.from_node(self, "live"),
-                        culprit_label=upstream.node_label,
-                        culprit_node_id=getattr(input_node, "id", None),
-                        culprit_node_title=upstream.node_label,
-                    ),
-                    "live",
-                )
-                self._refresh_selected_node_config()
-                return None
-
-            input_values.append(val)
-
-        result = self.processInputs(input_values)
-        if result is None:
-            self.markInvalid()
-            self.markDescendantsDirty()
-            if self.current_error is None:
-                message = self._node_tooltip() or "Invalid operation"
-                self.set_error(
-                    make_error(
-                        "TD-SYS-001",
-                        ErrorContext.from_node(self, "live"),
-                        message=message,
-                    ),
-                    "live",
-                )
-            self._refresh_selected_node_config()
-            return None
-
-        self.value = result
-        self.markInvalid(False)
-        self.markDirty(False)
-        self.clear_error("live")
-        self.evalChildren()
-        self._refresh_selected_node_config()
-        return self.value
-
-    # Uncomment if you want to use the default evalImplementation for calculator application
-    # def evalImplementation(self):
-    #     i1 = self.getInput(0)
-    #     i2 = self.getInput(1)
-
-    #     if i1 is None or i2 is None:
-    #         self.markInvalid()
-    #         self.markDescendantsDirty()
-    #         self.grNode.setToolTip("Connect all inputs")
-    #         return None
-
-    #     else:
-    #         val = self.evalOperation(i1.eval(), i2.eval())
-    #         self.value = val
-    #         self.markDirty(False)
-    #         self.markInvalid(False)
-    #         self.grNode.setToolTip("")
-
-    #         self.markDescendantsDirty()
-    #         self.evalChildren()
-
-    #         return val
+        return self.evaluator.run_base_implementation()
 
     def eval(self, index: Any = None) -> Any:
-        scene = getattr(self, "scene", None)
-        if scene is not None and getattr(scene, "_bulk_loading", False):
-            # A node constructed mid-load has no file path or column config
-            # yet, so a constructor-time eval would compute from empty inputs
-            # and be recomputed anyway once deserialization finishes. Leave it
-            # dirty; doEvalOutputs runs the single post-load pass.
-            return self.value
-        if self._evaluating:
-            # A sibling branch pushed into this node while it was still
-            # computing. The computation in progress will commit the complete
-            # result and push again; recomputing here only repeats work.
-            return self.value
-
-        coordinator = getattr(scene, "evaluator", None)
-        if coordinator is not None:
-            coordinator.flush_now()  # a pending edge edit is newer than us
-
-        if not self.isDirty() and not self.isInvalid():
-            logger.debug(" _> returning cached {} value:", self.__class__.__name__)
-            return self.value
-
-        self.set_changes_pending(False)
-        self._evaluating = True
-        if scene is not None:
-            scene._eval_depth = getattr(scene, "_eval_depth", 0) + 1
-        try:
-            try:
-                self._report_eval_progress(finished=False)
-            except Exception:  # noqa: BLE001 - UI listener must not break eval
-                logger.exception("Evaluation progress callback failed")
-            return self.evalImplementation()
-        except ValueError as e:
-            self.markInvalid()
-            self.set_error(translate_exception(e, node=self, phase="live"), "live")
-            self.markDescendantsDirty()
-        except Exception as e:
-            self.markInvalid()
-            self.set_error(translate_exception(e, node=self, phase="live"), "live")
-            dumpException(e)
-            return None  # Add explicit return for exception case
-        finally:
-            # Clear the guard and depth before notifying listeners: a listener
-            # that calls eval() must see a settled node, not a reentrant one.
-            self._evaluating = False
-            if scene is not None:
-                scene._eval_depth = max(0, getattr(scene, "_eval_depth", 1) - 1)
-            try:
-                self._report_eval_progress(finished=True)
-            except Exception:  # noqa: BLE001 - UI listener must not break eval
-                logger.exception("Evaluation progress callback failed")
-            # Scene-level notification so preview surfaces can follow a real
-            # recompute; cached evaluations returned above. ``Scene`` is not a
-            # QObject, so TriggerScene fans this out to its own listeners.
-            try:
-                notify = getattr(scene, "notifyNodeEvaluated", None)
-                if callable(notify):
-                    notify(self)
-            except Exception:  # noqa: BLE001 - UI listener must not break eval
-                logger.exception("Node evaluated listener failed")
-            if scene is not None and getattr(scene, "_eval_depth", 0) == 0:
-                coordinator = getattr(scene, "evaluator", None)
-                if coordinator is not None:
-                    coordinator.flush_now()
-
-    def _report_eval_progress(self, finished: bool) -> None:
-        """Notify the active progress dialog, if any (helpers/eval_progress.py).
-
-        Called before and after a real recompute only - a cache hit returns
-        above before this - so the dialog can name the node about to run and
-        repaint before a slow step blocks the thread.
-        """
-        scene = getattr(self, "scene", None)
-        callback = (
-            getattr(scene, "_eval_progress_cb", None) if scene is not None else None
-        )
-        if callable(callback):
-            callback(self, finished)
+        return self.evaluator.evaluate()
 
     def onEdgeConnectionChanged(self, new_edge: "Edge") -> None:
-        # A connection changes the consumer's inputs, not the producer's value.
-        # The package follows this with onInputChanged(socket) on the consumer,
-        # which performs the one evaluation for the drag-end sequence. On
-        # removal both sockets are already cleared, so onInputChanged does the
-        # consumer work and the producer stays untouched.
-        self.clear_error("run")
-        end_socket = getattr(new_edge, "end_socket", None)
-        if end_socket is None or self is not getattr(end_socket, "node", None):
-            return
-        self.markDirty()
-        self.markDescendantsDirty()
+        self.evaluator.on_edge_connection_changed(new_edge)
 
     def onInputChanged(self, socket: Optional["Socket"] = None) -> None:
-        content = getattr(self, "content", None)
-        if getattr(content, "_suspend_node_evaluation", False):
-            return
-
-        self.clear_error("run")
-        coordinator = getattr(self.scene, "evaluator", None)
-        if coordinator is not None:
-            # Edge notifications are deferred so drag-end, split and reroute
-            # loops coalesce in one event turn. Content edits in a small scene
-            # use the same ordered path (one notify per compute, cycle report).
-            # In a large scene the topological pass costs more than the push
-            # path, so keep the guard + push fallback measured in step 5.
-            small_scene = len(getattr(self.scene, "nodes", ())) <= 32
-            if socket is not None or small_scene:
-                coordinator.request_evaluation(self, defer=socket is not None)
-                return
-        self.markDirty()
-        self.markDescendantsDirty()
-        self.eval()
+        self.evaluator.on_input_changed(socket)
 
     def serialize(self) -> OrderedDict:
         res = super().serialize()

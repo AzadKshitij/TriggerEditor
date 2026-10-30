@@ -107,9 +107,9 @@ class RaisingNode(TriggerNode):
 
 
 def test_guard_cleared_after_exception(monkeypatch) -> None:
-    from trigger_designer.qt import node_base
+    from trigger_designer.qt import node_runtime
 
-    monkeypatch.setattr(node_base, "dumpException", lambda exc: None)
+    monkeypatch.setattr(node_runtime, "dumpException", lambda exc: None)
     window = TriggerSubWindow()
     try:
         node = RaisingNode(window.scene)

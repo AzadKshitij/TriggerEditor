@@ -175,9 +175,9 @@ def test_success_commits_value_and_clears_live_error() -> None:
 
 
 def test_value_error_and_exception_invalidate_and_record_error(monkeypatch) -> None:
-    from trigger_designer.qt import node_base
+    from trigger_designer.qt import node_runtime
 
-    monkeypatch.setattr(node_base, "dumpException", lambda exc: None)
+    monkeypatch.setattr(node_runtime, "dumpException", lambda exc: None)
     window = _window()
     try:
         scene = window.scene
