@@ -38,6 +38,8 @@ The palette tabs are named by what the nodes do:
 | Report | Comment, Data Profile, Graph |
 | Audit | Benford, Duplicates, Gaps, Risk Filters, Sample |
 
+The palette itself is the authority on what is installed; newer versions may add nodes, for example a Workpaper Output node on the Input tab (see [workpaper.md](workpaper.md)).
+
 The right-click menu uses the same groups, except that the first one is called **Input/Output**. Every node has its own page in the [node reference](nodes/README.md).
 
 To hide or show the palette, use **Window > Nodes Toolbar**.
