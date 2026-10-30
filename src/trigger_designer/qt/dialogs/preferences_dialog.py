@@ -23,6 +23,7 @@ from qtpy.QtWidgets import (
     QInputDialog,
     QKeySequenceEdit,
     QLabel,
+    QLineEdit,
     QListWidget,
     QListWidgetItem,
     QMessageBox,
@@ -607,6 +608,8 @@ class PreferencesDialog(QDialog):
         cap_row.addStretch(1)
         errors.addLayout(cap_row)
 
+        audit = self._build_audit_section()
+
         danger = ConfigSection("Reset")
         reset_all = TextButton(
             "Reset All Preferences",
@@ -620,9 +623,173 @@ class PreferencesDialog(QDialog):
         danger.addWidget(danger_hint)
         layout.addWidget(startup)
         layout.addWidget(errors)
+        layout.addWidget(audit)
         layout.addWidget(danger)
         layout.addStretch(1)
         return page
+
+    #: (attribute, preference key, label, tooltip) of the audit-trail checkboxes.
+    _AUDIT_CHECKS = (
+        (
+            "audit_record_check",
+            "audit/record_runs",
+            "Record every run (run history)",
+            "Write a tamper-evident record next to the workflow after each Run",
+        ),
+        (
+            "audit_identity_check",
+            "audit/record_identity",
+            "Record the user and machine name",
+            "Off: the user and machine fields of a record stay empty",
+        ),
+        (
+            "audit_hash_inputs_check",
+            "audit/hash_inputs",
+            "Fingerprint input files (SHA-256)",
+            "Hash each input file before the node reads it",
+        ),
+        (
+            "audit_hash_outputs_check",
+            "audit/hash_outputs",
+            "Fingerprint output files (SHA-256)",
+            "Hash each output file after it is written",
+        ),
+        (
+            "audit_embed_check",
+            "audit/embed_code",
+            "Store the generated code in each record",
+            "The code hash is always recorded; this keeps the text itself",
+        ),
+        (
+            "audit_warn_check",
+            "audit/warn_on_input_change",
+            "Warn when an input changed since the previous run",
+            "Adds one line per changed file to the Logging dock; never blocks a run",
+        ),
+    )
+
+    #: Row-count choices: stored value, visible label.
+    _AUDIT_COUNT_MODES = (
+        ("auto", "Auto"),
+        ("all", "All nodes"),
+        ("sink", "Sinks only"),
+        ("off", "Off"),
+    )
+
+    def _build_audit_section(self) -> ConfigSection:
+        section = ConfigSection("Audit trail")
+        for attribute, key, label, tip in self._AUDIT_CHECKS:
+            check = QCheckBox(label)
+            check.setObjectName(attribute)
+            check.setToolTip(tip)
+            check.toggled.connect(lambda value, key=key: self._prefs.set(key, value))
+            setattr(self, attribute, check)
+            section.addWidget(check)
+
+        folder_row = QHBoxLayout()
+        folder_label = QLabel("Run log folder")
+        folder_label.setObjectName("FieldLabel")
+        folder_row.addWidget(folder_label)
+        self.audit_dir_edit = QLineEdit(self)
+        self.audit_dir_edit.setObjectName("AuditRunLogDir")
+        self.audit_dir_edit.setMinimumHeight(30)
+        self.audit_dir_edit.setPlaceholderText("Next to each workflow (default)")
+        self.audit_dir_edit.setToolTip(
+            "Keep every run log here instead of next to the workflow file"
+        )
+        self.audit_dir_edit.setAccessibleName("Run log folder")
+        self.audit_dir_edit.editingFinished.connect(self._on_audit_dir_edited)
+        folder_row.addWidget(self.audit_dir_edit, 1)
+        browse = TextButton("Browse", "Choose the folder that holds the run logs")
+        browse.clicked.connect(self._browse_audit_dir)
+        folder_row.addWidget(browse)
+        section.addLayout(folder_row)
+
+        counts_row = QHBoxLayout()
+        counts_label = QLabel("Row counts")
+        counts_label.setObjectName("FieldLabel")
+        counts_row.addWidget(counts_label)
+        self.audit_counts_combo = NoWheelComboBox(self)
+        self.audit_counts_combo.setObjectName("AuditRowCounts")
+        self.audit_counts_combo.setMinimumHeight(30)
+        self.audit_counts_combo.setAccessibleName("Row counts")
+        self.audit_counts_combo.setToolTip(
+            "Auto counts every node for small inputs and only sources and "
+            "outputs for large ones"
+        )
+        for value, text in self._AUDIT_COUNT_MODES:
+            self.audit_counts_combo.addItem(text, value)
+        self.audit_counts_combo.currentIndexChanged.connect(self._on_audit_counts)
+        counts_row.addWidget(self.audit_counts_combo, 1)
+        section.addLayout(counts_row)
+
+        for attribute, key, label, low, high in (
+            (
+                "audit_threshold_spin",
+                "audit/exact_counts_max_mb",
+                "Count every node up to (MB)",
+                0,
+                1_000_000,
+            ),
+            (
+                "audit_hash_max_spin",
+                "audit/hash_max_mb",
+                "Skip hashing files above (MB)",
+                0,
+                10_000_000,
+            ),
+        ):
+            row = QHBoxLayout()
+            caption = QLabel(label)
+            caption.setObjectName("FieldLabel")
+            row.addWidget(caption)
+            spin = QSpinBox(self)
+            spin.setObjectName(attribute)
+            spin.setRange(low, high)
+            spin.setAccessibleName(label)
+            spin.valueChanged.connect(
+                lambda value, key=key: self._prefs.set(key, value)
+            )
+            setattr(self, attribute, spin)
+            row.addWidget(spin)
+            row.addStretch(1)
+            section.addLayout(row)
+        return section
+
+    def _load_audit_section(self) -> None:
+        for attribute, key, *_rest in self._AUDIT_CHECKS:
+            check = getattr(self, attribute)
+            check.blockSignals(True)
+            check.setChecked(bool(self._prefs.get(key, True)))
+            check.blockSignals(False)
+        self.audit_dir_edit.setText(str(self._prefs.get("audit/run_log_dir", "") or ""))
+        current = str(self._prefs.get("audit/row_counts", "auto") or "auto")
+        index = self.audit_counts_combo.findData(current)
+        self.audit_counts_combo.blockSignals(True)
+        self.audit_counts_combo.setCurrentIndex(max(0, index))
+        self.audit_counts_combo.blockSignals(False)
+        for attribute, key, default in (
+            ("audit_threshold_spin", "audit/exact_counts_max_mb", 256),
+            ("audit_hash_max_spin", "audit/hash_max_mb", 2048),
+        ):
+            spin = getattr(self, attribute)
+            spin.blockSignals(True)
+            spin.setValue(int(self._prefs.get(key, default) or 0))
+            spin.blockSignals(False)
+
+    def _on_audit_counts(self, _index: int) -> None:
+        self._prefs.set("audit/row_counts", str(self.audit_counts_combo.currentData()))
+
+    def _on_audit_dir_edited(self) -> None:
+        self._prefs.set("audit/run_log_dir", self.audit_dir_edit.text().strip())
+
+    def _browse_audit_dir(self) -> None:
+        chosen = QFileDialog.getExistingDirectory(
+            self, "Run log folder", self.audit_dir_edit.text() or ""
+        )
+        if chosen:
+            self.audit_dir_edit.setText(chosen)
+            self._on_audit_dir_edited()
 
     # -- state loading ----------------------------------------------------
     def _load_pages(self) -> None:
@@ -654,6 +821,7 @@ class PreferencesDialog(QDialog):
         self.locate_cap_spin.setValue(
             int(self._prefs.get("errors/locate_row_cap", 5_000_000) or 5_000_000)
         )
+        self._load_audit_section()
 
     def _on_page_changed(self, row: int) -> None:
         if 0 <= row < self.stack.count():
