@@ -11,7 +11,7 @@ Pick the framework first:
 |---|---|---|
 | Takes 1..n frames, emits 1..n frames, settings are plain values | **`ShapingNode` / `ShapingContent`** (declarative form, generated code calls core). Default choice. | `Preparation/record_id.py` (single output), `Preparation/split.py` (2 outputs), `Join/reconcile.py` (2 inputs, 4 outputs), `Transform/window.py`, `Preparation/text_to_columns.py` |
 | An audit test: a pure function plus a one-row Summary | **`AuditNode` / `AuditContent`** | `Audit/duplicates.py`, `Audit/gaps.py` (template for tests: `tests/support/audit_demo.py`) |
-| A multi-edge input socket, a bespoke table editor, file dialogs | Hand-written `TriggerNode` + content | `Join/union.py` (`MultiInputNode`), `InOut/file_input.py`, `Preparation/select.py` |
+| A multi-edge input socket, a bespoke table editor, file dialogs | Hand-written `TriggerNode` + content | `Join/union.py` (`MultiInputNode`, hand-written with modern undo wiring), `InOut/file_input.py`, `InOut/file_output.py`. (`Preparation/select.py` has a bespoke table editor but is still a `ShapingContent`: override `create_layout` and keep the framework.) |
 
 ## The checklist (every node)
 
@@ -351,7 +351,9 @@ property, `history`, `initUI`). You then own: `initInnerClasses`,
 `processInputs` (return a list of `{"data", "variable_name"}` or `None` after
 setting an error), `get_code` (rules in `architecture.md` section 6),
 `create_layout`, `serialize`/`deserialize`, the undo calls and
-`_sync_widgets_from_model`. Copy `Preparation/normalize_columns.py` for shape.
+`_sync_widgets_from_model`. Read `Join/union.py` (the modern reference) and the `ShapingContent` source in
+`qt/helpers/shaping_support.py` for the shape of `set_setting`, `_sync_widgets_from_model`,
+`serialize`/`deserialize` and `get_code`.
 Sockets: `super().__init__(scene, inputs=[1], outputs=[3, 3], output_text=["T","F"])`
 (the int is a colour class; one entry per socket).
 
