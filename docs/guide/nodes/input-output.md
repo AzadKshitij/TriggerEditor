@@ -103,6 +103,7 @@ The **Files** section only appears when the Source is a folder or a pattern. It 
 | **Order** | Folder and pattern | The order in which files are stacked: **Name (natural)** or **Modified date**. | Name (natural) |
 | **Columns** | Folder and pattern | What to do when files do not have the same columns: **Union by name** or **Must match**. | Union by name |
 | **Bad file** | Folder and pattern | What to do with a file that cannot be read: **Stop with error** or **Skip and report**. | Stop with error |
+| **Max files** | Folder and pattern | The most files the source may match, 1 to 100,000. A source that matches more stops with `TD-IN-012`; raise the number to read it. | 10,000 |
 | **Files read** (table) | Folder and pattern | One row per file (and per sheet): **File**, **Status**, **Columns**. Hover a row for the details. | |
 
 What "Include" means when empty: the files of the chosen type.
@@ -126,9 +127,9 @@ What "Include" means when empty: the files of the chosen type.
 
 **Columns: Must match.** The Run stops with `TD-SCH-011` as soon as any file has a column the others lack or lacks one the others have. The message names the file that introduces the difference and the column. Use this when a different layout means something is wrong and you want to be told.
 
-**Bad file: Skip and report.** A file that cannot be opened or recognised is left out, the **Files read** table shows "skipped: " and the reason, and the node chip shows "N skipped". If every file is skipped you get an error (`TD-IN-014`, "None of the N files ... could be read"). Skipping only covers problems found when a file is opened and its header read. A problem inside the body of a CSV (an invalid byte on row 8,000, a row with too many fields) is found later, when the rows are actually read, and then stops the run even with Skip selected. See [Edge cases](#edge-cases-and-limits).
+**Bad file: Skip and report.** A file that cannot be opened or recognised is left out, the **Files read** table shows "skipped: " and the reason, and the node chip shows "N skipped". If every file is skipped you get an error (`TD-IN-014`, "None of the N files ... could be read"). Skipping covers problems found when a file is opened and its header read, and, for CSV, text and JSON Lines files, problems in the **first 2,000 rows** of the body (an invalid byte, a row with too many fields): such a file is skipped and named. A problem deeper in a file is found later, when the rows are actually read, and then still stops the run even with Skip selected. See [Edge cases](#edge-cases-and-limits).
 
-The node holds at most **10,000 files**. A source that matches more stops with `TD-IN-012`. (The limit is part of the saved settings, but the Config Dock has no control for it.)
+The node holds at most **Max files** files (default 10,000). A source that matches more stops with `TD-IN-012`; raise **Max files** in the Files section.
 
 #### Columns and rows
 
@@ -153,14 +154,14 @@ Types **CSV** and **Text** read the same way. These controls appear:
 | Control | What it does | Default |
 |---|---|---|
 | **Delimiter** | The character that separates fields. Type `\t` for a tab. One character only; a longer entry makes the read fail. | `,` |
-| **First row holds field names** | On: the first row is the header. Off: there is no header and the columns are named `column_0`, `column_1`, and so on. | On |
+| **First row holds field names** | On: the first row is the header. Off: there is no header and the columns are named `column_0`, `column_1`, and so on (counted from 0). | On |
 | **Encoding** | **UTF-8**, or **UTF-8 (replace bad bytes)**. | UTF-8 |
 
 Important behaviours:
 
 - **Every CSV column arrives as text.** Numbers, dates and amounts are not converted. This is deliberate: it keeps leading zeros (`007`), long account numbers and odd values exactly as they are in the file. Convert columns with a [Select node](preparation.md) when you need numbers or dates.
 - **Empty cells become null.** A cell with nothing between the delimiters is an empty (null) value.
-- **Blank header cells get a name.** A header cell that is empty is named `column_N`, where N is its position counted from 1 (`column_2` for the second column), so the column is not lost. If that name is taken, a suffix is added.
+- **Blank header cells get a name.** A header cell that is empty is named `column_N`, where N is its position counted from 1 (`column_2` for the second column), so the column is not lost. This differs on purpose from a file with no header row at all, whose columns count from 0 (`column_0` is the first). If that name is taken, a suffix is added.
 - **Duplicate header names** are renamed by the reader (for example `Amount_duplicated_0`) and the node reports a note that mentions `TD-SCH-002`. Fix the source file or rename the columns with a Select node.
 - **Encoding.** The app reads UTF-8. A file saved as Windows-1252 or Latin-1 (accented letters such as `é` stored as one byte) is not valid UTF-8 and stops with `TD-IN-004`. Choose **UTF-8 (replace bad bytes)** to read it anyway: the unreadable characters are replaced by a placeholder character (`�`), nothing is dropped. Re-saving the file as "CSV UTF-8" in Excel is the clean fix.
 
@@ -277,11 +278,11 @@ If the real table on a sheet starts below a title (say the headers are in row 3)
 ### Edge cases and limits
 
 - **Live preview shows 100 rows; Run reads all rows.** See [Live preview and Run](#live-preview-and-run). CSV, Parquet and JSON Lines are read lazily while you edit, so opening a workflow with big files stays quick.
-- **No row cap.** There is no fixed limit on rows or file size. The practical limit is memory: Excel, JSON and database sources are loaded whole. The folder limit is 10,000 files.
+- **No row cap.** There is no fixed limit on rows or file size. The practical limit is memory: Excel, JSON and database sources are loaded whole. The folder limit is **Max files** (10,000 by default).
 - **Empty file.** An empty file (no header and no rows) stops with `TD-IN-005`, or is skipped when **Bad file** is **Skip and report**. A file with a header and no rows is read as a table with no rows.
 - **Nulls.** Empty CSV cells and missing columns are null. They are not zeros or empty strings.
 - **Types differ across files.** With Union by name: numbers combine, everything else becomes text for that column, and the Files read table marks the files "types differ".
-- **Errors inside a file body are found late.** An invalid byte or a row with too many fields deep in a file is found when the rows are read, not when the file is opened. It stops the run even if **Bad file** is **Skip and report**, and with several files the message may say "the input" instead of naming the file.
+- **Errors deep inside a file body are found late.** With **Skip and report**, the first 2,000 rows of each CSV, text or JSON Lines file are test-read, so a bad byte or an over-long row there skips (and names) that file. An invalid byte or a row with too many fields further down is found only when all rows are read, and it still stops the run. Reading every row of every file just to check them would cost a full extra pass. When it happens with several files, the error names the file when it can find it, otherwise it says "one of the N input files".
 - **Files that disappear.** If the source path is missing the node is marked invalid and its tooltip says so ("File '...' does not exist" or the `TD-IN-001` message). The app logs this a few times, then stops repeating itself.
 - **Workflow opened later.** When a saved workflow is opened, File Input checks that the file, sheet and columns still match what was saved and warns you about missing or new columns and changed types.
 - **Column order.** Columns follow the first file's order; columns found only in later files follow, in the order first seen; Filename and Sheet name columns come last.
@@ -301,7 +302,7 @@ The node tooltip shows the plain message. When you Run, the error list shows the
 | `TD-IN-007` | Some rows have more fields than the header. | Check the **Delimiter**; make sure values that contain the delimiter are quoted. |
 | `TD-IN-010` | The data in a file could not be read; the details name the column when known. | Check the file Type and Delimiter. |
 | `TD-IN-011` | The input file could not be opened. | Check the path and your access rights. |
-| `TD-IN-012` | The source matches more than 10,000 files. | Narrow the **Include** pattern or the folder. |
+| `TD-IN-012` | The source matches more files than **Max files** (10,000 by default). | Narrow the **Include** pattern or the folder, or raise **Max files**. |
 | `TD-IN-013` | The database could not be read as asked (unknown table, not a single `SELECT`, a statement that tries to change data). | Check the table name; use one `SELECT`. |
 | `TD-IN-014` | The File Input settings need attention. Examples: `Choose a file, folder or pattern.`, `Choose a table.`, `Write a SELECT query.`, `Choose at least one sheet.`, `Database sources take exactly one file, not a folder or pattern`, or every file was skipped. | Open File Input and fix the named setting. |
 | `TD-SCH-010` | The added filename or sheet-name column has the same name as a column already in the data. | Change **Column name**. |

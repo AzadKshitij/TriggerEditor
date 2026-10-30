@@ -33,6 +33,7 @@ from trigger_designer.core.input_source import (
 )
 from trigger_designer.core.inputs import (
     DEFAULT_EXCLUDE,
+    MAX_FILES_LIMIT,
     InputReadError,
     detect_file_type,
     effective_mode,
@@ -346,7 +347,7 @@ class FileInputContent(
         self.files_section = section
 
         self.includeEdit = QLineEdit()
-        self.includeEdit.setPlaceholderText("*.csv; *.tsv")
+        self.includeEdit.setPlaceholderText("part_*.csv; sales*.csv")
         self.includeEdit.setAccessibleName("Include patterns")
         self.includeEdit.setMinimumHeight(30)
         self.includeEdit.setToolTip(
@@ -404,6 +405,17 @@ class FileInputContent(
         self.badFileCombo.addItem("Skip and report", "skip")
         self.badFileCombo.currentIndexChanged.connect(self._on_on_file_error_changed)
         section.addWidget(FormRow("Bad file", self.badFileCombo, label_width=64))
+
+        self.maxFilesSpin = QSpinBox()
+        self.maxFilesSpin.setMinimumHeight(30)
+        self.maxFilesSpin.setRange(1, MAX_FILES_LIMIT)
+        self.maxFilesSpin.setAccessibleName("Max files")
+        self.maxFilesSpin.setToolTip(
+            "Stop with TD-IN-012 when the folder or pattern matches more files than this"
+        )
+        self.maxFilesSpin.valueChanged.connect(self._on_max_files_changed)
+        self.max_files_row = FormRow("Max files", self.maxFilesSpin, label_width=64)
+        section.addWidget(self.max_files_row)
 
         self.filesTable = QTableView()
         self.filesTable.setObjectName("ColumnTable")
@@ -737,6 +749,11 @@ class FileInputContent(
 
     def _on_recursive_toggled(self, checked: bool) -> None:
         self._apply_setting("recursive", checked, "Subfolders Toggled")
+
+    def _on_max_files_changed(self, value: int) -> None:
+        self._apply_setting(
+            "max_files", int(value), "Max Files Changed", merge_key="fi-max-files"
+        )
 
     def _on_order_changed(self, _index: int) -> None:
         value = self.orderCombo.currentData()
@@ -1103,6 +1120,7 @@ class FileInputContent(
         self._set_combo(self.orderCombo, self.file_order)
         self._set_combo(self.schemaCombo, self.schema_mismatch)
         self._set_combo(self.badFileCombo, self.on_file_error)
+        self._set_spin(self.maxFilesSpin, self.max_files)
         self._set_checked(self.outputFilenameCheckBox, self.output_filename_as_field)
         self._set_text(self.fileNameColumnEdit, self.file_name_column_name)
         self._set_combo(self.fileNameValueCombo, self.file_name_value)

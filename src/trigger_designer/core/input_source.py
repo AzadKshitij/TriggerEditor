@@ -425,9 +425,11 @@ def name_blank_columns(
 
     Polars keeps an empty header cell as ``""``. Select's table skips blank
     names, so that column vanishes from the editor even though the data still
-    carries it (issue #2). Name each blank cell by its 1-based position, the
-    same convention polars uses for headerless files, and step around names
-    the file already uses.
+    carries it (issue #2). Name each blank cell by its 1-based position
+    (``column_1`` is the first column) and step around names the file already
+    uses. Note that a file with no header row at all gets Polars' own
+    0-based names (``column_0`` is the first column); the two conventions are
+    kept as they are because saved workflows and goldens refer to them.
     """
     names = list(frame.collect_schema().names())
     used = {name for name in names if name.strip()}
@@ -519,6 +521,22 @@ def _read_db(path: str, settings: SourceSettings) -> pl.LazyFrame:
     except Exception as exc:  # noqa: BLE001
         raise _sql_error(exc, path) from None
     return frame.lazy()
+
+
+#: Rows read from each file to catch a bad byte or an over-long row early.
+PROBE_ROWS = 2000
+
+
+def _probe_body(frame: pl.LazyFrame) -> None:
+    """Read the first ``PROBE_ROWS`` rows so body errors surface per file.
+
+    A scan is lazy: a bad byte or a row with too many fields only fails at
+    ``collect``, long after the file was accepted. Reading a bounded head under
+    "Skip and report" lets such a file be skipped and named. Errors deeper in
+    the file are not found by this probe (reading all of every file would cost
+    a full pass); they still surface at collect.
+    """
+    frame.head(PROBE_ROWS).collect()
 
 
 def _preflight(path: str) -> None:
@@ -756,6 +774,12 @@ def build_source(state: dict) -> SourceResult:
                 else:  # sqlite / duckdb: SourceSettings validated the type
                     frame = _read_db(listed.path, settings)
                 columns = dict(frame.collect_schema())
+                if settings.on_file_error == "skip" and settings.file_type in (
+                    "csv",
+                    "txt",
+                    "ndjson",
+                ):
+                    _probe_body(frame)
             except Exception as exc:  # noqa: BLE001
                 error = (
                     exc
@@ -861,10 +885,43 @@ def _duplicate_warnings(listed: ListedFile, columns: dict[str, Any]) -> list[str
     ]
 
 
+def _locate_failing_file(report: SourceReport, state: dict) -> str | None:
+    """Find which file breaks by reading each one on its own, in a stream.
+
+    Only used after a failure, so the cost of a full pass is acceptable. Each
+    file is reduced to one row (null counts), so nothing is held in memory.
+    Excel, JSON and database sources are read eagerly and already name their
+    file when they fail.
+    """
+    try:
+        settings = SourceSettings.from_state(state)
+    except Exception:  # noqa: BLE001 - diagnosis must never raise
+        return None
+    if settings.file_type not in ("csv", "txt", "ndjson"):
+        return None
+    for item in report.files:
+        if item.status != "ok" or not item.path:
+            continue
+        try:
+            if settings.file_type == "ndjson":
+                frame = _read_ndjson(item.path, settings)
+            else:
+                frame = _read_csv(item.path, settings)
+            frame.select(pl.all().null_count()).collect(engine="streaming")
+        except Exception:  # noqa: BLE001 - this is the file that fails
+            return item.path
+    return None
+
+
 def diagnose_collect_error(
-    exc: BaseException, report: SourceReport | None
+    exc: BaseException, report: SourceReport | None, state: dict | None = None
 ) -> InputReadError:
-    """Turn a late ``collect()`` failure into a file/column-aware error."""
+    """Turn a late ``collect()`` failure into a file/column-aware error.
+
+    A body error (bad byte, row with too many fields) often omits the file
+    name. With one file there is no doubt; with several, pass the File Input
+    ``state`` and each file is re-read on its own to find the culprit.
+    """
     message = str(exc)
     lowered = message.lower()
     path: str | None = None
@@ -879,12 +936,21 @@ def diagnose_collect_error(
             # A body-level parse error usually omits the file name; with one
             # file there is no ambiguity about which one it was.
             path = report.files[0].path
+        if path is None and state is not None:
+            path = _locate_failing_file(report, state)
+    where = path
+    if where is None:
+        count = len(report.files) if report is not None else 0
+        where = f"one of the {count} input files" if count > 1 else "the input"
     column = _extract_column(message)
     if "invalid utf-8" in lowered:
         return InputReadError(
             "encoding",
             (
-                f"'{path or 'The input'}' is not UTF-8 text. "
+                f"'{path}' is not UTF-8 text. "
+                "Set Encoding to 'UTF-8 (replace bad bytes)'."
+                if path
+                else f"{where.capitalize()} is not UTF-8 text. "
                 "Set Encoding to 'UTF-8 (replace bad bytes)'."
             ),
             path=path,
@@ -899,7 +965,11 @@ def diagnose_collect_error(
         )
     return InputReadError(
         "parse",
-        f"Cannot read the data in '{path or 'the input files'}': {message}",
+        (
+            f"Cannot read the data in '{path}': {message}"
+            if path
+            else f"Cannot read the data in {where}: {message}"
+        ),
         path=path,
         column=column,
         technical=technical,

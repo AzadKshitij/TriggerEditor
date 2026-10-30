@@ -206,6 +206,7 @@ def test_writeback_does_not_rerecord(qtbot, tmp_path) -> None:
         ("encodingCombo", "utf8-lossy", "encoding", "utf8"),
         ("sheetModeCombo", "all", "sheet_mode", "one"),
         ("limitSpin", 5, "record_limit", 0),
+        ("maxFilesSpin", 20000, "max_files", 10000),
         ("asTextCheck", True, "read_as_text", False),
         ("dbModeCombo", "query", "db_mode", "table"),
         ("fileNameValueCombo", "path", "file_name_value", "name"),
@@ -328,3 +329,48 @@ def test_error_tooltip_for_missing_folder(qtbot, tmp_path) -> None:
     flush(content)
     assert node.isInvalid() is True
     assert str(empty) in node.grNode.toolTip()
+
+
+def test_max_files_control_is_in_the_files_section(qtbot, tmp_path) -> None:
+    monthly = monthly_csvs(tmp_path)
+    _window, _node, content, _dock = _graph(qtbot)
+    content._choose_folder(str(monthly))
+    flush(content)
+    assert content.files_section.isHidden() is False
+    assert content.max_files_row.isHidden() is False
+    assert content.maxFilesSpin.value() == 10000
+    assert content.maxFilesSpin.accessibleName() == "Max files"
+
+
+def test_max_files_limit_is_enforced_and_raising_it_fixes_the_run(
+    qtbot, tmp_path
+) -> None:
+    monthly = monthly_csvs(tmp_path)  # three files
+    _window, _node, content, _dock = _graph(qtbot)
+    content._choose_folder(str(monthly))
+    flush(content)
+    content.maxFilesSpin.setValue(2)
+    flush(content)
+    assert content.max_files == 2
+    assert content.last_error is not None
+    assert content.last_error.code == "TD-IN-012"
+    content.maxFilesSpin.setValue(3)
+    flush(content)
+    assert content.last_error is None
+    assert content.last_report.file_count == 3
+
+
+def test_max_files_survives_save_and_load(qtbot, tmp_path) -> None:
+    monthly = monthly_csvs(tmp_path)
+    _window, _node, content, _dock = _graph(qtbot, str(monthly), max_files=42)
+    state = content.serialize()
+    assert state["max_files"] == 42
+    _window2, _node2, content2, _dock2 = _graph(qtbot)
+    content2.deserialize(state, {})
+    assert content2.max_files == 42
+    assert content2.maxFilesSpin.value() == 42
+
+
+def test_include_placeholder_matches_the_documented_default(qtbot) -> None:
+    _window, _node, content, _dock = _graph(qtbot)
+    assert "*.tsv" not in content.includeEdit.placeholderText()

@@ -26,6 +26,9 @@ DEFAULT_INCLUDE: dict[str, tuple[str, ...]] = {
     "duckdb": (),
 }
 
+#: Largest ``max_files`` the dock and the command line accept.
+MAX_FILES_LIMIT = 100_000
+
 DEFAULT_EXCLUDE = ("~$*", ".*", "Thumbs.db", "desktop.ini")
 GLOB_CHARS = "*?["
 
