@@ -51,6 +51,7 @@ _WIDTH = "__td_width"
 _TXT = "__td_txt"
 _BAD = "__td_bad"
 _DATE = "__td_dt"
+_ORDER = "__td_order"
 
 _NUMBER_RE = r"^\+?(\d+)(?:\.0+)?$"
 _PREFIXED_DIGITS_RE = r"(?s)^.*?(\d+)$"
@@ -180,7 +181,9 @@ def _findings_frame(
     end: pl.Expr,
     count: pl.Expr,
     source_row: pl.Expr,
+    order: pl.Expr | None = None,
 ) -> list[pl.Expr]:
+    """Output columns plus a hidden numeric key so ``from`` sorts as a number."""
     return [
         *[pl.col(k) for k in keys],
         prefix.alias("prefix"),
@@ -189,6 +192,9 @@ def _findings_frame(
         end.alias("to"),
         count.cast(pl.Int64).alias("count"),
         source_row.cast(pl.UInt32).alias("source_row"),
+        (pl.lit(None, dtype=pl.Int64) if order is None else order.cast(pl.Int64)).alias(
+            _ORDER
+        ),
     ]
 
 
@@ -285,6 +291,7 @@ def _number_findings(
                 end=_fmt(pre, t, width),
                 count=t - f + 1,
                 source_row=pl.lit(None),
+                order=f,
             )
         )
     )
@@ -300,6 +307,7 @@ def _number_findings(
                     end=value,
                     count=pl.col("__td_n"),
                     source_row=pl.col("__td_first") + 1,
+                    order=num,
                 )
             )
         )
@@ -317,6 +325,7 @@ def _number_findings(
                     end=value,
                     count=pl.lit(1),
                     source_row=pl.col(ROW) + 1,
+                    order=num,
                 )
             )
         )
@@ -396,9 +405,13 @@ def run_gaps(frame, params: GapsParams) -> AuditResult:
     else:
         findings, annotated = _number_findings(lf, schema, p)
         readable = pl.col(_NUM).is_not_null()
+    # Numbers sort by value inside a prefix (6..7 before 11..12); the text in
+    # ``from`` is only the tie-breaker (dates are ISO text, which sorts right).
     findings = findings.sort(
-        [*groups, "prefix", "finding", "from"], nulls_last=True, maintain_order=True
-    )
+        [*groups, "prefix", "finding", _ORDER, "from"],
+        nulls_last=True,
+        maintain_order=True,
+    ).drop(_ORDER)
 
     series_keys = groups if p.mode == "date" else [*groups, _PREFIX]
     if series_keys:

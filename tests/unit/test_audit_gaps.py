@@ -263,8 +263,8 @@ def test_range_start_end_add_leading_and_trailing_gaps() -> None:
     )
     assert _rows(gaps, ["from", "to", "count"]) == [
         ("1", "4", 4),
-        ("10", "12", 3),
         ("7", "8", 2),
+        ("10", "12", 3),
     ]
     only_start, _ = _run(frame, sequence_column="n", mode="number", range_start=0)
     assert [r[2] for r in _rows(only_start)] == ["0", "7"]
@@ -617,3 +617,27 @@ def test_state_round_trips_through_serialize() -> None:
     assert other.content.params() == content.params()
     other.content.deserialize({})
     assert other.content.params() == GapsParams()
+
+
+def test_findings_sort_numerically_not_as_text() -> None:
+    # Unpadded numbers: text order would put "11" before "6".
+    values = [1, 2, 3, 6, 9, 10, 13]
+    gaps, _summary = _run(
+        pl.DataFrame({"n": [str(v) for v in values]}),
+        sequence_column="n",
+        mode="number",
+    )
+    assert [r[2:4] for r in _rows(gaps)] == [("4", "5"), ("7", "8"), ("11", "12")]
+    assert gaps.columns == COLS
+
+
+def test_numeric_order_holds_per_prefix_and_finding() -> None:
+    values = ["A-1", "A-7", "A-12", "A-13", "A-30", "B-2", "B-20", "B-3", "B-3"]
+    gaps, _ = _run(pl.DataFrame({"v": values}), sequence_column="v")
+    gap_rows = [r for r in _rows(gaps) if r[1] == "gap"]
+    assert [(r[0], r[2]) for r in gap_rows] == [
+        ("A-", "A-2"),
+        ("A-", "A-8"),
+        ("A-", "A-14"),
+        ("B-", "B-4"),
+    ]

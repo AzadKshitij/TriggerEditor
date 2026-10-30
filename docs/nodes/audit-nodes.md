@@ -218,8 +218,8 @@ text that does not fit the pattern is counted as unreadable (TD-AUDIT-102 warnin
   `prefix`, `finding`, `from`, `to`, `count`, `source_row`. `finding` is `gap` (a missing range from
   `from` to `to`, `count` numbers), `duplicate` (`count` times; `source_row` is the 1-based input row of the first
   occurrence), `out_of_order` (`source_row` is the offending row) or `date_gap` (days with no entry).
-  `source_row` is blank for gaps. Rows are sorted by group, prefix, finding and `from`; unpadded numbers
-  sort as text, so `11..12` comes before `6..7`.
+  `source_row` is blank for gaps. Rows are sorted by group, prefix, finding and then by the numeric value
+  of `from`, so `6..7` comes before `11..12` (dates sort chronologically).
 - `S` Summary: the eleven standard columns (`population_value` and `exception_value` are blank; an
   "exception" is one finding row) plus `series`, `gap_ranges`, `missing_items`, `duplicate_values`,
   `out_of_order_rows`, `unparseable_rows`. Status is `fail` when there is any finding.
