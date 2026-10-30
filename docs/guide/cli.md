@@ -351,6 +351,7 @@ Rules to remember:
 
 - An interactive `run` may use `--allow-unapproved` to skip this once. A scheduled run (`--trigger schedule`) ignores that option; it always needs approval.
 - The approvals file is not signed. It stops accidents and casual changes, not someone who can edit your files. On a build server, create the approval as part of the pipeline (`approve --yes`) from a reviewed commit, and keep the state folder read-only afterwards.
+- The review block and `info` list the paths of File Input and File Output nodes. The output path of a **Workpaper Output** node is not listed there yet (a known gap), although the run does write it; open such a workflow in the editor to see where it writes before you approve it.
 - `--input-dir`, `--output-dir` and `--param` are typed by you, so they are trusted. What the file itself says is not. Approving a workflow approves the paths it contains; pointing it at other folders from the command line is your decision.
 
 ## params

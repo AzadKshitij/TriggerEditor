@@ -8,9 +8,20 @@ a container runs.
 
 The program starts the editor's own node classes on Qt's offscreen platform, so
 a workflow gives the same result headless as it does when you press Run. (The
-tests compare the two byte for byte.) Commands that only read files (`info`,
-`validate`, `approve`, `params`, `paths`, `schedule`, `verify-log`) never load
-Qt or Polars and start in well under a second.
+tests compare the two: output files byte for byte, apart from row order for
+hash-join outputs, and the run records field by field.) Commands that only read
+files (`info`, `validate` without `--deep`, `approve`, `params`, `paths`,
+`schedule`) never load Qt, Polars or DuckDB, `verify-log` never loads Qt, and
+they start in about a second or less.
+
+This page is the short reference. Longer pages:
+
+* [User guide](guide/cli.md): installing, quick start with real output, every
+  command and option, the approval flow, scheduling step by step, safety,
+  troubleshooting.
+* [Developer page](dev/cli-internals.md): architecture, data flow of `run`,
+  import discipline, adding a command or a node, tests, packaging, what is not
+  verified.
 
 ```text
 trigger-designer-cli [--version] [--state-dir DIR] <command> [options]
@@ -238,6 +249,9 @@ writable.
 * Exit 8: close the output file in Excel, check free disk space; previous files are unchanged.
 * Exit 2 with `TD-IN-001`: `paths wf.tds` shows which saved path is missing; remap with `--input-dir`.
 * A scheduled task that does nothing: tasks created without `--run-whether-logged-on` do not run when nobody is logged on.
+* Exit 3 with `UnicodeEncodeError`: the console code page (cp1252 when output is
+  piped) cannot print a character of a path; set `PYTHONUTF8=1`.
+* More in [guide/cli.md](guide/cli.md#troubleshooting).
 
 ## For developers
 
@@ -247,7 +261,11 @@ writable.
   CLI never imports `trigger_designer.main`. `tests/unit/test_cli_import_discipline.py`
   guards this.
 * A new node needs a row in `core/headless/op_catalog.py` (with `output_keys` if it
-  holds an output path); `test_op_catalog_matches_registry.py` fails otherwise.
+  holds an output path); `test_op_catalog_matches_registry.py` fails otherwise. If
+  its generated code imports a module that is not in `GENERATED_IMPORTS`
+  (`core/headless/code_policy.py`) the run exits 6, and the module must also be in
+  the `trigger.spec` hidden imports (`test_packaging_spec.py`). See
+  [cli-internals.md](dev/cli-internals.md) section 14.
 * Failure injection for the end-to-end tests (`TD_TEST_HOOKS=1`, never in a frozen
   build): `TD_TEST_SLEEP_BEFORE_NODE="Title:seconds"`, `TD_TEST_FAIL_NODE=Title`,
   `TD_TEST_INJECT=Title` with `TD_TEST_INJECT_CODE`, `TD_TEST_ALLOC_MB="Title:n"`.
