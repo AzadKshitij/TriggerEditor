@@ -85,7 +85,7 @@ killed run are swept by the next run of the same workflow.
 * `--param NAME=VALUE` overrides a parameter defined in the workflow (splits on the
   first `=`). Only these settings can be parameters: File Input `filePath`,
   `include_patterns`, `exclude_patterns`, `max_files`, `db_table`, `selected_sheet`,
-  `record_limit`; File Output `filePath`; Filter `value`/`value2` (builder mode);
+  `record_limit`; File Output `filePath`; Workpaper Output `output_path`; Filter `value`/`value2` (builder mode);
   Split `random_seed`, `estimation_percent`. Anything else is refused
   (`TD-CLI-007`) because those strings reach code generation.
 * Precedence for a path setting: `--param`, then `--input-dir`/`--output-dir`
@@ -100,6 +100,12 @@ killed run are swept by the next run of the same workflow.
   current node. A node that is already running cannot be interrupted (generated
   code runs inside Polars or DuckDB); after `--cancel-grace` seconds the process
   exits 130 and outputs are not touched. A second signal exits immediately.
+* **Workpaper Output** follows `--output-dir` and `--param`, and its `source_files`
+  follow `--input-dir`. `If the file exists` is decided before the run starts: `version`
+  writes `name (2).xlsx` on a second run, `fail` exits 2 with `TD-OUT-010`, `replace`
+  keeps the name. A row-limited workpaper's `<name>_exceptions_full.csv` is written
+  beside the final workbook. The CLI run has no Run log sheet (no run record is passed
+  to the workpaper). See [guide/cli.md](guide/cli.md#workpaper-output-on-the-command-line).
 * `--emit-script FILE` also saves the generated Python script.
 * The run record is the same sealed, hash-chained record the editor writes
   (`--record-dir` or next to the workflow in `<name>.runs`). One record per run, also
