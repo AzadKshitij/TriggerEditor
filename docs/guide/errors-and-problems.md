@@ -120,7 +120,7 @@ Add `--check` to see whether the page is out of date without changing it.
 
 <!-- BEGIN GENERATED ERROR TABLE (scripts/gen_error_reference.py) -->
 
-_116 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
+_117 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
 
 #### Reading input files (TD-IN)
 
@@ -232,6 +232,7 @@ File Output and workpaper export.
 | `TD-OUT-012` | The workpaper settings are not valid | Check the output file (it must end in .xlsx) and the Prepared on date (YYYY-MM-DD). |
 | `TD-OUT-013` | The table is too large for an Excel sheet | An Excel sheet holds at most 1,048,575 data rows; save it as CSV or Parquet instead. |
 | `TD-OUT-014` | Excel could not create the workbook | A sheet name or cell content is not valid for Excel; rename the sheet or shorten the text. |
+| `TD-OUT-015` | Excel output must use the .xlsx extension | Change the output file name to end in .xlsx (the writer cannot create the old .xls format). |
 
 #### Running a workflow (TD-RUN)
 

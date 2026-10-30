@@ -832,6 +832,11 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "A sheet name or cell content is not valid for Excel; rename the sheet or shorten the text.",
         "error",
     ),
+    "TD-OUT-015": (
+        "Excel output must use the .xlsx extension",
+        "Change the output file name to end in .xlsx (the writer cannot create the old .xls format).",
+        "error",
+    ),
 }
 
 for _code, (_title, _hint, _severity) in _PASSTHROUGH.items():

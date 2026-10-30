@@ -59,7 +59,7 @@ qt/
   dialogs/preferences_dialog.py, preferences.py   Engagement defaults (engagement/*, export/workpaper_dir)
 core/headless/code_policy.py   GENERATED_IMPORTS allows run_workpaper (and write_frame_xlsx)
 core/headless/op_catalog.py    input.workpaper_output row with output_keys=("output_path",)
-core/errors/catalogue.py       passthrough entries for TD-OUT-010 .. 014
+core/errors/catalogue.py       passthrough entries for TD-OUT-010 .. 015
 ```
 
 `core/excel/__init__.py` re-exports only `ExcelWriteError` and `write_frame_xlsx`;
@@ -381,7 +381,7 @@ generated code. See section 15 for what differs from the editor.
 - Codes: `TD-OUT-001` folder missing, `002` file open/locked, `003` xlsxwriter missing, `005`
   disk full, `010` exists, `011` too many columns, `012` invalid settings, `013` too many rows
   (one-sheet export only), `014` Excel could not create the workbook. 001..006 have catalogue
-  entries with fixes; **010..014 are passthrough** entries in `core/errors/catalogue.py` (`_PASSTHROUGH`:
+  entries with fixes; **010..015 are passthrough** entries in `core/errors/catalogue.py` (`_PASSTHROUGH`:
   title, hint, severity) that keep the writer's own message as the detail. A new code needs a
   catalogue entry and a row in `docs/guide/errors-and-problems.md`; the guard test that every
   `TD-` literal is in the catalogue will fail otherwise.

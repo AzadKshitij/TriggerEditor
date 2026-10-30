@@ -683,6 +683,6 @@ def test_xls_output_name_is_refused_with_a_plain_code(tmp_path):
     proc = _run(m, tmp_path, "--output-dir", m.out_dir)
     assert proc.returncode != 0
     codes = [e.get("code") for e in _finished(proc)["errors"]]
-    assert "TD-OUT-012" in codes, codes
+    assert "TD-OUT-015" in codes, codes
     assert not (m.out_dir / "legacy.xls").exists()
     assert _leftovers(m.out_dir) == []

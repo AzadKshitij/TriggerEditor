@@ -490,6 +490,7 @@ What was checked in a real run:
 | `TD-OUT-012` | **The settings are not valid:** no file chosen, the file does not end in `.xlsx`, or **Prepared on** is not a `YYYY-MM-DD` date. | Fix the named setting. |
 | `TD-OUT-013` | **A table is too large for an Excel sheet** (more than 1,048,575 data rows). Raised by File Output as Excel and the Data Preview export. The workpaper lists what fits and writes the rest to a CSV instead. | Save as CSV or Parquet. |
 | `TD-OUT-014` | **Excel could not create the workbook:** a sheet name or cell content that Excel refuses. | Rename the sheet (**Exceptions sheet**) or shorten the offending text. |
+| `TD-OUT-015` | **Excel output must use the .xlsx extension** (File Output with Excel selected and a name ending in `.xls`; not raised by Workpaper Output, which reports `TD-OUT-012`). | Rename the file to end in `.xlsx`. |
 | `TD-OUT-005` | The disk is full. | Free space or use another drive. |
 
 Also: *Workpaper Output has no output file; choose one before running.* (a workflow with an empty **File** is flagged when it is opened and before Run). A Run that takes more than 30 seconds in the editor stops with `TD-RUN-001` ([Running workflows](running-workflows.md#time-and-memory-limits)); the workbook can still appear when the abandoned step ends, so check the file before running again.

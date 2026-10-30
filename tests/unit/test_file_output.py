@@ -305,7 +305,7 @@ def test_xls_path_is_refused_with_a_plain_td_out_code(tmp_path) -> None:
             [pl.DataFrame({"a": [1]})],
             {"filePath": str(out), "file_format": "excel"},
         )
-    assert caught.value.code == "TD-OUT-012"
+    assert caught.value.code == "TD-OUT-015"
     assert ".xlsx" in str(caught.value)
     assert not out.exists()
 

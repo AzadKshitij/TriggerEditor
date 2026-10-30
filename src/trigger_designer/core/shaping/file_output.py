@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from trigger_designer.core.excel.errors import TD_BAD_SETTINGS, ExcelWriteError
+from trigger_designer.core.excel.errors import TD_BAD_EXTENSION, ExcelWriteError
 from trigger_designer.core.shaping.common import as_lazy
 
 DEFAULTS = {
@@ -72,7 +72,7 @@ def write_node(frames: list, settings: dict) -> None:
                 "Excel output is saved as .xlsx; change the file name to end in "
                 ".xlsx (an .xls name would hold .xlsx content and Excel would "
                 "refuse to open it).",
-                code=TD_BAD_SETTINGS,
+                code=TD_BAD_EXTENSION,
                 path=path,
             )
         from trigger_designer.core.excel.frame_export import write_frame_xlsx
