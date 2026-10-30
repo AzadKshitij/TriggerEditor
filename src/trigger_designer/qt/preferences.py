@@ -72,6 +72,13 @@ DEFAULTS: dict[str, Any] = {
     "audit/exact_counts_max_mb": 256,
     "audit/embed_code": True,
     "audit/warn_on_input_change": True,
+    # Engagement defaults for workpapers (docs/plan/06-workpaper-export.md 3.3).
+    "engagement/client_name": "",
+    "engagement/engagement_name": "",
+    "engagement/period": "",
+    "engagement/preparer": "",
+    "engagement/logo_path": "",
+    "export/workpaper_dir": "",
 }
 
 _MISSING = object()

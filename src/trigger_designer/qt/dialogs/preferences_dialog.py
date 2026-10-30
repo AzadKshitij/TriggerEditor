@@ -609,6 +609,7 @@ class PreferencesDialog(QDialog):
         errors.addLayout(cap_row)
 
         audit = self._build_audit_section()
+        engagement = self._build_engagement_section()
 
         danger = ConfigSection("Reset")
         reset_all = TextButton(
@@ -624,9 +625,88 @@ class PreferencesDialog(QDialog):
         layout.addWidget(startup)
         layout.addWidget(errors)
         layout.addWidget(audit)
+        layout.addWidget(engagement)
         layout.addWidget(danger)
         layout.addStretch(1)
         return page
+
+    #: (attribute, preference key, label, placeholder) of the engagement fields.
+    _ENGAGEMENT_FIELDS = (
+        ("engagement_client_edit", "engagement/client_name", "Client", "Client name"),
+        (
+            "engagement_name_edit",
+            "engagement/engagement_name",
+            "Engagement",
+            "Engagement or audit name",
+        ),
+        ("engagement_period_edit", "engagement/period", "Period", "Period covered"),
+        (
+            "engagement_preparer_edit",
+            "engagement/preparer",
+            "Prepared by",
+            "Defaults to your Windows user name",
+        ),
+    )
+
+    def _build_engagement_section(self) -> ConfigSection:
+        """Defaults every Workpaper Output node and the workpaper export start from."""
+        section = ConfigSection("Engagement")
+        for attribute, key, label, placeholder in self._ENGAGEMENT_FIELDS:
+            row = QHBoxLayout()
+            caption = QLabel(label)
+            caption.setObjectName("FieldLabel")
+            row.addWidget(caption)
+            edit = QLineEdit(self)
+            edit.setObjectName(attribute)
+            edit.setMinimumHeight(30)
+            edit.setPlaceholderText(placeholder)
+            edit.setAccessibleName(label)
+            edit.editingFinished.connect(
+                lambda edit=edit, key=key: self._prefs.set(key, edit.text().strip())
+            )
+            setattr(self, attribute, edit)
+            row.addWidget(edit, 1)
+            section.addLayout(row)
+
+        logo_row = QHBoxLayout()
+        logo_label = QLabel("Logo")
+        logo_label.setObjectName("FieldLabel")
+        logo_row.addWidget(logo_label)
+        self.engagement_logo_edit = QLineEdit(self)
+        self.engagement_logo_edit.setObjectName("engagement_logo_edit")
+        self.engagement_logo_edit.setMinimumHeight(30)
+        self.engagement_logo_edit.setPlaceholderText("PNG or JPG shown on the Summary")
+        self.engagement_logo_edit.setAccessibleName("Logo")
+        self.engagement_logo_edit.editingFinished.connect(self._on_logo_edited)
+        logo_row.addWidget(self.engagement_logo_edit, 1)
+        browse = TextButton("Browse", "Choose the logo image for workpapers")
+        browse.clicked.connect(self._browse_logo)
+        logo_row.addWidget(browse)
+        section.addLayout(logo_row)
+        return section
+
+    def _load_engagement_section(self) -> None:
+        for attribute, key, *_rest in self._ENGAGEMENT_FIELDS:
+            getattr(self, attribute).setText(str(self._prefs.get(key, "") or ""))
+        self.engagement_logo_edit.setText(
+            str(self._prefs.get("engagement/logo_path", "") or "")
+        )
+
+    def _on_logo_edited(self) -> None:
+        self._prefs.set(
+            "engagement/logo_path", self.engagement_logo_edit.text().strip()
+        )
+
+    def _browse_logo(self) -> None:
+        chosen, _selected = QFileDialog.getOpenFileName(
+            self,
+            "Workpaper logo",
+            self.engagement_logo_edit.text() or "",
+            "Images (*.png *.jpg *.jpeg)",
+        )
+        if chosen:
+            self.engagement_logo_edit.setText(chosen)
+            self._on_logo_edited()
 
     #: (attribute, preference key, label, tooltip) of the audit-trail checkboxes.
     _AUDIT_CHECKS = (
@@ -822,6 +902,7 @@ class PreferencesDialog(QDialog):
             int(self._prefs.get("errors/locate_row_cap", 5_000_000) or 5_000_000)
         )
         self._load_audit_section()
+        self._load_engagement_section()
 
     def _on_page_changed(self, row: int) -> None:
         if 0 <= row < self.stack.count():
