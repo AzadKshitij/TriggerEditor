@@ -49,7 +49,7 @@ registering a package.
 | `profile.py`, `profile_report.py` | Data Profile engine and its report. |
 | `frames.py` | `frame_schema`, `frame_shape` (lazy-safe). |
 | `charts.py`, `utils/` | Chart spec; dtype widening and the cleansing engine. |
-| `excel/`, `headless/`, `warmup.py` | Streaming Excel writer, CLI foundations (op catalogue, workflow reader, approvals), Arrow warm-up. In progress; see the later `cli-internals.md` / `workpaper-internals.md`. |
+| `excel/`, `headless/`, `warmup.py` | Streaming Excel writer, CLI foundations (op catalogue, workflow reader, approvals), Arrow warm-up. See `cli-internals.md` and `workpaper-internals.md`. |
 
 ### `qt/`
 
@@ -275,7 +275,7 @@ The brief described `main` at `71b4041`. These statements no longer hold on
 | Fact 4: cancellation not wired | `request_run_cancel`, Cancel button, `run_loop` cancel between nodes (cooperative; the running node finishes). |
 | Fact 6: `getPyFile` writes `check_output.py` into the CWD | Writes `<app data>/last_run/check_output.py` using the code that actually ran. The tracked `check_output.py` at the repo root is a stale artefact (see `conventions.md`). |
 | Fact 10: exec has no sandbox | Still no sandbox for generated code, but all SQL is guarded (`sql_guard`), user text is quoted (`codegen_safe`), and `NodeExecutor.code_filter` / `policy_violation` exist as a refusal seam used by the headless runner. |
-| `__main__.py`: `python -m trigger_designer` | No `__main__.py` in `trigger_designer`. GUI: `trigger-designer` console script or `python src\trigger_designer\main.py`. CLI: `trigger-designer-cli` (`cli/__main__.py`, in progress). |
+| `__main__.py`: `python -m trigger_designer` | No `__main__.py` in `trigger_designer`. GUI: `trigger-designer` console script or `python src\trigger_designer\main.py`. CLI: `trigger-designer-cli` (`cli/__main__.py`; see `cli-internals.md`). |
 | Five families | Six: `NodeTypes.AUDIT` / `AuditNodes` added. |
 | "registerInputWidget records a whole-scene snapshot" | Still true for `registerInputWidget`; but shaping/audit nodes use `set_setting` -> `push_property_change`/`push_list_change`. No node subclass now relies on `history_stamp_callback`. |
 | `tests/integration` holds tests (CONTRIBUTING) | Empty directory (only `__pycache__`). |

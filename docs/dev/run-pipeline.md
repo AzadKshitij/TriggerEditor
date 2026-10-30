@@ -204,7 +204,7 @@ Run pipeline offers these points and nothing else (details in
 | `_seal_run_record(success)` -> `session.finish_when_settled(success and not cancelled, done)` | `_on_workflow_finished`, after `getPyFile` | Seals now on success; for a failed run waits (max `SETTLE_GUARD_MS = 5000`) until `is_enrichment_settled()` so the stored error is the enriched one. `done(path)` logs "Run log saved: <path>" and emits `runRecorded(path)` (the Run History dock listens). |
 | `add_enrichment_settled_listener(cb)` | window | One-shot callbacks run when `_pending_enrichments` reaches 0. |
 | `_abort_run_session()` | start failures | Discards a begun record and its `.started` marker. |
-| `set_run_record_provider` / `get_run_record_provider` | `core/audit/recorder.py` | Lets another feature (the planned workpaper) read the in-flight record as a dict while the run is going. |
+| `set_run_record_provider` / `get_run_record_provider` | `core/audit/recorder.py` | Lets another feature (the Workpaper Output node, see `workpaper-internals.md`) read the in-flight record as a dict while the run is going. |
 | `before_run_hooks`, `content.before_run()` | `_run_before_run_hooks` | Headless runners append to the list; a node content may define `before_run()`. Failures are logged and ignored. |
 | `content.after_execution(variables)` | executor thread, pure Python only | Graph, audit nodes' Summary. |
 | `content.on_run_result(variables)` | GUI thread | Audit Result text. A raising slot aborts the process under PySide6, so it is wrapped. |

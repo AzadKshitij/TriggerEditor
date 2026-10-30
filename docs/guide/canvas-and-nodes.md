@@ -31,14 +31,14 @@ The palette tabs are named by what the nodes do:
 
 | Palette tab | Nodes |
 |---|---|
-| Input | File Input, File Output |
+| Input | File Input, File Output, Workpaper Output |
 | Preparation | Aggregate, Cleansing, Date Helper, Filter, Find and Replace, Formula, Multi-Field Formula, Normalize, Record ID, Rows, Select, Select Records, Sort, Split, Text to Columns, Unique |
 | Join | Append, Fuzzy Match, Join, Reconcile, Union |
 | Transform | Count, Pivot, Running Total, SQL Query, Transpose, Unpivot, Window |
 | Report | Comment, Data Profile, Graph |
 | Audit | Benford, Duplicates, Gaps, Risk Filters, Sample |
 
-The palette itself is the authority on what is installed; newer versions may add nodes, for example a Workpaper Output node on the Input tab (see [workpaper.md](workpaper.md)).
+The palette itself is the authority on what is installed. Workpaper Output is described in [workpaper.md](workpaper.md).
 
 The right-click menu uses the same groups, except that the first one is called **Input/Output**. Every node has its own page in the [node reference](nodes/README.md).
 

@@ -13,7 +13,7 @@ means for contributors.
 | Process integrity | Settings text becomes Python statements in the generated code that `exec` runs | Any setting (sheet name, delimiter, label, node title, column name) reaching `get_code()` |
 | Result integrity | A re-run produces different numbers (`random()`, `uuid()`), or an input changed silently | Non-deterministic SQL; edited inputs |
 | Source databases | A "query" in File Input modifies or locks a SQLite/DuckDB file | File Input `sqlite`/`duckdb` source |
-| Spreadsheet readers | A cell starting with `=`, `+`, `-`, `@` is executed as a formula when the exported workbook is opened | File Output / Data Preview Excel export (`core/excel/cells.py`, in progress) |
+| Spreadsheet readers | A cell starting with `=`, `+`, `-`, `@` is executed as a formula when the exported workbook is opened | File Output, Data Preview and Workpaper Output Excel export (`core/excel/cells.py`) |
 | The audit record | Edited or deleted records | Anyone with file access (detectable, not preventable; see `audit-trail-internals.md`) |
 
 **Out of scope / accepted:** the generated Python is trusted *because it is
@@ -147,12 +147,13 @@ else.
 * The run script (`last_run/check_output.py`) lives in the app data folder, not
   next to the user's data.
 
-## Defence 6: Excel output (in progress)
+## Defence 6: Excel output
 
-`core/excel/cells.py` (not yet documented here) is where text cells that look
-like formulas are neutralised. Whoever owns the workpaper writes
-`workpaper-internals.md`; until then treat "a user string must never be written
-as an Excel formula" as a rule of any new export code.
+`core/excel/cells.py` is where text cells that look like formulas are
+neutralised (`needs_quote_prefix`, `guard_text`; the workpaper's CSV sidecar uses
+the same rule). `workpaper-internals.md` describes how the workpaper writer uses
+it. Treat "a user string must never be written as an Excel formula" as a rule of
+any new export code.
 
 ## Test strategy
 
