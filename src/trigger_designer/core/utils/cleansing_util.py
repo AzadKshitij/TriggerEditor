@@ -204,11 +204,11 @@ class DataCleansing:
         fields: Optional[List[str]] = None,
     ) -> "DataCleansing":
         """Clean whitespace in string columns.
+        trim: bool = True,
 
         ``trim`` removes the spaces at both ends; ``normalize_spaces`` turns
         runs of whitespace into one space without touching the ends.
         """
-        trim: bool = True,
         # Get string columns
         str_cols = []
         for col in self.df.columns:
