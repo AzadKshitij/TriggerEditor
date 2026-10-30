@@ -159,6 +159,20 @@ def _record_path(directory: Path, header_file: str) -> Path:
     return directory / header_file
 
 
+def _merge_reports(reports: list[VerifyReport]) -> VerifyReport:
+    """One report for several stores (each has its own chain and head)."""
+    if len(reports) == 1:
+        return reports[0]
+    head = next((r.head_hash for r in reports if r.head_hash), None)
+    return VerifyReport(
+        ok=all(r.ok for r in reports),
+        checked=sum(r.checked for r in reports),
+        problems=[p for r in reports for p in r.problems],
+        warnings=[w for r in reports for w in r.warnings],
+        head_hash=head,
+    )
+
+
 class RunHistoryDock(QDockWidget):
     """Lists, verifies, compares and exports the runs of the active workflow."""
 
@@ -176,6 +190,10 @@ class RunHistoryDock(QDockWidget):
         self.setObjectName("RunHistoryDock")
         self._window: TriggerSubWindow | None = None
         self._directory: Path | None = None
+        #: Every folder whose runs are listed: the primary store, then the
+        #: fallback store when runs were written there (primary was read-only).
+        self._dirs: list[Path] = []
+        self._run_dirs: dict[str, Path] = {}
         self._records: dict[str, dict] = {}
         self._tasks: set[AuditTask] = set()
         self._last_report: VerifyReport | None = None
@@ -351,18 +369,41 @@ class RunHistoryDock(QDockWidget):
             return None
         return store_from_preferences().store_dir_for(self._workflow_path())
 
+    def fallback_dir(self) -> Path | None:
+        """The fallback store of the active workflow when it holds runs."""
+        if self._window is None or self._directory is None:
+            return None
+        fallback = store_from_preferences().fallback_dir_for(self._workflow_path())
+        if fallback == self._directory or not (fallback / "index.jsonl").is_file():
+            return None
+        return fallback
+
+    def _dir_of(self, run_id: str) -> Path | None:
+        return self._run_dirs.get(run_id, self._directory)
+
     # ------------------------------------------------------------- loading
     def reload(self) -> None:
         """Re-read ``index.jsonl`` and keep the selection where possible."""
         keep = self.current_run_id()
         self._directory = self.store_dir()
         self._records.clear()
+        self._run_dirs = {}
+        self._dirs = []
         headers = []
         if self._directory is not None:
+            self._dirs = [self._directory]
+            fallback = self.fallback_dir()
+            if fallback is not None:
+                self._dirs.append(fallback)
+        for folder in self._dirs:
             try:
-                headers = store_from_preferences().list_runs(self._directory)
+                found = store_from_preferences().list_runs(folder)
             except Exception as exc:  # noqa: BLE001 - never raise into a Qt slot
-                logger.warning("cannot list the run log: {}", exc)
+                logger.warning("cannot list the run log {}: {}", folder, exc)
+                continue
+            for header in found:
+                self._run_dirs[header.run_id] = folder
+            headers.extend(found)
         self.run_model.set_runs(headers)
         self._update_empty_state()
         self._update_status()
@@ -376,8 +417,13 @@ class RunHistoryDock(QDockWidget):
 
     def _load_details(self, headers: list) -> None:
         directory = self._directory
-        recent = sorted(headers, key=lambda h: h.seq, reverse=True)[:DETAIL_LIMIT]
-        files = {h.run_id: h.file for h in recent}
+        recent = sorted(headers, key=lambda h: h.started_at, reverse=True)[
+            :DETAIL_LIMIT
+        ]
+        files = {
+            h.run_id: str(_record_path(self._dir_of(h.run_id) or Path(), h.file))
+            for h in recent
+        }
 
         def work(cancel, folder: Path, mapping: dict[str, str]):
             found = {}
@@ -386,7 +432,7 @@ class RunHistoryDock(QDockWidget):
                     break
                 try:
                     found[run_id] = summarise_record(
-                        orjson.loads((folder / file_name).read_bytes())
+                        orjson.loads(Path(file_name).read_bytes())
                     )
                 except OSError, orjson.JSONDecodeError, TypeError:
                     found[run_id] = {"duration": None, "nodes": None, "rows_out": None}
@@ -427,12 +473,11 @@ class RunHistoryDock(QDockWidget):
         if run_id in self._records:
             return self._records[run_id]
         row = self.run_model.run_at(self.run_model.row_of(run_id))
-        if row is None or self._directory is None:
+        folder = self._dir_of(run_id)
+        if row is None or folder is None:
             return None
         try:
-            record = orjson.loads(
-                _record_path(self._directory, row["file"]).read_bytes()
-            )
+            record = orjson.loads(_record_path(folder, row["file"]).read_bytes())
         except OSError, orjson.JSONDecodeError:
             return None
         self._records[run_id] = record
@@ -479,6 +524,9 @@ class RunHistoryDock(QDockWidget):
             self.status_label.setText("")
             return
         parts = [f"{count} run{'' if count == 1 else 's'}"]
+        in_fallback = sum(1 for d in self._run_dirs.values() if d != self._directory)
+        if in_fallback:
+            parts.append(f"{in_fallback} in the fallback folder")
         report = self._last_report
         if report is None:
             parts.append("chain not verified")
@@ -535,12 +583,12 @@ class RunHistoryDock(QDockWidget):
 
     # ----------------------------------------------------------- actions
     def verify(self) -> None:
-        directory = self._directory
-        if directory is None:
+        directories = list(self._dirs)
+        if not directories:
             return
 
-        def work(_cancel, folder: Path):
-            return verify_store(folder)
+        def work(_cancel, folders: list[Path]):
+            return _merge_reports([verify_store(folder) for folder in folders])
 
         def done(report: VerifyReport) -> None:
             self._last_report = report
@@ -558,7 +606,7 @@ class RunHistoryDock(QDockWidget):
         def failed(message: str) -> None:
             self.status_label.setText(f"Verification could not run: {message}")
 
-        self._start(work, done, failed, directory)
+        self._start(work, done, failed, directories)
 
     def _show_problems(self, report: VerifyReport) -> None:
         lines = [f"{p.kind}: {p.message}" for p in report.problems]
@@ -621,7 +669,8 @@ class RunHistoryDock(QDockWidget):
     def export_json_dialog(self) -> None:
         run_id = self.current_run_id()
         row = self.run_model.run_at(self.run_model.row_of(run_id)) if run_id else None
-        if row is None or self._directory is None:
+        folder = self._dir_of(run_id) if run_id else None
+        if row is None or folder is None:
             return
         target, _filter = QFileDialog.getSaveFileName(
             self,
@@ -631,7 +680,7 @@ class RunHistoryDock(QDockWidget):
         )
         if not target:
             return
-        source = _record_path(self._directory, row["file"])
+        source = _record_path(folder, row["file"])
 
         def work(_cancel, src: Path, dest: str):
             return export_json(src, dest)

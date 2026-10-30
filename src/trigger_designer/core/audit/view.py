@@ -133,8 +133,61 @@ def run_summary_rows(rec: dict) -> list[tuple[str, str]]:
     return rows
 
 
+def format_test_result(summary: dict | None) -> str:
+    """``fail: 12 of 1,000 (1.2%)`` for an audit node's stored ``test_summary``.
+
+    ``""`` when the node stored none (not an audit node, or it did not run).
+    """
+    if not isinstance(summary, dict):
+        return ""
+    status = str(summary.get("status") or "")
+    exceptions = _count(summary.get("exception_rows"))
+    population = _count(summary.get("population_rows"))
+    rate = summary.get("exception_rate")
+    if exceptions is None:
+        return status
+    text = f"{status}: {exceptions:,}"
+    if population is not None:
+        text += f" of {population:,}"
+    if isinstance(rate, (int, float)) and not isinstance(rate, bool):
+        text += f" ({rate * 100:.1f}%)"
+    return text
+
+
+def test_table_rows(rec: dict) -> list[dict]:
+    """One dict per audit test of the run, in node order.
+
+    Keys: node, op, test, status, population, exceptions, rate, criteria,
+    message, code (all strings; ``-`` for a number the test did not report).
+    """
+    out = []
+    for node in rec.get("nodes") or []:
+        summary = node.get("test_summary")
+        if not isinstance(summary, dict):
+            continue
+        population = _count(summary.get("population_rows"))
+        exceptions = _count(summary.get("exception_rows"))
+        rate = summary.get("exception_rate")
+        has_rate = isinstance(rate, (int, float)) and not isinstance(rate, bool)
+        out.append(
+            {
+                "node": node.get("label") or node.get("title") or "",
+                "op": node.get("op", ""),
+                "test": str(summary.get("test_name") or node.get("title") or ""),
+                "status": str(summary.get("status") or ""),
+                "population": "-" if population is None else f"{population:,}",
+                "exceptions": "-" if exceptions is None else f"{exceptions:,}",
+                "rate": f"{rate * 100:.1f}%" if has_rate else "-",
+                "criteria": str(summary.get("criteria") or ""),
+                "message": str(summary.get("message") or ""),
+                "code": str(summary.get("code") or ""),
+            }
+        )
+    return out
+
+
 def node_table_rows(rec: dict) -> list[dict]:
-    """One dict per node: node, op, status, rows_in, rows_out, columns, duration, error."""
+    """One dict per node: node, op, status, rows_in, rows_out, columns, duration, test, error."""
     out = []
     for node in rec.get("nodes") or []:
         sockets = [_count(entry.get("rows")) for entry in node.get("rows_in") or []]
@@ -158,6 +211,7 @@ def node_table_rows(rec: dict) -> list[dict]:
                     if node.get("status") == "skipped"
                     else format_duration(node.get("duration_s"))
                 ),
+                "test": format_test_result(node.get("test_summary")),
                 "error": str(error.get("title") or "") if error else "",
                 "node_id": node.get("node_id"),
             }

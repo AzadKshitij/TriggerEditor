@@ -112,3 +112,46 @@ def test_export_json_is_byte_identical_and_verifies(tmp_path):
     assert target.read_bytes() == Path(path).read_bytes()
     assert verify_record_file(target).ok
     assert sealed.record_hash in target.read_text(encoding="utf-8")
+
+
+def _benford_summary(**over) -> dict:
+    summary = {
+        "test_id": "audit.benford#7",
+        "test_name": "Benford <first digit>",
+        "node_id": 7,
+        "status": "fail",
+        "population_rows": 1000,
+        "exception_rows": 12,
+        "exception_rate": 0.012,
+        "criteria": "MAD > 0.015",
+        "message": "Distribution differs from Benford's law",
+        "code": "TD-AUDIT-101",
+    }
+    summary.update(over)
+    return summary
+
+
+def test_html_has_a_tests_section_with_the_stored_summaries():
+    record = make_record_dict()
+    record["nodes"][1]["op"] = "audit.benford"
+    record["nodes"][1]["test_summary"] = _benford_summary()
+    page = render_html(record)
+    assert "<h2>Tests</h2>" in page
+    tests = page.split("<h2>Tests</h2>", 1)[1].split("<h2>", 1)[0]
+    for expected in (
+        "Benford &lt;first digit&gt;",  # escaped
+        '<span class="failed">fail</span>',
+        "1,000",
+        "12",
+        "1.2%",
+        "MAD &gt; 0.015",
+        "Distribution differs",
+        "TD-AUDIT-101",
+    ):
+        assert expected in tests, expected
+    assert "Benford <first digit></td>" not in page  # never raw
+
+
+def test_html_tests_section_says_when_the_run_had_no_audit_tests():
+    page = render_html(make_record_dict())
+    assert "No audit tests in this run." in page

@@ -56,7 +56,11 @@ class RunListModel(QAbstractTableModel):
         """Replace the rows from ``RunHeader`` objects (any order)."""
         old = {row["run_id"]: row for row in self._rows}
         rows = []
-        for header in sorted(headers, key=lambda h: h.seq, reverse=True):
+        # Newest first. The primary and the fallback store keep separate seq
+        # counters, so time orders them; seq breaks a tie inside one chain.
+        for header in sorted(
+            headers, key=lambda h: (h.started_at, h.seq), reverse=True
+        ):
             row = {
                 "seq": header.seq,
                 "run_id": header.run_id,
@@ -222,7 +226,17 @@ class SummaryModel(QAbstractTableModel):
 class NodeTableModel(QAbstractTableModel):
     """One row per node of the selected run."""
 
-    HEADERS = ("Node", "Operation", "Status", "In", "Out", "Cols", "Time", "Problem")
+    HEADERS = (
+        "Node",
+        "Operation",
+        "Status",
+        "In",
+        "Out",
+        "Cols",
+        "Time",
+        "Test",
+        "Problem",
+    )
     KEYS = (
         "node",
         "op",
@@ -231,6 +245,7 @@ class NodeTableModel(QAbstractTableModel):
         "rows_out",
         "columns",
         "duration",
+        "test",
         "error",
     )
     NUMERIC = frozenset({3, 4, 5, 6})

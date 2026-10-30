@@ -60,7 +60,7 @@ Records follow the **path** of the workflow. If you move or rename a workflow, i
 
 ## The Run History dock
 
-Open **Window > Run History**. It lists the runs of the workflow in front. (It looks in the primary store folder; runs that were written to the fallback folder are not listed.)
+Open **Window > Run History**. It lists the runs of the workflow in front, from the primary store folder **and** from the fallback folder (used when the primary one was read-only), newest first. The status line says how many runs came from the fallback folder. The two folders keep separate chains, so run numbers can repeat; **Verify run log** checks both.
 
 ### The list
 
@@ -90,12 +90,12 @@ All buttons are icons; hover to read their tooltips.
 | Check inputs against selected run | Re-fingerprints the input files recorded in the selected run and compares them with what the record says (see below). |
 | Compare two selected runs | Select **exactly two** runs (click one, then `Ctrl`+click another), then press this toggle. The bottom-right table switches to differences. |
 | Export selected run as JSON | Saves a copy of the record (file name `run-0001-xxxxxxxx.json`). |
-| Export selected run as HTML report | Saves a self-contained web page with the summary, integrity details, inputs, outputs, steps, errors, settings and generated code, and opens it. If you have verified the chain in this session, the report says whether it passed. The page embeds the record's JSON. |
+| Export selected run as HTML report | Saves a self-contained web page with the summary, integrity details, inputs, outputs, steps, a **Tests** section (the result of each Audit node), errors, settings and generated code, and opens it. If you have verified the chain in this session, the report says whether it passed. The page embeds the record's JSON. |
 
 ### The panes under the list
 
 - **Summary** for the selected run: run id, number, status, start and end, duration, workflow name and its fingerprint (or "unsaved"), a note when the workflow had unsaved changes at the time, how many inputs and outputs and whether they were all hashed, number of nodes (with failed and skipped counts), the row-count mode used, who ran it, program versions, how many inputs changed since the previous run, number of warnings and the start of the record hash.
-- **Nodes** table, one row per node: Node, Operation, Status, In, Out, Cols, Time, Problem. Currently the Time column shows 0 ms for most nodes (see below).
+- **Nodes** table, one row per node: Node, Operation, Status, In, Out, Cols, Time, Test, Problem. **Test** is filled for Audit nodes, for example `fail: 12 of 1,000 (1.2%)` (the node's `test_summary`); it is empty for other nodes.
 - **Differences** table instead of Nodes when comparing: Kind, Node, Field, Old, New.
 
 ### Check inputs
@@ -264,7 +264,7 @@ Audit nodes (Benford, Duplicates, Gaps, Risk Filters, Sample) do two things. The
 
 The summary is recorded when the Run executes the node on the whole data. The sample-based number you see in a node while editing is not the one that is recorded.
 
-At present the **Run History dock and the HTML report do not display test summaries**; they are in the record itself, so use **Export selected run as JSON** (or open the `.json` file in the store folder) to see them.
+The Run History dock shows the result in the **Test** column of the Nodes table, and the HTML report has a **Tests** section with the test name, result, population, exceptions, rate, criteria and message. The full summary is in the record itself (**Export selected run as JSON**).
 
 ## Example: a real record
 

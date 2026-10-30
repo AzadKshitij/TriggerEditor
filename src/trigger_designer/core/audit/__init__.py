@@ -71,6 +71,8 @@ _EXPORTS: dict[str, str] = {
     "format_duration": "view",
     "run_summary_rows": "view",
     "node_table_rows": "view",
+    "test_table_rows": "view",
+    "format_test_result": "view",
     "render_html": "export",
     "export_json": "export",
     "error_to_dict": "errors_adapter",

@@ -24,7 +24,7 @@ executor.
 | `errors_adapter.py` | `NodeError` (or an exception) to the stored `error` dict: `node_error_to_dict`, `error_to_dict`, `exception_to_dict`. |
 | `compare.py` | `compare_runs`, `check_inputs`, `DiffItem`, `RunDiff`, `InputCheck`. |
 | `view.py` | Display rows shared by the dock and the HTML export: `run_summary_rows`, `node_table_rows`, `format_duration`, `format_local_time`. |
-| `export.py` | `render_html(record, verify=None)`, `export_json(source, destination)`. |
+| `export.py` | `render_html(record, verify=None)` (sections: summary, integrity, inputs, outputs, steps, tests, errors, warnings, settings, code), `export_json(source, destination)`. `view.py` also has `format_test_result` / `test_table_rows` (the stored `test_summary`, shared by the HTML Tests section and the dock's Test column). |
 | `test_summary.py` | `TestSummary` (what an audit test reports; stored in `NodeRunRecord.test_summary`). |
 | Qt side | `qt/helpers/audit_bridge.py` (`RunSession`, `options_from_preferences`, `store_from_preferences`, `node_specs_from_window`), `qt/helpers/audit_tasks.py` (`AuditTask`), `qt/docks/run_history_dock.py` (`RunHistoryDock`, `InputCheckDialog`), `qt/models/run_history_models.py`, preferences group "Audit trail". |
 
@@ -236,7 +236,10 @@ newlines; Excel through `openpyxl` read-only).
   `audit/hash_inputs`, `audit/hash_outputs`, `audit/hash_max_mb`,
   `audit/row_counts`, `audit/exact_counts_max_mb`, `audit/embed_code`,
   `audit/warn_on_input_change` (log "Input changed since the previous run").
-* `RunHistoryDock`: lists runs from the index, shows the node table, verify
+* `RunHistoryDock`: lists runs from the index of the primary store *and* of the
+  fallback store when that holds runs (`fallback_dir()`; `_run_dirs` maps each
+  run to its folder, rows sort by `started_at` because the chains have separate
+  `seq`), shows the node table (with a Test column from `test_summary`), verify
   (`verify_store`), compare two runs (`compare_runs`), "check inputs" (`check_inputs`,
   re-hashes now), export JSON/HTML (`export_json`, `render_html`). Long work runs
   in `AuditTask(fn(cancel_event, *args))` on the thread pool; results return

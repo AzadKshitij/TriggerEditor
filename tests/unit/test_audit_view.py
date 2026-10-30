@@ -128,3 +128,29 @@ def test_run_rows_out():
     assert run_rows_out(rec) == 3
     rec["outputs"][0]["row_count"] = None
     assert run_rows_out(rec) is None
+
+
+def test_test_result_text_and_rows():
+    from trigger_designer.core.audit.view import format_test_result, test_table_rows
+
+    assert format_test_result(None) == ""
+    assert format_test_result({"status": "pass"}) == "pass"
+    summary = {
+        "status": "warn",
+        "test_name": "Gaps",
+        "population_rows": 2000,
+        "exception_rows": 5,
+        "exception_rate": 0.0025,
+    }
+    assert format_test_result(summary) == "warn: 5 of 2,000 (0.2%)"
+    rec = make_record_dict()
+    rec["nodes"] = [make_node(1), make_node(2, title="Gaps", test_summary=summary)]
+    rows = test_table_rows(rec)
+    assert len(rows) == 1
+    assert (rows[0]["test"], rows[0]["status"], rows[0]["exceptions"]) == (
+        "Gaps",
+        "warn",
+        "5",
+    )
+    assert node_table_rows(rec)[1]["test"] == "warn: 5 of 2,000 (0.2%)"
+    assert node_table_rows(rec)[0]["test"] == ""

@@ -22,6 +22,7 @@ from trigger_designer.core.audit.view import (
     format_local_time,
     node_table_rows,
     run_summary_rows,
+    test_table_rows,
 )
 
 _CSS = """
@@ -96,6 +97,32 @@ def _nodes_table(record: dict) -> str:
             f"<td>{_e(error)}</td></tr>"
         )
     return f"<table>{head}{''.join(rows)}</table>"
+
+
+def _tests(record: dict) -> str:
+    """The audit tests of the run (each Audit node's stored ``test_summary``)."""
+    rows = test_table_rows(record)
+    if not rows:
+        return '<p class="muted">No audit tests in this run.</p>'
+    head = (
+        "<tr><th>Node</th><th>Test</th><th>Result</th><th>Population</th>"
+        "<th>Exceptions</th><th>Rate</th><th>Criteria</th><th>Message</th></tr>"
+    )
+    body = []
+    for row in rows:
+        css = {"pass": "ok", "warn": "warn", "fail": "failed", "error": "failed"}
+        result = f'<span class="{css.get(row["status"], "muted")}">{_e(row["status"])}</span>'
+        code = f" <code>{_e(row['code'])}</code>" if row["code"] else ""
+        body.append(
+            "<tr>"
+            f"<td>{_e(row['node'])}</td><td>{_e(row['test'])}</td><td>{result}</td>"
+            f'<td class="num">{_e(row["population"])}</td>'
+            f'<td class="num">{_e(row["exceptions"])}</td>'
+            f'<td class="num">{_e(row["rate"])}</td>'
+            f"<td>{_e(row['criteria'])}</td><td>{_e(row['message'])}{code}</td>"
+            "</tr>"
+        )
+    return f"<table>{head}{''.join(body)}</table>"
 
 
 def _errors(record: dict) -> str:
@@ -197,6 +224,8 @@ def render_html(record: dict, verify: Any = None) -> str:
         f"{_files_table(record.get('outputs') or [])}"
         "<h2>Steps</h2>"
         f"{_nodes_table(record)}"
+        "<h2>Tests</h2>"
+        f"{_tests(record)}"
         "<h2>Errors</h2>"
         f"{_errors(record)}"
         "<h2>Warnings</h2>"

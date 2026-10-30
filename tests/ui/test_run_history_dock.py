@@ -206,7 +206,7 @@ def test_selecting_a_run_fills_summary_and_node_table(
     titles = [dock.node_model.index(r, 0).data() for r in range(2)]
     assert titles == ["Load", "Filter"]
     assert dock.node_model.index(1, 2).data() == "failed"
-    assert dock.node_model.index(1, 7).data() == "Column 'amnt' was not found"
+    assert dock.node_model.index(1, 8).data() == "Column 'amnt' was not found"
     assert not dock.btn_compare.isEnabled()
     assert dock.btn_check_inputs.isEnabled() and dock.btn_export_html.isEnabled()
     assert Path(directory).is_dir()
@@ -482,3 +482,56 @@ def test_dock_follows_a_real_design_window_run(
     with qtbot.waitSignal(dock.verify_finished, timeout=20_000) as blocker:
         dock.btn_verify.click()
     assert blocker.args[0].ok
+
+
+def test_lists_runs_of_the_fallback_store_too(
+    qtbot, theme_manager, clean_preferences, tmp_path
+):
+    """Runs written to the fallback folder (primary read-only) are not lost."""
+    from trigger_designer.qt.helpers.audit_bridge import store_from_preferences
+
+    tds, _directory, _sealed = _seed(tmp_path, 2)
+    fallback = store_from_preferences().fallback_dir_for(str(tds))
+    store = RunStore(app_data_dir=tmp_path / "appdata")
+    later = store.seal_and_save(
+        make_record(
+            started_at="2026-10-21T10:00:00.000000Z",
+            finished_at="2026-10-21T10:00:01.000000Z",
+        ),
+        fallback,
+    )[0]
+    dock = _dock(qtbot, tds, theme_manager)
+    assert dock.run_model.rowCount() == 3
+    assert dock.fallback_dir() == fallback
+    # newest first across both stores; the fallback run is the newest
+    assert dock.run_model.run_at(0)["run_id"] == later.run_id
+    assert dock.record_for(later.run_id)["run_id"] == later.run_id
+    assert "1 in the fallback folder" in dock.status_label.text()
+    dock.verify()
+    assert dock.wait_for_tasks()
+    assert dock._last_report.ok and dock._last_report.checked == 3
+
+
+def test_node_table_shows_the_audit_test_result(
+    qtbot, theme_manager, clean_preferences, tmp_path
+):
+    summary = {
+        "status": "fail",
+        "test_name": "Duplicates",
+        "population_rows": 1000,
+        "exception_rows": 12,
+        "exception_rate": 0.012,
+    }
+    tds, _directory, _sealed = _seed(
+        tmp_path,
+        1,
+        nodes=[
+            make_node(1, title="Load"),
+            make_node(2, title="Dups", test_summary=summary),
+        ],
+    )
+    dock = _dock(qtbot, tds, theme_manager)
+    headers = list(dock.node_model.HEADERS)
+    column = headers.index("Test")
+    assert dock.node_model.index(0, column).data() == ""
+    assert dock.node_model.index(1, column).data() == "fail: 12 of 1,000 (1.2%)"
