@@ -53,7 +53,7 @@ from trigger_designer.core.audit.test_summary import TestSummary
 from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.frames import frame_schema
-from trigger_designer.qt.helpers.config_content import ConfigContent
+from trigger_designer.qt.node_content import ConfigContent
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import TriggerGraphicsNode, TriggerNode
 from trigger_designer.qt.undo.binding import DEFAULT_DEBOUNCE_MS

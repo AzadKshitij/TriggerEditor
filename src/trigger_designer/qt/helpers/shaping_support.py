@@ -30,7 +30,7 @@ from qtpy.QtWidgets import (
 
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.shaping.common import ShapingError, live_sample
-from trigger_designer.qt.helpers.config_content import ConfigContent
+from trigger_designer.qt.node_content import ConfigContent
 from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import (

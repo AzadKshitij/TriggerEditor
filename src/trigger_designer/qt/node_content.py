@@ -15,6 +15,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
+from qtpy.QtCore import Signal
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QLabel, QLayout, QScrollArea, QWidget
 
@@ -373,14 +374,42 @@ class TriggerChangeHandler(TriggerContentUndoMixin):
         _binding_of(self).clear()
 
 
-class TriggerContent(TriggerContentUndoMixin, QDMNodeIconContentWidget):
-    """Base for node content widgets.
+class ConfigContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+    """The one canonical base for Config Dock content widgets.
 
-    :class:`TriggerContentUndoMixin` supplies the undo protocol methods, so
-    every node can be restored without writing per-node bookkeeping. It is
-    listed *before* the Qt base deliberately: ``QDMNodeContentWidget`` defines
-    a no-op ``history_stamp_callback``, and a Qt base listed first would win
-    the MRO and silently disable the real one.
+    Owns what every node family used to duplicate: an ``evaluate`` signal, the
+    node getter/setter, the dock icon setup, the history reference and (through
+    :class:`TriggerChangeHandler`) the :class:`DockBinding` and undo helpers.
+    Node-specific data, widgets, serialization and code generation stay on the
+    subclass.
+    """
+
+    evaluate = Signal()
+
+    def __init__(self, node: "TriggerNode", parent: QWidget | None = None) -> None:
+        super().__init__(node, parent)
+        TriggerChangeHandler.__init__(self, node.scene, node)
+        self.history = node.scene.history
+
+    @property
+    def node(self) -> "TriggerNode":
+        return self._node
+
+    @node.setter
+    def node(self, value: "TriggerNode") -> None:
+        self._node = value
+
+    def initUI(self, _icon: QPixmap | None = None) -> None:
+        super().initUI(self.node.rsm.get(f"{self.node.icon}"))
+
+
+class TriggerContent(ConfigContent):
+    """Legacy default content: the node's label instead of its icon.
+
+    Kept as a thin adapter over :class:`ConfigContent` for nodes that never
+    declare their own content class. ``history_stamp_callback`` still resolves
+    to :class:`TriggerContentUndoMixin` (the Qt base defines none), so a
+    restore re-projects through ``sync_from_model``.
     """
 
     def initUI(self, icon: Optional[QPixmap] = None) -> Any:

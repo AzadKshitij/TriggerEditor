@@ -34,6 +34,7 @@ from trigger_designer.qt.helpers.rename_map import (
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.node_content import (
+    ConfigContent as ConfigContent,
     DockBinding as DockBinding,
     TriggerChangeHandler as TriggerChangeHandler,
     TriggerContent as TriggerContent,

@@ -321,18 +321,17 @@ def test_edge_change_on_the_producer_only_clears_run_error() -> None:
         window.close()
 
 
-def test_content_mro_keeps_undo_mixin_before_the_qt_base() -> None:
-    mro = TriggerContent.__mro__
-    assert mro.index(TriggerContentUndoMixin) < mro.index(QDMNodeIconContentWidget)
+def test_content_history_stamp_resolves_to_the_undo_mixin() -> None:
     assert (
         TriggerContent.history_stamp_callback
         is TriggerContentUndoMixin.history_stamp_callback
     )
+    assert issubclass(TriggerContent, QDMNodeIconContentWidget)
     assert issubclass(TriggerChangeHandler, TriggerContentUndoMixin)
 
 
 def test_config_content_is_a_change_handler_and_icon_content() -> None:
-    from trigger_designer.qt.helpers.config_content import ConfigContent
+    from trigger_designer.qt.node_content import ConfigContent
 
     assert issubclass(ConfigContent, QDMNodeIconContentWidget)
     assert issubclass(ConfigContent, TriggerChangeHandler)
@@ -347,3 +346,13 @@ def test_handler_without_init_still_has_input_widget_store() -> None:
     handler = Legacy.__new__(Legacy)
     assert handler._input_widgets == []
     assert handler._input_widgets is handler._input_widgets
+
+
+def test_trigger_content_is_a_config_content_adapter() -> None:
+    from trigger_designer.qt.helpers.config_content import (
+        ConfigContent as LegacyConfigContent,
+    )
+    from trigger_designer.qt.node_content import ConfigContent
+
+    assert LegacyConfigContent is ConfigContent
+    assert issubclass(TriggerContent, ConfigContent)
