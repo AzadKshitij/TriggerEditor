@@ -41,6 +41,7 @@ op id is the stable identifier stored in saved workflows
 | Select Records | ![Select Records](assets/node_icons/selectrecords.png) | Keeps the first, last, ranged, largest, or smallest rows and sends the remainder out of the second socket. |
 | Find and Replace | ![Find and Replace](assets/node_icons/findreplace.png) | Applies ordered literal or regex replacements across selected text columns, in place or into suffixed columns. |
 | Date Helper | ![Date Helper](assets/node_icons/datehelper.png) | Adds date parts, fiscal periods, day differences, holidays, and business-day calculations as new columns. |
+| Multi-Field Formula | ![Multi-Field Formula](../src/trigger_designer/resources/qt/images/node_icons/Preparation/MultiFieldFormula.svg) | Applies one SQL expression to every ticked column, replacing the columns or adding `<column><suffix>` copies. `{col}` is the column and `{name}` its name as text; the query runs through the read-only SQL guard (`TD-SHAPE-110`/`112`/`113`), and a formula without `{col}` is `TD-SHAPE-120`. At most 200 columns. |
 | Text to Columns | ![Text to Columns](../src/trigger_designer/resources/qt/images/node_icons/Preparation/TextToColumns.svg) | Splits one text column on a literal delimiter or a regex into new columns (the last takes the remainder) or into one row per piece; errors `TD-SHAPE-044` (not text) and `TD-SHAPE-101` (pattern can match nothing). |
 
 > Normalize reuses the Select glyph (`node_select`) until a dedicated

@@ -190,6 +190,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_date_helper",
     },
     {
+        "module_path": "Preparation.multi_field_formula",
+        "node_code": PreparationNodes.MULTI_FIELD_FORMULA,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Multi-Field Formula",
+        "icon": "node_multi_field_formula",
+    },
+    {
         "module_path": "Preparation.text_to_columns",
         "node_code": PreparationNodes.TEXT_TO_COLUMNS,
         "node_type": NodeTypes.PREPARATION,

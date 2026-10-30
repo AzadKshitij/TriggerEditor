@@ -52,6 +52,7 @@ ERROR_CODES: dict[str, str] = {
     "TD-SHAPE-113": "The SQL could not be parsed or run",
     "TD-SHAPE-114": "The SQL is too long",
     "TD-SHAPE-115": "The query took too long",
+    "TD-SHAPE-120": "The formula must use the column placeholder",
 }
 
 

@@ -594,6 +594,11 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Simplify the query or filter the data first.",
         "error",
     ),
+    "TD-SHAPE-120": (
+        "The formula must use the column placeholder",
+        "Write {col} where the column goes, for example UPPER({col}).",
+        "error",
+    ),
     "TD-SHAPE-005": (
         "A required input has no data",
         "Connect and fix the upstream node.",
