@@ -86,13 +86,13 @@ Two frameworks sit on top of `TriggerNode`:
 
 * **Shaping nodes** (`ShapingNode`/`ShapingContent`): declarative `FORM`,
   settings dict, generated code is a call into `core/shaping/<x>.run_node`.
-  Used by Preparation/Join/Transform/Report nodes added in plan 07 and Record ID.
+  Used by every Preparation, Join, Transform and Report node (Select, Join,
+  Formula and Filter included, some with custom docks).
 * **Audit nodes** (`AuditNode`/`AuditContent`): a `ParamsBase` dataclass plus a
   pure `run_<test>(frame, params) -> AuditResult`.
 
-Older nodes (File Input/Output, Select, Join, Union, Formula, Filter, ...) are
-hand-written `TriggerNode` + content classes. Step by step recipe:
-`adding-a-node.md`.
+Only File Input, File Output and Union are still hand-written `TriggerNode` +
+content classes. Step by step recipe: `adding-a-node.md`.
 
 ## 4. Data flow: live evaluation versus Run
 
