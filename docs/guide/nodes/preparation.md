@@ -1053,7 +1053,7 @@ A single Literal rule with Find `acme`, Replace `Acme Inc`, Match case off, in p
 - [Preview uses 100 rows](#preview-vs-run); the "cells change" chip counts the sample only.
 - Only **text** columns. Pick a number column and the node stops with `TD-SHAPE-044`; convert it with [Select](#select) first.
 - Empty cells stay empty.
-- Every rule is checked, even a switched-off one: an empty Find in a rule that is off still stops the node. Delete rules you do not need.
+- Only switched-on rules are checked. A switched-off rule may have an empty Find or an invalid pattern without stopping the node; the "Rule n" in a message counts all rules, on or off.
 - With no rule switched on, the table passes through unchanged (the columns are still checked).
 - Rules run in order, so a later rule can change what an earlier one produced.
 - A Regex Find that is not valid (for example an unclosed `(`) stops the node with `TD-SHAPE-040`. Escape special characters with a backslash.
@@ -1068,7 +1068,7 @@ A single Literal rule with Find `acme`, Replace `Acme Inc`, Match case off, in p
 | `TD-SHAPE-003` | A picked column is gone | Pick it again |
 | `TD-SHAPE-040` | Invalid regular expression (the detail names the rule number) | Escape special characters with a backslash |
 | `TD-SHAPE-041` | Find longer than 500 characters | Shorten it |
-| `TD-SHAPE-042` | A rule has an empty Find | Type the text, or remove the rule |
+| `TD-SHAPE-042` | A switched-on rule has an empty Find | Type the text, or remove the rule |
 | `TD-SHAPE-043` | More than 50 rules | Remove rules or use two nodes |
 | `TD-SHAPE-044` | A picked column is not text | Convert it to text with Select |
 

@@ -53,6 +53,10 @@ def validate_rules(rules: list[dict]) -> list[dict]:
     result = []
     for index, raw in enumerate(rules, start=1):
         rule = {**RULE_DEFAULTS, **raw}
+        if not rule["enabled"]:
+            # A switched-off rule is never run, so it is never checked.
+            result.append(rule)
+            continue
         if rule["mode"] not in ("literal", "regex"):
             raise ShapingError("TD-SHAPE-004", f"Rule {index}: unknown mode")
         if rule["find"] == "":
