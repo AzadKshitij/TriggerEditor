@@ -12,11 +12,11 @@ from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
     estimate_pairs,
-    numeric_expr,
     require_columns,
     schema_of,
     unique_name,
 )
+from trigger_designer.core.utils.amounts import amount_expr
 
 MAX_CANDIDATE_PAIRS = 5_000_000
 MATCH_TYPES = ("one_to_one", "one_to_many", "many_to_one", "many_to_many")
@@ -126,7 +126,7 @@ def _slim(frame: pl.DataFrame, side: str, s: dict) -> pl.DataFrame:
         )
     if s[f"amount_{side_name}"]:
         columns.append(
-            numeric_expr(
+            amount_expr(
                 s[f"amount_{side_name}"], schema[s[f"amount_{side_name}"]]
             ).alias(f"__{side}a")
         )
@@ -348,7 +348,7 @@ def _sum_amount(frame: pl.DataFrame, column: str) -> float | None:
         return 0.0
     try:
         return float(
-            frame.select(numeric_expr(column, frame.schema[column]).sum()).item() or 0.0
+            frame.select(amount_expr(column, frame.schema[column]).sum()).item() or 0.0
         )
     except Exception:  # noqa: BLE001
         return 0.0
