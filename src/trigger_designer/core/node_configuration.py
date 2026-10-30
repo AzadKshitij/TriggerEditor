@@ -35,6 +35,7 @@ class IONodes(IntEnum):
     TEXT_INPUT = auto()
     FILE_INPUT = auto()
     FILE_OUTPUT = auto()
+    WORKPAPER_OUTPUT = auto()
 
 
 class PreparationNodes(IntEnum):
@@ -328,7 +329,7 @@ def migrate_v1_data(data: dict) -> Union[str, None]:
         return None
     try:
         return V1_OPCODE_TO_OP.get((family, int(code)))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

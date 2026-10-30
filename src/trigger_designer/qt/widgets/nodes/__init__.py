@@ -28,6 +28,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_file_output",
     },
     {
+        "module_path": "InOut.workpaper_output",
+        "node_code": IONodes.WORKPAPER_OUTPUT,
+        "node_type": NodeTypes.IO,
+        "node_title": "Workpaper Output",
+        "icon": "node_file_output",
+    },
+    {
         "module_path": "Join.Append",
         "node_code": JoinNodes.APPEND,
         "node_type": NodeTypes.JOIN,
