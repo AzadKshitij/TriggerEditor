@@ -43,12 +43,17 @@ MEMORY_LIMIT = "2GB"
 #: statement must start with one of these words (after comments are removed)
 ALLOWED_FIRST_WORDS = frozenset({"select", "with", "from", "values", "table"})
 #: function / table-function names rejected anywhere in the statement
-_DENIED_CALLS = re.compile(
-    r'(?<![A-Za-z0-9_])"?(?:read_[a-z0-9_]+|glob|[a-z0-9_]*_scan|sniff_csv|query|'
+_DENIED_NAME = (
+    r"(?:read_[a-z0-9_]+|glob|[a-z0-9_]*_scan|sniff_csv|query|"
     r"query_table|duckdb_[a-z0-9_]+|pragma_[a-z0-9_]+|current_setting|"
-    r'which_secret|random|uuid|gen_random_uuid|setseed|getenv)"?\s*\(',
-    re.IGNORECASE,
+    r"which_secret|random|uuid|gen_random_uuid|setseed|getenv)"
 )
+#: an unquoted call, searched in text where quoted identifiers are blanked
+_DENIED_CALLS = re.compile(rf"(?<![A-Za-z0-9_]){_DENIED_NAME}\s*\(", re.IGNORECASE)
+#: a quoted call such as "read_csv"('x'); only a quoted identifier that IS a denied
+#: name counts, so a column called "total read_x(1)" is just a column
+_QUOTED_CALL = re.compile(r'"((?:[^"]|"")*)"\s*\(')
+_DENIED_FULL = re.compile(_DENIED_NAME, re.IGNORECASE)
 #: FROM 'file.csv' / JOIN 'file.csv' (a quoted *string* where a table belongs)
 _FROM_STRING = re.compile(r"\b(?:from|join)\s*'", re.IGNORECASE)
 #: FROM "dir/file.csv": a quoted identifier that looks like a path or glob
@@ -141,7 +146,10 @@ def check_select_only(sql: str, *, allow_unparsable: bool = False) -> None:
     if not m or (m.group().lower() not in ALLOWED_FIRST_WORDS and m.group() != "("):
         raise ShapingError("TD-SHAPE-111", "Only SELECT queries are allowed")
     with_idents = mask(normal, keep_identifiers=True)
-    if _DENIED_CALLS.search(with_idents):
+    if _DENIED_CALLS.search(masked) or any(
+        _DENIED_FULL.fullmatch(m.group(1).replace('""', '"').strip())
+        for m in _QUOTED_CALL.finditer(with_idents)
+    ):
         raise ShapingError(
             "TD-SHAPE-112", "This function is not allowed (files, system or random)"
         )

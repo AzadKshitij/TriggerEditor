@@ -39,6 +39,11 @@ ALLOWED = [
     "SELECT a\nFROM t1\n-- trailing comment",
     "SELECT CAST(a AS BIGINT), strftime(d, '%Y') FROM t1",
     "SELECT * REPLACE (a * 2 AS a) FROM t1",
+    # a quoted name that merely contains a denied call is just a column name
+    'SELECT "read_x(a)" FROM t1',
+    'SELECT "net read_x(1)", "random (x)" FROM t1',
+    'SELECT "glob(" AS "query(" FROM t1',
+    'SELECT "a ""read_csv(""" FROM t1',
 ]
 
 REJECTED = [
@@ -100,6 +105,9 @@ REJECTED = [
     ("SELECT * FROM read_csv -- c\n('x.csv')", "TD-SHAPE-112"),
     ("SELECT * FROM \"read_csv\"('x.csv')", "TD-SHAPE-112"),
     ("SELECT * FROM main.read_csv('x.csv')", "TD-SHAPE-112"),
+    ("SELECT * FROM main.\"read_csv\"('x.csv')", "TD-SHAPE-112"),
+    ("SELECT * FROM \"READ_CSV\" ('x.csv')", "TD-SHAPE-112"),
+    ('SELECT "x", random() FROM t1', "TD-SHAPE-112"),
     ("SELECT * FROM rEaD_CsV('x.csv')", "TD-SHAPE-112"),
     ("SELECT * FROM ｒｅａｄ_csv('x.csv')", "TD-SHAPE-112"),
     ("SELECT 1 WHERE EXISTS (SELECT * FROM read_csv('x'))", "TD-SHAPE-112"),
