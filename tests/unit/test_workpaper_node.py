@@ -314,7 +314,7 @@ def test_workflow_file_input_csv_is_curated(qtbot, tmp_path):
         schema_snapshot=[{"name": "a", "dtype": "Int64"}],
         file_metadata={"size": 9},
     )
-    assert rows["Source"] == str(csv) and rows["Source type"] == "csv"
+    assert rows["Source"] == csv.as_posix() and rows["Source type"] == "csv"
     assert rows["Delimiter"] == ";" and rows["Row limit"] == "50"
     assert rows["Encoding"] == "utf8-lossy"
     assert rows["First row is the header"] == "yes"

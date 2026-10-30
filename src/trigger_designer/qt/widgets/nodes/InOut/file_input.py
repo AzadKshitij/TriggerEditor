@@ -934,7 +934,7 @@ class FileInputContent(
             return [("Source", "not set")]
         mode = effective_mode(self.filePath)
         kind = str(self.file_type)
-        rows.append(("Source", self.filePath))
+        rows.append(("Source", str(self.filePath).replace("\\", "/")))
         rows.append(("Source type", kind))
         if mode in ("folder", "pattern"):
             rows.append(
