@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable
 from typing import Any
 
 from loguru import logger
@@ -79,6 +80,10 @@ class WorkflowExecutionMixin:
     #: a run has to stay optional.
     executionResultsChanged = None
 
+    #: Defaults for hosts that never call ``init_workflow_execution`` (tests).
+    _run_cancelled: bool = False
+    _workflow_executor: NodeExecutor | None = None
+
     def init_workflow_execution(self) -> None:
         """Initialise workflow execution state tracking."""
         self.workflow_execution_count: int = 0
@@ -88,6 +93,10 @@ class WorkflowExecutionMixin:
         self.execution_results: dict[Any, dict[str, Any]] = {}
         self._workflow_worker: WorkflowWorker | None = None
         self._workflow_sorted_nodes: list[Any] = []
+        self._workflow_executor: NodeExecutor | None = None
+        self._run_cancelled: bool = False
+        self._cancel_listeners: list[Callable[[], None]] = []
+        self._last_run_codes: dict[Any, str] = {}
 
     def _log_to_dock(self, message: str) -> None:
         """Report a message in the Logging dock.
@@ -114,8 +123,7 @@ class WorkflowExecutionMixin:
             # couldn't happen).
             return
 
-        if hasattr(self, "run_button"):
-            self.run_button.setEnabled(False)
+        self._show_run_controls(True)
 
         try:
             # Run reads values, so any coalesced edge edit and the latest SQL
@@ -131,14 +139,15 @@ class WorkflowExecutionMixin:
             # Never leave the Run button disabled because the graph cannot be
             # ordered. The selected edges make the loop visible; the message
             # uses the TD-CLI-004 wording without inventing a node-level error.
-            if hasattr(self, "run_button"):
-                self.run_button.setEnabled(True)
+            self._show_run_controls(False)
             select_cycle_edges(self.scene, exc)
             message = cycle_message(exc)
             logger.warning(message)
             self._log_to_dock(message)
             return
         executor = NodeExecutor()
+        self._workflow_executor = executor
+        self._run_cancelled = False
 
         # Reset node visuals and stored results
         self.execution_results.clear()
@@ -192,6 +201,60 @@ class WorkflowExecutionMixin:
             if coordinator is not None:
                 coordinator.resume()
             raise
+
+    def _show_run_controls(self, running: bool) -> None:
+        """Run and Cancel share one slot: exactly one is visible."""
+        run_button = getattr(self, "run_button", None)
+        cancel_button = getattr(self, "cancel_button", None)
+        if run_button is not None:
+            run_button.setEnabled(not running)
+            run_button.setVisible(not running)
+        if cancel_button is not None:
+            cancel_button.setVisible(running)
+            cancel_button.setEnabled(running)
+            if running:
+                cancel_button.setToolTip("Cancel run (stops after the current step)")
+
+    def add_cancel_listener(self, callback: Callable[[], None]) -> None:
+        """Register a zero-argument callable invoked by ``request_run_cancel``."""
+        if not hasattr(self, "_cancel_listeners"):
+            self._cancel_listeners = []
+        self._cancel_listeners.append(callback)
+
+    def request_run_cancel(self) -> bool:
+        """THE cancel entry point; True when a run was in flight.
+
+        Cancellation is cooperative: the node that is executing finishes, the
+        remaining nodes are skipped.
+        """
+        worker = getattr(self, "_workflow_worker", None)
+        executor = getattr(self, "_workflow_executor", None)
+        session = getattr(self, "_run_session", None)
+        try:
+            active = worker is not None and bool(worker.isRunning())
+        except RuntimeError:  # the Qt wrapper is already deleted
+            active = False
+        if active and worker is not None:
+            worker.request_cancel()
+        if active and executor is not None:
+            executor.cancel_execution()
+        if active and session is not None:
+            session.request_cancel()
+        for callback in list(getattr(self, "_cancel_listeners", [])):
+            try:
+                callback()
+            except Exception as exc:  # noqa: BLE001 - one listener must not block the rest
+                logger.warning("cancel listener failed: {}", exc)
+        if active:
+            self._run_cancelled = True
+            self._log_to_dock(
+                "Cancel requested - stopping after the current step finishes"
+            )
+            button = getattr(self, "cancel_button", None)
+            if button is not None:
+                button.setEnabled(False)
+                button.setToolTip("Cancelling after the current step finishes")
+        return active
 
     def _run_policy(self) -> dict[str, Any]:
         """Run options handed to the worker (``continue_on_error``)."""
@@ -395,6 +458,14 @@ class WorkflowExecutionMixin:
         # a deleted QThread's isRunning() on the next Run click raises
         # "wrapped C/C++ object ... has been deleted".
         finished_worker = self._workflow_worker
+        # The worker is authoritative: a cancel that arrives after the last
+        # node finished did not cancel anything.
+        self._run_cancelled = bool(
+            getattr(finished_worker, "cancelled", self._run_cancelled)
+        )
+        cancel_button = getattr(self, "cancel_button", None)
+        if cancel_button is not None:
+            cancel_button.setEnabled(False)
         self._workflow_worker = None
         if finished_worker is not None:
             _FINISHING_WORKERS.add(finished_worker)
@@ -408,7 +479,7 @@ class WorkflowExecutionMixin:
                 logger.exception("Failed to resume live evaluation after a run")
         self.getPyFile(self._workflow_sorted_nodes)
 
-        if success:
+        if success and not self._run_cancelled:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
         else:
             self._execution_cleanup(success=False)
@@ -441,7 +512,8 @@ class WorkflowExecutionMixin:
         )
 
         status_icon = "✅" if success else "❌"
-        status_text = "COMPLETED" if success else "FAILED"
+        cancelled = getattr(self, "_run_cancelled", False)
+        status_text = "COMPLETED" if success else "CANCELLED" if cancelled else "FAILED"
 
         logger.info(
             "{} Workflow execution #{} {}!",
@@ -465,7 +537,9 @@ class WorkflowExecutionMixin:
         self._log_to_dock(f"📊 Total runs: {self.workflow_execution_count}")
         self._log_to_dock(f"📈 Average time: {average_execution:.3f} seconds")
         self._log_to_dock(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
-        if not success:
+        if cancelled:
+            self._log_to_dock("Run cancelled")
+        elif not success:
             self._log_to_dock("⚠️  Execution failed - check logs for details")
             global_logger.error("Workflow execution failed - check logs for details")
 
@@ -476,8 +550,7 @@ class WorkflowExecutionMixin:
             node.grNode.resetPen()
             node.grNode.update()
 
-        if hasattr(self, "run_button"):
-            self.run_button.setEnabled(True)
+        self._show_run_controls(False)
 
     # --- Statistics helpers ---------------------------------------------------------
     def get_workflow_statistics(self) -> dict[str, int | float]:

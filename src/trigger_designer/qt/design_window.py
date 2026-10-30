@@ -158,6 +158,20 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.run_button.move(10, 10)
         self.run_button.clicked.connect(self.run_workflow)
 
+        # Cancel button: takes the Run button's slot while a run is in flight
+        # (never visible together). Cancellation is cooperative, so the
+        # tooltip says the current step still finishes.
+        self.cancel_button = IconButton.themed(
+            "Cancel run (stops after the current step)",
+            rsm_icon=self.rsm.get("icon_stop"),
+            parent=self,
+        )
+        self.cancel_button.move(10, 10)
+        self.cancel_button.hide()
+        self.cancel_button.clicked.connect(
+            lambda _checked=False: self.request_run_cancel()
+        )
+
         # Zoom In button
         self.zoom_in_button = IconButton.themed(
             "Zoom in",
@@ -189,6 +203,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         # the 12px used in the config dock.
         for button in (
             self.run_button,
+            self.cancel_button,
             self.zoom_in_button,
             self.zoom_out_button,
             self.fit_button,

@@ -103,6 +103,12 @@ class NodeExecutor:
         self.before_node: Callable[[Any], None] | None = None
         self.after_node: Callable[[Any, dict, ExecutionResult], None] | None = None
         self.code_filter: Callable[[str], str] | None = None
+        # Cooperative cancel latch. Cleared by reset_cancel() at the start of a
+        # run (the run loop does it), never by execute_node, so a request made
+        # before the next node starts is not lost. Observers may poll
+        # ``cancel_requested``; a node already inside ``exec`` is not stopped.
+        self._cancel_event = threading.Event()
+        self._node_running = False
         self._start_worker()
 
     def _start_worker(self) -> None:
@@ -126,6 +132,23 @@ class NodeExecutor:
                 task()
             except BaseException:  # noqa: BLE001 - the worker must outlive any task
                 logger.exception("Node executor task raised unexpectedly")
+
+    def reset_cancel(self) -> None:
+        """Forget an earlier cancel request (called when a run starts)."""
+        self._cancel_event.clear()
+
+    @property
+    def cancel_requested(self) -> bool:
+        return self._cancel_event.is_set()
+
+    def cancel_execution(self) -> bool:
+        """Latch a cancel request; True when a node is executing right now.
+
+        The running node cannot be interrupted: the request only stops the
+        run before the next node.
+        """
+        self._cancel_event.set()
+        return self._node_running
 
     def _call_hook(self, hook, *args) -> None:
         if hook is None:
@@ -230,9 +253,13 @@ class NodeExecutor:
             # Prepare local variables
             local_variables = {}
 
-            success, exception = self._execute_with_timeout(
-                code, local_variables, self.security_config.max_execution_time
-            )
+            self._node_running = True
+            try:
+                success, exception = self._execute_with_timeout(
+                    code, local_variables, self.security_config.max_execution_time
+                )
+            finally:
+                self._node_running = False
             if not success or exception:
                 if isinstance(exception, ExecutionTimeoutError):
                     raise exception
