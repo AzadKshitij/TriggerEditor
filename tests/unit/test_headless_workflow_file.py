@@ -239,3 +239,46 @@ def test_every_file_touching_op_in_the_catalogue_is_listed():
     for info, key, kind in ops:
         want = str(Path(f"C:/data/{info.op}_{key}.xlsx"))
         assert want in (reads if kind == "input" else writes)
+
+
+@pytest.fixture
+def subst_drive(tmp_path):
+    """A ``subst`` drive pointing at ``tmp_path`` (Windows only)."""
+    import os
+    import string
+    import subprocess
+
+    if os.name != "nt":
+        pytest.skip("subst drives are a Windows feature")
+    free = [
+        c for c in reversed(string.ascii_uppercase) if not os.path.exists(c + ":\\")
+    ]
+    if not free:
+        pytest.skip("no free drive letter")
+    letter = free[0]
+    if subprocess.run(["subst", f"{letter}:", str(tmp_path)], check=False).returncode:
+        pytest.skip("subst is not available")
+    try:
+        yield f"{letter}:\\"
+    finally:
+        subprocess.run(["subst", f"{letter}:", "/D"], check=False)
+
+
+@pytest.mark.parametrize("saved_via", ["subst", "real"])
+def test_paths_relativize_works_on_a_subst_drive(tmp_path, subst_drive, saved_via):
+    """C4: base_dir must not resolve the drive away from the saved spelling."""
+    import json as _json
+
+    from tests.support.cli import call_main, synthetic_workflow
+
+    (tmp_path / "data").mkdir()
+    root = subst_drive if saved_via == "subst" else str(tmp_path) + "\\"
+    data = synthetic_workflow(input_path=root + "data/in.csv")
+    wf = tmp_path / "wf.tds"
+    wf.write_text(_json.dumps(data), encoding="utf-8")
+    out = call_main(
+        ["paths", subst_drive + "wf.tds", "--relativize", "--format", "json"]
+    )
+    assert out.code == 0, out.stderr
+    changes = out.json()["relativize"]
+    assert [c["to"] for c in changes] == ["data/in.csv"]

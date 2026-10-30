@@ -46,7 +46,19 @@ def resolve_workflow_path(raw: str, *, base_dir: str) -> str:
 
 
 def relativize(path: str, base_dir: str) -> str | None:
-    """A forward-slash path relative to ``base_dir``, or ``None`` if outside it."""
+    """A forward-slash path relative to ``base_dir``, or ``None`` if outside it.
+
+    Compares the paths as spelled first; only when that finds them apart does
+    it try their real paths, so a ``subst`` or mapped drive works whichever
+    spelling the workflow saved (``resolve`` on one side only never matches).
+    """
+    rel = _relative_as_spelled(path, base_dir)
+    if rel is None:
+        rel = _relative_as_spelled(os.path.realpath(path), os.path.realpath(base_dir))
+    return rel
+
+
+def _relative_as_spelled(path: str, base_dir: str) -> str | None:
     norm_path = os.path.normpath(path)
     norm_base = os.path.normpath(base_dir)
     drive_a = os.path.splitdrive(norm_path)[0]

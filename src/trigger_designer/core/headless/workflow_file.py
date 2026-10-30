@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import locale
+import os
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
@@ -51,7 +52,10 @@ class WorkflowDoc:
 
     @property
     def base_dir(self) -> str:
-        return str(Path(self.path).resolve().parent)
+        # abspath, not resolve(): resolve() turns a subst or mapped drive into
+        # its target, so paths saved with the drive letter would no longer
+        # compare as being inside the folder.
+        return os.path.dirname(os.path.abspath(self.path))
 
 
 @dataclass(frozen=True)
