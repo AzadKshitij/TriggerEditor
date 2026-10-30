@@ -559,6 +559,11 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Pick a value from the list or inside the range.",
         "error",
     ),
+    "TD-SHAPE-101": (
+        "The split pattern can match nothing",
+        "Use a pattern that needs at least one character, such as \\s+ not \\s*.",
+        "error",
+    ),
     "TD-SHAPE-110": (
         "Only one statement is allowed",
         "Remove everything after the first statement.",

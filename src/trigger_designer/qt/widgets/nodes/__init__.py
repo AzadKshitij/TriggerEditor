@@ -190,6 +190,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_date_helper",
     },
     {
+        "module_path": "Preparation.text_to_columns",
+        "node_code": PreparationNodes.TEXT_TO_COLUMNS,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Text to Columns",
+        "icon": "node_text_to_columns",
+    },
+    {
         "module_path": "Transform.pivot",
         "node_code": TransformNodes.PIVOT,
         "node_type": NodeTypes.TRANSFORM,

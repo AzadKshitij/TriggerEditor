@@ -64,6 +64,10 @@
         "path":"qt/images/node_icons/Preparation/DateHelper.svg",
         "mode": "rb"
     },
+    "node_text_to_columns":{
+        "path":"qt/images/node_icons/Preparation/TextToColumns.svg",
+        "mode": "rb"
+    },
     "node_sort":{
         "path":"qt/images/node_icons/Preparation/Sort.svg",
         "mode": "rb"

@@ -42,6 +42,7 @@ ERROR_CODES: dict[str, str] = {
     "TD-SHAPE-070": "Amount or date column is set on one side only",
     "TD-SHAPE-071": "Add a key column pair or a date column",
     "TD-SHAPE-072": "Too many possible matches",
+    "TD-SHAPE-101": "The split pattern can match nothing",
     "TD-SHAPE-110": "Only one statement is allowed",
     "TD-SHAPE-111": "Only SELECT queries are allowed",
     "TD-SHAPE-112": "The SQL uses a function or file access that is not allowed",
