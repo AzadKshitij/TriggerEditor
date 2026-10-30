@@ -1207,6 +1207,13 @@ class PolarsTableViewer(QWidget):
 
         except Exception as e:
             logger.error(f"Excel export error: {e}")
+            from qtpy.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Export failed",
+                f"The Excel file could not be written.\n\n{e}",
+            )
 
     def _on_load_progress(self, progress: int):
         """Handle data loading progress."""

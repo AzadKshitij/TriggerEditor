@@ -71,6 +71,7 @@ dependencies = [
 
 [project.scripts]
 trigger-designer = "trigger_designer.main:main"
+trigger-designer-cli = "trigger_designer.cli:main"
 
 [tool.uv]
 # Installed (editable) into the venv so the `trigger-designer` console script

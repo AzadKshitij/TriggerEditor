@@ -7,6 +7,7 @@ from pathlib import Path
 from PyInstaller.building.api import COLLECT, EXE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
+from PyInstaller.utils.hooks import collect_submodules
 
 # Parse command line arguments
 parser = ArgumentParser(description="Build TriggerEditor with PyInstaller")
@@ -49,6 +50,28 @@ for _path in sorted(_nodes_dir.rglob("*.py")):
     if _parts[-1] == "__init__":
         _parts = _parts[:-1]
     node_hiddenimports.append(".".join(_parts))
+
+# --- core hidden imports begin
+# Qt-free core packages imported by string from exec'd generated code, importlib
+# or plan modules (invisible to PyInstaller's static analysis). ``core/`` and its
+# subpackages are PEP 420 namespace packages, so list the sources by file. A
+# package that has not landed yet simply yields nothing.
+_core_dir = Path("src/trigger_designer/core")
+_CORE_PACKAGES = ("audit", "errors", "excel", "workpaper", "shaping", "headless")
+_CORE_MODULES = ("inputs", "input_source", "profile", "sql_guard", "codegen_safe")
+core_hiddenimports = []
+for _pkg in _CORE_PACKAGES:
+    for _path in sorted((_core_dir / _pkg).rglob("*.py")):
+        _parts = _path.relative_to("src").with_suffix("").parts
+        core_hiddenimports.append(
+            ".".join(_parts[:-1] if _parts[-1] == "__init__" else _parts)
+        )
+for _name in _CORE_MODULES:
+    if (_core_dir / f"{_name}.py").exists():
+        core_hiddenimports.append(f"trigger_designer.core.{_name}")
+core_hiddenimports += ["xlsxwriter", "pyarrow.parquet", "trigger_designer.cli"]
+core_hiddenimports += collect_submodules("xlsxwriter")
+# --- core hidden imports end
 
 # Analysis configuration
 analysis = Analysis(
@@ -113,7 +136,8 @@ analysis = Analysis(
         "psutil",
         "orjson",
     ]
-    + node_hiddenimports,
+    + node_hiddenimports
+    + core_hiddenimports,
 
     # PyInstaller hooks
     hookspath=[],
