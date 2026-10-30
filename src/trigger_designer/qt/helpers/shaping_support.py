@@ -67,6 +67,9 @@ class Field:
     options: tuple = ()
     minimum: float = 0
     maximum: float = 1_000_000
+    #: ``float`` kinds only: spin-box step and decimals (None keeps Qt's 1.0 / 2)
+    step: float | None = None
+    decimals: int | None = None
     placeholder: str = ""
     tip: str = ""
     blank: bool = False
@@ -657,6 +660,11 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
         if spec.kind in ("int", "float"):
             widget = QSpinBox() if spec.kind == "int" else QDoubleSpinBox()
             widget.setMinimumHeight(30)
+            if spec.kind == "float":
+                if spec.decimals is not None:
+                    widget.setDecimals(spec.decimals)
+                if spec.step is not None:
+                    widget.setSingleStep(spec.step)
             widget.setRange(spec.minimum, spec.maximum)
             widget.setValue(value if value is not None else spec.minimum)
             self._debounced(widget.valueChanged, lambda w=widget: commit(w.value()))

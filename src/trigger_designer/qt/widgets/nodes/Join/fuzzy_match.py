@@ -1,9 +1,5 @@
 """Fuzzy Match node: Qt wrapper around core/shaping/fuzzy.py."""
 
-from typing import Any
-
-from qtpy.QtWidgets import QDoubleSpinBox, QWidget
-
 from trigger_designer.core.node_configuration import (
     JoinNodes,
     NodeTypes,
@@ -70,6 +66,8 @@ class FuzzyMatchContent(ShapingContent):
                     "float",
                     minimum=0.01,
                     maximum=1.0,
+                    step=0.01,
+                    decimals=2,
                     hint="1.0 is identical; pairs scoring below are dropped.",
                 ),
                 Field("strip_suffixes", "Ignore Inc/Ltd/LLC", "check"),
@@ -156,12 +154,6 @@ class FuzzyMatchContent(ShapingContent):
             collapsed=True,
         ),
     )
-
-    def _make_widget(self, spec: Field, value: Any, commit: Any) -> QWidget:
-        widget = super()._make_widget(spec, value, commit)
-        if isinstance(widget, QDoubleSpinBox):
-            widget.setSingleStep(0.01)
-        return widget
 
 
 @register_node(JoinNodes.FUZZY_MATCH, NodeTypes.JOIN)

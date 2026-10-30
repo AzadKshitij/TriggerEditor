@@ -171,3 +171,32 @@ def test_rebuilding_the_dock_drops_timers_of_the_old_widgets(qtbot) -> None:
     dock.updateConfig([])
     dock.updateConfig([node.grNode])
     assert not set(first) & set(content._timers)  # old timers are gone, not piled up
+
+
+def test_float_field_honours_step_and_decimals(qtbot) -> None:
+    from qtpy.QtWidgets import QDoubleSpinBox
+
+    from trigger_designer.qt.helpers.shaping_support import Field
+
+    _window, node, _dock = _node(qtbot, JoinNodes.RECONCILE, NodeTypes.JOIN)
+    spec = Field("v", "V", "float", maximum=10, step=0.05, decimals=3)
+    widget = node.content._make_widget(spec, 0.125, lambda _v: None)
+    assert isinstance(widget, QDoubleSpinBox)
+    assert (widget.singleStep(), widget.decimals()) == (0.05, 3)
+    plain = node.content._make_widget(Field("v", "V", "float"), 1, lambda _v: None)
+    assert plain.singleStep() == 1.0  # unchanged default
+
+    def find(fields, key):
+        for f in fields:
+            if f.key == key:
+                return f
+            hit = find(f.items, key)
+            if hit:
+                return hit
+
+    tolerance = find(
+        [f for s in node.content._sections() for f in s.fields], "tolerance"
+    )
+    assert (tolerance.step, tolerance.decimals) == (0.01, 2)
+    built = node.content._make_widget(tolerance, 0.5, lambda _v: None)
+    assert built.singleStep() == 0.01

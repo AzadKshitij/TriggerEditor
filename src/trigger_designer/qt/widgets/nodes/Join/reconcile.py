@@ -118,6 +118,8 @@ class ReconcileContent(ShapingContent):
                             "float",
                             minimum=0,
                             maximum=1e9,
+                            step=0.01,
+                            decimals=2,
                         ),
                     ),
                 ),
