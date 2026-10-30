@@ -225,6 +225,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_duplicates",
     },
     {
+        "module_path": "Audit.risk_filters",
+        "node_code": AuditNodes.RISK_FILTERS,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Risk Filters",
+        "icon": "node_risk_filters",
+    },
+    {
         "module_path": "Audit.sample",
         "node_code": AuditNodes.SAMPLE,
         "node_type": NodeTypes.AUDIT,

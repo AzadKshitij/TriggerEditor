@@ -152,6 +152,11 @@
         "mode": "rb"
     },
 
+    "node_risk_filters":{
+        "path":"qt/images/node_icons/Audit/Risk Filters.svg",
+        "mode": "rb"
+    },
+
     "icon_add":{ "mode": "material", "name": "add" },
     "icon_remove":{ "mode": "material", "name": "remove" },
     "icon_move_up":{ "mode": "material", "name": "arrow_upward" },
