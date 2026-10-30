@@ -664,7 +664,7 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
     ),
     "TD-SHAPE-072": (
         "Too many possible matches",
-        "Add key columns or narrow the tolerance.",
+        "Add key column pairs or narrow the date window.",
         "error",
     ),
     "TD-SHAPE-081": (

@@ -50,6 +50,24 @@ def test_vertical_schema_mismatch_is_readable() -> None:
     assert "diagonal_relaxed" in str(error.value)
 
 
+def test_vertical_type_mismatch_names_the_column_and_both_types() -> None:
+    right = pl.DataFrame({"a": ["3"], "b": ["z"]})
+    with pytest.raises(ShapingError) as error:
+        core.run_node([_left(), right], {"how": "vertical"})
+    text = str(error.value)
+    assert "'a' is Int64 on the left but String on the right" in text
+    assert "left-only: []" not in text and "right-only: []" not in text
+    assert "diagonal_relaxed" in text
+
+
+def test_vertical_column_order_mismatch_is_readable() -> None:
+    right = pl.DataFrame({"b": ["z"], "a": [3]})
+    with pytest.raises(ShapingError) as error:
+        core.run_node([_left(), right], {"how": "vertical"})
+    assert error.value.code == "TD-SHAPE-004"
+    assert "different order" in str(error.value)
+
+
 def test_unknown_method_is_an_error() -> None:
     with pytest.raises(ShapingError) as error:
         core.run_node([_left(), _right()], {"how": "bogus"})

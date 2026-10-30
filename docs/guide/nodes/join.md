@@ -90,7 +90,7 @@ With **Method** = Diagonal (relaxed), the output `Out` is:
 | A3 | 80.0 | N |
 | A9 | 10.0 | Y |
 
-With **Vertical (same columns)** the same two tables stop with `TD-SHAPE-004`: `schemas differ (left-only: [], right-only: ['Paid']). Try 'diagonal_relaxed'.`
+With **Vertical (same columns)** the same two tables stop with `TD-SHAPE-004`: `schemas differ (right-only: ['Paid']). Try 'diagonal_relaxed'.`
 
 With **Horizontal**, two tables of the same length, `Invoice` (A1, A2) and `Paid` (Y, N), give:
 
@@ -106,7 +106,7 @@ With **Horizontal**, two tables of the same length, `Invoice` (A1, A2) and `Paid
 - **Nulls** stay null.
 - **Different types.** Diagonal (relaxed) widens (a column of numbers on one side and text on the other becomes text, so `3` and `"x"` coexist). Vertical and Diagonal (strict) refuse.
 - **Horizontal** needs the same number of rows on both sides and different column names on both sides. Otherwise it stops (see errors).
-- The Vertical error lists missing columns only. If the columns have the same names but different types, the lists read "left-only: [], right-only: []" even though the types differ; check the column types.
+- The Vertical error says what differs: columns only on one side (`left-only: [...]`, `right-only: [...]`), a column with different types (`'Amount' is Int64 on the left but String on the right`), or the same columns in a different order.
 
 ### Errors you may see
 

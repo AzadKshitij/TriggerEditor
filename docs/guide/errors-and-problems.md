@@ -201,7 +201,7 @@ Select, Formula, Filter, SQL Query, Pivot, Reconcile, Fuzzy Match and the other 
 | `TD-SHAPE-061` | Too many new columns | Filter the header column to fewer distinct values. |
 | `TD-SHAPE-070` | Amount or date column is set on one side only | Pick it on both sides, or on neither. |
 | `TD-SHAPE-071` | Add a key column pair or a date column | Add a key pair or a date window. |
-| `TD-SHAPE-072` | Too many possible matches | Add key columns or narrow the tolerance. |
+| `TD-SHAPE-072` | Too many possible matches | Add key column pairs or narrow the date window. |
 | `TD-SHAPE-081` | Too many possible fuzzy pairs | Use a longer prefix or add a 'Must also match' column. |
 | `TD-SHAPE-082` | Too many rows to compare without blocking | Turn on prefix or first-word blocking. |
 | `TD-SHAPE-091` | The column must be a number | Pick a numeric column, or a text column that holds numbers. |
