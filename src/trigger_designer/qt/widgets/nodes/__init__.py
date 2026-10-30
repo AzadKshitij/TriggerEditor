@@ -225,6 +225,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_window",
     },
     {
+        "module_path": "Transform.sql_query",
+        "node_code": TransformNodes.SQL_QUERY,
+        "node_type": NodeTypes.TRANSFORM,
+        "node_title": "SQL Query",
+        "icon": "node_sql_query",
+    },
+    {
         "module_path": "Join.reconcile",
         "node_code": JoinNodes.RECONCILE,
         "node_type": NodeTypes.JOIN,

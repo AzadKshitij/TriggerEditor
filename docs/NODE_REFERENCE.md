@@ -56,6 +56,7 @@ op id is the stable identifier stored in saved workflows
 | Transpose | ![Transpose](assets/node_icons/transpose.png) | Flips the frame so rows become columns and columns become rows. |
 | Pivot | ![Pivot](assets/node_icons/pivot.png) | Turns distinct header values into columns, aggregating a value column per index group. |
 | Unpivot | ![Unpivot](assets/node_icons/unpivot.png) | Stacks selected value columns into a name/value pair while keeping the chosen ID columns. |
+| SQL Query | ![SQL Query](../src/trigger_designer/resources/qt/images/node_icons/Transform/SQL%20Query.svg) | Runs one read-only `SELECT` over up to three inputs, which appear as the tables `t1` (required), `t2` and `t3` (optional). The query goes through the SQL guard (`TD-SHAPE-110` to `-115`): one statement, no files, extensions, `PRAGMA`/`COPY`/`ATTACH`, no random functions, 20,000 characters, 25 s. Table names are fixed, so a referenced input that is not connected is `TD-SHAPE-113`. File Input columns are text, so cast numbers with `try_cast`. |
 | Window | ![Window](assets/node_icons/window.png) | Adds one column per calculation (previous/next row, row number, rank, running sum/min/max/mean, rolling sum), optionally restarting per group and ordered by chosen columns. Rows keep their input order. |
 
 ## Report

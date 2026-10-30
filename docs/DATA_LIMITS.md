@@ -42,6 +42,7 @@ What that means in practice:
 | Reconcile | Collects both inputs. Matching needs materialised candidates. | `core/shaping/reconcile.py` |
 | Fuzzy Match | Collects both inputs. Only the normalised text and block keys are scored, in DuckDB. | `core/shaping/fuzzy.py` |
 | Pivot | Collects the grouped result, one row per index and header combination. | `core/shaping/reshape.py` |
+| SQL Query | Collects the result of the query, which runs in DuckDB (2GB memory limit, 1 thread). | `core/shaping/sql_query.py`, `core/sql_guard.py` |
 | Transpose | The ordering sort may need the whole table. Spilling is not verified. | `core/shaping/transpose.py` |
 | Excel, JSON-array and SQLite inputs | Read whole, including while editing. As far as known, Polars has no lazy scan for these formats. | `core/input_source.py` |
 | Excel and JSON-array outputs | Collected before writing. No streaming sink is known for either. | `core/shaping/file_output.py` |
@@ -52,6 +53,7 @@ What that means in practice:
 - **Reconcile:** more than 5,000,000 candidate pairs raises `TD-SHAPE-072` (`MAX_CANDIDATE_PAIRS`, `core/shaping/reconcile.py`). This check runs at Run.
 - **Fuzzy Match:** more than 5,000,000 candidate pairs raises `TD-SHAPE-081` (`MAX_CANDIDATE_PAIRS`, `core/shaping/fuzzy.py`); `blocking=none` on more than 1,000,000 row pairs raises `TD-SHAPE-082`. Both checks run before any scoring. Fuzzy Match has no live cap constant: live inputs are already 100 rows.
 - **Pivot:** more than 500 distinct header values raises `TD-SHAPE-061` (`MAX_PIVOT_COLUMNS`, `core/shaping/reshape.py`).
+- **SQL Query:** a query longer than 20,000 characters raises `TD-SHAPE-114`; one running longer than 25 seconds is interrupted with `TD-SHAPE-115` (`MAX_SQL_CHARS`, `TIMEOUT_S`, `core/sql_guard.py`). The 2GB memory limit surfaces as `TD-SHAPE-113` with DuckDB's message.
 - **Old live caps:** Pivot's 5,000,000-row and Reconcile's 200,000-row live limits can no longer trigger, because live inputs are capped at 100 rows. `LIVE_CAP_ROWS` remains in the code and is unused in practice.
 - **Charts:** aggregated charts aggregate the whole frame they receive, then cap the distinct X groups at 2,000. Unaggregated charts show the first 2,000 rows and report the truncation (`MAX_CHART_POINTS`, `core/charts.py`). A chart built from a live frame covers the 100-row sample.
 - **Previews:** Run results show 1,000 rows or 2 MB, whichever is smaller (`qt/models/preview_sampling.py`, `qt/models/preview_worker.py`). Live values show the first 100 rows. The File Input table viewer shows 10 rows (`qt/widgets/nodes/InOut/file_input.py`).

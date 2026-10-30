@@ -234,9 +234,16 @@ def extract_completion_prefix(block_text: str, pos_in_block: int) -> Tuple[str, 
 
 
 def match_completions(
-    prefix: str, in_brackets: bool, column_names: List[str]
+    prefix: str,
+    in_brackets: bool,
+    column_names: List[str],
+    bracket: bool = True,
 ) -> List[str]:
-    """Filter completion candidates for prefix (case-insensitive)."""
+    """Filter completion candidates for prefix (case-insensitive).
+
+    ``bracket=False`` offers columns as plain SQL identifiers (quoted only when
+    needed) instead of ``[name]``; the SQL Query node uses that.
+    """
     if in_brackets and not prefix:
         return list(column_names)[:50]
     if not prefix:
@@ -255,7 +262,12 @@ def match_completions(
             seen.add(kw.upper())
             out.append(kw)
     for col in column_names:
-        label = f"[{col}]"
+        if bracket:
+            label = f"[{col}]"
+        elif col.isidentifier():
+            label = col
+        else:
+            label = '"' + col.replace('"', '""') + '"'
         if col.lower().startswith(lowered) and label not in seen:
             seen.add(label)
             out.append(label)
@@ -399,6 +411,8 @@ class SQLFormulaEditor(QTextEdit):
         # Initialize components
         self.setObjectName("formulaEditor")
         self.column_names: List[str] = []
+        #: Formula syntax writes columns as [name]; SQL Query sets this False.
+        self.bracket_columns: bool = True
         self.errors: List[Dict] = []
         self.external_validator: Optional[Callable[[str], List[Dict]]] = None
         self._last_completion = ""
@@ -491,7 +505,16 @@ class SQLFormulaEditor(QTextEdit):
     def _prefix_at_cursor(self) -> Tuple[str, bool]:
         cursor = self.textCursor()
         block_text = cursor.block().text()
-        return extract_completion_prefix(block_text, cursor.positionInBlock())
+        prefix, in_brackets = extract_completion_prefix(
+            block_text, cursor.positionInBlock()
+        )
+        if not self.bracket_columns:
+            in_brackets = False
+            match = _WORD_PREFIX_RE.search(
+                block_text[: max(0, cursor.positionInBlock())]
+            )
+            prefix = match.group() if match else ""
+        return prefix, in_brackets
 
     def _maybe_autocomplete(self, forced: bool = False) -> None:
         prefix, in_brackets = self._prefix_at_cursor()
@@ -499,7 +522,9 @@ class SQLFormulaEditor(QTextEdit):
         if not forced and len(prefix) < AUTOCOMPLETE_MIN_PREFIX and not in_brackets:
             self.completer.popup().hide()
             return
-        matches = match_completions(prefix, in_brackets, self.column_names)
+        matches = match_completions(
+            prefix, in_brackets, self.column_names, bracket=self.bracket_columns
+        )
         if not matches:
             self.completer.popup().hide()
             return
@@ -619,7 +644,9 @@ class SQLFormulaEditor(QTextEdit):
         # A malformed expression should point at its syntax first, not a
         # bracketed name inside an unfinished string. Still report genuine
         # column errors when the expression itself parsed successfully.
-        if not any(error.get("category") == "syntax" for error in self.errors):
+        if self.bracket_columns and not any(
+            error.get("category") == "syntax" for error in self.errors
+        ):
             self.errors.extend(self.validate_column_references(text))
 
         # Keep the primary host diagnostic first and avoid duplicate messages.

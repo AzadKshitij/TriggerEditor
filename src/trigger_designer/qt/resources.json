@@ -132,6 +132,10 @@
         "path":"qt/images/node_icons/Transform/Unpivot.svg",
         "mode": "rb"
     },
+    "node_sql_query":{
+        "path":"qt/images/node_icons/Transform/SQL Query.svg",
+        "mode": "rb"
+    },
     "node_window":{
         "path":"qt/images/node_icons/Transform/Window.svg",
         "mode": "rb"

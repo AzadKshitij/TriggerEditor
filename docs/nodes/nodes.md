@@ -175,6 +175,12 @@ Each entry gives: the Qt module and core module, today's classification, the tar
 - **Target:** keep.
 - **Phase:** P1. **Effort:** XS.
 
+### SQL Query
+- **Qt:** `qt/widgets/nodes/Transform/sql_query.py`. **Core:** `core/shaping/sql_query.py` (`run_node`, `diagnostics`), `core/sql_guard.py` (`run_select`, `infer_schema`).
+- **Today:** EAGER. `run_select` registers the inputs on a fresh locked in-memory DuckDB connection (`threads` = 1, `memory_limit` 2GB, external access off), runs the one checked `SELECT` under a 25 s interrupt timer, and returns a collected frame. The live preview sees the leading `LIVE_SAMPLE_ROWS` rows of each input. `LIVE_CAP_ROWS` = 2,000,000 is inert (D6).
+- **Target:** keep. Registering lazy frames as DuckDB scans is the only lever, and only if S1 shows the collect matters.
+- **Phase:** P3. **Effort:** XS.
+
 ## Report
 
 ### Graph
