@@ -124,6 +124,20 @@ Cancellation is **cooperative**: the node being executed finishes (bounded by
 its 30 s timeout). The worker is authoritative afterwards:
 `_on_workflow_finished` reads `worker.cancelled`, so a cancel that arrives
 after the last node finished is not reported as a cancelled run.
+
+Limits, pinned by `tests/unit/test_cancel_and_timeout_behaviour.py`:
+
+* The cancel flag is read only between nodes (`run_nodes`). Nothing inside a
+  node's `exec` polls it, so a long collect or write runs to completion (or to
+  the 30 s limit) after Cancel. Cooperative cancellation inside a collect is not
+  feasible with Polars/DuckDB; it is deliberately not attempted.
+* A node that hits `max_execution_time` is *abandoned*, not stopped. Its worker
+  thread keeps executing the code until the code returns by itself; the
+  executor queues a sentinel for it (it exits afterwards) and starts a fresh
+  worker so later nodes can run. The stuck code keeps using CPU and memory, and
+  may still write files, until it ends. At most one thread leaks per timed-out
+  node, and a fresh `NodeExecutor` is made for every Run.
+
 Closing a window with a run in flight calls `shutdown_workflow_worker`, which
 cancels, detaches the UI signals and waits; a thread that will not stop is
 parked in `_ORPHANED_WORKERS` (Qt aborts the process if a running `QThread` is

@@ -89,7 +89,7 @@ Cancel is **cooperative**:
 - Files that earlier nodes had already finished writing stay on disk. A node that was in the middle of writing a file when you pressed Cancel completes its write.
 - The run record is sealed with status `cancelled`.
 
-If a single step is very long (for example a very large write), Cancel will seem to do nothing until that step ends or hits the 30 second step limit (see below).
+Cancel is only looked at **between** steps, never inside one. If a single step is very long (for example a very large write), Cancel will seem to do nothing until that step ends or hits the 30 second step limit (see below). A step that hits the limit is *abandoned*, not stopped: the app stops waiting for it and reports `TD-RUN-001`, but the work it was doing carries on in the background until it finishes by itself, and it may still write its output file after the Run has been reported as failed. After a timeout, wait for the computer to go quiet before starting another Run that writes the same files.
 
 Closing the workflow window or the app during a Run cancels it the same way and waits up to five seconds for the current step.
 
