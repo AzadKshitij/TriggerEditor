@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime, time
+
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
@@ -66,6 +68,26 @@ def _as_number(text: str) -> float:
         raise ShapingError("TD-SHAPE-004", "Filter value must be a number") from None
 
 
+def _as_temporal(text: str, dtype: pl.DataType):
+    """Read the typed value as a date, date-time or time of the column's type."""
+    text = text.strip()
+    try:
+        if dtype == pl.Date:
+            return date.fromisoformat(text[:10])
+        if dtype == pl.Time:
+            return time.fromisoformat(text)
+        return datetime.fromisoformat(text)
+    except ValueError:
+        pass
+    if dtype == pl.Time:
+        raise ShapingError(
+            "TD-SHAPE-004", "Filter value must be a time such as 13:30:00"
+        ) from None
+    raise ShapingError(
+        "TD-SHAPE-004", "Filter value must be a date such as 2024-01-31"
+    ) from None
+
+
 def _builder_expression(
     column: str,
     dtype: pl.DataType,
@@ -74,6 +96,8 @@ def _builder_expression(
     value2: str,
 ) -> pl.Expr:
     numeric = getattr(dtype, "is_numeric", lambda: False)()
+    if dtype in (pl.Date, pl.Time) or isinstance(dtype, pl.Datetime):
+        return _temporal_expression(column, dtype, operation, value, value2)
     if operation == "In Between":
         if numeric:
             low, high = _as_number(value), _as_number(value2)
@@ -89,7 +113,8 @@ def _builder_expression(
     if operation == "Not Equals":
         return expression != converted
     if operation == "Contains":
-        return expression.str.contains(value)
+        # The typed text is searched as is: "(" or "." are not patterns.
+        return expression.str.contains(value, literal=True)
     if operation == "Less Than":
         return expression < converted
     if operation == "Greater Than":
@@ -98,6 +123,34 @@ def _builder_expression(
         return expression <= converted
     if operation == "Greater Than or Equal":
         return expression >= converted
+    raise ShapingError("TD-SHAPE-004", f"Unsupported filter operation: {operation}")
+
+
+def _temporal_expression(
+    column: str, dtype: pl.DataType, operation: str, value: str, value2: str
+) -> pl.Expr:
+    expression = pl.col(column)
+
+    def literal(text: str) -> pl.Expr:
+        return pl.lit(_as_temporal(text, dtype), dtype=dtype)
+
+    if operation == "In Between":
+        if _as_temporal(value, dtype) > _as_temporal(value2, dtype):
+            value, value2 = value2, value
+        return expression.is_between(literal(value), literal(value2), closed="both")
+    other = literal(value)
+    if operation == "Equals":
+        return expression == other
+    if operation == "Not Equals":
+        return expression != other
+    if operation == "Less Than":
+        return expression < other
+    if operation == "Greater Than":
+        return expression > other
+    if operation == "Less Than or Equal":
+        return expression <= other
+    if operation == "Greater Than or Equal":
+        return expression >= other
     raise ShapingError("TD-SHAPE-004", f"Unsupported filter operation: {operation}")
 
 

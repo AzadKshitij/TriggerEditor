@@ -160,3 +160,72 @@ def test_expression_null_rows_go_to_the_unmatched_output() -> None:
     )
     assert _rows(matched) == [("x",)]
     assert set(_rows(unmatched)) == {(None,), ("y",)}
+
+
+def _text_frame() -> pl.LazyFrame:
+    return pl.DataFrame({"s": ["a(b", "a.b", "axb", "A(B", None]}).lazy()
+
+
+def test_contains_reads_the_value_as_plain_text() -> None:
+    matched, other = core.run_node(
+        [_text_frame()], {"column": "s", "operation": "Contains", "value": "("}
+    )
+    assert matched.collect()["s"].to_list() == ["a(b", "A(B"]
+    assert other.collect().height == 3
+
+    matched, _ = core.run_node(
+        [_text_frame()], {"column": "s", "operation": "Contains", "value": "a.b"}
+    )
+    # "." is not a wildcard: only the literal "a.b" matches.
+    assert matched.collect()["s"].to_list() == ["a.b"]
+
+
+def _date_frame() -> pl.LazyFrame:
+    from datetime import date, datetime
+
+    return pl.DataFrame(
+        {
+            "d": [date(2024, 1, 1), date(2024, 2, 1), date(2024, 3, 1), None],
+            "t": [
+                datetime(2024, 1, 1, 8),
+                datetime(2024, 2, 1, 9),
+                datetime(2024, 3, 1, 10),
+                None,
+            ],
+        }
+    ).lazy()
+
+
+@pytest.mark.parametrize("column", ["d", "t"])
+def test_date_greater_than_and_in_between(column) -> None:
+    matched, other = core.run_node(
+        [_date_frame()],
+        {"column": column, "operation": "Greater Than", "value": "2024-01-15"},
+    )
+    assert matched.collect().height == 2
+    assert other.collect().height == 2  # earlier row and the empty cell
+
+    matched, _ = core.run_node(
+        [_date_frame()],
+        {
+            "column": column,
+            "operation": "In Between",
+            "value": "2024-03-01",  # swapped bounds are put in order
+            "value2": "2024-01-15",
+        },
+    )
+    assert matched.collect().height == 1 + (1 if column == "d" else 0)
+
+
+def test_date_equals_and_bad_date() -> None:
+    matched, _ = core.run_node(
+        [_date_frame()], {"column": "d", "operation": "Equals", "value": "2024-02-01"}
+    )
+    assert matched.collect().height == 1
+    with pytest.raises(ShapingError) as error:
+        core.run_node(
+            [_date_frame()],
+            {"column": "d", "operation": "Greater Than", "value": "last week"},
+        )
+    assert error.value.code == "TD-SHAPE-004"
+    assert "date" in str(error.value)

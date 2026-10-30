@@ -327,8 +327,8 @@ Writing `[order_value] > 200` instead fails with `Cannot compare values of type 
 - [Preview uses 100 rows](#preview-vs-run); Run filters everything.
 - Empty cells: a comparison with an empty cell is neither true nor false, so those rows go to **F**. That includes "Not Equals" in Simple mode.
 - Simple mode, numbers: the Value must be a number, otherwise `TD-SHAPE-004` ("Filter value must be a number"). **In Between** includes both ends, and if you type the bigger number first the two are swapped.
-- Simple mode, **Contains** on text is **case-sensitive** and the value is read as a pattern (a regular expression). Letters and digits behave like plain text, but characters such as `.` or `(` do not (a lone `(` is invalid and stops the node). For a plain, case-insensitive search use Expression mode: `[name] ILIKE '%acme%'`.
-- Simple mode on a real date column (not text): the date operations are offered, but a typed date Value is not read as a date and the node fails. Use Expression mode, for example `[posted] >= DATE '2024-01-01'`.
+- Simple mode, **Contains** on text is **case-sensitive** and the value is searched as plain text: `.` or `(` mean just those characters. For a case-insensitive search use Expression mode: `[name] ILIKE '%acme%'`.
+- Simple mode on a real date, date-time or time column (not text): type the Value as `2024-01-31` (dates and date-times, optionally with a time such as `2024-01-31 13:30:00`) or `13:30:00` (times). A date-only Value on a date-time column means midnight of that day. A Value that cannot be read gives `TD-SHAPE-004` ("Filter value must be a date such as 2024-01-31"). For a date held as text, use Expression mode with `TRY_CAST`.
 - Simple mode tests one column. For several conditions use Expression with `AND` / `OR`, or chain two Filters.
 - Expression mode is protected by the [read-only guard](#the-read-only-guard).
 
@@ -337,7 +337,7 @@ Writing `[order_value] > 200` instead fails with `Cannot compare values of type 
 | Code | When | Fix |
 |---|---|---|
 | `TD-SHAPE-003` | The Simple column is not in the input | Pick the column again |
-| `TD-SHAPE-004` | The Value is not a number; or the SQL engine rejected the condition (the text after the code is the engine's explanation, for example a missing column or "an explicit cast is required") | Correct the value; use `TRY_CAST` |
+| `TD-SHAPE-004` | The Value is not a number (or not a date or time on a date column); or the SQL engine rejected the condition (the text after the code is the engine's explanation, for example a missing column or "an explicit cast is required") | Correct the value; use `TRY_CAST` |
 | `TD-SHAPE-110`, `-112`, `-114`, `-115` | The expression breaks the [read-only guard](#the-read-only-guard) | Remove the offending part |
 | `TD-SHAPE-005` | No input data | Fix the upstream node |
 
