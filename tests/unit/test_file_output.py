@@ -214,3 +214,82 @@ def test_excel_format_executes_and_writes_readable_workbook(tmp_path) -> None:
 def test_excel_format_never_collects_in_generated_text() -> None:
     code = _make_content(file_format="excel", filePath="C:/t/o.xlsx").get_code()
     assert ".write_excel(" not in code and ".collect()" not in code
+
+
+# -- parquet compression (D1) -------------------------------------------------
+def _parquet_codec(path) -> str:
+    pq = pytest.importorskip("pyarrow.parquet")
+    return pq.ParquetFile(str(path)).metadata.row_group(0).column(0).compression
+
+
+@pytest.mark.parametrize(
+    ("setting", "codec"),
+    [
+        (None, "SNAPPY"),
+        ("snappy", "SNAPPY"),
+        ("zstd", "ZSTD"),
+        ("gzip", "GZIP"),
+        ("lz4", "LZ4"),
+        ("uncompressed", "UNCOMPRESSED"),
+    ],
+)
+def test_parquet_compression_is_honoured(tmp_path, setting, codec) -> None:
+    out = tmp_path / "c.parquet"
+    core.write_node(
+        [pl.DataFrame({"a": list(range(50))})],
+        {"filePath": str(out), "file_format": "parquet", "compression": setting},
+    )
+    assert pl.read_parquet(out)["a"].to_list() == list(range(50))
+    assert _parquet_codec(out) == codec
+
+
+def test_unknown_parquet_compression_is_refused(tmp_path) -> None:
+    with pytest.raises(ValueError, match="compression"):
+        core.write_node(
+            [pl.DataFrame({"a": [1]})],
+            {
+                "filePath": str(tmp_path / "x.parquet"),
+                "file_format": "parquet",
+                "compression": "rot13",
+            },
+        )
+
+
+def test_compression_is_ignored_for_other_formats(tmp_path) -> None:
+    out = tmp_path / "x.csv"
+    core.write_node(
+        [pl.DataFrame({"a": [1]})],
+        {"filePath": str(out), "compression": "zstd"},
+    )
+    assert pl.read_csv(out)["a"].to_list() == [1]
+
+
+def test_dead_use_streaming_key_is_gone_but_tolerated(tmp_path) -> None:
+    assert "use_streaming" not in core.DEFAULTS
+    out = tmp_path / "x.csv"
+    core.write_node(
+        [pl.DataFrame({"a": [1]})],
+        {"filePath": str(out), "use_streaming": False},
+    )
+    assert out.exists()
+
+
+def test_generated_parquet_code_compresses_and_passes_policy(tmp_path) -> None:
+    from trigger_designer.core.headless.code_policy import validate_generated_code
+
+    out = str(tmp_path / "g.parquet")
+    code = _make_content(
+        filePath=out, file_format="parquet", compression="zstd"
+    ).get_code()
+    validate_generated_code(code, io_paths={out})
+    exec(compile(code, "<file_output>", "exec"), {"var_in": pl.LazyFrame({"a": [1]})})  # noqa: S102
+    assert _parquet_codec(out) == "ZSTD"
+
+
+def test_generated_code_uses_safe_literals_for_hostile_text(tmp_path) -> None:
+    hostile = "x'); import os; os.system('echo hi'); ('.csv"
+    code = _make_content(filePath=hostile, delimiter="\n").get_code()
+    import ast
+
+    ast.parse(code)
+    assert code.count("\n") <= 3  # still a single call, value stayed a value

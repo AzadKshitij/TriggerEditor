@@ -111,3 +111,49 @@ def test_generated_code_uses_the_core_writer(qtbot) -> None:
     code = node.get_code()
     assert "trigger_designer.core.shaping.file_output" in code
     assert "write_node" in code
+
+
+def test_compression_combo_is_parquet_only_and_tracked(qtbot) -> None:
+    window, node, _dock = _node(qtbot)
+    content = node.content
+    assert content.compression_row.isHidden() is True
+
+    content.formatCombo.setCurrentIndex(content.formatCombo.findData("parquet"))
+    assert content.compression_row.isHidden() is False
+    combo = content.compressionCombo
+    assert isinstance(combo, NoWheelComboBox)
+    assert [combo.itemData(i) for i in range(combo.count())] == [
+        "snappy",
+        "zstd",
+        "gzip",
+        "lz4",
+        "uncompressed",
+    ]
+    assert combo.currentData() == "snappy"
+    assert combo.toolTip() and combo.accessibleName()
+
+    window.scene.history.storeHistory("Baseline")
+    combo.setCurrentIndex(combo.findData("zstd"))
+    assert content.settings["compression"] == "zstd"
+    assert "'compression': 'zstd'" in node.get_code()
+    window.scene.history.undo()
+    assert content.settings["compression"] == "snappy"
+    assert content.compressionCombo.currentData() == "snappy"
+
+
+def test_legacy_settings_load_without_use_streaming(qtbot) -> None:
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    content.deserialize(
+        {
+            "settings": {
+                "filePath": "x.parquet",
+                "file_format": "parquet",
+                "use_streaming": False,
+                "compression": None,
+            }
+        }
+    )
+    assert content.settings["file_format"] == "parquet"
+    assert "use_streaming" not in content.settings
+    assert content.settings.get("compression") in (None, "snappy")
