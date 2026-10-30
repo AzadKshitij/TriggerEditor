@@ -107,6 +107,9 @@ class NodeExecutor:
         # run (the run loop does it), never by execute_node, so a request made
         # before the next node starts is not lost. Observers may poll
         # ``cancel_requested``; a node already inside ``exec`` is not stopped.
+        #: Resolve the schema of every lazy output after exec (BUG-004); set
+        #: False to let a broken plan "succeed" until something collects it.
+        self.verify_plans: bool = True
         self._cancel_event = threading.Event()
         self._node_running = False
         self._start_worker()
@@ -206,6 +209,15 @@ class NodeExecutor:
                 execution_globals = {**self.execution_context, "__name__": "__main__"}
 
                 exec(code, execution_globals, local_vars)  # noqa: S102
+
+                if self.verify_plans:
+                    # Generated code only *builds* lazy plans, so a bad column
+                    # or join key would surface later at some sink, far from
+                    # the node that caused it. Resolving the schema checks the
+                    # plan without reading any data.
+                    for value in local_vars.values():
+                        if isinstance(value, pl.LazyFrame):
+                            value.collect_schema()
 
             except BaseException as e:  # noqa: BLE001
                 exception_container[0] = e

@@ -822,8 +822,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         try:
             self.executeWorkflow()
         except Exception as e:
+            # A Qt slot must not raise: the Run button was already restored.
             self.logError(f"Workflow execution failed: {str(e)}")
-            raise
 
     def getPyFile(self, sorted_nodes) -> None:
         code = CHECK_OUTPUT_HEADER
