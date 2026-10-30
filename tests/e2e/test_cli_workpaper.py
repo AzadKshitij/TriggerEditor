@@ -210,3 +210,49 @@ def test_workflow_sheet_never_shows_staging_names_and_follows_input_dir(
         str(c.value) for row in sources.iter_rows() for c in row if c.value
     )
     assert "moved" in listed  # source_files followed --input-dir too
+
+
+def _sheet_cells(path, name) -> list[str]:
+    sheet = load(path)[name]
+    return [
+        str(c.value) for row in sheet.iter_rows() for c in row if c.value is not None
+    ]
+
+
+def test_cli_workpaper_has_a_run_log_sheet_with_the_steps_and_durations(
+    qtbot, tmp_path
+):
+    tds, _source, original = _build(tmp_path)
+    proc = _run(tds, tmp_path)
+    assert proc.returncode == 0, proc.stderr[-2000:] + proc.stdout[-2000:]
+    workbook = original / "wp.xlsx"
+    book = load(workbook)
+    assert "Run log" in book.sheetnames
+    cells = _sheet_cells(workbook, "Run log")
+    text = " ".join(cells)
+    assert "Snapshot taken while the workflow was running" in text
+    assert "File Input" in cells and "Duplicates" in cells
+    sheet = book["Run log"]
+    header = next(
+        row for row in sheet.iter_rows() if any(c.value == "Duration (s)" for c in row)
+    )
+    col = next(c.column for c in header if c.value == "Duration (s)")
+    durations = [
+        sheet.cell(r, col).value
+        for r in range(header[0].row + 1, sheet.max_row + 1)
+        if sheet.cell(r, 2).value in ("File Input", "Duplicates")
+    ]
+    assert len(durations) == 2
+    assert all(isinstance(d, (int, float)) and d >= 0 for d in durations), durations
+    summary = " ".join(_sheet_cells(workbook, "Summary"))
+    assert "no run record is available" not in summary
+
+
+def test_cli_no_record_leaves_the_run_log_out_with_the_reason(qtbot, tmp_path):
+    tds, _source, original = _build(tmp_path)
+    proc = _run(tds, tmp_path, "--no-record")
+    assert proc.returncode == 0, proc.stderr[-2000:] + proc.stdout[-2000:]
+    workbook = original / "wp.xlsx"
+    assert "Run log" not in load(workbook).sheetnames
+    summary = " ".join(_sheet_cells(workbook, "Summary"))
+    assert "run recording is off" in summary

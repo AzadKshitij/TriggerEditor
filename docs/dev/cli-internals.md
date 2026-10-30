@@ -322,8 +322,9 @@ loop), `install_signal_handlers` for `SIGINT`, `SIGBREAK` and `SIGTERM`, a daemo
 watchdog thread polling every 0.25 s for the deadline, the memory ceiling (RSS via
 psutil) and the cancel grace. The first signal sets the flag and emits
 `run.cancelling`; a second, or the grace expiring, forces exit 130. The executor's
-own per-node limit is set to `timeout + 5` so it never fires before the
-supervisor. A running node cannot be interrupted (it is inside Polars/DuckDB);
+own default per-node limit is set to `timeout + 5` so it never fires before the
+supervisor; a node's own `execution_timeout` (Workpaper Output: 600 s) never lowers it, and the
+supervisor's total deadline still wins. A running node cannot be interrupted (it is inside Polars/DuckDB);
 that is why the forced exit exists and why outputs are staged.
 
 ## 9. Events and the stdout channel
@@ -570,7 +571,7 @@ vendored editor's `print`s go to the debug log (`events.route_stray_stdout`) and
 the console-prints guard exempts `cli/commands` and `cli/output.py`;
 `schedule list` shows `daily at 02:30`, not a dict.
 
-**Fixed later** (`0593b8e`, tests above): a Workpaper Output now follows `--output-dir`, `--param`, `--input-dir` (`source_files`) and `paths --relativize`, and obeys `if_exists` and the CSV sidecar rule under the CLI (section 6, `_finish_workpapers`). A Workpaper Output run from the CLI has no Run log sheet: the headless runner installs no run-record provider (`set_run_record_provider`), so `core.workpaper` gets no record and omits the sheet with the reason `NO_RECORD_REASON`. Installing a provider in `core/headless/runner.py` would add it.
+**Fixed later** (`0593b8e`, tests above): a Workpaper Output now follows `--output-dir`, `--param`, `--input-dir` (`source_files`) and `paths --relativize`, and obeys `if_exists` and the CSV sidecar rule under the CLI (section 6, `_finish_workpapers`). A Workpaper Output run from the CLI used to have no Run log sheet because the headless runner installed no run-record provider. **Fixed:** `_Run._install_record_provider` (called right after `recorder.begin`) installs `core.audit.recorder.set_run_record_provider` with `recorder.snapshot`, as `qt/helpers/audit_bridge.RunSession.start` does in the editor; `_clear_record_provider` removes it when the node loop ends and again in `cleanup()` (failure, cancel, timeout and forced-exit paths). With `--no-record` it is not installed: the recorder keeps nothing, so the sheet is omitted with `NO_RECORD_REASON`. The imports are inside the methods, so read-only commands still import nothing extra. Tests: `tests/unit/test_headless_record_provider.py`, `tests/e2e/test_cli_workpaper.py`.
 
 **Open:**
 

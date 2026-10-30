@@ -104,8 +104,8 @@ killed run are swept by the next run of the same workflow.
   follow `--input-dir`. `If the file exists` is decided before the run starts: `version`
   writes `name (2).xlsx` on a second run, `fail` exits 2 with `TD-OUT-010`, `replace`
   keeps the name. A row-limited workpaper's `<name>_exceptions_full.csv` is written
-  beside the final workbook. The CLI run has no Run log sheet (no run record is passed
-  to the workpaper). See [guide/cli.md](guide/cli.md#workpaper-output-on-the-command-line).
+  beside the final workbook. The CLI run gives the workpaper the in-flight run record, so it has a Run log
+  sheet (omitted, with the reason on the Summary, under `--no-record`). See [guide/cli.md](guide/cli.md#workpaper-output-on-the-command-line).
 * `--emit-script FILE` also saves the generated Python script.
 * The run record is the same sealed, hash-chained record the editor writes
   (`--record-dir` or next to the workflow in `<name>.runs`). One record per run, also

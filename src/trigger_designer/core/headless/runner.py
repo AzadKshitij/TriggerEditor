@@ -140,6 +140,7 @@ class _Run:
         self.current_node_id = None
         self.committed = False
         self._record_done = False
+        self._provider_installed = False
         self._guard = threading.RLock()
         self._announced = False
         self.outcome: RunOutcome | None = None
@@ -213,7 +214,39 @@ class _Run:
         return self.announce(exc.code, errors=[row])
 
     # ------------------------------------------------------------ cleanup
+    def _install_record_provider(self) -> None:
+        """Let the workpaper read the in-flight record (its Run log sheet).
+
+        Mirrors ``RunSession.start`` in the GUI. Not installed with
+        ``--no-record``: the recorder keeps nothing then, and the workpaper
+        reports that run recording is off.
+        """
+        if self.opts.no_record or self.recorder is None:
+            return
+        from trigger_designer.core.audit.recorder import set_run_record_provider
+
+        recorder = self.recorder
+
+        def provider() -> dict | None:
+            try:
+                return recorder.snapshot()
+            except Exception:  # noqa: BLE001 - never fail a node over the Run log
+                return None
+
+        set_run_record_provider(provider)
+        self._provider_installed = True
+
+    def _clear_record_provider(self) -> None:
+        if not self._provider_installed:
+            return
+        self._provider_installed = False
+        with contextlib.suppress(Exception):
+            from trigger_designer.core.audit.recorder import set_run_record_provider
+
+            set_run_record_provider(None)
+
     def cleanup(self) -> None:
+        self._clear_record_provider()
         if self.sup:
             self.sup.stop()
         if self.plan and not self.committed:
@@ -495,6 +528,7 @@ class _Run:
         )
         executor.before_node = recorder.before_node
         executor.after_node = recorder.after_node
+        self._install_record_provider()
         session.before_run(self._warn)
 
         codes: dict = {}
@@ -528,6 +562,7 @@ class _Run:
             sup.poll(runner)
         finally:
             executor.shutdown()
+            self._clear_record_provider()
         self._finish_run(report, result, ok_ids, codes)
 
     def _finish_run(self, report, result: dict, ok_ids: set, codes: dict) -> None:

@@ -286,6 +286,10 @@ Read these before opening an old `.tds` file or re-running an old workflow.
   now gets 10 minutes instead of the 30-second default so a 500,000-row workpaper can finish in
   the editor. `TD-RUN-001` states the limit that applied. The CLI `--timeout` is unchanged.
 
+- CLI: a workpaper produced by `trigger-designer-cli run` now has a Run log sheet (the runner installs the
+  run-record provider for the run and clears it afterwards); with `--no-record` the sheet is left out and
+  the Summary says why.
+
 ## Known issues
 
 As of the commit above. Details and evidence in `docs/dev/*.md`.
