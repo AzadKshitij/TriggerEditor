@@ -337,8 +337,8 @@ CSV sidecar to carry the rest.
 `write_run_workpaper` shares everything with `write_workpaper` except: no Exceptions sheet
 (`with_exceptions=False`), `SummaryInputs(mode="run", tests=tests_from_record(record))` where the
 tests are the `test_summary` of the record's nodes, and `WorkpaperResult.exceptions_total` is
-the sum of the tests' exception rows. Its "Test performed" row falls back to the fixed text
-"Exceptions workpaper" (section 15). `dialog_class` is injectable so tests drive the flow
+the sum of the tests' exception rows. Its "Test performed" row is `spec.test_name`, else
+`sheets_summary._whole_run_label(len(tests))` ("Whole run: 2 tests"). `dialog_class` is injectable so tests drive the flow
 without a modal dialog.
 
 ## 11. Headless use
@@ -488,8 +488,7 @@ These were found while writing the guide, by running the code. They are not fixe
    `tests/unit/test_headless_workpaper_paths.py`).
 3. **CLI run, no Run log.** `core/headless` installs no run-record provider, so the Run log
    sheet is omitted ("no run record is available"). (The CLI writes its own record.)
-4. **Run workpaper, "Test performed"** shows the fixed text "Exceptions workpaper" because
-   `spec.test_name` is empty and there is no single test.
+4. ~~Run workpaper "Test performed" always read "Exceptions workpaper"~~ (fixed: "Whole run: N tests").
 5. **The Workflow sheet's File Input row** lists internal keys (`Filepathrel`, `Input schema
    version`) because File Input has no `describe_settings()` hook.
 6. **In-flight Run log:** the workpaper node's own step is not in the log and `Rows read` of a

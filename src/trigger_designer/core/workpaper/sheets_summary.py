@@ -187,6 +187,13 @@ def _pct(num: float | None, den: float | None) -> float | str:
         return "n/a"
 
 
+def _whole_run_label(count: int) -> str:
+    """What "Test performed" says for a whole-run workpaper."""
+    if count == 0:
+        return "Whole run: no audit tests recorded"
+    return f"Whole run: {count} test{'s' if count != 1 else ''}"
+
+
 def write_summary_sheet(
     wb: Any, ws: Any, book: FormatBook, s: SummaryInputs
 ) -> list[str]:
@@ -219,9 +226,13 @@ def write_summary_sheet(
 
     # --- engagement
     w.section(3, "Engagement")
-    test_name = (
-        spec.test_name or (test.test_name if test else "") or "Exceptions workpaper"
-    )
+    test_name = spec.test_name or (test.test_name if test else "")
+    if not test_name:
+        test_name = (
+            _whole_run_label(len(s.tests))
+            if s.mode == "run"
+            else "Exceptions workpaper"
+        )
     w.field(4, "Workpaper reference", spec.workpaper_ref)
     w.field(5, "Client", spec.client)
     w.field(6, "Engagement", spec.engagement)

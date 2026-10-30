@@ -241,3 +241,31 @@ def test_run_workpaper_without_tests_says_so(tmp_path):
     result = write_run_workpaper(spec, run_record=record, now=FIXED_NOW)
     ws = load(result.path)["Summary"]
     assert ws["A22"].value == "No audit tests were recorded in this run."
+
+
+def test_run_workpaper_test_performed_counts_the_tests(tmp_path):
+    spec = make_spec(tmp_path, test_name="", output_path=str(tmp_path / "r1.xlsx"))
+    result = write_run_workpaper(spec, run_record=RECORD, now=FIXED_NOW)
+    ws = load(result.path)["Summary"]
+    assert ws.cell(find_label(ws, "Test performed"), 2).value == "Whole run: 1 test"
+    two = {**RECORD, "nodes": [*RECORD["nodes"], RECORD["nodes"][1]]}
+    spec = make_spec(tmp_path, test_name="", output_path=str(tmp_path / "r2.xlsx"))
+    ws = load(write_run_workpaper(spec, run_record=two, now=FIXED_NOW).path)["Summary"]
+    assert ws.cell(find_label(ws, "Test performed"), 2).value == "Whole run: 2 tests"
+
+
+def test_run_workpaper_test_performed_without_tests(tmp_path):
+    spec = make_spec(tmp_path, test_name="")
+    record = {**RECORD, "nodes": RECORD["nodes"][:1]}
+    ws = load(write_run_workpaper(spec, run_record=record, now=FIXED_NOW).path)[
+        "Summary"
+    ]
+    assert "no audit tests" in ws.cell(find_label(ws, "Test performed"), 2).value
+
+
+def test_run_workpaper_explicit_test_name_wins(tmp_path):
+    spec = make_spec(tmp_path, test_name="Quarter close review")
+    ws = load(write_run_workpaper(spec, run_record=RECORD, now=FIXED_NOW).path)[
+        "Summary"
+    ]
+    assert ws.cell(find_label(ws, "Test performed"), 2).value == "Quarter close review"

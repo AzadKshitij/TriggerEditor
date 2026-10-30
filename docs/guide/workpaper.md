@@ -179,7 +179,7 @@ The workbook has **Summary**, **Run log** and **Workflow**. Its Summary has a **
 | **Exception rate** | Exceptions divided by population |
 | **Result** | The rule and the outcome sentence of the test |
 
-If the run had no audit test, the table says "No audit tests were recorded in this run." In this layout the *Test performed* row reads "Exceptions workpaper", a fixed label, and there are no tick marks (there is no exception list to tick).
+If the run had no audit test, the table says "No audit tests were recorded in this run." In this layout the *Test performed* row reads "Whole run: N tests" (counted from the run record; "Whole run: no audit tests recorded" when there are none) unless you typed a test name, and there are no tick marks (there is no exception list to tick).
 
 ---
 
