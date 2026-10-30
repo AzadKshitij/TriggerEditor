@@ -251,3 +251,17 @@ def no_modal_dialogs(monkeypatch):
     monkeypatch.setattr(workflow_execution_mixin, "QTimer", _ImmediateQTimer)
 
     return captured
+
+
+@pytest.fixture(autouse=True)
+def _e2e_default_no_modal_dialogs(request):
+    """Every ``tests/e2e`` test runs with the modal-dialog stub applied.
+
+    A progress dialog or warning box opened by an end-to-end run would block the
+    offscreen test forever. A test that also asks for ``no_modal_dialogs`` gets
+    the same (cached) fixture value, so it is applied once.
+    """
+    if "e2e" in Path(str(request.node.fspath)).parts:
+        yield request.getfixturevalue("no_modal_dialogs")
+    else:
+        yield None
