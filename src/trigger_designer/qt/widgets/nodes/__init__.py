@@ -204,6 +204,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_reconcile",
     },
     {
+        "module_path": "Audit.gaps",
+        "node_code": AuditNodes.GAPS,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Gaps",
+        "icon": "node_gaps",
+    },
+    {
         "module_path": "Audit.duplicates",
         "node_code": AuditNodes.DUPLICATES,
         "node_type": NodeTypes.AUDIT,
