@@ -1,8 +1,7 @@
 # Changelog
 
 Everything on branch `feature` since it diverged from `main` (merge base
-`ee997d9`). Written from `git log main..feature` as of commit 72ab9d6 (111
-commits); the list is refreshed at the end of the work. Regenerate the raw,
+`ee997d9`). Written from `git log main..feature` as of commit `9745a25` (121 commits); the list is refreshed at the end of the work. Regenerate the raw,
 grouped commit list with `python scripts/gen_changelog_stub.py` and diff it
 against this file.
 
@@ -197,6 +196,7 @@ Not final; internals documented later (`docs/dev/cli-internals.md`,
 - Repository hygiene: 68 MB comparison CSV untracked [`c73417f`](https://github.com/AzadKshitij/TriggerEditor/commit/c73417f) [`97a3cce`](https://github.com/AzadKshitij/TriggerEditor/commit/97a3cce); legacy
   stylesheets and compiled resource modules removed [`d93d3cd`](https://github.com/AzadKshitij/TriggerEditor/commit/d93d3cd); unused imports and an
   empty module removed [`561bfd2`](https://github.com/AzadKshitij/TriggerEditor/commit/561bfd2); `check_output.py` path refactor [`baea998`](https://github.com/AzadKshitij/TriggerEditor/commit/baea998).
+- Audit amounts: `amount_expr` is cheaper for amounts without a comma ([`297aacc`](https://github.com/AzadKshitij/TriggerEditor/commit/297aacc)); opt-in Audit performance budgets on one million rows ([`158d5ed`](https://github.com/AzadKshitij/TriggerEditor/commit/158d5ed)).
 - Tests: `no_modal_dialogs` applied by default to `tests/e2e` [`2bdefa8`](https://github.com/AzadKshitij/TriggerEditor/commit/2bdefa8); goldens
   for the audit workflows [`2113a6e`](https://github.com/AzadKshitij/TriggerEditor/commit/2113a6e); Split goldens regenerated [`c3035e5`](https://github.com/AzadKshitij/TriggerEditor/commit/c3035e5).
 
