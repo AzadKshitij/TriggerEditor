@@ -559,6 +559,36 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Pick a value from the list or inside the range.",
         "error",
     ),
+    "TD-SHAPE-110": (
+        "Only one statement is allowed",
+        "Remove everything after the first statement.",
+        "error",
+    ),
+    "TD-SHAPE-111": (
+        "Only SELECT queries are allowed",
+        "Write a SELECT query; changing data or settings is not allowed.",
+        "error",
+    ),
+    "TD-SHAPE-112": (
+        "The SQL uses a function or file access that is not allowed",
+        "Remove file-reading, system or random functions.",
+        "error",
+    ),
+    "TD-SHAPE-113": (
+        "The SQL could not be parsed or run",
+        "Check the SQL syntax.",
+        "error",
+    ),
+    "TD-SHAPE-114": (
+        "The SQL is too long",
+        "Shorten the SQL.",
+        "error",
+    ),
+    "TD-SHAPE-115": (
+        "The query took too long",
+        "Simplify the query or filter the data first.",
+        "error",
+    ),
     "TD-SHAPE-005": (
         "A required input has no data",
         "Connect and fix the upstream node.",
