@@ -57,8 +57,23 @@ for _path in sorted(_nodes_dir.rglob("*.py")):
 # subpackages are PEP 420 namespace packages, so list the sources by file. A
 # package that has not landed yet simply yields nothing.
 _core_dir = Path("src/trigger_designer/core")
-_CORE_PACKAGES = ("audit", "errors", "excel", "workpaper", "shaping", "headless")
-_CORE_MODULES = ("inputs", "input_source", "profile", "sql_guard", "codegen_safe")
+_CORE_PACKAGES = (
+    "audit",
+    "errors",
+    "excel",
+    "workpaper",
+    "shaping",
+    "headless",
+    "utils",
+)
+_CORE_MODULES = (
+    "inputs",
+    "input_source",
+    "profile",
+    "profile_report",
+    "sql_guard",
+    "codegen_safe",
+)
 core_hiddenimports = []
 for _pkg in _CORE_PACKAGES:
     for _path in sorted((_core_dir / _pkg).rglob("*.py")):

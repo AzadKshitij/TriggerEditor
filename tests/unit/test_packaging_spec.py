@@ -54,3 +54,26 @@ def test_listed_core_modules_exist() -> None:
             assert rel.with_suffix(".py").exists() or (rel / "__init__.py").exists(), (
                 mod
             )
+
+
+def test_every_module_generated_code_imports_is_in_the_spec() -> None:
+    """Generated code is exec'd, so PyInstaller never sees its imports."""
+    import importlib.util
+
+    from trigger_designer.core.headless.code_policy import GENERATED_IMPORTS
+
+    listed = set(_run_block())
+    literal = SPEC.read_text(encoding="utf-8")
+    missing = []
+    for module in GENERATED_IMPORTS:
+        if not module.startswith("trigger_designer."):
+            # third-party: must be a hidden import; the stdlib needs nothing
+            spec = importlib.util.find_spec(module)
+            stdlib = spec is not None and "site-packages" not in (spec.origin or "")
+            if not stdlib and f'"{module}"' not in literal:
+                missing.append(module)
+        elif module not in listed and not any(
+            item.startswith(f"{module}.") for item in listed
+        ):
+            missing.append(module)
+    assert not missing, f"missing from trigger.spec hidden imports: {missing}"
