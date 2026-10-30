@@ -38,6 +38,9 @@ class ExecutionResult:
     code: str = ""
     started_at: str = ""
     finished_at: str = ""
+    #: True when the failing source exception carries the class attribute
+    #: ``policy_violation = True`` (set by a ``code_filter`` that refuses code).
+    policy_violation: bool = False
 
 
 def _utc_now_iso() -> str:
@@ -114,9 +117,7 @@ class NodeExecutor:
         )
         self._node_worker_thread.start()
 
-    def _node_worker_loop(
-        self, tasks: "queue.Queue[Callable[[], None] | None]"
-    ) -> None:
+    def _node_worker_loop(self, tasks: queue.Queue[Callable[[], None] | None]) -> None:
         while True:
             task = tasks.get()
             if task is None:
@@ -204,7 +205,7 @@ class NodeExecutor:
 
         return True, exception_container[0]
 
-    def execute_node(self, node: "TriggerNode") -> ExecutionResult:
+    def execute_node(self, node: TriggerNode) -> ExecutionResult:
         """Execute a node's code with comprehensive monitoring and error handling.
 
         Args:
@@ -257,6 +258,9 @@ class NodeExecutor:
                     )
 
             self._call_hook(self.after_node, node, local_variables, result)
+            # An observer may have added or replaced a variable; the result
+            # and the shared context must agree on what the node produced.
+            result.variables = {**result.variables, **local_variables}
 
             # Update shared execution context with new variables
             self.execution_context.update(local_variables)
@@ -279,6 +283,7 @@ class NodeExecutor:
                 f"{type(source).__module__}.{type(source).__qualname__}"
             )
             result.traceback_text = "".join(traceback.format_exception(source))
+            result.policy_violation = bool(getattr(source, "policy_violation", False))
             source.__traceback__ = None
 
             # Log error
