@@ -45,3 +45,32 @@ def test_info_survives_cp1252_stdout(tmp_path):
     proc = run_cli("info", wf, cwd=tmp_path, extra_env=env)
     assert proc.returncode == 0, proc.stderr
     assert "Traceback" not in proc.stderr
+
+
+def _info_bytes(tmp_path, env_extra):
+    wf = _wf(tmp_path, input_path="C:/данные/in.csv")
+    env = cli_env(tmp_path)
+    env.pop("PYTHONIOENCODING")
+    env.pop("PYTHONUTF8", None)
+    env.update(env_extra)
+    return subprocess.run(
+        [sys.executable, "-m", "trigger_designer.cli", "info", str(wf)],
+        cwd=tmp_path,
+        env=env,
+        capture_output=True,
+        timeout=120,
+        check=False,
+    )
+
+
+def test_piped_stdout_defaults_to_utf8(tmp_path):
+    proc = _info_bytes(tmp_path, {})
+    assert proc.returncode == 0, proc.stderr
+    assert "данные".encode() in proc.stdout
+
+
+def test_explicit_cp1252_pipe_replaces_unencodable(tmp_path):
+    proc = _info_bytes(tmp_path, {"PYTHONIOENCODING": "cp1252"})
+    assert proc.returncode == 0, proc.stderr
+    assert b"Traceback" not in proc.stderr
+    assert b"C:/??????/in.csv" in proc.stdout

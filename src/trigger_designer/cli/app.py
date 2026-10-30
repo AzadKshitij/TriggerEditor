@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import sys
 import traceback
 
@@ -40,7 +41,29 @@ def make_context(args) -> CliContext:
     return CliContext(state=state_dir(getattr(args, "state_dir", None)))
 
 
+def configure_streams() -> None:
+    """Make printing a path never raise ``UnicodeEncodeError``.
+
+    A piped stream is UTF-8 unless the caller chose an encoding with
+    ``PYTHONIOENCODING``/``PYTHONUTF8`` (a cp1252 pipe cannot hold Cyrillic
+    paths); every stream replaces what it still cannot encode.
+    """
+    chosen = bool(os.environ.get("PYTHONIOENCODING") or os.environ.get("PYTHONUTF8"))
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            if not chosen and not stream.isatty():
+                reconfigure(encoding="utf-8", errors="replace")
+            else:
+                reconfigure(errors="replace")
+        except OSError, ValueError:
+            continue
+
+
 def main(argv: list[str] | None = None, *, hard_exit: bool = True) -> int:
+    configure_streams()
     parser = build_parser()
     args = parser.parse_args(argv)  # SystemExit(64) on usage errors
     try:
