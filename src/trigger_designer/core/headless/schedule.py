@@ -136,6 +136,22 @@ def parse_trigger(
     raise CliError(ExitCode.USAGE, "TD-CLI-006", "Choose when the task should run.")
 
 
+def describe_trigger(trigger: dict) -> str:
+    """The trigger as a short sentence, for ``schedule list``."""
+    kind = trigger.get("kind") if isinstance(trigger, dict) else None
+    if kind in ("daily", "weekdays"):
+        return f"{kind} at {trigger.get('time', '?')}"
+    if kind == "weekly":
+        days = ", ".join(trigger.get("days") or []) or "?"
+        return f"weekly on {days} at {trigger.get('time', '?')}"
+    if kind == "hourly":
+        every = trigger.get("every", 1)
+        return "every hour" if every == 1 else f"every {every} hours"
+    if kind == "once":
+        return f"once at {str(trigger.get('at', '?')).replace('T', ' ')}"
+    return "(unknown trigger)"
+
+
 def _boundary(date: datetime, hhmm: str) -> str:
     hour, minute = _hhmm(hhmm)
     return f"{date:%Y-%m-%d}T{hour:02d}:{minute:02d}:00"

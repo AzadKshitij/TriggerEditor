@@ -16,8 +16,9 @@ POLL_S = 0.25
 class Supervisor:
     """Owns the cancel flag (checked between nodes) and the forced exits.
 
-    The wall-clock ``deadline_s`` starts at construction, which is process
-    start in the CLI; ``max_memory_mb`` is an absolute RSS ceiling.
+    The wall-clock ``deadline_s`` starts at construction, which is when the
+    run begins (after argument parsing and imports, not at process start);
+    ``max_memory_mb`` is an absolute RSS ceiling.
     """
 
     def __init__(

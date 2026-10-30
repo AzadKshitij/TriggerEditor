@@ -373,3 +373,29 @@ def test_executable_in_development_uses_python_dash_m(monkeypatch):
     assert sched.executable() == [sys.executable, "-m", "trigger_designer.cli"]
     monkeypatch.setattr(sys, "frozen", True, raising=False)
     assert sched.executable() == [sys.executable]
+
+
+@pytest.mark.parametrize(
+    ("trigger", "text"),
+    [
+        ({"kind": "daily", "time": "02:30"}, "daily at 02:30"),
+        ({"kind": "weekdays", "time": "06:00"}, "weekdays at 06:00"),
+        (
+            {"kind": "weekly", "days": ["MON", "THU"], "time": "06:30"},
+            "weekly on MON, THU at 06:30",
+        ),
+        ({"kind": "hourly", "every": 1}, "every hour"),
+        ({"kind": "hourly", "every": 6}, "every 6 hours"),
+        ({"kind": "once", "at": "2026-11-02T06:30"}, "once at 2026-11-02 06:30"),
+        ({}, "(unknown trigger)"),
+    ],
+)
+def test_describe_trigger(trigger, text):
+    assert sched.describe_trigger(trigger) == text
+
+
+def test_list_text_shows_a_readable_trigger_not_a_dict(tmp_path, approved, fake):
+    _add(tmp_path, approved)
+    result = call_main(["schedule", "list"], env=_env(tmp_path))
+    assert "daily at 02:30" in result.stdout
+    assert "{" not in result.stdout and "kind" not in result.stdout

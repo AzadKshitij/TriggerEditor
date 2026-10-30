@@ -131,7 +131,7 @@ def _list(args, ctx) -> int:
     for item in merged:
         row = item["live"] or {}
         print(
-            f"{item['name']:20} {item['trigger']}  next: {row.get('next_run', '?')}  "
+            f"{item['name']:20} {sched.describe_trigger(item.get('trigger'))}  next: {row.get('next_run', '?')}  "
             f"status: {row.get('status', '?')}  last result: {row.get('last_result', '?')}"
         )
     return 0
