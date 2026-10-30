@@ -154,8 +154,25 @@ class RunRecord:
 
 
 #: Run-level keys a record must carry (3.3). Derived from the dataclass so the
-#: document and the code cannot drift; a test pins the list.
+#: document and the code cannot drift; a test pins the list. This is the set for
+#: the *current* schema version; use :func:`required_run_keys` for a record.
 REQUIRED_RUN_KEYS = tuple(f.name for f in dataclasses.fields(RunRecord))
+
+#: Evolution rule: a field added after version 1 is listed here with the schema
+#: version that introduced it (and ``RUN_RECORD_SCHEMA_VERSION`` is raised to
+#: it). Only records of that version or newer must carry the key, so an older
+#: sealed record, whose hash covers its original bytes, still validates.
+#: Every field not listed here has been required since version 1.
+FIELD_ADDED_IN: dict[str, int] = {}
+
+
+def required_run_keys(schema_version: Any = None) -> tuple[str, ...]:
+    """Keys a record of ``schema_version`` must carry (current when unknown)."""
+    if not _is_int(schema_version):
+        schema_version = RUN_RECORD_SCHEMA_VERSION
+    return tuple(
+        key for key in REQUIRED_RUN_KEYS if FIELD_ADDED_IN.get(key, 1) <= schema_version
+    )
 
 
 def _is_int(value: Any) -> bool:
@@ -193,7 +210,7 @@ def validate_record_dict(d: dict) -> list[str]:
     errors: list[str] = []
     if not isinstance(d, dict):
         return ["record: expected an object"]
-    for key in REQUIRED_RUN_KEYS:
+    for key in required_run_keys(d.get("schema_version")):
         if key not in d:
             errors.append(f"{key}: required key is missing")
     version = d.get("schema_version")

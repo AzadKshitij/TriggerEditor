@@ -31,12 +31,19 @@ executor.
 ## Record schema (`RUN_RECORD_SCHEMA_VERSION = 1`, `HASH_ALGO = "sha256-canonical-json-v1"`)
 
 `RunRecord.to_dict()` is the on-disk shape. `REQUIRED_RUN_KEYS` is **derived
-from the dataclass fields** (a test pins the list), and `validate_record_dict`
-reports every missing key as `schema_invalid`. Trap: a field added to
-`RunRecord` becomes required, so records sealed *before* the field existed fail
-`verify_store` with "required key is missing". Adding a field therefore also
-needs an exemption (or a version rule) in `validate_record_dict` for older
-records. Fields:
+from the dataclass fields** (a test pins the list) and is the key set of the
+*current* schema version. `validate_record_dict` checks a record against
+`required_run_keys(record["schema_version"])` and reports each missing key as
+`schema_invalid`.
+
+**Schema evolution rule.** A sealed record is never rewritten, so a field added
+later must not make older records invalid. To add a run-level field: give it a
+default in `RunRecord`, raise `RUN_RECORD_SCHEMA_VERSION` to N, and register it
+in `FIELD_ADDED_IN` (`{"new_field": N}`). Only records with `schema_version >= N`
+must then carry the key; version 1 records, and every field not listed, keep
+their original requirements. A test checks that each registered field is not
+ahead of the schema version, and another seals records, adds a field and
+verifies the old store still passes. Fields:
 
 Run level: `run_id` (uuid4 hex), `started_at`, `finished_at` (UTC
 `YYYY-MM-DDTHH:MM:SS.ffffffZ`), `status` (`running` in flight only, then

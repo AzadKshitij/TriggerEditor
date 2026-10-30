@@ -137,3 +137,55 @@ def test_deepcopy_of_to_dict_is_independent():
     two = copy.deepcopy(one)
     two["warnings"].append("x")
     assert record.to_dict()["warnings"] == []
+
+
+def _pretend_field_added_in_v2(monkeypatch) -> None:
+    """Simulate a future build: ``RunRecord`` gained ``extra`` in schema 2."""
+    from trigger_designer.core.audit import schema
+
+    monkeypatch.setattr(schema, "RUN_RECORD_SCHEMA_VERSION", 2)
+    monkeypatch.setattr(
+        schema, "REQUIRED_RUN_KEYS", (*schema.REQUIRED_RUN_KEYS, "extra")
+    )
+    monkeypatch.setattr(schema, "FIELD_ADDED_IN", {"extra": 2})
+
+
+def test_additive_field_is_optional_for_older_records(monkeypatch):
+    _pretend_field_added_in_v2(monkeypatch)
+    old = _valid()  # schema_version 1, no "extra"
+    assert validate_record_dict(old) == []
+    new = {**_valid(), "schema_version": 2}
+    assert any(m.startswith("extra:") for m in validate_record_dict(new))
+    new["extra"] = 1
+    assert validate_record_dict(new) == []
+
+
+def test_old_sealed_records_still_verify_after_a_field_is_added(tmp_path, monkeypatch):
+    from tests.support.audit_helpers import make_record
+    from trigger_designer.core.audit.store import RunStore, verify_store
+
+    store = RunStore(app_data_dir=tmp_path / "appdata")
+    directory = tmp_path / "wf.runs"
+    for i in range(2):
+        store.seal_and_save(
+            make_record(
+                started_at=f"2026-10-21T09:14:0{i}.000000Z",
+                finished_at=f"2026-10-21T09:14:0{i}.500000Z",
+            ),
+            directory,
+        )
+    assert verify_store(directory).ok
+    _pretend_field_added_in_v2(monkeypatch)
+    report = verify_store(directory)
+    assert report.ok, [p.message for p in report.problems]
+
+
+def test_every_field_added_after_v1_is_registered_and_not_ahead_of_the_schema():
+    from trigger_designer.core.audit.schema import (
+        FIELD_ADDED_IN,
+        REQUIRED_RUN_KEYS,
+        RUN_RECORD_SCHEMA_VERSION,
+    )
+
+    assert set(FIELD_ADDED_IN) <= set(REQUIRED_RUN_KEYS)
+    assert all(1 < v <= RUN_RECORD_SCHEMA_VERSION for v in FIELD_ADDED_IN.values())
