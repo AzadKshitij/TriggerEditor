@@ -52,6 +52,8 @@ class PreparationNodes(IntEnum):
     SELECT_RECORDS = auto()
     FIND_REPLACE = auto()
     DATE_HELPER = auto()
+    TEXT_TO_COLUMNS = auto()
+    MULTI_FIELD_FORMULA = auto()
 
 
 class JoinNodes(IntEnum):
@@ -59,6 +61,7 @@ class JoinNodes(IntEnum):
     JOIN = auto()
     UNION = auto()
     RECONCILE = auto()
+    FUZZY_MATCH = auto()
 
 
 class TransformNodes(IntEnum):
@@ -68,11 +71,14 @@ class TransformNodes(IntEnum):
     TRANSPOSE = auto()
     PIVOT = auto()
     UNPIVOT = auto()
+    WINDOW = auto()
+    SQL_QUERY = auto()
 
 
 class ReportNodes(IntEnum):
     GRAPH = auto()
     DATA_PROFILE = auto()
+    COMMENT = auto()
 
 
 class AuditNodes(IntEnum):
