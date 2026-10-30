@@ -81,3 +81,6 @@ outcome = run_nodes(
 
 `outcome` is a `LoopOutcome(success, cancelled, executed, failed, skipped)`. The
 loop imports no Qt.
+
+The generated-code allowlist described for headless runs exists only in the command line
+(`core/headless/code_policy.py`); the editor's own Run keeps today's behaviour.

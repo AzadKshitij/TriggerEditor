@@ -225,6 +225,11 @@ development setup and guidelines. In short:
 3. Run the formatter, linter and type checker, then `pytest`.
 4. Open a pull request describing the change and its rationale.
 
+## Headless
+
+`trigger-designer-cli run workflow.tds` runs a saved workflow without the editor window, with exit codes,
+JSON-lines logs, run records and a Windows scheduling helper. See [docs/CLI.md](docs/CLI.md).
+
 ## License
 
 Released under the **MIT License**.
