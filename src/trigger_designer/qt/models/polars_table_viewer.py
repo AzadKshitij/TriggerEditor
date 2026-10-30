@@ -1202,7 +1202,9 @@ class PolarsTableViewer(QWidget):
             )
 
             if filename:
-                current_df.write_excel(filename)
+                from trigger_designer.core.excel import write_frame_xlsx
+
+                write_frame_xlsx(current_df, filename)
                 logger.debug(f"Data exported to Excel: {filename}")
 
         except Exception as e:

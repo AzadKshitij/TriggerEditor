@@ -193,3 +193,24 @@ def test_xlsxwriter_is_a_declared_dependency():
     )
     declared = " ".join(project["project"]["dependencies"])
     assert "xlsxwriter" in declared
+
+
+def test_excel_format_executes_and_writes_readable_workbook(tmp_path) -> None:
+    import openpyxl
+
+    out = tmp_path / "out.xlsx"
+    code = _make_content(file_format="excel", filePath=str(out)).get_code()
+    exec(  # noqa: S102 - the generated code is the unit under test
+        code,
+        {"__name__": "__main__"},
+        {"var_in": pl.LazyFrame({"a": [1, 2], "b": ["x", None]})},
+    )
+    rows = [
+        [c.value for c in r] for r in openpyxl.load_workbook(out).active.iter_rows()
+    ]
+    assert rows == [["a", "b"], [1, "x"], [2, None]]
+
+
+def test_excel_format_never_collects_in_generated_text() -> None:
+    code = _make_content(file_format="excel", filePath="C:/t/o.xlsx").get_code()
+    assert ".write_excel(" not in code and ".collect()" not in code

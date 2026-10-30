@@ -546,9 +546,6 @@ def test_write_frame_xlsx_makes_a_formatted_workbook(tmp_path):
     assert [c.value for c in sheet[1]] == ["a", "b"]
     assert sheet["A1"].font.bold is True
     assert sheet.freeze_panes == "A2"
-    # an Excel table: the filter buttons live on the table, not the sheet
-    tables = list(sheet.tables.values())
-    assert len(tables) == 1
-    assert tables[0].autoFilter is not None
-    assert tables[0].ref == "A1:B4"
+    # streamed writer (constant memory): filter buttons via autofilter, no table
+    assert sheet.auto_filter.ref == "A1:B4"
     assert [r[0].value for r in sheet.iter_rows(min_row=2)] == [1, None, 3]

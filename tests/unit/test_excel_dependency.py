@@ -56,10 +56,12 @@ def test_viewer_export_failure_shows_warning(qtbot, monkeypatch, tmp_path) -> No
     )
     seen: list[str] = []
     monkeypatch.setattr(QMessageBox, "warning", lambda *a, **k: seen.append(a[2]))
+    import trigger_designer.core.excel as excel_pkg
+
     monkeypatch.setattr(
-        pl.DataFrame,
-        "write_excel",
-        lambda self, *a, **k: (_ for _ in ()).throw(OSError("boom")),
+        excel_pkg,
+        "write_frame_xlsx",
+        lambda *a, **k: (_ for _ in ()).throw(OSError("boom")),
     )
     viewer.export_excel()
     assert seen and "boom" in seen[0]

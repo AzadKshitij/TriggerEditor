@@ -61,7 +61,9 @@ def write_node(frames: list, settings: dict) -> None:
             options["include_bom"] = True
         frame.sink_csv(path, **options)
     elif file_format == "excel":
-        frame.collect().write_excel(path)
+        from trigger_designer.core.excel.frame_export import write_frame_xlsx
+
+        write_frame_xlsx(frame, path)
     elif file_format == "parquet":
         frame.sink_parquet(path, compression="snappy")
     elif file_format == "json":
