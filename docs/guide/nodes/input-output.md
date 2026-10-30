@@ -356,14 +356,14 @@ The Config Dock has two sections.
 
 | Control | What it does | Default |
 |---|---|---|
-| **File** (text box) with a **Browse for save location** icon button | The full path of the file to create, for example `D:\out\exceptions.csv`. The folder must already exist. The browse button opens a Save dialog filtered to the current format. | Empty (placeholder "Enter file path") |
+| **File** (text box) with a **Browse for save location** icon button | The full path of the file to create, for example `D:\out\exceptions.csv`. The folder must already exist. The browse button opens a Save dialog filtered to the current format (for Excel the filter is `*.xlsx` only). | Empty (placeholder "Enter file path") |
 
 Typing a path changes the **Format** for you when the extension is recognised:
 
 | Extension | Format picked |
 |---|---|
 | `.csv`, `.txt` | CSV |
-| `.xlsx`, `.xls` | Excel |
+| `.xlsx`, `.xls` | Excel (a typed `.xls` is changed to `.xlsx`, see below) |
 | `.parquet` | Parquet |
 | `.json` | JSON |
 | `.ndjson` | NDJSON |
@@ -378,6 +378,7 @@ Other extensions (for example `.jsonl` or `.tsv`) leave the format unchanged. Th
 | **Format** | Always | One of CSV, Excel, Parquet, JSON, NDJSON, Arrow IPC, Custom delimited. | CSV |
 | **Delimiter** | CSV and Custom delimited | The separator between values; a single character. A blank box means a comma. | `,` |
 | **Encoding: Include BOM** | CSV and Custom delimited | Writes a byte-order mark at the start of the file so that Excel recognises UTF-8 text. | Off |
+| **Compression** | Parquet only | The Parquet compression: Snappy, Zstandard, Gzip, LZ4 or None. The control is hidden for every other format. | Snappy |
 
 What each format writes:
 
@@ -386,12 +387,14 @@ What each format writes:
 | **CSV** | A text file with a header row and one line per row. UTF-8. Empty (null) values are written as nothing between the separators. The Delimiter and BOM settings apply. |
 | **Custom delimited** | The same as CSV, for any separator (for example `\|` or `;`). Pick the extension yourself (for example `.txt`); typing `.txt` switches the Format to CSV, which writes the same bytes. |
 | **Excel** | A new `.xlsx` workbook with one sheet named `Sheet1`. The header row is bold with a light fill, frozen, and has filter buttons. Numbers, dates and times are real Excel numbers and dates, empty values are blank cells, and text is never treated as a formula (a value starting with `=` stays text). Column widths are set from the data. |
-| **Parquet** | A compressed, typed binary file (Snappy compression). Fast and compact; keeps column types. |
+| **Parquet** | A compressed, typed binary file. Fast and compact; keeps column types. Compressed with Snappy unless you pick another **Compression** (Zstandard, Gzip, LZ4, or None for no compression). Snappy is the default; choose another only if the program that reads the file asks for it. |
 | **JSON** | One JSON document: a list of records, `[{"Invoice":"A1","Amount":10.5}, ...]`. The whole table is built in memory first. |
 | **NDJSON** | JSON Lines: one record per line. |
 | **Arrow IPC** | An Arrow file that other data tools read quickly; keeps column types. |
 
-Compression and streaming are not options in the dock: Parquet always uses Snappy, and CSV, Parquet, NDJSON and Arrow IPC are always written in a streaming way (a table bigger than memory can still be written).
+**Excel is `.xlsx` only.** The writer cannot produce the old `.xls` format. When you type a path that ends in `.xls` and leave the field, the dock changes it to `.xlsx` and shows the new name; the Save dialog only offers `*.xlsx`. An old workflow file that still holds an `.xls` name for Excel output does not write a wrong file: the Run stops before anything is written, asking for a name that ends in `.xlsx` (see `TD-OUT-012` below).
+
+**Streaming is not an option.** CSV, Parquet, NDJSON and Arrow IPC are always written in a streaming way (a table bigger than memory can still be written), so there is no switch for it. Workflow files saved by an earlier version that carry a streaming setting still open; the setting is ignored. A file that stored no compression (or an empty one) is read as Snappy. An unknown compression name in a hand-edited file stops the Run with a message that lists the valid choices.
 
 ### Worked example
 
@@ -420,6 +423,7 @@ With **Delimiter** `;` and **Include BOM** on, the same data is written as `Invo
 - **The folder is not created.** If the folder does not exist, the Run stops with `TD-OUT-001`. Create it first.
 - **Nothing connected.** With no input the node shows the tooltip "Input is not connected" and the Run stops with `TD-OUT-006`.
 - **No path.** The Run stops with the message `File Output: choose an output path`.
+- **Excel is `.xlsx` only.** A file name ending in `.xls` is refused (`TD-OUT-012`) with Excel selected; rename it to `.xlsx`.
 - **Excel limits.** An Excel sheet holds at most 1,048,575 data rows and 16,384 columns. A larger table is refused, never cut short (`TD-OUT-013` for rows, `TD-OUT-011` for columns). Write it as CSV or Parquet instead, or select fewer columns first.
 - **Table with no columns** cannot be written as Excel.
 - **JSON** loads the entire table into memory before writing.
@@ -438,6 +442,7 @@ With **Delimiter** `;` and **Include BOM** on, the same data is written as `Invo
 | `TD-OUT-005` | The disk is full. | Free space or write to another drive. |
 | `TD-OUT-006` | Nothing is connected to this output. | Connect the node whose result you want to save. |
 | `TD-OUT-011` | The table has more than 16,384 columns, the Excel maximum. | Select fewer columns before writing. |
+| `TD-OUT-012` | Excel output was given a file name ending in `.xls`. The writer only creates `.xlsx` files. | Change the name to end in `.xlsx`. |
 | `TD-OUT-013` | The table has more than 1,048,575 data rows, which an Excel sheet cannot hold. | Save as CSV or Parquet instead. |
 | `TD-OUT-014` | Excel could not create the workbook (for example, unusable cell content). | Shorten or fix the offending text and try again. |
 
@@ -559,7 +564,7 @@ The Exceptions sheet lists the 6 rows with empty **Tick mark** and **Auditor com
 - **Text starting with `=`, `+`, `-` or `@`** is stored as text, never as a formula.
 - **No recorded run** (Preferences > Record every run off): the Run log sheet is left out and the Summary says why.
 - **Big lists are slow.** About 500,000 rows take 35 to 45 seconds, more than the 30 second limit per step; lower the Row limit (see [Limits and performance](../limits-and-performance.md)).
-- **From the command line** the Run log sheet is left out; see [Workpapers](../workpaper.md#from-the-command-line).
+- **From the command line** the Run log sheet is left out (the command-line run installs no run-record source). **If the file exists** is obeyed there too, `--output-dir` and `--param` can redirect the workbook, and **Source files** follow `--input-dir`; see [The command line](../cli.md#workpaper-output-on-the-command-line) and [Workpapers](../workpaper.md#from-the-command-line).
 - The workpaper node is not a way to write the whole table: use File Output for that.
 
 ### Errors you may see
