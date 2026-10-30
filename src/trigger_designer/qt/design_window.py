@@ -22,6 +22,7 @@ from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_graph import GraphCycleError, cycles, topological_order
 from nodeeditor.utils import dumpException
 
+from trigger_designer.core.constants import WORKFLOW_SCHEMA_VERSION
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     OpCodeNotRegistered,
@@ -500,6 +501,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             self.view.update()
             viewport.update()
 
+    def fileNew(self) -> None:
+        """File > New: empty the scene and give the document a new identity."""
+        super().fileNew()
+        self.scene.reset_workflow_identity()
+
     def fileLoad(self, filename: str) -> bool:
         self.logInfo(f"Loading file: {filename}")
         # Shown and painted before any work: parse, node construction and
@@ -549,6 +555,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         schema_version = workflow_metadata.get("schema_version")
         if schema_version:
             self.logDebug(f"Loaded workflow schema version: {schema_version}")
+        if isinstance(schema_version, int) and schema_version > WORKFLOW_SCHEMA_VERSION:
+            validation_messages.append(
+                "This workflow was saved by a newer version of the app "
+                f"(file format {schema_version}, this app understands "
+                f"{WORKFLOW_SCHEMA_VERSION}). Some settings may be ignored; "
+                "saving will overwrite them."
+            )
 
         for node in self.getAllNodes():
             if isinstance(node, TriggerNode_Unknown):
