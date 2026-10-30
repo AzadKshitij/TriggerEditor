@@ -122,8 +122,7 @@ Guide: `docs/guide/workpaper.md`. Internals: `docs/dev/workpaper-internals.md`.
   in bounded memory). [`b4c333f`](https://github.com/AzadKshitij/TriggerEditor/commit/b4c333f)
 - Spooled batches are read with Polars only (no pyarrow). [`eda6906`](https://github.com/AzadKshitij/TriggerEditor/commit/eda6906)
 - The CLI lists the workbook under `writes` in `approve`, `info` and `paths`. [`7495285`](https://github.com/AzadKshitij/TriggerEditor/commit/7495285)
-- Known gaps: decimal-comma text amounts are misread by the workpaper's amount parser; from the
-  CLI the Run log sheet is omitted. See `docs/dev/workpaper-internals.md`, section 15.
+- Known gaps: from the CLI the Run log sheet is omitted. See `docs/dev/workpaper-internals.md`, section 15.
 
 ### New nodes (shaping and report)
 

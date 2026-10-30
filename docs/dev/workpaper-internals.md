@@ -291,10 +291,10 @@ All in `core/excel/cells.py`, one place:
   matches `ID_NAME` gets the `0` format (no thousands separator); duration headers get
   ` (seconds)`; headers that collide with `RESERVED_HEADERS` get ` (data)`; empty headers become
   `Column n`.
-- `stream.amount_expr(name, dtype)`: for `String` strips whitespace and **all commas**,
-  turns `(x)` into `-x`, casts non-strictly; numeric dtypes cast to Float64; anything else `None`.
-  It does **not** use `core/utils/amounts.py`, the shared decimal-comma aware parser that the
-  audit nodes use (see section 15).
+- `stream.amount_expr(name, dtype)`: for `String` delegates to `core/utils/amounts.py`, the
+  shared decimal-comma aware parser that the audit nodes and Reconcile use (`12,5` is 12.5,
+  `1.234,50` and `1'234,50` are 1234.5, `(x)` is `-x`; unreadable forms such as `1,2,3` are null
+  and counted in `ExceptionStats.unparseable`); numeric dtypes cast to Float64; anything else `None`.
 - CSV sidecar (`stream.write_csv_sidecar`): UTF-8 with BOM, a `Ref` column, cells with
   `needs_quote_prefix` text prefixed by `'`, booleans as `true`/`false`, datetimes ISO with a space.
 
@@ -474,10 +474,7 @@ node has no setting for it yet.
 
 These were found while writing the guide, by running the code. They are not fixed here.
 
-1. **Decimal-comma amounts are misread.** `stream.amount_expr` removes every comma, so a text
-   amount `12,5` becomes 125 and `1.234,50` becomes 1.2345, silently, in the Exceptions sheet's
-   amount column and in the totals. The audit nodes use the shared decimal-comma aware
-   parser `core/utils/amounts.py` (commit `b3a955d`); the workpaper should use it.
+1. ~~Decimal-comma amounts are misread~~ (fixed: `stream.amount_expr` uses the shared parser).
 2. **CLI run, truncated list (fixed in the working tree, not yet committed when this page was
    written).** The CLI stages every output under a temporary name, and the sidecar used to be named
    after it (`.<name>.tdtmp-<id>_exceptions_full.csv`, left hidden in the output folder, and quoted

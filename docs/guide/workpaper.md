@@ -234,7 +234,7 @@ How values are shown: numbers as numbers, dates as `yyyy-mm-dd`, times and times
 
 #### Amounts
 
-The **Amount column** is shown with your **Decimals** and totalled. If the column is text, amounts such as `1,234.50`, `(12.00)` (read as -12) and ` 7 ` are read as numbers. **Use a point as the decimal separator**: a comma is treated as a thousands separator, so `12,5` would be read as 125 and `1.234,50` as 1.2345. Convert decimal-comma amounts to numbers before the workpaper (for example with a Select node, set to a number type). Values that cannot be read at all stay as text, are not totalled, and are counted in a line of *Notes and limitations*. The totals are sums of floating point numbers.
+The **Amount column** is shown with your **Decimals** and totalled. If the column is text, amounts such as `1,234.50`, `(12.00)` (read as -12) and ` 7 ` are read as numbers. European and Swiss forms are understood too: `12,5` and `1.234,50` are read as 12.5 and 1234.5, `1'234.50` as 1234.5. A single comma followed by exactly three digits (`1,234`) is a thousands separator. Values that cannot be read at all stay as text, are not totalled, and are counted in a line of *Notes and limitations*. The totals are sums of floating point numbers.
 
 ### Run log
 

@@ -75,6 +75,42 @@ def test_amount_column_numbers_from_strings_and_note(tmp_path):
     )
 
 
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("1,234.50", 1234.5),  # US
+        ("12,5", 12.5),  # European decimal comma
+        ("1.234,50", 1234.5),  # European grouped
+        ("1'234,50", 1234.5),  # Swiss apostrophe
+        ("1'234.50", 1234.5),
+        ("(1.234,50)", -1234.5),  # parenthesised negative
+        ("(12,5)", -12.5),
+        ("1,234", 1234.0),  # exact thousands group
+    ],
+)
+def test_amount_text_forms_are_read_like_the_audit_nodes(tmp_path, raw, expected):
+    frame = pl.DataFrame({"Amount": [raw]})
+    result, wb = _write(tmp_path, frame)
+    assert wb["Exceptions"]["D3"].value == pytest.approx(expected)
+    assert not any("could not be read" in w for w in result.warnings)
+
+
+def test_unreadable_decimal_comma_forms_are_counted_not_guessed(tmp_path):
+    frame = pl.DataFrame({"Amount": ["1,2,3", "1.234.567", "12,5", "n/a"]})
+    result, wb = _write(tmp_path, frame)
+    ws = wb["Exceptions"]
+    assert [ws.cell(r, 4).value for r in (3, 4, 5, 6)] == [
+        "1,2,3",
+        "1.234.567",
+        12.5,
+        "n/a",
+    ]
+    assert any("3 value(s)" in w and "could not be read" in w for w in result.warnings)
+    assert load(result.path, data_only=True)["Summary"]["C24"].value == pytest.approx(
+        12.5
+    )
+
+
 def test_tick_validation_covers_every_data_row(tmp_path):
     _, wb = _write(tmp_path, EXCEPTIONS)
     validations = wb["Exceptions"].data_validations.dataValidation

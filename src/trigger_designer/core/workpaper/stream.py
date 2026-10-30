@@ -18,6 +18,7 @@ from trigger_designer.core.excel.cells import (
     needs_quote_prefix,
 )
 from trigger_designer.core.excel.spool import Spooled
+from trigger_designer.core.utils.amounts import amount_expr as shared_amount_expr
 
 HASH_CAP_BYTES = 4 * 1024**3
 _CHUNK = 1024 * 1024
@@ -26,14 +27,14 @@ _CHUNK = 1024 * 1024
 def amount_expr(name: str, dtype: Any) -> pl.Expr | None:
     """Float64 value of the amount column; ``None`` when the dtype cannot hold amounts.
 
-    Text such as ``1,234.50``, ``(12.00)`` or `` 7 `` is parsed; anything else
-    becomes null (the caller counts those and keeps the original text).
+    Text goes through the shared decimal-comma aware parser
+    (``core/utils/amounts.py``): ``1,234.50``, ``1.234,50``, ``1'234,50``,
+    ``12,5`` and ``(12.00)`` are read; anything else becomes null (the caller
+    counts those and keeps the original text).
     """
-    col = pl.col(name)
     if dtype == pl.String:
-        text = col.str.strip_chars().str.replace_all(",", "", literal=True)
-        text = text.str.replace(r"^\((.*)\)$", "-$1")
-        return text.cast(pl.Float64, strict=False)
+        return shared_amount_expr(name, dtype)
+    col = pl.col(name)
     if dtype.is_numeric():
         return col.cast(pl.Float64, strict=False)
     return None
