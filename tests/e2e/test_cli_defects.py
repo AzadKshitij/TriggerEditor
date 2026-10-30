@@ -74,3 +74,42 @@ def test_explicit_cp1252_pipe_replaces_unencodable(tmp_path):
     assert proc.returncode == 0, proc.stderr
     assert b"Traceback" not in proc.stderr
     assert b"C:/??????/in.csv" in proc.stdout
+
+
+# ------------------------------------------------------------------ C5 noise
+def _formula(tmp_path):
+    from tests.support.corpus import FILE_OUTPUT_CASES
+    from tests.support.workflows import materialize
+
+    case = {c.name: c for c in FILE_OUTPUT_CASES}["formula"]
+    return materialize(case, tmp_path)
+
+
+def _assert_quiet(stderr: str):
+    assert "icon:" not in stderr
+    assert "<class" not in stderr
+    assert "QPixmap" not in stderr
+    assert "\x1b[" not in stderr
+    assert "Traceback" not in stderr
+
+
+def test_run_stderr_has_no_editor_prints(tmp_path):
+    m = _formula(tmp_path)
+    proc = run_cli(
+        "run", m.path, "--allow-unapproved", "--record-dir", tmp_path / "rec",
+        cwd=tmp_path,
+    )  # fmt: skip
+    assert proc.returncode == 0, proc.stderr[-1500:]
+    _assert_quiet(proc.stderr)
+    assert "run.finished" in proc.stderr
+
+
+def test_deep_validate_stderr_is_clean_and_vv_shows_the_prints(tmp_path):
+    m = _formula(tmp_path)
+    proc = run_cli("validate", m.path, "--deep", cwd=tmp_path)
+    assert proc.returncode == 0, proc.stdout + proc.stderr[-1500:]
+    _assert_quiet(proc.stderr)
+    assert proc.stderr.strip() == ""
+    loud = run_cli("validate", m.path, "--deep", "-vv", cwd=tmp_path)
+    assert loud.returncode == 0
+    assert "icon:" in loud.stderr and "\x1b[" not in loud.stderr

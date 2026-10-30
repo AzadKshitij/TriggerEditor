@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import contextlib
 import os
-import sys
 
 from trigger_designer.cli.output import print_json
+from trigger_designer.core.headless.events import route_stray_stdout
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.paths import resolve_workflow_path
 from trigger_designer.core.headless.workflow_file import (
@@ -47,7 +46,7 @@ def execute(args, ctx) -> int:
         from trigger_designer.core.headless.runner import deep_validate
 
         # The editor's node classes print to stdout; keep it for the report.
-        with contextlib.redirect_stdout(sys.stderr):
+        with route_stray_stdout():
             findings = deep_validate(doc, args, ctx)
     else:
         findings = static_findings(doc, args)

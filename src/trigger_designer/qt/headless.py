@@ -20,11 +20,25 @@ from loguru import logger
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 
 
-def quiet_loguru(level: str = "WARNING") -> None:
+def quiet_loguru(verbosity: int = 0) -> None:
     """Node and editor code logs a lot at DEBUG/INFO; a command that prints a
-    report on stdout must not be drowned by it."""
+    report on stdout must not be drowned by it.
+
+    No stderr sink at all by default (the findings already carry what went
+    wrong); ``-v`` shows warnings, ``-vv`` everything. Plain text, no ANSI
+    colours and no variable dumps, so a log reader stays readable.
+    """
     logger.remove()
-    logger.add(sys.stderr, level=level)
+    if verbosity <= 0:
+        return
+    logger.add(
+        sys.stderr,
+        level="WARNING" if verbosity == 1 else "DEBUG",
+        colorize=False,
+        backtrace=False,
+        diagnose=False,
+        format="{level: <8} {name}: {message}",
+    )
 
 
 def ensure_app():

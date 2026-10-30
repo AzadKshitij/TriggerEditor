@@ -295,6 +295,13 @@ def build_parser() -> argparse.ArgumentParser:
         "--no-files", action="store_true", help="skip the input-exists check"
     )
     val.add_argument("--strict", action="store_true", help="treat warnings as errors")
+    val.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="--deep: show the editor's warnings (-vv: everything) on stderr",
+    )
     _add_param(val)
     _add_dirs(val)
     _add_format(val)

@@ -27,6 +27,56 @@ def capture_stdout_channel() -> IO[bytes]:
     return out
 
 
+class _StrayStdout:
+    """Stands in for ``sys.stdout`` while editor and node code runs: their
+    ``print`` calls become ``logger.debug`` lines (visible with ``-vv``)."""
+
+    encoding = "utf-8"
+    errors = "replace"
+
+    def __init__(self) -> None:
+        self._pending = ""
+
+    def write(self, text: str) -> int:
+        self._pending += text
+        *lines, self._pending = self._pending.split("\n")
+        for line in lines:
+            self._emit(line)
+        return len(text)
+
+    def flush(self) -> None:
+        if self._pending:
+            self._emit(self._pending)
+            self._pending = ""
+
+    @staticmethod
+    def _emit(line: str) -> None:
+        if not line.strip():
+            return
+        try:
+            from loguru import logger
+        except ImportError:
+            return
+        logger.debug("stdout: {}", line)
+
+    def isatty(self) -> bool:
+        return False
+
+
+@contextlib.contextmanager
+def route_stray_stdout():
+    """Send ``print`` output of vendored editor code and nodes to the debug log
+    instead of the console (the vendored node editor prints its icon pixmaps)."""
+    saved = sys.stdout
+    sink = _StrayStdout()
+    sys.stdout = sink
+    try:
+        yield
+    finally:
+        sink.flush()
+        sys.stdout = saved
+
+
 def rotate(
     path: Path, max_bytes: int = MAX_LOG_BYTES, backups: int = LOG_BACKUPS
 ) -> None:
@@ -65,6 +115,7 @@ class Emitter:
         self.run_id = run_id
         self.quiet = quiet
         self._stream = stream
+        self._stdout = sys.stdout  # the real one, before route_stray_stdout
         self._lock = threading.Lock()
         self._stream_broken = False
         self._file: IO[bytes] | None = None
@@ -83,8 +134,8 @@ class Emitter:
                 self._stream.write(data)
                 self._stream.flush()
             else:
-                sys.stdout.write(data.decode("utf-8"))
-                sys.stdout.flush()
+                self._stdout.write(data.decode("utf-8"))
+                self._stdout.flush()
         except BrokenPipeError, OSError, ValueError:
             self._stream_broken = True
 

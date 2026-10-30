@@ -27,7 +27,11 @@ from trigger_designer.core.headless.atomic import (
     write_json_atomic,
 )
 from trigger_designer.core.headless.context import CliContext
-from trigger_designer.core.headless.events import Emitter, attach_loguru_bridge
+from trigger_designer.core.headless.events import (
+    Emitter,
+    attach_loguru_bridge,
+    route_stray_stdout,
+)
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode, combine
 from trigger_designer.core.headless.locks import RunLock, lock_path
 from trigger_designer.core.headless.plan import (
@@ -276,7 +280,8 @@ class _Run:
     # ------------------------------------------------------------ main flow
     def execute(self) -> RunOutcome:
         try:
-            return self._execute()
+            with route_stray_stdout():
+                return self._execute()
         except CliError as exc:
             return self._fail(exc)
         except KeyboardInterrupt:
@@ -730,7 +735,7 @@ def deep_validate(doc: WorkflowDoc, args: Any, ctx: CliContext) -> list[Finding]
     try:
         from trigger_designer.qt.headless import HeadlessSession, quiet_loguru
 
-        quiet_loguru()
+        quiet_loguru(getattr(args, "verbose", 0))
         session = HeadlessSession()
         try:
             report = session.load(
