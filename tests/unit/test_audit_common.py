@@ -89,6 +89,32 @@ def test_amount_expr_reads_accounting_text() -> None:
     assert out == [1234.5, -500.0, 5.0, 7.0, None, None, -3.0]
 
 
+def test_amount_expr_reads_decimal_comma_and_keeps_us_forms() -> None:
+    cases = {
+        "1.234,50": 1234.5,
+        "1 234,50": 1234.5,
+        "1'234,50": 1234.5,
+        "1234,5": 1234.5,
+        "€1.234.567,89": 1234567.89,
+        "(1.234,50)": -1234.5,
+        "-0,5": -0.5,
+        "1,234.50": 1234.5,
+        "(1,234.50)": -1234.5,
+        "$5": 5.0,
+        "-1,234": -1234.0,
+        "1,234,567": 1234567.0,
+        "12.5": 12.5,
+        # unreadable rather than silently wrong
+        "1.234.567": None,
+        "1,2,3": None,
+        "1.2,3.4": None,
+        "1.23,4,5": None,
+    }
+    frame = pl.DataFrame({"a": list(cases)})
+    out = frame.select(amount_expr("a", pl.String).alias("v"))["v"].to_list()
+    assert out == list(cases.values())
+
+
 def test_amount_expr_passes_numbers_through() -> None:
     frame = pl.DataFrame({"a": [1, 2, None]})
     out = frame.select(amount_expr("a", pl.Int64).alias("v"))

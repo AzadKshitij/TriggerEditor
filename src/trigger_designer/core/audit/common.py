@@ -193,13 +193,54 @@ def check_reserved(schema: dict, names: list[str]) -> None:
 
 # ---- value expressions ------------------------------------------------------
 def amount_expr(name: str, dtype: pl.DataType) -> pl.Expr:
-    """Float64 or null. Text is cleaned: ' (1,234.50) ' -> -1234.5, '$5' -> 5.0."""
+    """Float64 or null. Text is cleaned: ' (1,234.50) ' -> -1234.5, '$5' -> 5.0.
+
+    Text rules, applied after trimming, removing currency symbols, spaces and
+    apostrophes (``1 234,50`` and ``1'234,50`` are group separators) and turning
+    ``(x)`` into ``-x``:
+
+    * both ``,`` and ``.``: the last one is the decimal mark. ``1,234.50`` is
+      US/UK; ``1.234,50`` is European and must have exact groups of three.
+    * only ``,``: exact groups of three (``1,234`` / ``1,234,567``, first group
+      1-3 digits, no leading zero) are thousands, so ``1,234`` is 1234. Any
+      other single comma is a decimal comma (``1234,5`` -> 1234.5,
+      ``0,123`` -> 0.123). ``1,2,3`` is unreadable.
+    * only ``.``: a decimal point; several dots (``1.234.567``) are unreadable.
+
+    Anything else is null, so the caller's TD-AUDIT-102 warning fires instead of
+    silently producing wrong digits.
+    """
     col = pl.col(name)
     if dtype == pl.String:
-        col = (
+        s = (
             col.str.strip_chars()
-            .str.replace_all(r"[,\s$£€]", "")
+            .str.replace_all(r"[\s$£€'’]", "")
             .str.replace(r"^\((.*)\)$", "-$1")
+        )
+        us_both = s.str.contains(r"\.[^,]*$") & s.str.contains(",")
+        eu_both = s.str.contains(r",[^.]*$") & s.str.contains(r"\.")
+        eu_ok = s.str.contains(r"^-?\d{1,3}(\.\d{3})*,\d+$")
+        thousands = s.str.contains(r"^-?[1-9]\d{0,2}(,\d{3})+$")
+        dec_comma = s.str.contains(r"^-?\d+,\d+$")
+        only_comma = s.str.contains(",") & ~s.str.contains(r"\.")
+        col = (
+            pl.when(us_both)
+            .then(s.str.replace_all(",", ""))
+            .when(eu_both)
+            .then(
+                pl.when(eu_ok)
+                .then(s.str.replace_all(r"\.", "").str.replace(",", "."))
+                .otherwise(pl.lit(None, dtype=pl.String))
+            )
+            .when(only_comma)
+            .then(
+                pl.when(thousands)
+                .then(s.str.replace_all(",", ""))
+                .when(dec_comma)
+                .then(s.str.replace(",", "."))
+                .otherwise(pl.lit(None, dtype=pl.String))
+            )
+            .otherwise(s)
         )
     return col.cast(pl.Float64, strict=False)
 

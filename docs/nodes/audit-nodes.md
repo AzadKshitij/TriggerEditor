@@ -50,8 +50,11 @@ unreadable amount or date does not stop the test: those values are skipped, the 
 `£`, `€` and thousands commas are removed. Dates may be real dates or text in one of the five formats the
 node offers (`YYYY-MM-DD`, `DD/MM/YYYY`, `MM/DD/YYYY`, `DD-MM-YYYY`, `YYYYMMDD`).
 
-> Known limit: an amount written with a decimal comma (`1.234,50`) is read wrongly. Convert such
-> columns first.
+> Decimal commas: `1.234,50`, `1 234,50`, `1'234,50` and `1234,5` are read as European amounts, and
+> `1,234.50`, `(1,234.50)`, `$5` and `-1,234` keep their US/UK meaning. A lone comma followed by exactly
+> three digits (`1,234`) is read as a thousands separator. Mixed or malformed forms (`1.234.567`,
+> `1,2,3`) are treated as unreadable, so the "could not be read" warning (TD-AUDIT-102) appears
+> instead of silently wrong numbers.
 
 ---
 
