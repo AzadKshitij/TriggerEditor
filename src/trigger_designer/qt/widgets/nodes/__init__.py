@@ -204,6 +204,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_reconcile",
     },
     {
+        "module_path": "Audit.benford",
+        "node_code": AuditNodes.BENFORD,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Benford",
+        "icon": "node_benford",
+    },
+    {
         "module_path": "Audit.gaps",
         "node_code": AuditNodes.GAPS,
         "node_type": NodeTypes.AUDIT,
