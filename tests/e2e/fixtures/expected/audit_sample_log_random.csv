@@ -1,0 +1,2 @@
+scope,stratum,method,seed,algorithm,population_rows,population_value,requested_size,sample_size,sample_value,interval,start,high_value_items,lower_bound,upper_bound,key_columns,amount_column,parameters,note
+overall,,random,42,td-sample-1,2413,,60,60,,,,,,,je_number,"","{""amount_column"": """", ""band_edges"": [], ""band_sizes"": [], ""key_columns"": [""je_number""], ""method"": ""random"", ""sample_percent"": 10.0, ""sample_size"": 60, ""seed"": 42, ""size_kind"": ""count""}",""

@@ -13,7 +13,7 @@ import polars as pl
 import pytest
 from nodeeditor.node_edge import Edge
 
-from tests.support.frames import read_frame
+from tests.support.frames import assert_frame_golden, read_frame
 from tests.support.workflows import run_workflow_and_wait
 from trigger_designer.core.node_configuration import (
     AuditNodes,
@@ -126,6 +126,7 @@ def test_all_seven_tests_flag_the_hand_computed_entries(qtbot, tmp_path) -> None
     assert clean.columns == ["je", "date", "amount", "desc", "source"]
     assert clean["je"].to_list() == ["J6"]
 
+    assert_frame_golden(read_frame(paths["summary"]), "audit_risk_summary")
     summary = read_frame(paths["summary"]).row(0, named=True)
     assert summary["test_name"] == "Risk Filters"
     assert summary["status"] == "warn"

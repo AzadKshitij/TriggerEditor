@@ -11,7 +11,7 @@ import pytest
 from nodeeditor.node_edge import Edge
 
 from tests.support.audit_ledger import make_ledger
-from tests.support.frames import read_frame
+from tests.support.frames import assert_frame_golden, read_frame
 from tests.support.workflows import run_workflow_and_wait
 from trigger_designer.core.node_configuration import (
     AuditNodes,
@@ -84,6 +84,7 @@ def test_gaps_workflow_grouped_by_ledger(qtbot, tmp_path, ledger_csv, no_modal_d
         group_columns=["ledger"],
     )
     assert gaps.height == 13
+    assert_frame_golden(gaps, "audit_gaps_table")
     assert gaps.columns == [
         "ledger",
         "prefix",

@@ -12,7 +12,7 @@ import pytest
 from nodeeditor.node_edge import Edge
 
 from tests.support.audit_ledger import make_ledger
-from tests.support.frames import read_frame
+from tests.support.frames import assert_frame_golden, read_frame
 from tests.support.workflows import executed_frame, run_workflow_and_wait
 from trigger_designer.core.node_configuration import (
     AuditNodes,
@@ -70,6 +70,7 @@ def test_first_digit_run_writes_table_summary_and_drill_down(qtbot, tmp_path) ->
     assert len(window.execution_results) == len(window.getAllNodes())
 
     table = read_frame(paths["table"])
+    assert_frame_golden(table, "audit_benford_gl_table")
     assert table.height == 9
     assert table["digit"].to_list() == list(range(1, 10))
     ledger = make_ledger().frame

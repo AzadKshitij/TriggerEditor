@@ -13,7 +13,7 @@ import pytest
 from nodeeditor.node_edge import Edge
 
 from tests.support.audit_ledger import make_ledger
-from tests.support.frames import read_frame
+from tests.support.frames import assert_frame_golden, read_frame
 from tests.support.workflows import executed_frame, run_workflow_and_wait
 from trigger_designer.core.node_configuration import (
     AuditNodes,
@@ -111,6 +111,7 @@ def test_exact_workflow(qtbot, tmp_path, ledger_csv, no_modal_dialogs) -> None:
     assert dups.height + unique.height == 2413
 
     assert summary.height == 1
+    assert_frame_golden(summary, "audit_dup_exact_summary")
     row = summary.row(0, named=True)
     assert row["test_name"] == "Duplicates" and row["status"] == "fail"
     assert (row["population_rows"], row["exception_rows"], row["groups"]) == (
@@ -139,7 +140,9 @@ def test_near_workflow(qtbot, tmp_path, ledger_csv) -> None:
     )
     dups = read_frame(dups_path)
     unique = read_frame(unique_path)
-    row = read_frame(summary_path).row(0, named=True)
+    summary = read_frame(summary_path)
+    assert_frame_golden(summary, "audit_dup_near_summary")
+    row = summary.row(0, named=True)
 
     assert dups.height == 46 and unique.height == 2367
     assert dups["dup_group_id"].n_unique() == 22

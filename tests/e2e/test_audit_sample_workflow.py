@@ -14,6 +14,7 @@ import pytest
 from nodeeditor.node_edge import Edge
 
 from tests.support.audit_ledger import make_ledger
+from tests.support.frames import assert_frame_golden, read_frame
 from tests.support.workflows import run_workflow_and_wait
 from trigger_designer.core.audit.sampling import (
     LOG_COLUMNS,
@@ -125,6 +126,8 @@ def test_same_seed_gives_identical_output_twice(qtbot, tmp_path, method) -> None
     )
     assert sample["sample_seq"].is_not_null().all()
     assert list(log.columns) == list(LOG_COLUMNS)
+    if method == "random":
+        assert_frame_golden(read_frame(paths["log"]), "audit_sample_log_random")
     overall = log.filter(pl.col("scope") == "overall").row(0, named=True)
     assert overall["population_rows"] == str(ledger.height)
     assert overall["seed"] == "42" and overall["algorithm"] == "td-sample-1"
