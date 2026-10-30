@@ -1,8 +1,9 @@
-"""Headless command line. Placeholder: the CLI plan replaces this file."""
+"""Headless command line (plan 08). Importing this package stays cheap."""
 
-import sys
+from __future__ import annotations
 
 
 def main(argv: list[str] | None = None) -> int:
-    sys.stderr.write("trigger-designer-cli is not implemented yet.\n")
-    return 2
+    from trigger_designer.cli.app import main as _main
+
+    return _main(argv)
