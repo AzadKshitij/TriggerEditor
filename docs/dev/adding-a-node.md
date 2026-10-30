@@ -62,11 +62,17 @@ they start with `tests/` or `docs/`.
    packages is picked up. A new *top-level* `core/<x>.py` imported by generated
    code must be added to `_CORE_MODULES` in `trigger.spec` (otherwise the
    frozen app fails at Run with `ModuleNotFoundError`).
-9. **Tests** (section "Tests to write").
-10. **Docs.** A row in `docs/NODE_REFERENCE.md`, the user guide under
+9. **Headless code policy.** Shaping nodes are covered (generated code imports
+   only `run_node` from `trigger_designer.core.shaping.<x>`). If your generated
+   code imports any other module or name, add it to `GENERATED_IMPORTS` in
+   `core/headless/code_policy.py`, or `trigger-designer-cli run` will refuse the
+   node (audit nodes are listed there by name; a new audit test needs its
+   `Params`/`run_` pair added).
+10. **Tests** (section "Tests to write").
+11. **Docs.** A row in `docs/NODE_REFERENCE.md`, the user guide under
     `docs/guide/`, and a line under "Added" in `docs/CHANGELOG.md`. If the node
     changes behaviour of saved workflows, list it under "Behaviour changes".
-11. **Verify.** `.venv\Scripts\python.exe -m ruff format <files>`, then
+12. **Verify.** `.venv\Scripts\python.exe -m ruff format <files>`, then
     `ruff check <files>`, then the focused tests, then `tests\unit` and
     `tests\e2e`. Smoke by hand: drop the node unwired, Run (no `NameError`);
     wire File Input in, Run; save, reload, Run; undo/redo a setting.
