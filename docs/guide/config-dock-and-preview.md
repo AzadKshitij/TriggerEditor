@@ -97,7 +97,9 @@ The preview collects at most **1,000 rows** or about **2 MB**, whichever is smal
 - **Export Excel...** asks for a file name (default `dataframe_export.xlsx`).
 - **Copy as TSV** copies the table to the clipboard so you can paste it into Excel.
 
-If the Excel file cannot be written, a dialog titled **Export failed** appears: "The Excel file could not be written", followed by the reason (for example the file is open in Excel). Close the file and try again. CSV export shows no dialog on failure; the reason is written to the Logs file only.
+The menu items' tooltips say this too. When the export is **partial** (the preview was cut at the size limit, the source has more rows than the preview, or the search hides some rows), a dialog titled **Export complete** tells you how many rows were written, for example "Exported 1,000 of 2,500 rows", and reminds you that the full output is written by a File Output node when you Run. When the export covers every row of the source, no dialog is shown.
+
+If a file cannot be written, a dialog titled **Export failed** appears ("The CSV file could not be written" or "The Excel file could not be written"), followed by the reason, for example that the file is open in Excel. Close the file and try again.
 
 ### Standalone window
 

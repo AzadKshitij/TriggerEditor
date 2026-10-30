@@ -220,7 +220,7 @@ Other keys on the canvas:
 | `Ctrl+Shift+R` | Reset those statistics |
 | `F11` | Full screen |
 
-Workflows open as tabs in the middle of the window. Close a tab with its **x**; if it has unsaved changes the app asks whether to save, discard or cancel.
+Workflows open as tabs in the middle of the window. Close a tab with its **x**; if it has unsaved changes the app asks whether to save, discard or cancel. If a save fails (for example the folder is read-only or the disk is full), a **Save failed** dialog shows the reason, the status bar says the changes are not saved, and the tab stays open with its unsaved changes.
 
 ## If something goes wrong
 

@@ -16,7 +16,7 @@ theme's tokens via ``Qt.BackgroundRole``.
 """
 
 import polars as pl
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -641,6 +641,9 @@ class PolarsTableViewer(QWidget):
         self.export_csv_btn = None
         self.export_excel_btn = None
         self.info_label = None
+        #: Called as ``reporter(rows_written, path)`` after a successful export;
+        #: the host uses it to say how the exported rows relate to the source.
+        self.export_reporter: Callable[[int, str], None] | None = None
 
         # Chunk/cache sizing for the model
         self.chunk_size = 1000
@@ -1158,6 +1161,16 @@ class PolarsTableViewer(QWidget):
 
         self.info_label.setText(info_text)
 
+    def _report_export(self, rows: int, filename: str) -> None:
+        """Tell the host an export finished; a host problem never fails it."""
+        reporter = self.export_reporter
+        if reporter is None:
+            return
+        try:
+            reporter(rows, filename)
+        except Exception:  # noqa: BLE001 - the file is already written
+            logger.exception("Export report failed")
+
     def export_csv(self) -> None:
         """Export the loaded frame to CSV (asks for a path first)."""
         try:
@@ -1179,9 +1192,17 @@ class PolarsTableViewer(QWidget):
             if filename:
                 current_df.write_csv(filename)
                 logger.debug(f"Data exported to CSV: {filename}")
+                self._report_export(current_df.height, filename)
 
         except Exception as e:
             logger.error(f"CSV export error: {e}")
+            from qtpy.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Export failed",
+                f"The CSV file could not be written.\n\n{e}",
+            )
 
     def export_excel(self) -> None:
         """Export the loaded frame to Excel (asks for a path first)."""
@@ -1206,6 +1227,7 @@ class PolarsTableViewer(QWidget):
 
                 write_frame_xlsx(current_df, filename)
                 logger.debug(f"Data exported to Excel: {filename}")
+                self._report_export(current_df.height, filename)
 
         except Exception as e:
             logger.error(f"Excel export error: {e}")

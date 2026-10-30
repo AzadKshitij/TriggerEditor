@@ -687,6 +687,42 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             else:
                 self.logWarning(f"Removed invalid edge during workflow load: {edge}")
 
+    #: Why the last ``fileSave`` failed (``None`` after a successful save).
+    last_save_error: str | None = None
+
+    def fileSave(self, filename: str | None = None) -> bool:
+        """Save the workflow; a failure is shown, not just logged.
+
+        The base class swallows the exception and returns ``False``, and its
+        caller still announces "Successfully saved". Here the reason goes to the
+        user in a warning dialog and the file name is left as it was.
+        """
+        target = filename or self.filename
+        if not target:
+            return False
+        previous = self.filename
+        self.last_save_error = None
+        try:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            try:
+                self.filename = target
+                self.scene.saveToFile(target)
+            finally:
+                QApplication.restoreOverrideCursor()
+            return True
+        except Exception as exc:  # noqa: BLE001 - any failure must reach the user
+            dumpException(exc)
+            self.filename = previous
+            self.last_save_error = f"{type(exc).__name__}: {exc}"
+            self.logError(f"Could not save {target}: {self.last_save_error}")
+            QMessageBox.warning(
+                self,
+                "Save failed",
+                f"The workflow could not be saved to\n{target}\n\n{exc}\n\n"
+                "Your changes are still open and unsaved.",
+            )
+            return False
+
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
 

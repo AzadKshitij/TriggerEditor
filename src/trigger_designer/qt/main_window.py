@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
     QWidget,
     QFileDialog,
     QMdiSubWindow,
+    QMessageBox,
     QTabWidget,
     QShortcut,
 )
@@ -472,12 +473,42 @@ class TriggerWindow(
         except Exception as e:
             dumpException(e)
 
+    def _save_failed(self, editor) -> bool:
+        """True when ``editor``'s save failed (it already showed the reason).
+
+        The library announces "Successfully saved" whatever happened; replace
+        that status line and report the save as not done, so closing a window
+        or opening another file cannot carry on as if the work was kept.
+        """
+        if editor is None or not getattr(editor, "last_save_error", None):
+            return False
+        self.statusBar().showMessage("Save failed - your changes are not saved", 8000)
+        return True
+
+    def maybeSave(self) -> bool:
+        """Ask to save unsaved changes (the library's dialog has a typo in it)."""
+        if not self.isModified():
+            return True
+        answer = QMessageBox.warning(
+            self,
+            "About to lose your work?",
+            "The document has been modified.\nDo you want to save your changes?",
+            QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel,
+        )
+        if answer == QMessageBox.StandardButton.Save:
+            return bool(self.onFileSave())
+        return answer != QMessageBox.StandardButton.Cancel
+
     def onFileSave(self):
         current = self.getCurrentNodeEditorWidget()
         commit = getattr(current, "commit_pending_config_edits", None)
         if callable(commit):
             commit(evaluate=False)
         result = super().onFileSave()
+        if self._save_failed(current):
+            return False
         if result:
             current = self.getCurrentNodeEditorWidget()
             filename = getattr(current, "filename", None)
@@ -490,6 +521,8 @@ class TriggerWindow(
         if callable(commit):
             commit(evaluate=False)
         result = super().onFileSaveAs()
+        if self._save_failed(current):
+            return False
         if result:
             current = self.getCurrentNodeEditorWidget()
             filename = getattr(current, "filename", None)
