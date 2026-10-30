@@ -96,3 +96,63 @@ def call_main(argv, *, env: dict | None = None) -> InProc:
             else:
                 os.environ[key] = value
     return InProc(code, out.getvalue(), err.getvalue())
+
+
+# --------------------------------------------------------------- synthetic .tds
+def synthetic_workflow(
+    *,
+    input_path: str = "in.csv",
+    output_path: str = "out.csv",
+    input_rel: str | None = None,
+    filter_value: str | None = "x",
+    filter_mode: str = "builder",
+    extra_nodes: list | None = None,
+) -> dict:
+    """A small valid workflow dict: File Input -> Filter -> File Output."""
+    input_content = {"filePath": input_path, "file_type": "csv", "selected_sheet": ""}
+    if input_rel is not None:
+        input_content["filePathRel"] = input_rel
+    nodes = [
+        {
+            "id": 101,
+            "op": "input.file_input",
+            "title": "File Input",
+            "inputs": [],
+            "outputs": [{"id": 1011}],
+            "content": input_content,
+        },
+        {
+            "id": 102,
+            "op": "preparation.filter",
+            "title": "Filter",
+            "inputs": [{"id": 1021}],
+            "outputs": [{"id": 1022}],
+            "content": {
+                "settings": {"mode": filter_mode, "value": filter_value, "value2": ""}
+            },
+        },
+        {
+            "id": 103,
+            "op": "input.file_output",
+            "title": "File Output",
+            "inputs": [{"id": 1031}],
+            "outputs": [],
+            "content": {"settings": {"filePath": output_path, "file_format": "csv"}},
+        },
+        *(extra_nodes or []),
+    ]
+    return {
+        "workflow_metadata": {"schema_version": 2, "app_version": "0.1.0"},
+        "nodes": nodes,
+        "edges": [
+            {"id": 9001, "start": 1011, "end": 1021},
+            {"id": 9002, "start": 1022, "end": 1031},
+        ],
+    }
+
+
+def write_workflow(path, data: dict) -> Path:
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    return path
