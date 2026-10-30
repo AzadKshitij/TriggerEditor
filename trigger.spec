@@ -4,7 +4,7 @@ import platform
 from argparse import ArgumentParser
 from pathlib import Path
 
-from PyInstaller.building.api import COLLECT, EXE, PYZ
+from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
 from PyInstaller.utils.hooks import collect_submodules
@@ -73,6 +73,13 @@ core_hiddenimports += ["xlsxwriter", "pyarrow.parquet", "trigger_designer.cli"]
 core_hiddenimports += collect_submodules("xlsxwriter")
 # --- core hidden imports end
 
+gui_datas = [
+    ("src/trigger_designer/qt/resources.json", "trigger_designer/qt"),
+    ("src/trigger_designer/resources/qt", "trigger_designer/resources/qt"),
+    ("src/trigger_designer/resources/Icon.ico", "trigger_designer/resources"),
+    ("src/trigger_designer/resources/splash.png", "trigger_designer/resources"),
+] + node_module_datas
+
 # Analysis configuration
 analysis = Analysis(
     # Entry point
@@ -90,13 +97,7 @@ analysis = Analysis(
     # (`.opencode/`, examples, qss sources, generated rc modules) that bloats
     # the bundle by ~65 MB. Only the files read at runtime belong here, plus
     # the node sources listed above.
-    datas=[
-        ("src/trigger_designer/qt/resources.json", "trigger_designer/qt"),
-        ("src/trigger_designer/resources/qt", "trigger_designer/resources/qt"),
-        ("src/trigger_designer/resources/Icon.ico", "trigger_designer/resources"),
-        ("src/trigger_designer/resources/splash.png", "trigger_designer/resources"),
-    ]
-    + node_module_datas,
+    datas=gui_datas,
     
     # Hidden imports (modules PyInstaller might miss)
     hiddenimports=[
@@ -204,6 +205,34 @@ def _is_qt_bloat(entry) -> bool:
 analysis.datas = [entry for entry in analysis.datas if not _is_qt_bloat(entry)]
 analysis.binaries = [entry for entry in analysis.binaries if not _is_qt_bloat(entry)]
 
+# Command-line twin (plan 08 S11): a console program beside the GUI exe. It
+# reuses the GUI's hidden imports and data so the same nodes resolve, and MERGE
+# lets the two share every DLL, so the CLI adds only a few MB. The portable
+# single-file build stays GUI-only.
+cli_analysis = None
+if not options.portable:
+    cli_analysis = Analysis(
+        ["src/trigger_designer/cli_entry.py"],
+        pathex=[],
+        binaries=[],
+        datas=list(gui_datas),
+        hiddenimports=list(analysis.hiddenimports) + ["trigger_designer.qt.headless"],
+        hookspath=[],
+        hooksconfig={},
+        excludes=list(analysis.excludes),
+        runtime_hooks=[],
+        noarchive=False,
+        optimize=1,
+    )
+    cli_analysis.binaries = [e for e in cli_analysis.binaries if not _is_qt_bloat(e)]
+    cli_analysis.datas = [e for e in cli_analysis.datas if not _is_qt_bloat(e)]
+    MERGE(
+        (analysis, "main", app_name),
+        (cli_analysis, "cli_entry", "trigger-designer-cli"),
+    )
+else:
+    print("Note: the portable build does not include trigger-designer-cli.")
+
 # Python bytecode archive
 pyz = PYZ(analysis.pure)
 
@@ -245,13 +274,32 @@ executable = EXE(
     entitlements_file=None,
 )
 
+cli_executable = None
+if cli_analysis is not None:
+    cli_executable = EXE(
+        PYZ(cli_analysis.pure),
+        cli_analysis.scripts,
+        [],
+        bootloader_ignore_signals=False,
+        console=True,
+        debug=False,
+        strip=False,
+        upx=False,
+        name="trigger-designer-cli",
+        icon=icon_path,
+        exclude_binaries=True,
+        argv_emulation=False,
+        target_arch=None,
+    )
+
 # Collection (for non-portable builds)
 collection = (
     None if options.portable
     else COLLECT(
         executable,
-        analysis.binaries,
-        analysis.datas,
+        cli_executable,
+        analysis.binaries + cli_analysis.binaries,
+        analysis.datas + cli_analysis.datas,
         name=app_name,
         strip=False,
         upx=False,
