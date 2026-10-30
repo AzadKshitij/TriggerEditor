@@ -113,6 +113,7 @@ def test_get_code_unwired_raises_and_wired_calls_runner(qtbot):
     assert code == wired.get_code()
     assert "run_workpaper(" in code and "exceptions=var_exc" in code
     assert "population=var_pop" in code and "summary=var_sum" in code
+    assert f"node_id={wired.id}" in code  # lets the runner notice an abandoned step
     _w, minimal = _new(qtbot)
     assert (
         "population=None" in minimal.get_code() and "summary=None" in minimal.get_code()

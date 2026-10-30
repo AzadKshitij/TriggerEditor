@@ -116,6 +116,7 @@ def build_code(
     *,
     workflow: Sequence[Mapping[str, Any]] | None = None,
     sources: Sequence[Mapping[str, Any]] | None = None,
+    node_id: int | None = None,
 ) -> str:
     """Generated code of the node. User text only enters through ``json.dumps`` + ``!r``."""
     if not input_vars or not input_vars[0]:
@@ -124,6 +125,7 @@ def build_code(
     summary = input_vars[2] if len(input_vars) > 2 and input_vars[2] else "None"
     workflow_json = json.dumps(list(workflow), ensure_ascii=False) if workflow else None
     sources_json = json.dumps(list(sources or []), ensure_ascii=False)
+    node_arg = f"    node_id={int(node_id)},\n" if node_id is not None else ""
     return (
         "import polars as pl\n"
         "from trigger_designer.core.workpaper.node_runner import run_workpaper\n"
@@ -134,5 +136,6 @@ def build_code(
         f"    summary={summary},\n"
         f"    workflow_json={workflow_json!r},\n"
         f"    sources_json={sources_json!r},\n"
+        f"{node_arg}"
         ")\n"
     )

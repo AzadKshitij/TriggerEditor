@@ -28,6 +28,32 @@ def _summary_info(summary: pl.LazyFrame | pl.DataFrame | None) -> TestInfo | Non
     return TestInfo.from_frame(frame)
 
 
+def _abandon_check(node_id: int | None):
+    """A ``abandoned()`` poll built on the run record (no link to the executor).
+
+    The executor stops waiting for a step after its time limit and records that step
+    as failed, but cannot stop its thread. The step is gone when the run record shows
+    this node failed, or the run is no longer ``running``.
+    """
+
+    def check() -> bool:
+        record = current_run_record()
+        if not record:
+            return False
+        if record.get("status") not in (None, "", "running"):
+            return True
+        if node_id is None:
+            return False
+        return any(
+            isinstance(node, dict)
+            and node.get("node_id") == node_id
+            and node.get("status") == "failed"
+            for node in record.get("nodes") or []
+        )
+
+    return check
+
+
 def run_workpaper(
     *,
     spec_json: str,
@@ -36,6 +62,7 @@ def run_workpaper(
     summary: pl.LazyFrame | pl.DataFrame | None = None,
     workflow_json: str | None = None,
     sources_json: str = "[]",
+    node_id: int | None = None,
 ) -> dict[str, Any]:
     """Write the workpaper; returns ``WorkpaperResult.to_dict()``."""
     from trigger_designer.core.workpaper.writer import write_workpaper
@@ -57,6 +84,7 @@ def run_workpaper(
         test=_summary_info(summary),
         run_record=current_run_record() if spec.include_run_record else None,
         workflow=workflow,
+        abandoned=_abandon_check(node_id),
     )
     logger.success("Workpaper written to {}", result.path)
     for line in result.warnings:

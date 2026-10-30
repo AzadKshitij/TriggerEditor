@@ -320,3 +320,73 @@ def test_publish_path_must_be_xlsx_like_the_output_path(tmp_path):
         write_workpaper(
             _staged_spec(tmp_path, str(tmp_path / "x.txt")), EXCEPTIONS, now=FIXED_NOW
         )
+
+
+# ---------------------------------------------------------------- abandonment
+def test_abandoned_write_publishes_nothing(tmp_path):
+    from trigger_designer.core.workpaper.spec import WorkpaperAbandoned
+
+    spec = make_spec(tmp_path)
+    with pytest.raises(WorkpaperAbandoned):
+        write_workpaper(spec, EXCEPTIONS, abandoned=lambda: True)
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_not_abandoned_write_still_publishes(tmp_path):
+    result = write_workpaper(make_spec(tmp_path), EXCEPTIONS, abandoned=lambda: False)
+    assert result.path and (tmp_path / "wp.xlsx").exists()
+
+
+def test_abandoned_after_the_workbook_is_built_leaves_no_csv(tmp_path):
+    calls = []
+
+    def abandoned():
+        calls.append(1)
+        return len(calls) >= 2  # fine at the first check, gone at the last one
+
+    from trigger_designer.core.workpaper.spec import WorkpaperAbandoned
+
+    spec = make_spec(tmp_path, row_limit=1)
+    with pytest.raises(WorkpaperAbandoned):
+        write_workpaper(spec, EXCEPTIONS, abandoned=abandoned)
+    assert list(tmp_path.iterdir()) == []
+
+
+def _provider(record):
+    from trigger_designer.core.workpaper.context import set_run_record_provider
+
+    set_run_record_provider(lambda: record)
+    return lambda: set_run_record_provider(None)
+
+
+@pytest.mark.parametrize(
+    ("record", "gone"),
+    [
+        ({"status": "running", "nodes": [{"node_id": 7, "status": "failed"}]}, True),
+        ({"status": "running", "nodes": [{"node_id": 3, "status": "failed"}]}, False),
+        ({"status": "running", "nodes": []}, False),
+        ({"status": "failed", "nodes": []}, True),
+        (None, False),
+    ],
+)
+def test_run_workpaper_detects_an_abandoned_step_from_the_run_record(
+    tmp_path, record, gone
+):
+    undo = _provider(record)
+    try:
+        spec = make_spec(tmp_path)
+        if gone:
+            from trigger_designer.core.workpaper.spec import WorkpaperAbandoned
+
+            with pytest.raises(WorkpaperAbandoned):
+                run_workpaper(
+                    spec_json=spec.to_json(), exceptions=EXCEPTIONS, node_id=7
+                )
+            assert list(tmp_path.iterdir()) == []
+        else:
+            out = run_workpaper(
+                spec_json=spec.to_json(), exceptions=EXCEPTIONS, node_id=7
+            )
+            assert (tmp_path / "wp.xlsx").exists() and out["path"]
+    finally:
+        undo()

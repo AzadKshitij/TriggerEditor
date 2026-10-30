@@ -205,6 +205,7 @@ class WorkpaperOutputContent(ShapingContent):
             self.input_vars,
             workflow=self._workflow,
             sources=self._sources,
+            node_id=getattr(self.node, "id", None),
         )
 
     # ---- dock ---------------------------------------------------------------

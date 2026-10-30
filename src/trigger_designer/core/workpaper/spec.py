@@ -34,6 +34,13 @@ class WorkpaperError(ExcelWriteError):
         super().__init__(message, code=code, path=path)
 
 
+class WorkpaperAbandoned(Exception):
+    """The run gave up on this step (time limit) while the workbook was being built.
+
+    Nothing is published; the exception ends the abandoned thread quietly.
+    """
+
+
 @dataclass(frozen=True)
 class SourceFile:
     path: str

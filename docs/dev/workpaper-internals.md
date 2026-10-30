@@ -441,7 +441,15 @@ The asserted budgets are +400 MB and 120 s. Memory is the stable figure; wall ti
 the machine. **Mind the editor's per-step limit of 30 seconds** (`SecurityConfig.max_execution_time` in `core/ExecutionCheck/executor.py`):
 a 500k-row workpaper takes longer than that, so the node's dock carries the hint "Large workpapers
 may exceed the 30 second per-node limit; lower the row limit". The timed-out step is abandoned,
-not stopped, and can still finish writing the workbook after the Run has been reported failed.
+not stopped (the executor has no way to interrupt a thread inside `exec`). The workpaper no
+longer publishes after that: the generated code passes `node_id=` to `run_workpaper`, which
+builds an `abandoned()` poll from the run record (`node_runner._abandon_check`: this node is
+`failed` in the in-flight record, or the run is no longer `running`). `write_workpaper` polls it
+after the Exceptions sheet, before closing the workbook and again before publishing, and then
+drops the staged files and raises `WorkpaperAbandoned` (`spec.py`; nothing is written, the CSV is
+not published either). It cannot detect abandonment when no run record exists (CLI, which has no
+time limit anyway). The remaining gap is the limit itself, which only the executor can change:
+see the options in section 15, item 7.
 
 ## 14. Extension points
 
@@ -499,8 +507,13 @@ These were found while writing the guide, by running the code. They are not fixe
 5. ~~The Workflow sheet's File Input row listed internal keys~~ (fixed: `describe_settings()` hook).
 6. ~~In-flight Run log gaps~~ (fixed: labelled in-progress row; `Rows read` from `rows_out`).
    Still "not recorded" for a folder/pattern input of several files.
-7. **Time limit:** the 30 second per-step limit makes lists of about 400,000 rows and more fail in the
-   editor (see section 13).
+7. **Time limit (partly mitigated):** the 30 second per-step limit still makes lists of about
+   400,000 rows and more fail in the editor (see section 13); an abandoned step no longer
+   publishes the workbook. Fixing the limit needs `core/ExecutionCheck/executor.py`. Options:
+   (a) a per-node timeout declaration the executor reads (for example a `max_execution_time`
+   attribute on the node content, 120 s for Workpaper Output); (b) a progress heartbeat the node
+   calls so the executor treats it as alive; (c) lower the work per step (the node's row limit
+   default, or write the exceptions sheet from a separate worker and wait on it).
 
 ## 16. Verified against
 

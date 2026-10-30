@@ -12,7 +12,7 @@ import os
 import shutil
 import tempfile
 import time
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC, date, datetime
 from typing import Any
@@ -49,6 +49,7 @@ from trigger_designer.core.workpaper.spec import (
     IF_EXISTS_MODES,
     SourceFile,
     TestInfo,
+    WorkpaperAbandoned,
     WorkpaperError,
     WorkpaperResult,
     WorkpaperSpec,
@@ -285,13 +286,25 @@ def _properties(spec: WorkpaperSpec, now: datetime) -> dict[str, Any]:
     }
 
 
-def _finish(wb: Any, tmp_xlsx: str, final: str) -> str:
+def _check_abandoned(abandoned: Callable[[], bool] | None) -> None:
+    if abandoned is not None and abandoned():
+        raise WorkpaperAbandoned("the run no longer waits for this workpaper")
+
+
+def _finish(
+    wb: Any,
+    tmp_xlsx: str,
+    final: str,
+    abandoned: Callable[[], bool] | None = None,
+) -> str:
+    _check_abandoned(abandoned)
     try:
         wb.close()
     except engine.library_errors() as exc:
         raise ExcelWriteError(
             f"Excel could not create the workbook: {exc}", code=TD_BAD_WORKBOOK
         ) from exc
+    _check_abandoned(abandoned)  # closing a big workbook takes seconds
     publish(tmp_xlsx, final)
     return sha256_file(final) or ""
 
@@ -305,8 +318,14 @@ def write_workpaper(
     run_record: Mapping[str, Any] | None = None,
     workflow: Sequence[Mapping[str, Any]] | None = None,
     now: datetime | None = None,
+    abandoned: Callable[[], bool] | None = None,
 ) -> WorkpaperResult:
-    """Write the workpaper for one test: Summary, Exceptions, Run log, Workflow."""
+    """Write the workpaper for one test: Summary, Exceptions, Run log, Workflow.
+
+    ``abandoned`` is polled before anything is published; when it returns True the
+    staged files are dropped and ``WorkpaperAbandoned`` is raised (the run already
+    reported this step as failed, so a workbook must not appear afterwards).
+    """
     started = time.perf_counter()
     now = now or datetime.now()
     spec, prepared, notes = _validated(spec)
@@ -367,6 +386,7 @@ def write_workpaper(
                 limit=limit,
                 csv_name=csv_name,
             )
+            _check_abandoned(abandoned)
             sources = gather_sources(spec, run_record)
             info = SummaryInputs(
                 spec=spec,
@@ -411,7 +431,7 @@ def write_workpaper(
                 )
             if names.workflow:
                 write_workflow_sheet(sheets[names.workflow], book, workflow or [])
-            sha = _finish(wb, tmp_xlsx, final)
+            sha = _finish(wb, tmp_xlsx, final, abandoned)
         except BaseException:
             _abort(wb)
             raise

@@ -493,7 +493,7 @@ What was checked in a real run:
 | `TD-OUT-015` | **Excel output must use the .xlsx extension** (File Output with Excel selected and a name ending in `.xls`; not raised by Workpaper Output, which reports `TD-OUT-012`). | Rename the file to end in `.xlsx`. |
 | `TD-OUT-005` | The disk is full. | Free space or use another drive. |
 
-Also: *Workpaper Output has no output file; choose one before running.* (a workflow with an empty **File** is flagged when it is opened and before Run). A Run that takes more than 30 seconds in the editor stops with `TD-RUN-001` ([Running workflows](running-workflows.md#time-and-memory-limits)); the workbook can still appear when the abandoned step ends, so check the file before running again.
+Also: *Workpaper Output has no output file; choose one before running.* (a workflow with an empty **File** is flagged when it is opened and before Run). A Run that takes more than 30 seconds in the editor stops with `TD-RUN-001` ([Running workflows](running-workflows.md#time-and-memory-limits)); the workpaper step notices that the run has given up on it and does not write the workbook afterwards, so no file appears from a failed run. Lower the **Row limit** and run again.
 
 ---
 
