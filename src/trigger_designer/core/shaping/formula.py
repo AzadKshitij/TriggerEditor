@@ -104,15 +104,15 @@ def section_query(
         section["formula_text"], available_columns, in_between=False
     )
     columns = list(available_columns)
+    db_type = DTYPE_TO_DUCKDB.get(section.get("target_dtype") or "")
+    if db_type:
+        sql_formula = f"CAST({sql_formula} AS {db_type})"
     if target in columns:
         query = (
             f"SELECT * REPLACE ({sql_formula} AS {quote_identifier(target)}) "
             f"FROM {relation_name}"
         )
     else:
-        db_type = DTYPE_TO_DUCKDB.get(section.get("target_dtype") or "")
-        if db_type:
-            sql_formula = f"CAST({sql_formula} AS {db_type})"
         query = (
             f"SELECT *, {sql_formula} AS {quote_identifier(target)} "
             f"FROM {relation_name}"
@@ -157,7 +157,19 @@ def _run_sequential(
     return frame, columns, errors
 
 
+def check_section_count(settings: dict) -> None:
+    """Refuse more sections than the node holds instead of dropping the extras."""
+    count = len((settings or {}).get("sections") or [])
+    if count > MAX_FORMULA_SECTIONS:
+        raise ShapingError(
+            "TD-SHAPE-004",
+            f"A Formula node holds at most {MAX_FORMULA_SECTIONS} formulas but "
+            f"this one has {count}; move the extra formulas to a second Formula node",
+        )
+
+
 def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
+    check_section_count(settings)
     frame = as_lazy(frames[0])
     sections = normalize(settings)["sections"]
     configured = [

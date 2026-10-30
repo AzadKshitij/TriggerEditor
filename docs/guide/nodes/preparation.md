@@ -369,13 +369,13 @@ Writing `[order_value] > 200` instead fails with `Cannot compare values of type 
 | Control | Default | Effect |
 |---|---|---|
 | **Target column** (drop-down) | "Select target column" | Where the result goes. Choose an existing column to **replace** it, or **+ add column** to create a new one (an "Add Column" box asks for the name). Columns made by earlier cards are listed too. |
-| **Data type** (drop-down) | Auto | Used only for a **new** column. Choices: Auto, String, Integer, Float, Boolean, Date, Datetime, Time, Categorical. Auto keeps whatever the SQL produces. If the target is an existing column the box is greyed and shows that column's type. |
+| **Data type** (drop-down) | Auto | Applied to the result with `CAST`, for a new column or for one that is replaced. Choices: Auto, String, Integer, Float, Boolean, Date, Datetime, Time, Categorical. Auto keeps whatever the SQL produces. If the target is a column of the input the box is greyed and shows that column's type. |
 | Formula (SQL editor; placeholder `Enter formula e.g.:` / `CASE WHEN [Age] > 30 THEN 'Adult' ELSE 'Young' END`) | empty | A SQL expression; see [Writing SQL expressions](#writing-sql-expressions). Drag the grip under the editor to make it taller. A message under the editor explains any error. |
 | Card header arrow | expanded | Collapse a card. |
 
 A card counts only when it has both a target column and a formula. Cards without both are skipped; if none counts, the table passes through unchanged. Formulas run top to bottom, so a later card may use a column created by an earlier one.
 
-When a formula **replaces** an existing column, the result keeps whatever type the SQL produces; the Data type box is not applied. To force a type, create a new column and choose the Data type, or use `CAST` in the formula.
+When a formula **replaces** a column made by an earlier card, the Data type of the card is applied to the result. When it replaces a column of the input the box is greyed; use `CAST` in the formula to change that column's type. A node holds at most five cards; a saved workflow with more stops with `TD-SHAPE-004` ("holds at most 5 formulas") instead of dropping the extra cards.
 
 The dock chips show how many columns the input has and how many formulas are set, for example "2 of 3 formulas".
 
@@ -418,7 +418,7 @@ UPPER([vendor]) || '-' || CAST([id] AS VARCHAR)
 **Edge cases and limits.**
 
 - [Preview uses 100 rows](#preview-vs-run). The card also trial-runs the formula on the first 100 rows so errors such as "text plus number" show before you Run.
-- At most **five** formulas per node; extra ones are dropped. Chain two Formula nodes for more, or use [Multi-Field Formula](#multi-field-formula) to apply one rule to many columns.
+- At most **five** formulas per node (the add button stops at five); a file with more stops with `TD-SHAPE-004`. Chain two Formula nodes for more, or use [Multi-Field Formula](#multi-field-formula) to apply one rule to many columns.
 - Results are stored as the app's standard types (whole numbers, decimals, text, dates, yes/no); unusual SQL result types are converted.
 - Empty cells: most functions return empty when an input is empty. Use `COALESCE([x], 0)` to substitute a value.
 - Failed conversions: `TRY_CAST` gives an empty cell; `CAST` stops the node with an error.
