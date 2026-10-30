@@ -308,7 +308,7 @@ This record was produced by running a small workflow: **File Input** (a 42-row o
         "var_dupsum_...": "eager",
         "var_uniq_...": "materialized"
       },
-      "duration_s": 0.0,
+      "duration_s": 0.018342,
       "error": null,
       "node_id": 3,
       "op": "audit.duplicates",
@@ -430,7 +430,7 @@ Read it like this:
 - The input has a `sha256` and 42 rows. The Duplicates node's `test_summary.status` is `"fail"` because 4 of 42 rows are in 2 duplicate groups, while the node itself ran fine (`"status": "ok"`).
 - `baseline` is `null`: there was no earlier run to compare with.
 - `row_count_mode_effective: "all"`: the input was far below the 256 MB threshold, so every node was counted.
-- `duration_s: 0.0` for the node is the known limitation noted above.
+- `duration_s` for the node is its real wall-clock time (here 0.018 s); a record from an earlier build shows `0.0`.
 
 ## If something goes wrong
 

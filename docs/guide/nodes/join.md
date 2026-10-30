@@ -563,7 +563,7 @@ The two O1 payments add up to 300 and are one match with two rows. O2 is 5 short
 
 ### Edge cases and limits
 
-- **Candidate pairs: up to 5,000,000.** Reconcile counts how many row pairs could possibly match before it starts. More than that stops with `TD-SHAPE-072`. Add key columns or narrow the date window.
+- **Candidate pairs: up to 5,000,000.** Reconcile counts how many row pairs could possibly match before it starts. More than that stops with `TD-SHAPE-072`. Add key column pairs or narrow the date window.
 - **Live preview:** 100 rows of each input; Run uses all rows and holds both inputs in memory. See [Live preview and Run](input-output.md#live-preview-and-run).
 - **Keys** are converted to text, trimmed and lower-cased on both sides before comparing. `007` and `7` are different; `Inv-1 ` and `inv-1` are the same. There is no fuzziness: for that see [Fuzzy Match](#fuzzy-match).
 - **Null keys never match.**
@@ -580,7 +580,7 @@ The two O1 payments add up to 300 and are one match with two rows. O2 is 5 short
 |---|---|---|
 | `TD-SHAPE-071` | "Add a key column pair or a date window". There is nothing to match on. | Add a key pair, or choose a date pair. |
 | `TD-SHAPE-070` | "Pick the amount/date column on both sides". Only one side is set. | Pick it on both sides, or on neither. |
-| `TD-SHAPE-072` | More than 5,000,000 possible matches. | Add key columns or narrow the date window. |
+| `TD-SHAPE-072` | More than 5,000,000 possible matches. | Add key column pairs or narrow the date window. |
 | `TD-SHAPE-003` | A chosen column is no longer in the input. | Select the column again. |
 | `TD-SHAPE-004` | A setting is unknown or out of range (negative tolerance or window). | Pick a value inside the allowed range. |
 | `TD-SHAPE-050` | A date column is neither a date nor text (for example numbers). | Choose a date column, or convert the column first. |
