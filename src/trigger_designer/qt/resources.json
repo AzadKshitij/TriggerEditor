@@ -123,6 +123,10 @@
         "path":"qt/images/node_icons/Transform/Unpivot.svg",
         "mode": "rb"
     },
+    "node_window":{
+        "path":"qt/images/node_icons/Transform/Window.svg",
+        "mode": "rb"
+    },
     
 
     "node_graph":{

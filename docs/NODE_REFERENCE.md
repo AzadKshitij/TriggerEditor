@@ -54,6 +54,7 @@ op id is the stable identifier stored in saved workflows
 | Transpose | ![Transpose](assets/node_icons/transpose.png) | Flips the frame so rows become columns and columns become rows. |
 | Pivot | ![Pivot](assets/node_icons/pivot.png) | Turns distinct header values into columns, aggregating a value column per index group. |
 | Unpivot | ![Unpivot](assets/node_icons/unpivot.png) | Stacks selected value columns into a name/value pair while keeping the chosen ID columns. |
+| Window | ![Window](assets/node_icons/window.png) | Adds one column per calculation (previous/next row, row number, rank, running sum/min/max/mean, rolling sum), optionally restarting per group and ordered by chosen columns. Rows keep their input order. |
 
 ## Report
 

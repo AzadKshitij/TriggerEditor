@@ -656,6 +656,11 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Add key columns or narrow the tolerance.",
         "error",
     ),
+    "TD-SHAPE-091": (
+        "The column must be a number",
+        "Pick a numeric column, or a text column that holds numbers.",
+        "error",
+    ),
     "TD-CLI-001": (
         "The workflow file could not be read.",
         "Check the path and that it is a .tds file.",

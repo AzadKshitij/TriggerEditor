@@ -211,6 +211,13 @@ _LAZY_NODE_SPECS = [
         "icon": "node_unpivot",
     },
     {
+        "module_path": "Transform.window",
+        "node_code": TransformNodes.WINDOW,
+        "node_type": NodeTypes.TRANSFORM,
+        "node_title": "Window",
+        "icon": "node_window",
+    },
+    {
         "module_path": "Join.reconcile",
         "node_code": JoinNodes.RECONCILE,
         "node_type": NodeTypes.JOIN,
