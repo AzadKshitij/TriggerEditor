@@ -157,7 +157,7 @@ chart or join. Transpose it into one row per branch and month.
 |---|---|---|
 | **Key columns** | none | Columns that identify the row (branch, account). They are repeated on every output row. |
 | **Data columns** | none | The columns to turn into rows. With none chosen the table passes through unchanged. |
-| **If columns are missing** | Warn and skip | What to do when a chosen data column no longer exists. *Warn and skip* and *Ignore* both leave the missing column out of the result (the dock shows a "data column(s) missing" chip in either case). *Error* stops the node with `TD-SHAPE-003`. |
+| **If columns are missing** | Warn and skip | What to do when a chosen data column no longer exists. *Warn and skip* and *Ignore* both leave the missing column out of the result; *Warn and skip* also shows a "data column(s) missing" chip (and a "key column(s) missing" chip), *Ignore* shows no chip. *Error* stops the node with `TD-SHAPE-003`. |
 
 **Worked example.** Key `Branch`, data `Jan`, `Feb`, `Mar`:
 
@@ -182,7 +182,7 @@ becomes
 - Output is one block per data column, in the order you ticked them, and in input row order inside each block.
 - Empty cells are kept as empty `Value` rows. Filter them afterwards if you do not want them.
 - If the data columns have different types (numbers and text), `Value` becomes text.
-- If every data column is missing, the table passes through unchanged. Missing *key* columns only raise a chip.
+- If every data column is missing, the table passes through unchanged. Missing *key* columns only raise a chip (none under *Ignore*).
 
 **Tip.** Unpivot does the same job with more control (it names the two new columns and can drop empty
 values). Use Transpose for a quick reshape, Unpivot when you need the names.
