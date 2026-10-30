@@ -200,6 +200,9 @@ def test_before_run_hooks_run_after_reevaluation_and_before_worker(
     assert host.executeWorkflow() is True
     assert host.order == ["reeval", "content", "hook", "worker"]
     host._workflow_worker = None
+    # executeWorkflow builds a real NodeExecutor (one pooled thread) even with a
+    # fake worker, and the fake worker never releases it.
+    host._workflow_executor.shutdown()
 
 
 def test_hook_exception_does_not_abort_run(monkeypatch, patched) -> None:
