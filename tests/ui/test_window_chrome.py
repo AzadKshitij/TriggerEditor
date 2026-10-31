@@ -219,6 +219,33 @@ class TestWindowChrome(unittest.TestCase):
         self.chrome.set_context_title(None)
         self.assertEqual(self._title_label().text(), self.window.windowTitle())
 
+    def test_theme_change_keeps_the_menu_bar_at_its_hint(self) -> None:
+        """A restyle must not size the title balance from a transient width.
+
+        ``QMainWindow`` still tracks the ``QMenuBar`` it handed to the chrome,
+        so changing the application style sheet temporarily resizes the bar to
+        the whole window width. The balance spacer has to use the bar's own
+        hint instead: sizing it from that transient leaves no room for the
+        row, and the menus collapse to ``File`` plus the overflow button while
+        the title jumps left until the window is moved.
+        """
+        self.window.resize(1280, 800)
+        _APP.processEvents()
+        bar = self.menu_bar
+        hint = bar.sizeHint().width()
+
+        # The intermediate state a style-sheet change leaves behind.
+        bar.resize(self.chrome.width(), 29)
+        self.chrome.apply_theme()
+        _APP.processEvents()
+
+        self.assertEqual(bar.width(), hint)
+        label = self._title_label()
+        self.assertEqual(label.text(), self.window.windowTitle())
+        self.assertLessEqual(
+            abs(label.x() + label.width() // 2 - self.chrome.width() // 2), 1
+        )
+
     def test_title_is_centred_in_the_window(self) -> None:
         """The menus are wider than the caption buttons; the title still centres.
 

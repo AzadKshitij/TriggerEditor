@@ -318,12 +318,22 @@ class WindowChrome(QWidget):
             self.caption.apply_theme(get_theme_manager().is_dark())
 
     def _left_group_width(self) -> int:
-        """Width of the app icon and the menus, left margin included."""
+        """Width of the app icon and the menus, left margin included.
+
+        ``QMainWindow`` still tracks the ``QMenuBar`` object it handed over,
+        so a style-sheet change resizes the reparented bar to the whole
+        window width for a moment. Trusting that transient in
+        :meth:`_balance_title` sizes the spacer from the entire window, the
+        row then cannot fit its children, and the bar collapses to its
+        overflow minimum - the title bar glitch after a theme change. A bar
+        is never legitimately wider than its own hint, so the smaller of the
+        two is the width the chrome's layout gives it.
+        """
         bar = self._menu_bar
         width = self.layout().contentsMargins().left()
         if self._icon_label.isVisibleTo(self):
             width += _ICON_SLOT_W
-        return width + max(bar.width(), bar.sizeHint().width())
+        return width + min(bar.width(), bar.sizeHint().width())
 
     def _balance_title(self) -> None:
         """Put the middle of the row back on the middle of the window.
