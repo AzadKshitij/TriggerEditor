@@ -141,4 +141,8 @@ def test_serialize_round_trip(qtbot) -> None:
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
     for index in (0, 1):
-        assert out[index]["data"].collect().equals(live_value(node)[index]["data"].collect())
+        assert (
+            out[index]["data"]
+            .collect()
+            .equals(live_value(node)[index]["data"].collect())
+        )

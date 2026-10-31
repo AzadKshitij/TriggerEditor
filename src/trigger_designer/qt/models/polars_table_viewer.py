@@ -419,7 +419,7 @@ class PolarsTableModel(QAbstractTableModel):
             try:
                 value = row_data[col]
                 return self._format_value(value, self._column_names[col])
-            except (IndexError, KeyError):
+            except IndexError, KeyError:
                 return None
 
         elif role == Qt.TextAlignmentRole:

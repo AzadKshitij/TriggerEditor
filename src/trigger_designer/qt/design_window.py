@@ -895,9 +895,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             # A Qt slot must not raise: the Run button was already restored.
             self.logError(f"Workflow execution failed: {str(e)}")
 
-    def getPyFile(
-        self, sorted_nodes, path: "str | os.PathLike | None" = None
-    ) -> str:
+    def getPyFile(self, sorted_nodes, path: "str | os.PathLike | None" = None) -> str:
         """Write the run's generated script and return its path.
 
         Never writes into the working directory: the default target is

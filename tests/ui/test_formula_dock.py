@@ -103,9 +103,7 @@ def test_target_and_text_edits_change_output(qtbot) -> None:
     assert _output(node)["x"].to_list() == [2, 3, 4]
 
 
-def test_text_editing_defers_compute_until_the_node_is_left(
-    qtbot, monkeypatch
-) -> None:
+def test_text_editing_defers_compute_until_the_node_is_left(qtbot, monkeypatch) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("y", "")], "Baseline")

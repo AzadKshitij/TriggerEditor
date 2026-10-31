@@ -125,9 +125,7 @@ class ResourceManager:
             if res.get("mode") == "material":
                 from trigger_designer.qt import theme_icons
 
-                pixmap = theme_icons.material_pixmap(
-                    res["name"], bool(res.get("fill"))
-                )
+                pixmap = theme_icons.material_pixmap(res["name"], bool(res.get("fill")))
                 ResourceManager._cache[id] = pixmap
                 ResourceManager._id_by_key[pixmap.cacheKey()] = id
                 return pixmap

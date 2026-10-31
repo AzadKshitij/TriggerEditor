@@ -56,7 +56,7 @@ def _parse_iso(value) -> datetime | None:
         return value
     try:
         return datetime.fromisoformat(str(value))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 
@@ -186,7 +186,7 @@ class RowsContent(ShapingContent):
             widget.setMinimumHeight(30)
             try:
                 widget.setValue(float(value))
-            except (TypeError, ValueError):
+            except TypeError, ValueError:
                 widget.setValue(0.0)
             widget.valueChanged.connect(
                 lambda v, k=key, l=label: self.set_setting(
@@ -210,7 +210,7 @@ class RowsContent(ShapingContent):
         widget.setMinimumHeight(30)
         try:
             widget.setValue(int(float(value)))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             widget.setValue(0)
         widget.valueChanged.connect(
             lambda v, k=key, l=label: self.set_setting(
@@ -245,12 +245,12 @@ class RowsContent(ShapingContent):
                 elif isinstance(widget, QDoubleSpinBox):
                     try:
                         widget.setValue(float(value))
-                    except (TypeError, ValueError):
+                    except TypeError, ValueError:
                         pass
                 elif isinstance(widget, QSpinBox):
                     try:
                         widget.setValue(int(float(value)))
-                    except (TypeError, ValueError):
+                    except TypeError, ValueError:
                         pass
                 elif isinstance(widget, QLineEdit):
                     text = "" if value is None else str(value)
@@ -320,7 +320,7 @@ class RowsContent(ShapingContent):
     def _number(value, default, cast):
         try:
             return cast(float(value))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return default
 
     # -- model -> widgets -------------------------------------------------

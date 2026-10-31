@@ -175,7 +175,9 @@ def test_validate_section_survives_an_input_that_cannot_be_sampled() -> None:
     def explode(_frame: pl.DataFrame) -> pl.DataFrame:
         raise RuntimeError("upstream exploded")
 
-    frame = pl.DataFrame({"g": [1.0]}).lazy().map_batches(explode, schema={"g": pl.Float64})
+    frame = (
+        pl.DataFrame({"g": [1.0]}).lazy().map_batches(explode, schema={"g": pl.Float64})
+    )
     settings = {"sections": [_section("y", "[g] + 1")]}
 
     assert core.validate_section([frame], settings, 0) == []

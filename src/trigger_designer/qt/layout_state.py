@@ -40,7 +40,7 @@ def _to_point(value: Any) -> QPoint | None:
     if isinstance(value, (list, tuple)) and len(value) >= 2:
         try:
             return QPoint(int(value[0]), int(value[1]))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
     if isinstance(value, str) and "," in value:
         try:
@@ -57,7 +57,7 @@ def _to_size(value: Any) -> QSize | None:
     if isinstance(value, (list, tuple)) and len(value) >= 2:
         try:
             return QSize(int(value[0]), int(value[1]))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
     if isinstance(value, str) and "," in value:
         try:

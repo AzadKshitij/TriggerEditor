@@ -13,7 +13,7 @@ SPLIT_COL = "__split_idx"
 def _percent(settings: dict) -> int:
     try:
         percent = int(settings.get("estimation_percent", 70))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         raise ShapingError(
             "TD-SHAPE-004", "Estimation percent must be between 1 and 99"
         ) from None

@@ -120,7 +120,7 @@ class ProblemsDock(QDockWidget):
         if old is not None:
             try:
                 old.changed.disconnect(self._schedule_refresh)
-            except (TypeError, RuntimeError):
+            except TypeError, RuntimeError:
                 pass
         self._window = window
         self._store = getattr(window, "problems", None)

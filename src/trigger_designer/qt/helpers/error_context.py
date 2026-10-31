@@ -66,7 +66,7 @@ def _input_edges(node) -> list[tuple[Any, Any]]:
     for socket in sockets:
         try:
             edges = list(socket.orderedEdges())
-        except (AttributeError, RuntimeError, TypeError):
+        except AttributeError, RuntimeError, TypeError:
             edges = list(getattr(socket, "edges", ()) or ())
         for edge in edges:
             if id(edge) in seen:
@@ -80,7 +80,7 @@ def _edge_frame(socket, edge) -> Any:
     """Return the upstream frame connected to ``socket`` through ``edge``."""
     try:
         upstream_socket = edge.getOtherSocket(socket)
-    except (AttributeError, RuntimeError):
+    except AttributeError, RuntimeError:
         return None
     upstream = getattr(upstream_socket, "node", None)
     if upstream_socket is None or upstream is None:
@@ -91,7 +91,7 @@ def _edge_frame(socket, edge) -> Any:
         return _first_frame(upstream)
     try:
         entry = value[index]
-    except (IndexError, KeyError, TypeError):
+    except IndexError, KeyError, TypeError:
         return None
     return entry.get("data") if isinstance(entry, dict) else None
 
