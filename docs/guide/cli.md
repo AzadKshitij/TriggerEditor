@@ -6,7 +6,7 @@ It runs the same nodes as the editor, so a workflow gives the same result headle
 
 [Back to the guide index](README.md)
 
-This page is the guide. The short command reference for developers and IT is [`docs/CLI.md`](../CLI.md); how it works inside is in [CLI internals](../dev/cli-internals.md).
+This page is both the guide and the command reference.
 
 ## On this page
 
@@ -479,7 +479,7 @@ The program also refuses these before any node runs (exit 2, `TD-CLI-014`): two 
 
 ## Workpaper Output on the command line
 
-A [Workpaper Output](nodes/input-output.md#workpaper-output) node runs the same way as in the editor, with these points:
+A [Workpaper Output](../nodes/input-output/workpaper-output.md) node runs the same way as in the editor, with these points:
 
 - **Where it is written.** `--output-dir DIR` puts the workbook into `DIR` under the file name saved in the node, and `--param NAME=PATH` can set its `output_path` (add the parameter with `params add ... --setting output_path`). Both go through the same precedence as for a File Output; see [Parameters and path overrides](#parameters-and-path-overrides).
 - **If the file exists** is honoured. With **New version** (the default) the CLI picks the first free name before it starts, so a second run writes `name (2).xlsx` and keeps `name.xlsx`. **Replace** keeps the name. **Stop with error** refuses an existing file before any node runs: exit 2, `TD-OUT-010`.
@@ -715,7 +715,7 @@ The CLI only generates Windows Task Scheduler tasks. Anything else just runs the
 30 2 * * *  trigger-designer-cli run /srv/wf.tds --trigger schedule --log-format json --log-file /var/log/td/wf.jsonl
 ```
 
-A cron line, a systemd timer, launchd, a CI job or a container entry point all work the same: run the command, read the exit code. You do not need `flock` or similar, because the program has its own run lock. The container recipe in [CLI.md](../CLI.md) is a sketch that has not been built or run yet; treat it as a starting point for IT, not a tested image. The scheduling commands (`schedule ...`) exit with 9 on systems other than Windows.
+A cron line, a systemd timer, launchd, a CI job or a container entry point all work the same: run the command, read the exit code. You do not need `flock` or similar, because the program has its own run lock. The container recipe below is a sketch that has not been built or run yet; treat it as a starting point for IT, not a tested image. The scheduling commands (`schedule ...`) exit with 9 on systems other than Windows.
 
 ## Safety
 
@@ -784,7 +784,7 @@ A run never modifies the workflow file. It works on a private copy in the `work`
 
 ### Headless Qt and "no display"
 
-The nodes are the editor's own, and they need Qt even though nothing is drawn. The CLI starts Qt itself on its "offscreen" platform (no window, no screen, no graphics card) and ignores the `QT_QPA_PLATFORM` of the environment, so it works on a server with no desktop. (`TRIGGER_CLI_QPA` can name another platform for diagnosis.) No window is ever created. If it will not start on a Linux container, the offscreen platform needs a few system libraries; see the container sketch in [CLI.md](../CLI.md).
+The nodes are the editor's own, and they need Qt even though nothing is drawn. The CLI starts Qt itself on its "offscreen" platform (no window, no screen, no graphics card) and ignores the `QT_QPA_PLATFORM` of the environment, so it works on a server with no desktop. (`TRIGGER_CLI_QPA` can name another platform for diagnosis.) No window is ever created. If it will not start on a Linux container, the offscreen platform needs a few system libraries; see the container sketch below.
 
 ### Locked files
 
@@ -820,4 +820,4 @@ A single run has a fixed cost of about two seconds for loading Qt and the data e
 - [Run history and the audit trail](run-history-and-audit-trail.md): what is in a record, and how to verify and compare in the editor.
 - [Errors and problems](errors-and-problems.md): the `TD-` codes.
 - [Security and privacy](security-and-privacy.md): before you open a file from someone else.
-- [CLI.md](../CLI.md): the short command reference. [CLI internals](../dev/cli-internals.md): the developer's view.
+- [Workpaper Output](../nodes/input-output/workpaper-output.md): the node that builds a formatted workbook.

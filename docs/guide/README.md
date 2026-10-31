@@ -25,7 +25,7 @@ This guide is for auditors and analysts who use the program. It is task-oriented
 | Know what the program does and does not guarantee, and how to open a workflow from someone else | [Security and privacy](security-and-privacy.md) |
 | Know how big my data can be and how to keep things fast | [Limits and performance](limits-and-performance.md) |
 | Fix a common problem, or look up a word | [Troubleshooting, FAQ and glossary](troubleshooting-and-faq.md) |
-| Find out what a particular node does | [Node reference](nodes/README.md) |
+| Find out what a particular node does | [Node reference](../nodes/index.md) |
 | Run a workflow unattended from the command line | [Command line](cli.md) |
 | Produce a formatted Excel workpaper | [Workpapers](workpaper.md) |
 
@@ -127,6 +127,6 @@ Run it again later on an unchanged file: run 2 appears, and selecting both runs 
 
 ## Where to go next
 
-- Browse the [node reference](nodes/README.md) to see what else the palette offers.
+- Browse the [node reference](../nodes/index.md) to see what else the palette offers.
 - Open one of the examples in `savedfiles\` (for instance `1. in-select.tds`, with its data in `data\`) to see finished workflows. The folder `savedfiles\Example_2_Retail_Ledger\` holds a larger exercise with a step-by-step setup guide.
 - Read [Security and privacy](security-and-privacy.md) before opening workflows that someone else sent you.

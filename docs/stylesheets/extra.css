@@ -1,0 +1,41 @@
+/* ------------------------------------------------------------------ icons */
+/* Node icons inside tables and inline text stay small and aligned. */
+.md-typeset table img {
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* The icon at the top of a node page. */
+.md-typeset img.node-icon {
+  width: 56px;
+  height: 56px;
+}
+
+/* ------------------------------------------------------------------ images */
+/* Full-width screenshots on the home page. */
+.md-typeset img.screenshot {
+  width: 100%;
+  height: auto;
+  border-radius: 0.2rem;
+}
+
+/* ------------------------------------------------------------------ tables */
+/* Wide node tables scroll instead of squeezing their columns. */
+.md-typeset table:not([class]) {
+  display: block;
+  overflow-x: auto;
+}
+
+/* ------------------------------------------------------------------ header */
+/* The TD mark is square; give it a little more presence than the default. */
+.md-header__button.md-logo img {
+  height: 1.75rem;
+  width: auto;
+}
+
+/* ------------------------------------------------------------------ footer */
+/* The site does not use the copyright / "Made with Material" strip. */
+.md-footer-meta {
+  display: none;
+}

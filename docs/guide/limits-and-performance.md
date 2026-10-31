@@ -2,8 +2,6 @@
 
 How big can your data be, how long can a step take, and what can you do to keep a big workflow quick? This page gives the numbers the app really enforces, explains the difference between nodes that stream data and nodes that hold it in memory, and ends with advice for big files.
 
-For the technical detail behind this page, see [DATA_LIMITS.md](../DATA_LIMITS.md) in the project's docs folder; this guide links to it and does not replace it.
-
 [Back to the guide index](README.md)
 
 ## On this page

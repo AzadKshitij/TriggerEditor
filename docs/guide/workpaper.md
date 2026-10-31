@@ -9,7 +9,7 @@ A **workpaper** is the Excel file you file with your audit working papers: what 
 - [The Workpaper Output node](#the-workpaper-output-node)
 - [The Config Dock, setting by setting](#the-config-dock-setting-by-setting)
 - [Engagement defaults in Preferences](#engagement-defaults-in-preferences)
-- [File > Export Workpaper...](#file--export-workpaper)
+- [File > Export Workpaper...](#file-export-workpaper)
 - [What each sheet contains](#what-each-sheet-contains)
 - [File names, versions and replacing](#file-names-versions-and-replacing)
 - [Safe by construction: formulas in your data](#safe-by-construction-formulas-in-your-data)
@@ -59,7 +59,7 @@ Use the node for each test you will file separately. Use the menu entry for a co
 
 ## The Workpaper Output node
 
-<img src="../../src/trigger_designer/resources/qt/images/node_icons/Input/File%20Output.svg" width="56" alt="Workpaper Output icon (shared with File Output)">
+![Workpaper Output icon (shared with File Output)](../assets/node_icons/Input/File%20Output.svg){ .node-icon }
 
 Find **Workpaper Output** on the **Input** tab of the node palette, next to File Input and File Output. It is an end point: it has three inputs and no output.
 

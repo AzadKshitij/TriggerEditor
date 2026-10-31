@@ -39,7 +39,7 @@ The Config Dock shows the settings of the **one** selected node. Its title names
 From top to bottom:
 
 1. **Label** - an optional note shown above the node on the canvas (see [Labels and groups](canvas-and-nodes.md#labels-and-groups)).
-2. The node's own sections, for example **Match on**, **Match type** and **Result** for Duplicates. Each node is described on its page in the [node reference](nodes/README.md).
+2. The node's own sections, for example **Match on**, **Match type** and **Result** for Duplicates. Each node is described on its page in the [node reference](../nodes/index.md).
 
 Hover the title area of the dock for a one-line summary of how the node is set up.
 

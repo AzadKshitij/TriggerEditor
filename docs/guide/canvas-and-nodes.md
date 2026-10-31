@@ -40,7 +40,7 @@ The palette tabs are named by what the nodes do:
 
 The palette itself is the authority on what is installed. Workpaper Output is described in [workpaper.md](workpaper.md).
 
-The right-click menu uses the same groups, except that the first one is called **Input/Output**. Every node has its own page in the [node reference](nodes/README.md).
+The right-click menu uses the same groups, except that the first one is called **Input/Output**. Every node has its own page in the [node reference](../nodes/index.md).
 
 To hide or show the palette, use **Window > Nodes Toolbar**.
 

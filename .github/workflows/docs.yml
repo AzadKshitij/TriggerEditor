@@ -1,0 +1,55 @@
+name: docs
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # The optimize plugin shells out to pngquant and jpegoptim for images.
+      # They are installed below; HTML, CSS and JS minification never needs them.
+      DOCS_OPTIMIZE_IMAGES: "true"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install image tools
+        run: sudo apt-get update && sudo apt-get install -y pngquant jpegoptim
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install docs dependencies
+        run: uv sync --only-group docs
+
+      - name: Build strictly
+        run: uv run --no-sync mkdocs build --strict
+
+      - name: Configure git for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Publish development docs
+        if: github.ref == 'refs/heads/main'
+        run: uv run --no-sync mike deploy --push dev
+
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          uv run --no-sync mike deploy --push --update-aliases "$VERSION" latest
+          uv run --no-sync mike set-default --push latest

@@ -133,3 +133,10 @@ profiling = [
     "py-spy==0.4.2",
     "scalene==2.4.0",
 ]
+# Documentation site. `[imaging]` pulls the Pillow and CairoSVG dependencies the
+# optimize plugin needs to minify and cache built pages.
+docs = [
+    "mkdocs-material[imaging]>=9.6",
+    "mike>=2.1",
+    "pymdown-extensions>=10.0",
+]

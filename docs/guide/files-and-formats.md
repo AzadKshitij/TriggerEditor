@@ -129,7 +129,7 @@ Encoding: **UTF-8**, or **UTF-8 (replace bad bytes)** for files that are not val
 
 Databases are always opened read-only.
 
-Each File Input node has its own page in the [node reference](nodes/README.md).
+Each File Input node has its own page in the [node reference](../nodes/index.md).
 
 ## Output file types
 

@@ -1,0 +1,1521 @@
+<!doctype html>
+<html lang='en' data-theme='dark'>
+<head>
+<meta charset='utf-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1'>
+<title>Signal — Trigger Designer Design System</title>
+<style>
+:root{
+  color-scheme: dark;
+  --font-ui: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Cascadia Mono', 'Consolas', 'SFMono-Regular', monospace;
+
+  --bg-canvas:#0e1115;
+  --bg-base:#14171b;
+  --bg-raised:#191e22;
+  --bg-overlay:#1e242a;
+  --bg-inset:#101418;
+  --bg-hover:#22282e;
+  --bg-pressed:#2c333a;
+
+  --border-subtle:#242a30;
+  --border-default:#2f363d;
+  --border-strong:#3e4750;
+
+  --text-1:#f5f7f9;
+  --text-2:#c6cdd5;
+  --text-3:#919ba6;
+  --text-4:#5c6672;
+
+  --accent:#5680c2;
+  --accent-hover:#6a96d7;
+  --accent-pressed:#3a76ba;
+  --accent-soft:rgba(86,128,194,.16);
+  --accent-line:rgba(86,128,194,.45);
+
+  --success:#48a878;
+  --warning:#d9a441;
+  --danger:#e0686c;
+  --info:#5ba8d6;
+  --activity:#9b7bd4;
+
+  --success-soft:rgba(72,168,120,.14);
+  --danger-soft:rgba(224,104,108,.14);
+  --info-soft:rgba(91,168,214,.14);
+  --warn-bg:#4a350f;
+  --warn-text:#f2ce8b;
+
+  --sel-bg:rgba(86,128,194,.18);
+  --node-input:#c4574f;
+  --node-prep:#3f9e63;
+  --node-join:#4f7fd1;
+  --node-transform:#7c5cbf;
+  --node-report:#c99a3c;
+  --node-selection:#ffa637;
+
+  --grid-minor:rgba(255,255,255,.035);
+  --grid-major:rgba(255,255,255,.06);
+  --edge:#454d57;
+  --node-shadow:0 5px 12px rgba(0,0,0,.32);
+  --panel-shadow:0 18px 40px rgba(0,0,0,.38);
+}
+:root[data-theme='light']{
+  color-scheme: light;
+  --bg-canvas:#f3f5f7;
+  --bg-base:#ffffff;
+  --bg-raised:#f7f8fa;
+  --bg-overlay:#ffffff;
+  --bg-inset:#f1f3f5;
+  --bg-hover:#edf0f3;
+  --bg-pressed:#e1e6eb;
+
+  --border-subtle:#e8ebee;
+  --border-default:#d6dbe0;
+  --border-strong:#bcc5cd;
+
+  --text-1:#10151a;
+  --text-2:#39434d;
+  --text-3:#68737f;
+  --text-4:#9aa5b1;
+
+  --accent:#2f6fb5;
+  --accent-hover:#3d82ce;
+  --accent-pressed:#245a96;
+  --accent-soft:rgba(47,111,181,.10);
+  --accent-line:rgba(47,111,181,.38);
+
+  --success:#2e8b5f;
+  --warning:#a9751a;
+  --danger:#c1484d;
+  --info:#2a7dae;
+  --activity:#7452b4;
+
+  --success-soft:rgba(46,139,95,.12);
+  --danger-soft:rgba(193,72,77,.12);
+  --info-soft:rgba(42,125,174,.12);
+  --warn-bg:#fbf0d8;
+  --warn-text:#7a5310;
+
+  --sel-bg:rgba(47,111,181,.12);
+  --node-input:#b84e47;
+  --node-prep:#34875a;
+  --node-join:#3f6fbf;
+  --node-transform:#7452b4;
+  --node-report:#a87c22;
+  --node-selection:#b26700;
+
+  --grid-minor:rgba(16,21,26,.045);
+  --grid-major:rgba(16,21,26,.07);
+  --edge:#aab4be;
+  --node-shadow:0 5px 12px rgba(16,21,26,.18);
+  --panel-shadow:0 18px 40px rgba(16,21,26,.14);
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;
+  padding:18px 0;
+  background:var(--bg-canvas);
+  font-family:var(--font-ui);
+  font-size:12px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+.wrap{width:100%}
+.stage{
+  width:100%;
+  max-width:1120px;
+  margin:0 auto;
+  padding:clamp(14px, 3.2vw, 26px);
+  background:
+    radial-gradient(760px 280px at 12% -8%, var(--accent-soft), transparent 65%),
+    var(--bg-base);
+  border:1px solid var(--border-default);
+  border-radius:12px;
+  color:var(--text-1);
+}
+.ic{width:12px;height:12px;flex:0 0 auto;display:block}
+button{font-family:inherit;cursor:pointer}
+button:focus, a:focus{outline:1px solid var(--accent);outline-offset:2px}
+.seg button:focus{outline-offset:1px}
+a{color:inherit}
+
+/* Hero ------------------------------------------------------------------ */
+.hero{display:grid;gap:14px;padding:4px 0 20px}
+.brand-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.logo{
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;
+  color:#fff;background:linear-gradient(145deg, var(--accent-hover), var(--accent-pressed));
+  box-shadow:0 4px 10px rgba(0,0,0,.22);
+}
+.logo svg{width:15px;height:15px}
+.brand-word{font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase}
+.brand-sub{font-size:9.5px;color:var(--text-4);letter-spacing:.02em}
+.vpill{
+  font:9px var(--font-mono);color:var(--text-3);
+  border:1px solid var(--border-default);border-radius:999px;
+  padding:2px 6px;background:var(--bg-raised);
+}
+.hero h1{
+  margin:0;font-size:clamp(24px, 4.4vw, 34px);line-height:1.1;
+  letter-spacing:-.025em;font-weight:600;max-width:17ch;
+}
+.hero .lede{
+  margin:0;font-size:12.5px;line-height:1.62;color:var(--text-2);max-width:72ch;
+}
+.hero-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg{
+  display:inline-flex;padding:2px;gap:2px;border-radius:6px;
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+}
+.seg button{
+  height:24px;padding:0 9px;border:0;border-radius:4px;background:transparent;
+  color:var(--text-3);font-size:10px;font-weight:500;
+}
+.seg button[aria-pressed='true']{
+  background:var(--bg-base);color:var(--text-1);
+  box-shadow:0 0 0 1px var(--border-default);
+}
+.theme-note{font-size:9px;color:var(--text-4)}
+.jump{
+  margin-left:auto;font-size:10px;color:var(--accent-hover);text-decoration:none;
+  border-bottom:1px solid var(--accent-line);padding-bottom:1px;white-space:nowrap;
+}
+.jump:hover{color:var(--text-1)}
+.dna{display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));gap:7px;margin-top:2px}
+.dna-card{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:6px;padding:10px 11px;min-width:0;
+}
+.dna-card .k{
+  font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--accent-hover);font-weight:600;
+}
+.dna-card b{display:block;font-size:12px;margin:2px 0 3px;font-weight:600}
+.dna-card p{margin:0;font-size:9.5px;line-height:1.45;color:var(--text-3)}
+.borrowed{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:2px}
+.b-k{font:8.5px var(--font-mono);letter-spacing:.1em;color:var(--accent-hover)}
+.borrowed span:not(.b-k){
+  font-size:9px;color:var(--text-3);border:1px solid var(--border-subtle);
+  background:var(--bg-raised);border-radius:999px;padding:2px 7px;
+}
+
+/* Nav ------------------------------------------------------------------- */
+.nav{
+  position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:2px;
+  padding:6px 0;margin:0 0 2px;background:var(--bg-base);
+  border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);
+  overflow-x:auto;scrollbar-width:none;
+}
+.nav::-webkit-scrollbar{display:none}
+.nav a{
+  flex:none;font-size:10px;color:var(--text-3);text-decoration:none;
+  padding:5px 9px;border-radius:4px;border:1px solid transparent;white-space:nowrap;
+}
+.nav a:hover{background:var(--bg-hover);border-color:var(--border-default);color:var(--text-1)}
+.nav-end{margin-left:auto;font:8.5px var(--font-mono);color:var(--text-4);padding:0 4px;white-space:nowrap}
+
+/* Sections -------------------------------------------------------------- */
+.section{padding:24px 0 28px;border-top:1px solid var(--border-subtle);scroll-margin-top:52px}
+.sec-head{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-bottom:4px}
+.sec-num{font:10px var(--font-mono);color:var(--accent-hover);letter-spacing:.08em}
+h2{margin:0;font-size:18px;line-height:1.25;letter-spacing:-.01em;font-weight:600}
+.sec-desc{margin:0 0 12px;font-size:11.5px;line-height:1.55;color:var(--text-3);max-width:76ch}
+.sub{
+  margin:18px 0 7px;font-size:9px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--text-3);
+}
+.sub.first{margin-top:2px}
+.group-label{
+  display:flex;justify-content:space-between;gap:8px;margin:11px 0 5px;
+  font-size:9px;color:var(--text-3);
+}
+.group-label span:last-child{font-family:var(--font-mono);color:var(--text-4)}
+
+/* Swatches -------------------------------------------------------------- */
+.swatches{display:grid;grid-template-columns:repeat(auto-fit, minmax(98px, 1fr));gap:6px}
+.sw{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:6px;overflow:hidden;min-width:0;
+}
+.sw .well{
+  height:38px;background:var(--sw);border-bottom:1px solid var(--border-subtle);
+  position:relative;
+}
+.sw .well::after{content:'';position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,255,255,.04)}
+.sw .meta{padding:6px 7px 7px;display:grid;gap:1px;min-width:0}
+.sw b{font-size:9.5px;font-weight:600;color:var(--text-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sw .hx{font:8.5px/1.35 var(--font-mono);color:var(--text-4);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Type ------------------------------------------------------------------ */
+.type-block{background:var(--bg-raised);border:1px solid var(--border-subtle);border-radius:8px;padding:2px 12px}
+.type-row{
+  display:grid;grid-template-columns:92px 1fr;gap:12px;align-items:baseline;
+  padding:8px 0;border-bottom:1px solid var(--border-subtle);
+}
+.type-row:last-child{border-bottom:0}
+.type-meta{font:8.5px/1.5 var(--font-mono);color:var(--text-4)}
+.type-sample{color:var(--text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t-display{font-size:21px;font-weight:600;letter-spacing:-.02em}
+.t-title{font-size:16px;font-weight:600}
+.t-heading{font-size:13px;font-weight:600}
+.t-body{font-size:12px}
+.t-label{font-size:11px;font-weight:500;color:var(--text-2)}
+.t-micro{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3)}
+.t-mono{font:11px var(--font-mono);color:var(--text-2)}
+
+/* Metrics --------------------------------------------------------------- */
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:8px}
+.metric-card{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:8px;padding:10px 12px 11px;min-width:0;
+}
+.metric-card h3{
+  margin:0 0 8px;font-size:9px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-3);
+}
+.mrow{display:grid;grid-template-columns:56px 1fr 30px;gap:7px;align-items:center;padding:1.5px 0}
+.mrow .name{font-size:9px;color:var(--text-3);white-space:nowrap}
+.mrow .val{font:8.5px var(--font-mono);color:var(--text-4);text-align:right}
+.mbar{
+  height:6px;border-radius:2px;background:var(--accent-soft);
+  border:1px solid var(--accent-line);width:min(calc(var(--v) * 1px), 100%);min-width:3px;
+}
+.radii{display:flex;gap:10px;flex-wrap:wrap;padding:3px 0 1px}
+.rad{display:grid;gap:4px;justify-items:center;font:8.5px var(--font-mono);color:var(--text-4)}
+.rad i{
+  display:block;width:36px;height:26px;background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:var(--r);
+}
+.hint{font-size:9.5px;line-height:1.5;color:var(--text-4);margin:0}
+.hint code{font:9px var(--font-mono);color:var(--text-3);background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:3px;padding:0 3px}
+
+/* Demo cards ------------------------------------------------------------ */
+.demo-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:9px}
+.demo{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:8px;overflow:hidden;display:flex;flex-direction:column;min-width:0;
+}
+.wide{grid-column:1 / -1}
+.demo-head{
+  display:flex;justify-content:space-between;align-items:baseline;gap:8px;
+  padding:8px 11px;border-bottom:1px solid var(--border-subtle);
+}
+.demo-title{font-size:10.5px;font-weight:600;color:var(--text-2)}
+.demo-note{font:8px var(--font-mono);color:var(--text-4);letter-spacing:.06em;text-align:right}
+.demo-body{padding:12px;display:flex;flex-direction:column;gap:9px;flex:1;min-width:0}
+.demo-body.flush{padding:0;gap:0}
+.demo-foot{
+  padding:7px 11px;border-top:1px solid var(--border-subtle);
+  display:flex;gap:7px;flex-wrap:wrap;align-items:center;
+  font-size:9px;color:var(--text-4);
+}
+.token-pill{
+  font:8.5px var(--font-mono);color:var(--text-3);
+  border:1px solid var(--border-default);background:var(--bg-base);
+  border-radius:3px;padding:1px 5px;white-space:nowrap;
+}
+
+/* Strip ----------------------------------------------------------------- */
+.strip-scroll{overflow-x:auto;scrollbar-width:thin}
+.strip-inner{min-width:640px}
+.strip{
+  height:36px;display:flex;align-items:center;gap:4px;padding:3px 6px;
+  background:var(--bg-raised);border-bottom:1px solid var(--border-default);
+}
+.chip-ds{
+  height:24px;display:inline-flex;align-items:center;gap:5px;padding:0 7px;
+  background:var(--bg-base);border:1px solid var(--border-subtle);
+  border-radius:4px;font-size:9.5px;color:var(--text-2);white-space:nowrap;
+}
+.chip-ds .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex:none}
+.chip-ds .ic{width:9px;height:9px;color:var(--text-4)}
+.search-ds{
+  height:26px;flex:1;min-width:110px;max-width:200px;display:flex;align-items:center;gap:6px;
+  padding:0 7px;background:var(--bg-inset);border:1px solid var(--border-default);
+  border-radius:4px;font-size:10px;color:var(--text-3);
+}
+.search-ds .ic{width:11px;height:11px;color:var(--text-3)}
+.search-ds .ph{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.search-ds .clr{color:var(--text-4);font-size:12px;line-height:1}
+.strip .spacer{flex:1}
+.ib{
+  width:30px;height:30px;border-radius:4px;display:inline-grid;place-items:center;
+  background:var(--bg-base);border:1px solid var(--border-subtle);
+  color:var(--text-2);padding:0;flex:none;
+}
+.ib .ic{width:12px;height:12px}
+.ib:hover{background:var(--bg-hover);border-color:var(--accent);color:var(--text-1)}
+.ib.is-hover{background:var(--bg-hover);border-color:var(--accent);color:var(--text-1)}
+.ib.is-pressed{background:var(--bg-pressed);border-color:var(--accent);color:var(--text-1)}
+.ib.is-checked{background:var(--accent);border-color:var(--accent);color:#fff}
+.ib.is-checked:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.ib.is-disabled{color:var(--text-4);background:var(--bg-base);border-color:var(--border-subtle);cursor:not-allowed}
+.strip-table{background:var(--bg-base)}
+.st-row{
+  display:grid;grid-template-columns:1.2fr .8fr .7fr .8fr;align-items:center;
+  height:24px;padding:0 8px;border-bottom:1px solid var(--border-subtle);
+  font-size:9.5px;color:var(--text-3);
+}
+.st-row:last-child{border-bottom:0}
+.st-row.head{
+  height:22px;font:7.5px var(--font-ui);letter-spacing:.09em;text-transform:uppercase;
+  color:var(--text-4);background:var(--bg-raised);
+}
+.st-row.sel{background:var(--sel-bg);color:var(--text-1)}
+.st-row .num{font-family:var(--font-mono);font-size:8.5px;text-align:right;color:var(--text-2)}
+
+/* Actions --------------------------------------------------------------- */
+.state-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.state{display:grid;justify-items:center;gap:4px;font-size:8px;color:var(--text-4)}
+.btn-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.btn{
+  height:28px;padding:0 11px;border-radius:4px;border:1px solid var(--border-default);
+  background:var(--bg-base);color:var(--text-2);font-size:10.5px;font-weight:500;
+}
+.btn:hover{background:var(--bg-hover);border-color:var(--accent);color:var(--text-1)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-hover);border-color:var(--accent-hover)}
+.btn.danger{background:transparent;color:var(--danger);border-color:var(--border-default)}
+.btn.danger:hover{background:var(--danger-soft);border-color:var(--danger);color:var(--danger)}
+.btn.small{height:24px;padding:0 8px;font-size:9.5px}
+
+/* Fields ---------------------------------------------------------------- */
+.field-label{font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-4)}
+.field{
+  height:30px;display:flex;align-items:center;gap:6px;padding:0 8px;
+  background:var(--bg-inset);border:1px solid var(--border-default);
+  border-radius:4px;font-size:10.5px;color:var(--text-2);min-width:0;
+}
+.field .ic{width:11px;height:11px;color:var(--text-3)}
+.field .ph{color:var(--text-4);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.field .clr{color:var(--text-4);font-size:13px;line-height:1;margin-left:auto}
+.field.is-focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.field.combo{justify-content:space-between;background:var(--bg-base);color:var(--text-3)}
+.field.combo .ic{width:9px;height:9px;color:var(--text-4)}
+.checkline{display:flex;align-items:center;gap:7px;font-size:10.5px;color:var(--text-2);min-height:22px}
+
+/* Chips ----------------------------------------------------------------- */
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.badge{
+  height:18px;display:inline-flex;align-items:center;gap:3px;padding:0 5px;
+  border-radius:3px;font-size:8.5px;font-weight:600;letter-spacing:.02em;white-space:nowrap;
+}
+.badge .ic{width:8px;height:8px}
+.badge.warn{background:var(--warn-bg);color:var(--warn-text)}
+.badge.ok{background:var(--success-soft);color:var(--success)}
+.badge.err{background:var(--danger-soft);color:var(--danger)}
+.badge.info{background:var(--info-soft);color:var(--info)}
+.badge.accent{background:var(--accent-soft);color:var(--accent-hover)}
+
+/* Section + checklist --------------------------------------------------- */
+.section-head{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border-bottom:1px solid var(--border-subtle);padding-bottom:5px;
+}
+.section-head b{
+  font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--text-3);font-weight:600;
+}
+.mini-textbtns{display:flex;gap:3px}
+.mini-textbtn{
+  height:18px;padding:0 5px;border-radius:3px;border:1px solid var(--border-default);
+  background:var(--bg-base);color:var(--text-3);font-size:8px;
+}
+.mini-textbtn:hover{background:var(--bg-hover);border-color:var(--accent);color:var(--text-1)}
+.check-toolbar{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:8.5px;color:var(--text-4)}
+.checks{display:grid;gap:1px}
+.check{
+  display:flex;align-items:center;gap:7px;height:24px;padding:0 2px;
+  border-radius:3px;font-size:10.5px;color:var(--text-2);
+}
+.check:hover{background:var(--bg-hover)}
+.box{
+  width:14px;height:14px;flex:none;border:1px solid var(--border-strong);
+  border-radius:3px;display:grid;place-items:center;background:var(--bg-inset);color:transparent;
+}
+.box.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.box .ic{width:9px;height:9px}
+.check .meta{margin-left:auto;font:8px var(--font-mono);color:var(--text-4)}
+
+/* Menu ------------------------------------------------------------------ */
+.menu-ds{
+  background:var(--bg-overlay);border:1px solid var(--border-default);
+  border-radius:6px;padding:4px;box-shadow:var(--panel-shadow);max-width:250px;width:100%;
+}
+.menu-ds button{
+  display:flex;width:100%;align-items:center;justify-content:space-between;
+  height:27px;padding:0 8px;border:0;border-radius:4px;background:transparent;
+  color:var(--text-2);font-size:10.5px;text-align:left;gap:12px;
+}
+.menu-ds button:hover,.menu-ds .on{background:var(--accent-soft);color:var(--text-1)}
+.menu-ds .sc{font:8.5px var(--font-mono);color:var(--text-4)}
+.menu-ds .sep{height:1px;background:var(--border-subtle);margin:4px 6px}
+
+/* Dialog ---------------------------------------------------------------- */
+.dialog-ds{
+  width:100%;max-width:290px;margin:0 auto;background:var(--bg-base);
+  border:1px solid var(--border-strong);border-radius:8px;
+  box-shadow:var(--panel-shadow);overflow:hidden;
+}
+.dialog-head{
+  height:34px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 9px 0 11px;border-bottom:1px solid var(--border-subtle);
+  font-size:11px;font-weight:600;
+}
+.dialog-head button{
+  width:22px;height:22px;border:0;border-radius:3px;background:transparent;
+  color:var(--text-4);display:grid;place-items:center;padding:0;
+}
+.dialog-head button:hover{background:var(--bg-hover);color:var(--text-1)}
+.dialog-body{padding:11px;display:grid;gap:7px}
+.dialog-body .lbl{font-size:9px;color:var(--text-3)}
+.dialog-foot{
+  display:flex;justify-content:flex-end;gap:6px;padding:9px 10px;
+  border-top:1px solid var(--border-subtle);
+}
+.dialog-foot .btn{height:26px;font-size:10px}
+
+/* Empty / logs ---------------------------------------------------------- */
+.empty{
+  min-height:108px;display:grid;place-content:center;gap:4px;
+  text-align:center;padding:14px;color:var(--text-3);
+}
+.empty b{font-size:11px;font-weight:500;color:var(--text-2)}
+.empty span{font-size:9.5px;color:var(--text-4)}
+.log-ds{
+  background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:6px;
+  padding:7px 8px;font:9.5px/1.65 var(--font-mono);display:grid;gap:2px;min-width:0;
+}
+.lrow{display:flex;gap:6px;align-items:baseline;white-space:nowrap;overflow:hidden}
+.lt{color:var(--text-4);flex:none}
+.ll{
+  font-size:7.5px;font-weight:700;letter-spacing:.04em;padding:0 3px;
+  border-radius:2px;line-height:1.5;flex:none;
+}
+.ll.info{background:var(--info-soft);color:var(--info)}
+.ll.warn{background:var(--warn-bg);color:var(--warn-text)}
+.ll.err{background:var(--danger-soft);color:var(--danger)}
+.lm{color:var(--text-3);overflow:hidden;text-overflow:ellipsis}
+
+/* Nodes ----------------------------------------------------------------- */
+.node-row{display:flex;gap:16px;flex-wrap:wrap;padding:2px 0 1px}
+.node-demo{display:grid;justify-items:center;gap:5px;font-size:8px;color:var(--text-4)}
+.node-tile{
+  width:46px;height:46px;border-radius:10px;background:var(--c);
+  display:grid;place-items:center;color:#fff;position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), var(--node-shadow);
+}
+.node-tile .ic{width:23px;height:23px}
+.ring-sel{box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px var(--node-selection), var(--node-shadow)}
+.ring-hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 1px rgba(255,255,255,.3), var(--node-shadow)}
+.ring-run{box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px var(--activity), var(--node-shadow)}
+.ring-ok{box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px var(--success), var(--node-shadow)}
+.ring-err{box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px var(--danger), var(--node-shadow)}
+.status-dot{
+  position:absolute;right:-4px;bottom:-4px;width:11px;height:11px;border-radius:50%;
+  display:grid;place-items:center;border:1.5px solid var(--bg-raised);color:#fff;
+}
+.status-dot .ic{width:6px;height:6px}
+.status-dot.ok{background:var(--success)}
+.status-dot.err{background:var(--danger)}
+
+/* Table ----------------------------------------------------------------- */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border-subtle);border-radius:6px}
+.tbl{width:100%;border-collapse:collapse;min-width:440px;font-size:10.5px}
+.tbl th{
+  text-align:left;height:24px;padding:0 7px;border-bottom:1px solid var(--border-subtle);
+  background:var(--bg-base);font-size:7.5px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-4);white-space:nowrap;
+}
+.tbl td{
+  height:28px;padding:0 7px;border-bottom:1px solid var(--border-subtle);
+  color:var(--text-2);white-space:nowrap;
+}
+.tbl tr:last-child td{border-bottom:0}
+.tbl tr.sel td{background:var(--sel-bg);color:var(--text-1)}
+.tbl .num{text-align:right;font:9.5px var(--font-mono);font-variant-numeric:tabular-nums;color:var(--text-2)}
+.tbl .dtype{text-transform:none;letter-spacing:0;font:7.5px var(--font-mono);color:var(--text-4);font-weight:400;margin-left:3px}
+
+/* Patterns -------------------------------------------------------------- */
+.pattern-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:8px}
+.pattern{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:8px;padding:10px;display:grid;gap:7px;min-width:0;
+}
+.pattern-head{display:flex;justify-content:space-between;gap:7px;align-items:baseline}
+.pattern-head b{font-size:9.5px;font-weight:600;color:var(--text-2)}
+.pattern-head span{font:8px var(--font-mono);color:var(--text-4);text-align:right}
+.pattern p{margin:0;font-size:9px;line-height:1.45;color:var(--text-4)}
+.wire{
+  height:118px;background:var(--bg-inset);border:1px solid var(--border-subtle);
+  border-radius:5px;padding:7px;display:grid;gap:4px;align-content:start;overflow:hidden;
+}
+.wbar{height:18px;display:flex;gap:3px;align-items:center}
+.wsearch{flex:1;height:18px;border:1px solid var(--border-default);border-radius:3px;background:var(--bg-base)}
+.wbtn{width:18px;height:18px;border:1px solid var(--border-default);border-radius:3px;background:var(--bg-base)}
+.wthead{height:12px;border-bottom:1px solid var(--border-default);display:grid;grid-template-columns:14px 1fr 26px;gap:4px}
+.wthead span{background:var(--border-subtle);height:5px;border-radius:1px;margin-top:2px}
+.wrow{height:17px;display:grid;grid-template-columns:14px 1fr 26px;gap:5px;align-items:center;padding:0 2px;border-radius:2px}
+.wrow.on{background:var(--accent-soft)}
+.wck{width:9px;height:9px;border:1px solid var(--border-strong);border-radius:2px;background:var(--bg-base);display:block}
+.wrow.on .wck{background:var(--accent);border-color:var(--accent)}
+.wl{height:4px;background:var(--border-strong);border-radius:2px;width:70%}
+.wt{height:4px;background:var(--accent);border-radius:2px;opacity:.7}
+.wsec{display:grid;gap:4px;padding-bottom:5px;border-bottom:1px solid var(--border-subtle)}
+.wtitle{width:34%;height:5px;background:var(--border-strong);border-radius:2px}
+.wfield{height:16px;border:1px solid var(--border-default);background:var(--bg-base);border-radius:3px}
+.wchecks{display:grid;gap:3px}
+.wchecks i{display:block;height:5px;background:var(--border-strong);border-radius:2px;width:84%}
+.wchecks i:nth-child(2){width:66%}
+.wchecks i:nth-child(3){width:74%}
+.stripwire{align-content:center}
+.wstrip{height:20px;display:flex;align-items:center;gap:3px;padding:0 3px;border:1px solid var(--border-default);border-radius:3px;background:var(--bg-raised)}
+.wid{width:26px;height:9px;border-radius:2px;background:var(--accent-soft);border:1px solid var(--accent-line)}
+.wflex{flex:1;height:12px;border-radius:2px;background:var(--bg-base);border:1px solid var(--border-default)}
+.wcount{width:22px;height:9px;border-radius:2px;background:var(--border-subtle)}
+.wact{width:14px;height:14px;border-radius:2px;background:var(--bg-base);border:1px solid var(--border-default)}
+.wline{height:6px;background:var(--border-subtle);border-radius:2px;width:100%}
+.wline.on{background:var(--accent-soft);border:1px solid var(--accent-line)}
+
+/* App mockup ------------------------------------------------------------ */
+.app-stage{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:10px;padding:12px;
+}
+.app{
+  width:100%;display:flex;flex-direction:column;overflow:hidden;
+  background:var(--bg-base);border:1px solid var(--border-strong);
+  border-radius:7px;box-shadow:var(--panel-shadow);line-height:1.2;
+}
+.app button{line-height:1}
+.app-menu{
+  flex:0 0 26px;display:flex;align-items:center;gap:9px;padding:0 8px;
+  border-bottom:1px solid var(--border-subtle);font-size:8.5px;color:var(--text-4);
+}
+.app-brand{display:flex;align-items:center;gap:5px;color:var(--text-2);font-weight:600;font-size:8.5px;white-space:nowrap}
+.app-logo{
+  width:14px;height:14px;border-radius:4px;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(145deg, var(--accent-hover), var(--accent-pressed));
+}
+.app-logo svg{width:8px;height:8px}
+.menu-links{display:flex;gap:7px}
+.menu-title{flex:1;text-align:center;color:var(--text-3);font-size:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.win-dots{display:flex;gap:7px;color:var(--text-4);font-size:8px}
+.app-palette{
+  flex:0 0 56px;display:flex;flex-direction:column;justify-content:center;gap:3px;
+  padding:3px 8px;border-bottom:1px solid var(--border-default);background:var(--bg-base);
+}
+.pal-tabs{display:flex;gap:2px;overflow:hidden}
+.pal-tab{
+  font-size:7px;color:var(--text-4);padding:0 5px 4px;
+  border-bottom:1.5px solid transparent;white-space:nowrap;
+}
+.pal-tab.on{color:var(--text-2);border-color:var(--accent)}
+.pal-items{display:flex;gap:6px;overflow:hidden}
+.pal-item{display:grid;justify-items:center;gap:2px;width:34px;flex:none}
+.pal-item em{
+  font-style:normal;font-size:5.5px;color:var(--text-4);
+  white-space:nowrap;max-width:34px;overflow:hidden;text-overflow:ellipsis;
+}
+.pal-tile{
+  width:22px;height:22px;border-radius:5px;background:var(--c);color:#fff;
+  display:grid;place-items:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.18);
+}
+.pal-tile svg{width:12px;height:12px}
+.app-main{flex:0 0 330px;display:grid;grid-template-columns:168px minmax(0, 1fr);min-height:0}
+.configpane{
+  background:var(--bg-base);border-right:1px solid var(--border-default);
+  display:flex;flex-direction:column;min-width:0;
+}
+.config-head{
+  flex:0 0 24px;display:flex;align-items:center;justify-content:space-between;gap:6px;
+  padding:0 7px;border-bottom:1px solid var(--border-subtle);
+  font:6.5px var(--font-mono);letter-spacing:.06em;color:var(--text-4);
+}
+.config-head b{font-size:7px;color:var(--text-2);letter-spacing:0;font-weight:600;white-space:nowrap}
+.config-body{padding:7px;display:grid;gap:6px;align-content:start;overflow:hidden}
+.cfg-block{display:grid;gap:3px;min-width:0}
+.mini-label{font-size:6px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-4)}
+.mini-field{
+  height:21px;display:flex;align-items:center;gap:4px;padding:0 5px;
+  background:var(--bg-inset);border:1px solid var(--border-default);border-radius:3px;
+  font-size:7.5px;color:var(--text-2);white-space:nowrap;overflow:hidden;
+}
+.mini-field .caret{margin-left:auto;color:var(--text-4);font-size:8px}
+.mini-sec-head{
+  display:flex;align-items:center;justify-content:space-between;gap:4px;
+  border-bottom:1px solid var(--border-subtle);padding-bottom:3px;
+  font-size:6.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);
+}
+.mini-textbtns{display:flex;gap:2px}
+.mini-textbtns button{
+  height:13px;padding:0 4px;font-size:6px;border-radius:2px;
+  border:1px solid var(--border-default);background:var(--bg-base);color:var(--text-3);
+}
+.mini-toolbar{display:flex;gap:3px;align-items:center;height:20px}
+.mini-search{
+  flex:1;height:20px;display:flex;align-items:center;gap:3px;padding:0 4px;
+  border:1px solid var(--border-default);background:var(--bg-inset);
+  border-radius:3px;font-size:7px;color:var(--text-4);min-width:0;white-space:nowrap;overflow:hidden;
+}
+.mini-search svg{width:8px;height:8px;flex:none}
+.mini-ib{
+  width:20px;height:20px;flex:none;display:grid;place-items:center;
+  border:1px solid var(--border-subtle);border-radius:3px;
+  background:var(--bg-base);color:var(--text-3);padding:0;
+}
+.mini-ib svg{width:8px;height:8px}
+.mini-table{width:100%;border-collapse:collapse;font-size:7px;table-layout:fixed}
+.mini-table th{
+  text-align:left;height:13px;padding:0 3px;border-bottom:1px solid var(--border-subtle);
+  font-size:5.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-4);font-weight:600;
+}
+.mini-table td{
+  height:16px;padding:0 3px;border-bottom:1px solid var(--border-subtle);
+  color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mini-table tr:last-child td{border-bottom:0}
+.mini-table tr.sel td{background:var(--sel-bg);color:var(--text-1)}
+.mini-table .wchk{width:10px}
+.mini-table .wtype{width:30px;font:5.5px var(--font-mono);color:var(--text-4)}
+.mini-box{
+  width:9px;height:9px;display:inline-grid;place-items:center;vertical-align:-2px;
+  border:1px solid var(--border-strong);border-radius:2px;background:var(--bg-inset);
+  color:transparent;margin-right:4px;
+}
+.mini-box.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.mini-box svg{width:6px;height:6px}
+.mini-check{display:flex;align-items:center;font-size:6.5px;color:var(--text-3);height:15px;white-space:nowrap;overflow:hidden}
+.canvas{
+  position:relative;overflow:hidden;min-width:0;
+  background-color:var(--bg-canvas);
+  background-image:
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px);
+  background-size:22px 22px, 22px 22px, 110px 110px, 110px 110px;
+}
+.canvas-toolbar{position:absolute;top:6px;left:6px;display:flex;gap:3px;z-index:4}
+.canvas-toolbar .mini-ib{background:var(--bg-base);opacity:.92}
+.canvas-hint{position:absolute;right:7px;bottom:5px;font:6px var(--font-mono);color:var(--text-4);z-index:4}
+.edges{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.edges path{fill:none;stroke:var(--edge);stroke-width:1.4;vector-effect:non-scaling-stroke;opacity:.85}
+.edges path.active{stroke:var(--accent);stroke-width:1.8;opacity:1}
+.gnode{
+  position:absolute;left:var(--x);top:var(--y);transform:translate(-50%,-50%);
+  display:grid;justify-items:center;gap:3px;z-index:3;
+}
+.gtile{
+  width:46px;height:46px;border-radius:10px;background:var(--c);color:#fff;
+  display:grid;place-items:center;position:relative;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18), var(--node-shadow);
+}
+.gtile svg{width:23px;height:23px}
+.gtile.sel{box-shadow:inset 0 1px 0 rgba(255,255,255,.18), 0 0 0 2px var(--node-selection), var(--node-shadow)}
+.glbl{
+  font-size:6.5px;color:var(--text-3);background:color-mix(in srgb, var(--bg-canvas) 70%, transparent);
+  padding:0 3px;border-radius:2px;white-space:nowrap;
+}
+.done{
+  position:absolute;right:-3px;bottom:-3px;width:10px;height:10px;border-radius:50%;
+  background:var(--success);border:1.5px solid var(--bg-canvas);
+  display:grid;place-items:center;color:#fff;
+}
+.done svg{width:6px;height:6px}
+.previewpane{
+  flex:0 0 152px;display:flex;flex-direction:column;min-width:0;
+  border-top:1px solid var(--border-default);background:var(--bg-base);
+}
+.docktabs{
+  flex:0 0 24px;display:flex;align-items:flex-end;gap:2px;padding:0 6px;
+  border-bottom:1px solid var(--border-default);background:var(--bg-base);
+}
+.docktab{
+  font-size:7.5px;color:var(--text-4);padding:0 7px 4px;
+  border-bottom:1.5px solid transparent;white-space:nowrap;
+}
+.docktab.on{color:var(--text-2);border-color:var(--accent)}
+.previewstrip{
+  flex:0 0 30px;display:flex;align-items:center;gap:3px;padding:2px 5px;
+  background:var(--bg-raised);border-bottom:1px solid var(--border-subtle);overflow:hidden;
+}
+.pchip{
+  height:20px;display:inline-flex;align-items:center;gap:3px;padding:0 5px;
+  background:var(--bg-base);border:1px solid var(--border-subtle);
+  border-radius:3px;font-size:7px;color:var(--text-2);white-space:nowrap;flex:none;
+}
+.pchip .dot{width:4px;height:4px;border-radius:50%;background:var(--accent);flex:none}
+.pchip svg{width:6px;height:6px;color:var(--text-4)}
+.psearch{
+  height:20px;flex:1;min-width:60px;max-width:130px;display:flex;align-items:center;gap:3px;
+  padding:0 4px;background:var(--bg-inset);border:1px solid var(--border-default);
+  border-radius:3px;font-size:7px;color:var(--text-4);white-space:nowrap;overflow:hidden;
+}
+.psearch svg{width:8px;height:8px;flex:none}
+.pclear{margin-left:auto;font-size:9px;color:var(--text-4);line-height:1}
+.pspacer{flex:1}
+.pcounts{
+  font-size:6.5px;color:var(--text-4);white-space:nowrap;padding:0 2px;flex:none;
+  font-variant-numeric:tabular-nums;
+}
+.pib{
+  width:22px;height:22px;flex:none;display:grid;place-items:center;
+  border:1px solid var(--border-subtle);border-radius:3px;
+  background:var(--bg-base);color:var(--text-3);padding:0;
+}
+.pib svg{width:9px;height:9px}
+.pib.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ptable{width:100%;border-collapse:collapse;font-size:7.5px;table-layout:fixed}
+.ptable th{
+  text-align:left;height:14px;padding:0 5px;border-bottom:1px solid var(--border-subtle);
+  font-size:5.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-4);font-weight:600;
+}
+.ptable td{
+  height:17px;padding:0 5px;border-bottom:1px solid var(--border-subtle);
+  color:var(--text-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.ptable tr:last-child td{border-bottom:0}
+.ptable tr.sel td{background:var(--sel-bg);color:var(--text-1)}
+.ptable .num{text-align:right;font:7px var(--font-mono);font-variant-numeric:tabular-nums}
+.app-status{
+  flex:0 0 20px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:0 8px;background:var(--bg-raised);border-top:1px solid var(--border-default);
+  font-size:6.5px;color:var(--text-4);white-space:nowrap;overflow:hidden;
+}
+.app-status span:first-child{overflow:hidden;text-overflow:ellipsis;min-width:0}
+.app-status span:last-child{flex:none}
+.app-caption{
+  display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  margin:8px 0 0;font-size:9px;color:var(--text-4);line-height:1.5;
+}
+.app-caption b{color:var(--text-3);font-weight:500}
+.anatomy{display:grid;grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));gap:7px;margin-top:10px}
+.anatomy-card{background:var(--bg-raised);border:1px solid var(--border-subtle);border-radius:6px;padding:9px 10px}
+.anatomy-card b{display:block;font-size:9.5px;color:var(--text-2);margin-bottom:2px}
+.anatomy-card p{margin:0;font-size:9px;line-height:1.45;color:var(--text-4)}
+
+/* Rules ----------------------------------------------------------------- */
+.rule-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));gap:7px}
+.rule{
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-left:2px solid var(--success);border-radius:6px;padding:9px 11px;
+}
+.rule.dont{border-left-color:var(--danger)}
+.rule .rk{
+  font:7.5px var(--font-mono);letter-spacing:.1em;color:var(--success);
+  display:block;margin-bottom:2px;
+}
+.rule.dont .rk{color:var(--danger)}
+.rule b{font-size:10px;font-weight:600;display:block;margin-bottom:2px}
+.rule p{margin:0;font-size:9.5px;line-height:1.5;color:var(--text-3)}
+.callout{
+  background:var(--accent-soft);border:1px solid var(--accent-line);
+  border-radius:6px;padding:10px 12px;font-size:10.5px;line-height:1.55;color:var(--text-2);
+}
+.callout b{color:var(--text-1);font-weight:600}
+.spec-list{display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:5px 14px;margin:8px 0 0;padding:0;list-style:none}
+.spec-list li{font-size:9.5px;line-height:1.5;color:var(--text-3);padding-left:11px;position:relative}
+.spec-list li::before{content:'';position:absolute;left:0;top:6px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+.spec-list code{font:8.5px var(--font-mono);color:var(--text-2)}
+
+/* Implementation -------------------------------------------------------- */
+.impl-scroll{overflow-x:auto;border:1px solid var(--border-subtle);border-radius:6px}
+.impl{width:100%;border-collapse:collapse;min-width:560px;font-size:9.5px}
+.impl th{
+  text-align:left;height:26px;padding:0 8px;border-bottom:1px solid var(--border-subtle);
+  background:var(--bg-base);font-size:7px;font-weight:600;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-4);white-space:nowrap;
+}
+.impl td{height:32px;padding:4px 8px;border-bottom:1px solid var(--border-subtle);color:var(--text-3);vertical-align:top}
+.impl tr:last-child td{border-bottom:0}
+.impl td:first-child{color:var(--text-2);white-space:nowrap}
+.impl code{
+  font:8.5px var(--font-mono);color:var(--accent-hover);
+  background:var(--bg-inset);border:1px solid var(--border-subtle);border-radius:3px;
+  padding:0 3px;white-space:nowrap;
+}
+.phases{display:grid;gap:5px;margin-top:8px}
+.phase{
+  display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:start;
+  background:var(--bg-raised);border:1px solid var(--border-subtle);
+  border-radius:6px;padding:8px 10px;
+}
+.phase .n{
+  width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  background:var(--accent-soft);border:1px solid var(--accent-line);
+  font:8px var(--font-mono);color:var(--accent-hover);
+}
+.phase b{display:block;font-size:10px;font-weight:600;color:var(--text-2)}
+.phase p{margin:1px 0 0;font-size:9px;line-height:1.45;color:var(--text-4)}
+.phase .tag{
+  font:7.5px var(--font-mono);color:var(--text-4);border:1px solid var(--border-default);
+  border-radius:3px;padding:1px 5px;white-space:nowrap;
+}
+
+/* Footer ---------------------------------------------------------------- */
+.foot{
+  display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;
+  margin-top:4px;padding-top:12px;border-top:1px solid var(--border-subtle);
+  font-size:8.5px;color:var(--text-4);
+}
+.foot a{color:var(--text-3);text-decoration:none;border-bottom:1px solid var(--border-default)}
+.foot a:hover{color:var(--text-1);border-color:var(--accent)}
+
+/* Responsive ------------------------------------------------------------ */
+@media (max-width: 620px){
+  body{padding:10px 0}
+  .hero h1{max-width:20ch}
+  .jump{margin-left:0}
+  .nav-end{display:none}
+  .type-row{grid-template-columns:78px 1fr;gap:8px}
+  .type-meta{font-size:8px}
+  .demo-note{display:none}
+  .app-stage{padding:8px}
+  .app-main{grid-template-columns:1fr;flex-basis:200px}
+  .configpane{display:none}
+  .app-palette{flex-basis:52px}
+  .previewpane{flex-basis:146px}
+  .app-menu .menu-links span:nth-child(n+4){display:none}
+  .app-menu .menu-title{display:none}
+  .pal-items .pal-item:nth-child(n+4){display:none}
+  .p-socket,.p-scope{display:none}
+  .pcounts{font-size:6px}
+  .gtile{width:38px;height:38px;border-radius:8px}
+  .gtile svg{width:19px;height:19px}
+  .glbl{display:none}
+  .canvas-hint{display:none}
+  .anatomy{margin-top:8px}
+  .phase{grid-template-columns:20px 1fr}
+  .phase .tag{display:none}
+}
+@media (max-width: 420px){
+  .ptable th:nth-child(3),.ptable td:nth-child(3){display:none}
+  .pcounts{display:none}
+  .dna{grid-template-columns:1fr 1fr}
+  .dna-card:nth-child(n+3){display:none}
+  .swatches{grid-template-columns:repeat(auto-fit, minmax(88px, 1fr))}
+}
+</style>
+</head>
+<body>
+<svg width='0' height='0' style='position:absolute' aria-hidden='true'>
+  <defs>
+    <symbol id='i-search' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='10.5' cy='10.5' r='6.5'/><path d='m15.5 15.5 4.5 4.5'/></g></symbol>
+    <symbol id='i-refresh' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M20 11a8 8 0 1 0-2.3 6.4'/><path d='M20 4v7h-7'/></g></symbol>
+    <symbol id='i-options' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M4 7h7'/><path d='M15 7h5'/><circle cx='13' cy='7' r='2'/><path d='M4 17h3'/><path d='M11 17h9'/><circle cx='9' cy='17' r='2'/></g></symbol>
+    <symbol id='i-pin' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M9 3h6l-1 6 4 4v1H6v-1l4-4z'/><path d='M12 14v7'/></g></symbol>
+    <symbol id='i-check' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m4.5 12.5 4.7 4.7L19.5 6.8'/></g></symbol>
+    <symbol id='i-chevron' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'><path d='m7 10 5 5 5-5'/></g></symbol>
+    <symbol id='i-close' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='m6 6 12 12M18 6 6 18'/></g></symbol>
+    <symbol id='i-play' viewBox='0 0 24 24'><path d='M8 5v14l11-7z' fill='currentColor'/></symbol>
+    <symbol id='i-input' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3v11'/><path d='m8 10 4 4 4-4'/><path d='M4 17v3h16v-3'/></g></symbol>
+    <symbol id='i-output' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M12 21V10'/><path d='m8 14 4-4 4 4'/><path d='M4 7V4h16v3'/></g></symbol>
+    <symbol id='i-filter' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M3 5h18l-7 8v6l-4 2v-8z'/></g></symbol>
+    <symbol id='i-grid' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='3' width='18' height='18' rx='2'/><path d='M3 9h18M3 15h18M9 3v18M15 3v18'/></g></symbol>
+    <symbol id='i-join' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><circle cx='9' cy='12' r='5'/><circle cx='15' cy='12' r='5'/></g></symbol>
+    <symbol id='i-report' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M4 20V10M10 20V4M16 20v-7M22 20H2'/></g></symbol>
+    <symbol id='i-file' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M6 3h8l4 4v14H6z'/><path d='M14 3v4h4'/></g></symbol>
+    <symbol id='i-warning' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M12 3 22 20H2z'/><path d='M12 9v5'/><circle cx='12' cy='17.2' r='.9' fill='currentColor' stroke='none'/></g></symbol>
+    <symbol id='i-plus' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round'><path d='M12 5v14M5 12h14'/></g></symbol>
+    <symbol id='i-arrow-up' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'><path d='M12 19V5M6 11l6-6 6 6'/></g></symbol>
+    <symbol id='i-external' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'><path d='M14 4h6v6'/><path d='M20 4 11 13'/><path d='M18 14v5H5V6h5'/></g></symbol>
+    <symbol id='i-table' viewBox='0 0 24 24'><g fill='none' stroke='currentColor' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><rect x='3' y='4' width='18' height='16' rx='2'/><path d='M3 9h18M9 9v11'/></g></symbol>
+    <symbol id='i-warn-fill' viewBox='0 0 24 24'><path d='M12 3 22 20H2z' fill='currentColor'/></symbol>
+  </defs>
+</svg>
+
+<div class='wrap'>
+<main class='stage'>
+
+  <header class='hero'>
+    <div class='brand-row'>
+      <span class='logo' aria-hidden='true'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M4 17v-5M9 17V8M14 17v-6M19 17V5'/></svg></span>
+      <span class='brand-word'>Signal</span>
+      <span class='brand-sub'>Trigger Designer design system</span>
+      <span class='vpill'>v1.0</span>
+      <span class='vpill'>Preview-derived</span>
+    </div>
+    <h1>One instrument. Every surface.</h1>
+    <p class='lede'>A dense, quiet, token-driven language built from what already works in the Data Preview window. One strip carries the chrome; four surfaces, one hairline and a single accent do the rest.</p>
+    <div class='hero-actions'>
+      <div class='seg' role='group' aria-label='Theme preview'>
+        <button type='button' data-set-theme='dark' aria-pressed='true'>Dark</button>
+        <button type='button' data-set-theme='light' aria-pressed='false'>Light</button>
+      </div>
+      <span class='theme-note'>Both themes are first-class &middot; the switch is live</span>
+      <a class='jump' href='#application'>Jump to the app preview &rarr;</a>
+    </div>
+    <div class='dna'>
+      <div class='dna-card'><span class='k'>36 px</span><b>One chrome strip</b><p>Identity left, actions right, counts immediately before actions.</p></div>
+      <div class='dna-card'><span class='k'>24 px</span><b>Chips, not cards</b><p>Inset chips hold the node, socket, search scope and counts.</p></div>
+      <div class='dna-card'><span class='k'>1 px</span><b>Borders, not shadows</b><p>Depth comes from surface steps and one hairline, never stacked elevation.</p></div>
+      <div class='dna-card'><span class='k'>12 px</span><b>Icons at rest</b><p>Icon-only actions. Text survives in dialogs and the All / None pair.</p></div>
+    </div>
+    <div class='borrowed'>
+      <span class='b-k'>STUDIED</span>
+      <span>Data Preview strip</span>
+      <span>live search + scope</span>
+      <span>status by exception</span>
+      <span>one accent</span>
+      <span>11px labels</span>
+      <span>no footer</span>
+    </div>
+  </header>
+
+  <nav class='nav' aria-label='Sections'>
+    <a href='#foundations'>01 Foundations</a>
+    <a href='#components'>02 Components</a>
+    <a href='#application'>03 Application</a>
+    <a href='#rules'>04 Rules</a>
+    <a href='#implementation'>05 Implementation</a>
+    <span class='nav-end'>SIGNAL / 1.0</span>
+  </nav>
+
+  <section id='foundations' class='section'>
+    <div class='sec-head'><span class='sec-num'>01</span><h2>Foundations</h2></div>
+    <p class='sec-desc'>Tokens are semantic, not descriptive. A widget asks for <b>surface.raised</b> or <b>text.tertiary</b>, never for a hex value. The dark and light palettes are peers, not an inversion.</p>
+
+    <div class='sub first'>Color &middot; semantic tokens</div>
+    <div class='group-label'><span>Surfaces</span><span>7</span></div>
+    <div class='swatches'>
+      <div class='sw'><div class='well' style='--sw:var(--bg-canvas)'></div><div class='meta'><b>bg.canvas</b><span class='hx'>D #0E1115</span><span class='hx'>L #F3F5F7</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--bg-base)'></div><div class='meta'><b>bg.base</b><span class='hx'>D #14171B</span><span class='hx'>L #FFFFFF</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--bg-raised)'></div><div class='meta'><b>bg.raised</b><span class='hx'>D #191E22</span><span class='hx'>L #F7F8FA</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--bg-overlay)'></div><div class='meta'><b>bg.overlay</b><span class='hx'>D #1E242A</span><span class='hx'>L #FFFFFF</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--bg-inset)'></div><div class='meta'><b>bg.inset</b><span class='hx'>D #101418</span><span class='hx'>L #F1F3F5</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--bg-hover)'></div><div class='meta'><b>bg.hover</b><span class='hx'>D #22282E</span><span class='hx'>L #EDF0F3</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--bg-pressed)'></div><div class='meta'><b>bg.pressed</b><span class='hx'>D #2C333A</span><span class='hx'>L #E1E6EB</span></div></div>
+    </div>
+
+    <div class='group-label'><span>Text</span><span>4</span></div>
+    <div class='swatches'>
+      <div class='sw'><div class='well' style='--sw:var(--text-1)'></div><div class='meta'><b>text.primary</b><span class='hx'>D #F5F7F9</span><span class='hx'>L #10151A</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--text-2)'></div><div class='meta'><b>text.secondary</b><span class='hx'>D #C6CDD5</span><span class='hx'>L #39434D</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--text-3)'></div><div class='meta'><b>text.tertiary</b><span class='hx'>D #919BA6</span><span class='hx'>L #68737F</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--text-4)'></div><div class='meta'><b>text.disabled</b><span class='hx'>D #5C6672</span><span class='hx'>L #9AA5B1</span></div></div>
+    </div>
+
+    <div class='group-label'><span>Accent and borders</span><span>6</span></div>
+    <div class='swatches'>
+      <div class='sw'><div class='well' style='--sw:var(--accent)'></div><div class='meta'><b>accent</b><span class='hx'>D #5680C2</span><span class='hx'>L #2F6FB5</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--accent-hover)'></div><div class='meta'><b>accent.hover</b><span class='hx'>D #6A96D7</span><span class='hx'>L #3D82CE</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--accent-pressed)'></div><div class='meta'><b>accent.pressed</b><span class='hx'>D #3A76BA</span><span class='hx'>L #245A96</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--border-subtle)'></div><div class='meta'><b>border.subtle</b><span class='hx'>D #242A30</span><span class='hx'>L #E8EBEE</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--border-default)'></div><div class='meta'><b>border.default</b><span class='hx'>D #2F363D</span><span class='hx'>L #D6DBE0</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--border-strong)'></div><div class='meta'><b>border.strong</b><span class='hx'>D #3E4750</span><span class='hx'>L #BCC5CD</span></div></div>
+    </div>
+
+    <div class='group-label'><span>Status</span><span>6</span></div>
+    <div class='swatches'>
+      <div class='sw'><div class='well' style='--sw:var(--success)'></div><div class='meta'><b>success</b><span class='hx'>D #48A878</span><span class='hx'>L #2E8B5F</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--warning)'></div><div class='meta'><b>warning</b><span class='hx'>D #D9A441</span><span class='hx'>L #A9751A</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--danger)'></div><div class='meta'><b>danger</b><span class='hx'>D #E0686C</span><span class='hx'>L #C1484D</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--info)'></div><div class='meta'><b>info</b><span class='hx'>D #5BA8D6</span><span class='hx'>L #2A7DAE</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--activity)'></div><div class='meta'><b>activity</b><span class='hx'>D #9B7BD4</span><span class='hx'>L #7452B4</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--node-selection)'></div><div class='meta'><b>node.selection</b><span class='hx'>D #FFA637</span><span class='hx'>L #B26700</span></div></div>
+    </div>
+
+    <div class='group-label'><span>Node categories</span><span>5</span></div>
+    <div class='swatches'>
+      <div class='sw'><div class='well' style='--sw:var(--node-input)'></div><div class='meta'><b>node.input</b><span class='hx'>D #C4574F</span><span class='hx'>L #B84E47</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--node-prep)'></div><div class='meta'><b>node.prepare</b><span class='hx'>D #3F9E63</span><span class='hx'>L #34875A</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--node-join)'></div><div class='meta'><b>node.join</b><span class='hx'>D #4F7FD1</span><span class='hx'>L #3F6FBF</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--node-transform)'></div><div class='meta'><b>node.transform</b><span class='hx'>D #7C5CBF</span><span class='hx'>L #7452B4</span></div></div>
+      <div class='sw'><div class='well' style='--sw:var(--node-report)'></div><div class='meta'><b>node.report</b><span class='hx'>D #C99A3C</span><span class='hx'>L #A87C22</span></div></div>
+    </div>
+
+    <div class='sub'>Typography</div>
+    <div class='type-block'>
+      <div class='type-row'><div class='type-meta'>display<br>20 / 600</div><div class='type-sample t-display'>Monthly sales by region</div></div>
+      <div class='type-row'><div class='type-meta'>title<br>16 / 600</div><div class='type-sample t-title'>Node Configuration</div></div>
+      <div class='type-row'><div class='type-meta'>heading<br>13 / 600</div><div class='type-sample t-heading'>Columns</div></div>
+      <div class='type-row'><div class='type-meta'>body<br>12 / 400</div><div class='type-sample t-body'>Keep only the columns you need downstream.</div></div>
+      <div class='type-row'><div class='type-meta'>label<br>11 / 500</div><div class='type-sample t-label'>Search this preview&hellip;</div></div>
+      <div class='type-row'><div class='type-meta'>micro<br>10 / 600</div><div class='type-sample t-micro'>Node configuration</div></div>
+      <div class='type-row'><div class='type-meta'>mono<br>11 / 400</div><div class='type-sample t-mono'>select(&quot;revenue&quot;) * 100</div></div>
+    </div>
+    <p class='hint' style='margin-top:6px'>UI face: Segoe UI Variable / Segoe UI. Data face: Cascadia Mono / Consolas. No webfonts, no per-widget font sizes.</p>
+
+    <div class='sub'>Space, size and radius</div>
+    <div class='metric-grid'>
+      <div class='metric-card'>
+        <h3>Spacing</h3>
+        <div class='mrow'><span class='name'>2 &middot; hairline</span><span class='mbar' style='--v:2'></span><span class='val'>2</span></div>
+        <div class='mrow'><span class='name'>4 &middot; chrome</span><span class='mbar' style='--v:4'></span><span class='val'>4</span></div>
+        <div class='mrow'><span class='name'>6 &middot; strip</span><span class='mbar' style='--v:6'></span><span class='val'>6</span></div>
+        <div class='mrow'><span class='name'>8 &middot; panel</span><span class='mbar' style='--v:8'></span><span class='val'>8</span></div>
+        <div class='mrow'><span class='name'>12 &middot; group</span><span class='mbar' style='--v:12'></span><span class='val'>12</span></div>
+        <div class='mrow'><span class='name'>16 &middot; dialog</span><span class='mbar' style='--v:16'></span><span class='val'>16</span></div>
+        <div class='mrow'><span class='name'>24 &middot; section</span><span class='mbar' style='--v:24'></span><span class='val'>24</span></div>
+      </div>
+      <div class='metric-card'>
+        <h3>Size</h3>
+        <div class='mrow'><span class='name'>strip</span><span class='mbar' style='--v:36'></span><span class='val'>36</span></div>
+        <div class='mrow'><span class='name'>toolbar</span><span class='mbar' style='--v:40'></span><span class='val'>40</span></div>
+        <div class='mrow'><span class='name'>control</span><span class='mbar' style='--v:30'></span><span class='val'>30</span></div>
+        <div class='mrow'><span class='name'>chip</span><span class='mbar' style='--v:24'></span><span class='val'>24</span></div>
+        <div class='mrow'><span class='name'>row</span><span class='mbar' style='--v:28'></span><span class='val'>28</span></div>
+        <div class='mrow'><span class='name'>icon</span><span class='mbar' style='--v:12'></span><span class='val'>12</span></div>
+        <div class='mrow'><span class='name'>node</span><span class='mbar' style='--v:120'></span><span class='val'>120</span></div>
+      </div>
+      <div class='metric-card'>
+        <h3>Radius</h3>
+        <div class='radii'>
+          <span class='rad'><i style='--r:3px'></i>3</span>
+          <span class='rad'><i style='--r:4px'></i>4</span>
+          <span class='rad'><i style='--r:6px'></i>6</span>
+          <span class='rad'><i style='--r:10px'></i>10</span>
+        </div>
+        <p class='hint' style='margin-top:8px'>3 badge &middot; 4 control, chip &middot; 6 panel, menu &middot; 10 node tile. Nothing else.</p>
+      </div>
+    </div>
+    <p class='hint' style='margin-top:7px'>Density is a rule, not a preference. 2 / 4 / 6 inside a panel; 8 / 12 only between groups. If a panel feels tight, remove a control, not a pixel.</p>
+  </section>
+
+  <section id='components' class='section'>
+    <div class='sec-head'><span class='sec-num'>02</span><h2>Components</h2></div>
+    <p class='sec-desc'>Every dock is a composition of the same primitives. The strip is the signature; the rest are quiet, repeatable parts. None of them carries its own stylesheet.</p>
+
+    <div class='demo-grid'>
+      <div class='demo wide'>
+        <div class='demo-head'><span class='demo-title'>Preview strip</span><span class='demo-note'>SIGNATURE &middot; 36PX &middot; PREVIEW-DERIVED</span></div>
+        <div class='demo-body flush'>
+          <div class='strip-scroll'>
+            <div class='strip-inner'>
+              <div class='strip'>
+                <span class='chip-ds'><i class='dot'></i>Select</span>
+                <span class='chip-ds'>Output 1 <svg class='ic' aria-hidden='true'><use href='#i-chevron'></use></svg></span>
+                <span class='search-ds'><svg class='ic' aria-hidden='true'><use href='#i-search'></use></svg><span class='ph'>Search this preview&hellip;</span><span class='clr'>&times;</span></span>
+                <span class='chip-ds'>All columns <svg class='ic' aria-hidden='true'><use href='#i-chevron'></use></svg></span>
+                <span class='spacer'></span>
+                <span class='chip-ds'>1,284 rows &middot; 12 cols</span>
+                <button type='button' class='ib is-checked' aria-label='Unpin this node'><svg class='ic' aria-hidden='true'><use href='#i-pin'></use></svg></button>
+                <button type='button' class='ib' aria-label='Refresh preview'><svg class='ic' aria-hidden='true'><use href='#i-refresh'></use></svg></button>
+                <button type='button' class='ib' aria-label='Preview options'><svg class='ic' aria-hidden='true'><use href='#i-options'></use></svg></button>
+              </div>
+              <div class='strip-table'>
+                <div class='st-row head'><span>channel</span><span>owner</span><span>region</span><span>revenue</span></div>
+                <div class='st-row sel'><span>Organic</span><span>A. Chen</span><span>West</span><span class='num'>$48,210</span></div>
+                <div class='st-row'><span>Paid</span><span>M. Silva</span><span>East</span><span class='num'>$31,880</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class='demo-foot'>
+          <span class='token-pill'>36 strip</span>
+          <span class='token-pill'>24 chip</span>
+          <span class='token-pill'>26 search</span>
+          <span class='token-pill'>30 action</span>
+          <span class='hint'>Identity &rarr; search &rarr; scope &rarr; counts &rarr; actions. Search is the only element that flexes.</span>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Actions</span><span class='demo-note'>ICON-FIRST</span></div>
+        <div class='demo-body'>
+          <div class='state-row'>
+            <span class='state'><button type='button' class='ib' aria-label='Refresh'><svg class='ic' aria-hidden='true'><use href='#i-refresh'></use></svg></button>Default</span>
+            <span class='state'><button type='button' class='ib is-hover' aria-label='Refresh'><svg class='ic' aria-hidden='true'><use href='#i-refresh'></use></svg></button>Hover</span>
+            <span class='state'><button type='button' class='ib is-pressed' aria-label='Refresh'><svg class='ic' aria-hidden='true'><use href='#i-refresh'></use></svg></button>Pressed</span>
+            <span class='state'><button type='button' class='ib is-checked' aria-label='Pinned'><svg class='ic' aria-hidden='true'><use href='#i-pin'></use></svg></button>Checked</span>
+            <span class='state'><button type='button' class='ib is-disabled' aria-label='Refresh' disabled><svg class='ic' aria-hidden='true'><use href='#i-refresh'></use></svg></button>Disabled</span>
+          </div>
+          <div class='btn-row'>
+            <button type='button' class='btn'>Cancel</button>
+            <button type='button' class='btn primary'>Apply</button>
+            <button type='button' class='btn danger'>Delete</button>
+            <button type='button' class='btn small'>All</button>
+            <button type='button' class='btn small'>None</button>
+          </div>
+          <p class='hint'>30 &times; 30 icon buttons, 12px glyph, 4px radius, tooltip and accessibleName. Text is reserved for dialogs and the All / None pair.</p>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Fields</span><span class='demo-note'>30PX CONTROL</span></div>
+        <div class='demo-body'>
+          <span class='field-label'>Search</span>
+          <div class='field'><svg class='ic' aria-hidden='true'><use href='#i-search'></use></svg><span class='ph'>Search columns&hellip;</span><span class='clr'>&times;</span></div>
+          <span class='field-label'>Value</span>
+          <div class='field is-focus'><span>customer_id</span></div>
+          <span class='field-label'>Data type</span>
+          <div class='field combo'><span>String</span><svg class='ic' aria-hidden='true'><use href='#i-chevron'></use></svg></div>
+          <div class='checkline'><span class='box on'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span>Keep rows with nulls</div>
+          <p class='hint'>One focus recipe: 1px accent border + 2px soft ring. Never remove focus.</p>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Chips and badges</span><span class='demo-note'>STATUS BY EXCEPTION</span></div>
+        <div class='demo-body'>
+          <div class='chiprow'>
+            <span class='chip-ds'><i class='dot'></i>Select</span>
+            <span class='chip-ds'>1,284 rows &middot; 12 cols</span>
+            <span class='badge warn'>limited</span>
+            <span class='badge ok'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg>Executed</span>
+            <span class='badge info'>12 columns</span>
+          </div>
+          <div class='chiprow'>
+            <span class='badge accent'>Pinned</span>
+            <span class='badge err'>Failed</span>
+            <span class='chip-ds'>Output 2 <svg class='ic' aria-hidden='true'><use href='#i-chevron'></use></svg></span>
+          </div>
+          <p class='hint'>Chips are 24px inset surfaces for identity and counts. Badges are 18px and appear only when status differs from normal.</p>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Config section</span><span class='demo-note'>FLAT, NOT BOXED</span></div>
+        <div class='demo-body'>
+          <div class='section-head'><b>Columns</b><span class='mini-textbtns'><button type='button' class='mini-textbtn'>All</button><button type='button' class='mini-textbtn'>None</button></span></div>
+          <p class='hint'>Choose which columns continue downstream.</p>
+          <div class='checks'>
+            <div class='check'><span class='box on'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span>Customer ID<span class='meta'>String</span></div>
+            <div class='check'><span class='box on'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span>Region<span class='meta'>String</span></div>
+            <div class='check'><span class='box on'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span>Revenue<span class='meta'>Float64</span></div>
+            <div class='check'><span class='box'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span>Internal note<span class='meta'>String</span></div>
+            <div class='check'><span class='box'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span>Channel<span class='meta'>String</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Menu</span><span class='demo-note'>OVERLAY SURFACE</span></div>
+        <div class='demo-body'>
+          <div class='menu-ds'>
+            <button type='button'>Copy as TSV</button>
+            <button type='button' class='on'>Export CSV&hellip;</button>
+            <button type='button'>Export Excel&hellip;</button>
+            <div class='sep'></div>
+            <button type='button'>Open in standalone window <span class='sc'>Ctrl+Shift+D</span></button>
+          </div>
+          <p class='hint'>27px rows, 6px radius. Accent tint is hover state, not decoration. Dialog-opening items end in an ellipsis.</p>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Dialog</span><span class='demo-note'>TEXT ALLOWED</span></div>
+        <div class='demo-body'>
+          <div class='dialog-ds'>
+            <div class='dialog-head'>Rename column<button type='button' aria-label='Close dialog'><svg class='ic' aria-hidden='true'><use href='#i-close'></use></svg></button></div>
+            <div class='dialog-body'>
+              <span class='lbl'>Display name</span>
+              <div class='field is-focus'><span>Customer</span></div>
+              <p class='hint'>Shown in the canvas and table headers.</p>
+            </div>
+            <div class='dialog-foot'><button type='button' class='btn'>Cancel</button><button type='button' class='btn primary'>Rename</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Empty state</span><span class='demo-note'>ONE QUIET LINE</span></div>
+        <div class='demo-body'>
+          <div class='empty'><b>No previewable data on this socket</b><span>Select a node or run the workflow.</span></div>
+          <p class='hint'>No illustration, no dashed frame, no custom card. If there is nothing to show, say so once.</p>
+        </div>
+      </div>
+
+      <div class='demo'>
+        <div class='demo-head'><span class='demo-title'>Log lines</span><span class='demo-note'>MONO 11</span></div>
+        <div class='demo-body'>
+          <div class='log-ds'>
+            <div class='lrow'><span class='lt'>16:12:54.966</span><span class='ll info'>INFO</span><span class='lm'>Design window created and ready</span></div>
+            <div class='lrow'><span class='lt'>16:13:02.104</span><span class='ll warn'>WARN</span><span class='lm'>Preview stopped at the size limit</span></div>
+            <div class='lrow'><span class='lt'>16:13:04.771</span><span class='ll err'>ERROR</span><span class='lm'>Column revenue is not numeric</span></div>
+          </div>
+          <p class='hint'>Level is the only colour in a log line. Timestamps stay tertiary; messages stay secondary.</p>
+        </div>
+      </div>
+
+      <div class='demo wide'>
+        <div class='demo-head'><span class='demo-title'>Node states</span><span class='demo-note'>CANVAS &middot; CATEGORY FILL + 2PX RING</span></div>
+        <div class='demo-body'>
+          <div class='node-row'>
+            <span class='node-demo'><span class='node-tile' style='--c:var(--node-prep)'><svg class='ic' aria-hidden='true'><use href='#i-filter'></use></svg></span>Idle</span>
+            <span class='node-demo'><span class='node-tile ring-hover' style='--c:var(--node-join)'><svg class='ic' aria-hidden='true'><use href='#i-join'></use></svg></span>Hover</span>
+            <span class='node-demo'><span class='node-tile ring-sel' style='--c:var(--node-transform)'><svg class='ic' aria-hidden='true'><use href='#i-grid'></use></svg></span>Selected</span>
+            <span class='node-demo'><span class='node-tile ring-run' style='--c:var(--node-report)'><svg class='ic' aria-hidden='true'><use href='#i-report'></use></svg></span>Running</span>
+            <span class='node-demo'><span class='node-tile ring-ok' style='--c:var(--node-prep)'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg><span class='status-dot ok'><svg class='ic' aria-hidden='true'><use href='#i-check'></use></svg></span></span>Executed</span>
+            <span class='node-demo'><span class='node-tile ring-err' style='--c:var(--node-input)'><svg class='ic' aria-hidden='true'><use href='#i-input'></use></svg><span class='status-dot err'><svg class='ic' aria-hidden='true'><use href='#i-close'></use></svg></span></span>Error</span>
+          </div>
+        </div>
+        <div class='demo-foot'>
+          <span class='token-pill'>category fill</span>
+          <span class='token-pill'>2px state ring</span>
+          <span class='token-pill'>status dot</span>
+          <span class='hint'>State is never colour alone: the ring and the dot carry different jobs.</span>
+        </div>
+      </div>
+
+      <div class='demo wide'>
+        <div class='demo-head'><span class='demo-title'>Data table</span><span class='demo-note'>ROW 28 &middot; HEADER 11</span></div>
+        <div class='demo-body'>
+          <div class='tbl-wrap'>
+            <table class='tbl'>
+              <thead><tr><th>Order</th><th>Customer</th><th>Region</th><th>Revenue <span class='dtype'>f64</span></th><th>Status</th></tr></thead>
+              <tbody>
+                <tr class='sel'><td>#1042</td><td>A. Chen</td><td>West</td><td class='num'>$48,210.00</td><td><span class='badge ok'>Paid</span></td></tr>
+                <tr><td>#1043</td><td>M. Silva</td><td>East</td><td class='num'>$31,880.00</td><td><span class='badge ok'>Paid</span></td></tr>
+                <tr><td>#1044</td><td>J. Park</td><td>North</td><td class='num'>$12,450.00</td><td><span class='badge warn'>Refund</span></td></tr>
+                <tr><td>#1045</td><td>R. Nair</td><td>South</td><td class='num'>$9,120.00</td><td><span class='badge info'>Pending</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class='demo-foot'>
+          <span class='token-pill'>28 row</span>
+          <span class='token-pill'>11 header</span>
+          <span class='token-pill'>18% selection</span>
+          <span class='hint'>Numbers use tabular mono and right alignment. Dtypes are micro, never a second font colour in the row.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class='sub'>Layout patterns</div>
+    <div class='pattern-grid'>
+      <div class='pattern'>
+        <div class='pattern-head'><b>A &middot; Toolbar + table</b><span>Select &middot; GroupBy &middot; Join</span></div>
+        <div class='wire'>
+          <div class='wbar'><span class='wsearch'></span><span class='wbtn'></span><span class='wbtn'></span></div>
+          <div class='wthead'><span></span><span></span><span></span></div>
+          <div class='wrow on'><i class='wck'></i><span class='wl'></span><span class='wt'></span></div>
+          <div class='wrow'><i class='wck'></i><span class='wl'></span><span class='wt'></span></div>
+          <div class='wrow'><i class='wck'></i><span class='wl'></span><span class='wt'></span></div>
+        </div>
+        <p>The toolbar is the section: search, move, options. The table takes the rest. No group box around it.</p>
+      </div>
+      <div class='pattern'>
+        <div class='pattern-head'><b>B &middot; Form stack</b><span>Filter &middot; Sort &middot; File I/O</span></div>
+        <div class='wire'>
+          <div class='wsec'><span class='wtitle'></span><span class='wfield'></span></div>
+          <div class='wsec'><span class='wtitle'></span><span class='wfield'></span><span class='wfield'></span></div>
+          <div class='wsec'><span class='wtitle'></span><div class='wchecks'><i></i><i></i><i></i></div></div>
+        </div>
+        <p>Flat sections with a micro heading and one info line. 4px gaps, stretch last, never a bespoke margin.</p>
+      </div>
+      <div class='pattern'>
+        <div class='pattern-head'><b>C &middot; Chrome strip</b><span>Preview &middot; Logs</span></div>
+        <div class='wire stripwire'>
+          <div class='wstrip'><span class='wid'></span><span class='wflex'></span><span class='wcount'></span><span class='wact'></span><span class='wact'></span><span class='wact'></span></div>
+          <div class='wline on'></div>
+          <div class='wline'></div>
+          <div class='wline'></div>
+          <div class='wline'></div>
+        </div>
+        <p>One 36px strip over the content. Counts sit before actions; nothing gets a second row of chrome.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id='application' class='section'>
+    <div class='sec-head'><span class='sec-num'>03</span><h2>Application</h2></div>
+    <p class='sec-desc'>The same tokens, composed into the whole editor: node palette, config dock, canvas, tabbed preview and status bar. Nothing here needs a new component.</p>
+
+    <div class='app-stage'>
+      <div class='app' role='img' aria-label='Mockup of Trigger Designer using the Signal design system'>
+        <div class='app-menu'>
+          <span class='app-brand'><span class='app-logo'><svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round'><path d='M4 17v-5M9 17V8M14 17v-6M19 17V5'/></svg></span>Trigger</span>
+          <span class='menu-links'><span>File</span><span>Edit</span><span>View</span><span>Window</span><span>Help</span></span>
+          <span class='menu-title'>monthly_sales.tds</span>
+          <span class='win-dots'><span>&minus;</span><span>&#9633;</span><span>&times;</span></span>
+        </div>
+
+        <div class='app-palette'>
+          <div class='pal-tabs'><span class='pal-tab on'>Input</span><span class='pal-tab'>Preparation</span><span class='pal-tab'>Join</span><span class='pal-tab'>Transform</span><span class='pal-tab'>Report</span></div>
+          <div class='pal-items'>
+            <span class='pal-item'><span class='pal-tile' style='--c:var(--node-input)'><svg class='ic' aria-hidden='true'><use href='#i-input'></use></svg></span><em>File Input</em></span>
+            <span class='pal-item'><span class='pal-tile' style='--c:var(--node-input)'><svg class='ic' aria-hidden='true'><use href='#i-output'></use></svg></span><em>File Output</em></span>
+            <span class='pal-item'><span class='pal-tile' style='--c:var(--node-report)'><svg class='ic' aria-hidden='true'><use href='#i-search'></use></svg></span><em>Browse</em></span>
+            <span class='pal-item'><span class='pal-tile' style='--c:var(--node-prep)'><svg class='ic' aria-hidden='true'><use href='#i-file'></use></svg></span><em>Read CSV</em></span>
+          </div>
+        </div>
+
+        <div class='app-main'>
+          <aside class='configpane'>
+            <div class='config-head'><span>NODE CONFIGURATION</span><b>(Select)</b></div>
+            <div class='config-body'>
+              <div class='cfg-block'>
+                <span class='mini-label'>Label</span>
+                <div class='mini-field'>Select customers<span class='caret'>&#9662;</span></div>
+              </div>
+              <div class='cfg-block'>
+                <div class='mini-sec-head'><span>Columns</span><span class='mini-textbtns'><button type='button'>All</button><button type='button'>None</button></span></div>
+                <div class='mini-toolbar'>
+                  <div class='mini-search'><svg aria-hidden='true'><use href='#i-search'></use></svg>Search columns&hellip;</div>
+                  <button type='button' class='mini-ib' aria-label='Move up'><svg aria-hidden='true'><use href='#i-arrow-up'></use></svg></button>
+                  <button type='button' class='mini-ib' aria-label='Options'><svg aria-hidden='true'><use href='#i-options'></use></svg></button>
+                </div>
+                <table class='mini-table'>
+                  <thead><tr><th class='wchk'></th><th>Column</th><th class='wtype'>Type</th></tr></thead>
+                  <tbody>
+                    <tr class='sel'><td><span class='mini-box on'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></td><td>Customer ID</td><td class='wtype'>String</td></tr>
+                    <tr><td><span class='mini-box on'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></td><td>Region</td><td class='wtype'>String</td></tr>
+                    <tr><td><span class='mini-box on'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></td><td>Revenue</td><td class='wtype'>Float64</td></tr>
+                    <tr><td><span class='mini-box'></span></td><td>Internal note</td><td class='wtype'>String</td></tr>
+                    <tr><td><span class='mini-box on'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></td><td>Channel</td><td class='wtype'>String</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class='cfg-block'>
+                <div class='mini-sec-head'><span>Options</span></div>
+                <label class='mini-check'><span class='mini-box on'><svg aria-hidden='true'><use href='#i-check'></use></svg></span>Auto-accept new columns</label>
+                <label class='mini-check'><span class='mini-box'></span>Drop duplicate rows</label>
+              </div>
+            </div>
+          </aside>
+
+          <div class='canvas'>
+            <div class='canvas-toolbar'>
+              <button type='button' class='mini-ib' aria-label='Run'><svg aria-hidden='true'><use href='#i-play'></use></svg></button>
+              <button type='button' class='mini-ib' aria-label='Zoom'><svg aria-hidden='true'><use href='#i-search'></use></svg></button>
+              <button type='button' class='mini-ib' aria-label='Fit view'><svg aria-hidden='true'><use href='#i-grid'></use></svg></button>
+            </div>
+            <svg class='edges' viewBox='0 0 100 100' preserveAspectRatio='none' aria-hidden='true'>
+              <path d='M12 34 C20 34 23 18 31 18'/>
+              <path d='M12 34 C24 34 27 64 38 64'/>
+              <path d='M31 18 C45 18 48 34 59 34'/>
+              <path class='active' d='M38 64 C48 64 50 34 59 34'/>
+              <path d='M38 64 C50 64 52 77 63 77'/>
+              <path d='M59 34 C70 34 75 48 86 48'/>
+              <path d='M63 77 C73 77 76 48 86 48'/>
+            </svg>
+            <div class='gnode' style='--x:12%;--y:34%;--c:var(--node-input)'><span class='gtile'><svg aria-hidden='true'><use href='#i-input'></use></svg></span><span class='glbl'>File Input</span></div>
+            <div class='gnode' style='--x:31%;--y:18%;--c:var(--node-prep)'><span class='gtile'><svg aria-hidden='true'><use href='#i-filter'></use></svg><span class='done'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></span><span class='glbl'>Filter</span></div>
+            <div class='gnode' style='--x:38%;--y:64%;--c:var(--node-prep)'><span class='gtile sel'><svg aria-hidden='true'><use href='#i-check'></use></svg><span class='done'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></span><span class='glbl'>Select</span></div>
+            <div class='gnode' style='--x:59%;--y:34%;--c:var(--node-join)'><span class='gtile'><svg aria-hidden='true'><use href='#i-join'></use></svg><span class='done'><svg aria-hidden='true'><use href='#i-check'></use></svg></span></span><span class='glbl'>Join</span></div>
+            <div class='gnode' style='--x:63%;--y:77%;--c:var(--node-transform)'><span class='gtile'><svg aria-hidden='true'><use href='#i-grid'></use></svg></span><span class='glbl'>Aggregate</span></div>
+            <div class='gnode' style='--x:86%;--y:48%;--c:var(--node-report)'><span class='gtile'><svg aria-hidden='true'><use href='#i-report'></use></svg></span><span class='glbl'>Chart</span></div>
+            <span class='canvas-hint'>22px grid &middot; 2px rings</span>
+          </div>
+        </div>
+
+        <div class='previewpane'>
+          <div class='docktabs'><span class='docktab'>Logs</span><span class='docktab on'>Data Preview</span></div>
+          <div class='previewstrip'>
+            <span class='pchip'><i class='dot'></i>Select</span>
+            <span class='pchip p-socket'>Output 1 <svg aria-hidden='true'><use href='#i-chevron'></use></svg></span>
+            <span class='psearch'><svg aria-hidden='true'><use href='#i-search'></use></svg><span>Search this preview&hellip;</span><span class='pclear'>&times;</span></span>
+            <span class='pchip p-scope'>All columns <svg aria-hidden='true'><use href='#i-chevron'></use></svg></span>
+            <span class='pspacer'></span>
+            <span class='pcounts'>1,284 rows &middot; 12 cols</span>
+            <button type='button' class='pib' aria-label='Pin'><svg aria-hidden='true'><use href='#i-pin'></use></svg></button>
+            <button type='button' class='pib' aria-label='Refresh'><svg aria-hidden='true'><use href='#i-refresh'></use></svg></button>
+            <button type='button' class='pib' aria-label='Options'><svg aria-hidden='true'><use href='#i-options'></use></svg></button>
+          </div>
+          <table class='ptable'>
+            <thead><tr><th>channel</th><th>owner</th><th>region</th><th class='num'>revenue</th></tr></thead>
+            <tbody>
+              <tr class='sel'><td>Organic</td><td>A. Chen</td><td>West</td><td class='num'>$48,210</td></tr>
+              <tr><td>Paid</td><td>M. Silva</td><td>East</td><td class='num'>$31,880</td></tr>
+              <tr><td>Referral</td><td>J. Park</td><td>North</td><td class='num'>$12,450</td></tr>
+              <tr><td>Organic</td><td>R. Nair</td><td>South</td><td class='num'>$9,120</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class='app-status'><span>savedfiles/Example_1/monthly_sales.tds</span><span>Ready &middot; 12 columns &middot; UTF-8</span></div>
+      </div>
+    </div>
+    <p class='app-caption'><span><b>Composition:</b> 26px menu &middot; 56px palette &middot; 168px config &middot; 330px canvas &middot; 152px preview &middot; 20px status</span><span><b>Nothing is restyled per widget.</b></span></p>
+
+    <div class='anatomy'>
+      <div class='anatomy-card'><b>Chrome</b><p>Strips are 36px. Identity left, actions right, counts immediately before actions. Search is the only flexible field.</p></div>
+      <div class='anatomy-card'><b>Config docks</b><p>300px minimum. Toolbar 40, control 30, row 28, icon 12. Pattern A or B, never a third layout.</p></div>
+      <div class='anatomy-card'><b>Canvas</b><p>Category fill, 2px state ring, neutral edge. Accent only for the active path or selection.</p></div>
+      <div class='anatomy-card'><b>Type</b><p>11px labels, 13px headings, 10px micro. Mono only for data, SQL, formulas and logs.</p></div>
+    </div>
+  </section>
+
+  <section id='rules' class='section'>
+    <div class='sec-head'><span class='sec-num'>04</span><h2>Rules</h2></div>
+    <p class='sec-desc'>A small set of enforceable rules keeps the system coherent after the first week. Each one has a visible failure mode.</p>
+
+    <div class='rule-grid'>
+      <div class='rule'><span class='rk'>DO</span><b>Depth from surface + hairline</b><p>Use base, raised, inset and overlay. One 1px border marks the edge. Menus and floating nodes are the only shadows.</p></div>
+      <div class='rule dont'><span class='rk'>DON'T</span><b>Stack elevation or radii</b><p>No 12px radius on a dock, no three shadows on a card, no gradient border. If two surfaces are unclear, add one surface step.</p></div>
+      <div class='rule'><span class='rk'>DO</span><b>Keep the 36 / 30 / 24 rhythm</b><p>Strip 36, control 30, chip 24, icon 12, row 28. The rhythm is what makes every dock feel related.</p></div>
+      <div class='rule dont'><span class='rk'>DON'T</span><b>Let a form grow controls</b><p>44px inputs and 16px gaps turn an instrument into a web form. Remove a control or split the panel; do not inflate it.</p></div>
+      <div class='rule'><span class='rk'>DO</span><b>Reserve accent for state</b><p>Selection, focus, checked pin, active tab, active path. One accent per view is the target.</p></div>
+      <div class='rule dont'><span class='rk'>DON'T</span><b>Use accent to decorate</b><p>Category identity belongs to the node palette. Headers, icons and chips stay neutral unless they are interactive or active.</p></div>
+      <div class='rule'><span class='rk'>DO</span><b>Status only where status lives</b><p>A dot, a badge, a ring, a single log token. Success and error do not repaint a whole dock.</p></div>
+      <div class='rule dont'><span class='rk'>DON'T</span><b>Encode state in colour alone</b><p>Pair the ring with a dot or label. Pair a failed node with a glyph. Pair a log level with its word.</p></div>
+    </div>
+
+    <div class='sub'>Content and interaction</div>
+    <div class='callout'><b>Live by default.</b> Check, move and select apply immediately; text search debounces at 300ms. History records only a real diff and reads as <b>Noun Verbed</b> (&ldquo;Column Selection Changed&rdquo;). An Apply button is a missing signal, not a safety feature.</div>
+    <ul class='spec-list'>
+      <li>Sentence case for labels and tooltips; Title Case for window and dialog titles.</li>
+      <li>Menu items that open a dialog end in an ellipsis. Commands that act immediately do not.</li>
+      <li>Counts read <code>1,284 rows &middot; 12 cols</code>: thousands separator, thin middot, unit after the number.</li>
+      <li>Empty states are one sentence plus, at most, one hint line. No illustration.</li>
+      <li>Tooltips are sentence case and take no trailing period; accessibleName matches the tooltip.</li>
+      <li>Never use <code>QIcon.fromTheme</code> on Windows. Bundle the glyph or use the <code>:/qss_icons</code> fallback.</li>
+      <li>Focus is visible: 1px accent border plus a 2px soft ring. Keyboard shortcuts never replace focus.</li>
+    </ul>
+  </section>
+
+  <section id='implementation' class='section'>
+    <div class='sec-head'><span class='sec-num'>05</span><h2>Implementation</h2></div>
+    <p class='sec-desc'>Signal is not a mockup layer. It maps to the existing theme JSON, <code>base.qss</code>, the shared config widgets and the Python-painted canvas.</p>
+
+    <div class='impl-scroll'>
+      <table class='impl'>
+        <thead><tr><th>Concern</th><th>Source of truth</th><th>How it lands</th></tr></thead>
+        <tbody>
+          <tr><td>Surfaces, text, borders</td><td><code>resources/qt/themes/dark.json</code> + <code>light.json</code></td><td>Semantic keys formatted into <code>base.qss</code>; <code>ResourceManager.get_theme_color</code> for painted widgets.</td></tr>
+          <tr><td>Accent and status</td><td>same theme JSON</td><td><code>accent_*</code>, <code>success</code>, <code>warning</code>, <code>danger</code>, <code>info</code>, <code>activity</code>; one key set per theme.</td></tr>
+          <tr><td>Type scale</td><td><code>base.qss</code> + canvas <code>QFont</code></td><td>10 / 11 / 12 / 13 / 16 / 20. Segoe UI Variable and Cascadia Mono, no webfonts.</td></tr>
+          <tr><td>Metrics</td><td><code>qt/widgets/common/config_widgets.py</code></td><td><code>STRIP_H 36</code>, <code>CONTROL_H 30</code>, <code>CHIP_H 24</code>, <code>ICON 12</code>; one constant set, imported everywhere.</td></tr>
+          <tr><td>Dock chrome</td><td><code>qt/docks/*</code>, <code>data_preview_panel.py</code></td><td>Compose the strip from <code>IconButton</code>, <code>NoWheelComboBox</code> and chips; no inline QSS.</td></tr>
+          <tr><td>Config panels</td><td><code>config_widgets.py</code></td><td>Flat <code>ConfigSection</code>, <code>ColumnChecklist</code>, <code>TextButton</code>; object names only.</td></tr>
+          <tr><td>Tables</td><td><code>polars_table_viewer.py</code>, <code>select_table_widget.py</code></td><td>28px rows, 11px headers, token colours via <code>get_theme_color</code>; no bare Fusion palette.</td></tr>
+          <tr><td>Canvas</td><td><code>node_base.py</code>, <code>node_editor_colors.py</code></td><td>Category fills from tokens, 2px state rings, neutral edges, 22 / 110px grid.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class='sub'>Migration order</div>
+    <div class='phases'>
+      <div class='phase'><span class='n'>1</span><div><b>Tokens and guards</b><p>Extend both theme JSONs; add a parity test that every <code>{token}</code> used by QSS exists in both. No visual change.</p></div><span class='tag'>FOUNDATION</span></div>
+      <div class='phase'><span class='n'>2</span><div><b>QSS foundation</b><p>Surfaces, chips, badges, strips, focus and the light-theme pass. Keep <code>base.qss</code> and <code>_style.scss</code> in agreement.</p></div><span class='tag'>FOUNDATION</span></div>
+      <div class='phase'><span class='n'>3</span><div><b>Shared chrome</b><p>Preview, Logs, Config dock header and status bar. Same tokens, same strip composition, no per-dock CSS.</p></div><span class='tag'>CHROME</span></div>
+      <div class='phase'><span class='n'>4</span><div><b>Config Dock</b><p>Flatten sections, normalise toolbars and checklists, replace empty states, align tables to 28px rows.</p></div><span class='tag'>DOCKS</span></div>
+      <div class='phase'><span class='n'>5</span><div><b>Canvas</b><p>Category palette, state rings, edge colours, grid rhythm and the node title treatment.</p></div><span class='tag'>CANVAS</span></div>
+      <div class='phase'><span class='n'>6</span><div><b>Polish and proof</b><p>Menus and dialogs, light-theme screenshots, one visual pass per surface, then delete the old ad-hoc values.</p></div><span class='tag'>QA</span></div>
+    </div>
+
+    <p class='hint' style='margin-top:10px'>This page and <code>docs/DESIGN_SYSTEM.md</code> are the target contract. The migration order above is the implementation path; keep the preview beside the code while landing it.</p>
+  </section>
+
+  <footer class='foot'>
+    <span><b>SIGNAL 1.0</b> &middot; Trigger Designer &middot; derived from the Data Preview strip</span>
+    <span>Spec: <a href='DESIGN_SYSTEM.md'>docs/DESIGN_SYSTEM.md</a> &middot; two themes &middot; zero inline QSS</span>
+    <a href='#foundations'>Back to top</a>
+  </footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var buttons = Array.prototype.slice.call(document.querySelectorAll('[data-set-theme]'));
+  function setTheme(name) {
+    root.setAttribute('data-theme', name);
+    buttons.forEach(function (button) {
+      button.setAttribute('aria-pressed', button.getAttribute('data-set-theme') === name ? 'true' : 'false');
+    });
+  }
+  buttons.forEach(function (button) {
+    button.addEventListener('click', function () { setTheme(button.getAttribute('data-set-theme')); });
+  });
+  setTheme('dark');
+})();
+</script>
+</body>
+</html>
