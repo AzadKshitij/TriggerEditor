@@ -149,7 +149,7 @@ class PreferencesDialog(QDialog):
             self.shortcuts_page,
             self.general_page,
         ):
-            self.stack.addWidget(page)
+            self.stack.addWidget(self._scroll_page(page))
         right.addWidget(self.stack, 1)
 
         footer = QHBoxLayout()
@@ -170,6 +170,23 @@ class PreferencesDialog(QDialog):
         outer.addLayout(right, 1)
         self.sidebar.setCurrentRow(0)
 
+    def _scroll_page(self, page: QWidget) -> QScrollArea:
+        """Let one preferences page scroll instead of squeezing its controls.
+
+        The dialog opens at its minimum size while a page's natural height
+        follows the application font and its number of sections. Appearance
+        alone needs more room than the body has for the 210px preview, the
+        theme list and the accent and font sections; without a scroll area the
+        layout runs out of room and paints controls over one another.
+        """
+        scroll = QScrollArea(self)
+        scroll.setObjectName("PreferencesScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        scroll.setWidget(page)
+        return scroll
+
     # -- Appearance -------------------------------------------------------
     def _build_appearance_page(self) -> QWidget:
         page = QWidget()
@@ -182,22 +199,28 @@ class PreferencesDialog(QDialog):
         layout.addWidget(self.preview)
 
         theme_section = ConfigSection("Theme")
+        theme_body = QHBoxLayout()
+        theme_body.setSpacing(6)
         self.theme_list = QListWidget(self)
         self.theme_list.setObjectName("ThemeList")
         self.theme_list.setFixedHeight(148)
         self.theme_list.currentItemChanged.connect(self._on_theme_selected)
-        theme_section.addWidget(self.theme_list)
+        theme_body.addWidget(self.theme_list, 1)
 
-        theme_actions = QHBoxLayout()
+        # The four actions sit beside the list, not under it: a row of text
+        # buttons needs more width than the page has once the vertical
+        # scrollbar is showing at the dialog's minimum width. A rail also
+        # keeps each label on one line when the application font grows.
+        theme_actions = QVBoxLayout()
         theme_actions.setSpacing(4)
         self.customize_button = TextButton(
             "Customize…", "Duplicate and edit the selected theme"
         )
         self.customize_button.clicked.connect(self._customize_theme)
         theme_actions.addWidget(self.customize_button)
-        import_button = TextButton("Import…", "Import a theme JSON file")
-        import_button.clicked.connect(self._import_theme)
-        theme_actions.addWidget(import_button)
+        self.import_button = TextButton("Import…", "Import a theme JSON file")
+        self.import_button.clicked.connect(self._import_theme)
+        theme_actions.addWidget(self.import_button)
         self.export_button = TextButton("Export…", "Export the selected theme")
         self.export_button.clicked.connect(self._export_theme)
         theme_actions.addWidget(self.export_button)
@@ -206,12 +229,14 @@ class PreferencesDialog(QDialog):
         self.delete_button.clicked.connect(self._delete_theme)
         theme_actions.addWidget(self.delete_button)
         theme_actions.addStretch(1)
-        theme_section.addLayout(theme_actions)
+        theme_body.addLayout(theme_actions)
+        theme_section.addLayout(theme_body)
 
         hint = QLabel(
             "Built-in themes are read-only; Customize makes an editable copy."
         )
         hint.setObjectName("FieldHint")
+        hint.setWordWrap(True)
         theme_section.addWidget(hint)
         layout.addWidget(theme_section)
 
@@ -461,18 +486,6 @@ class PreferencesDialog(QDialog):
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
-        scroll = QScrollArea(page)
-        scroll.setObjectName("PreferencesScroll")
-        scroll.setWidgetResizable(True)
-        scroll.setFrameShape(QFrame.Shape.NoFrame)
-        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-
-        content = QWidget()
-        content.setObjectName("PreferencesPage")
-        rows = QVBoxLayout(content)
-        rows.setContentsMargins(0, 0, 0, 0)
-        rows.setSpacing(6)
-
         section = ConfigSection("Arranging nodes")
         self.shortcut_editors: dict[str, QKeySequenceEdit] = {}
         for command in node_arrange.SHORTCUT_COMMANDS:
@@ -483,7 +496,7 @@ class PreferencesDialog(QDialog):
             label.setMinimumWidth(180)
             row.addWidget(label)
 
-            editor = QKeySequenceEdit(content)
+            editor = QKeySequenceEdit(page)
             editor.setObjectName("ShortcutEditor")
             editor.setMaximumSequenceLength(1)
             editor.setToolTip(f"Shortcut for {command.label}")
@@ -500,7 +513,7 @@ class PreferencesDialog(QDialog):
             reset = IconButton.themed(
                 f"Restore the default shortcut for {command.label}",
                 rsm_icon=self._shortcut_icon(),
-                parent=content,
+                parent=page,
             )
             reset.clicked.connect(
                 lambda _checked=False, command_id=command.id: (
@@ -510,7 +523,7 @@ class PreferencesDialog(QDialog):
             row.addWidget(reset)
             section.addLayout(row)
 
-        rows.addWidget(section)
+        layout.addWidget(section)
 
         footer = QHBoxLayout()
         footer.setSpacing(6)
@@ -520,16 +533,14 @@ class PreferencesDialog(QDialog):
         reset_all.clicked.connect(self._restore_all_shortcuts)
         footer.addWidget(reset_all)
         footer.addStretch(1)
-        rows.addLayout(footer)
+        layout.addLayout(footer)
 
         self.shortcut_error = QLabel("")
         self.shortcut_error.setObjectName("ShortcutError")
         self.shortcut_error.setWordWrap(True)
         self.shortcut_error.hide()
-        rows.addWidget(self.shortcut_error)
-        rows.addStretch(1)
-        scroll.setWidget(content)
-        layout.addWidget(scroll, 1)
+        layout.addWidget(self.shortcut_error)
+        layout.addStretch(1)
         return page
 
     def _shortcut_icon(self):
