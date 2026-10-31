@@ -617,7 +617,6 @@ class TriggerWindow(
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
         """Handle sub window activation to switch the dock contexts"""
-        chrome = getattr(self, "window_chrome", None)
         if sub_window:
             widget = sub_window.widget()
             if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
@@ -629,12 +628,8 @@ class TriggerWindow(
             # The status bar reports the cursor position of the canvas the
             # user is looking at.
             self.connectStatusScene(widget)
-            if chrome is not None:
-                chrome.set_context_title(sub_window.windowTitle())
         else:
             self.connectStatusScene(None)
-            if chrome is not None:
-                chrome.set_context_title(None)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         # Activate the window being closed first so ``maybeSave`` targets the

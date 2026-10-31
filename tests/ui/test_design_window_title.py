@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Document titles: the MDI window shows the name without the ``.tds`` suffix.
 
-``TriggerSubWindow.getUserFriendlyFilename`` feeds the MDI window title, the
-chrome row and the Window menu, so the extension is dropped in one place.
+``TriggerSubWindow.getUserFriendlyFilename`` feeds the MDI window title and the
+Window menu, so the extension is dropped in one place. The frameless titlebar
+names the application instead; the document name belongs to the MDI tab.
 """
 
 import os
@@ -17,9 +18,10 @@ sys.path.insert(
 )
 
 import pytest
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QLabel
 
 from trigger_designer.qt.design_window import TriggerSubWindow
+from trigger_designer.qt.main_window import TriggerWindow
 
 _APP = QApplication.instance() or QApplication([])
 
@@ -64,3 +66,33 @@ def test_title_without_an_extension_is_unchanged(window: TriggerSubWindow) -> No
     window.setTitle()
 
     assert window.windowTitle() == "notes"
+
+
+def test_chrome_title_shows_the_app_name(tmp_path) -> None:
+    """The titlebar names the app; the document name lives in the MDI tab (#7).
+
+    A modified workflow used to replace the app name with its own title, which
+    left a stale ``*`` in the titlebar after saving.
+    """
+    window = TriggerWindow()
+    try:
+        editor = TriggerSubWindow()
+        sub = window.createMdiChild(editor)
+        window.resize(1600, 900)
+        window.show()
+        sub.show()
+        window.mdiArea.setActiveSubWindow(sub)
+        _APP.processEvents()
+
+        editor.filename = str(tmp_path / "monthly_sales.tds")
+        editor.scene.has_been_modified = True
+        _APP.processEvents()
+
+        title = window.window_chrome.findChild(QLabel, "WindowChromeTitle")
+        assert sub.windowTitle() == "monthly_sales*"
+        assert window.windowTitle() == "Trigger Designer"
+        assert title.text() == "Trigger Designer"
+    finally:
+        window.hide()
+        window.deleteLater()
+        _APP.processEvents()
