@@ -135,3 +135,18 @@ def test_chip_warns_when_text_rules_have_no_column() -> None:
     quiet = {"strip_whitespace": False, "normalize_spaces": False}
     assert core.describe([None], quiet) == []
     assert core.describe([None], {**quiet, "case_modification": "upper"})
+
+
+def test_strip_whitespace_takes_trim_as_a_parameter() -> None:
+    # The Cleansing node passes ``trim=`` into the cleaner; the keyword must be a
+    # real parameter (it was once left as a body statement, which raised
+    # NameError on every call).
+    from trigger_designer.core.utils.cleansing_util import DataCleansing
+
+    frame = pl.DataFrame({"c": ["  a   b  ", " x "]})
+    trimmed = DataCleansing(frame).strip_whitespace(fields=["c"], trim=True)
+    kept = DataCleansing(frame).strip_whitespace(
+        fields=["c"], trim=False, normalize_spaces=True
+    )
+    assert trimmed.df["c"].to_list() == ["a b", "x"]
+    assert kept.df["c"].to_list() == [" a b ", " x "]
