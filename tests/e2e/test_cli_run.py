@@ -332,10 +332,8 @@ def test_relative_paths_resolve_against_workflow_dir(tmp_path):
     )
     assert proc.returncode == 0, proc.stderr[-1500:]
     assert (wfdir / "result.csv").exists()
-    assert os.listdir(other) == [
-        "data",
-        "state",
-    ] or "check_output.py" not in os.listdir(other)
+    assert set(os.listdir(other)) == {"data", "state"}
+    assert "check_output.py" not in os.listdir(other)
 
 
 def test_unicode_space_and_apostrophe_paths(tmp_path):
