@@ -604,12 +604,6 @@ def test_workpaper_output_is_staged_and_committed(tmp_path):
     final = m.out_dir / "wp.xlsx"
     final.write_bytes(b"previous")
     proc = _run(path, tmp_path)
-    if (
-        proc.returncode == 1
-        and "Workpaper" in proc.stdout
-        and "node.finished" in proc.stdout
-    ):
-        pytest.skip("the workpaper node is not runnable in this build yet")
     assert proc.returncode == 0, proc.stderr[-1500:] + proc.stdout[-1500:]
     assert final.read_bytes()[:2] == b"PK"  # a real xlsx replaced the sentinel
     assert _leftovers(m.out_dir) == []
