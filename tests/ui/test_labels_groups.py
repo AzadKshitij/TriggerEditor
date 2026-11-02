@@ -3,10 +3,19 @@
 
 import types
 
+import pytest
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication, QWidget
 
 APP = QApplication.instance() or QApplication([])
+
+# nodeeditor's Group double-disconnects Group.onChildMoved on teardown
+# (node_group.py:134, an upstream bug). The libpyside complaint about the
+# failed disconnect is pure noise: the message contains colons, so only
+# the "libpyside" prefix is matched.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:libpyside.*:RuntimeWarning",
+)
 
 
 def _make_scene():

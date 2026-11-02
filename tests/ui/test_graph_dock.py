@@ -28,6 +28,15 @@ from trigger_designer.qt.design_window import TriggerSubWindow
 
 APP = QApplication.instance() or QApplication([])
 
+# matplotlib's Qt backend probes the deprecated AA_UseHighDpiPixmaps
+# attribute on every app it attaches to (fixed upstream in newer
+# matplotlib). Third-party noise; the message text contains colons
+# ("Qt::ApplicationAttribute"), which filterwarnings would misparse, so
+# only the "Enum value" prefix is matched.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:Enum value.*:DeprecationWarning",
+)
+
 #: Contents built by this module, so teardown can dispose their chart windows.
 _BUILT: list = []
 

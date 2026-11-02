@@ -327,7 +327,7 @@ def test_full_report_button_opens_the_html_in_the_browser(qtbot, monkeypatch):
     monkeypatch.setattr(
         profile_view.QDesktopServices,
         "openUrl",
-        lambda url: opened.append(url.toLocalFile()) or True,
+        lambda url: opened.append(url.toLocalFile()),
     )
     view.report_button.click()
     assert len(opened) == 1

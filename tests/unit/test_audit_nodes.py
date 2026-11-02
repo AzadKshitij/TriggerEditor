@@ -17,6 +17,11 @@ from tests.support.audit_demo import (
     demo_graph,
     run_demo,
 )
+from tests.support.contract_helpers import (
+    live_value_and_generated_code_agree,
+    round_trip_settings,
+    run_after_execution,
+)
 from trigger_designer.core.audit.common import AuditConfigError
 from trigger_designer.core.audit.test_summary import TestSummary
 from trigger_designer.core.node_configuration import (
@@ -74,19 +79,14 @@ def test_the_context_menu_has_an_audit_category() -> None:
 
 def test_live_value_and_generated_code_agree() -> None:
     _window, source, node = _ready(column="amount", threshold=6.0)
-    out = node.value
-    assert [o["variable_name"] for o in out] == node.content.output_variable_names()
-    live = [o["data"].collect() for o in out]
+    live, namespace = live_value_and_generated_code_agree(node, source)
+    # Demo-node-specific checks
+    assert [
+        o["variable_name"] for o in node.value
+    ] == node.content.output_variable_names()
     assert live[0].height == 3 and live[1].height == 3
-
-    namespace = {"var_src": source.frame}
-    exec(node.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
-    for item, expected in zip(out, live):
-        got = namespace[item["variable_name"]]
-        got = got.collect() if isinstance(got, pl.LazyFrame) else got
-        assert got.equals(expected)
     # The one-row summary is collected eagerly in generated code.
-    assert isinstance(namespace[out[2]["variable_name"]], pl.DataFrame)
+    assert isinstance(namespace[node.value[2]["variable_name"]], pl.DataFrame)
     summary = live[2].row(0, named=True)
     assert summary["exception_rows"] == 3 and summary["population_rows"] == 6
     assert summary["status"] == "fail" and summary["code"] == "TD-AUDIT-102"
@@ -164,23 +164,22 @@ def test_op_id_and_sockets() -> None:
 def test_state_round_trips_through_serialize() -> None:
     _window, _source, node = _ready(column="amount")
     content = node.content
-    content.keys = ["key"]
-    content.mode = "below"
-    content.threshold = 12.5
-    content.top = 4
-    content.levels = [1000.0, 10000.0]
-    content.sizes = [20, -1]
-    content.lines = ["a", "b"]
-    data = content.serialize()
+    data, other_content = round_trip_settings(
+        content,
+        lambda: DemoNode(TriggerSubWindow().scene).content,
+        keys=["key"],
+        mode="below",
+        threshold=12.5,
+        top=4,
+        levels=[1000.0, 10000.0],
+        sizes=[20, -1],
+        lines=["a", "b"],
+    )
     assert data["threshold"] == 12.5 and data["levels"] == [1000.0, 10000.0]
-
-    window = TriggerSubWindow()
-    other = DemoNode(window.scene)
-    other.content.deserialize(dict(data))
-    assert other.content.params() == content.params()
-    other.content.deserialize({})  # a file saved before any setting existed
-    assert other.content.params() == DemoParams()
-    assert other.content.keys == [] and other.content.keys is not DemoParams().keys
+    assert other_content.params() == content.params()
+    other_content.deserialize({})  # a file saved before any setting existed
+    assert other_content.params() == DemoParams()
+    assert other_content.keys == [] and other_content.keys is not DemoParams().keys
 
 
 def test_serialized_lists_are_independent_of_the_defaults() -> None:
@@ -216,9 +215,7 @@ def test_after_execution_sets_the_test_summary() -> None:
     assert content.test_summary is None
     summary_var = content.summary_variable_name
     assert summary_var == content.output_variable_names()[2]
-    frame = node.value[2]["data"].collect()
-    content.after_execution({summary_var: frame})
-    summary = content.test_summary
+    summary = run_after_execution(content, node, output_index=2)
     assert isinstance(summary, TestSummary)
     assert summary.test_id == f"audit.demo#{node.id}"
     assert summary.exceptions_var == content.output_variable_names()[0]

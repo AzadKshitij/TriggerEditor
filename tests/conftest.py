@@ -53,21 +53,6 @@ _preferences._legacy_scopes = list
 
 _APP = None
 
-
-def ensure_qapp():
-    """Create (or return) the process-wide QApplication."""
-    global _APP
-    from qtpy.QtWidgets import QApplication
-
-    _APP = QApplication.instance() or QApplication([])
-    return _APP
-
-
-@pytest.fixture(scope="session", autouse=True)
-def qapp():
-    return ensure_qapp()
-
-
 # -- layers ------------------------------------------------------------------
 
 _LAYERS = {

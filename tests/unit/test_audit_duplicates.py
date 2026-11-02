@@ -17,6 +17,11 @@ import pytest
 
 from tests.support.audit_demo import demo_graph
 from tests.support.audit_ledger import make_ledger
+from tests.support.contract_helpers import (
+    live_value_and_generated_code_agree,
+    round_trip_settings,
+    run_after_execution,
+)
 from trigger_designer.core.audit.common import BASE_SUMMARY, AuditConfigError
 from trigger_designer.core.audit.duplicates import (
     DuplicatesParams,
@@ -570,15 +575,9 @@ def test_registration_op_id_and_sockets() -> None:
 )
 def test_live_value_and_generated_code_agree(settings) -> None:
     _window, source, node = _node(**settings)
-    out = node.value
-    live = [o["data"].collect() for o in out]
-    namespace = {"var_src": source.frame}
-    exec(node.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
-    for item, expected in zip(out, live):
-        got = namespace[item["variable_name"]]
-        got = got.collect() if isinstance(got, pl.LazyFrame) else got
-        assert got.equals(expected)
-    assert isinstance(namespace[out[2]["variable_name"]], pl.DataFrame)
+    live, namespace = live_value_and_generated_code_agree(node, source)
+    # Duplicates-specific checks
+    assert isinstance(namespace[node.value[2]["variable_name"]], pl.DataFrame)
     assert live[0].columns[-2:] == ["dup_group_id", "dup_count"]
     code = node.get_code()
     assert "from trigger_designer.core.audit.duplicates import" in code
@@ -609,9 +608,7 @@ def test_misconfigured_node_fails_live_and_in_the_run_code() -> None:
 def test_after_execution_sets_the_test_summary() -> None:
     _window, _source, node = _node(key_columns=KEYS)
     content = node.content
-    frame = node.value[2]["data"].collect()
-    content.after_execution({content.summary_variable_name: frame})
-    summary = content.test_summary
+    summary = run_after_execution(content, node, output_index=2)
     assert summary.test_id == f"audit.duplicates#{node.id}"
     assert summary.exceptions_var == content.duplicates_var
     assert summary.exception_rows == 5 and summary.status == "fail"
@@ -622,22 +619,22 @@ def test_after_execution_sets_the_test_summary() -> None:
 def test_state_round_trips_through_serialize() -> None:
     _window, _source, node = _node(key_columns=KEYS)
     content = node.content
-    content.mode = "near"
-    content.amount_column = "amt"
-    content.tolerance_kind = "percent"
-    content.tolerance = 1.5
-    content.date_column = "date"
-    content.window_days = 7
-    content.date_format = "%d/%m/%Y"
-    content.value_column = "amt"
-    content.ignore_case = True
-    content.trim_text = False
-    data = content.serialize()
+    data, other_content = round_trip_settings(
+        content,
+        lambda: TriggerNode_Duplicates(TriggerSubWindow().scene).content,
+        mode="near",
+        amount_column="amt",
+        tolerance_kind="percent",
+        tolerance=1.5,
+        date_column="date",
+        window_days=7,
+        date_format="%d/%m/%Y",
+        value_column="amt",
+        ignore_case=True,
+        trim_text=False,
+    )
     assert data["key_columns"] == KEYS and data["tolerance"] == 1.5
-    window = TriggerSubWindow()
-    other = TriggerNode_Duplicates(window.scene)
-    other.content.deserialize(dict(data))
-    assert other.content.params() == content.params()
-    other.content.deserialize({})
-    assert other.content.params() == DuplicatesParams()
-    assert other.content.key_columns == []
+    assert other_content.params() == content.params()
+    other_content.deserialize({})
+    assert other_content.params() == DuplicatesParams()
+    assert other_content.key_columns == []

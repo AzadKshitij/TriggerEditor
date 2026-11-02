@@ -8,6 +8,7 @@ import polars as pl
 import pytest
 
 from tests.support.audit_ledger import make_ledger
+from tests.support.contract_helpers import live_value_and_generated_code_agree
 from trigger_designer.core.audit.common import AuditConfigError
 from trigger_designer.core.audit.risk_filters import (
     LABELS,
@@ -665,14 +666,9 @@ def test_the_node_is_registered_with_its_sockets_and_op_id() -> None:
 
 def test_live_value_and_generated_code_agree() -> None:
     _window, source, node = _ready_node(**_configured())
-    live = [o["data"].collect() for o in node.value]
+    live, namespace = live_value_and_generated_code_agree(node, source)
+    # Risk-filters-specific checks
     assert [f.height for f in live[:2]] == [6, 1]
-    namespace = {"var_src": source.frame}
-    exec(node.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
-    for item, expected in zip(node.value, live, strict=True):
-        got = namespace[item["variable_name"]]
-        got = got.collect() if isinstance(got, pl.LazyFrame) else got
-        assert got.equals(expected)
     assert isinstance(namespace[node.value[2]["variable_name"]], pl.DataFrame)
 
 

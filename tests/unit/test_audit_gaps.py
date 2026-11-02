@@ -10,6 +10,11 @@ import pytest
 
 from tests.support.audit_demo import demo_graph
 from tests.support.audit_ledger import make_ledger
+from tests.support.contract_helpers import (
+    live_value_and_generated_code_agree,
+    round_trip_settings,
+    run_after_execution,
+)
 from trigger_designer.core.audit.common import AuditConfigError
 from trigger_designer.core.audit.gaps import GapsParams, run_gaps
 from trigger_designer.core.node_configuration import (
@@ -533,19 +538,13 @@ def test_live_value_and_generated_code_agree() -> None:
     _window, source, node = _graph(
         frame, sequence_column="je", group_columns=["led"], range_start=1
     )
-    out = node.value
-    assert [o["variable_name"] for o in out] == [
+    live, namespace = live_value_and_generated_code_agree(node, source)
+    # Gaps-specific checks
+    assert [o["variable_name"] for o in node.value] == [
         f"var_gaps_{node.content.id}",
         f"var_gapsum_{node.content.id}",
     ]
-    live = [o["data"].collect() for o in out]
-    namespace = {"var_src": source.frame}
-    exec(node.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
-    for item, expected in zip(out, live):
-        got = namespace[item["variable_name"]]
-        got = got.collect() if isinstance(got, pl.LazyFrame) else got
-        assert got.equals(expected)
-    assert isinstance(namespace[out[1]["variable_name"]], pl.DataFrame)
+    assert isinstance(namespace[node.value[1]["variable_name"]], pl.DataFrame)
     assert live[1].row(0, named=True)["exception_rows"] == live[0].height
     assert "from trigger_designer.core.audit.gaps import GapsParams, run_gaps" in (
         node.get_code()
@@ -590,10 +589,7 @@ def test_after_execution_builds_the_test_summary() -> None:
         pl.DataFrame({"je": JE}).lazy(), sequence_column="je"
     )
     content = node.content
-    content.after_execution(
-        {content.summary_variable_name: node.value[1]["data"].collect()}
-    )
-    summary = content.test_summary
+    summary = run_after_execution(content, node, output_index=1)
     assert summary.test_id == f"audit.gaps#{node.id}"
     assert summary.exceptions_var == content.output_variable_names()[0]
     assert summary.exception_rows == 6 and summary.status == "fail"
@@ -604,19 +600,20 @@ def test_after_execution_builds_the_test_summary() -> None:
 def test_state_round_trips_through_serialize() -> None:
     _window, _source, node = _graph(pl.DataFrame({"je": JE}).lazy())
     content = node.content
-    content.sequence_column = "je"
-    content.mode = "date"
-    content.group_columns = ["led"]
-    content.range_start = 3
-    content.min_gap_days = 4
-    content.business_days_only = True
-    content.holidays = ["2024-03-29"]
-    data = content.serialize()
-    other = TriggerNode_Gaps(TriggerSubWindow().scene)
-    other.content.deserialize(dict(data))
-    assert other.content.params() == content.params()
-    other.content.deserialize({})
-    assert other.content.params() == GapsParams()
+    _data, other_content = round_trip_settings(
+        content,
+        lambda: TriggerNode_Gaps(TriggerSubWindow().scene).content,
+        sequence_column="je",
+        mode="date",
+        group_columns=["led"],
+        range_start=3,
+        min_gap_days=4,
+        business_days_only=True,
+        holidays=["2024-03-29"],
+    )
+    assert other_content.params() == content.params()
+    other_content.deserialize({})
+    assert other_content.params() == GapsParams()
 
 
 def test_findings_sort_numerically_not_as_text() -> None:

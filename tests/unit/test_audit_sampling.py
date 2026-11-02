@@ -16,6 +16,7 @@ import pytest
 
 from tests.support.audit_demo import demo_graph
 from tests.support.audit_ledger import make_ledger
+from tests.support.contract_helpers import live_value_and_generated_code_agree
 from trigger_designer.core.audit import sampling
 from trigger_designer.core.audit.common import ROW, AuditConfigError
 from trigger_designer.core.audit.sampling import (
@@ -889,18 +890,9 @@ def test_live_value_and_generated_code_agree() -> None:
     _w, source, node = _ready(
         key_columns=KEY, method="mus", amount_column="amount", sample_size=40
     )
-    out = node.value
-    live = [
-        o["data"].collect() if isinstance(o["data"], pl.LazyFrame) else o["data"]
-        for o in out
-    ]
-    namespace = {"var_src": source.frame}
-    exec(node.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
-    for item, expected in zip(out, live):
-        got = namespace[item["variable_name"]]
-        got = got.collect() if isinstance(got, pl.LazyFrame) else got
-        assert got.equals(expected)
-    assert isinstance(namespace[out[2]["variable_name"]], pl.DataFrame)
+    live, namespace = live_value_and_generated_code_agree(node, source)
+    # Sampling-specific checks
+    assert isinstance(namespace[node.value[2]["variable_name"]], pl.DataFrame)
     assert live[0].height == 40 and live[1].height == LEDGER.height - 40
     assert node.get_code() == node.get_code()  # idempotent: no timestamp, no counter
 

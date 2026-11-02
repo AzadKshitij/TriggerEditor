@@ -14,15 +14,15 @@ import os
 import pytest
 
 SRC_ROOT = os.path.join(
-    os.path.dirname(__file__), "..", "..", "src", "trigger_designer"
+    os.path.dirname(__file__), "..", "..", "src", "trigger_designer", "qt"
 )
 
 #: Files whose remaining prints are the deliberate fallbacks.
 ALLOWED_PRINTS = {
     # The Shift+P separator and the no-dock fallback of ``log()``.
-    os.path.join("qt", "design_window.py"),
+    os.path.join("design_window.py"),
     # The fallbacks that run when the dock is gone or logging broke.
-    os.path.join("qt", "helpers", "global_logger.py"),
+    os.path.join("helpers", "global_logger.py"),
 }
 
 #: The headless CLI's stdout is its product (``print`` in its commands and the
