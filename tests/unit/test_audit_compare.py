@@ -157,16 +157,16 @@ def test_diff_order_is_fixed():
     new["inputs"][0]["sha256"] = "1" * 64
     new["nodes"][0]["settings"] = {"x": 1}
     new["outputs"][0]["row_count"] = 9
-    assert [k for k, _ in _kinds(compare_runs(old, new))] == [
+    # One assert over one diff: the exact kind sequence, in the order the
+    # comparison walks its categories. A missing kind must fail here, not pass.
+    kinds = [i.kind for i in compare_runs(old, new).items]
+    assert kinds == [
         "environment",
         "input",
         "parameter",
         "parameter",
         "output",
-    ] or True
-    kinds = [i.kind for i in compare_runs(old, new).items]
-    assert kinds.index("environment") < kinds.index("input") < kinds.index("parameter")
-    assert kinds.index("parameter") < kinds.index("output")
+    ]
 
 
 # -- check_inputs ------------------------------------------------------------
