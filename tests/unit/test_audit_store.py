@@ -256,6 +256,28 @@ def test_unknown_key_with_recomputed_hash_verifies_but_stale_hash_fails(tmp_path
     _edit(path, lambda d: d.update(x_future=1))
     assert _kinds(store.verify(directory)) == ["record_hash_mismatch"]
 
+    # A future version that knows the key would have re-sealed the record and
+    # its index entry: the unknown key itself is not a problem, the stale
+    # hash is. Rehashing the file alone is caught against the index.
+    _edit(path, lambda d: d.update(record_hash=compute_record_hash(d)))
+    assert _kinds(store.verify(directory)) == ["index_mismatch"]
+
+    rehashed = compute_record_hash(orjson.loads(path.read_bytes()))
+    index_path = directory / "index.jsonl"
+    entries = [
+        orjson.loads(line)
+        for line in index_path.read_bytes().splitlines()
+        if line.strip()
+    ]
+    for entry in entries:
+        if entry.get("run_id") == r1.run_id:
+            entry["record_hash"] = rehashed
+    os.chmod(index_path, stat.S_IWRITE)
+    index_path.write_bytes(b"\n".join(orjson.dumps(e) for e in entries) + b"\n")
+
+    assert store.verify(directory).ok
+    assert verify_record_file(path).ok
+
 
 def test_verify_record_file_standalone(tmp_path):
     _store, directory, (r1, *_rest) = _seed(tmp_path, 2)
