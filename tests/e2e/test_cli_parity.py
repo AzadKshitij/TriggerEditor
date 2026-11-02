@@ -13,7 +13,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import polars as pl
 import pytest
 
 from tests.support.cli import run_cli
@@ -166,4 +165,3 @@ def test_corpus_passes_policy(qtbot, no_modal_dialogs):
                 refused += 1
                 pytest.fail(f"{path.name}: {node.node_title}: {exc}")
     assert checked >= 40 and refused == 0
-    assert pl is not None
