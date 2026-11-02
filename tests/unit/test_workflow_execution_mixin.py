@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 
-import os
-import sys
 from types import SimpleNamespace
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 from qtpy.QtWidgets import QApplication
 
@@ -26,7 +17,7 @@ class FakeNode:
     therefore unhashable) since nodes are used as execution_results dict
     keys."""
 
-    def __init__(self, node_title: str, grNode: "DummyGraphicsNode") -> None:
+    def __init__(self, node_title: str, grNode: DummyGraphicsNode) -> None:
         self.node_title = node_title
         self.grNode = grNode
 

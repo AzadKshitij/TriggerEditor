@@ -5,16 +5,7 @@ The zoom threshold and the per-element modes are the user's call: which parts
 of a node survive the canvas simplifying, and where that happens.
 """
 
-import os
-import sys
 from collections.abc import Iterator
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 import pytest
 from qtpy.QtWidgets import QApplication

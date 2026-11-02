@@ -101,6 +101,8 @@ branch = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# src on the path for every test; per-module sys.path.insert blocks are gone.
+pythonpath = ["src"]
 # Layers are marked automatically from the directory a test lives in
 # (see tests/conftest.py); `--strict-markers` keeps a typo from silently
 # creating an unselectable layer.

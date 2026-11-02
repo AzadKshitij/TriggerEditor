@@ -8,13 +8,6 @@ and that applying a map moves the window's real ``QAction`` shortcuts.
 from __future__ import annotations
 
 import json
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-)
 
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import QAction, QApplication, QWidget

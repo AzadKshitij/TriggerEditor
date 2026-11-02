@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 """Data Preview wiring: shared dock creation, Window menu, scene hooks."""
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 from qtpy.QtWidgets import QApplication, QMainWindow
 
 from trigger_designer.core.node_configuration import (

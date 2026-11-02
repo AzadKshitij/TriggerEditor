@@ -12,16 +12,6 @@ These tests pin the invariant: painting the diagnostics leaves the document
 alone, leaves the text alone, and does not disturb the undo stack.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 from qtpy.QtWidgets import QApplication
 
 from trigger_designer.qt.widgets.sql_formula_editor import SQLFormulaEditor

@@ -26,21 +26,25 @@ from __future__ import annotations
 
 import gc
 import os
-import sys
 import tempfile
 from pathlib import Path
 
 import pytest
 
 _ROOT = Path(__file__).resolve().parents[1]
-_SRC = _ROOT / "src"
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
 
 #: Kept alive for the whole session so the directory is not garbage-collected.
 _DATA_DIR = tempfile.TemporaryDirectory(prefix="trigger-designer-tests-")
-os.environ.setdefault("TRIGGER_DESIGNER_DATA_DIR", _DATA_DIR.name)
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# Hard-set, not setdefault: an inherited TRIGGER_DESIGNER_DATA_DIR would send
+# the whole run at the real %APPDATA%/Trigger Designer store, and an inherited
+# QT_QPA_PLATFORM=windows would open real windows and turn timing tests into
+# desktop tests.
+os.environ["TRIGGER_DESIGNER_DATA_DIR"] = _DATA_DIR.name
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+assert (
+    Path(os.environ["TRIGGER_DESIGNER_DATA_DIR"]).resolve()
+    == Path(_DATA_DIR.name).resolve()
+), "the test data dir was not applied"
 
 from trigger_designer.qt import preferences as _preferences
 

@@ -15,18 +15,10 @@ published through a signal, a lossless serialization round trip, and a chart
 backend that stays out of the startup import sweep.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 import copy
+import os
 import subprocess
+import sys
 
 import polars as pl
 from nodeeditor.node_edge import Edge

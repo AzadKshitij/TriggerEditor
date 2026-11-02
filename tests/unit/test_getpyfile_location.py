@@ -8,8 +8,6 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
 import pytest
 
 from trigger_designer.qt.design_window import TriggerSubWindow

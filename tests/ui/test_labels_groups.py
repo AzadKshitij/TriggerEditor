@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Node labels + upstream visual groups: model behaviour and menu helpers."""
 
-import os
-import sys
 import types
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QApplication, QWidget
@@ -82,6 +73,7 @@ def test_label_deserialize_old_file_without_keys() -> None:
 
 def test_group_collapse_expand_edges() -> None:
     from nodeeditor.node_group import Group
+
     from trigger_designer.qt.performance_scene import TriggerEdge
 
     scene = _make_scene()

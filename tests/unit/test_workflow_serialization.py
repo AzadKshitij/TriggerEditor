@@ -6,12 +6,6 @@ import sys
 from pathlib import Path
 from typing import ClassVar
 
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 SRC_PATH = sys.path[0]
 
 import polars as pl
@@ -165,12 +159,11 @@ def test_cleansing_content_serializes_settings() -> None:
 
 
 def test_trigger_scene_workflow_metadata_round_trip_in_subprocess() -> None:
-    code = f"""
+    code = """
 import os
 import sys
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-sys.path.insert(0, r'{SRC_PATH}')
 
 from qtpy.QtWidgets import QApplication
 
@@ -185,13 +178,13 @@ assert serialized['workflow_metadata']['schema_version'] == WORKFLOW_SCHEMA_VERS
 assert serialized['workflow_metadata']['app_version'] == VERSION
 assert 'saved_at' in serialized['workflow_metadata']
 
-scene.deserialize({{
+scene.deserialize({
     'id': 1,
     'scene_width': 64000,
     'scene_height': 64000,
     'nodes': [],
     'edges': [],
-}})
+})
 
 assert scene.loaded_workflow_metadata['schema_version'] == 0
 assert scene.loaded_workflow_metadata['app_version'] is None

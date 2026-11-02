@@ -6,14 +6,6 @@ Edit-menu label, and the ``scene.history`` -> ``QUndoStack`` path - against a
 real design window offscreen.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-)
-
 import pytest
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QMainWindow

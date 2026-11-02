@@ -8,16 +8,6 @@ bar only ever said "Ready". The base cannot simply be called: it wires
 widget, so that attribute does not exist.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 import pytest
 from qtpy.QtWidgets import QApplication, QLabel, QWidget
 

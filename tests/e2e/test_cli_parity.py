@@ -31,12 +31,12 @@ def _sha(path: Path) -> str:
 
 
 def _latest(folder: Path) -> dict:
-    files = sorted(
-        (p for p in folder.glob("*.json") if p.name != "hash_cache.json"),
-        key=lambda p: p.stat().st_mtime,
-    )
-    assert files, f"no record in {folder}"
-    return json.loads(files[-1].read_text(encoding="utf-8"))
+    # Sequence order comes from the index, not st_mtime: two records written
+    # back-to-back can share an mtime tick, which would make "latest" depend
+    # on directory order.
+    record = RunStore().latest_record_dict(folder)
+    assert record is not None, f"no record in {folder}"
+    return record
 
 
 def _shape(record: dict) -> dict:

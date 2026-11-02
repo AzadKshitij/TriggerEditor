@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """DataPreviewPanel: the strip (node, socket, search, provenance, counts)."""
 
-import os
-import sys
 import time
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 import polars as pl
 from qtpy.QtCore import Qt

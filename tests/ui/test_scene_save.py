@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
 import orjson
 import pytest
 from nodeeditor.node_scene import InvalidFile

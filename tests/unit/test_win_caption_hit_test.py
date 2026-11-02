@@ -11,16 +11,6 @@ physical pixels in and returns a hit-test code, so it is checked here on every
 platform.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 from qtpy.QtCore import QRect
 
 from trigger_designer.qt.helpers.win_caption import (

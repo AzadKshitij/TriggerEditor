@@ -2,10 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
 from nodeeditor.node_graph import GraphCycleError
 
 from trigger_designer.qt.design_window import TriggerSubWindow

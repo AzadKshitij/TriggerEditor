@@ -8,10 +8,6 @@
 
 from __future__ import annotations
 
-import os
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
 import polars as pl
 import pytest
 from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox

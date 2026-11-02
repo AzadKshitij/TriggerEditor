@@ -12,16 +12,6 @@ after a successful run, and the non-modal chart window follows later setting
 edits through the debounce.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 import copy
 
 import polars as pl

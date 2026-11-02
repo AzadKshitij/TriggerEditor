@@ -5,14 +5,6 @@ plumbing but the timeline contract: what gets recorded, what merging does,
 what undo restores, and that no recording happens while a restore is running.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-)
-
 import pytest
 from qtpy.QtWidgets import QApplication
 

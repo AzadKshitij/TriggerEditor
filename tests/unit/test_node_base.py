@@ -1,21 +1,11 @@
 #!/usr/bin/env python3
 
-import os
-import sys
 from types import SimpleNamespace
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QFrame
 
 from trigger_designer.qt.node_base import TriggerChangeHandler
-
 
 APP = QApplication.instance() or QApplication([])
 

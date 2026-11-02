@@ -1,12 +1,5 @@
 """Edges are stored output -> input even when the drag started on an input."""
 
-import os
-import sys
-from pathlib import Path
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graph import descendants, topological_order
 from qtpy.QtWidgets import QApplication

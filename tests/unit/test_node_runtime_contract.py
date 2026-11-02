@@ -6,13 +6,6 @@ transitions of ``evalImplementation``, ``eval`` exception handling, error
 knock-on clearing, invalidation on input changes and the content MRO.
 """
 
-import os
-import sys
-from pathlib import Path
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 from qtpy.QtWidgets import QApplication
 

@@ -11,16 +11,7 @@ deleted while their edges stayed behind.
 
 from __future__ import annotations
 
-import os
-import sys
 from collections.abc import Iterator
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 import pytest
 from qtpy.QtCore import QPointF, QRectF

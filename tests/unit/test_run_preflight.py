@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import os
 from types import SimpleNamespace
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 from nodeeditor.node_graph import GraphCycleError
