@@ -131,7 +131,8 @@ def test_default_store_dir_is_next_to_the_workflow(tmp_path):
     record = recorder.begin(str(wf), [_spec(tmp_path)], app_version="0.1.0")
     recorder.finish(record, True)
     assert (tmp_path / "wf.runs" / "index.jsonl").is_file()
-    assert (tmp_path / "wf.runs" / "hash_cache.json").exists() or True
+    # hash_cache.json is NOT asserted here: the cache is only written once an
+    # input file is actually hashed, and this record has no input files.
 
 
 def test_snapshot_is_an_independent_deep_copy(tmp_path):
