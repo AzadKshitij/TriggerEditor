@@ -6,6 +6,7 @@ import hashlib
 import itertools
 import os
 import stat
+import sys
 import threading
 import time
 from pathlib import Path
@@ -300,7 +301,22 @@ def test_record_file_is_pretty_and_hash_matches_canonical(tmp_path):
     assert compute_record_hash(data) == data["record_hash"] == r1.record_hash
 
 
-@pytest.mark.xfail(strict=False, reason="elevated users can write read-only files")
+def _running_elevated() -> bool:
+    """An elevated process can write read-only files, so the seal check cannot hold."""
+    if sys.platform != "win32":
+        return False
+    try:
+        import ctypes
+
+        return bool(ctypes.windll.shell32.IsUserAnAdmin())
+    except Exception:  # noqa: BLE001 - treat an unknown token state as non-elevated
+        return False
+
+
+@pytest.mark.skipif(
+    _running_elevated(),
+    reason="elevated users can write read-only files",
+)
 def test_record_file_is_read_only(tmp_path):
     _store, directory, (r1, *_rest) = _seed(tmp_path, 1)
     assert not os.access(_record_path(directory, r1), os.W_OK)
