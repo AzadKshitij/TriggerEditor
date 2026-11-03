@@ -402,7 +402,7 @@ Ref  Tick mark  Auditor comment  vendor    invoice_no  amount  paid_on     note 
 A2  Snapshot taken while the workflow was running: steps up to and including Duplicates are listed;
     this step is listed as in progress at the end; later steps are not.
 Run ID 7f65b31a2ec1481c94bbbf2359c6d8df   Status running   Started (UTC) 2026-10-30T18:54:34.890001Z
-Run by kashvinchandrasan@USMUMKASHVIM2    Application version 0.1.0   Python 3.14.8   Polars 2.0.0
+Run by alice@WORKSTATION01    Application version 0.1.0a1   Python 3.14.8   Polars 2.0.0
 Workflow SHA-256  552818fbaf33ac0b7a1df9a9fbc5bf74289b7a4711518925cfdbfac934ce1555
 
 Role   Path               Size  Modified (UTC)               SHA-256

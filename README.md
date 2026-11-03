@@ -150,16 +150,25 @@ scripts\run.bat                                          # Windows helper
 
 ## Building a standalone executable
 
-Windows builds are scripted with PyInstaller:
+Windows builds are scripted with PyInstaller. The folder build (onedir) starts
+faster because nothing is unpacked at launch; the single-file build trades that
+startup time for a one-file download.
 
 ```powershell
-scripts\build.bat                 # onedir build in dist\TriggerEditor\
-scripts\build.bat -- --portable   # single-file executable
+scripts\build.bat                 # folder build in dist\TriggerEditor\, zipped
+scripts\build.bat -- --folder     # same as above, named explicitly
+scripts\build.bat -- --portable   # single-file executable, zipped
+scripts\build.bat -- --both       # both editions in one run
 ```
 
-The script installs the locked dependencies (`uv sync --frozen`), smokes-tests the
-source imports, and runs PyInstaller with [`trigger.spec`](trigger.spec). Compile
-the installer with Inno Setup using
+Each build is packaged by `scripts/package_windows.py` into
+`dist\TriggerDesigner-<version>-windows-folder.zip` or
+`dist\TriggerDesigner-<version>-windows-portable.zip`, and
+`dist\SHA256SUMS.txt` is regenerated. The script installs the locked
+dependencies (`uv sync --frozen --dev`), smoke-tests the source imports, and
+runs PyInstaller with [`trigger.spec`](trigger.spec). The folder build also
+runs `trigger-designer-cli --version` and `validate --deep` on the sample
+workflow. Compile the installer with Inno Setup using
 [`savedfiles/TriggerDesigner_Setup.iss`](savedfiles/TriggerDesigner_Setup.iss).
 
 ## Project layout

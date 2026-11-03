@@ -14,7 +14,7 @@ from trigger_designer.core.input_source import build_source
 
 # File Input (csv, builder path)
 _spec_1873945534272 = {
-    "filePath": "C:/Users/azadk/.local/share/opencode/worktree/f02c226d0c50f053dbc941d477c1547441188e19/feature/savedfiles/Example_3_AE_Winter_Watch/data",
+    "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_3_AE_Winter_Watch/data",
     "file_type": "csv",
     "record_limit": 0,
     "output_filename_as_field": True,

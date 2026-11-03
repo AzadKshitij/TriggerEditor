@@ -1,131 +1,86 @@
-# Logging Dock Integration
+# Logs dock
 
-This document describes the logging dock functionality that has been integrated into the Trigger Designer application.
+The Logs dock is one panel for the active design window: the running commentary
+and the list of nodes with problems. It is a view, not a store.
 
 ## Overview
 
-The logging dock provides a single, shared logging panel that displays logs for the currently active design window. The dock automatically switches context when you switch between different design windows, showing only the logs relevant to the active window.
+Each design window owns a `DiagnosticFeed` (`window.diagnostics`). The feed holds
+log lines *and* problem records in one order; the dock paints whichever document
+is active and keeps no records of its own. Switching windows repoints the dock at
+another feed.
+
+A problem record wraps the whole `NodeError`, so code, Fix, Caused-by, technical
+text and fingerprint survive unflattened. The node's badge still reads
+`NodeErrorState.by_source`; the feed is a copy pushed after it, never a second
+authority.
 
 ## Features
 
-### Shared Logging Dock with Context Switching
-- Single logging dock that shows logs for the currently active design window
-- Logs are isolated per design window but displayed in a shared interface
-- Automatic context switching when you change between design windows
-- Clean display when switching to windows with no logs (empty state)
+- One list: log lines and node problems interleaved by insertion order.
+- Counted filter strip: `All`, `N Errors`, `N Conv`, `N Warnings`, `N Messages`.
+  The chip is both the filter and the count; there is no tab-title count.
+- `Last Run` / `Configuration`: split problem records by origin. Log lines appear
+  in both modes, because a log line has no phase.
+- `Ctrl+F` search over message, code, title, detail and node name, debounced
+  300 ms.
+- Click a problem row to select its node and centre the canvas; Return does the
+  same from the keyboard.
+- Double-click or Space expands a problem row to the code, Fix, Caused-by and
+  (with the toggle on) the first technical line.
+- `Copy details` copies the selected problems, or every problem the filter shows.
+- `Clear` empties log lines only. A live problem leaves when its node goes clean.
+- `Follow new entries` keeps the newest record in view.
+- Can be closed and reopened from Window ▸ Logs; a failed Run raises it with
+  `Last Run` and `Errors` selected.
 
-### Docking Capabilities
-- The logging dock shares the bottom dock area with the Data Preview dock as tabs
-- The tab bar is the pair's chrome: a docked panel hides its own title bar and the
-  float/close buttons that come with it
-- Drag the Logs tab out of the tab bar to pop the panel out into its own window;
-  the popped-out panel gets its title bar back (its window frame moves, resizes
-  and closes it) and re-docks when dragged back over a dock area
-- Can be closed and reopened from Window ▸ Logs
+### Dock chrome
 
-### Log Filtering
-- **Log Level Filter**: Filter logs by minimum level (TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL)
-- **Text Filter**: Search for specific text within log messages
-- **Auto-scroll**: Automatically scroll to the latest log entries
-
-### Log Levels
-- **TRACE** (Gray): Detailed debugging information
-- **DEBUG** (Green): General debugging information  
-- **INFO** (Blue): General information messages
-- **WARNING** (Orange): Warning messages
-- **ERROR** (Red): Error messages
-- **CRITICAL** (Purple): Critical error messages
+The dock shares the bottom tab bar with Data Preview and Run History. While it is
+a tab it hides its own title bar; dragging the tab out pops the panel out with a
+frame and re-docks on drop.
 
 ## Usage
 
-### Automatic Context Switching
-When you create a new design window (File → New or Ctrl+N), the existing logging dock automatically starts tracking logs for that window. When you switch between design windows, the logging dock content updates to show logs for the currently active window.
-
-### Manual Logging
-From within a design window, you can log messages using these methods:
-
 ```python
-# In your design window code
-self.logTrace("Detailed debugging info")
-self.logDebug("Debug information") 
+# From a design window: appends a log record to this document's feed.
 self.logInfo("General information")
 self.logWarning("Warning message")
-self.logError("Error occurred")
-self.logCritical("Critical error")
-
-# Or use the generic log method
 self.log("INFO", "Custom message")
 ```
 
-### Built-in Logging
-The application automatically logs various activities:
-- Design window creation with welcome messages
-- File loading operations
-- Workflow execution status
-- Node creation events
-- Error conditions
+Node errors do not go through `log()`: `NodeErrorState.set` pushes the structured
+record straight into `window.diagnostics`, and `log_new` writes only to the
+session log file.
 
-### Dock Management
-- **Undocking**: Drag the *tab* out of the tab bar - the panel pops out and its
-  title bar appears; drag the floating window back over a dock area to dock it
-- **Docking**: Drop a floating panel on an edge, or on the Logs tab bar, to dock
-  or tab it there
-- **Closing**: `Window ▸ Logs` toggles the panel; the close button of a floating
-  panel does the same
-- **Resizing**: Drag the dock borders to resize the logging area
+## Implementation details
 
-### Filtering
-1. **Log Level**: Use the dropdown to select minimum log level to display
-2. **Text Filter**: Type in the filter box to search for specific text
-3. **Auto-scroll**: Check/uncheck to enable/disable automatic scrolling
-4. **Clear**: Click the "Clear" button to remove all log entries
+| Part | Role |
+|---|---|
+| `helpers/diagnostic_feed.py` | `DiagnosticFeed` and `DiagnosticRecord`: one order, `seq`, immutable `first_seen`, per-kind retention, `changed` signal. |
+| `helpers/diagnostic_feed.py` | Category (`Errors`, `Conv`, `Warnings`, `Messages`) is derived from kind, severity and the `TD-TYP-` prefix, never stored. |
+| `docks/logging_dock.py` | `LoggingDock` (strip, mode, search, actions), `DiagnosticModel` (flat `QAbstractItemModel`), `DiagnosticDelegate` (all row painting and colour). |
+| `design_window.py` | Owns the feed, sets `scene.diagnostics`, and is the only place `log()` appends. |
+| `node_runtime.py` | `NodeErrorState.diagnostics_feed()` reads `scene.diagnostics`; no widget walk. |
 
-## Implementation Details
+### Memory
 
-### Architecture
-- `LoggingDock`: The main dock widget containing the log viewer
-- `LogEntry`: Represents individual log entries with timestamps
-- `MainWindowDockMixin`: Manages dock creation and cleanup
-- `TriggerSubWindow`: Integrated with logging methods
-
-### Memory Management
-- Logs are automatically limited to 1000 entries per design window to prevent memory issues
-- Older logs are removed when the limit is exceeded for each window
-- Logs for a design window are automatically cleaned up when the window is closed
-- Only one dock exists, reducing memory overhead
+- 1,000 log records per document; the oldest are dropped past the cap.
+- Problem records are never trimmed by that cap and never deleted by Clear.
+- A problem record leaves when node state drops it, or when the next Run starts
+  (run-origin records).
+- Nothing is left in place of a fixed problem; the session log file is the trail.
 
 ### Performance
-- Log display is updated every 100ms for smooth performance
-- Only updates when new logs are added
-- Efficient filtering without rebuilding the entire display
 
-## Testing
-
-You can test the logging functionality by running:
-
-```bash
-python test_logging_dock.py
-```
-
-This will:
-1. Create a main window with a new design window
-2. Send test messages at different log levels
-3. Demonstrate the logging dock functionality
+- The feed emits `changed`; the dock coalesces to a 0 ms timer and rebuilds the
+  projection list.
+- The model resets only when the identity sequence changes; a payload-only update
+  emits `dataChanged`.
+- Selection and scroll are restored by record id after a reset.
+- No HTML is generated anywhere in the path.
 
 ## Related docks
 
-The Data Preview dock (`docs/DATA_PREVIEW_DOCK_README.md`) shares this tab stack:
-`MainWindowDockMixin` tabifies it behind Logs, and `Window > Data Preview` (or
-`Ctrl+Shift+D`) brings it to the front. Both docks keep their per-window state
-keyed by `str(id(design_window))` and drop it in `onDesignWindowClose`.
-
-## Future Enhancements
-
-Potential future improvements:
-- Export logs to file
-- Log search and highlighting
-- Log level statistics
-- Custom log formatting
-- Integration with external logging frameworks
-- Log timestamps with different formats
-- Log message grouping and folding
+The Data Preview dock (`docs/DATA_PREVIEW_DOCK_README.md`) shares this tab stack.
+Both follow the active document and drop its state in `onDesignWindowClose`.

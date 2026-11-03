@@ -15,10 +15,12 @@ from loguru import logger
 from qtpy.QtGui import QIcon, QGuiApplication, QScreen
 from qtpy.QtWidgets import QApplication
 
+from trigger_designer.qt.helpers.diagnostic_feed import log_level
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.splash import Splash
 
 _LOG_STREAM_LOCK = threading.Lock()
+_VERBOSE_LEVELS = ("TRACE", "DEBUG")
 _ANSI_ESCAPE_RE = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 
 
@@ -31,26 +33,32 @@ def _should_flush(text: str) -> bool:
 
 
 class _TeeStream:
-    def __init__(self, terminal_stream: TextIO, log_stream: TextIO) -> None:
+    def __init__(
+        self, terminal_stream: TextIO, log_stream: TextIO, to_terminal: bool = True
+    ) -> None:
         self._terminal_stream = terminal_stream
         self._log_stream = log_stream
+        self._to_terminal = to_terminal
 
     def write(self, text: str) -> int:
         if not text:
             return 0
 
         with _LOG_STREAM_LOCK:
-            self._terminal_stream.write(text)
+            if self._to_terminal:
+                self._terminal_stream.write(text)
             self._log_stream.write(_strip_ansi_escape_sequences(text))
             if _should_flush(text):
-                self._terminal_stream.flush()
+                if self._to_terminal:
+                    self._terminal_stream.flush()
                 self._log_stream.flush()
 
         return len(text)
 
     def flush(self) -> None:
         with _LOG_STREAM_LOCK:
-            self._terminal_stream.flush()
+            if self._to_terminal:
+                self._terminal_stream.flush()
             self._log_stream.flush()
 
     def isatty(self) -> bool:
@@ -161,13 +169,14 @@ def _configure_logging() -> Path | None:
         logger.warning(f"Unable to open log file {log_file_path}: {exc}")
         return None
 
-    sys.stdout = _TeeStream(original_stdout, log_file_handle)
-    sys.stderr = _TeeStream(original_stderr, log_file_handle)
+    verbose = log_level() in _VERBOSE_LEVELS
+    sys.stdout = _TeeStream(original_stdout, log_file_handle, to_terminal=verbose)
+    sys.stderr = _TeeStream(original_stderr, log_file_handle, to_terminal=verbose)
 
     logger.remove()
     logger.add(
         original_stderr,
-        level="DEBUG",
+        level=log_level() if verbose else "WARNING",
         format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level:<8} | {name}:{function}:{line} - {message}",
     )
     logger.add(
@@ -232,7 +241,7 @@ def main() -> None:
     # Application configuration. The application name is the product name -
     # the old code set it to "Trigger", which made QStandardPaths and any
     # default QSettings scope disagree with everything else.
-    name_company = "Blue Octa"
+    name_company = "Azad Kshitij"
     name_product = "Trigger Designer"
     app.setApplicationName(name_product)
     app.setApplicationDisplayName(name_product)

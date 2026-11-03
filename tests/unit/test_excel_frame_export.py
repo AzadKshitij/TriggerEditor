@@ -114,7 +114,17 @@ def test_missing_xlsxwriter_is_td_out_003(tmp_path, monkeypatch):
 def test_failed_publish_keeps_old_target_and_cleans_temp(tmp_path, monkeypatch):
     import tempfile
 
-    before = set(Path(tempfile.gettempdir()).glob("td_xl_*"))
+    # Redirect mkdtemp into this test's own folder: the glob-before/after
+    # check against the shared temp directory races with other xdist workers.
+    private = tmp_path / "_tmp"
+    private.mkdir()
+    real_mkdtemp = tempfile.mkdtemp
+
+    def local_mkdtemp(*args, **kwargs):
+        kwargs["dir"] = str(private)
+        return real_mkdtemp(*args, **kwargs)
+
+    monkeypatch.setattr(tempfile, "mkdtemp", local_mkdtemp)
     out = tmp_path / "o.xlsx"
     out.write_bytes(b"old")
 
@@ -125,7 +135,7 @@ def test_failed_publish_keeps_old_target_and_cleans_temp(tmp_path, monkeypatch):
     with pytest.raises(ExcelWriteError):
         write_frame_xlsx(pl.DataFrame({"a": [1]}), str(out))
     assert out.read_bytes() == b"old"
-    assert set(Path(tempfile.gettempdir()).glob("td_xl_*")) == before
+    assert not list(private.iterdir())
 
 
 def test_locked_target_is_td_out_002(tmp_path, monkeypatch):

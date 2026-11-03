@@ -1,7 +1,7 @@
 # Signal — Trigger Designer Design System
 
 > Source of truth for the application UI.
-> Visual reference: [`design_system_preview.html`](assets/design_system_preview.html) — self-contained, no network required.
+> Visual reference: `docs/assets/design_system_preview.html` in the source tree (not part of the published site).
 > Config Dock contract: **§§1–7** (the sections `AGENTS.md` points at).
 > Reference implementations: the Data Preview strip (`qt/widgets/data_preview_panel.py`) and the Select tool (`qt/widgets/nodes/Preparation/select.py:134-259`).
 > Status: Signal 1.0 is the target contract. The Preview strip is the reference implementation; tokens and states marked **target** below are not in `base.qss` yet. The migration order is in §19.
@@ -563,7 +563,32 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 - Level is the only colour: `INFO` info, `WARN` warning, `ERROR` danger, `CRITICAL` danger + bold, `DEBUG` tertiary.
 - No card per line. The log pane is one `bg.inset` surface with hairline separators.
 - Auto-scroll is a checkbox in the dock controls, not a footer button.
-- Colours come from the theme (`text_*`, `info`, `warning`, `danger`) via `LoggingDock.apply_theme()` / `LogsTextEdit`; the SQL editor's syntax colours are the `Code` token group (`syntax_*`, `editor_line_number_*`, `editor_current_line`). No hardcoded log or syntax colours.
+- Colours come from the theme (`text_*`, `info`, `warning`, `danger`) via `LoggingDock.apply_theme()`; the SQL editor's syntax colours are the `Code` token group (`syntax_*`, `editor_line_number_*`, `editor_current_line`). No hardcoded log or syntax colours.
+
+### Diagnostic feed
+
+The Logs dock is one list of records, not a tab per kind. A record is a log line or
+a node problem; a problem carries the whole `NodeError`, so code, Fix, Caused-by and
+technical text stay structured.
+
+- **Row.** 22px: a 12px severity glyph, `HH:MM:SS` in `text.tertiary`, then the node
+  name as a link (`accent.secondary`) with its numeric id in `text.tertiary` for a
+  problem, or the message directly for a log line. The message is
+  `text.secondary`, elided right, never wrapped.
+- **Glyph.** Shape carries the kind so colour is never the only signal (§15):
+  circle-with-bang error, triangle warning, ring info, square debug, dot below that.
+- **Expansion.** A problem row expands in place (double-click, Space, or the chevron)
+  to `code  Fix: …`, then `Caused by: …`, then the first technical line when the
+  toggle is on. Detail text is 11px Mono in `text.tertiary`, 16px per line.
+- **Strip.** 40px, `background.secondary`. Counted chips are the filter and the count:
+  `All`, `N Errors`, `N Conv`, `N Warnings`, `N Messages`, then the icon actions and
+  the `Last Run` / `Configuration` segmented control. A zero count uses
+  `text.inactive` through `[zero="true"]`; the selected chip is `accent.primary`.
+  Chips are 30px tall, so the hit area meets §15.
+- **Colour owner.** The delegate resolves every colour from the active theme and
+  re-reads it in `apply_theme()`. No `setForeground`, no inline `style=`.
+- **Empty state.** One `EmptyStateLabel`, wording per filter: "No messages yet",
+  "No problems", "The last run reported nothing", "Nothing matches this filter".
 
 ### Status bar
 
@@ -673,7 +698,10 @@ ICON_SIZE = 16
 | `RenderDetailCardCombo`, `RenderDetailSocketsCombo`, `RenderDetailLabelCombo`, `RenderDetailIndicatorCombo` | preferences | hover, focus, disabled |
 | `ColorHexEdit`, `ColorSwatch`, `ThemeTokenRow`, `ContrastLabel` | theme editor | hover, focus |
 | `FieldLabel`, `FieldHint`, `SectionTitleText` | preferences / theme editor | — |
-| `LogsTextEdit` | logs | — |
+| `LoggingDockWidget`, `LoggingToolbar` | logs | — |
+| `DiagnosticCount` | logs | hover, pressed, checked, `[zero="true"]` |
+| `DiagnosticSearch` | logs | focus |
+| `DiagnosticTree` | logs | item hover, selected |
 | `FormulaCompleterPopup` | SQL editor | hover, selected |
 
 ### Guards
@@ -704,7 +732,7 @@ Target guards still to add:
 - Theme engine: `qt/theme_manager.py`, theme editor `qt/dialogs/theme_editor_dialog.py`, swatches `qt/widgets/common/theme_widgets.py`
 - Preferences: `qt/preferences.py`, dialog `qt/dialogs/preferences_dialog.py`, host window `qt/main_window.py`
 - Layout and session: `qt/layout_state.py`, `qt/helpers/preview_dock_state.py` (legacy migration only)
-- Visual preview: [`design_system_preview.html`](assets/design_system_preview.html)
+- Visual preview: `docs/assets/design_system_preview.html` in the source tree
 
 ---
 
@@ -799,4 +827,4 @@ Target guards still to add:
 - Canvas: `src/trigger_designer/qt/node_base.py`, `src/trigger_designer/qt/node_editor_colors.py`
 - Theme hooks: `src/trigger_designer/resources/qt/themes/base.qss`, `src/trigger_designer/qss/_style.scss`
 - Icons: `src/trigger_designer/qt/resources.json:98-105`
-- Visual preview: [`design_system_preview.html`](assets/design_system_preview.html)
+- Visual preview: `docs/assets/design_system_preview.html` in the source tree

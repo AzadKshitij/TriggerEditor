@@ -54,7 +54,7 @@ The sample file is `savedfiles\Example_2_Retail_Ledger\data\orders.csv` in the T
 1. Start Trigger Designer. The **Welcome to Trigger Designer** dialog opens.
 2. Click **New Project**. (Or close the dialog and choose **File > New**, `Ctrl+N`.)
 
-An empty canvas opens as a tab, with the node palette across the top (tabs **Input**, **Preparation**, **Join**, **Transform**, **Report**, **Audit**), the **Node Configuration** panel on the left, and the **Logs**, **Data Preview**, **Problems** and **Run History** tabs at the bottom.
+An empty canvas opens as a tab, with the node palette across the top (tabs **Input**, **Preparation**, **Join**, **Transform**, **Report**, **Audit**), the **Node Configuration** panel on the left, and the **Logs**, **Data Preview** and **Run History** tabs at the bottom.
 
 ### 2. Read the file
 

@@ -14,6 +14,8 @@ site_dir: site
 # in the repository for maintainers but are never published.
 exclude_docs: |
   internal/
+  assets/icon_proposals/
+  assets/design_system_preview.html
 
 theme:
   name: material
@@ -59,7 +61,10 @@ extra_javascript:
 
 nav:
   - Home: index.md
+  - Install: install.md
   - Getting started: guide/README.md
+  - Blog: blog/index.md
+  - Release notes: release-notes/v0.1.0-alpha.1.md
   - Concepts:
       - The canvas and nodes: guide/canvas-and-nodes.md
       - Config Dock, preview, logs and problems: guide/config-dock-and-preview.md
@@ -126,8 +131,8 @@ nav:
   - Workpapers: guide/workpaper.md
   - Command line: guide/cli.md
   - Troubleshooting and FAQ: guide/troubleshooting-and-faq.md
-  - Versioning: versions.md
   - Contributing:
+      - Versioning: versions.md
       - Writing node pages: contributing/writing-style.md
       - Design system: DESIGN_SYSTEM.md
 
@@ -135,6 +140,10 @@ plugins:
   - search:
       lang: en
       separator: '[\s\u200b\-]'
+  - blog:
+      blog_dir: blog
+      post_dir: blog/posts
+      post_date_format: long
   - optimize:
       cache: true
       cache_dir: .cache/plugin/optimize

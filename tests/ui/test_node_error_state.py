@@ -126,7 +126,7 @@ def test_set_error_sets_tooltip_badge_and_problems(qtbot) -> None:
     assert "Both inputs must be connected" in node.grNode.toolTip()
     assert node.grNode._error_badge == "error"
     assert node.current_error is error
-    assert window.problems.count() == 1
+    assert window.diagnostics.count() == 1
 
 
 def test_run_error_wins_then_live_reappears(qtbot) -> None:

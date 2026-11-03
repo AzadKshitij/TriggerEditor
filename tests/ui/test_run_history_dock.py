@@ -136,7 +136,7 @@ def test_default_layout_tabs_the_history_with_the_bottom_docks(
     apply_default_layout(window)
     tabbed = window.tabifiedDockWidgets(window.loggingDock)
     assert window.runHistoryDock in tabbed
-    assert window.dataPreviewDock in tabbed and window.problemsDock in tabbed
+    assert window.dataPreviewDock in tabbed
 
 
 def test_following_the_active_window(qtbot, theme_manager, clean_preferences, tmp_path):

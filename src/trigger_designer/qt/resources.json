@@ -193,6 +193,8 @@
     "icon_folder_open":{ "mode": "material", "name": "folder_open" },
     "icon_files":{ "mode": "material", "name": "folder_copy" },
     "icon_copy":{ "mode": "material", "name": "content_copy" },
+    "icon_clear":{ "mode": "material", "name": "delete_sweep" },
+    "icon_follow":{ "mode": "material", "name": "vertical_align_bottom" },
     "icon_report":{ "mode": "material", "name": "summarize" },
     "icon_technical":{ "mode": "material", "name": "expand_more" },
     "icon_save":{ "mode": "material", "name": "save" },

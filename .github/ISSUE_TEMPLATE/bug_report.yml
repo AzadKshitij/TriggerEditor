@@ -1,0 +1,60 @@
+name: Bug report
+description: Something in Trigger Designer does not work as described.
+labels: ["bug", "alpha"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing the alpha. Do not attach workflow files or data
+        files: they can contain business data. Describe the shape of the data instead.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Shown in Help > About, or in the folder name of the download (for example 0.1.0a1).
+    validations:
+      required: true
+  - type: dropdown
+    id: download
+    attributes:
+      label: How did you get it?
+      options:
+        - Portable zip
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a fresh launch if possible.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened
+    validations:
+      required: true
+  - type: input
+    id: logs
+    attributes:
+      label: Log file name
+      description: |
+        Open the folder %APPDATA%\Trigger Designer\logs and give the file name of the
+        log written at the time of the problem. Do not attach the file itself.
+  - type: checkboxes
+    id: crash
+    attributes:
+      label: Known issue check
+      options:
+        - label: I checked the known issues list in the release notes (including the 0xC0000409 crash).
+          required: true

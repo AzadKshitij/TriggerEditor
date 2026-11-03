@@ -116,9 +116,26 @@ Records of earlier runs stay in the old `.runs` folder; move that folder with th
 | Is the stop button showing instead of play? | A Run is in progress. Wait, or cancel. |
 | Did the Logs say "The workflow has a cycle"? | Remove one connection of the loop (the loop's edges are selected). |
 | Is there a **File Output** node, connected, with a path? | Without one, a Run writes nothing. See [Workflows with no output node](running-workflows.md#workflows-with-no-output-node). |
-| Did a node fail? | The Problems dock opens by itself after a failed Run; fix the first problem. |
+| Did a node fail? | The Logs dock opens by itself after a failed Run; fix the first problem. |
 | Is the file where you think? | Open the File Output node and read the path in **File**. Use a full path so there is no doubt where it goes. Check the run record's `outputs`, which lists the exact paths written. |
 | Is the run record there? | Run History lists it. "Run log saved: <path>" in the Logs says where it went. |
+
+## The Logs dock and the log file are quiet
+
+The program keeps routine detail out of the Logs dock and the log file. You see
+warnings, errors and the main steps of a Run. To see every detail, including the
+technical trace, start the program with the environment variable
+`TRIGGER_DESIGNER_LOG_LEVEL` set to `DEBUG`:
+
+```powershell
+$env:TRIGGER_DESIGNER_LOG_LEVEL = "DEBUG"
+& "C:\Tools\TriggerDesigner\TriggerEditor.exe"
+```
+
+Use `TRACE` for the most detail. Any other value, or no value, means `INFO`. The
+setting applies to the Logs dock, the console and the log file written to
+`%APPDATA%\Trigger Designer\logs`. Set the variable only while you investigate:
+the trace is long.
 
 ## Panels and layout
 
@@ -193,7 +210,7 @@ Records of earlier runs stay in the old `.runs` folder; move that folder with th
 | **Output / Input (socket)** | The connection points on the right and left of a node. |
 | **Pin** | Freeze the Data Preview on one node. |
 | **Plan** | The description of the work a lazy node builds; data is read only when something at the end asks for it. |
-| **Problems dock** | The list of nodes that currently have an error or warning. |
+| **Logs dock** | The log stream and the nodes that currently have an error or warning. |
 | **Record (run record)** | The sealed file that describes one Run. |
 | **Run** | Process the whole data with the workflow and write the outputs. |
 | **Sample (live sample)** | The first 100 rows used while editing. |

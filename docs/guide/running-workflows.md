@@ -56,7 +56,7 @@ Only one Run per workflow window can be in progress. Pressing the button while o
    - how long this Run took, the number of runs in this session and the average time,
    - "Run log saved: <path>".
 
-   If any node failed, the Problems dock comes to the front.
+   If any node failed, the Logs dock comes to the front.
 
 Green rings fade about a second after a successful Run. Red rings stay until the problem is fixed.
 
@@ -67,11 +67,11 @@ What happens next depends on **Edit > Settings > General > Error messages > "Kee
 - **On (default).** The Run carries on with every node that does not depend on the failed one. A node whose upstream failed, or was itself skipped, is **not executed**: it gets the warning `TD-RUN-008` "Skipped because 'X' failed" (not a red error; the node is not marked invalid) and its status in the run record is `skipped`. The failed node is recorded as `failed`, the independent branches as `ok`, and the Run as a whole is `failed`. Files written by the independent branches stay on disk.
 - **Off.** The Run **stops at the first failed node**. Nodes after it do not run and are not marked as skipped (in the run record they are listed as `skipped`). Files written by nodes that finished before the failure stay on disk.
 
-The Problems dock lists the failed node as the problem; the skipped nodes' `TD-RUN-008` warnings are knock-on entries that clear when you fix the first node and Run again. The command-line runner has its own flag for the same behaviour; see [cli.md](cli.md).
+The Logs dock lists the failed node as the problem; the skipped nodes' `TD-RUN-008` warnings are knock-on entries that clear when you fix the first node and Run again. The command-line runner has its own flag for the same behaviour; see [cli.md](cli.md).
 
 After a failed Run:
 
-1. Open **Problems** and click the first row. It selects the failing node.
+1. Open **Logs**, pick the **Errors** chip, and click the first row. It selects the failing node.
 2. Read the message and fix. See [Errors and problems](errors-and-problems.md).
 3. Run again.
 

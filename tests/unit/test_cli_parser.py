@@ -11,7 +11,7 @@ from trigger_designer.cli.parser import COMMAND_MODULES, build_parser
 def test_version_flag():
     result = call_main(["--version"])
     assert result.code == 0
-    assert result.stdout.strip() == "trigger-designer-cli 0.1.0 (workflow schema 2)"
+    assert result.stdout.strip() == "trigger-designer-cli 0.1.0a1 (workflow schema 2)"
 
 
 def test_usage_error_exits_64():

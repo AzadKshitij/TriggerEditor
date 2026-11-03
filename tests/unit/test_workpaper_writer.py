@@ -163,7 +163,17 @@ def test_replace_when_target_is_really_locked(tmp_path):
 
 
 def test_failed_write_leaves_no_partial_target_and_cleans_temp(tmp_path, monkeypatch):
-    before = set(Path(tempfile.gettempdir()).glob("td_wp_*"))
+    # Redirect mkdtemp into this test's own folder: the glob-before/after
+    # check against the shared temp directory races with other xdist workers.
+    private = tmp_path / "_tmp"
+    private.mkdir()
+    real_mkdtemp = tempfile.mkdtemp
+
+    def local_mkdtemp(*args, **kwargs):
+        kwargs["dir"] = str(private)
+        return real_mkdtemp(*args, **kwargs)
+
+    monkeypatch.setattr(tempfile, "mkdtemp", local_mkdtemp)
     import xlsxwriter
 
     def boom(self):
@@ -174,7 +184,7 @@ def test_failed_write_leaves_no_partial_target_and_cleans_temp(tmp_path, monkeyp
         write_workpaper(make_spec(tmp_path), EXCEPTIONS, now=FIXED_NOW)
     assert err.value.code == "TD-OUT-014"
     assert not (tmp_path / "wp.xlsx").exists()
-    assert set(Path(tempfile.gettempdir()).glob("td_wp_*")) == before
+    assert not list(private.iterdir())
 
 
 def test_eager_dataframe_input_matches_lazy(tmp_path):

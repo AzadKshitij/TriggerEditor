@@ -11,7 +11,6 @@ from trigger_designer.qt.docks.data_preview import DataPreviewDock
 from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
-from trigger_designer.qt.docks.problems_dock import ProblemsDock
 from trigger_designer.qt.docks.run_history_dock import RunHistoryDock
 from trigger_designer.qt.helpers.dock_chrome import (
     enable_tab_drag_out,
@@ -145,7 +144,7 @@ class MainWindowMenuMixin:
 
         if hasattr(self, "loggingDock") and self.loggingDock is not None:
             logger_action = self.loggingDock.toggleViewAction()
-            logger_action.setText("Show Logger")
+            logger_action.setText("Logs")
             self.windowMenu.addAction(logger_action)
 
         if hasattr(self, "dataPreviewDock") and self.dataPreviewDock is not None:
@@ -153,11 +152,6 @@ class MainWindowMenuMixin:
             preview_action.setText("Data Preview")
             preview_action.setShortcut(QKeySequence("Ctrl+Shift+D"))
             self.windowMenu.addAction(preview_action)
-
-        if hasattr(self, "problemsDock") and self.problemsDock is not None:
-            problems_action = self.problemsDock.toggleViewAction()
-            problems_action.setText("Problems")
-            self.windowMenu.addAction(problems_action)
 
         if hasattr(self, "runHistoryDock") and self.runHistoryDock is not None:
             history_action = self.runHistoryDock.toggleViewAction()
@@ -315,14 +309,6 @@ class MainWindowDockMixin:
         install_tab_only_chrome(self.loggingDock)
         install_tab_only_chrome(self.dataPreviewDock)
 
-    def createProblemsDock(self) -> None:
-        """Create the Problems dock, tabified with Logs and Data Preview."""
-        self.problemsDock = ProblemsDock(self)
-        self.problemsDock.setObjectName("ProblemsDock")
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.problemsDock)
-        self.tabifyDockWidget(self.loggingDock, self.problemsDock)
-        install_tab_only_chrome(self.problemsDock)
-
     def createRunHistoryDock(self) -> None:
         """Create the Run History dock, tabified with the other bottom docks."""
         self.runHistoryDock = RunHistoryDock(self)
@@ -349,15 +335,14 @@ class MainWindowDockMixin:
         if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
             self.dataPreviewDock.switch_to_design_window(design_window)
 
-    def switchProblemsDock(self, design_window) -> None:
-        if hasattr(self, "problemsDock") and self.problemsDock:
-            self.problemsDock.switch_to_design_window(design_window)
-
-    def raiseProblemsDock(self) -> None:
-        dock = getattr(self, "problemsDock", None)
-        if dock is not None:
-            dock.show()
-            dock.raise_()
+    def raiseDiagnosticsDock(self) -> None:
+        """Raise Logs on what the last run reported, narrowed to errors."""
+        dock = getattr(self, "loggingDock", None)
+        if dock is None:
+            return
+        dock.show()
+        dock.raise_()
+        dock.show_last_run(only_errors=True)
 
     def onDesignWindowClose(self, design_window, event) -> None:
         """Handle design window close event to clean up logs and previews"""
@@ -366,8 +351,6 @@ class MainWindowDockMixin:
             self.loggingDock.remove_design_window(design_window_id)
         if hasattr(self, "dataPreviewDock") and self.dataPreviewDock:
             self.dataPreviewDock.remove_design_window(design_window_id)
-        if hasattr(self, "problemsDock") and self.problemsDock:
-            self.problemsDock.remove_design_window(design_window_id)
         if hasattr(self, "runHistoryDock") and self.runHistoryDock:
             self.runHistoryDock.remove_design_window(design_window_id)
 

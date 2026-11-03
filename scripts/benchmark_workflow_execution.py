@@ -69,14 +69,12 @@ PER_RUN_TIMEOUT_MS = 60_000
 
 # Sample workflows were committed with the authoring machine's absolute paths
 # baked into every File Input/Output node (docs/bugs.md: 16 tracked files
-# contain 'KASHVINCHANDRASAN'). On any other machine File Inputs retry for
+# contain '<you>'). On any other machine File Inputs retry for
 # ~1s, give up, and downstream nodes fail with "no incoming data" - the
 # benchmark then measures the failure cascade, not the workload. Localize
 # such paths onto this checkout before loading, the same basename fallback
 # tests/support/corpus.py uses for e2e fixtures.
-_FOREIGN_REPO_ROOTS = (
-    "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor",
-)
+_FOREIGN_REPO_ROOTS = ("C:/Users/<you>/TriggerEditor",)
 
 
 def _looks_like_windows_path(value: str) -> bool:

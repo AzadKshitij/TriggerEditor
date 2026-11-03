@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor/src/test_Data.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,
@@ -86,7 +86,7 @@
       ],
       "outputs": [],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data_lt_5.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor/src/test_Data_lt_5.csv",
         "file_format": "csv",
         "delimiter": ",",
         "use_streaming": true,

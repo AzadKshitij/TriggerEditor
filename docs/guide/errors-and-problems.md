@@ -20,8 +20,8 @@ When something is wrong, the app tells you which node, what is wrong, and what t
 | Where | What you see |
 |---|---|
 | **The node** | A red ring and a red round "!" badge on its bottom edge (amber for a warning). Hover the node to read a short message. |
-| **The Problems dock** | One row per node with a problem: node, code, one-sentence description. Click a row to jump to the node. See [Problems](config-dock-and-preview.md#problems). |
-| **The Logs** | The error is written once, when it first appears, with its code. |
+| **The Logs dock** | One row per node with a problem, mixed into the log stream: node, one-sentence description, and an expandable code plus **Fix:** line. Click a row to jump to the node. See [Logs](config-dock-and-preview.md#logs). |
+| **The log file** | The error is written once, when it first appears, with its full technical text. |
 | **The run record** | A failed node's error is stored in the run record (see [Run history](run-history-and-audit-trail.md)). |
 | **A dialog** | Only for things outside a node: a file that cannot be opened, an Excel export that failed, a workflow with unknown nodes. |
 
@@ -29,7 +29,7 @@ Errors come in two kinds. A **live** error appears while you edit (it is about t
 
 ## How to read a message
 
-Here is a real message, copied from the Problems dock with **Copy details**:
+Here is a real message, copied from the Logs dock with **Copy details**:
 
 ```text
 [TD-TYP-001] Select 'Amounts': Column 'Amount' has values that cannot be read as whole numbers.
@@ -77,7 +77,7 @@ Things to know about row numbers:
 Often the node that fails is only where the problem *shows*. A Select node may complain about a column, when the real cause is a File Input that read the column as text. The app tries to find the real cause:
 
 - The real culprit is shown with its own error, and the nodes after it show "Stopped because 'X' has a problem" or "Skipped because 'X' failed" (codes `TD-RUN-003`, `TD-RUN-008`). These are **knock-on** errors: fix the first node and they clear by themselves.
-- In the Problems dock a line **Caused by:** names the culprit node.
+- In the Logs dock a line **Caused by:** names the culprit node.
 
 When you see several errors, start with the one that is **furthest upstream** (closest to the File Input).
 
@@ -85,7 +85,7 @@ When you see several errors, start with the one that is **furthest upstream** (c
 
 Messages are written for people, but the engine's own words are kept for support.
 
-- In the **Problems** dock, click the **Show technical details** icon button in the toolbar (hover to see its tooltip). Each row then also shows the engine's exception text and, for run errors, the stack trace. The toggle is remembered between sessions (preference `errors/show_technical`, off by default).
+- In the **Logs** dock, click the **Show technical details** icon button in the toolbar (hover to see its tooltip). An expanded problem row then also shows the engine's exception text and, for run errors, the stack trace. The toggle is remembered between sessions (preference `errors/show_technical`, off by default).
 - Click **Copy details** to put the selected problems (or all of them, when none is selected) on the clipboard. If technical details are on, they are included. Paste this into an email or ticket.
 
 ## Privacy: hiding data values in messages
@@ -100,7 +100,7 @@ The setting is read when an error is created, so it affects errors raised after 
 
 ## A fixing routine that works
 
-1. Open **Problems**. Start with the topmost, most upstream node.
+1. Open **Logs** and pick the **Errors** chip. Start with the topmost, most upstream node.
 2. Read the **Fix:** line and apply it.
 3. Click away from the node (to let it recompute) and check that the red mark is gone.
 4. If the same column keeps failing, look at the data type: text columns that hold numbers are the usual cause. See [Troubleshooting](troubleshooting-and-faq.md#my-numbers-are-treated-as-text).

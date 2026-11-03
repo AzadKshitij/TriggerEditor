@@ -49,8 +49,8 @@ Run button -> TriggerSubWindow.run_workflow() -> WorkflowExecutionMixin.executeW
      _on_workflow_finished(success):
         cancel flag from worker.cancelled, hold the QThread reference until finished,
         evaluator.resume(), getPyFile(sorted_nodes)  (never raises),
-        _seal_run_record(success), cleanup + summary in the Logging dock,
-        raise the Problems dock when roots_only errors > 0,
+        _seal_run_record(success), cleanup + summary in the Logs dock,
+        raise the Logs dock (Last Run, Errors) when roots_only errors > 0,
         executionResultsChanged.emit()
 ```
 
@@ -186,7 +186,7 @@ an old artefact; do not commit it again.
 `translate_exception(exc, node=, phase="run", ctx=build_context(node, window,
 "run"), redact=<errors/redact_values>, traceback_text=...)` gives a `NodeError`
 (`error-system.md`). It is stored with `node.set_error(error, "run")`
-(canvas badge, tooltip, Problems dock). `_start_error_enrichment` then
+(canvas badge, tooltip, Logs dock). `_start_error_enrichment` then
 translates upstream: a background job (`error_enricher.start_enrichment`) finds
 the node whose plan or data really caused the failure and may replace the root
 error and give the failing node a knock-on error. `_apply_enrichment` discards a

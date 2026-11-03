@@ -260,7 +260,7 @@ trigger-designer-cli run sales.tds --param input_file=D:\in\today.csv --log-form
 | Situation | Seen as |
 |---|---|
 | Not approved | `FAILED at the run [TD-CLI-008] This workflow has not been approved to run. - Review it with approve <workflow>; scheduled runs always need approval.` exit 6 |
-| Edited after approval | `... [TD-CLI-008] The workflow changed after it was approved (approved 2026-10-30T17:48:06Z by kashvinchandrasan). - Check who changed it, then approve it again` exit 6 |
+| Edited after approval | `... [TD-CLI-008] The workflow changed after it was approved (approved 2026-10-30T17:48:06Z by alice). - Check who changed it, then approve it again` exit 6 |
 | Missing input | `FAILED at the run [TD-IN-001] Cannot find the input file 'Y:\audit\in\nothere.csv'. - Use --input-dir to remap saved paths, or fix the path in the editor.` exit 2 |
 | Missing output folder | `FAILED at the run [TD-CLI-014] The output folder does not exist: Y:\audit\out2 - Create it, or pass --create-output-dirs.` exit 2 |
 | Unknown or missing parameter | `FAILED at the run [TD-CLI-005] Required parameter 'input_file' was not given. - Pass --param input_file=VALUE.` exit 2 |
@@ -334,9 +334,9 @@ An approval is the SHA-256 fingerprint of the exact bytes of the `.tds` file, to
 
 ```text
 > trigger-designer-cli approve --list
-21ca314bd088  2026-10-30T17:48:06Z  kashvinchandrasan  Y:\audit\wf\select.tds
-d8a13dc49053  2026-10-30T17:48:50Z  kashvinchandrasan  Y:\audit\wf\select.tds
-b90b21cab1f9  2026-10-30T17:51:26Z  kashvinchandrasan  Y:\audit\proj\filter.tds
+21ca314bd088  2026-10-30T17:48:06Z  alice  Y:\audit\wf\select.tds
+d8a13dc49053  2026-10-30T17:48:50Z  alice  Y:\audit\wf\select.tds
+b90b21cab1f9  2026-10-30T17:51:26Z  alice  Y:\audit\proj\filter.tds
 ```
 
 (The first two are the same file before and after adding parameters; each version needs its own approval.)
@@ -670,7 +670,7 @@ Times are your computer's local time. Records and log timestamps are UTC.
    <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
      ...
      <Triggers><CalendarTrigger><StartBoundary>2026-10-30T02:30:00</StartBoundary>...<ScheduleByDay><DaysInterval>1</DaysInterval></ScheduleByDay></CalendarTrigger></Triggers>
-     <Principals><Principal id="Author"><UserId>US\kashvinchandrasan</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
+     <Principals><Principal id="Author"><UserId>DOMAIN\alice</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals>
      <Settings>
        <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
        <StartWhenAvailable>true</StartWhenAvailable>

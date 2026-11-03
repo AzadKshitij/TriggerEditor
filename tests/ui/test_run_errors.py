@@ -46,7 +46,7 @@ def test_run_parser_error_is_plain_language(qtbot) -> None:
     assert node.isInvalid()
 
 
-def test_run_error_reaches_the_problems_store(qtbot) -> None:
+def test_run_error_reaches_the_diagnostic_feed(qtbot) -> None:
     main = TriggerWindow()
     qtbot.addWidget(main)
     main.show()
@@ -57,6 +57,6 @@ def test_run_error_reaches_the_problems_store(qtbot) -> None:
 
     window._on_node_finished(node, _result(_parser_error()))
 
-    assert window.problems.count("error") == 1
-    _source, error = window.problems.entries()[0]
+    assert window.diagnostics.count("error") == 1
+    _source, error = window.diagnostics.entries()[0]
     assert error.code == "TD-EXP-001"

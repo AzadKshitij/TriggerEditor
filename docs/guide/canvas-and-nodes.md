@@ -196,7 +196,7 @@ Data Profile and Comment are the exceptions: they update straight away.
 
 ### The tooltip
 
-Hover a node with a red or amber badge to read a short message: which node, what is wrong, the first sentence of the detail, a suggested fix, and the error code such as `TD-SCH-001`. The same problem is listed in the **Problems** dock. See [Errors and problems](errors-and-problems.md).
+Hover a node with a red or amber badge to read a short message: which node, what is wrong, the first sentence of the detail, a suggested fix, and the error code such as `TD-SCH-001`. The same problem is listed in the **Logs** dock. See [Errors and problems](errors-and-problems.md).
 
 ## Menus and shortcuts
 
@@ -227,7 +227,7 @@ Workflows open as tabs in the middle of the window. Close a tab with its **x**; 
 | Symptom | What to do |
 |---|---|
 | The edge snaps back when I drop it | You broke a rule: output to input only, no loop, one edge per input (except Union). Try the other direction, or check for an existing edge on that input. |
-| A node has a red ring and a red "!" | Hover it, or open the Problems dock. See [Errors and problems](errors-and-problems.md). |
+| A node has a red ring and a red "!" | Hover it, or open the Logs dock. See [Errors and problems](errors-and-problems.md). |
 | A node shows an amber "!" and nothing changed | Click the empty canvas. The "changes not run yet" mark clears when the node recomputes. |
 | Paste does nothing | The clipboard does not hold nodes copied from this app. The status bar says "Paste ignored: clipboard does not contain node data". |
 | The Config Dock is empty | Select exactly **one** node. With none or several selected it stays empty. |
