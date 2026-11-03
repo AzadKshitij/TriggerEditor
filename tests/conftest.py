@@ -46,6 +46,16 @@ assert (
     == Path(_DATA_DIR.name).resolve()
 ), "the test data dir was not applied"
 
+# Under pytest-xdist every worker is its own process, and the numeric
+# libraries below default each process's native thread pool to every core:
+# a dozen workers would each spawn core-count threads and thrash the box.
+# Cap them on workers only; a serial run keeps the library defaults.
+# POLARS_MAX_THREADS is read once at polars import, which happens after
+# conftest, so setting it here still takes effect.
+if "PYTEST_XDIST_WORKER" in os.environ:
+    os.environ.setdefault("POLARS_MAX_THREADS", "2")
+    os.environ.setdefault("OMP_NUM_THREADS", "2")
+
 from trigger_designer.qt import preferences as _preferences
 
 # A legacy scope is a QSettings; an empty list keeps tests hermetic.

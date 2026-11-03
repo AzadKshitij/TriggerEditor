@@ -123,7 +123,7 @@ def _coerce(raw: Any, default: Any) -> Any:
     if isinstance(default, int) and not isinstance(default, bool):
         try:
             return int(raw)
-        except TypeError, ValueError:
+        except (TypeError, ValueError):
             return default
     if isinstance(default, list):
         if isinstance(raw, str):
@@ -241,7 +241,7 @@ class Preferences(QObject):
         if grid_size is not None:
             try:
                 put("editor/grid_size", int(grid_size))
-            except TypeError, ValueError:
+            except (TypeError, ValueError):
                 pass
 
         show_grid = first("show_grid")

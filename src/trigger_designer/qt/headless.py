@@ -41,9 +41,40 @@ def quiet_loguru(verbosity: int = 0) -> None:
     )
 
 
+#: Qt platform-plugin chatter. The offscreen plugin warns once per window about
+#: size hints it cannot forward and once per font-database start-up when the Qt
+#: wheel ships no fonts; neither says anything about the workflow being loaded.
+#: Every other Qt message keeps going to stderr.
+_DROPPED_QT_MESSAGES = (
+    "This plugin does not support ",
+    "QFontDatabase: Cannot find font directory",
+)
+
+
+def _silence_qpa_noise() -> None:
+    """Drop platform-plugin warnings so a command's stderr stays its own.
+
+    ``validate`` and friends promise an empty stderr on success; a message
+    about the platform plugin is an artefact of how Qt was built, not output
+    of the workflow, and it would otherwise surface depending on the machine.
+    """
+    from qtpy.QtCore import qInstallMessageHandler
+
+    def handler(_mode, _context, message: str) -> None:
+        if message.startswith(_DROPPED_QT_MESSAGES):
+            return
+        try:
+            sys.stderr.write(message + "\n")
+        except (OSError, ValueError):  # a closed stderr must not abort Qt
+            pass
+
+    qInstallMessageHandler(handler)
+
+
 def ensure_app():
     """The process-wide ``QApplication`` on the offscreen platform."""
     os.environ["QT_QPA_PLATFORM"] = os.environ.get("TRIGGER_CLI_QPA", "offscreen")
+    _silence_qpa_noise()
     from qtpy.QtWidgets import QApplication
 
     app = QApplication.instance() or QApplication(["trigger-designer-cli"])

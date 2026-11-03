@@ -328,7 +328,7 @@ class NodeExecutor:
             self._call_hook(self.before_node, node)
 
             # Prepare local variables
-            local_variables = {}
+            local_variables: dict[str, Any] = {}
 
             self._node_running = True
             try:
@@ -337,15 +337,17 @@ class NodeExecutor:
                 )
             finally:
                 self._node_running = False
+
             if not success or exception:
                 if isinstance(exception, ExecutionTimeoutError):
                     raise exception
-                elif exception:
+                if exception:
                     raise NodeExecutionError(
                         str(exception),
                         node_name=node_name,
                         original_exception=exception,
                     ) from exception
+
             result.success = True
 
             # Before the hook: a node's after_execution reads these values.
@@ -361,13 +363,16 @@ class NodeExecutor:
                         f"after_execution hook failed for {node_name}: {hook_error}"
                     )
 
-            self._call_hook(self.after_node, node, local_variables, result)
-            # An observer may have added or replaced a variable; the result
-            # and the shared context must agree on what the node produced.
-            result.variables = {**result.variables, **local_variables}
-
-            # Update shared execution context with new variables
-            self.execution_context.update(local_variables)
+            try:
+                self._call_hook(self.after_node, node, local_variables, result)
+                # An observer may have added or replaced a variable; the result
+                # and the shared context must agree on what the node produced.
+                result.variables = {**result.variables, **local_variables}
+                # Update shared execution context with new variables
+                self.execution_context.update(local_variables)
+            except Exception as hook_error:
+                logger.warning(f"after_node hook failed for {node_name}: {hook_error}")
+                raise
 
             # Log successful execution
             logger.debug(f"Successfully executed node {node_name}")

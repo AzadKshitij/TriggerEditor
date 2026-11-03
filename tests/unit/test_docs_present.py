@@ -19,7 +19,9 @@ def test_every_doc_file_is_non_empty() -> None:
 
 
 def test_executor_guide_documents_no_missing_features() -> None:
-    text = (DOCS / "ENHANCED_EXECUTOR_GUIDE.md").read_text(encoding="utf-8")
+    # The MkDocs reorganisation (ab9decb6) moved the engineering guides into
+    # docs/internal/, which the site excludes.
+    text = (DOCS / "internal" / "ENHANCED_EXECUTOR_GUIDE.md").read_text(encoding="utf-8")
     for invented in ("allowed_imports", "forbidden_functions", "allow_file_access"):
         assert invented not in text
     for real in ("max_execution_time", "before_node", "after_node", "code_filter"):

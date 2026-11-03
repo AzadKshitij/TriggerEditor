@@ -106,7 +106,16 @@ pythonpath = ["src"]
 # Layers are marked automatically from the directory a test lives in
 # (see tests/conftest.py); `--strict-markers` keeps a typo from silently
 # creating an unselectable layer.
-addopts = "-ra --strict-markers"
+# pytest-xdist: -n auto spreads the suite over one worker per logical CPU.
+# Each worker is its own process - its own QApplication, its own throwaway
+# trigger-designer data dir (tests/conftest.py), its own tmp_path and
+# in-process module state - so tests cannot interfere across workers. Tests
+# that ever grow shared state or a fixed order requirement get
+# @pytest.mark.xdist_group("name"); --dist loadgroup pins same-group tests
+# to one worker while untagged tests keep load-balancing. Nothing in the
+# suite needs a group today. Escape hatches: -n 0 for a strict serial run
+# (benchmarks measuring wall-clock, --pdb sessions).
+addopts = "-ra --strict-markers -n auto --dist loadgroup"
 qt_api = "pyside6"
 # A hung test is the failure mode that used to make this suite look slow:
 # one demo ran app.exec_() for ever. Per-test, with a thread dump on expiry.
@@ -127,6 +136,7 @@ dev = [
     "pytest==9.1.1",
     "pytest-qt==4.5.0",
     "pytest-timeout==2.4.0",
+    "pytest-xdist==3.8.0",
     "ruff==0.17.2",
     "ty==0.0.91",
 ]

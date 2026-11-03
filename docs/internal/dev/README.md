@@ -75,7 +75,7 @@ are the enums in `core/node_configuration.py` and `_LAZY_NODE_SPECS` in
 | Python | `>=3.14.0,<3.15` (`.python-version` 3.14); the venv `.venv` is 3.14.8 |
 | GUI | PySide6-Essentials 6.12.0 through `qtpy` 2.4.3 (never import PySide6/PyQt6 directly); canvas `nodeeditor-qtpy` 0.8.2 from PyPI |
 | Data | polars 2.0.0 (`[pyarrow]`), pyarrow 26.0.0, duckdb 2.0.0, sqlglot 30.24, fastexcel, openpyxl, xlsxwriter 3.3.0, orjson 3.13.0, numpy 2.5.4 |
-| Dev | ruff 0.17.2, ty 0.0.91, pytest 9.1.1, pytest-qt 4.5.0, pytest-timeout 2.4.0, pre-commit, pyinstaller, radon (user's uncommitted `pyproject.toml` edit adds it); no pytest-xdist |
+| Dev | ruff 0.17.2, ty 0.0.91, pytest 9.1.1, pytest-qt 4.5.0, pytest-timeout 2.4.0, pytest-xdist 3.8.0, pre-commit, pyinstaller, radon (user's uncommitted `pyproject.toml` edit adds it) |
 | uv | 0.13.4 (`[tool.uv] package = true`, hatchling build, editable install; scripts `trigger-designer` and `trigger-designer-cli`) |
 
 `pyarrow` is not optional: DuckDB registers Polars frames through Arrow. The old

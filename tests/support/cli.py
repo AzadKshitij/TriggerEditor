@@ -14,16 +14,37 @@ from pathlib import Path
 SRC = Path(__file__).resolve().parents[2] / "src"
 
 
+#: Knobs that would let the caller's shell pick the CLI's Qt plugin set, style
+#: or binding. The subprocess must behave like a plain ``trigger-designer-cli``
+#: run from a clean shell, or a stray variable turns this suite red.
+_FOREIGN_QT_ENV = (
+    "QT_PLUGIN_PATH",
+    "QT_QPA_PLATFORM_PLUGIN_PATH",
+    "QT_QPA_PLATFORMTHEME",
+    "QT_QPA_GENERIC_PLUGINS",
+    "QT_STYLE_OVERRIDE",
+    "QT_API",
+    "TRIGGER_CLI_QPA",
+)
+
+
 def cli_env(cwd: Path, extra_env: dict | None = None) -> dict:
-    env = {
-        **os.environ,
-        "PYTHONPATH": str(SRC),
-        "PYTHONIOENCODING": "utf-8",
-        "TRIGGER_DESIGNER_DATA_DIR": str(cwd / "data"),
-        "TRIGGER_DESIGNER_STATE_DIR": str(cwd / "state"),
-        **(extra_env or {}),
-    }
+    env = dict(os.environ)
+    for name in _FOREIGN_QT_ENV:
+        env.pop(name, None)
+    for name in [key for key in env if key.startswith("TD_TEST_")]:
+        env.pop(name, None)  # failure injection belongs to the test that asks
     env.pop("QT_QPA_PLATFORM", None)  # the CLI must set it itself
+    env.update(
+        {
+            "PYTHONPATH": str(SRC),
+            "PYTHONIOENCODING": "utf-8",
+            "QT_API": "pyside6",
+            "TRIGGER_DESIGNER_DATA_DIR": str(cwd / "data"),
+            "TRIGGER_DESIGNER_STATE_DIR": str(cwd / "state"),
+            **(extra_env or {}),
+        }
+    )
     return env
 
 

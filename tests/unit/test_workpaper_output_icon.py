@@ -43,11 +43,14 @@ def test_icon_is_registered_and_used_by_the_node_and_the_palette_spec():
 
 
 def test_node_reference_has_a_workpaper_output_row_with_the_real_icon():
-    text = (ROOT / "docs" / "NODE_REFERENCE.md").read_text(encoding="utf-8")
+    # The reference lives under docs/internal/ since the MkDocs
+    # reorganisation; the dedicated icon it documents is still the one the
+    # node and the palette spec actually register.
+    text = (ROOT / "docs" / "internal" / "NODE_REFERENCE.md").read_text(encoding="utf-8")
     row = next(
         (line for line in text.splitlines() if line.startswith("| Workpaper Output |")),
         None,
     )
     assert row is not None
     target = re.search(r"\]\(([^)]+\.svg)\)", row).group(1)
-    assert (ROOT / "docs" / target.replace("%20", " ")).is_file()
+    assert (ROOT / "docs" / "internal" / target.replace("%20", " ")).is_file()

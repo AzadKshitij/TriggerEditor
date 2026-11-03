@@ -124,3 +124,26 @@ def test_system_exit_is_a_failure_and_the_worker_survives() -> None:
     assert result.success is False
     assert result.exception_type == "builtins.SystemExit"
     assert executor.execute_node(StubNode("y = 2")).success is True
+
+
+def test_after_execution_hook_sees_the_nodes_own_outputs() -> None:
+    """The content hook must receive variables, not an empty context.
+
+    The Graph node's ``after_execution`` reads its frame from this dictionary
+    to replace the live 100-row sample with the run result. Publishing the
+    variables after the hook left every chart showing the sample.
+    """
+    seen: list[dict] = []
+
+    class Content(SimpleNamespace):
+        def after_execution(self, context: dict) -> None:
+            seen.append(dict(context))
+
+    node = StubNode("result_frame = 41")
+    node.content = Content()
+    executor = NodeExecutor()
+    result = executor.execute_node(node)
+
+    assert result.success
+    assert seen == [{"result_frame": 41}]
+    assert result.variables == {"result_frame": 41}

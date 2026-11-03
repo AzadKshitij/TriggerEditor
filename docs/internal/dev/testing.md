@@ -41,8 +41,14 @@ $env:PYTHONIOENCODING = "utf-8"    # when piping output: the app logs emoji
 `QT_QPA_PLATFORM=offscreen` and a throwaway `TRIGGER_DESIGNER_DATA_DIR` are set
 by `tests/conftest.py` before anything imports Qt, so no display is needed and a
 developer's real preferences are never read or written. `timeout = 120`
-seconds per test with a thread dump (`timeout_method = "thread"`). `pytest-xdist` is
-**not installed or declared** even though `tests/README.md` mentions `-n auto`.
+seconds per test with a thread dump (`timeout_method = "thread"`).
+
+`addopts` runs the suite under `pytest-xdist` (`-n auto --dist loadgroup`). A
+test that needs its worker to keep state between calls carries
+`@pytest.mark.xdist_group("name")`; `loadgroup` then keeps that group on one
+worker while everything unmarked still spreads across all of them. Serial runs
+(benchmarks, `--pdb`) take `-n 0`. Each worker caps polars/OpenMP threads at
+two so four workers do not oversubscribe the CPU.
 
 ### Baselines (commit `e2b610a`, clean worktree)
 
