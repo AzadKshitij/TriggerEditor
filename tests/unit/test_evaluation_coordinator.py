@@ -1,12 +1,6 @@
 """Ordered passes, coalesced edge edits, and blocking of failed branches."""
 
-import os
-import sys
 import weakref
-from pathlib import Path
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from qtpy.QtWidgets import QApplication
 

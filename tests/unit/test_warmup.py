@@ -1,10 +1,6 @@
 """The startup warm-up must be safe to run on a background thread."""
 
-import sys
-from pathlib import Path
 from threading import Thread
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
 from trigger_designer.core.warmup import warm_duckdb_polars
 

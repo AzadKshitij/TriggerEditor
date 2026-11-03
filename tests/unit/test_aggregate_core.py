@@ -133,3 +133,12 @@ def test_unknown_action_is_an_error() -> None:
 def test_legacy_group_by_spelling_is_normalized() -> None:
     normalized = core.normalize({"actions": [_action("g", "Group By")]})
     assert normalized["actions"][0]["action"] == "GroupBy"
+
+
+def test_groups_keep_first_appearance_order() -> None:
+    names = [f"g{index:03d}" for index in range(300)][::-1]
+    frame = pl.DataFrame({"g": names, "x": range(300)}).lazy()
+    out = core.run_node(
+        [frame], {"actions": [_action("g", "GroupBy"), _action("x", "Sum")]}
+    ).pop()
+    assert out.collect()["g"].to_list() == names

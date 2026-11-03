@@ -52,20 +52,18 @@ class ResourceManager:
             # logger.info(
             #     f"{self.__class__.__name__} Resources: {ResourceManager._map.items()}")
 
-    def load_theme(self, theme_file: str = "dark") -> str:
-        """Deprecated: build QSS for a theme id.
+    @classmethod
+    def register_material(cls, id: str, name: str, fill: bool = False) -> None:
+        """Add a Material Symbol under ``id`` unless resources.json has it.
 
-        Kept so older call sites keep working; new code uses
-        ``ThemeManager`` directly. Applying the stylesheet is the
-        ThemeManager's job, not this class's.
+        Lets a feature that needs one more glyph ship without editing the map;
+        an entry that exists in ``resources.json`` always wins.
         """
-        from trigger_designer.qt.theme_manager import get_theme_manager
-
-        try:
-            return get_theme_manager().stylesheet_for(theme_file)
-        except Exception as exc:
-            logger.error(f"Unable to build theme '{theme_file}': {exc}")
-            return ""
+        cls()  # load the map first: loading replaces ``_map``
+        entry: dict = {"mode": "material", "name": name}
+        if fill:
+            entry["fill"] = True
+        cls._map.setdefault(id, entry)
 
     def get_theme_color(self, key: str, default: str = "#000000") -> QColor:
         """Resolve one theme token to a QColor, for a data-driven paint.
@@ -98,35 +96,16 @@ class ResourceManager:
 
         return ResourceManager._res_folder / "resources" / path_str  # type: ignore
 
-    @staticmethod
-    def get_icon_path(id: str) -> Optional[Path]:
-        """Get a resource's path from the ResourceManager.
-
-        Args:
-            id (str): The name of the resource.
-
-        Returns:
-            Path: The resource path if found, else None.
-        """
-        res: dict = ResourceManager._map.get(id, {})
-        if not res:
-            return None
-
-        path_str = res.get("path")
-        if not path_str:
-            return None
-
-        return path_str  # type: ignore
-
     def get(self, id: str) -> Any:
         """Get a resource from the ResourceManager.
 
         This can include resources inside and outside of QResources, and will return
         theme-respecting variations of resources if available.
 
-        The monochrome ``ui/`` glyphs are re-rendered for the active theme
-        (see :mod:`trigger_designer.qt.theme_icons`); node icons and the
-        app chrome are returned untouched.
+        ``material`` entries (buttons and actions) are drawn from Material
+        Symbols in the active theme's ink colour (see
+        :mod:`trigger_designer.qt.theme_icons`); node icons and the app chrome
+        are returned untouched.
 
         Args:
             id (str): The name of the resource.
@@ -143,25 +122,19 @@ class ResourceManager:
             if not res:
                 return None
 
+            if res.get("mode") == "material":
+                from trigger_designer.qt import theme_icons
+
+                pixmap = theme_icons.material_pixmap(res["name"], bool(res.get("fill")))
+                ResourceManager._cache[id] = pixmap
+                ResourceManager._id_by_key[pixmap.cacheKey()] = id
+                return pixmap
+
             try:
                 file_path = (
                     ResourceManager._res_folder / "resources" / res.get("path", "")
                 )
 
-                # if res.get("mode") in ["r", "rb"]:
-                #     with open(
-                #         (file_path),
-                #         res.get("mode", "r"),
-                #     ) as f:
-                #         data = f.read()
-                #         if res.get("mode") == 'rb':
-                #             data = bytes(data)
-                #             # Convert this svg image into qpixmap
-                #             qim = ImageQt.ImageQt(data)
-                #             data = QPixmap.fromImage(qim)
-                #             # data = QImage(data)
-                #         ResourceManager._cache[id] = data
-                #         return data
                 if res.get("mode") == "rb":
                     # Create QPixmap for SVG
                     renderer = QSvgRenderer(str(file_path))
@@ -174,14 +147,9 @@ class ResourceManager:
                     renderer.render(painter)
                     painter.end()
 
-                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
                     ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
-                elif res and res.get("mode") == "pil":
-                    data = Image.open(file_path)
-                    ResourceManager._cache[id] = data
-                    return data
                 elif res and res.get("mode") == "qimg":
                     data = Image.open(file_path)
                     qim = ImageQt.ImageQt(data)
@@ -191,7 +159,6 @@ class ResourceManager:
                     data = Image.open(file_path)
                     qim = ImageQt.ImageQt(data)
                     pixmap = QPixmap.fromImage(qim)
-                    pixmap = self._themed(id, res, file_path, pixmap)
                     ResourceManager._cache[id] = pixmap
                     ResourceManager._id_by_key[pixmap.cacheKey()] = id
                     return pixmap
@@ -212,24 +179,3 @@ class ResourceManager:
         if pixmap is None or pixmap.isNull():
             return None
         return ResourceManager._id_by_key.get(pixmap.cacheKey())
-
-    @staticmethod
-    def _themed(id: str, res: dict, file_path: Path, pixmap: QPixmap) -> QPixmap:
-        """Re-render a monochrome glyph for the active theme.
-
-        Node icons carry their type in their colour, so only the ``ui/``
-        glyph set is re-rendered. Everything else - including the app icon
-        and the splash - is returned as loaded.
-        """
-        from trigger_designer.qt import theme_icons
-
-        path = res.get("path", "")
-        if not theme_icons.is_themable(id, path):
-            return pixmap
-        return theme_icons.themed_pixmap(id, file_path, pixmap)
-
-    def __getattr__(self, __name: str) -> Any:
-        attr = self.get(__name)
-        if attr:
-            return attr
-        raise AttributeError(f"{self.__class__.__name__} has no attribute {__name}")

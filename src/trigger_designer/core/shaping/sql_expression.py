@@ -65,10 +65,18 @@ def translate_function_aliases(segment: str) -> str:
     return re.sub(r"(?i)\bstrip\s*\(", "trim(", segment)
 
 
-def prepare_expression_sql(expression_text: str, available_columns: list[str]) -> str:
-    """Turn a filter/formula expression into a DuckDB SQL expression."""
+def prepare_expression_sql(
+    expression_text: str, available_columns: list[str], *, in_between: bool = True
+) -> str:
+    """Turn a filter/formula expression into a DuckDB SQL expression.
+
+    Formulas pass ``in_between=False``: ``in_between(a, b)`` is a Filter alias.
+    """
     sql_expression = normalize_string_literals(expression_text)
-    sql_expression = apply_outside_string_literals(sql_expression, translate_in_between)
+    if in_between:
+        sql_expression = apply_outside_string_literals(
+            sql_expression, translate_in_between
+        )
     sql_expression = apply_outside_string_literals(
         sql_expression, translate_function_aliases
     )
@@ -78,10 +86,18 @@ def prepare_expression_sql(expression_text: str, available_columns: list[str]) -
 
 
 def shorten_error(message: str) -> str:
-    """First line of an engine error, without DuckDB's category prefix."""
+    """The engine error's key line, without DuckDB's category prefix."""
     text = (message or "").strip().replace("\r\n", "\n")
+    match = re.search(r'Referenced column "[^"]+" not found', text)
+    if match:
+        return match.group()
     first_line = text.split("\n", 1)[0].strip()
-    for prefix in ("Binder Error:", "Catalog Error:", "Parser Error:"):
+    for prefix in (
+        "Binder Error:",
+        "Catalog Error:",
+        "Conversion Error:",
+        "Parser Error:",
+    ):
         if first_line.startswith(prefix):
             first_line = first_line[len(prefix) :].strip()
     return first_line[:160]

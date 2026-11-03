@@ -68,6 +68,8 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
 def describe(frames: list, settings: dict) -> list[tuple[str, str]]:
     schema = schema_of(as_lazy(frames[0]))
     settings = settings or {}
+    if _action(settings) == "ignore":
+        return []  # "Ignore" means silent: the missing columns just drop out.
     chips: list[tuple[str, str]] = []
     missing_data = [
         name for name in settings.get("data_columns") or [] if name not in schema

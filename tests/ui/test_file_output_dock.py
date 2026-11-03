@@ -111,3 +111,77 @@ def test_generated_code_uses_the_core_writer(qtbot) -> None:
     code = node.get_code()
     assert "trigger_designer.core.shaping.file_output" in code
     assert "write_node" in code
+
+
+def test_compression_combo_is_parquet_only_and_tracked(qtbot) -> None:
+    window, node, _dock = _node(qtbot)
+    content = node.content
+    assert content.compression_row.isHidden() is True
+
+    content.formatCombo.setCurrentIndex(content.formatCombo.findData("parquet"))
+    assert content.compression_row.isHidden() is False
+    combo = content.compressionCombo
+    assert isinstance(combo, NoWheelComboBox)
+    assert [combo.itemData(i) for i in range(combo.count())] == [
+        "snappy",
+        "zstd",
+        "gzip",
+        "lz4",
+        "uncompressed",
+    ]
+    assert combo.currentData() == "snappy"
+    assert combo.toolTip() and combo.accessibleName()
+
+    window.scene.history.storeHistory("Baseline")
+    combo.setCurrentIndex(combo.findData("zstd"))
+    assert content.settings["compression"] == "zstd"
+    assert "'compression': 'zstd'" in node.get_code()
+    window.scene.history.undo()
+    assert content.settings["compression"] == "snappy"
+    assert content.compressionCombo.currentData() == "snappy"
+
+
+def test_legacy_settings_load_without_use_streaming(qtbot) -> None:
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    content.deserialize(
+        {
+            "settings": {
+                "filePath": "x.parquet",
+                "file_format": "parquet",
+                "use_streaming": False,
+                "compression": None,
+            }
+        }
+    )
+    assert content.settings["file_format"] == "parquet"
+    assert "use_streaming" not in content.settings
+    assert content.settings.get("compression") in (None, "snappy")
+
+
+def test_typing_an_xls_path_is_normalised_to_xlsx(qtbot) -> None:
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    content.filePathEdit.setText("C:/reports/ledger.XLS")
+    content.filePathEdit.editingFinished.emit()
+    assert content.settings["filePath"] == "C:/reports/ledger.xlsx"
+    assert content.settings["file_format"] == "excel"
+    assert content.filePathEdit.text() == "C:/reports/ledger.xlsx"
+
+
+def test_save_dialog_offers_xlsx_only(qtbot, monkeypatch) -> None:
+    from trigger_designer.qt.widgets.nodes.InOut import file_output as module
+
+    _window, node, _dock = _node(qtbot)
+    content = node.content
+    content.settings["file_format"] = "excel"
+    seen = {}
+
+    def fake(parent, title, directory, filter_str):
+        seen["filter"] = filter_str
+        return "", ""
+
+    monkeypatch.setattr(module.QFileDialog, "getSaveFileName", staticmethod(fake))
+    content.openFileDialog()
+    assert "*.xls)" not in seen["filter"] and ".xls " not in seen["filter"]
+    assert "*.xlsx" in seen["filter"]

@@ -40,10 +40,16 @@ DEFAULTS: dict[str, Any] = {
     "general/schema_version": SCHEMA_VERSION,
     "appearance/theme": "dark",
     "appearance/accent": "",
+    # Application font size in points; 0 keeps the system default.
+    "appearance/font_size": 0,
     "layout/restore": True,
     "layout/session": False,
     "editor/grid_size": 20,
     "editor/show_grid": True,
+    "editor/snap_to_grid": True,
+    # JSON object of command id -> key sequence. Kept as text because the INI
+    # backend only stores scalars; see qt/helpers/shortcuts.py.
+    "editor/shortcuts": "{}",
     "editor/render_detail_threshold": 50,
     "editor/render_detail_card": "auto",
     "editor/render_detail_sockets": "auto",
@@ -54,6 +60,25 @@ DEFAULTS: dict[str, Any] = {
     "errors/locate_rows": True,
     "errors/locate_row_cap": 5_000_000,
     "errors/show_technical": False,
+    # Audit trail (docs/plan/02-audit-trail.md 3.14): one sealed record per Run.
+    "audit/record_runs": True,
+    "audit/run_log_dir": "",
+    "audit/record_identity": True,
+    "audit/hash_inputs": True,
+    "audit/hash_outputs": True,
+    "audit/hash_max_mb": 2048,
+    # auto / all / sink / off (see core/audit/counting.py)
+    "audit/row_counts": "auto",
+    "audit/exact_counts_max_mb": 256,
+    "audit/embed_code": True,
+    "audit/warn_on_input_change": True,
+    # Engagement defaults for workpapers (docs/plan/06-workpaper-export.md 3.3).
+    "engagement/client_name": "",
+    "engagement/engagement_name": "",
+    "engagement/period": "",
+    "engagement/preparer": "",
+    "engagement/logo_path": "",
+    "export/workpaper_dir": "",
 }
 
 _MISSING = object()
@@ -270,9 +295,3 @@ def get_preferences() -> Preferences:
     if _instance is None:
         _instance = Preferences()
     return _instance
-
-
-def reset_preferences_instance() -> None:
-    """Drop the cached store (tests that swap ``TRIGGER_DESIGNER_DATA_DIR``)."""
-    global _instance
-    _instance = None

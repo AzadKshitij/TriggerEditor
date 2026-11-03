@@ -19,7 +19,6 @@ class PivotContent(ShapingContent):
     MODULE = "trigger_designer.core.shaping.reshape"
     RUNNER = "run_pivot"
     OUTPUT_KINDS = ("pivot",)
-    LIVE_CAP_ROWS = 5_000_000
     HISTORY = "Pivot"
     SUMMARY = "long to wide"
     FORM = (

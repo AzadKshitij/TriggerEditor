@@ -11,8 +11,6 @@ from trigger_designer.core.errors.model import ErrorContext, NodeError, Suggeste
 def make_error(
     code: str,
     ctx: ErrorContext | None = None,
-    *,
-    severity: str | None = None,
     **params: Any,
 ) -> NodeError:
     context = ctx or ErrorContext()
@@ -21,36 +19,20 @@ def make_error(
     values.setdefault("culprit_label", "")
     title, detail, fixes = render_entry(code, values, located=False)
     entry = CATALOGUE.get(code) or {}
-    chosen_severity = severity or entry.get("severity", "error")
     suggested = tuple(SuggestedFix(text=text) for text in fixes)
     return NodeError(
         code=code,
         title=title,
         detail=detail,
         hint=fixes[0] if fixes else entry.get("hint", ""),
-        technical=str(params.get("technical", "")),
-        exc_type=str(params.get("exc_type", "")),
-        severity=chosen_severity,
-        node_id=context.node_id,
-        node_title=context.node_title,
-        op=context.op,
-        columns=tuple(params.get("columns") or ()),
-        path=params.get("path"),
-        phase=context.phase,
-        node_label=context.node_label,
+        severity=entry.get("severity", "error"),
         suggested_fixes=suggested,
-        did_you_mean=tuple(item for item in (params.get("suggestions") or ()) if item),
+        **context.error_fields(),
         culprit_node_id=params.get("culprit_node_id"),
         culprit_node_title=params.get("culprit_node_title"),
         params={
             key: str(value)
             for key, value in values.items()
-            if key
-            not in {
-                "columns",
-                "suggestions",
-                "culprit_node_id",
-                "culprit_node_title",
-            }
+            if key not in {"culprit_node_id", "culprit_node_title"}
         },
     )

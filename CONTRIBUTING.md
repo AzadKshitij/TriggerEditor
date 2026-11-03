@@ -17,7 +17,8 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 - `src/trigger_designer/` — Main application source code
 - `tests/unit/` — Unit tests
-- `tests/integration/` — Integration tests and demos
+- `tests/e2e/` — Saved workflows loaded and run through the real app
+- `tests/ui/` — Offscreen widget tests
 - `docs/` — Documentation
 - `scripts/` — Build scripts and utilities
 - `data/` — Test data files
@@ -25,8 +26,13 @@ Thank you for your interest in contributing! This document provides guidelines f
 
 ## Running Tests
 
+Run each layer on its own. A bare `pytest tests/` mixes Qt-heavy layers and
+can abort the process, so it is not a supported command:
+
 ```bash
-uv run --project . pytest tests/
+.venv/Scripts/python.exe -m pytest tests/unit -q
+.venv/Scripts/python.exe -m pytest tests/e2e -q
+.venv/Scripts/python.exe -m pytest tests/ui -q
 ```
 
 `tests/benchmarks` is skipped unless `--run-benchmarks` is passed.

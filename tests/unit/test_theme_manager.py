@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 
 from trigger_designer.qt.theme_manager import (
+    DERIVED_TOKENS,
     SYSTEM_THEME_ID,
     ThemeManager,
 )
@@ -31,7 +32,7 @@ def test_builtin_dark_loads_complete(theme_manager: ThemeManager) -> None:
     assert theme.builtin
     assert theme.tokens["background_primary"] == "#14171b"
     used = set(_TOKEN_RE.findall((THEMES_DIR / "base.qss").read_text("utf-8")))
-    assert not used - set(theme.tokens)
+    assert not used - DERIVED_TOKENS - set(theme.tokens)
 
 
 def test_stylesheet_formats_without_placeholders(theme_manager: ThemeManager) -> None:

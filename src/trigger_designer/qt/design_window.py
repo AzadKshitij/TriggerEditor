@@ -1,7 +1,9 @@
 from loguru import logger
 from contextlib import contextmanager, nullcontext
 import os
+import sys
 import time
+from pathlib import Path
 
 from qtpy.QtGui import (
     QPixmap,
@@ -10,7 +12,7 @@ from qtpy.QtGui import (
     QDragEnterEvent,
     QKeyEvent,
 )
-from qtpy.QtCore import QDataStream, QIODevice, Qt, Signal, QSize, QTimer
+from qtpy.QtCore import QDataStream, QIODevice, QSize, Qt, Signal, QTimer
 from qtpy.QtWidgets import (
     QApplication,
     QGraphicsView,
@@ -22,8 +24,9 @@ from nodeeditor.node_editor_widget import NodeEditorWidget
 from nodeeditor.node_graph import GraphCycleError, cycles, topological_order
 from nodeeditor.utils import dumpException
 
+from trigger_designer.core.codegen_safe import safe_comment
+from trigger_designer.core.constants import WORKFLOW_SCHEMA_VERSION
 from trigger_designer.core.node_configuration import (
-    NODE_REGISTRIES,
     NodeTypes,
     OpCodeNotRegistered,
     get_class_from_op,
@@ -47,6 +50,7 @@ from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.helpers.problems_store import ProblemsStore
 from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
@@ -61,6 +65,8 @@ if TYPE_CHECKING:
     from trigger_designer.qt.docks.logging_dock import LoggingDock
 
 DEBUG = False
+#: Glyph size of the run/zoom/fit overlay buttons on the canvas.
+CANVAS_ICON_SIZE = 20
 DEBUG_CONTEXT = False
 
 # Header prepended to exported scripts (see TriggerSubWindow.getPyFile).
@@ -81,12 +87,30 @@ CHECK_OUTPUT_HEADER = (
 )
 
 
+def _source_root() -> "str | None":
+    """The ``src`` folder holding the package, or None in a frozen build."""
+    if getattr(sys, "frozen", False):
+        return None
+    root = Path(__file__).resolve().parents[2]
+    return str(root) if (root / "trigger_designer").is_dir() else None
+
+
+def check_output_header(src_root: "str | None") -> str:
+    """The exported script's header; adds ``src`` so a script run from the data
+    folder (not next to ``src``) can still ``import trigger_designer``."""
+    if not src_root:
+        return CHECK_OUTPUT_HEADER
+    return CHECK_OUTPUT_HEADER + f"_td_sys.path.insert(0, {src_root!r})\n"
+
+
 class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
     Scene_class = TriggerScene
     itemSelected = Signal(object)
     #: Emitted when a run published fresh ``execution_results``: preview data
     #: for a node lives there, not in ``node.value``.
     executionResultsChanged = Signal()
+    #: Emitted with the saved path once a Run's record is sealed on disk.
+    runRecorded = Signal(str)
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)
@@ -143,8 +167,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
     def addButtons(self) -> None:
         """Build the canvas overlay: run, zoom in, zoom out, fit view.
 
-        Icon-only buttons per docs/DESIGN_SYSTEM.md §4: 30x30 with a 12px
-        icon, a mandatory tooltip and accessible name. The glyphs come from
+        Icon-only buttons per docs/DESIGN_SYSTEM.md §4: 30x30 with a larger
+        canvas icon, a mandatory tooltip and accessible name. The glyphs come from
         the ResourceManager - a desktop theme icon renders blank on Windows.
         """
         # Run button
@@ -155,6 +179,20 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         )
         self.run_button.move(10, 10)
         self.run_button.clicked.connect(self.run_workflow)
+
+        # Cancel button: takes the Run button's slot while a run is in flight
+        # (never visible together). Cancellation is cooperative, so the
+        # tooltip says the current step still finishes.
+        self.cancel_button = IconButton.themed(
+            "Cancel run (stops after the current step)",
+            rsm_icon=self.rsm.get("icon_stop"),
+            parent=self,
+        )
+        self.cancel_button.move(10, 10)
+        self.cancel_button.hide()
+        self.cancel_button.clicked.connect(
+            lambda _checked=False: self.request_run_cancel()
+        )
 
         # Zoom In button
         self.zoom_in_button = IconButton.themed(
@@ -183,6 +221,17 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.fit_button.move(118, 10)
         self.fit_button.clicked.connect(self.fitView)
 
+        # The overlay floats over the canvas, so its glyphs are larger than
+        # the 12px used in the config dock.
+        for button in (
+            self.run_button,
+            self.cancel_button,
+            self.zoom_in_button,
+            self.zoom_out_button,
+            self.fit_button,
+        ):
+            button.setIconSize(QSize(CANVAS_ICON_SIZE, CANVAS_ICON_SIZE))
+
     def zoomIn(self) -> None:
         zoom_factor = self.view.zoomIn()
         self._last_scale *= zoom_factor
@@ -202,13 +251,12 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         try:  # Calculate the bounding rectangle of all nodes
             rect = None
             for node in nodes:
-                if rect is None:
-                    rect = node.grNode.boundingRect()
-                    rect.moveTopLeft(node.pos)
-                else:
-                    node_rect = node.grNode.boundingRect()
-                    node_rect.moveTopLeft(node.pos)
-                    rect = rect.united(node_rect)
+                # ``sceneBoundingRect`` is already in scene coordinates and is
+                # returned by value. Do not translate ``boundingRect`` with
+                # ``moveTopLeft``: that rect is cached by the item, and moving it
+                # rewrote the node's own bounds (see ``TriggerGraphicsNode``).
+                node_rect = node.grNode.sceneBoundingRect()
+                rect = node_rect if rect is None else rect.united(node_rect)
 
             if rect is None:
                 return
@@ -217,7 +265,6 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             padding = 50
             rect = rect.adjusted(-padding, -padding, padding, padding)
 
-            # Fit the view while preserving current scale
             self.view.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
             self._last_scale = self.view.transform().m11()  # Store current scale
             self.view.zoom = self._last_scale * 10
@@ -475,6 +522,11 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             self.view.update()
             viewport.update()
 
+    def fileNew(self) -> None:
+        """File > New: empty the scene and give the document a new identity."""
+        super().fileNew()
+        self.scene.reset_workflow_identity()
+
     def fileLoad(self, filename: str) -> bool:
         self.logInfo(f"Loading file: {filename}")
         # Shown and painted before any work: parse, node construction and
@@ -524,6 +576,13 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         schema_version = workflow_metadata.get("schema_version")
         if schema_version:
             self.logDebug(f"Loaded workflow schema version: {schema_version}")
+        if isinstance(schema_version, int) and schema_version > WORKFLOW_SCHEMA_VERSION:
+            validation_messages.append(
+                "This workflow was saved by a newer version of the app "
+                f"(file format {schema_version}, this app understands "
+                f"{WORKFLOW_SCHEMA_VERSION}). Some settings may be ignored; "
+                "saving will overwrite them."
+            )
 
         for node in self.getAllNodes():
             if isinstance(node, TriggerNode_Unknown):
@@ -627,6 +686,42 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 )
             else:
                 self.logWarning(f"Removed invalid edge during workflow load: {edge}")
+
+    #: Why the last ``fileSave`` failed (``None`` after a successful save).
+    last_save_error: str | None = None
+
+    def fileSave(self, filename: str | None = None) -> bool:
+        """Save the workflow; a failure is shown, not just logged.
+
+        The base class swallows the exception and returns ``False``, and its
+        caller still announces "Successfully saved". Here the reason goes to the
+        user in a warning dialog and the file name is left as it was.
+        """
+        target = filename or self.filename
+        if not target:
+            return False
+        previous = self.filename
+        self.last_save_error = None
+        try:
+            QApplication.setOverrideCursor(Qt.CursorShape.WaitCursor)
+            try:
+                self.filename = target
+                self.scene.saveToFile(target)
+            finally:
+                QApplication.restoreOverrideCursor()
+            return True
+        except Exception as exc:  # noqa: BLE001 - any failure must reach the user
+            dumpException(exc)
+            self.filename = previous
+            self.last_save_error = f"{type(exc).__name__}: {exc}"
+            self.logError(f"Could not save {target}: {self.last_save_error}")
+            QMessageBox.warning(
+                self,
+                "Save failed",
+                f"The workflow could not be saved to\n{target}\n\n{exc}\n\n"
+                "Your changes are still open and unsaved.",
+            )
+            return False
 
     def setTitle(self) -> None:
         self.setWindowTitle(self.getUserFriendlyFilename())
@@ -745,7 +840,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             dataStream >> pixmap
             # print("eventData::::::::::", eventData)
             # print("dataStream::::::::: ", dataStream)
-            node_code = dataStream.readInt()
+            # Qt 6 name; PySide6 has no readInt alias (issue #3).
+            node_code = dataStream.readInt32()
             node_type = dataStream.readQString()
 
             mouse_position = event.pos()
@@ -765,6 +861,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 node_type_enum = NodeTypes(node_type)
                 node = get_class_from_opcode(node_code, node_type_enum)(self.scene)  # type: ignore
                 node.setPos(scene_position.x(), scene_position.y())
+                node_arrange.snap_node_to_grid(node, node_arrange.grid_size(self.scene))
                 self.scene.history.storeHistory(
                     "Created node %s" % node.__class__.__name__
                 )
@@ -795,105 +892,34 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         try:
             self.executeWorkflow()
         except Exception as e:
+            # A Qt slot must not raise: the Run button was already restored.
             self.logError(f"Workflow execution failed: {str(e)}")
-            raise
 
-    def getPyFile(self, sorted_nodes) -> None:
-        code = CHECK_OUTPUT_HEADER
+    def getPyFile(self, sorted_nodes, path: "str | os.PathLike | None" = None) -> str:
+        """Write the run's generated script and return its path.
+
+        Never writes into the working directory: the default target is
+        ``<app data>/last_run/check_output.py``. Node code comes from the run
+        that just finished (``_last_run_codes``); a node that did not run is
+        asked once, and a node that cannot produce code never aborts the export.
+        """
+        from trigger_designer.qt.preferences import app_data_dir
+
+        target = Path(path) if path else app_data_dir() / "last_run" / "check_output.py"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        codes = getattr(self, "_last_run_codes", {}) or {}
+        parts = [check_output_header(_source_root())]
         for node in sorted_nodes:
-            code += node.get_code()
-            # print(code)
-
-        with open("check_output.py", "w") as file:
-            # Write the string to the file
-            file.write(code)
+            code = codes.get(node)
+            if code is None:
+                try:
+                    code = node.get_code()
+                except Exception as exc:  # noqa: BLE001
+                    title = safe_comment(getattr(node, "node_title", "node"))
+                    code = f"# {title}: no code ({safe_comment(exc)})\n"
+            parts.append(code)
+        target.write_text("".join(parts), encoding="utf-8", newline="\n")
+        return str(target)
 
     def getAllNodes(self) -> list["TriggerNode"]:
         return self.scene.nodes
-
-    def getNodeConnections(self) -> dict:
-        connections = {}
-        for node in self.getAllNodes():
-            connections[node] = {
-                "inputs": (
-                    [
-                        edge.start_socket.node
-                        for socket in node.inputs
-                        for edge in socket.edges
-                    ]
-                    if node.inputs
-                    else []
-                ),
-                "outputs": (
-                    [
-                        edge.end_socket.node
-                        for socket in node.outputs
-                        for edge in socket.edges
-                    ]
-                    if node.outputs
-                    else []
-                ),
-            }
-        return connections
-
-    def topologicalSort(self, connections=None):
-        """Deprecated: use :func:`nodeeditor.node_graph.topological_order`.
-
-        Kept for one release so existing callers keep working. ``connections``
-        is ignored; the scene is the graph of record.
-        """
-        return topological_order(self.scene)
-
-    def test_execution_visuals(self) -> None:
-        """Test function to verify execution visual effects"""
-        self.run_button.setEnabled(False)
-        sorted_nodes = topological_order(self.scene)
-
-        # Get all nodes
-        nodes = self.getAllNodes()
-
-        # Reset all node borders to default
-        for node in sorted_nodes:
-            node.grNode.resetPen()
-            node.grNode.update()
-
-        # Process nodes one by one with delays
-        self._process_next_node(nodes, 0)
-
-    def _process_next_node(self, nodes: list, current_index: int) -> None:
-        """Process nodes sequentially with visual transitions"""
-        if current_index >= len(nodes):
-            # All nodes processed, cleanup
-            QTimer.singleShot(1000, self._test_cleanup)
-            return
-
-        node = nodes[current_index]
-
-        # Show executing state (purple)
-        node.grNode.setPenExecuting()
-        node.grNode.update()
-
-        # Schedule transition to executed state (green)
-        QTimer.singleShot(1000, lambda: self._transition_to_executed(node))
-
-        # Schedule processing of next node
-        QTimer.singleShot(
-            1500, lambda: self._process_next_node(nodes, current_index + 1)
-        )
-
-    def _test_executed_state(self, node):
-        """Helper to show executed state"""
-        node.grNode.setPenExecuted()
-        node.grNode.update()
-
-    def _transition_to_executed(self, node) -> None:
-        """Transition a single node to executed state"""
-        node.grNode.setPenExecuted()
-        node.grNode.update()
-
-    def _test_cleanup(self) -> None:
-        """Reset all nodes and re-enable run button"""
-        for node in self.getAllNodes():
-            node.grNode.resetPen()
-            node.grNode.update()
-        self.run_button.setEnabled(True)

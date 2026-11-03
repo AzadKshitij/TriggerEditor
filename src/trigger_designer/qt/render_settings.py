@@ -51,7 +51,7 @@ def threshold_percent(prefs: Any) -> int:
     raw = prefs.get("editor/render_detail_threshold", DEFAULT_THRESHOLD_PERCENT)
     try:
         percent = int(raw)
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         percent = DEFAULT_THRESHOLD_PERCENT
     return max(0, min(100, percent))
 

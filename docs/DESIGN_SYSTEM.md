@@ -1,7 +1,7 @@
 # Signal — Trigger Designer Design System
 
 > Source of truth for the application UI.
-> Visual reference: [`design_system_preview.html`](design_system_preview.html) — self-contained, no network required.
+> Visual reference: [`design_system_preview.html`](assets/design_system_preview.html) — self-contained, no network required.
 > Config Dock contract: **§§1–7** (the sections `AGENTS.md` points at).
 > Reference implementations: the Data Preview strip (`qt/widgets/data_preview_panel.py`) and the Select tool (`qt/widgets/nodes/Preparation/select.py:134-259`).
 > Status: Signal 1.0 is the target contract. The Preview strip is the reference implementation; tokens and states marked **target** below are not in `base.qss` yet. The migration order is in §19.
@@ -207,12 +207,15 @@ Docks must `dock_layout.addWidget(toolbar)` then `dock_layout.addWidget(view, 1)
 QVBoxLayout (dock_layout)
 ├─ QWidget toolbar [fixedH 40, QHBox margins 0]
 │   ├─ QLineEdit search ("Search columns...", clear button, minH 30)
+│   ├─ TextButton All / None
 │   ├─ IconButton up / down
 │   └─ IconButton options (menu)
-└─ QTableView [stretch 1] via QSortFilterProxyModel
-    ├─ CaseInsensitive, FilterKeyColumn -1
-    ├─ ExtendedSelection + SelectRows
-    └─ ComboBoxDelegate for dtype col (single-click edit)
+└─ SelectTableView [stretch 1] via SelectFilterProxy
+    ├─ CaseInsensitive over name, rename and dtype
+    ├─ ExtendedSelection + SelectRows, 28px rows, no row numbers
+    ├─ Interactive data columns (checkbox fixed at 50), widths kept on the content
+    ├─ DtypeDelegate (single-click dropdown)
+    └─ RenameDelegate (Enter/focus-out commits, Escape cancels)
 ```
 
 Use for: Select, GroupBy, Join mappings, Unique lists.
@@ -247,7 +250,7 @@ Import from `qt/widgets/common/__init__.py`:
 - `NoWheelComboBox` — drops wheel events unless popup open. Use everywhere a combo sits in a scrollable dock.
 - `IconButton` / `TextButton` — see §4.
 
-Table helpers: `SelectTableWidget`, `RowData`, `ComboBoxDelegate` in `qt/widgets/select_table_widget.py` — reuse delegate painting (`QStyleOptionComboBox`) for any dtype/option column.
+Table helpers: `SelectTableModel`, `RowData`, `SelectFilterProxy`, `DtypeDelegate`, `RenameDelegate` and `SelectTableView` in `qt/widgets/select_table_widget.py` — reuse the model/delegate split for any editable column list. `SelectTableWidget` and `ComboBoxDelegate` remain aliases for older imports.
 
 **Target shared primitives:** `Chip`, `StatusBadge` and `ToolbarStrip` belong in `config_widgets.py`, not in a node. Do not fork them per dock.
 
@@ -456,6 +459,9 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 
 - Do not draw vertical grid lines. The row separator is enough.
 - `QHeaderView::section` must use the theme tokens; no default Fusion header.
+- Editable tables keep the checkbox column fixed and every data column
+  `Interactive`; keep the widths on the content so a dock rebuild does not
+  reset them, and let spare width grow the name column.
 - Delegates must paint from `option.palette`/`option.font`; never hand a bare `QStyleOptionComboBox` to `drawComplexControl`.
 - The Preview table is dense (24px); editable tables are 28px. Do not mix densities in one view.
 - Copy/export menus stay in the strip's Options menu; no table footer.
@@ -500,10 +506,12 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 | Hover | 1px `rgba(255,255,255,.30)` | none | Must not shift layout |
 | Selected | 2px `node.selection` (`#FFA637`) | optional success | Selection outranks hover |
 | Running | 2px `activity` | spinner/dot optional | No pulsing fill on the whole tile |
-| Executed | 2px `success` | success check, bottom-right | Clears when the node is dirtied |
-| Error | 2px `danger` | danger glyph, bottom-right | Tooltip carries the message |
+| Executed | 2px `success` | success check, bottom edge (centred) | Clears when the node is dirtied |
+| Error | 2px `danger` | danger glyph, bottom edge (centred) | Tooltip carries the message; replaces the status glyph |
 
 - State is never colour alone: the ring plus dot/glyph plus tooltip.
+- One status glyph per node. An error or warning replaces the executed/dirty
+  glyph in the same place; never draw a second indicator in a corner.
 - The ring is drawn outside the tile and must not change the node's hit area.
 
 ### Edges and grid
@@ -515,6 +523,30 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 - No animated dashes or particles by default; execution state belongs to the node ring.
 - Canvas and grid colours are tokens — `canvas_background`, `canvas_grid_light`, `canvas_grid_dark` — applied by `apply_theme_to_scene()`; state rings read `node_selection` / `activity` / `success` / `danger` through `NodeBase._pen_role`. Keep paint methods token-driven; a literal `QColor("#...")` in a `paint()` is a bug.
 - The workspace frame behind the sub-windows is `canvas_background` too (`TriggerWindow._theme_mdi_background`), so the graph and the frame read as one surface. Edge and socket colours are user settings, not theme tokens (`qt/node_editor_colors.py`).
+
+### Snapping and arrangement
+
+- **Snapping** is a preference (`editor/snap_to_grid`) copied onto the graphics scene by
+  `apply_theme_to_scene()`, because the drag handler reads it once per mouse move.
+  The same value is the check item under **Edit › Arrange** and the node context menu;
+  hold `Alt` while dragging to bypass it. New nodes dropped from the palette land on the grid.
+- **Arrange commands** live in one table, `qt/helpers/node_arrange.py`: align horizontal /
+  vertical centres, distribute horizontally / vertically, arrange in row / column / grid,
+  snap selection. Both menus and the shortcut page read that table, so labels, minimum
+  selections and defaults cannot drift apart.
+- Geometry rules: align shares the selection's bounding-box centre; arrange starts at its
+  top-left with a 40-unit gap; a grid uses `ceil(sqrt(n))` columns; distribute keeps the
+  outer nodes fixed and evens the edge gaps (never negative). A command that changes
+  nothing records no undo step.
+- Each command is one `MoveNodesCommand` per press - positions only, not a scene snapshot.
+  A group whose child moved is refitted explicitly, since the vendored `Group` only refits
+  from a mouse-driven `positionChanged`.
+- **Shortcuts** are per-command, edited under **Preferences › Shortcuts**, and stored as a
+  JSON object under `editor/shortcuts` (INI holds scalars only). Missing key = default,
+  empty string = cleared. A sequence needs Ctrl/Alt/Shift or a function key, so it cannot
+  shadow typing in the node editors; clashes are checked against the window's live actions.
+- Known limitation: dragging a group by its header moves every child through the vendored
+  `Group.mouseMoveEvent`, which does not pass through the node's snap correction.
 
 ### Canvas chrome
 
@@ -600,7 +632,7 @@ CONTROL_H = 30
 CHIP_H = 24
 ROW_H = 28
 DENSE_ROW_H = 24
-ICON_SIZE = 12
+ICON_SIZE = 16
 ```
 
 `IconButton`, `TextButton`, `Chip` and `StatusBadge` use these constants. Do not repeat the numbers in node files.
@@ -672,7 +704,7 @@ Target guards still to add:
 - Theme engine: `qt/theme_manager.py`, theme editor `qt/dialogs/theme_editor_dialog.py`, swatches `qt/widgets/common/theme_widgets.py`
 - Preferences: `qt/preferences.py`, dialog `qt/dialogs/preferences_dialog.py`, host window `qt/main_window.py`
 - Layout and session: `qt/layout_state.py`, `qt/helpers/preview_dock_state.py` (legacy migration only)
-- Visual preview: [`design_system_preview.html`](design_system_preview.html)
+- Visual preview: [`design_system_preview.html`](assets/design_system_preview.html)
 
 ---
 
@@ -767,4 +799,4 @@ Target guards still to add:
 - Canvas: `src/trigger_designer/qt/node_base.py`, `src/trigger_designer/qt/node_editor_colors.py`
 - Theme hooks: `src/trigger_designer/resources/qt/themes/base.qss`, `src/trigger_designer/qss/_style.scss`
 - Icons: `src/trigger_designer/qt/resources.json:98-105`
-- Visual preview: [`design_system_preview.html`](design_system_preview.html)
+- Visual preview: [`design_system_preview.html`](assets/design_system_preview.html)

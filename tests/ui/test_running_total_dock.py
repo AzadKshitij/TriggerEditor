@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 from nodeeditor.node_edge import Edge
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     TransformNodes,
@@ -52,14 +53,15 @@ def _node(qtbot, frame=None):
     return window, source, node, dock
 
 
-def test_dock_offers_numeric_sums_and_all_groups(qtbot) -> None:
+def test_dock_offers_numbers_and_text_as_sums_and_all_groups(qtbot) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     sums = content._widgets["sum_columns"]
     groups = content._widgets["group_by_columns"]
     assert isinstance(sums, ColumnPicker)
     assert isinstance(groups, ColumnPicker)
-    assert sums.column_names() == ["n"]
+    # Text columns are offered too: a CSV arrives as text and is read as numbers.
+    assert sums.column_names() == ["a", "n", "s"]
     assert groups.column_names() == ["a", "n", "s"]
     assert content.dock_summary() == "0 sums \u00b7 0 groups"
 
@@ -72,13 +74,13 @@ def test_selecting_sums_and_groups_changes_output(qtbot) -> None:
 
     sums.set_selected(["n"], emit=True)
     assert content.settings["sum_columns"] == ["n"]
-    out = node.value[0]["data"].collect()
+    out = live_value(node)[0]["data"].collect()
     assert out["RunTot_n"].to_list() == [1, 3, 6]
     assert content.dock_summary() == "1 sum \u00b7 0 groups"
 
     groups.set_selected(["a"], emit=True)
     assert content.settings["group_by_columns"] == ["a"]
-    out = node.value[0]["data"].collect()
+    out = live_value(node)[0]["data"].collect()
     assert out["RunTot_n"].to_list() == [1, 3, 3]
     assert content.dock_summary() == "1 sum \u00b7 1 group"
 
@@ -91,17 +93,17 @@ def test_undo_redoes_settings_widgets_and_output(qtbot) -> None:
 
     history.storeHistory("Baseline")
     picker.set_selected(["n"], emit=True)
-    assert "RunTot_n" in node.value[0]["data"].collect().columns
+    assert "RunTot_n" in live_value(node)[0]["data"].collect().columns
 
     history.undo()
     assert content.settings["sum_columns"] == []
     assert content._widgets["sum_columns"].checked() == []
-    assert "RunTot_n" not in node.value[0]["data"].collect().columns
+    assert "RunTot_n" not in live_value(node)[0]["data"].collect().columns
 
     history.redo()
     assert content.settings["sum_columns"] == ["n"]
     assert content._widgets["sum_columns"].checked() == ["n"]
-    assert "RunTot_n" in node.value[0]["data"].collect().columns
+    assert "RunTot_n" in live_value(node)[0]["data"].collect().columns
 
 
 def test_generated_code_matches_live(qtbot) -> None:
@@ -111,7 +113,7 @@ def test_generated_code_matches_live(qtbot) -> None:
     content.set_setting(
         "group_by_columns", ["a"], "Running Total Group By Columns Changed"
     )
-    live = node.value[0]["data"].collect()
+    live = live_value(node)[0]["data"].collect()
 
     namespace = {"var_src": _frame().lazy()}
     exec(content.get_code(), {"__name__": "__main__"}, namespace)  # noqa: S102
@@ -133,4 +135,4 @@ def test_serialize_round_trip(qtbot) -> None:
     fresh.markDirty(True)
     out = fresh.eval()
     assert out is not None and not fresh.isInvalid()
-    assert out[0]["data"].collect().equals(node.value[0]["data"].collect())
+    assert out[0]["data"].collect().equals(live_value(node)[0]["data"].collect())

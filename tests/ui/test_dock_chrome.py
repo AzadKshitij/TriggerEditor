@@ -7,16 +7,7 @@ beside it, keeps the title bar it is moved and closed by. The main window sets
 ``GroupedDragging`` so dragging a tab out of the bar pops that panel out.
 """
 
-import os
-import sys
 from collections.abc import Iterator
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 import pytest
 from qtpy.QtCore import Qt

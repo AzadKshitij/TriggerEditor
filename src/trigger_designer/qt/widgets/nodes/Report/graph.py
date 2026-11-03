@@ -77,24 +77,6 @@ _NO_COLUMN_LABEL = "(select column)"
 _WINDOW_REFRESH_DEBOUNCE_MS = 300
 
 
-def _label_for(
-    items: tuple[tuple[str, str], ...], value: str, default: str = ""
-) -> str:
-    for label, item_value in items:
-        if item_value == value:
-            return label
-    return default
-
-
-def _value_for(
-    items: tuple[tuple[str, str], ...], label: str, default: str = ""
-) -> str:
-    for item_label, value in items:
-        if item_label == label:
-            return value
-    return default
-
-
 class GraphContent(ShapingContent):
     """Chart configuration dock; the data itself is a pass-through."""
 
@@ -159,8 +141,6 @@ class GraphContent(ShapingContent):
         self.open_graph_button = IconButton.themed(
             "Show graph",
             rsm_icon=self.node.rsm.get("icon_external"),
-            qss_fallback=":/qss_icons/dark/rc/window_undock.png",
-            theme_fallback="window-new",
         )
         self.open_graph_button.clicked.connect(self.open_graph_in_new_window)
 

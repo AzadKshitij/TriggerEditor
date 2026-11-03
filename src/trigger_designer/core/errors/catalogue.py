@@ -22,6 +22,8 @@ class Entry(TypedDict, total=False):
     fixes: tuple[tuple[str, str], ...]
     hint: str
     reserved: bool
+    #: Built directly with ``make_error`` (run or eval path), not by a rule.
+    direct: bool
     passthrough: bool
 
 
@@ -404,7 +406,7 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-RUN-003": {
         "severity": "error",
-        "reserved": True,
+        "direct": True,
         "title": "Stopped because '{culprit_label}' has a problem.",
         "detail": "The problem is in the earlier step, not in this one.",
         "fixes": (("Fix '{culprit_label}' first, then run again.", ""),),
@@ -417,13 +419,12 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-RUN-005": {
         "severity": "warning",
-        "reserved": True,
+        "direct": True,
         "title": "Input {input_number} is not connected.",
         "fixes": (("Connect a node to this input.", ""),),
     },
     "TD-RUN-006": {
         "severity": "error",
-        "reserved": True,
         "title": "This step needs the result of an earlier step that is not available.",
         "detail": "{reason}",
         "fixes": (
@@ -436,14 +437,13 @@ CATALOGUE: dict[str, Entry] = {
     },
     "TD-RUN-008": {
         "severity": "warning",
-        "reserved": True,
+        "direct": True,
         "title": "Skipped because '{culprit_label}' failed.",
         "detail": "Independent branches of the workflow still ran.",
         "fixes": (("Fix '{culprit_label}' and run again.", ""),),
     },
     "TD-SYS-001": {
         "severity": "error",
-        "reserved": True,
         "title": "{message}",
         "fixes": (("Check this node's settings.", ""),),
     },
@@ -559,6 +559,52 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Pick a value from the list or inside the range.",
         "error",
     ),
+    "TD-SHAPE-101": (
+        "The split pattern can match nothing",
+        "Use a pattern that needs at least one character, such as \\s+ not \\s*.",
+        "error",
+    ),
+    "TD-SHAPE-110": (
+        "Only one statement is allowed",
+        "Remove everything after the first statement.",
+        "error",
+    ),
+    "TD-SHAPE-111": (
+        "Only SELECT queries are allowed",
+        "Write a SELECT query; changing data or settings is not allowed.",
+        "error",
+    ),
+    "TD-SHAPE-112": (
+        "The SQL uses a function or file access that is not allowed",
+        "Remove file-reading, system or random functions.",
+        "error",
+    ),
+    "TD-SHAPE-113": (
+        "The SQL could not be parsed or run",
+        "Check the SQL syntax.",
+        "error",
+    ),
+    "TD-SHAPE-114": (
+        "The SQL is too long",
+        "Shorten the SQL.",
+        "error",
+    ),
+    "TD-SHAPE-115": (
+        "The query took too long",
+        "Simplify the query or filter the data first.",
+        "error",
+    ),
+    "TD-SHAPE-120": (
+        "The formula must use the column placeholder",
+        "Write {col} where the column goes, for example UPPER({col}).",
+        "error",
+    ),
+    "TD-SHAPE-130": (
+        "The generated rows do not match the input rows",
+        "Set Start, Increment and End so the number of generated values equals "
+        "the number of input rows, or remove the input.",
+        "error",
+    ),
     "TD-SHAPE-005": (
         "A required input has no data",
         "Connect and fix the upstream node.",
@@ -618,58 +664,22 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
     ),
     "TD-SHAPE-072": (
         "Too many possible matches",
-        "Add key columns or narrow the tolerance.",
+        "Add key column pairs or narrow the date window.",
         "error",
     ),
     "TD-SHAPE-081": (
         "Too many possible fuzzy pairs",
-        "Add a blocking key or filter earlier.",
+        "Use a longer prefix or add a 'Must also match' column.",
         "error",
     ),
     "TD-SHAPE-082": (
         "Too many rows to compare without blocking",
-        "Add a blocking column.",
+        "Turn on prefix or first-word blocking.",
         "error",
     ),
     "TD-SHAPE-091": (
         "The column must be a number",
-        "Convert the column with a Select node.",
-        "error",
-    ),
-    "TD-SHAPE-101": (
-        "The split pattern can match nothing",
-        "Change the split pattern.",
-        "error",
-    ),
-    "TD-SHAPE-110": (
-        "Only one SQL statement is allowed",
-        "Remove the extra statements.",
-        "error",
-    ),
-    "TD-SHAPE-111": (
-        "Only SELECT queries are allowed",
-        "Rewrite it as a SELECT.",
-        "error",
-    ),
-    "TD-SHAPE-112": (
-        "A file, system or random function is not allowed",
-        "Remove that function.",
-        "error",
-    ),
-    "TD-SHAPE-113": (
-        "The SQL could not be parsed or run",
-        "Check the SQL near the reported text.",
-        "error",
-    ),
-    "TD-SHAPE-114": ("The SQL is too long", "Shorten the statement.", "error"),
-    "TD-SHAPE-115": (
-        "The query took too long",
-        "Filter the data before the query.",
-        "error",
-    ),
-    "TD-SHAPE-120": (
-        "The formula must contain {col}",
-        "Add {col} to the formula.",
+        "Pick a numeric column, or a text column that holds numbers.",
         "error",
     ),
     "TD-CLI-001": (
@@ -822,6 +832,11 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "A sheet name or cell content is not valid for Excel; rename the sheet or shorten the text.",
         "error",
     ),
+    "TD-OUT-015": (
+        "Excel output must use the .xlsx extension",
+        "Change the output file name to end in .xlsx (the writer cannot create the old .xls format).",
+        "error",
+    ),
 }
 
 for _code, (_title, _hint, _severity) in _PASSTHROUGH.items():
@@ -869,23 +884,3 @@ def render_entry(
         if rendered and rendered not in fixes:
             fixes.append(rendered)
     return shorten(title, 90), detail, tuple(fixes)
-
-
-def main_markdown() -> str:
-    lines = [
-        "# Error codes",
-        "",
-        "| Code | Severity | Title | Fix |",
-        "|---|---|---|---|",
-    ]
-    for code in sorted(CATALOGUE):
-        entry = CATALOGUE[code]
-        lines.append(
-            "| {code} | {severity} | {title} | {fix} |".format(
-                code=code,
-                severity=entry.get("severity", "error"),
-                title=str(entry.get("title", "")).replace("|", "\\|"),
-                fix=str(entry.get("hint", "")).replace("|", "\\|"),
-            )
-        )
-    return "\n".join(lines) + "\n"

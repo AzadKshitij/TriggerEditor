@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 from qtpy.QtWidgets import QVBoxLayout, QLabel, QWidget
 from nodeeditor.node_icon_content_widget import QDMNodeIconContentWidget
 
+from trigger_designer.core.codegen_safe import safe_comment
 from trigger_designer.qt.node_base import (
     TriggerNode,
     TriggerGraphicsNode,
@@ -83,7 +84,7 @@ class TriggerNode_Unknown(TriggerNode):
         return None
 
     def get_code(self) -> str:
-        return f"# Unknown node '{self.missing_op}' — skipped\n"
+        return f"# Unknown node {safe_comment(self.missing_op)} - skipped\n"
 
     def serialize(self) -> Dict[str, Any]:
         res = super().serialize()

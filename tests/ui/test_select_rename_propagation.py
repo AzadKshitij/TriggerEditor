@@ -1,20 +1,11 @@
 #!/usr/bin/env python3
 """Downstream Select nodes must follow upstream renames, not go stale."""
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 import polars as pl
 from nodeeditor.node_edge import Edge
 from qtpy.QtWidgets import QApplication, QMainWindow
 
+from tests.support.flush import flush
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -51,6 +42,7 @@ def _rename_headless(content, mapping):
         if column["name"] in mapping:
             column["rename"] = mapping[column["name"]]
     content.set_setting("columns", columns, "Select Columns Changed")
+    flush(content)  # the node runs when it is left
     content.node.markDirty(True)
     content.node.eval()
     APP.processEvents()

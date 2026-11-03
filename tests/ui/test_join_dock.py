@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 from nodeeditor.node_edge import Edge
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     JoinNodes,
     NodeTypes,
@@ -60,7 +61,7 @@ def _node(qtbot):
 
 
 def _outputs(node):
-    return [entry["data"].collect() for entry in node.value]
+    return [entry["data"].collect() for entry in live_value(node)]
 
 
 def test_default_mapping_and_output_rows(qtbot) -> None:

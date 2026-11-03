@@ -4,16 +4,22 @@ from __future__ import annotations
 
 import polars as pl
 
+from trigger_designer.core.excel.errors import TD_BAD_EXTENSION, ExcelWriteError
 from trigger_designer.core.shaping.common import as_lazy
 
 DEFAULTS = {
     "filePath": "",
     "file_format": "csv",
     "delimiter": ",",
-    "use_streaming": True,
     "include_bom": False,
-    "compression": None,
+    # Parquet codec. None means the historical default (snappy).
+    "compression": "snappy",
 }
+
+# ``use_streaming`` used to be a default but was never read: every sink_* call
+# already streams. Old .tds files may still carry it; unknown keys are ignored.
+
+PARQUET_COMPRESSIONS = ("snappy", "zstd", "gzip", "lz4", "uncompressed")
 
 FORMATS = (
     "csv",
@@ -61,9 +67,25 @@ def write_node(frames: list, settings: dict) -> None:
             options["include_bom"] = True
         frame.sink_csv(path, **options)
     elif file_format == "excel":
-        frame.collect().write_excel(path)
+        if path.lower().endswith(".xls"):
+            raise ExcelWriteError(
+                "Excel output is saved as .xlsx; change the file name to end in "
+                ".xlsx (an .xls name would hold .xlsx content and Excel would "
+                "refuse to open it).",
+                code=TD_BAD_EXTENSION,
+                path=path,
+            )
+        from trigger_designer.core.excel.frame_export import write_frame_xlsx
+
+        write_frame_xlsx(frame, path)
     elif file_format == "parquet":
-        frame.sink_parquet(path, compression="snappy")
+        codec = str(settings.get("compression") or "snappy").lower()
+        if codec not in PARQUET_COMPRESSIONS:
+            raise ValueError(
+                f"File Output: unknown Parquet compression '{codec}'. "
+                f"Choose one of {', '.join(PARQUET_COMPRESSIONS)}."
+            )
+        frame.sink_parquet(path, compression=codec)
     elif file_format == "json":
         frame.collect().write_json(path)
     elif file_format == "ndjson":

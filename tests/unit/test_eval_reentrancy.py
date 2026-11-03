@@ -1,12 +1,5 @@
 """A dirty node pushed by two branches must compute only once."""
 
-import os
-import sys
-from pathlib import Path
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
 from qtpy.QtWidgets import QApplication
 
 from trigger_designer.qt.design_window import TriggerSubWindow
@@ -107,9 +100,9 @@ class RaisingNode(TriggerNode):
 
 
 def test_guard_cleared_after_exception(monkeypatch) -> None:
-    from trigger_designer.qt import node_base
+    from trigger_designer.qt import node_runtime
 
-    monkeypatch.setattr(node_base, "dumpException", lambda exc: None)
+    monkeypatch.setattr(node_runtime, "dumpException", lambda exc: None)
     window = TriggerSubWindow()
     try:
         node = RaisingNode(window.scene)

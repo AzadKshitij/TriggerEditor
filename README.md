@@ -7,7 +7,7 @@
 **A visual, node-based data-processing workbench — cleanse, transform, join and
 preview data without writing a pipeline by hand.**
 
-<img src="docs/assets/screenshot_main.png" alt="Trigger Designer main window: node canvas, node palette, node configuration dock and logging dock" width="100%" />
+<img src="docs/assets/screenshot_main.webp" alt="Trigger Designer main window: node canvas, node palette, node configuration dock and logging dock" width="100%" />
 
 <sub>A workflow loaded in the node canvas, with the Config Dock editing a Cleansing node.</sub>
 
@@ -77,14 +77,15 @@ identifier stored in saved workflows; icons live in
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Preparation/Dynamic%20Row%20Generate.svg" width="28" height="28" /> | **Rows** | Builds a grid or series of rows from ranges and literals. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Join.svg" width="28" height="28" /> | **Join** | Full-outer join with L / J / R output sockets for orphans and matches. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Append.svg" width="28" height="28" /> | **Append** | Stacks the right input's rows underneath the left input. |
+| <img src="src/trigger_designer/resources/qt/images/node_icons/Join/Union.svg" width="28" height="28" /> | **Union** | Stacks two or more inputs vertically, matching columns by name or manual mapping. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Count.svg" width="28" height="28" /> | **Count** | Counts rows, overall or per group, and emits the total. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Running%20Total.svg" width="28" height="28" /> | **Running Total** | Adds a cumulative sum column, optionally per group. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Transform/Transpose.svg" width="28" height="28" /> | **Transpose** | Flips the frame so rows become columns and columns become rows. |
 | <img src="src/trigger_designer/resources/qt/images/node_icons/Report/Graph.svg" width="28" height="28" /> | **Graph** | Renders the incoming data as a chart in its own window. |
 
 > Join is always a full outer join; the join *type* is expressed through the three
-> output sockets. See [`docs/NODE_REFERENCE.md`](docs/NODE_REFERENCE.md) for the
-> full inventory and the gotchas behind each node.
+> output sockets. See the [node reference](docs/nodes/index.md) for every node,
+> its settings and its gotchas.
 
 ## Requirements
 
@@ -180,17 +181,27 @@ src/trigger_designer/
 
 ## Documentation
 
+The user documentation is a MkDocs Material site. Its source lives in `docs/`
+and is published with [mike](https://github.com/jimporter/mike) so each release
+keeps its own copy.
+
+```bash
+uv sync --group docs          # install the docs toolchain
+uv run --group docs mkdocs serve    # live preview on http://127.0.0.1:8000
+uv run --group docs mkdocs build --strict
+```
+
 | Document | Contents |
 |---|---|
-| [`docs/NODE_REFERENCE.md`](docs/NODE_REFERENCE.md) | The full palette and each node's behaviour. |
-| [`docs/FORMULA_TOOL_REFERENCE.md`](docs/FORMULA_TOOL_REFERENCE.md) | Formula editor features and usage. |
-| [`docs/SQL_FORMULA_REFERENCE.md`](docs/SQL_FORMULA_REFERENCE.md) | DuckDB SQL formula syntax for calculated columns. |
-| [`docs/ENHANCED_EXECUTOR_GUIDE.md`](docs/ENHANCED_EXECUTOR_GUIDE.md) | The node execution engine (timeouts, sandboxing, metrics). |
-| [`docs/POLARS_TABLE_VIEWER_README.md`](docs/POLARS_TABLE_VIEWER_README.md) | The lazy-loading DataFrame table viewer. |
-| [`docs/LOGGING_DOCK_README.md`](docs/LOGGING_DOCK_README.md) · [`docs/GLOBAL_LOGGING_README.md`](docs/GLOBAL_LOGGING_README.md) | Logging dock and the global logger. |
-| [`docs/LABELS_AND_GROUPS.md`](docs/LABELS_AND_GROUPS.md) | Node labels and visual groups. |
+| [`docs/index.md`](docs/index.md) | Site home: what the app is and where to start. |
+| [`docs/guide/`](docs/guide/README.md) | The user guide: first workflow, canvas, Config Dock, running, errors, audit trail. |
+| [`docs/nodes/`](docs/nodes/index.md) | One page per node, grouped by palette family. |
+| [`docs/versions.md`](docs/versions.md) | How versions are published with mike. |
+| [`docs/contributing/writing-style.md`](docs/contributing/writing-style.md) | The node page template and voice. |
+| [`docs/internal/`](docs/internal/) | Engineering notes, plans and historical reports. Excluded from the site. |
 | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Config Dock design system and UI conventions. |
 | [`savedfiles/Example_2_Retail_Ledger/NODE_SETUP_GUIDE.md`](savedfiles/Example_2_Retail_Ledger/NODE_SETUP_GUIDE.md) | A worked, node-by-node example workflow. |
+| [`savedfiles/Example_3_AE_Winter_Watch/README.md`](savedfiles/Example_3_AE_Winter_Watch/README.md) | A real-data showcase: twelve published NHS England A&E returns into a national trend and a ranked trust watchlist. |
 
 ## Testing
 
@@ -208,7 +219,7 @@ headless by setting `QT_QPA_PLATFORM=offscreen`.
 - **Types:** `uv run --project . ty check`
 - **All hooks:** `uv run --project . pre-commit run --all-files`
 - **Profiling:** `scripts/profile_app.py`, `scripts/run_pyspy.bat` (see
-  [`docs/PERFORMANCE_PROFILING_FINDINGS.md`](docs/PERFORMANCE_PROFILING_FINDINGS.md)).
+  [`docs/internal/PERFORMANCE_PROFILING_FINDINGS.md`](docs/internal/PERFORMANCE_PROFILING_FINDINGS.md)).
 
 Before changing UI, read [`AGENTS.md`](AGENTS.md) and
 [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) — Config Dock conventions,
@@ -223,6 +234,11 @@ development setup and guidelines. In short:
 2. Make a focused change and add tests.
 3. Run the formatter, linter and type checker, then `pytest`.
 4. Open a pull request describing the change and its rationale.
+
+## Headless
+
+`trigger-designer-cli run workflow.tds` runs a saved workflow without the editor window, with exit codes,
+JSON-lines logs, run records and a Windows scheduling helper. See [the command line guide](docs/guide/cli.md).
 
 ## License
 

@@ -1,27 +1,22 @@
 """Enhanced Python code executor for TriggerEditor nodes.
 
-This module provides a robust Python code executor with timeout handling,
-memory monitoring, execution statistics, and comprehensive error reporting.
+This module provides a robust Python code executor with timeout handling and
+comprehensive error reporting.
 All imports and functions are allowed for maximum flexibility.
 """
 
-import gc
-import io
 import os
 import queue
 import re
-import sys
 import threading
-import time
 import traceback
+import weakref
 from collections.abc import Callable
-from contextlib import contextmanager, redirect_stderr, redirect_stdout
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 import polars as pl
-import psutil
 from loguru import logger
 
 from trigger_designer.qt.helpers import global_logger
@@ -35,67 +30,25 @@ class ExecutionResult:
     """Detailed result of code execution."""
 
     success: bool
-    output: str = ""
     error: str = ""
     variables: dict[str, Any] = field(default_factory=dict)
-    execution_time: float = 0.0
-    memory_used: float = 0.0
-    peak_memory: float = 0.0
-    lines_executed: int = 0
-    warnings: list[str] = field(default_factory=list)
-    timestamp: datetime = field(default_factory=datetime.now)
     exception: BaseException | None = None
     traceback_text: str = ""
     exception_type: str = ""
     code: str = ""
     started_at: str = ""
     finished_at: str = ""
+    #: True when the failing source exception carries the class attribute
+    #: ``policy_violation = True`` (set by a ``code_filter`` that refuses code).
     policy_violation: bool = False
-
-    def without_frames(self) -> "ExecutionResult":
-        """A copy whose ``variables`` describe values instead of holding them.
-
-        The executor keeps the last 100 results for debugging; the frames
-        there duplicate every output of the run and keep temporary frames
-        (``df_for_duck``, closed DuckDB handles) alive. Keep the variable
-        names and a short descriptor, drop the objects.
-        """
-        return replace(
-            self,
-            variables={
-                name: _describe_value(value) for name, value in self.variables.items()
-            },
-            exception=None,
-        )
 
 
 def _utc_now_iso() -> str:
     return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
-def _describe_value(value: Any) -> str:
-    """A short, frame-free descriptor of an executed variable."""
-    type_name = type(value).__name__
-    shape = getattr(value, "shape", None)
-    if shape is None:
-        return type_name
-    try:
-        return f"{type_name}{tuple(shape)}"
-    except TypeError:
-        return type_name
-
-
-@dataclass
-class ExecutionStats:
-    """Statistics for tracking execution performance."""
-
-    total_executions: int = 0
-    successful_executions: int = 0
-    failed_executions: int = 0
-    total_execution_time: float = 0.0
-    average_execution_time: float = 0.0
-    max_memory_used: float = 0.0
-    last_execution: datetime | None = None
+#: Hard ceiling for a node's own ``execution_timeout`` (seconds).
+MAX_NODE_TIMEOUT = 1800.0
 
 
 @dataclass
@@ -103,7 +56,21 @@ class SecurityConfig:
     """Configuration for code execution limits."""
 
     max_execution_time: float = 30.0  # seconds
-    max_memory_mb: float = 512.0  # megabytes
+    #: Ceiling for a per-node ``execution_timeout`` declaration (seconds).
+    max_node_timeout: float = MAX_NODE_TIMEOUT
+
+
+def _node_worker_loop(tasks: queue.Queue[Callable[[], None] | None]) -> None:
+    """Pooled worker body. Deliberately holds no reference to the executor."""
+    while True:
+        task = tasks.get()
+        if task is None:
+            return
+        try:
+            task()
+        except BaseException:  # noqa: BLE001 - the worker must outlive any task
+            logger.exception("Node executor task raised unexpectedly")
+        del task
 
 
 class NodeExecutionError(Exception):
@@ -126,37 +93,18 @@ class ExecutionTimeoutError(NodeExecutionError):
     """Exception raised when code execution times out."""
 
 
-
-class ExecutionMemoryError(NodeExecutionError):
-    """Exception raised when code execution exceeds memory limits."""
-
-
-
 class NodeExecutor:
-    """Enhanced Python code executor with timeout monitoring, memory tracking, and error handling."""
-
-    max_missing_dependency_attempts = 5
-    # gc.collect() is expensive (full cyclic GC pass) and buys little per
-    # call since polars/pyarrow objects are refcounted, not cycle-heavy;
-    # run it periodically instead of after every single node execution.
-    gc_collect_interval = 20
+    """Python code executor with timeout monitoring and error handling."""
 
     def __init__(self, security_config: SecurityConfig | None = None) -> None:
         """Initialize the NodeExecutor.
 
         Args:
-            security_config: Configuration for execution limits (timeout, memory)
+            security_config: Configuration for execution limits (timeout)
         """
         self.execution_context: dict[str, Any] = {}
         self._seed_base_globals()
         self.security_config = security_config or SecurityConfig()
-        self.stats = ExecutionStats()
-        self.execution_history: list[ExecutionResult] = []
-        self._cancel_event = threading.Event()
-        self._current_task_done: threading.Event | None = None
-        self._missing_dependency_attempts: dict[str, int] = {}
-        self._process = psutil.Process(os.getpid())
-        self._executions_since_gc = 0
         # One daemon worker thread reused for every node execution in this
         # NodeExecutor's lifetime, instead of spawning+joining a fresh OS
         # thread per node. Kept as a plain daemon thread + queue (rather
@@ -168,31 +116,86 @@ class NodeExecutor:
         self.before_node: Callable[[Any], None] | None = None
         self.after_node: Callable[[Any, dict, ExecutionResult], None] | None = None
         self.code_filter: Callable[[str], str] | None = None
+        # Cooperative cancel latch. Cleared by reset_cancel() at the start of a
+        # run (the run loop does it), never by execute_node, so a request made
+        # before the next node starts is not lost. Observers may poll
+        # ``cancel_requested``; a node already inside ``exec`` is not stopped.
+        #: Resolve the schema of every lazy output after exec (BUG-004); set
+        #: False to let a broken plan "succeed" until something collects it.
+        self.verify_plans: bool = True
+        self._cancel_event = threading.Event()
+        self._node_running = False
         self._start_worker()
 
     def _start_worker(self) -> None:
-        """Start a fresh pooled worker with its own queue."""
+        """Start a fresh pooled worker with its own queue.
+
+        The worker target is a module-level function that sees only its queue,
+        never ``self``: a bound method would keep the executor alive for as
+        long as the thread idles, so a discarded executor could never be
+        collected and its thread would live until process exit (one leaked
+        thread per Run click - hundreds across a test session).
+        ``weakref.finalize`` posts the stop sentinel when the executor is
+        garbage collected, as a backstop for owners that never call
+        :meth:`shutdown`.
+        """
+        old_finalizer = getattr(self, "_worker_finalizer", None)
+        if old_finalizer is not None:
+            old_finalizer.detach()
         tasks: queue.Queue[Callable[[], None] | None] = queue.Queue()
         self._node_task_queue = tasks
         self._node_worker_thread = threading.Thread(
-            target=self._node_worker_loop,
+            target=_node_worker_loop,
             args=(tasks,),
             daemon=True,
             name="NodeExecutorWorker",
         )
         self._node_worker_thread.start()
+        self._worker_finalizer = weakref.finalize(self, tasks.put, None)
 
-    def _node_worker_loop(
-        self, tasks: "queue.Queue[Callable[[], None] | None]"
-    ) -> None:
-        while True:
-            task = tasks.get()
-            if task is None:
+    def shutdown(self, timeout: float = 2.0) -> None:
+        """Stop the pooled worker thread; idempotent and never raises.
+
+        Posts the stop sentinel and waits at most ``timeout`` seconds. A worker
+        stuck inside a node (the case ``_execute_with_timeout`` abandons) is
+        not killed: it is a daemon, exits once the node returns, and the wait
+        is bounded so the GUI never hangs. A later ``execute_node`` starts a
+        fresh worker, so a shut-down executor stays usable.
+        """
+        try:
+            finalizer = getattr(self, "_worker_finalizer", None)
+            if finalizer is not None:
+                finalizer.detach()
+            thread = getattr(self, "_node_worker_thread", None)
+            if thread is None:
                 return
-            try:
-                task()
-            except BaseException:  # noqa: BLE001 - the worker must outlive any task
-                logger.exception("Node executor task raised unexpectedly")
+            self._node_task_queue.put(None)
+            if thread.is_alive() and thread is not threading.current_thread():
+                thread.join(timeout)
+        except Exception:  # noqa: BLE001 - shutdown runs from slots/destructors
+            logger.exception("Node executor shutdown failed")
+
+    def _ensure_worker(self) -> None:
+        thread = self._node_worker_thread
+        if not thread.is_alive():
+            self._start_worker()
+
+    def reset_cancel(self) -> None:
+        """Forget an earlier cancel request (called when a run starts)."""
+        self._cancel_event.clear()
+
+    @property
+    def cancel_requested(self) -> bool:
+        return self._cancel_event.is_set()
+
+    def cancel_execution(self) -> bool:
+        """Latch a cancel request; True when a node is executing right now.
+
+        The running node cannot be interrupted: the request only stops the
+        run before the next node.
+        """
+        self._cancel_event.set()
+        return self._node_running
 
     def _call_hook(self, hook, *args) -> None:
         if hook is None:
@@ -210,67 +213,23 @@ class NodeExecutor:
             {"pl": pl, "os": os, "datetime": datetime, "timedelta": timedelta}
         )
 
-    def _track_missing_dependency(self, dependency_type: str, identifier: str) -> int:
-        key = f"{dependency_type}:{identifier}"
-        attempts = self._missing_dependency_attempts.get(key, 0) + 1
-        self._missing_dependency_attempts[key] = attempts
-        return attempts
-
-    def _log_missing_dependency(
-        self,
-        node_name: str,
-        dependency_type: str,
-        identifier: str,
-    ) -> None:
-        attempts = self._track_missing_dependency(dependency_type, identifier)
-
-        if attempts > self.max_missing_dependency_attempts:
-            return
-
-        warning_message = (
-            f"{node_name}: {dependency_type} '{identifier}' not found "
-            f"(attempt {attempts}/{self.max_missing_dependency_attempts})"
-        )
-        logger.warning(warning_message)
-        global_logger.warning(warning_message)
-
-        if attempts == self.max_missing_dependency_attempts:
-            give_up_message = (
-                f"{node_name}: giving up after {self.max_missing_dependency_attempts} attempts "
-                f"because {dependency_type} '{identifier}' was not found."
-            )
-            logger.error(give_up_message)
-            global_logger.error(give_up_message)
-
     def _report_missing_dependency(self, node_name: str, error: Exception) -> None:
         source_error = getattr(error, "original_exception", None) or error
 
         if isinstance(source_error, NameError):
             match = re.search(r"name '([^']+)' is not defined", str(source_error))
-            variable_name = match.group(1) if match else str(source_error)
-            self._log_missing_dependency(node_name, "variable", variable_name)
+            kind, identifier = (
+                "variable",
+                match.group(1) if match else str(source_error),
+            )
         elif isinstance(source_error, FileNotFoundError):
-            file_name = getattr(source_error, "filename", None) or str(source_error)
-            self._log_missing_dependency(node_name, "file", file_name)
-
-    @contextmanager
-    def _capture_output(self):
-        """Context manager to capture stdout and stderr."""
-        stdout_buffer = io.StringIO()
-        stderr_buffer = io.StringIO()
-
-        try:
-            with redirect_stdout(stdout_buffer), redirect_stderr(stderr_buffer):
-                yield stdout_buffer, stderr_buffer
-        finally:
-            pass
-
-    def _get_memory_usage(self) -> float:
-        """Get current process memory usage in MB."""
-        try:
-            return self._process.memory_info().rss / (1024 * 1024)
-        except Exception:  # noqa: BLE001
-            return 0.0
+            kind = "file"
+            identifier = getattr(source_error, "filename", None) or str(source_error)
+        else:
+            return
+        message = f"{node_name}: {kind} '{identifier}' not found"
+        logger.warning(message)
+        global_logger.warning(message)
 
     def _execute_with_timeout(
         self, code: str, local_vars: dict[str, Any], timeout: float
@@ -295,13 +254,21 @@ class NodeExecutor:
 
                 exec(code, execution_globals, local_vars)  # noqa: S102
 
+                if self.verify_plans:
+                    # Generated code only *builds* lazy plans, so a bad column
+                    # or join key would surface later at some sink, far from
+                    # the node that caused it. Resolving the schema checks the
+                    # plan without reading any data.
+                    for value in local_vars.values():
+                        if isinstance(value, pl.LazyFrame):
+                            value.collect_schema()
+
             except BaseException as e:  # noqa: BLE001
-                exception_container[0] = e
                 exception_container[0] = e
             finally:
                 done.set()
 
-        self._current_task_done = done
+        self._ensure_worker()
         self._node_task_queue.put(target)
 
         if not done.wait(timeout):
@@ -313,12 +280,32 @@ class NodeExecutor:
             self._node_task_queue.put(None)
             self._start_worker()
             return False, ExecutionTimeoutError(
-                f"Code execution timed out after {timeout} seconds"
+                f"Code execution timed out after {timeout:g} seconds"
             )
 
         return True, exception_container[0]
 
-    def execute_node(self, node: "TriggerNode") -> ExecutionResult:
+    def effective_timeout(self, node: Any) -> float:
+        """The time limit for ``node``: its declared ``execution_timeout`` or the default.
+
+        A node (read first) or its content may set the class attribute
+        ``execution_timeout`` (seconds, ``None`` = use the default). The value is
+        capped at ``SecurityConfig.max_node_timeout``. A default that is already
+        at or above that cap (the CLI's "no limit" and ``--timeout`` budgets) is
+        never lowered by a declaration; the CLI total deadline still wins.
+        """
+        default = self.security_config.max_execution_time
+        cap = self.security_config.max_node_timeout
+        for owner in (node, getattr(node, "content", None)):
+            declared = getattr(owner, "execution_timeout", None)
+            if isinstance(declared, bool) or not isinstance(declared, (int, float)):
+                continue
+            if declared <= 0 or default >= cap:
+                continue
+            return float(min(declared, cap))
+        return default
+
+    def execute_node(self, node: TriggerNode) -> ExecutionResult:
         """Execute a node's code with comprehensive monitoring and error handling.
 
         Args:
@@ -327,13 +314,6 @@ class NodeExecutor:
         Returns:
             ExecutionResult containing detailed execution information
         """
-        start_time = time.time()
-        start_memory = self._get_memory_usage()
-        peak_memory = start_memory
-
-        # Reset cancellation flag
-        self._cancel_event.clear()
-
         # Create result object
         result = ExecutionResult(success=False)
         result.started_at = _utc_now_iso()
@@ -347,50 +327,31 @@ class NodeExecutor:
                 code = self.code_filter(code)
             self._call_hook(self.before_node, node)
 
-            # Count lines of code
-            result.lines_executed = len(
-                [line for line in code.splitlines() if line.strip()]
-            )
-
             # Prepare local variables
-            local_variables = {}
+            local_variables: dict[str, Any] = {}
 
-            # Capture output during execution
-            with self._capture_output() as (stdout_buffer, stderr_buffer):
-                # Execute with timeout
+            self._node_running = True
+            try:
                 success, exception = self._execute_with_timeout(
-                    code, local_variables, self.security_config.max_execution_time
+                    code, local_variables, self.effective_timeout(node)
                 )
+            finally:
+                self._node_running = False
 
-                # Monitor memory usage during execution
-                current_memory = self._get_memory_usage()
-                peak_memory = max(peak_memory, current_memory)
-
-                # Check memory limits
-                if peak_memory - start_memory > self.security_config.max_memory_mb:
-                    raise ExecutionMemoryError(
-                        f"Memory usage exceeded limit: {peak_memory - start_memory:.2f}MB",
+            if not success or exception:
+                if isinstance(exception, ExecutionTimeoutError):
+                    raise exception
+                if exception:
+                    raise NodeExecutionError(
+                        str(exception),
                         node_name=node_name,
-                    )
+                        original_exception=exception,
+                    ) from exception
 
-                if not success or exception:
-                    if isinstance(exception, ExecutionTimeoutError):
-                        raise exception
-                    elif exception:
-                        raise NodeExecutionError(
-                            str(exception),
-                            node_name=node_name,
-                            original_exception=exception,
-                        ) from exception
+            result.success = True
 
-                # Collect results
-                result.output = stdout_buffer.getvalue()
-                stderr_content = stderr_buffer.getvalue()
-                if stderr_content:
-                    result.warnings.append(f"stderr: {stderr_content}")
-
-                result.success = True
-
+            # Before the hook: a node's after_execution reads these values.
+            result.variables = local_variables.copy()
             after_execution = getattr(
                 getattr(node, "content", None), "after_execution", None
             )
@@ -398,17 +359,20 @@ class NodeExecutor:
                 try:
                     after_execution(result.variables)
                 except Exception as hook_error:  # noqa: BLE001
-                    hook_message = (
+                    logger.warning(
                         f"after_execution hook failed for {node_name}: {hook_error}"
                     )
-                    result.warnings.append(hook_message)
-                    logger.warning(hook_message)
 
-            self._call_hook(self.after_node, node, local_variables, result)
-            result.variables = local_variables.copy()
-
-            # Update shared execution context with new variables
-            self.execution_context.update(local_variables)
+            try:
+                self._call_hook(self.after_node, node, local_variables, result)
+                # An observer may have added or replaced a variable; the result
+                # and the shared context must agree on what the node produced.
+                result.variables = {**result.variables, **local_variables}
+                # Update shared execution context with new variables
+                self.execution_context.update(local_variables)
+            except Exception as hook_error:
+                logger.warning(f"after_node hook failed for {node_name}: {hook_error}")
+                raise
 
             # Log successful execution
             logger.debug(f"Successfully executed node {node_name}")
@@ -436,142 +400,11 @@ class NodeExecutor:
 
         finally:
             result.finished_at = _utc_now_iso()
-            # Calculate final statistics
-            result.execution_time = time.time() - start_time
-            result.memory_used = self._get_memory_usage() - start_memory
-            result.peak_memory = peak_memory - start_memory
-
-            # Update statistics
-            self._update_stats(result)
-
-            # Add to history (keep last 100 executions). Store the frame-free
-            # copy: the history is for debugging, and holding the run's frames
-            # here would duplicate every output and keep temp objects alive.
-            self.execution_history.append(result.without_frames())
-            if len(self.execution_history) > 100:
-                self.execution_history.pop(0)
-
-            # Clean up task-done-event reference
-            self._current_task_done = None
-
-            # Periodic garbage collection instead of every node (see
-            # gc_collect_interval) - a full gc.collect() per call was
-            # measured as one of the largest fixed per-node costs.
-            self._executions_since_gc += 1
-            if self._executions_since_gc >= self.gc_collect_interval:
-                gc.collect()
-                self._executions_since_gc = 0
+            # No gc.collect() here. This runs on the run's worker thread, and
+            # a full collection there also destroys any unreachable Qt
+            # wrappers (graphics items, widgets of discarded windows) on a
+            # non-GUI thread: an intermittent Windows access violation, 0/24
+            # crashes with this removed against ~40% before. Frames are
+            # refcounted, so the automatic collector is enough.
 
         return result
-
-    def execute_node_legacy(self, node: "TriggerNode") -> tuple[str, dict[str, Any]]:
-        """Legacy method for backward compatibility.
-
-        Args:
-            node: The TriggerNode to execute
-
-        Returns:
-            Tuple of (output_string, variables_dict)
-        """
-        result = self.execute_node(node)
-
-        if result.success:
-            return result.output, result.variables
-        else:
-            return f"Error: {result.error}", self.execution_context
-
-    def _update_stats(self, result: ExecutionResult) -> None:
-        """Update execution statistics.
-
-        Args:
-            result: ExecutionResult to incorporate into stats
-        """
-        self.stats.total_executions += 1
-        self.stats.last_execution = result.timestamp
-
-        if result.success:
-            self.stats.successful_executions += 1
-        else:
-            self.stats.failed_executions += 1
-
-        self.stats.total_execution_time += result.execution_time
-        self.stats.average_execution_time = (
-            self.stats.total_execution_time / self.stats.total_executions
-        )
-
-        self.stats.max_memory_used = max(self.stats.max_memory_used, result.peak_memory)
-
-    def cancel_execution(self) -> bool:
-        """Cancel currently running execution.
-
-        Returns:
-            True if cancellation was attempted, False if no execution running
-        """
-        if self._current_task_done and not self._current_task_done.is_set():
-            self._cancel_event.set()
-            return True
-        return False
-
-    def clear_context(self) -> None:
-        """Clear the shared execution context."""
-        self.execution_context.clear()
-        self._seed_base_globals()
-        logger.debug("Execution context cleared")
-
-    def get_context_info(self) -> dict[str, Any]:
-        """Get information about the current execution context.
-
-        Returns:
-            Dictionary with context variable information
-        """
-        context_info = {}
-
-        for name, value in self.execution_context.items():
-            try:
-                context_info[name] = {
-                    "type": type(value).__name__,
-                    "size": sys.getsizeof(value),
-                    "repr": repr(value)[:100] + "..."
-                    if len(repr(value)) > 100
-                    else repr(value),
-                }
-            except Exception:  # noqa: BLE001
-                context_info[name] = {
-                    "type": type(value).__name__,
-                    "size": 0,
-                    "repr": "<unable to represent>",
-                }
-
-        return context_info
-
-    def get_statistics(self) -> ExecutionStats:
-        """Get execution statistics.
-
-        Returns:
-            ExecutionStats object with current statistics
-        """
-        return self.stats
-
-    def get_execution_history(
-        self, limit: int | None = None
-    ) -> list[ExecutionResult]:
-        """Get execution history.
-
-        Args:
-            limit: Maximum number of results to return (None for all)
-
-        Returns:
-            List of ExecutionResult objects
-        """
-        if limit is None:
-            return self.execution_history.copy()
-        return self.execution_history[-limit:] if limit > 0 else []
-
-    def set_config(self, config: SecurityConfig) -> None:
-        """Update execution configuration.
-
-        Args:
-            config: New SecurityConfig to apply (timeout and memory limits)
-        """
-        self.security_config = config
-        logger.debug("Execution configuration updated")

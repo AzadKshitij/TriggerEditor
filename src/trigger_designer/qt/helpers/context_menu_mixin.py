@@ -5,7 +5,6 @@ import time
 from typing import Any, Dict, Optional
 
 from loguru import logger
-from qtpy.QtCore import Qt
 from qtpy.QtGui import QContextMenuEvent, QCursor
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QInputDialog, QMenu
 
@@ -22,6 +21,7 @@ from trigger_designer.core.node_configuration import (
     NodeTypes,
     get_class_from_opcode,
 )
+from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 
 #: Show the cache-invalidation actions in the node context menu. They are
@@ -43,6 +43,7 @@ class ContextMenuMixin:
             "Join": NODE_REGISTRIES[NodeTypes.JOIN],
             "Transform": NODE_REGISTRIES[NodeTypes.TRANSFORM],
             "Report": NODE_REGISTRIES[NodeTypes.REPORT],
+            "Audit": NODE_REGISTRIES[NodeTypes.AUDIT],
         }
 
     # --- Node actions --------------------------------------------------------------
@@ -65,10 +66,10 @@ class ContextMenuMixin:
     def _get_action_icon(self, category: str, icon_id: str):
         from qtpy.QtGui import QIcon, QPixmap  # Local import to avoid circular deps
 
-        icon = QIcon(f":{category}/{self.rsm.get_icon_path(icon_id)}")
+        path = self.rsm.get_full_path(icon_id)
+        icon = QIcon(str(path)) if path else QIcon()
         if icon.isNull():
-            # ponytail: filesystem fallback — icons.qrc may miss an entry
-            # (recompile icons_rc.py when adding icons permanently)
+            # Raster fallback when the SVG icon engine is unavailable
             pixmap = self.rsm.get(icon_id)
             if isinstance(pixmap, QPixmap) and not pixmap.isNull():
                 icon = QIcon(pixmap)
@@ -123,6 +124,9 @@ class ContextMenuMixin:
         cursor_pos = self.mapFromGlobal(QCursor.pos())
         scene_pos = self.scene.getView().mapToScene(cursor_pos)
         new_calc_node.setPos(scene_pos.x(), scene_pos.y())
+        node_arrange.snap_node_to_grid(
+            new_calc_node, node_arrange.grid_size(self.scene)
+        )
         self.scene.history.storeHistory("Created %s" % new_calc_node.__class__.__name__)
 
     # --- Context menu handlers -----------------------------------------------------
@@ -272,6 +276,17 @@ class ContextMenuMixin:
         if clicked_node is not None and clicked_node.parent_group is not None:
             detachAct = context_menu.addAction("Detach from Group")
 
+        arrange_menu = context_menu.addMenu("Arrange")
+        arrange_actions: Dict[Any, str] = {}
+        for command in node_arrange.COMMANDS:
+            arrange_action = arrange_menu.addAction(command.label)
+            arrange_action.setEnabled(len(candidates) >= command.minimum)
+            arrange_actions[arrange_action] = command.id
+        arrange_menu.addSeparator()
+        snapAct = arrange_menu.addAction("Snap to Grid")
+        snapAct.setCheckable(True)
+        snapAct.setChecked(node_arrange.snap_enabled(self.scene))
+
         groupAct = None
         if len(candidates) > 1:
             groupAct = context_menu.addAction("Group Selected Nodes")
@@ -312,6 +327,10 @@ class ContextMenuMixin:
             self.scene.history.storeHistory(
                 "Detached node from group", setModified=True
             )
+        if action is not None and action in arrange_actions and candidates:
+            node_arrange.apply_command(self.scene, arrange_actions[action], candidates)
+        if snapAct is not None and action == snapAct:
+            node_arrange.set_snap_enabled(self.scene, snapAct.isChecked())
         if candidates and groupAct and action == groupAct:
             self.createGroup(candidates)
 
@@ -356,20 +375,6 @@ class ContextMenuMixin:
                 dumpException(exc)
 
     # --- Helpers -------------------------------------------------------------------
-    def determine_target_socket_of_node(self, was_dragged_flag, new_calc_node):
-        target_socket = None
-        if was_dragged_flag:
-            if len(new_calc_node.inputs) > 0:
-                target_socket = new_calc_node.inputs[0]
-        else:
-            if len(new_calc_node.outputs) > 0:
-                target_socket = new_calc_node.outputs[0]
-        return target_socket
-
-    def finish_new_node_state(self, new_calc_node: Any) -> None:
-        self.scene.doDeselectItems()
-        new_calc_node.grNode.doSelect(True)
-        new_calc_node.grNode.onSelected()
 
     def createGroup(self, nodes=None):
         """Group ``nodes`` in an upstream visual ``Group``.

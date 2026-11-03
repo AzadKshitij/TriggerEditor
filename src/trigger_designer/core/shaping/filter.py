@@ -2,17 +2,27 @@
 
 from __future__ import annotations
 
+from datetime import date, datetime, time
+
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
-    connect_duckdb,
     schema_of,
 )
 from trigger_designer.core.shaping.sql_expression import (
     prepare_expression_sql,
     shorten_error,
+)
+
+# The user's expression is SQL: it runs only after the read-only guard and on a
+# locked connection (BUG-029/030), never on a plain DuckDB connection.
+from trigger_designer.core.sql_guard import (
+    check_select_only,
+)
+from trigger_designer.core.sql_guard import (
+    connect_for_shaping as connect_duckdb,
 )
 
 DEFAULTS = {
@@ -58,6 +68,26 @@ def _as_number(text: str) -> float:
         raise ShapingError("TD-SHAPE-004", "Filter value must be a number") from None
 
 
+def _as_temporal(text: str, dtype: pl.DataType):
+    """Read the typed value as a date, date-time or time of the column's type."""
+    text = text.strip()
+    try:
+        if dtype == pl.Date:
+            return date.fromisoformat(text[:10])
+        if dtype == pl.Time:
+            return time.fromisoformat(text)
+        return datetime.fromisoformat(text)
+    except ValueError:
+        pass
+    if dtype == pl.Time:
+        raise ShapingError(
+            "TD-SHAPE-004", "Filter value must be a time such as 13:30:00"
+        ) from None
+    raise ShapingError(
+        "TD-SHAPE-004", "Filter value must be a date such as 2024-01-31"
+    ) from None
+
+
 def _builder_expression(
     column: str,
     dtype: pl.DataType,
@@ -66,6 +96,8 @@ def _builder_expression(
     value2: str,
 ) -> pl.Expr:
     numeric = getattr(dtype, "is_numeric", lambda: False)()
+    if dtype in (pl.Date, pl.Time) or isinstance(dtype, pl.Datetime):
+        return _temporal_expression(column, dtype, operation, value, value2)
     if operation == "In Between":
         if numeric:
             low, high = _as_number(value), _as_number(value2)
@@ -81,7 +113,8 @@ def _builder_expression(
     if operation == "Not Equals":
         return expression != converted
     if operation == "Contains":
-        return expression.str.contains(value)
+        # The typed text is searched as is: "(" or "." are not patterns.
+        return expression.str.contains(value, literal=True)
     if operation == "Less Than":
         return expression < converted
     if operation == "Greater Than":
@@ -90,6 +123,34 @@ def _builder_expression(
         return expression <= converted
     if operation == "Greater Than or Equal":
         return expression >= converted
+    raise ShapingError("TD-SHAPE-004", f"Unsupported filter operation: {operation}")
+
+
+def _temporal_expression(
+    column: str, dtype: pl.DataType, operation: str, value: str, value2: str
+) -> pl.Expr:
+    expression = pl.col(column)
+
+    def literal(text: str) -> pl.Expr:
+        return pl.lit(_as_temporal(text, dtype), dtype=dtype)
+
+    if operation == "In Between":
+        if _as_temporal(value, dtype) > _as_temporal(value2, dtype):
+            value, value2 = value2, value
+        return expression.is_between(literal(value), literal(value2), closed="both")
+    other = literal(value)
+    if operation == "Equals":
+        return expression == other
+    if operation == "Not Equals":
+        return expression != other
+    if operation == "Less Than":
+        return expression < other
+    if operation == "Greater Than":
+        return expression > other
+    if operation == "Less Than or Equal":
+        return expression <= other
+    if operation == "Greater Than or Equal":
+        return expression >= other
     raise ShapingError("TD-SHAPE-004", f"Unsupported filter operation: {operation}")
 
 
@@ -110,7 +171,9 @@ def _builder_outputs(frame: pl.LazyFrame, settings: dict) -> list[pl.LazyFrame]:
         return [frame, frame.head(0)]
 
     expression = _builder_expression(column, schema[column], operation, value, value2)
-    return [frame.filter(expression), frame.filter(~expression)]
+    # A null comparison is neither true nor false; it belongs to the unmatched
+    # output so the two outputs always cover every input row.
+    return [frame.filter(expression), frame.filter((~expression).fill_null(True))]
 
 
 def _expression_outputs(
@@ -122,12 +185,19 @@ def _expression_outputs(
 
     try:
         prepared = prepare_expression_sql(text, list(schema_of(frame)))
+        query_t = f"SELECT * FROM df_filter WHERE {prepared}"
+        # IS NOT TRUE, not NOT (...): a null result must land here too.
+        query_f = f"SELECT * FROM df_filter WHERE ({prepared}) IS NOT TRUE"
+        check_select_only(query_t, allow_unparsable=True)
+        check_select_only(query_f, allow_unparsable=True)
         with connect_duckdb() as duck:
             duck.register("df_filter", frame)
             # Eager .pl(): a lazy result streams from this connection after
             # the with-block closes, which fails. Materialise now.
-            matched = duck.sql(f"SELECT * FROM df_filter WHERE {prepared}").pl()
-            unmatched = duck.sql(f"SELECT * FROM df_filter WHERE NOT ({prepared})").pl()
+            matched = duck.sql(query_t).pl()
+            unmatched = duck.sql(query_f).pl()
+    except ShapingError:
+        raise
     except Exception as exc:  # noqa: BLE001 - engine errors become a stable code
         raise ShapingError("TD-SHAPE-004", shorten_error(str(exc))) from None
     return [matched.lazy(), unmatched.lazy()]

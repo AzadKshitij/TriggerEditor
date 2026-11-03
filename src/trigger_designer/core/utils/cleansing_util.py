@@ -135,7 +135,9 @@ class DataCleansing:
 
         return self
 
-    def remove_rows_with_nulls(self, fields: Optional[List[str]] = None) -> "DataCleansing":
+    def remove_rows_with_nulls(
+        self, fields: Optional[List[str]] = None
+    ) -> "DataCleansing":
         """Remove rows where any selected field is null."""
         if not fields:
             return self
@@ -202,8 +204,13 @@ class DataCleansing:
         remove_all: bool = False,
         normalize_spaces: bool = True,
         fields: Optional[List[str]] = None,
+        trim: bool = True,
     ) -> "DataCleansing":
-        """Clean whitespace in string columns"""
+        """Clean whitespace in string columns.
+
+        ``trim`` removes the spaces at both ends; ``normalize_spaces`` turns
+        runs of whitespace into one space without touching the ends.
+        """
         # Get string columns
         str_cols = []
         for col in self.df.columns:
@@ -223,7 +230,9 @@ class DataCleansing:
                     expr = pl.col(col).str.replace_all(r"\s", "")
                 else:
                     # Strip leading/trailing whitespace
-                    expr = pl.col(col).str.strip_chars()
+                    expr = pl.col(col)
+                    if trim:
+                        expr = expr.str.strip_chars()
                     if normalize_spaces:
                         # Replace multiple spaces with single space
                         expr = expr.str.replace_all(r"\s+", " ")

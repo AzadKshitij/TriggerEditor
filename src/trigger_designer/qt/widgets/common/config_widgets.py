@@ -34,7 +34,7 @@ CONTROL_H = 30
 CHIP_H = 24
 ROW_H = 28
 DENSE_ROW_H = 24
-ICON_SIZE = 12
+ICON_SIZE = 16
 #: Air above every config section, so two adjacent sections do not merge.
 SECTION_GAP = 4
 
@@ -54,11 +54,11 @@ def _resource_id_for(pixmap: QPixmap) -> str | None:
 
 
 class IconButton(QPushButton):
-    """Icon-only button: 30x30, 12px icon, tooltip + accessible name required.
+    """Icon-only button: 30x30, 16px icon, tooltip + accessible name required.
 
-    Resolves the icon via ResourceManager id first, then a compiled
-    ``:/qss_icons`` fallback, then ``QIcon.fromTheme`` (last resort —
-    blank on Windows, see docs/DESIGN_SYSTEM.md §4).
+    The icon comes from the ResourceManager (Material Symbols tinted with the
+    active theme); ``QIcon.fromTheme`` is blank on Windows, see
+    docs/DESIGN_SYSTEM.md §4.
     """
 
     def __init__(
@@ -106,11 +106,9 @@ class IconButton(QPushButton):
         cls,
         tooltip: str,
         rsm_icon: QIcon | QPixmap | None = None,
-        qss_fallback: str | None = None,
-        theme_fallback: str | None = None,
         parent: QWidget | None = None,
     ) -> "IconButton":
-        """Build an IconButton trying rsm -> :/qss_icons -> fromTheme."""
+        """Build an IconButton from a ResourceManager icon."""
         icon: QIcon | QPixmap | None = None
         if isinstance(rsm_icon, QPixmap):
             # The pixmap is kept as it is: the resource it was rendered from
@@ -119,14 +117,6 @@ class IconButton(QPushButton):
             icon = rsm_icon
         elif isinstance(rsm_icon, QIcon) and not rsm_icon.isNull():
             icon = rsm_icon
-        if icon is None and qss_fallback:
-            candidate = QIcon(qss_fallback)
-            if not candidate.isNull():
-                icon = candidate
-        if icon is None and theme_fallback:
-            candidate = QIcon.fromTheme(theme_fallback)
-            if not candidate.isNull():
-                icon = candidate
         return cls(tooltip, icon, parent)
 
 
@@ -242,8 +232,6 @@ class InspectorHeader(QFrame):
         layout.addWidget(self._title)
         layout.addStretch(1)
 
-        self._badge: StatusBadge | None = None
-
     def set_icon(self, icon: QIcon | QPixmap | None) -> None:
         if icon is None or (isinstance(icon, QIcon) and icon.isNull()):
             self._icon.clear()
@@ -261,21 +249,6 @@ class InspectorHeader(QFrame):
 
     def set_title(self, title: str) -> None:
         self._title.setText(title)
-
-    def set_status(self, text: str, tone: str = "") -> None:
-        """Show a status badge; pass an empty ``text`` to hide it again."""
-        if not text:
-            if self._badge is not None:
-                self._badge.hide()
-            return
-        if self._badge is None:
-            self._badge = StatusBadge("", tone, self)
-            self.layout().addWidget(self._badge)
-        self._badge.setText(text)
-        self._badge.setProperty("tone", tone)
-        self._badge.style().unpolish(self._badge)
-        self._badge.style().polish(self._badge)
-        self._badge.show()
 
 
 class ContextStrip(QFrame):
@@ -430,23 +403,6 @@ class ConfigSection(QFrame):
         stays so count call sites do not need re-plumbing.
         """
 
-    def add_header_action(self, widget: QWidget) -> None:
-        """Place an action (e.g. Add) at the right end of the section header.
-
-        The header is a 20px row; a 30px control dropped into it is taller
-        than its parent and draws over the body below (reading as two
-        controls overlapping). Grow the header to whatever the action needs
-        instead of letting the action escape its row.
-        """
-        if self._header is None:
-            return
-        # ``sizeHint`` alone under-reports a button that pins its own size
-        # (IconButton is fixed 30x30), so take the fixed minimum too.
-        needed = max(widget.sizeHint().height(), widget.minimumHeight())
-        if needed > self._header.height():
-            self._header.setFixedHeight(needed)
-        self._header.layout().addWidget(widget)
-
     def set_title(self, title: str) -> None:
         if self._title is not None:
             self._title.setText(title.upper())
@@ -555,7 +511,8 @@ class SegmentedControl(QWidget):
 
 
 class FormRow(QFrame):
-    """One setting: label left, control right, optional hint under both."""
+    """One setting: label left, control right (checkbox first, then label),
+    optional hint under both."""
 
     def __init__(
         self,
@@ -578,10 +535,16 @@ class FormRow(QFrame):
         row.setSpacing(6)
         label_widget = QLabel(label, self)
         label_widget.setObjectName("FieldLabel")
-        if label_width:
-            label_widget.setFixedWidth(label_width)
-        row.addWidget(label_widget)
-        row.addWidget(field, 1)
+        if isinstance(field, QCheckBox):
+            # Checkbox first, then a label that wraps instead of being cut off.
+            label_widget.setWordWrap(True)
+            row.addWidget(field)
+            row.addWidget(label_widget, 1)
+        else:
+            if label_width:
+                label_widget.setFixedWidth(label_width)
+            row.addWidget(label_widget)
+            row.addWidget(field, 1)
         if action is not None:
             # A trailing control (browse, clear) sits in the same 30px row
             # instead of owning a line of its own.
@@ -821,9 +784,6 @@ class ElidedLabel(QLabel):
         super().setText(self._full_text)
         self.update()
 
-    def full_text(self) -> str:
-        return self._full_text
-
     def sizeHint(self) -> QSize:
         hint = super().sizeHint()
         return QSize(0, hint.height())
@@ -893,7 +853,6 @@ class RuleStack(QWidget):
         self.add_button = IconButton.themed(
             add_tooltip,
             rsm_icon=self._icon("icon_add"),
-            qss_fallback=":/qss_icons/dark/rc/arrow_right.png",
             parent=self,
         )
         self.add_button.clicked.connect(self.add_requested.emit)
@@ -997,25 +956,21 @@ class RuleStack(QWidget):
         up = IconButton.themed(
             "Move up",
             rsm_icon=self._icon("icon_move_up"),
-            qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
             parent=header,
         )
         down = IconButton.themed(
             "Move down",
             rsm_icon=self._icon("icon_move_down"),
-            qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
             parent=header,
         )
         duplicate = IconButton.themed(
             "Duplicate",
             rsm_icon=self._icon("icon_copy"),
-            qss_fallback=":/qss_icons/dark/rc/window_new.png",
             parent=header,
         )
         remove = IconButton.themed(
             "Remove",
             rsm_icon=self._icon("icon_remove"),
-            qss_fallback=":/qss_icons/dark/rc/window_close.png",
             parent=header,
         )
         up.setEnabled(index > 0)

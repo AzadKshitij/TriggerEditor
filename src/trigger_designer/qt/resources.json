@@ -25,6 +25,10 @@
         "path":"qt/images/node_icons/Input/File Output.svg",
         "mode": "rb"
     },
+    "node_workpaper_output":{
+        "path":"qt/images/node_icons/Input/Workpaper Output.svg",
+        "mode": "rb"
+    },
 
 
 
@@ -64,6 +68,14 @@
         "path":"qt/images/node_icons/Preparation/DateHelper.svg",
         "mode": "rb"
     },
+    "node_multi_field_formula":{
+        "path":"qt/images/node_icons/Preparation/MultiFieldFormula.svg",
+        "mode": "rb"
+    },
+    "node_text_to_columns":{
+        "path":"qt/images/node_icons/Preparation/TextToColumns.svg",
+        "mode": "rb"
+    },
     "node_sort":{
         "path":"qt/images/node_icons/Preparation/Sort.svg",
         "mode": "rb"
@@ -98,6 +110,10 @@
         "path":"qt/images/node_icons/Join/Reconcile.svg",
         "mode": "rb"
     },
+    "node_fuzzy_match":{
+        "path":"qt/images/node_icons/Join/FuzzyMatch.svg",
+        "mode": "rb"
+    },
 
 
     "node_count":{
@@ -120,6 +136,14 @@
         "path":"qt/images/node_icons/Transform/Unpivot.svg",
         "mode": "rb"
     },
+    "node_sql_query":{
+        "path":"qt/images/node_icons/Transform/SQL Query.svg",
+        "mode": "rb"
+    },
+    "node_window":{
+        "path":"qt/images/node_icons/Transform/Window.svg",
+        "mode": "rb"
+    },
     
 
     "node_graph":{
@@ -127,93 +151,63 @@
         "mode": "rb"
     },
 
-    "icon_add":{
-        "path":"qt/images/node_icons/add.png",
-        "mode": "qpixmap"
-    },
-    "icon_remove":{
-        "path":"qt/images/node_icons/sub.png",
-        "mode": "qpixmap"
+    "node_data_profile":{
+        "path":"qt/images/node_icons/Report/Data Profile.svg",
+        "mode": "rb"
     },
 
-    "icon_folder_open":{
-        "path":"qt/images/node_icons/ui/folder_open.svg",
+    "node_comment":{
+        "path":"qt/images/node_icons/Report/Comment.svg",
         "mode": "rb"
     },
-    "icon_files":{
-        "path":"qt/images/node_icons/ui/files.svg",
+
+    "node_duplicates":{
+        "path":"qt/images/node_icons/Audit/Duplicates.svg",
         "mode": "rb"
     },
-    "icon_copy":{
-        "path":"qt/images/node_icons/ui/copy.svg",
+
+    "node_gaps":{
+        "path":"qt/images/node_icons/Audit/Gaps.svg",
         "mode": "rb"
     },
-    "icon_details":{
-        "path":"qt/images/node_icons/ui/details.svg",
+
+    "node_benford":{
+        "path":"qt/images/node_icons/Audit/Benford.svg",
         "mode": "rb"
     },
-    "icon_save":{
-        "path":"qt/images/node_icons/ui/document_save.svg",
+
+    "node_sample":{
+        "path":"qt/images/node_icons/Audit/Sample.svg",
         "mode": "rb"
     },
-    "icon_external":{
-        "path":"qt/images/node_icons/ui/open_external.svg",
+
+    "node_risk_filters":{
+        "path":"qt/images/node_icons/Audit/Risk Filters.svg",
         "mode": "rb"
     },
-    "icon_apply":{
-        "path":"qt/images/node_icons/ui/apply_check.svg",
-        "mode": "rb"
-    },
-    "icon_options":{
-        "path":"qt/images/node_icons/ui/options_sliders.svg",
-        "mode": "rb"
-    },
-    "icon_refresh":{
-        "path":"qt/images/node_icons/ui/refresh.svg",
-        "mode": "rb"
-    },
-    "icon_pin":{
-        "path":"qt/images/node_icons/ui/pin.svg",
-        "mode": "rb"
-    },
-    "icon_unpin":{
-        "path":"qt/images/node_icons/ui/pin_filled.svg",
-        "mode": "rb"
-    },
-    "icon_search":{
-        "path":"qt/images/node_icons/ui/search.svg",
-        "mode": "rb"
-    },
-    "icon_run_play":{
-        "path":"qt/images/node_icons/ui/play.svg",
-        "mode": "rb"
-    },
-    "icon_zoom_in":{
-        "path":"qt/images/node_icons/ui/zoom_in.svg",
-        "mode": "rb"
-    },
-    "icon_zoom_out":{
-        "path":"qt/images/node_icons/ui/zoom_out.svg",
-        "mode": "rb"
-    },
-    "icon_zoom_fit":{
-        "path":"qt/images/node_icons/ui/zoom_fit.svg",
-        "mode": "rb"
-    },
-    "icon_chevron_first":{
-        "path":"qt/images/node_icons/ui/chevron_first.svg",
-        "mode": "rb"
-    },
-    "icon_chevron_prev":{
-        "path":"qt/images/node_icons/ui/chevron_prev.svg",
-        "mode": "rb"
-    },
-    "icon_chevron_next":{
-        "path":"qt/images/node_icons/ui/chevron_next.svg",
-        "mode": "rb"
-    },
-    "icon_chevron_last":{
-        "path":"qt/images/node_icons/ui/chevron_last.svg",
-        "mode": "rb"
-    }
+
+    "icon_add":{ "mode": "material", "name": "add" },
+    "icon_remove":{ "mode": "material", "name": "remove" },
+    "icon_move_up":{ "mode": "material", "name": "arrow_upward" },
+    "icon_move_down":{ "mode": "material", "name": "arrow_downward" },
+    "icon_folder_open":{ "mode": "material", "name": "folder_open" },
+    "icon_files":{ "mode": "material", "name": "folder_copy" },
+    "icon_copy":{ "mode": "material", "name": "content_copy" },
+    "icon_report":{ "mode": "material", "name": "summarize" },
+    "icon_technical":{ "mode": "material", "name": "expand_more" },
+    "icon_save":{ "mode": "material", "name": "save" },
+    "icon_external":{ "mode": "material", "name": "open_in_new" },
+    "icon_options":{ "mode": "material", "name": "tune" },
+    "icon_refresh":{ "mode": "material", "name": "refresh" },
+    "icon_compare":{ "mode": "material", "name": "compare" },
+    "icon_verify":{ "mode": "material", "name": "verified_user" },
+    "icon_check_inputs":{ "mode": "material", "name": "fact_check" },
+    "icon_pin":{ "mode": "material", "name": "keep" },
+    "icon_unpin":{ "mode": "material", "name": "keep", "fill": true },
+    "icon_search":{ "mode": "material", "name": "search" },
+    "icon_run_play":{ "mode": "material", "name": "play_arrow" },
+    "icon_stop":{ "mode": "material", "name": "stop" },
+    "icon_zoom_in":{ "mode": "material", "name": "zoom_in" },
+    "icon_zoom_out":{ "mode": "material", "name": "zoom_out" },
+    "icon_zoom_fit":{ "mode": "material", "name": "fit_screen" }
 }

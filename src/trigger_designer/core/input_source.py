@@ -1,8 +1,9 @@
 """Readers and union logic behind File Input's new source types.
 
 Qt-free. Live evaluation and generated code both call :func:`build_source`,
-so they cannot disagree. CSV stays all-``String``; typed formats keep their
-native dtypes and cross-file dtype conflicts resolve deterministically.
+so they cannot disagree. CSV stays all-``String``; blank header cells get
+positional names so Select can see them; typed formats keep their native
+dtypes and cross-file dtype conflicts resolve deterministically.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ import os
 import re
 import sqlite3
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 from typing import Any
 
@@ -28,99 +29,38 @@ from trigger_designer.core.inputs import (
     list_source_files,
 )
 
-SOURCE_KEYS = (
-    "filePath",
-    "file_type",
-    "record_limit",
-    "output_filename_as_field",
-    "delimiter",
-    "first_row_contains_field_names",
-    "selected_sheet",
-    "start_row",
-    "include_patterns",
-    "exclude_patterns",
-    "recursive",
-    "file_order",
-    "file_name_column_name",
-    "file_name_value",
-    "schema_mismatch",
-    "on_file_error",
-    "max_files",
-    "encoding",
-    "read_as_text",
-    "json_nested",
-    "sheet_mode",
-    "selected_sheets",
-    "add_sheet_name_column",
-    "sheet_name_column_name",
-    "db_mode",
-    "db_table",
-    "db_query",
-)
-
-SOURCE_DEFAULTS: dict[str, Any] = {
-    "filePath": "",
-    "file_type": "csv",
-    "record_limit": 0,
-    "output_filename_as_field": False,
-    "delimiter": ",",
-    "first_row_contains_field_names": True,
-    "selected_sheet": "",
-    "start_row": 1,
-    "include_patterns": (),
-    "exclude_patterns": DEFAULT_EXCLUDE,
-    "recursive": False,
-    "file_order": "name",
-    "file_name_column_name": "FileName",
-    "file_name_value": "name",
-    "schema_mismatch": "union",
-    "on_file_error": "stop",
-    "max_files": 10000,
-    "encoding": "utf8",
-    "read_as_text": False,
-    "json_nested": "text",
-    "sheet_mode": "one",
-    "selected_sheets": (),
-    "add_sheet_name_column": False,
-    "sheet_name_column_name": "SheetName",
-    "db_mode": "table",
-    "db_table": "",
-    "db_query": "",
-}
-
-_DB_TYPES = ("sqlite", "duckdb")
 _COLUMN_RE = re.compile(r"column\s+[\"']([^\"']+)[\"']", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class SourceSettings:
-    filePath: str
-    file_type: str
-    record_limit: int
-    output_filename_as_field: bool
-    delimiter: str
-    first_row_contains_field_names: bool
-    selected_sheet: str
-    start_row: int
-    include_patterns: tuple[str, ...]
-    exclude_patterns: tuple[str, ...]
-    recursive: bool
-    file_order: str
-    file_name_column_name: str
-    file_name_value: str
-    schema_mismatch: str
-    on_file_error: str
-    max_files: int
-    encoding: str
-    read_as_text: bool
-    json_nested: str
-    sheet_mode: str
-    selected_sheets: tuple[str, ...]
-    add_sheet_name_column: bool
-    sheet_name_column_name: str
-    db_mode: str
-    db_table: str
-    db_query: str
+    filePath: str = ""
+    file_type: str = "csv"
+    record_limit: int = 0
+    output_filename_as_field: bool = False
+    delimiter: str = ","
+    first_row_contains_field_names: bool = True
+    selected_sheet: str = ""
+    start_row: int = 1
+    include_patterns: tuple[str, ...] = ()
+    exclude_patterns: tuple[str, ...] = DEFAULT_EXCLUDE
+    recursive: bool = False
+    file_order: str = "name"
+    file_name_column_name: str = "FileName"
+    file_name_value: str = "name"
+    schema_mismatch: str = "union"
+    on_file_error: str = "stop"
+    max_files: int = 10000
+    encoding: str = "utf8"
+    read_as_text: bool = False
+    json_nested: str = "text"
+    sheet_mode: str = "one"
+    selected_sheets: tuple[str, ...] = ()
+    add_sheet_name_column: bool = False
+    sheet_name_column_name: str = "SheetName"
+    db_mode: str = "table"
+    db_table: str = ""
+    db_query: str = ""
 
     @property
     def mode(self) -> str:
@@ -130,7 +70,7 @@ class SourceSettings:
     def from_state(cls, state: dict) -> SourceSettings:
         values: dict[str, Any] = {}
         for key in SOURCE_KEYS:
-            default = SOURCE_DEFAULTS[key]
+            default = getattr(cls, key)
             value = state.get(key, default)
             if value is None:
                 value = default
@@ -189,6 +129,10 @@ class SourceSettings:
         return cls(**values)
 
 
+#: Every File Input setting, in declaration order.
+SOURCE_KEYS = tuple(item.name for item in fields(SourceSettings))
+
+
 @dataclass
 class FileReport:
     path: str
@@ -202,21 +146,6 @@ class FileReport:
     warnings: list[str] = field(default_factory=list)
     error: dict | None = None
     size_bytes: int | None = None
-
-    def as_dict(self) -> dict:
-        return {
-            "path": self.path,
-            "relative_path": self.relative_path,
-            "sheet": self.sheet,
-            "status": self.status,
-            "columns": list(self.columns),
-            "missing_columns": list(self.missing_columns),
-            "extra_columns": list(self.extra_columns),
-            "dtype_conflicts": list(self.dtype_conflicts),
-            "warnings": list(self.warnings),
-            "error": self.error,
-            "size_bytes": self.size_bytes,
-        }
 
 
 @dataclass
@@ -233,18 +162,7 @@ class SourceReport:
     files: list[FileReport] = field(default_factory=list)
 
     def as_dict(self) -> dict:
-        return {
-            "mode": self.mode,
-            "root": self.root,
-            "file_count": self.file_count,
-            "ok_count": self.ok_count,
-            "skipped_count": self.skipped_count,
-            "excluded_count": self.excluded_count,
-            "union_columns": list(self.union_columns),
-            "reference_columns": list(self.reference_columns),
-            "warnings": list(self.warnings),
-            "files": [item.as_dict() for item in self.files],
-        }
+        return asdict(self)
 
     def differing_files(self) -> list[FileReport]:
         return [
@@ -399,105 +317,68 @@ def _sql_for(settings: SourceSettings, dialect: str) -> str:
     return base
 
 
+def _read_error(
+    kind: str, message: str, exc: BaseException, path: str, **extra: Any
+) -> InputReadError:
+    """An InputReadError that carries the original exception as technical text."""
+    return InputReadError(
+        kind,
+        message,
+        path=path,
+        technical=str(exc),
+        cause_type=type(exc).__name__,
+        **extra,
+    )
+
+
 def _classify(
     exc: BaseException, path: str, sheet: str | None = None
 ) -> InputReadError:
     if isinstance(exc, InputReadError):
         return exc
     message = str(exc)
-    technical = message
     cause_type = type(exc).__name__
+
+    def error(kind: str, text: str, **extra: Any) -> InputReadError:
+        return _read_error(kind, text, exc, path, sheet=sheet, **extra)
+
     if isinstance(exc, FileNotFoundError):
-        return InputReadError(
-            "file_not_found",
-            f"Cannot find the input file '{path}'.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
+        return error("file_not_found", f"Cannot find the input file '{path}'.")
     winerror = getattr(exc, "winerror", None)
     if (
         isinstance(exc, PermissionError)
         or winerror in (5, 32)
         or ("being used by another process" in message)
     ):
-        return InputReadError(
+        return error(
             "locked",
             f"Cannot read '{path}': the file is open in another program or not allowed.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
         )
     if isinstance(exc, pl.exceptions.NoDataError):
-        return InputReadError(
-            "empty_file",
-            f"'{path}' is empty.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
+        return error("empty_file", f"'{path}' is empty.")
     lowered = message.lower()
     if "invalid utf-8" in lowered or ("utf8" in lowered and "invalid" in lowered):
-        return InputReadError(
+        return error(
             "encoding",
             f"'{path}' is not UTF-8 text. Set Encoding to 'UTF-8 (replace bad bytes)'.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
         )
     column = _extract_column(message)
     if cause_type == "SheetNotFoundError" or (
         "sheet" in lowered and "not found" in lowered
     ):
-        return InputReadError(
+        return error(
             "sheet_missing",
             f"Worksheet '{sheet or 'requested'}' is missing from '{path}'.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
         )
     if "invalid Zip archive" in message or "EOCD" in message:
-        return InputReadError(
-            "parse",
-            f"'{path}' is not a valid Excel workbook.",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
+        return error("parse", f"'{path}' is not a valid Excel workbook.")
     if isinstance(exc, pl.exceptions.PolarsError):
-        return InputReadError(
-            "parse",
-            f"Cannot read the data in '{path}': {message}",
-            path=path,
-            sheet=sheet,
-            column=column,
-            technical=technical,
-            cause_type=cause_type,
+        return error(
+            "parse", f"Cannot read the data in '{path}': {message}", column=column
         )
     if isinstance(exc, OSError):
-        return InputReadError(
-            "unreadable",
-            f"Cannot open '{path}': {message}",
-            path=path,
-            sheet=sheet,
-            technical=technical,
-            cause_type=cause_type,
-        )
-    return InputReadError(
-        "parse",
-        f"Cannot read '{path}': {message}",
-        path=path,
-        sheet=sheet,
-        column=column,
-        technical=technical,
-        cause_type=cause_type,
-    )
+        return error("unreadable", f"Cannot open '{path}': {message}")
+    return error("parse", f"Cannot read '{path}': {message}", column=column)
 
 
 def _extract_column(message: str) -> str | None:
@@ -509,12 +390,11 @@ def _sql_error(exc: BaseException, path: str) -> InputReadError:
     message = str(exc)
     lowered = message.lower()
     if "could not set lock" in lowered or "being used by another process" in lowered:
-        return InputReadError(
+        return _read_error(
             "locked",
             f"Cannot read '{path}': the database is open for writing in another program.",
-            path=path,
-            technical=message,
-            cause_type=type(exc).__name__,
+            exc,
+            path,
         )
     if any(
         marker in lowered
@@ -527,20 +407,44 @@ def _sql_error(exc: BaseException, path: str) -> InputReadError:
             "not allowed",
         )
     ):
-        return InputReadError(
+        return _read_error(
             "db_forbidden",
             f"The query on '{path}' tried to change data or use files. Only SELECT is read.",
-            path=path,
-            technical=message,
-            cause_type=type(exc).__name__,
+            exc,
+            path,
         )
-    return InputReadError(
-        "db_error",
-        f"Cannot read the database '{path}': {message}",
-        path=path,
-        technical=message,
-        cause_type=type(exc).__name__,
+    return _read_error(
+        "db_error", f"Cannot read the database '{path}': {message}", exc, path
     )
+
+
+def name_blank_columns(
+    frame: pl.LazyFrame | pl.DataFrame,
+) -> pl.LazyFrame | pl.DataFrame:
+    """Replace blank CSV header cells with usable positional names.
+
+    Polars keeps an empty header cell as ``""``. Select's table skips blank
+    names, so that column vanishes from the editor even though the data still
+    carries it (issue #2). Name each blank cell by its 1-based position
+    (``column_1`` is the first column) and step around names the file already
+    uses. Note that a file with no header row at all gets Polars' own
+    0-based names (``column_0`` is the first column); the two conventions are
+    kept as they are because saved workflows and goldens refer to them.
+    """
+    names = list(frame.collect_schema().names())
+    used = {name for name in names if name.strip()}
+    renames: dict[str, str] = {}
+    for position, name in enumerate(names, start=1):
+        if name.strip():
+            continue
+        candidate = f"column_{position}"
+        suffix = 2
+        while candidate in used:
+            candidate = f"column_{position}_{suffix}"
+            suffix += 1
+        used.add(candidate)
+        renames[name] = candidate
+    return frame.rename(renames) if renames else frame
 
 
 def _read_csv(path: str, settings: SourceSettings) -> pl.LazyFrame:
@@ -549,7 +453,7 @@ def _read_csv(path: str, settings: SourceSettings) -> pl.LazyFrame:
         options["separator"] = settings.delimiter
     if not settings.first_row_contains_field_names:
         options["has_header"] = False
-    return pl.scan_csv(io_path(path), **options)
+    return name_blank_columns(pl.scan_csv(io_path(path), **options))
 
 
 def _read_parquet(path: str, settings: SourceSettings) -> pl.LazyFrame:
@@ -617,6 +521,22 @@ def _read_db(path: str, settings: SourceSettings) -> pl.LazyFrame:
     except Exception as exc:  # noqa: BLE001
         raise _sql_error(exc, path) from None
     return frame.lazy()
+
+
+#: Rows read from each file to catch a bad byte or an over-long row early.
+PROBE_ROWS = 2000
+
+
+def _probe_body(frame: pl.LazyFrame) -> None:
+    """Read the first ``PROBE_ROWS`` rows so body errors surface per file.
+
+    A scan is lazy: a bad byte or a row with too many fields only fails at
+    ``collect``, long after the file was accepted. Reading a bounded head under
+    "Skip and report" lets such a file be skipped and named. Errors deeper in
+    the file are not found by this probe (reading all of every file would cost
+    a full pass); they still surface at collect.
+    """
+    frame.head(PROBE_ROWS).collect()
 
 
 def _preflight(path: str) -> None:
@@ -807,13 +727,6 @@ def build_source(state: dict) -> SourceResult:
         max_files=settings.max_files,
     )
 
-    if settings.file_type in _DB_TYPES and listing.mode != "single":
-        raise InputReadError(
-            "unsupported_source",
-            "Database sources take exactly one file.",
-            path=settings.filePath,
-        )
-
     parts: list[_Part] = []
     reports: list[FileReport] = []
     cache: dict[str, Any] = {}
@@ -858,13 +771,15 @@ def build_source(state: dict) -> SourceResult:
                         cache,
                         multi_file=multi_file,
                     )
-                elif settings.file_type in _DB_TYPES:
+                else:  # sqlite / duckdb: SourceSettings validated the type
                     frame = _read_db(listed.path, settings)
-                else:  # pragma: no cover - SourceSettings validates the type
-                    raise InputReadError(
-                        "config", f"Unsupported file type '{settings.file_type}'."
-                    )
                 columns = dict(frame.collect_schema())
+                if settings.on_file_error == "skip" and settings.file_type in (
+                    "csv",
+                    "txt",
+                    "ndjson",
+                ):
+                    _probe_body(frame)
             except Exception as exc:  # noqa: BLE001
                 error = (
                     exc
@@ -970,10 +885,43 @@ def _duplicate_warnings(listed: ListedFile, columns: dict[str, Any]) -> list[str
     ]
 
 
+def _locate_failing_file(report: SourceReport, state: dict) -> str | None:
+    """Find which file breaks by reading each one on its own, in a stream.
+
+    Only used after a failure, so the cost of a full pass is acceptable. Each
+    file is reduced to one row (null counts), so nothing is held in memory.
+    Excel, JSON and database sources are read eagerly and already name their
+    file when they fail.
+    """
+    try:
+        settings = SourceSettings.from_state(state)
+    except Exception:  # noqa: BLE001 - diagnosis must never raise
+        return None
+    if settings.file_type not in ("csv", "txt", "ndjson"):
+        return None
+    for item in report.files:
+        if item.status != "ok" or not item.path:
+            continue
+        try:
+            if settings.file_type == "ndjson":
+                frame = _read_ndjson(item.path, settings)
+            else:
+                frame = _read_csv(item.path, settings)
+            frame.select(pl.all().null_count()).collect(engine="streaming")
+        except Exception:  # noqa: BLE001 - this is the file that fails
+            return item.path
+    return None
+
+
 def diagnose_collect_error(
-    exc: BaseException, report: SourceReport | None
+    exc: BaseException, report: SourceReport | None, state: dict | None = None
 ) -> InputReadError:
-    """Turn a late ``collect()`` failure into a file/column-aware error."""
+    """Turn a late ``collect()`` failure into a file/column-aware error.
+
+    A body error (bad byte, row with too many fields) often omits the file
+    name. With one file there is no doubt; with several, pass the File Input
+    ``state`` and each file is re-read on its own to find the culprit.
+    """
     message = str(exc)
     lowered = message.lower()
     path: str | None = None
@@ -988,12 +936,21 @@ def diagnose_collect_error(
             # A body-level parse error usually omits the file name; with one
             # file there is no ambiguity about which one it was.
             path = report.files[0].path
+        if path is None and state is not None:
+            path = _locate_failing_file(report, state)
+    where = path
+    if where is None:
+        count = len(report.files) if report is not None else 0
+        where = f"one of the {count} input files" if count > 1 else "the input"
     column = _extract_column(message)
     if "invalid utf-8" in lowered:
         return InputReadError(
             "encoding",
             (
-                f"'{path or 'The input'}' is not UTF-8 text. "
+                f"'{path}' is not UTF-8 text. "
+                "Set Encoding to 'UTF-8 (replace bad bytes)'."
+                if path
+                else f"{where.capitalize()} is not UTF-8 text. "
                 "Set Encoding to 'UTF-8 (replace bad bytes)'."
             ),
             path=path,
@@ -1008,7 +965,11 @@ def diagnose_collect_error(
         )
     return InputReadError(
         "parse",
-        f"Cannot read the data in '{path or 'the input files'}': {message}",
+        (
+            f"Cannot read the data in '{path}': {message}"
+            if path
+            else f"Cannot read the data in {where}: {message}"
+        ),
         path=path,
         column=column,
         technical=technical,

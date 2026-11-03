@@ -11,11 +11,12 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.shaping import filter as core
-from trigger_designer.core.shaping.common import connect_duckdb
 from trigger_designer.core.shaping.sql_expression import (
     prepare_expression_sql,
     shorten_error,
 )
+from trigger_designer.core.sql_guard import check_select_only
+from trigger_designer.core.sql_guard import connect_for_shaping as connect_duckdb
 from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
 from trigger_designer.qt.node_base import frame_schema
 from trigger_designer.qt.widgets.common import (
@@ -170,11 +171,12 @@ class FilterContent(ShapingContent):
         if self.settings.get("operation") not in operations:
             self.set_setting("operation", "Equals", "Filter Operation Changed")
 
-    def _commit_expression(self, *, evaluate: bool = True) -> None:
+    def _commit_expression(self, *, evaluate: bool | None = None) -> bool:
+        """Read the editor into the model; False when the editor is gone."""
         try:
             text = self.expression_input.get_text() or ""
         except AttributeError, RuntimeError:
-            return
+            return False
         self.set_setting(
             "expression",
             text,
@@ -184,6 +186,7 @@ class FilterContent(ShapingContent):
         )
         if evaluate:
             self._evaluate_pending()
+        return True
 
     def _on_expression_finished(self) -> None:
         """Commit on focus-out; evaluate when the SQL editor is left."""
@@ -196,21 +199,8 @@ class FilterContent(ShapingContent):
 
     def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
         """Read the expression into the model before the dock is destroyed."""
-        try:
-            text = self.expression_input.get_text() or ""
-        except AttributeError, RuntimeError:
-            return
-        self.set_setting(
-            "expression",
-            text,
-            "Filter Expression Changed",
-            "filter-expression",
-            evaluate=False,
-        )
-        if evaluate:
+        if self._commit_expression(evaluate=False) and evaluate:
             self._evaluate_pending()
-        else:
-            self.cancel_pending_evaluation()
 
     def _column_dtype(self, column: str):
         return self.schema(0).get(column) if column else None
@@ -309,11 +299,11 @@ class FilterContent(ShapingContent):
         try:
             sample = pl.DataFrame(schema=frame_schema(self.frames[0]))
             prepared = prepare_expression_sql(text, columns)
+            query = f"SELECT * FROM df_filter WHERE {prepared}"
+            check_select_only(query, allow_unparsable=True)
             with connect_duckdb() as duck:
                 duck.register("df_filter", sample)
-                duck.execute(
-                    f"EXPLAIN SELECT * FROM df_filter WHERE {prepared}"
-                ).fetchall()
+                duck.execute(f"EXPLAIN {query}").fetchall()
             return []
         except Exception as exc:  # noqa: BLE001 - diagnostics are advisory
             return [

@@ -9,6 +9,7 @@ __all__ = [
     "JoinNodes",
     "TransformNodes",
     "ReportNodes",
+    "AuditNodes",
     "register_node",
     "register_lazy_node",
     "get_class_from_opcode",
@@ -26,6 +27,7 @@ class NodeTypes(StrEnum):
     JOIN = "join"
     TRANSFORM = "transform"
     REPORT = "report"
+    AUDIT = "audit"
 
 
 class IONodes(IntEnum):
@@ -33,6 +35,7 @@ class IONodes(IntEnum):
     TEXT_INPUT = auto()
     FILE_INPUT = auto()
     FILE_OUTPUT = auto()
+    WORKPAPER_OUTPUT = auto()
 
 
 class PreparationNodes(IntEnum):
@@ -50,6 +53,8 @@ class PreparationNodes(IntEnum):
     SELECT_RECORDS = auto()
     FIND_REPLACE = auto()
     DATE_HELPER = auto()
+    TEXT_TO_COLUMNS = auto()
+    MULTI_FIELD_FORMULA = auto()
 
 
 class JoinNodes(IntEnum):
@@ -57,19 +62,32 @@ class JoinNodes(IntEnum):
     JOIN = auto()
     UNION = auto()
     RECONCILE = auto()
+    FUZZY_MATCH = auto()
 
 
 class TransformNodes(IntEnum):
-    ARRANGE = auto()
+    ARRANGE = auto()  # reserved: no node class; keeps the numbers below stable
     COUNT_RECORDS = auto()
     RUNNING_TOTAL = auto()
     TRANSPOSE = auto()
     PIVOT = auto()
     UNPIVOT = auto()
+    WINDOW = auto()
+    SQL_QUERY = auto()
 
 
 class ReportNodes(IntEnum):
     GRAPH = auto()
+    DATA_PROFILE = auto()
+    COMMENT = auto()
+
+
+class AuditNodes(IntEnum):
+    DUPLICATES = auto()
+    GAPS = auto()
+    BENFORD = auto()
+    SAMPLE = auto()
+    RISK_FILTERS = auto()
 
 
 # Node registries
@@ -79,6 +97,7 @@ NODE_REGISTRIES: Dict[NodeTypes, Dict[int, "TriggerNode"]] = {
     NodeTypes.JOIN: {},
     NodeTypes.TRANSFORM: {},
     NodeTypes.REPORT: {},
+    NodeTypes.AUDIT: {},
 }
 
 # Opcode enums keyed by family. Used to resolve stable op ids
@@ -89,6 +108,7 @@ _OPCODE_ENUMS = {
     NodeTypes.JOIN: JoinNodes,
     NodeTypes.TRANSFORM: TransformNodes,
     NodeTypes.REPORT: ReportNodes,
+    NodeTypes.AUDIT: AuditNodes,
 }
 
 # Frozen v1 numbering (pre-stable-op). Maps (family, int code) as stored
@@ -309,7 +329,7 @@ def migrate_v1_data(data: dict) -> Union[str, None]:
         return None
     try:
         return V1_OPCODE_TO_OP.get((family, int(code)))
-    except (TypeError, ValueError):
+    except TypeError, ValueError:
         return None
 
 

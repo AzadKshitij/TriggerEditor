@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 from nodeeditor.node_edge import Edge
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -52,7 +53,7 @@ def _node(qtbot):
 
 
 def _output(node) -> pl.DataFrame:
-    return node.value[0]["data"].collect()
+    return live_value(node)[0]["data"].collect()
 
 
 def _add_field(content, field: str) -> None:
@@ -154,5 +155,5 @@ def test_serialize_round_trip(qtbot) -> None:
         out[0]["data"]
         .collect()
         .sort("g")
-        .equals(node.value[0]["data"].collect().sort("g"))
+        .equals(live_value(node)[0]["data"].collect().sort("g"))
     )

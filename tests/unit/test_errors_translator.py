@@ -417,3 +417,16 @@ def test_translate_broken_str_never_raises() -> None:
     error = translate_exception(Broken(), ctx=_ctx())
     assert isinstance(error, NodeError)
     assert error.title
+
+
+def test_calamine_missing_file_is_in_001_not_untranslated() -> None:
+    class CalamineError(Exception):
+        pass
+
+    def trigger() -> None:
+        raise CalamineError(
+            "calamine error: Cannot open file (os error 2): C:/x/a.xlsx"
+        )
+
+    error = _translate(trigger, _ctx(input_paths={"C:/x/a.xlsx": 4}))
+    assert error.code == "TD-IN-001"

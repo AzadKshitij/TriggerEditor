@@ -27,7 +27,7 @@ class RunningTotalContent(ShapingContent):
         FormSection(
             "Running totals",
             (
-                Field("sum_columns", "Sum", "columns", filter="numeric_only"),
+                Field("sum_columns", "Sum", "columns", filter="numeric"),
                 Field("group_by_columns", "Group by", "columns"),
             ),
             info="Each selected sum column becomes RunTot_<column>.",

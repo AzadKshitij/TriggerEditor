@@ -33,6 +33,8 @@ from qtpy.QtCore import QObject, Qt, Signal
 from qtpy.QtGui import QColor, QGuiApplication, QPalette
 from qtpy.QtWidgets import QApplication, QWidget
 
+from trigger_designer.qt.checkbox_icons import TOKENS as _CHECKBOX_TOKENS
+from trigger_designer.qt.checkbox_icons import checkbox_tokens
 from trigger_designer.qt.preferences import (
     Preferences,
     bundle_base,
@@ -170,6 +172,18 @@ COLOR_KEYS: frozenset[str] = frozenset(
     key for _group, rows in TOKEN_GROUPS for key, _label in rows
 )
 
+_FONT_PX_RE = re.compile(r"(font-size:\s*)(\d+(?:\.\d+)?)px")
+
+#: base.qss tokens computed at format time, so theme JSONs need not define them.
+DERIVED_TOKENS = frozenset({"text_on_accent"}) | _CHECKBOX_TOKENS
+
+
+def _text_on(background: str) -> str:
+    """Black or white, whichever reads better on ``background``."""
+    c = QColor(background)
+    luminance = 0.2126 * c.redF() + 0.7152 * c.greenF() + 0.0722 * c.blueF()
+    return "#10151a" if luminance > 0.6 else "#ffffff"
+
 
 class ThemeError(Exception):
     """Raised when a theme cannot be parsed or formatted into QSS."""
@@ -243,6 +257,7 @@ class ThemeManager(QObject):
         )
         self._preview_id: str | None = None
         self._cache: dict[str, Theme] = {}
+        self._base_font_pt: float | None = None
         self._color_cache: dict[tuple[str, str], QColor] = {}
         # ``base.qss`` and the default theme's tokens are read-only at runtime,
         # so read them once per manager instead of on every stylesheet build.
@@ -612,12 +627,60 @@ class ThemeManager(QObject):
         qss = self._base_qss()
         tokens = dict(self._fallback_tokens())
         tokens.update(theme.tokens)
+        tokens.setdefault("text_on_accent", _text_on(tokens["accent_primary"]))
+        tokens.update(checkbox_tokens(tokens))
         try:
-            return qss.format(**tokens)
+            return self._scale_font_sizes(qss.format(**tokens))
         except KeyError as exc:
             raise ThemeError(
                 f"Theme '{theme.id}' is missing token {exc.args[0]!r} required by base.qss"
             ) from exc
+
+    # -- font size --------------------------------------------------------
+    def requested_font_size(self) -> int:
+        """The chosen application font size in points; 0 means the default."""
+        try:
+            return max(0, int(self._prefs.get("appearance/font_size", 0) or 0))
+        except TypeError, ValueError:
+            return 0
+
+    def base_font_size(self) -> float:
+        """The application's font size before any user choice, in points."""
+        if self._base_font_pt is None:
+            app = QApplication.instance()
+            point = app.font().pointSizeF() if isinstance(app, QApplication) else 0
+            self._base_font_pt = point if point > 0 else 9.0
+        return self._base_font_pt
+
+    def font_scale(self) -> float:
+        """Factor by which the chosen size differs from the default."""
+        size = self.requested_font_size()
+        return size / self.base_font_size() if size else 1.0
+
+    def _scale_font_sizes(self, qss: str) -> str:
+        """Scale the ``font-size: Npx`` literals in ``qss`` by the chosen size."""
+        scale = self.font_scale()
+        if scale == 1.0:
+            return qss
+        return _FONT_PX_RE.sub(
+            lambda m: f"{m.group(1)}{max(7, round(float(m.group(2)) * scale))}px", qss
+        )
+
+    def _apply_font(self) -> None:
+        if self._app is None:
+            return
+        font = self._app.font()
+        font.setPointSizeF(self.requested_font_size() or self.base_font_size())
+        self._app.setFont(font)
+        # Menus keep a platform font unless they are told about the change.
+        for widget_class in ("QMenuBar", "QMenu", "QToolTip"):
+            self._app.setFont(font, widget_class)
+
+    def set_font_size(self, size: int, *, persist: bool = True) -> Theme:
+        """Change the application font size (0 restores the default)."""
+        if persist:
+            self._prefs.set("appearance/font_size", max(0, int(size)))
+        return self.apply(persist=False)
 
     def apply(self, theme_id: str | None = None, *, persist: bool = False) -> Theme:
         """Apply a theme now; optionally remember it as the user's choice."""
@@ -630,7 +693,9 @@ class ThemeManager(QObject):
                 self._preview_id = theme_id
         theme = self.active_theme()
         if self._app is not None:
+            self.base_font_size()  # capture the default before it is changed
             self._app.setStyleSheet(self.stylesheet(theme))
+            self._apply_font()
         self._color_cache.clear()
         self._active_cached = None
         self._invalidate_icon_cache()
@@ -657,10 +722,8 @@ class ThemeManager(QObject):
         switch has to clear them or every already-built button keeps the
         glyph it was painted with.
         """
-        from trigger_designer.qt import theme_icons
         from trigger_designer.qt.resource_manager import ResourceManager
 
-        theme_icons.clear_cache()
         ResourceManager._cache.clear()
 
     def commit_preview(self) -> Theme:
@@ -777,11 +840,6 @@ def get_theme_manager() -> ThemeManager:
     return _instance
 
 
-def reset_theme_manager_instance() -> None:
-    global _instance
-    _instance = None
-
-
 def _set_grid_colour(gr_scene: Any, colour: QColor, *, light: bool) -> None:
     """Set one grid colour on ``gr_scene`` without tripping the vendored print.
 
@@ -820,6 +878,9 @@ def apply_theme_to_scene(scene: Any, manager: ThemeManager | None = None) -> Non
     try:
         gr_scene.gridSize = int(prefs.get("editor/grid_size", 20) or 20)
         gr_scene.showGrid = bool(prefs.get("editor/show_grid", True))
+        # The drag handler reads this off the graphics scene, not the
+        # preference, because it runs once per mouse move.
+        gr_scene.snap_to_grid = bool(prefs.get("editor/snap_to_grid", True))
     except Exception as exc:  # noqa: BLE001 - defensive
         logger.warning(f"Unable to apply the grid settings: {exc}")
 

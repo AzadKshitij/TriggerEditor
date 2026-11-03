@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 
 from qtpy.QtWidgets import (
@@ -12,6 +11,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+from trigger_designer.core.codegen_safe import lit
 from trigger_designer.core.node_configuration import (
     IONodes,
     NodeTypes,
@@ -40,6 +40,14 @@ _FORMAT_LABELS = (
     ("custom_delimited", "Custom delimited"),
 )
 
+_COMPRESSION_LABELS = (
+    ("snappy", "Snappy"),
+    ("zstd", "Zstandard"),
+    ("gzip", "Gzip"),
+    ("lz4", "LZ4"),
+    ("uncompressed", "None"),
+)
+
 _EXTENSION_FORMATS = {
     "csv": "csv",
     "txt": "csv",
@@ -51,6 +59,11 @@ _EXTENSION_FORMATS = {
     "ipc": "ipc",
     "arrow": "ipc",
 }
+
+
+def _xlsx_name(path: str) -> str:
+    """``report.xls`` -> ``report.xlsx``: Excel would refuse xlsx content in an .xls name."""
+    return path[:-4] + ".xlsx" if path.lower().endswith(".xls") else path
 
 
 class FileOutputContent(ShapingContent):
@@ -77,10 +90,10 @@ class FileOutputContent(ShapingContent):
             self.filePathEdit.textChanged,
             lambda: self._commit_path(self.filePathEdit.text()),
         )
+        self.filePathEdit.editingFinished.connect(self._finish_path_edit)
         self.saveButton = IconButton.themed(
             "Browse for save location",
             rsm_icon=self.node.rsm.get("icon_save"),
-            theme_fallback="document-save",
         )
         self.saveButton.clicked.connect(self.openFileDialog)
         destination.addWidget(
@@ -140,10 +153,35 @@ class FileOutputContent(ShapingContent):
         self.bom_row = FormRow("Encoding", self.bom_check, label_width=88)
         options.addWidget(self.bom_row)
 
+        self.compressionCombo = NoWheelComboBox()
+        self.compressionCombo.setMinimumHeight(30)
+        self.compressionCombo.setToolTip("Parquet compression codec")
+        self.compressionCombo.setAccessibleName("Parquet compression")
+        for value, label in _COMPRESSION_LABELS:
+            self.compressionCombo.addItem(label, value)
+        self.compressionCombo.setCurrentIndex(
+            max(0, self.compressionCombo.findData(self._compression()))
+        )
+        self.compressionCombo.currentIndexChanged.connect(
+            lambda _index: self.set_setting(
+                "compression",
+                self.compressionCombo.currentData() or "snappy",
+                "File Output Compression Changed",
+            )
+        )
+        self.compression_row = FormRow(
+            "Compression", self.compressionCombo, label_width=88
+        )
+        options.addWidget(self.compression_row)
+
         dock_layout.addWidget(options)
         dock_layout.addStretch()
         self._apply_visibility()
-        self._refresh_counts()
+        self.refresh_dock_context()
+
+    def _compression(self) -> str:
+        value = str(self.settings.get("compression") or "snappy").lower()
+        return value if value in core.PARQUET_COMPRESSIONS else "snappy"
 
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
         file_format = str(self.settings.get("file_format") or "csv")
@@ -153,12 +191,9 @@ class FileOutputContent(ShapingContent):
             chips.append(("path set", ""))
         return chips, os.path.basename(path)
 
-    def _refresh_counts(self) -> None:
-        self.refresh_dock_context()
-
     def after_change(self) -> None:
         self._sync_widgets_from_model()
-        self._refresh_counts()
+        self.refresh_dock_context()
 
     def _sync_widgets_from_model(self) -> None:
         """Project settings onto the custom controls (undo/redo/load)."""
@@ -198,6 +233,14 @@ class FileOutputContent(ShapingContent):
             finally:
                 self.bom_check.blockSignals(blocked)
 
+        index = self.compressionCombo.findData(self._compression())
+        if index >= 0 and self.compressionCombo.currentIndex() != index:
+            blocked = self.compressionCombo.blockSignals(True)
+            try:
+                self.compressionCombo.setCurrentIndex(index)
+            finally:
+                self.compressionCombo.blockSignals(blocked)
+
         self._apply_visibility()
 
     def _apply_visibility(self) -> None:
@@ -209,8 +252,21 @@ class FileOutputContent(ShapingContent):
         )
         self.delimiter_row.setVisible(delimited)
         self.bom_row.setVisible(delimited)
+        self.compression_row.setVisible(self.settings.get("file_format") == "parquet")
 
     # -- commits ----------------------------------------------------------
+    def _finish_path_edit(self) -> None:
+        """Leaving the field: .xls becomes .xlsx (the writer only makes xlsx)."""
+        text = self.filePathEdit.text()
+        fixed = _xlsx_name(text)
+        if fixed != text:
+            blocked = self.filePathEdit.blockSignals(True)
+            try:
+                self.filePathEdit.setText(fixed)
+            finally:
+                self.filePathEdit.blockSignals(blocked)
+        self._commit_path(fixed)
+
     def _commit_path(self, path: str) -> None:
         self.set_setting(
             "filePath", path, "File Output Path Changed", "File Output-path"
@@ -224,7 +280,7 @@ class FileOutputContent(ShapingContent):
         file_format = str(self.settings.get("file_format") or "csv")
         filters = {
             "csv": "CSV Files (*.csv);;Text Files (*.txt)",
-            "excel": "Excel Files (*.xlsx *.xls)",
+            "excel": "Excel Files (*.xlsx)",
             "parquet": "Parquet Files (*.parquet)",
             "json": "JSON Files (*.json)",
             "ndjson": "NDJSON Files (*.ndjson)",
@@ -236,6 +292,7 @@ class FileOutputContent(ShapingContent):
             self.parent(), f"Save {file_format.upper()} File", "", filter_str
         )
         if path:
+            path = _xlsx_name(path)
             self.filePathEdit.setText(path)
             self._commit_path(path)
 
@@ -245,12 +302,11 @@ class FileOutputContent(ShapingContent):
             return (
                 "raise ValueError('File Output: no incoming data - connect an input')\n"
             )
-        payload = json.dumps(self.settings, sort_keys=True)
+        settings = dict(sorted(self.settings.items()))
         return (
-            "import json\n"
             "from trigger_designer.core.shaping.file_output import "
             "write_node as _write_node\n"
-            f"_write_node([{self.input_vars[0]}], json.loads({payload!r}))\n"
+            f"_write_node([{self.input_vars[0]}], {lit(settings)})\n"
         )
 
     # -- persistence ------------------------------------------------------
@@ -261,9 +317,18 @@ class FileOutputContent(ShapingContent):
                 "filePath": str(data.get("filePath") or ""),
                 "file_format": str(data.get("file_format") or "csv"),
                 "delimiter": str(data.get("delimiter") or ","),
-                "use_streaming": bool(data.get("use_streaming", True)),
                 "include_bom": bool(data.get("include_bom", False)),
-                "compression": data.get("compression"),
+                "compression": data.get("compression") or "snappy",
+            }
+        saved = data.get("settings")
+        if isinstance(saved, dict) and (
+            "use_streaming" in saved or not saved.get("compression")
+        ):
+            # use_streaming was never honoured; compression None meant snappy.
+            data = dict(data)
+            data["settings"] = {
+                **{k: v for k, v in saved.items() if k != "use_streaming"},
+                "compression": saved.get("compression") or "snappy",
             }
         return super().deserialize(data, hashmap)
 

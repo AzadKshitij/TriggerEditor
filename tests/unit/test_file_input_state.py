@@ -7,6 +7,7 @@ import shutil
 
 import orjson
 
+from tests.support.input_fixtures import multi_sheet_xlsx
 from trigger_designer.core.input_source import SOURCE_KEYS
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.widgets.nodes.InOut.file_input import FileInputContent
@@ -122,6 +123,17 @@ def test_file_metadata_single_file_legacy_shape(tmp_path) -> None:
         "size_bytes": source.stat().st_size,
         "modified_time": int(source.stat().st_mtime),
     }
+    window.close()
+
+
+def test_file_metadata_counts_a_multi_sheet_workbook_once(tmp_path) -> None:
+    book = multi_sheet_xlsx(tmp_path)
+    window, content = _content(str(book))
+    content.file_type = "excel"
+    content.sheet_mode = "all"
+    metadata = content.serialize()["file_metadata"]
+    assert metadata["file_count"] == 1
+    assert metadata["total_size_bytes"] == book.stat().st_size
     window.close()
 
 

@@ -7,16 +7,7 @@ A listener that ignores the event must veto the close - that is how
 user picks "Cancel" in the save prompt.
 """
 
-import os
-import sys
 import unittest
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
 
 from qtpy.QtWidgets import QApplication
 

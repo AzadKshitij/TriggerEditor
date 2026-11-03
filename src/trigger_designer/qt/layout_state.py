@@ -40,7 +40,7 @@ def _to_point(value: Any) -> QPoint | None:
     if isinstance(value, (list, tuple)) and len(value) >= 2:
         try:
             return QPoint(int(value[0]), int(value[1]))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
     if isinstance(value, str) and "," in value:
         try:
@@ -57,7 +57,7 @@ def _to_size(value: Any) -> QSize | None:
     if isinstance(value, (list, tuple)) and len(value) >= 2:
         try:
             return QSize(int(value[0]), int(value[1]))
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             return None
     if isinstance(value, str) and "," in value:
         try:
@@ -212,10 +212,6 @@ class LayoutState:
             active = None
         return existing, active
 
-    def clear_session(self) -> None:
-        self._prefs.remove(SESSION_FILES_KEY)
-        self._prefs.remove(SESSION_ACTIVE_KEY)
-
     # -- reset ------------------------------------------------------------
     def clear(self) -> None:
         """Forget the saved layout (used by Reset Layout)."""
@@ -232,10 +228,12 @@ def apply_default_layout(window: QMainWindow) -> None:
         ("loggingDock", Qt.DockWidgetArea.BottomDockWidgetArea),
         ("dataPreviewDock", Qt.DockWidgetArea.BottomDockWidgetArea),
         ("problemsDock", Qt.DockWidgetArea.BottomDockWidgetArea),
+        ("runHistoryDock", Qt.DockWidgetArea.BottomDockWidgetArea),
     )
     logging: QWidget | None = None
     preview: QWidget | None = None
     problems: QWidget | None = None
+    history: QWidget | None = None
     for attribute, area in default_areas:
         dock = getattr(window, attribute, None)
         if dock is None:
@@ -249,9 +247,13 @@ def apply_default_layout(window: QMainWindow) -> None:
             preview = dock
         elif attribute == "problemsDock":
             problems = dock
+        elif attribute == "runHistoryDock":
+            history = dock
     if logging is not None and preview is not None:
         window.tabifyDockWidget(logging, preview)
     if logging is not None and problems is not None:
         window.tabifyDockWidget(logging, problems)
+    if logging is not None and history is not None:
+        window.tabifyDockWidget(logging, history)
     if logging is not None:
         logging.raise_()

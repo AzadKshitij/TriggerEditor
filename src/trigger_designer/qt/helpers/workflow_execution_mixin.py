@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import time
-from typing import Any, Dict, List, Union
+from collections.abc import Callable
+from typing import Any
 
 from loguru import logger
 from nodeeditor.node_graph import GraphCycleError, topological_order
 from qtpy.QtCore import QTimer
 
+from trigger_designer.core.audit.recorder import set_run_record_provider
 from trigger_designer.core.errors import translate_exception
+from trigger_designer.core.errors.builders import make_error
 from trigger_designer.core.ExecutionCheck.executor import NodeExecutor
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.audit_bridge import RunSession
 from trigger_designer.qt.helpers.edge_validators import (
     cycle_message,
     select_cycle_edges,
@@ -23,6 +27,22 @@ from trigger_designer.qt.preferences import get_preferences
 #: when a running QThread is destroyed, so a reference is held here until the
 #: thread stops (see ``wait_for_orphaned_workflow_workers``).
 _ORPHANED_WORKERS: set[WorkflowWorker] = set()
+
+#: Runs whose ``run()`` emitted ``workflowFinished`` but whose thread is still
+#: unwinding. Dropping the last Python reference at that point lets PySide6
+#: collect a running QThread (a ``qFatal`` abort), so the reference is kept
+#: here until ``isFinished()`` is true.
+_FINISHING_WORKERS: set[WorkflowWorker] = set()
+
+
+def _prune_finishing_workers() -> None:
+    for worker in list(_FINISHING_WORKERS):
+        try:
+            done = worker.isFinished()
+        except RuntimeError:
+            done = True  # C++ object already deleted by deleteLater()
+        if done:
+            _FINISHING_WORKERS.discard(worker)
 
 
 def wait_for_orphaned_workflow_workers(timeout_ms: int = 5000) -> bool:
@@ -40,6 +60,21 @@ def wait_for_orphaned_workflow_workers(timeout_ms: int = 5000) -> bool:
     return not _ORPHANED_WORKERS
 
 
+def _direct_upstream(nodes: list[Any]) -> dict[Any, list[Any]]:
+    """Map each node to the nodes feeding its input sockets directly."""
+    upstream: dict[Any, list[Any]] = {}
+    for node in nodes:
+        parents: list[Any] = []
+        for socket in getattr(node, "inputs", None) or []:
+            for edge in getattr(socket, "edges", None) or []:
+                other = edge.getOtherSocket(socket)
+                parent = getattr(other, "node", None)
+                if parent is not None and parent is not node and parent not in parents:
+                    parents.append(parent)
+        upstream[node] = parents
+    return upstream
+
+
 class WorkflowExecutionMixin:
     """Mixin providing workflow execution orchestration and statistics tracking."""
 
@@ -47,6 +82,15 @@ class WorkflowExecutionMixin:
     #: not a QObject (tests instantiate it directly), so announcing the end of
     #: a run has to stay optional.
     executionResultsChanged = None
+    #: ``TriggerSubWindow`` shadows this with ``Signal(str)``: the path of the
+    #: run record that was just sealed.
+    runRecorded = None
+
+    #: Defaults for hosts that never call ``init_workflow_execution`` (tests).
+    _run_cancelled: bool = False
+    _workflow_executor: NodeExecutor | None = None
+    _run_session: RunSession | None = None
+    _pending_enrichments: int = 0
 
     def init_workflow_execution(self) -> None:
         """Initialise workflow execution state tracking."""
@@ -54,9 +98,17 @@ class WorkflowExecutionMixin:
         self.workflow_start_time: float = 0.0
         self.total_workflow_time: float = 0.0
         self.last_execution_time: float = 0.0
-        self.execution_results: Dict[Any, Dict[str, Any]] = {}
-        self._workflow_worker: Union[WorkflowWorker, None] = None
-        self._workflow_sorted_nodes: List[Any] = []
+        self.execution_results: dict[Any, dict[str, Any]] = {}
+        self._workflow_worker: WorkflowWorker | None = None
+        self._workflow_sorted_nodes: list[Any] = []
+        self._workflow_executor: NodeExecutor | None = None
+        self._run_cancelled: bool = False
+        self._cancel_listeners: list[Callable[[], None]] = []
+        self._last_run_codes: dict[Any, str] = {}
+        self._run_session = None
+        self._pending_enrichments = 0
+        self._enrichment_listeners: list[Callable[[], None]] = []
+        self._skipped_nodes: list[tuple[Any, Any]] = []
 
     def _log_to_dock(self, message: str) -> None:
         """Report a message in the Logging dock.
@@ -73,18 +125,20 @@ class WorkflowExecutionMixin:
             logger.info(message)
 
     # --- Workflow execution helpers -------------------------------------------------
-    def executeWorkflow(self) -> None:  # noqa: N802 (keep Qt naming convention)
+    def executeWorkflow(self) -> bool:
         """Run the current workflow on a single background thread while
-        updating execution visuals from signals it emits."""
+        updating execution visuals from signals it emits.
+
+        Returns ``True`` when a worker was started. Every early exit (a loop
+        in the graph, a failing pre-flight) restores the Run button first, so
+        a refused run can never leave the window without a way to run again.
+        """
         if self._workflow_worker_is_running():
             # A run is already in flight - the GUI thread stays responsive
             # for the whole run now, so this guard is reachable in
             # practice (previously the GUI was blocked, so a second click
             # couldn't happen).
-            return
-
-        if hasattr(self, "run_button"):
-            self.run_button.setEnabled(False)
+            return False
 
         try:
             # Run reads values, so any coalesced edge edit and the latest SQL
@@ -100,60 +154,335 @@ class WorkflowExecutionMixin:
             # Never leave the Run button disabled because the graph cannot be
             # ordered. The selected edges make the loop visible; the message
             # uses the TD-CLI-004 wording without inventing a node-level error.
-            if hasattr(self, "run_button"):
-                self.run_button.setEnabled(True)
+            self._show_run_controls(False)
             select_cycle_edges(self.scene, exc)
             message = cycle_message(exc)
             logger.warning(message)
             self._log_to_dock(message)
-            return
-        executor = NodeExecutor()
+            return False
+        except Exception as exc:  # noqa: BLE001 - a Qt slot must not raise
+            self._show_run_controls(False)
+            logger.exception("Cannot prepare the run")
+            self._log_to_dock(f"Cannot run: {exc}")
+            return False
 
-        # Reset node visuals and stored results
-        self.execution_results.clear()
-        problems = getattr(self, "problems", None)
-        if problems is not None:
-            problems.clear_source("run")
-        for node in self.getAllNodes():
-            node.markInvalid(False)
-            clear = getattr(node, "clear_error", None)
-            if callable(clear):
-                clear("run")
-            node.grNode.resetPen()
-            node.grNode.update()
+        # The pre-flight below runs on the GUI thread and can take a while;
+        # keep a second click from re-entering it.
+        run_button = getattr(self, "run_button", None)
+        if run_button is not None:
+            run_button.setEnabled(False)
 
-        # Start timing and increment execution counters
-        self.workflow_start_time = time.time()
-        self.workflow_execution_count += 1
-
-        logger.info("🚀 Starting workflow execution #{}", self.workflow_execution_count)
-        self._log_to_dock(
-            f"🚀 Starting workflow execution #{self.workflow_execution_count}..."
-        )
-
-        self._workflow_sorted_nodes = sorted_nodes
-
-        worker = WorkflowWorker(sorted_nodes, executor)
-        worker.nodeStarted.connect(self._on_node_started)
-        worker.nodeFinished.connect(self._on_node_finished)
-        worker.nodeErrored.connect(self._on_node_errored)
-        worker.workflowFinished.connect(self._on_workflow_finished)
-        worker.finished.connect(worker.deleteLater)
-        self._workflow_worker = worker
-
-        # The worker and live GUI evaluation both enter Polars/DuckDB. Hold
-        # live passes until the worker is finished; edits made during the run
-        # queue in the coordinator and flush once it stops.
-        coordinator = getattr(self.scene, "evaluator", None)
-        if coordinator is not None:
-            coordinator.suspend()
         try:
-            worker.start()
-        except Exception:
-            self._workflow_worker = None
+            self.execution_results.clear()
+            self._last_run_codes = {}
+            problems = getattr(self, "problems", None)
+            if problems is not None:
+                problems.clear_source("run")
+            for node in self.getAllNodes():
+                node.markInvalid(False)
+                clear = getattr(node, "clear_error", None)
+                if callable(clear):
+                    clear("run")
+                node.grNode.resetPen()
+                node.grNode.update()
+
+            self._reevaluate_for_run(sorted_nodes)
+            self._run_before_run_hooks(sorted_nodes)
+            self._show_run_controls(True)
+
+            executor = NodeExecutor()
+            self._workflow_executor = executor
+            self._run_cancelled = False
+            self._skipped_nodes = []
+            self._start_run_session(sorted_nodes, executor)
+
+            # Start timing and increment execution counters
+            self.workflow_start_time = time.time()
+            self.workflow_execution_count += 1
+
+            logger.info(
+                "🚀 Starting workflow execution #{}", self.workflow_execution_count
+            )
+            self._log_to_dock(
+                f"🚀 Starting workflow execution #{self.workflow_execution_count}..."
+            )
+
+            self._workflow_sorted_nodes = sorted_nodes
+
+            _prune_finishing_workers()
+            worker = WorkflowWorker(
+                sorted_nodes,
+                executor,
+                continue_on_error=bool(
+                    self._run_policy().get("continue_on_error", False)
+                ),
+                upstream=_direct_upstream(sorted_nodes),
+            )
+            worker.nodeStarted.connect(self._on_node_started)
+            worker.nodeFinished.connect(self._on_node_finished)
+            worker.nodeErrored.connect(self._on_node_errored)
+            worker.nodeSkipped.connect(self._on_node_skipped)
+            worker.workflowFinished.connect(self._on_workflow_finished)
+            worker.finished.connect(worker.deleteLater)
+            self._workflow_worker = worker
+
+            # The worker and live GUI evaluation both enter Polars/DuckDB. Hold
+            # live passes until the worker is finished; edits made during the
+            # run queue in the coordinator and flush once it stops.
+            coordinator = getattr(self.scene, "evaluator", None)
             if coordinator is not None:
-                coordinator.resume()
-            raise
+                coordinator.suspend()
+            try:
+                worker.start()
+            except Exception:
+                if coordinator is not None:
+                    coordinator.resume()
+                raise
+        except Exception as exc:  # noqa: BLE001 - never leave Run disabled
+            self._workflow_worker = None
+            self._abort_run_session()
+            self._show_run_controls(False)
+            logger.exception("Cannot start the run")
+            self._log_to_dock(f"Cannot start the run: {exc}")
+            return False
+        return True
+
+    # --- Run record (docs/plan/02-audit-trail.md) -------------------------------
+    def _start_run_session(self, sorted_nodes: list[Any], executor: Any) -> None:
+        """Begin the run record; a recording problem never stops the run."""
+        self._run_session = None
+        try:
+            self._run_session = RunSession.start(self, sorted_nodes, executor)
+        except Exception:  # noqa: BLE001 - recording must not fail the run
+            logger.exception("Run recording is unavailable for this run")
+            self._run_session = None
+            executor.before_node = None
+            executor.after_node = None
+            set_run_record_provider(None)
+
+    def _abort_run_session(self) -> None:
+        session = self._run_session
+        self._run_session = None
+        set_run_record_provider(None)
+        if session is not None:
+            try:
+                session.abort()
+            except Exception:  # noqa: BLE001, S110
+                pass
+
+    def _seal_run_record(self, success: bool) -> None:
+        """Seal the record (after error enrichment settled, for failed runs)."""
+        session = self._run_session
+        if session is None:
+            return
+
+        def done(path: str | None) -> None:
+            if self._run_session is session:
+                self._run_session = None
+                set_run_record_provider(None)
+            if path:
+                self._log_to_dock(f"Run log saved: {path}")
+                signal = self.runRecorded
+                if signal is not None:
+                    signal.emit(path)
+            else:
+                self._log_to_dock("The run log could not be saved (see the log file)")
+
+        try:
+            session.finish_when_settled(success and not self._run_cancelled, done)
+        except Exception:  # noqa: BLE001 - recording must not break the run's end
+            logger.exception("Could not seal the run record")
+            if self._run_session is session:
+                self._run_session = None
+            set_run_record_provider(None)
+
+    def is_enrichment_settled(self) -> bool:
+        """True when no failed-node error is still being enriched."""
+        return self._pending_enrichments <= 0
+
+    def add_enrichment_settled_listener(self, callback: Callable[[], None]) -> None:
+        """Run ``callback`` once, the next time error enrichment settles."""
+        if not hasattr(self, "_enrichment_listeners"):
+            self._enrichment_listeners = []
+        self._enrichment_listeners.append(callback)
+
+    def _enrichment_finished(self) -> None:
+        self._pending_enrichments = max(0, self._pending_enrichments - 1)
+        if self._pending_enrichments:
+            return
+        listeners = list(getattr(self, "_enrichment_listeners", []))
+        self._enrichment_listeners = []
+        for callback in listeners:
+            try:
+                callback()
+            except Exception:  # noqa: BLE001 - one listener must not block the rest
+                logger.exception("enrichment listener failed")
+
+    def _reevaluate_for_run(self, sorted_nodes: list[Any]) -> None:
+        """Make every node's live state current immediately before Run.
+
+        Generated code reads attributes that only a live evaluation sets
+        (``incoming_variable``, ``incom_data``, ``data``). A node that was
+        never evaluated, or whose edit is still waiting for the dock to close,
+        would otherwise execute its fallback code and silently produce an
+        empty frame. Every node is therefore recomputed in topological order
+        on the GUI thread; nodes that stay invalid keep their red state and
+        are reported in the Logging dock rather than aborting the run (an
+        unfinished node legitimately fails with its own message).
+        """
+        reevaluate = getattr(self, "doEvalOutputs", None)
+        if not callable(reevaluate):
+            return  # hosts without a scene (unit-test doubles)
+        for node in sorted_nodes:
+            mark = getattr(node, "markDirty", None)
+            if callable(mark):
+                mark(True)
+        reevaluate()
+        # Everything was just recomputed: a deferred "run when the dock is
+        # left" request has nothing left to do.
+        for node in sorted_nodes:
+            content = getattr(node, "content", None)
+            cancel_pending = getattr(content, "cancel_pending_evaluation", None)
+            if callable(cancel_pending):
+                cancel_pending()
+        invalid = [
+            node for node in sorted_nodes if getattr(node, "isInvalid", lambda: False)()
+        ]
+        if invalid:
+            titles = ", ".join(str(getattr(n, "node_title", "?")) for n in invalid[:5])
+            self._log_to_dock(
+                f"Warning: {len(invalid)} step(s) have problems and may fail or "
+                f"produce empty output: {titles}"
+            )
+
+    #: Callables ``(sorted_nodes) -> None`` run once per Run, after the
+    #: re-evaluation and before the worker starts. Headless runners may iterate
+    #: the list themselves: the list is the contract, not ``_run_before_run_hooks``.
+    before_run_hooks: list[Callable[[list[Any]], None]] | None = None
+
+    def _run_before_run_hooks(self, sorted_nodes: list[Any]) -> None:
+        """Call each node content's ``before_run()`` then every registered hook.
+
+        A failing hook is logged and never stops the run.
+        """
+        for node in sorted_nodes:
+            before_run = getattr(getattr(node, "content", None), "before_run", None)
+            if callable(before_run):
+                try:
+                    before_run()
+                except Exception as exc:  # noqa: BLE001
+                    logger.warning("before_run failed for {}: {}", node, exc)
+        for hook in list(self.before_run_hooks or []):
+            try:
+                hook(sorted_nodes)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("before-run hook failed: {}", exc)
+
+    def _show_run_controls(self, running: bool) -> None:
+        """Run and Cancel share one slot: exactly one is visible."""
+        run_button = getattr(self, "run_button", None)
+        cancel_button = getattr(self, "cancel_button", None)
+        if run_button is not None:
+            run_button.setEnabled(not running)
+            run_button.setVisible(not running)
+        if cancel_button is not None:
+            cancel_button.setVisible(running)
+            cancel_button.setEnabled(running)
+            if running:
+                cancel_button.setToolTip("Cancel run (stops after the current step)")
+
+    def add_cancel_listener(self, callback: Callable[[], None]) -> None:
+        """Register a zero-argument callable invoked by ``request_run_cancel``."""
+        if not hasattr(self, "_cancel_listeners"):
+            self._cancel_listeners = []
+        self._cancel_listeners.append(callback)
+
+    def request_run_cancel(self) -> bool:
+        """THE cancel entry point; True when a run was in flight.
+
+        Cancellation is cooperative: the node that is executing finishes, the
+        remaining nodes are skipped.
+        """
+        worker = getattr(self, "_workflow_worker", None)
+        executor = getattr(self, "_workflow_executor", None)
+        session = getattr(self, "_run_session", None)
+        try:
+            active = worker is not None and bool(worker.isRunning())
+        except RuntimeError:  # the Qt wrapper is already deleted
+            active = False
+        if active and worker is not None:
+            worker.request_cancel()
+        if active and executor is not None:
+            executor.cancel_execution()
+        if active and session is not None:
+            session.request_cancel()
+        for callback in list(getattr(self, "_cancel_listeners", [])):
+            try:
+                callback()
+            except Exception as exc:  # noqa: BLE001 - one listener must not block the rest
+                logger.warning("cancel listener failed: {}", exc)
+        if active:
+            self._run_cancelled = True
+            self._log_to_dock(
+                "Cancel requested - stopping after the current step finishes"
+            )
+            button = getattr(self, "cancel_button", None)
+            if button is not None:
+                button.setEnabled(False)
+                button.setToolTip("Cancelling after the current step finishes")
+        return active
+
+    def _run_policy(self) -> dict[str, Any]:
+        """Run options handed to the worker (``continue_on_error``).
+
+        Preferences "Keep running independent branches after a failure"
+        (``errors/continue_past_failure``, on by default): after a failure the
+        nodes that do not depend on it still run and its dependents are
+        skipped. Off: the Run stops at the first failed node.
+        """
+        keep_going = get_preferences().get("errors/continue_past_failure", True)
+        return {"continue_on_error": bool(keep_going)}
+
+    def _on_node_skipped(self, node: Any, blocker: Any) -> None:
+        """Slot: a node was not executed because ``blocker`` failed or was
+        skipped, or (``blocker is None``) because the run was cancelled.
+
+        A node skipped behind a failure gets the knock-on warning ``TD-RUN-008``
+        (it is never marked invalid: nothing is wrong with the node itself).
+        """
+        if blocker is not None:
+            self._skipped_nodes.append((node, blocker))
+
+    def _mark_skipped_nodes(self) -> None:
+        """Give every node skipped behind a failure its ``TD-RUN-008`` warning.
+
+        Deferred until error enrichment has settled: applying an enriched error
+        clears the failed node's "run" error, and ``clear_error`` cascades to
+        the knock-on errors of its children.
+        """
+        pending = list(getattr(self, "_skipped_nodes", []))
+        self._skipped_nodes = []
+        for node, blocker in pending:
+            set_error = getattr(node, "set_error", None)
+            if not callable(set_error):
+                continue
+            try:
+                ctx = build_context(node, self, "run")
+                label = ctx.node_labels.get(getattr(blocker, "id", None)) or str(
+                    getattr(blocker, "node_title", "an earlier step")
+                )
+                set_error(
+                    make_error(
+                        "TD-RUN-008",
+                        ctx,
+                        culprit_label=label,
+                        culprit_node_id=getattr(blocker, "id", None),
+                        culprit_node_title=label,
+                    ),
+                    "run",
+                )
+            except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                logger.exception("Could not mark the skipped node")
 
     def _workflow_worker_is_running(self) -> bool:
         """Whether a run is in flight, tolerating a deleted Qt wrapper."""
@@ -193,11 +522,14 @@ class WorkflowExecutionMixin:
                 worker.nodeStarted,
                 worker.nodeFinished,
                 worker.nodeErrored,
+                getattr(worker, "nodeSkipped", None),
                 worker.workflowFinished,
             ):
+                if signal is None:
+                    continue
                 try:
                     signal.disconnect()
-                except (RuntimeError, TypeError):
+                except RuntimeError, TypeError:
                     pass
             if worker.wait(timeout_ms):
                 return True
@@ -224,6 +556,16 @@ class WorkflowExecutionMixin:
     def _on_node_finished(self, node: Any, result: Any) -> None:
         """Slot: a node finished executing (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
+        session = self._run_session
+        if session is not None:
+            session.node_finished(node, result)
+
+        # The exported script reuses the code that actually ran, instead of
+        # asking every node for it a second time.
+        codes = getattr(self, "_last_run_codes", None)
+        ran_code = getattr(result, "code", "")
+        if isinstance(codes, dict) and ran_code:
+            codes[node] = ran_code
 
         if result.success:
             clear = getattr(node, "clear_error", None)
@@ -234,6 +576,17 @@ class WorkflowExecutionMixin:
             )
             node.grNode.setPenExecuted()
             node.grNode.update()
+            # GUI-thread counterpart of ``content.after_execution`` (which runs
+            # on the executor thread): a node that wants its run result on screen
+            # reads it here, with no cross-thread hand-off.
+            on_run_result = getattr(
+                getattr(node, "content", None), "on_run_result", None
+            )
+            if callable(on_run_result):
+                try:
+                    on_run_result(result.variables)
+                except Exception:  # noqa: BLE001 - a raising slot aborts the process
+                    logger.exception("on_run_result failed for {}", node_name)
         elif callable(getattr(node, "set_error", None)):
             logger.debug("Run failed for node {}", node_name)
             error = translate_exception(
@@ -261,6 +614,9 @@ class WorkflowExecutionMixin:
         """Slot: node raised unexpectedly outside NodeExecutor's own error
         handling (runs on the GUI thread)."""
         node_name = getattr(node, "node_title", node.__class__.__name__)
+        session = self._run_session
+        if session is not None:
+            session.node_errored(node, exc)
         if callable(getattr(node, "set_error", None)):
             logger.debug("Unexpected error for node {}", node_name)
             error = translate_exception(
@@ -281,17 +637,29 @@ class WorkflowExecutionMixin:
         node.grNode.update()
 
     def _start_error_enrichment(self, node: Any, error) -> None:
+        self._pending_enrichments += 1
+
+        def applied(result, failed=node, original=error) -> None:
+            try:
+                self._apply_enrichment(failed, result, original)
+            finally:
+                self._enrichment_finished()
+
         try:
             job = build_enrich_job(node, self, error, "run")
-            start_enrichment(
-                job,
-                lambda result, failed=node: self._apply_enrichment(failed, result),
-                store=getattr(self, "problems", None),
-            )
-        except Exception:  # noqa: BLE001, S110 - enrichment is optional
-            pass
+            start_enrichment(job, applied)
+        except Exception:  # noqa: BLE001 - enrichment is optional
+            self._enrichment_finished()
 
-    def _apply_enrichment(self, node: Any, result) -> None:
+    def _apply_enrichment(self, node: Any, result, original=None) -> None:
+        # The job runs in the background. If the node was edited and
+        # re-evaluated meanwhile its run error is gone, and applying the late
+        # result would bring a fixed error back.
+        errors = getattr(node, "_errors_dict", None)
+        if original is not None and callable(errors):
+            current = errors().get("run")
+            if current is None or current.fingerprint != original.fingerprint:
+                return
         clear = getattr(node, "clear_error", None)
         if callable(clear):
             clear("run")
@@ -325,7 +693,19 @@ class WorkflowExecutionMixin:
         # (queued right behind this one) triggers deleteLater() - querying
         # a deleted QThread's isRunning() on the next Run click raises
         # "wrapped C/C++ object ... has been deleted".
+        finished_worker = self._workflow_worker
+        # The worker is authoritative: a cancel that arrives after the last
+        # node finished did not cancel anything.
+        self._run_cancelled = bool(
+            getattr(finished_worker, "cancelled", self._run_cancelled)
+        )
+        cancel_button = getattr(self, "cancel_button", None)
+        if cancel_button is not None:
+            cancel_button.setEnabled(False)
         self._workflow_worker = None
+        if finished_worker is not None:
+            _FINISHING_WORKERS.add(finished_worker)
+        _prune_finishing_workers()
         scene = getattr(self, "scene", None)
         coordinator = getattr(scene, "evaluator", None)
         if coordinator is not None:
@@ -333,9 +713,18 @@ class WorkflowExecutionMixin:
                 coordinator.resume()
             except Exception:  # noqa: BLE001 - a raising slot aborts the process
                 logger.exception("Failed to resume live evaluation after a run")
-        self.getPyFile(self._workflow_sorted_nodes)
+        try:
+            self.getPyFile(self._workflow_sorted_nodes)
+        except Exception:  # noqa: BLE001 - the export must never skip the cleanup
+            logger.exception("Could not write the generated script")
+        self._seal_run_record(success)
+        if getattr(self, "_skipped_nodes", None):
+            if self.is_enrichment_settled():
+                self._mark_skipped_nodes()
+            else:
+                self.add_enrichment_settled_listener(self._mark_skipped_nodes)
 
-        if success:
+        if success and not self._run_cancelled:
             QTimer.singleShot(1000, lambda: self._execution_cleanup(success=True))
         else:
             self._execution_cleanup(success=False)
@@ -368,7 +757,8 @@ class WorkflowExecutionMixin:
         )
 
         status_icon = "✅" if success else "❌"
-        status_text = "COMPLETED" if success else "FAILED"
+        cancelled = getattr(self, "_run_cancelled", False)
+        status_text = "COMPLETED" if success else "CANCELLED" if cancelled else "FAILED"
 
         logger.info(
             "{} Workflow execution #{} {}!",
@@ -392,7 +782,9 @@ class WorkflowExecutionMixin:
         self._log_to_dock(f"📊 Total runs: {self.workflow_execution_count}")
         self._log_to_dock(f"📈 Average time: {average_execution:.3f} seconds")
         self._log_to_dock(f"🕒 Cumulative time: {self.total_workflow_time:.3f} seconds")
-        if not success:
+        if cancelled:
+            self._log_to_dock("Run cancelled")
+        elif not success:
             self._log_to_dock("⚠️  Execution failed - check logs for details")
             global_logger.error("Workflow execution failed - check logs for details")
 
@@ -403,11 +795,10 @@ class WorkflowExecutionMixin:
             node.grNode.resetPen()
             node.grNode.update()
 
-        if hasattr(self, "run_button"):
-            self.run_button.setEnabled(True)
+        self._show_run_controls(False)
 
     # --- Statistics helpers ---------------------------------------------------------
-    def get_workflow_statistics(self) -> Dict[str, Union[int, float]]:
+    def get_workflow_statistics(self) -> dict[str, int | float]:
         """Return aggregated workflow execution statistics."""
         average_execution = (
             self.total_workflow_time / self.workflow_execution_count
@@ -511,7 +902,7 @@ class WorkflowExecutionMixin:
             if name in node_results
         ]
 
-    def getSocketData(self, node: Any, socket_index: int) -> Any:  # noqa: N802
+    def getSocketData(self, node: Any, socket_index: int) -> Any:
         """Return the execution result bound to a socket after workflow run."""
         if not self.execution_results:
             self._log_to_dock("No execution results available. Run the workflow first.")

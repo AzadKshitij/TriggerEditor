@@ -6,6 +6,7 @@ import polars as pl
 from nodeeditor.node_edge import Edge
 from qtpy.QtCore import Qt
 
+from trigger_designer.core.input_source import build_source
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -90,6 +91,41 @@ def test_select_uses_shaping_and_table_edits_are_undoable(qtbot) -> None:
     assert "settings" in serialized
     assert serialized["settings"]["columns"][1]["rename"] == "Bee"
     assert "2 of 2 columns selected" in content.dock_summary()
+
+
+def test_select_shows_a_name_for_a_blank_csv_header(qtbot, tmp_path) -> None:
+    path = tmp_path / "blank_header.csv"
+    path.write_text(",Keyword,Seed\n0,kids,foo\n1,bar,baz\n", encoding="utf-8")
+    frame = build_source({"filePath": str(path), "file_type": "csv"}).frame
+    assert frame.collect_schema().names() == ["column_1", "Keyword", "Seed"]
+
+    window = TriggerSubWindow()
+    qtbot.addWidget(window)
+    source = Source(window.scene, frame)
+    cls = get_class_from_opcode(PreparationNodes.SELECT, NodeTypes.PREPARATION)
+    node = cls(window.scene)
+    Edge(window.scene, source.outputs[0], node.inputs[0])
+    node.markDirty(True)
+    node.eval()
+
+    content = node.content
+    dock = ConfigDock()
+    qtbot.addWidget(dock)
+    dock.updateConfig([node.grNode])
+
+    names = [row.text for row in content.table_widget.rows()]
+    assert names == ["column_1", "Keyword", "Seed"]
+    row_index = names.index("column_1")
+    content.table_widget.setData(
+        content.table_widget.index(row_index, 3),
+        "Index",
+        Qt.ItemDataRole.EditRole,
+    )
+    assert content.settings["columns"][row_index]["rename"] == "Index"
+
+    node.markDirty(True)
+    node.eval()
+    assert content.outputs[0].collect_schema().names() == ["Index", "Keyword", "Seed"]
 
 
 def test_select_reconciles_missing_and_new_columns(qtbot) -> None:

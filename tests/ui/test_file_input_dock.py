@@ -13,6 +13,7 @@ from tests.support.input_fixtures import (
     multi_sheet_xlsx,
     sqlite_db,
 )
+from tests.support.flush import flush
 from trigger_designer.core.node_configuration import (
     IONodes,
     NodeTypes,
@@ -56,6 +57,7 @@ def test_folder_pick_shows_files_section_and_table(qtbot, tmp_path) -> None:
     monthly = monthly_csvs(tmp_path)
     _window, node, content, _dock = _graph(qtbot)
     content._choose_folder(str(monthly))
+    flush(content)
     assert content.files_section.isHidden() is False
     assert content.filesTable.model().rowCount() == 3
     statuses = [content.filesTable.model().item(row, 1).text() for row in range(3)]
@@ -68,6 +70,18 @@ def test_folder_pick_shows_files_section_and_table(qtbot, tmp_path) -> None:
     assert node.isInvalid() is False
     assert content.last_report is not None
     assert content.last_report.differing_files()
+
+
+def test_blank_header_preview_uses_a_generated_name(qtbot, tmp_path) -> None:
+    source = tmp_path / "blank.csv"
+    source.write_text(",name\n1,Ann\n", encoding="utf-8")
+    _window, _node, content, _dock = _graph(qtbot, str(source))
+    content.loadFile(str(source))
+    assert content.data.collect_schema().names() == ["column_1", "name"]
+    assert content.schema_snapshot == [
+        {"name": "column_1", "dtype": "String"},
+        {"name": "name", "dtype": "String"},
+    ]
 
 
 def test_visibility_matrix(qtbot, tmp_path) -> None:
@@ -161,6 +175,8 @@ def test_path_edit_debounced(qtbot, tmp_path) -> None:
     for _index in range(5):
         content.filePathEdit.setText(source)
     qtbot.wait(420)
+    assert calls == []  # the run waits until the node is left
+    flush(content)
     assert len(calls) == 1
     assert history.controller.count == baseline + 1
     assert content.filePath == source
@@ -190,6 +206,7 @@ def test_writeback_does_not_rerecord(qtbot, tmp_path) -> None:
         ("encodingCombo", "utf8-lossy", "encoding", "utf8"),
         ("sheetModeCombo", "all", "sheet_mode", "one"),
         ("limitSpin", 5, "record_limit", 0),
+        ("maxFilesSpin", 20000, "max_files", 10000),
         ("asTextCheck", True, "read_as_text", False),
         ("dbModeCombo", "query", "db_mode", "table"),
         ("fileNameValueCombo", "path", "file_name_value", "name"),
@@ -309,5 +326,51 @@ def test_error_tooltip_for_missing_folder(qtbot, tmp_path) -> None:
     empty.mkdir()
     _window, node, content, _dock = _graph(qtbot)
     content._choose_folder(str(empty))
+    flush(content)
     assert node.isInvalid() is True
     assert str(empty) in node.grNode.toolTip()
+
+
+def test_max_files_control_is_in_the_files_section(qtbot, tmp_path) -> None:
+    monthly = monthly_csvs(tmp_path)
+    _window, _node, content, _dock = _graph(qtbot)
+    content._choose_folder(str(monthly))
+    flush(content)
+    assert content.files_section.isHidden() is False
+    assert content.max_files_row.isHidden() is False
+    assert content.maxFilesSpin.value() == 10000
+    assert content.maxFilesSpin.accessibleName() == "Max files"
+
+
+def test_max_files_limit_is_enforced_and_raising_it_fixes_the_run(
+    qtbot, tmp_path
+) -> None:
+    monthly = monthly_csvs(tmp_path)  # three files
+    _window, _node, content, _dock = _graph(qtbot)
+    content._choose_folder(str(monthly))
+    flush(content)
+    content.maxFilesSpin.setValue(2)
+    flush(content)
+    assert content.max_files == 2
+    assert content.last_error is not None
+    assert content.last_error.code == "TD-IN-012"
+    content.maxFilesSpin.setValue(3)
+    flush(content)
+    assert content.last_error is None
+    assert content.last_report.file_count == 3
+
+
+def test_max_files_survives_save_and_load(qtbot, tmp_path) -> None:
+    monthly = monthly_csvs(tmp_path)
+    _window, _node, content, _dock = _graph(qtbot, str(monthly), max_files=42)
+    state = content.serialize()
+    assert state["max_files"] == 42
+    _window2, _node2, content2, _dock2 = _graph(qtbot)
+    content2.deserialize(state, {})
+    assert content2.max_files == 42
+    assert content2.maxFilesSpin.value() == 42
+
+
+def test_include_placeholder_matches_the_documented_default(qtbot) -> None:
+    _window, _node, content, _dock = _graph(qtbot)
+    assert "*.tsv" not in content.includeEdit.placeholderText()

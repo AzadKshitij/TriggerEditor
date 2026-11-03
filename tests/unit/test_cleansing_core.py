@@ -104,3 +104,49 @@ def test_empty_input_and_lazy_output() -> None:
     out = outs[0].collect()
     assert out.height == 0
     assert out.columns == ["a"]
+
+
+def test_collapse_does_not_trim_when_trim_is_off() -> None:
+    frame = pl.DataFrame({"c": ["  a   b  "]})
+    out = _run(
+        frame, selected_fields=["c"], strip_whitespace=False, normalize_spaces=True
+    )
+    assert out["c"].to_list() == [" a b "]
+
+
+def test_trim_alone_keeps_inner_runs() -> None:
+    frame = pl.DataFrame({"c": ["  a   b  "]})
+    out = _run(
+        frame, selected_fields=["c"], strip_whitespace=True, normalize_spaces=False
+    )
+    assert out["c"].to_list() == ["a   b"]
+
+
+def test_trim_and_collapse_together() -> None:
+    frame = pl.DataFrame({"c": ["  a   b  "]})
+    assert _run(frame, selected_fields=["c"])["c"].to_list() == ["a b"]
+
+
+def test_chip_warns_when_text_rules_have_no_column() -> None:
+    assert core.describe([None], {}) == [
+        ("No columns ticked: the text rules do nothing", "warning")
+    ]
+    assert core.describe([None], {"selected_fields": ["c"]}) == []
+    quiet = {"strip_whitespace": False, "normalize_spaces": False}
+    assert core.describe([None], quiet) == []
+    assert core.describe([None], {**quiet, "case_modification": "upper"})
+
+
+def test_strip_whitespace_takes_trim_as_a_parameter() -> None:
+    # The Cleansing node passes ``trim=`` into the cleaner; the keyword must be a
+    # real parameter (it was once left as a body statement, which raised
+    # NameError on every call).
+    from trigger_designer.core.utils.cleansing_util import DataCleansing
+
+    frame = pl.DataFrame({"c": ["  a   b  ", " x "]})
+    trimmed = DataCleansing(frame).strip_whitespace(fields=["c"], trim=True)
+    kept = DataCleansing(frame).strip_whitespace(
+        fields=["c"], trim=False, normalize_spaces=True
+    )
+    assert trimmed.df["c"].to_list() == ["a b", "x"]
+    assert kept.df["c"].to_list() == [" a b ", " x "]

@@ -132,10 +132,6 @@ class EnhancedFileInputContent:
                 # Update the enhanced table display
                 self._update_table_display(preview_df)
 
-                # Update file type UI
-                file_type = self._auto_detect_file_type(fileName)
-                self._update_ui_visibility(file_type)
-
                 logger.info(
                     f"File loaded for preview: {fileName} ({len(preview_df)} rows)"
                 )

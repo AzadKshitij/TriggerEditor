@@ -8,7 +8,6 @@ import polars as pl
 
 from trigger_designer.core.errors import ErrorContext, translate_exception
 from trigger_designer.core.ExecutionCheck.executor import (
-    ExecutionResult,
     NodeExecutor,
     SecurityConfig,
 )
@@ -72,20 +71,6 @@ def test_get_code_error_is_an_ordinary_failure() -> None:
     assert result.success is False
     assert isinstance(result.exception, ValueError)
     assert result.error == "cannot generate"
-
-
-def test_without_frames_drops_exception() -> None:
-    result = ExecutionResult(
-        success=False,
-        exception=ValueError("x"),
-        exception_type="builtins.ValueError",
-        traceback_text="Traceback ...",
-    )
-    copy = result.without_frames()
-    assert copy.exception is None
-    assert copy.exception_type == "builtins.ValueError"
-    assert copy.traceback_text == "Traceback ..."
-    assert copy is not result
 
 
 def test_result_translates_with_preserved_technical_text() -> None:

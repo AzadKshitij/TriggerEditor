@@ -8,7 +8,3 @@ VERSION: str = "0.1.0"  # Major.Minor.Patch
 WORKFLOW_SCHEMA_VERSION: int = 2
 APP_NAME: str = "TriggerDesigner"
 VERSION_BRANCH: str = ""
-APP_TITLE: str = f"{APP_NAME} {VERSION} {VERSION_BRANCH}"
-
-# Folder & file names where TriggerDesigner keeps its data relative to a design.
-FOLDER_NAME: str = ".trigger_designer"

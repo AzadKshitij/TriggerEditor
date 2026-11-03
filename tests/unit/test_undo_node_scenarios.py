@@ -12,14 +12,6 @@ Covers the two failures that motivated the rework:
 Drives a real :class:`TriggerScene` and a real :class:`ConfigDock` offscreen.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(
-    0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src"))
-)
-
 import pytest
 from qtpy.QtWidgets import QApplication, QLabel
 

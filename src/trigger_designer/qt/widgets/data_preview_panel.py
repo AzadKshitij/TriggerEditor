@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QLineEdit,
     QMenu,
+    QMessageBox,
     QShortcut,
     QVBoxLayout,
     QWidget,
@@ -110,6 +111,9 @@ class DataPreviewPanel(QWidget):
         self.viewer.model.set_page_size(max(1, int(max_rows)))
         content_layout.addWidget(self.viewer, 1)
         self._content.setVisible(False)
+        self._max_rows = max(1, int(max_rows))
+        self._max_size_mb = max_size_mb
+        self.viewer.export_reporter = self._on_exported
 
         self._state_label = EmptyStateLabel(_BLANK_STATE, self)
 
@@ -396,12 +400,59 @@ class DataPreviewPanel(QWidget):
         self.copy_action = menu.addAction("Copy as TSV")
         self.export_csv_action = menu.addAction("Export CSV...")
         self.export_excel_action = menu.addAction("Export Excel...")
+        scope_tip = (
+            "Writes only the rows collected in the preview (at most "
+            f"{self._max_rows:,} rows or {self._max_size_mb:g} MB, or the rows "
+            "matching the search). The full output is written by a File Output node."
+        )
+        self.export_csv_action.setToolTip(scope_tip)
+        self.export_excel_action.setToolTip(scope_tip)
         self.copy_action.triggered.connect(self.viewer.copy_all_visible_to_clipboard)
         self.export_csv_action.triggered.connect(self.viewer.export_csv)
         self.export_excel_action.triggered.connect(self.viewer.export_excel)
         menu.aboutToShow.connect(self._sync_options_menu)
         self.options_btn.setMenu(menu)
         self.options_menu = menu
+
+    def export_scope_message(self, rows: int) -> tuple[str, bool]:
+        """What an export of ``rows`` rows covers: ``(text, is_partial)``.
+
+        The export writes the collected preview (or the search-filtered part of
+        it), never the node's full output.
+        """
+        window = self._window
+        total = window.total_rows if window is not None else None
+        collected = window.frame.height if window is not None else rows
+        filtered = rows < collected
+        partial = filtered or bool(window is not None and window.limited)
+        if total is not None and total > rows:
+            partial = True
+        if total is not None:
+            text = f"Exported {rows:,} of {total:,} rows"
+        elif window is not None and window.limited:
+            text = (
+                f"Exported {rows:,} of the {collected:,} previewed rows "
+                "(the source has more)"
+            )
+        else:
+            text = f"Exported {rows:,} previewed rows"
+        if filtered:
+            text += f", the ones matching the search ({collected:,} are previewed)"
+        if partial:
+            text += (
+                f". The preview holds at most {self._max_rows:,} rows or "
+                f"{self._max_size_mb:g} MB; the full output is written by a "
+                "File Output node when you Run"
+            )
+        return text + ".", partial
+
+    def _on_exported(self, rows: int, filename: str) -> None:
+        """Say how the exported rows relate to the source (viewer callback)."""
+        text, partial = self.export_scope_message(rows)
+        if partial:
+            QMessageBox.information(
+                self, "Export complete", f"{text}\n\nSaved to {filename}"
+            )
 
     def _sync_options_menu(self) -> None:
         has_data = self._window is not None

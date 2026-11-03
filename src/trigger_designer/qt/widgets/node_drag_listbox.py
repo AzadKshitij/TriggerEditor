@@ -1,12 +1,9 @@
 from qtpy.QtGui import (
     QPixmap,
-    QIcon,
     QDrag,
     QPainter,
-    QColor,
     QFont,
     QCursor,
-    QMouseEvent,
     QPainterPath,
 )
 from qtpy.QtCore import QSize, Qt, QByteArray, QDataStream, QMimeData, QIODevice, QPoint
@@ -15,23 +12,19 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QListWidgetItem,
     QWidget,
-    QVBoxLayout,
     QLabel,
     QSizePolicy,
-    QHBoxLayout,
     QGridLayout,
-    QFrame,
 )
 
 from nodeeditor.utils import dumpException
 
 from typing import Any, Optional
 
+from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.resource_manager import ResourceManager
-from trigger_designer.qt.node_base import TriggerNode
 from trigger_designer.core.node_configuration import (
     NodeTypes,
-    get_class_from_opcode,
     LISTBOX_MIMETYPE,
     NODE_REGISTRIES,
 )
@@ -123,7 +116,9 @@ class QTRDragListbox(QListWidget):
             itemData = QByteArray()
             dataStream = QDataStream(itemData, QIODevice.WriteOnly)
             dataStream << pixmap
-            dataStream.writeInt(node_code)
+            # Qt 6 renamed writeInt to writeInt32, and PySide6 dropped the old
+            # alias outright - drags never started on that binding (issue #3).
+            dataStream.writeInt32(node_code)
             dataStream.writeQString(self.node_type)
             # dataStream.writeQString(item.text())
 
@@ -173,7 +168,9 @@ class ListWidgetItemWidget(QWidget):
 
         self.text_label = QLabel(name, self)
         self.text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.text_label.setFont(QFont("Arial", 8))
+        self.text_label.setFont(
+            QFont("Arial", round(8 * get_theme_manager().font_scale()))
+        )
         self.text_label.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         self.text_label.setMinimumWidth(self.icon_label.width())
 

@@ -86,6 +86,21 @@ if not exist "dist\TriggerEditor\_internal\trigger_designer\resources\qt\themes\
     echo WARNING: theme assets missing in bundle; check datas in trigger.spec.
 )
 
+if not exist "dist\TriggerEditor\trigger-designer-cli.exe" (
+    echo Build failed: dist\TriggerEditor\trigger-designer-cli.exe missing.
+    exit /b 1
+)
+"dist\TriggerEditor\trigger-designer-cli.exe" --version
+if %ERRORLEVEL% NEQ 0 (
+    echo Build failed: the command-line program does not start.
+    exit /b 1
+)
+"dist\TriggerEditor\trigger-designer-cli.exe" validate "savedfiles\0. All Node- Test.tds" --deep --no-files
+if %ERRORLEVEL% NEQ 0 (
+    echo Build failed: deep validation of the sample workflow failed.
+    exit /b 1
+)
+
 echo.
 echo Build completed successfully.
 echo Launch dist\TriggerEditor\TriggerEditor.exe to smoke-test, then compile

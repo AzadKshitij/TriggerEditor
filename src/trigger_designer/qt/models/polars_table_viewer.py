@@ -16,7 +16,7 @@ theme's tokens via ``Qt.BackgroundRole``.
 """
 
 import polars as pl
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -419,7 +419,7 @@ class PolarsTableModel(QAbstractTableModel):
             try:
                 value = row_data[col]
                 return self._format_value(value, self._column_names[col])
-            except (IndexError, KeyError):
+            except IndexError, KeyError:
                 return None
 
         elif role == Qt.TextAlignmentRole:
@@ -641,6 +641,9 @@ class PolarsTableViewer(QWidget):
         self.export_csv_btn = None
         self.export_excel_btn = None
         self.info_label = None
+        #: Called as ``reporter(rows_written, path)`` after a successful export;
+        #: the host uses it to say how the exported rows relate to the source.
+        self.export_reporter: Callable[[int, str], None] | None = None
 
         # Chunk/cache sizing for the model
         self.chunk_size = 1000
@@ -1158,6 +1161,16 @@ class PolarsTableViewer(QWidget):
 
         self.info_label.setText(info_text)
 
+    def _report_export(self, rows: int, filename: str) -> None:
+        """Tell the host an export finished; a host problem never fails it."""
+        reporter = self.export_reporter
+        if reporter is None:
+            return
+        try:
+            reporter(rows, filename)
+        except Exception:  # noqa: BLE001 - the file is already written
+            logger.exception("Export report failed")
+
     def export_csv(self) -> None:
         """Export the loaded frame to CSV (asks for a path first)."""
         try:
@@ -1179,9 +1192,17 @@ class PolarsTableViewer(QWidget):
             if filename:
                 current_df.write_csv(filename)
                 logger.debug(f"Data exported to CSV: {filename}")
+                self._report_export(current_df.height, filename)
 
         except Exception as e:
             logger.error(f"CSV export error: {e}")
+            from qtpy.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Export failed",
+                f"The CSV file could not be written.\n\n{e}",
+            )
 
     def export_excel(self) -> None:
         """Export the loaded frame to Excel (asks for a path first)."""
@@ -1202,11 +1223,21 @@ class PolarsTableViewer(QWidget):
             )
 
             if filename:
-                current_df.write_excel(filename)
+                from trigger_designer.core.excel import write_frame_xlsx
+
+                write_frame_xlsx(current_df, filename)
                 logger.debug(f"Data exported to Excel: {filename}")
+                self._report_export(current_df.height, filename)
 
         except Exception as e:
             logger.error(f"Excel export error: {e}")
+            from qtpy.QtWidgets import QMessageBox
+
+            QMessageBox.warning(
+                self,
+                "Export failed",
+                f"The Excel file could not be written.\n\n{e}",
+            )
 
     def _on_load_progress(self, progress: int):
         """Handle data loading progress."""
@@ -1216,28 +1247,6 @@ class PolarsTableViewer(QWidget):
         """Handle model errors."""
         logger.error(f"Model error: {error_message}")
 
-    def get_selected_data(self) -> Optional[pl.DataFrame]:
-        """
-        Get the currently selected rows as a new DataFrame.
-
-        Returns:
-            Selected data as Polars DataFrame or None if no selection
-        """
-        selection = self.table_view.selectionModel().selectedRows()
-        if not selection:
-            return None
-
-        current_df = (
-            self.filtered_dataframe
-            if self.filtered_dataframe is not None
-            else self.dataframe
-        )
-        if current_df is None:
-            return None
-
-        selected_indices = [index.row() for index in selection]
-        return current_df[selected_indices]
-
     def refresh(self):
         """Refresh the view and clear caches."""
         self.model._clear_caches()
@@ -1245,12 +1254,3 @@ class PolarsTableViewer(QWidget):
         self.model.endResetModel()
         self._update_info_display()
         logger.debug("View refreshed")
-
-    def get_table_view(self):
-        """
-        Get direct access to the underlying QTableView for custom styling or operations.
-
-        Returns:
-            QTableView: The table view widget
-        """
-        return self.table_view

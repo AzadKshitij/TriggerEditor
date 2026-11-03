@@ -15,6 +15,7 @@ from qtpy.QtWidgets import (
     QWidget,
     QFileDialog,
     QMdiSubWindow,
+    QMessageBox,
     QTabWidget,
     QShortcut,
 )
@@ -149,6 +150,7 @@ class TriggerWindow(
         self.createLoggingDock()
         self.createDataPreviewDock()
         self.createProblemsDock()
+        self.createRunHistoryDock()
 
         self.createMenus()
 
@@ -330,6 +332,9 @@ class TriggerWindow(
         problems_dock = getattr(self, "problemsDock", None)
         if problems_dock is not None:
             problems_dock.apply_theme()
+        history_dock = getattr(self, "runHistoryDock", None)
+        if history_dock is not None:
+            history_dock.apply_theme()
         # Caption glyphs are painted in Python, so they re-read the tokens.
         chrome = getattr(self, "window_chrome", None)
         if chrome is not None:
@@ -468,12 +473,42 @@ class TriggerWindow(
         except Exception as e:
             dumpException(e)
 
+    def _save_failed(self, editor) -> bool:
+        """True when ``editor``'s save failed (it already showed the reason).
+
+        The library announces "Successfully saved" whatever happened; replace
+        that status line and report the save as not done, so closing a window
+        or opening another file cannot carry on as if the work was kept.
+        """
+        if editor is None or not getattr(editor, "last_save_error", None):
+            return False
+        self.statusBar().showMessage("Save failed - your changes are not saved", 8000)
+        return True
+
+    def maybeSave(self) -> bool:
+        """Ask to save unsaved changes (the library's dialog has a typo in it)."""
+        if not self.isModified():
+            return True
+        answer = QMessageBox.warning(
+            self,
+            "About to lose your work?",
+            "The document has been modified.\nDo you want to save your changes?",
+            QMessageBox.StandardButton.Save
+            | QMessageBox.StandardButton.Discard
+            | QMessageBox.StandardButton.Cancel,
+        )
+        if answer == QMessageBox.StandardButton.Save:
+            return bool(self.onFileSave())
+        return answer != QMessageBox.StandardButton.Cancel
+
     def onFileSave(self):
         current = self.getCurrentNodeEditorWidget()
         commit = getattr(current, "commit_pending_config_edits", None)
         if callable(commit):
             commit(evaluate=False)
         result = super().onFileSave()
+        if self._save_failed(current):
+            return False
         if result:
             current = self.getCurrentNodeEditorWidget()
             filename = getattr(current, "filename", None)
@@ -486,6 +521,8 @@ class TriggerWindow(
         if callable(commit):
             commit(evaluate=False)
         result = super().onFileSaveAs()
+        if self._save_failed(current):
+            return False
         if result:
             current = self.getCurrentNodeEditorWidget()
             filename = getattr(current, "filename", None)
@@ -580,7 +617,6 @@ class TriggerWindow(
 
     def onSubWindowActivated(self, sub_window: QMdiSubWindow) -> None:
         """Handle sub window activation to switch the dock contexts"""
-        chrome = getattr(self, "window_chrome", None)
         if sub_window:
             widget = sub_window.widget()
             if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
@@ -588,15 +624,12 @@ class TriggerWindow(
                 self.switchLoggingDock(widget)
                 self.switchDataPreviewDock(widget)
                 self.switchProblemsDock(widget)
+                self.switchRunHistoryDock(widget)
             # The status bar reports the cursor position of the canvas the
             # user is looking at.
             self.connectStatusScene(widget)
-            if chrome is not None:
-                chrome.set_context_title(sub_window.windowTitle())
         else:
             self.connectStatusScene(None)
-            if chrome is not None:
-                chrome.set_context_title(None)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
         # Activate the window being closed first so ``maybeSave`` targets the

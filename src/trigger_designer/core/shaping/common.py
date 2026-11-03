@@ -46,13 +46,14 @@ ERROR_CODES: dict[str, str] = {
     "TD-SHAPE-082": "Too many rows to compare without blocking",
     "TD-SHAPE-091": "The column must be a number",
     "TD-SHAPE-101": "The split pattern can match nothing",
-    "TD-SHAPE-110": "Only one SQL statement is allowed",
+    "TD-SHAPE-110": "Only one statement is allowed",
     "TD-SHAPE-111": "Only SELECT queries are allowed",
-    "TD-SHAPE-112": "A file, system or random function is not allowed",
+    "TD-SHAPE-112": "The SQL uses a function or file access that is not allowed",
     "TD-SHAPE-113": "The SQL could not be parsed or run",
     "TD-SHAPE-114": "The SQL is too long",
     "TD-SHAPE-115": "The query took too long",
-    "TD-SHAPE-120": "The formula must contain {col}",
+    "TD-SHAPE-120": "The formula must use the column placeholder",
+    "TD-SHAPE-130": "The generated rows do not match the input rows",
 }
 
 

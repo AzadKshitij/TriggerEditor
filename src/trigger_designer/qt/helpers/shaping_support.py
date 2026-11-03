@@ -19,6 +19,7 @@ from qtpy.QtWidgets import (
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QLineEdit,
     QPlainTextEdit,
     QPushButton,
@@ -29,7 +30,8 @@ from qtpy.QtWidgets import (
 
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.shaping.common import ShapingError, live_sample
-from trigger_designer.qt.helpers.config_content import ConfigContent
+from trigger_designer.qt.node_content import ConfigContent
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import (
     TriggerGraphicsNode,
@@ -65,6 +67,9 @@ class Field:
     options: tuple = ()
     minimum: float = 0
     maximum: float = 1_000_000
+    #: ``float`` kinds only: spin-box step and decimals (None keeps Qt's 1.0 / 2)
+    step: float | None = None
+    decimals: int | None = None
     placeholder: str = ""
     tip: str = ""
     blank: bool = False
@@ -229,14 +234,35 @@ class SuffixEditor(QWidget):
             self.changed.emit(self.value())
 
 
-class ShapingContent(ConfigContent, SerializableContentMixin):
+def clear_layout(layout: QLayout | None, *, delete: bool = False) -> bool:
+    """Delete the widgets and nested layouts in ``layout``; keep it unless ``delete``.
+
+    False when there is nothing to clear or its C++ object is already gone
+    (the Config Dock cleared while a modal dialog was open).
+    """
+    if layout is None:
+        return False
+    try:
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+            elif item.layout() is not None:
+                clear_layout(item.layout(), delete=True)
+        if delete:
+            layout.deleteLater()
+    except RuntimeError:
+        return False
+    return True
+
+
+class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin):
     SETTINGS: dict = {}  # noqa: RUF012 - subclass defaults, never mutated
     MODULE = ""
     RUNNER = "run_node"
     OUTPUT_KINDS: tuple = ("out",)
     INPUTS = 1
     OPTIONAL_INPUTS: frozenset = frozenset()
-    LIVE_CAP_ROWS = 0
     FORM: tuple = ()
     HISTORY = "Node"
     SUMMARY = ""
@@ -288,47 +314,18 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         schema = self.schema(spec.input)
         return [(name, dtype_label(schema[name])) for name in self.names(spec)]
 
-    def _rows_in(self, limit: int | None = None) -> int:
-        """Rows across the inputs; with ``limit``, lazy inputs stop past it.
-
-        Reading at most ``limit + 1`` rows from each lazy input is enough to
-        tell whether the total exceeds ``limit``, so the cap check never scans
-        a whole source just to count it.
-        """
-        total = 0
-        for frame in self.frames:
-            if isinstance(frame, pl.LazyFrame):
-                source = frame if limit is None else frame.head(limit + 1)
-                total += source.select(pl.len()).collect().item()
-            elif frame is not None:
-                total += frame.height
-        return total
-
     def compute(self) -> list:
         module = importlib.import_module(self.MODULE)
         settings = copy.deepcopy(self.settings)
         frames = list(self.frames)
         self.chips = []
-        capped = bool(self.LIVE_CAP_ROWS) and (
-            self._rows_in(self.LIVE_CAP_ROWS) > self.LIVE_CAP_ROWS
-        )
-        if capped:
-            frames = [
-                None
-                if frame is None
-                else pl.DataFrame(schema=frame_schema(frame)).lazy()
-                for frame in frames
-            ]
-            self.chips = [
-                (f"Over {self.LIVE_CAP_ROWS:,} rows: full result at Run", "warning")
-            ]
         runner = getattr(module, self.RUNNER)
         outs = runner(frames, settings)
         self.outputs = [
             out.lazy() if isinstance(out, pl.DataFrame) else out for out in outs
         ]
         describe = getattr(module, "describe", None)
-        if describe is not None and not capped:
+        if describe is not None:
             try:
                 self.chips += describe(frames, settings)
             except Exception:  # noqa: BLE001, S110 - chips are advisory
@@ -371,8 +368,12 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         merge_key: str | None = None,
         *,
         structural: bool = False,
-        evaluate: bool = True,
+        evaluate: bool | None = None,
     ) -> None:
+        """Store a setting. ``evaluate`` forces (True) or skips (False) the run.
+
+        Left as None the class decides: deferred classes mark the run pending.
+        """
         if is_syncing(self) or self.history.is_restoring_history:
             return
         old = self.settings.get(key)
@@ -383,11 +384,15 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         self._update_visibility()
         self.after_change()
         self.refresh_dock_context()
-        if evaluate:
+        if evaluate is None:
+            self.request_evaluation()
+        elif evaluate:
             self._pending_evaluate = False
+            self._show_changes_pending(False)
             self.evaluate.emit()
         else:
             self._pending_evaluate = True
+            self._show_changes_pending(True)
         push = (
             self.push_list_change
             if structural and isinstance(value, list)
@@ -444,27 +449,10 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
             return
         self._mark_scene_modified()
 
-    def _evaluate_pending(self) -> None:
-        """Apply one deferred evaluation, if the node is in a safe state."""
-        if not self._pending_evaluate:
-            return
-        if (
-            is_syncing(self)
-            or self.history.is_restoring_history
-            or getattr(self, "_suspend_node_evaluation", False)
-        ):
-            return
-        self._pending_evaluate = False
-        self.evaluate.emit()
-
-    def cancel_pending_evaluation(self) -> None:
-        """Drop deferred work and invalidate any queued focus-out callback."""
-        self._pending_evaluate = False
-        self._eval_generation += 1
-
     def _schedule_focus_out_evaluation(self) -> None:
         """Check focus on the next event turn and evaluate once it has left."""
-        if not self._pending_evaluate:
+        if self.DEFER_EVALUATION or not self._pending_evaluate:
+            # Deferred nodes run when the dock is left, not on editor focus-out.
             return
         self._eval_generation += 1
         generation = self._eval_generation
@@ -526,6 +514,7 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         if not self.ready():
             dock_layout.addWidget(EmptyStateLabel())
             return
+        self.release_dock_timers()  # timers of the previous dock's editors
         self._widgets, self._rows, self._stacks = {}, {}, {}
         for section_spec in self._sections():
             section = ConfigSection(
@@ -671,6 +660,11 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         if spec.kind in ("int", "float"):
             widget = QSpinBox() if spec.kind == "int" else QDoubleSpinBox()
             widget.setMinimumHeight(30)
+            if spec.kind == "float":
+                if spec.decimals is not None:
+                    widget.setDecimals(spec.decimals)
+                if spec.step is not None:
+                    widget.setSingleStep(spec.step)
             widget.setRange(spec.minimum, spec.maximum)
             widget.setValue(value if value is not None else spec.minimum)
             self._debounced(widget.valueChanged, lambda w=widget: commit(w.value()))
@@ -702,11 +696,19 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
         timer = QTimer(self)
         timer.setSingleShot(True)
         timer.setInterval(300)
-        timer.timeout.connect(fire)
+
+        def guarded() -> None:
+            try:
+                fire()
+            except RuntimeError:  # the editor it captured was destroyed
+                pass
+
+        timer.timeout.connect(guarded)
         signal.connect(lambda *_args, t=timer: t.start())
         self._timers.append(timer)
 
     def flush_pending(self) -> None:
+        """Commit every edit still inside its debounce."""
         for timer in list(self._timers):
             try:
                 if timer.isActive():
@@ -714,6 +716,25 @@ class ShapingContent(ConfigContent, SerializableContentMixin):
                     timer.timeout.emit()
             except RuntimeError:
                 continue
+
+    def release_dock_timers(self) -> None:
+        """Stop and drop every debounce timer (the dock's editors are going away).
+
+        A timer holds a callback that reads its editor; one that fires after the
+        dock was destroyed would touch a deleted widget.
+        """
+        timers, self._timers = self._timers, []
+        for timer in timers:
+            try:
+                timer.stop()
+                timer.deleteLater()
+            except RuntimeError:
+                continue
+
+    def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
+        """Commit text edits still inside their debounce, then the deferred run."""
+        self.flush_pending()
+        super().commit_pending_dock_edits(evaluate=evaluate)
 
     @staticmethod
     def _set_combo(widget: NoWheelComboBox, value: Any) -> None:

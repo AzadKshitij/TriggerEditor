@@ -8,16 +8,6 @@ aggregates duplicate X by default, line and scatter keep every row, and
 anything undrawable comes back as a message instead of a traceback.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 import polars as pl
 import pytest
 

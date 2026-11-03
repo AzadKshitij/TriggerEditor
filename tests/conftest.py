@@ -26,21 +26,35 @@ from __future__ import annotations
 
 import gc
 import os
-import sys
 import tempfile
 from pathlib import Path
 
 import pytest
 
 _ROOT = Path(__file__).resolve().parents[1]
-_SRC = _ROOT / "src"
-if str(_SRC) not in sys.path:
-    sys.path.insert(0, str(_SRC))
 
 #: Kept alive for the whole session so the directory is not garbage-collected.
 _DATA_DIR = tempfile.TemporaryDirectory(prefix="trigger-designer-tests-")
-os.environ.setdefault("TRIGGER_DESIGNER_DATA_DIR", _DATA_DIR.name)
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+# Hard-set, not setdefault: an inherited TRIGGER_DESIGNER_DATA_DIR would send
+# the whole run at the real %APPDATA%/Trigger Designer store, and an inherited
+# QT_QPA_PLATFORM=windows would open real windows and turn timing tests into
+# desktop tests.
+os.environ["TRIGGER_DESIGNER_DATA_DIR"] = _DATA_DIR.name
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+assert (
+    Path(os.environ["TRIGGER_DESIGNER_DATA_DIR"]).resolve()
+    == Path(_DATA_DIR.name).resolve()
+), "the test data dir was not applied"
+
+# Under pytest-xdist every worker is its own process, and the numeric
+# libraries below default each process's native thread pool to every core:
+# a dozen workers would each spawn core-count threads and thrash the box.
+# Cap them on workers only; a serial run keeps the library defaults.
+# POLARS_MAX_THREADS is read once at polars import, which happens after
+# conftest, so setting it here still takes effect.
+if "PYTEST_XDIST_WORKER" in os.environ:
+    os.environ.setdefault("POLARS_MAX_THREADS", "2")
+    os.environ.setdefault("OMP_NUM_THREADS", "2")
 
 from trigger_designer.qt import preferences as _preferences
 
@@ -48,21 +62,6 @@ from trigger_designer.qt import preferences as _preferences
 _preferences._legacy_scopes = list
 
 _APP = None
-
-
-def ensure_qapp():
-    """Create (or return) the process-wide QApplication."""
-    global _APP
-    from qtpy.QtWidgets import QApplication
-
-    _APP = QApplication.instance() or QApplication([])
-    return _APP
-
-
-@pytest.fixture(scope="session", autouse=True)
-def qapp():
-    return ensure_qapp()
-
 
 # -- layers ------------------------------------------------------------------
 
@@ -212,13 +211,55 @@ def _no_leaked_qt_windows(qapp):
     GlobalLogger.get_instance().set_main_window(None)
 
 
+_POOLED_THREAD_NAMES = ("NodeExecutorWorker",)
+
+
+def _pooled_threads() -> list:
+    import threading
+
+    return [
+        t
+        for t in threading.enumerate()
+        if t.is_alive() and t.name.startswith(_POOLED_THREAD_NAMES)
+    ]
+
+
+@pytest.fixture(autouse=True)
+def _no_leaked_worker_threads():
+    """Fail a test that leaves a ``NodeExecutorWorker`` thread running.
+
+    Every ``NodeExecutor`` owns one pooled daemon thread. Hundreds were left
+    idle across a session (one per Run click, never stopped), so a test or a
+    product path that discards an executor without releasing it is reported
+    here, by name.
+    """
+    before = {id(t) for t in _pooled_threads()}
+    yield
+    import time
+
+    gc.collect()
+    deadline = time.monotonic() + 2.0
+    while True:
+        leaked = [t for t in _pooled_threads() if id(t) not in before]
+        if not leaked or time.monotonic() > deadline:
+            break
+        time.sleep(0.02)
+        gc.collect()
+    if leaked:
+        pytest.fail(
+            f"{len(leaked)} NodeExecutorWorker thread(s) outlived the test: "
+            + ", ".join(f"{t.name}#{t.ident}" for t in leaked),
+            pytrace=False,
+        )
+
+
 @pytest.fixture()
 def no_modal_dialogs(monkeypatch):
     """Keep file-load and run UI out of tests, and capture what it would show.
 
     Returns a dict with ``warnings`` (validation messages that would have
     opened a QMessageBox) and ``run_code`` (the node lists ``getPyFile``
-    would have written to ``check_output.py`` in the working directory).
+    would have written to the last-run script).
     """
     from trigger_designer.qt import design_window
     from trigger_designer.qt.helpers import eval_progress, workflow_execution_mixin
@@ -243,10 +284,25 @@ def no_modal_dialogs(monkeypatch):
 
     monkeypatch.setattr(design_window, "QMessageBox", _RecordingMessageBox)
 
-    def _capture_code(_self, nodes):
+    def _capture_code(_self, nodes, path=None):
         captured["run_code"].append(nodes)
+        return ""
 
     monkeypatch.setattr(design_window.TriggerSubWindow, "getPyFile", _capture_code)
     monkeypatch.setattr(workflow_execution_mixin, "QTimer", _ImmediateQTimer)
 
     return captured
+
+
+@pytest.fixture(autouse=True)
+def _e2e_default_no_modal_dialogs(request):
+    """Every ``tests/e2e`` test runs with the modal-dialog stub applied.
+
+    A progress dialog or warning box opened by an end-to-end run would block the
+    offscreen test forever. A test that also asks for ``no_modal_dialogs`` gets
+    the same (cached) fixture value, so it is applied once.
+    """
+    if "e2e" in Path(str(request.node.fspath)).parts:
+        yield request.getfixturevalue("no_modal_dialogs")
+    else:
+        yield None

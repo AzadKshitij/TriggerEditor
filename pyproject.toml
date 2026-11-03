@@ -7,7 +7,7 @@ name = "TriggerDesigner"
 version = "0.1.0"
 description = "A visual data processing tool with node-based workflow editor"
 readme = "README.md"
-requires-python = ">=3.14,<3.15"
+requires-python = ">=3.14.0,<3.15"
 license = {text = "MIT"}
 authors = [{name = "Azad Kshitij", email = "azadkshitij08302001@gmail.com"}]
 
@@ -40,6 +40,9 @@ dependencies = [
     # File handling
     "fastexcel>=0.21.0",
     "openpyxl>=3.1.5",
+    # Writes .xlsx: Polars' DataFrame.write_excel needs it, so File Output's
+    # Excel format and the Data Profile export fail without it.
+    "xlsxwriter==3.3.0",
     "orjson==3.13.0",
     # GUI framework: PySide6 (LGPLv3), not PyQt6 (GPLv3-or-commercial). The
     # application is MIT, and a bundle that ships Qt6 cannot honestly declare
@@ -63,10 +66,12 @@ dependencies = [
     # Logging
     "loguru==0.7.3",
     "pyqtgraph==0.14.0",
+    "qt-material-icons==0.5.2",
 ]
 
 [project.scripts]
 trigger-designer = "trigger_designer.main:main"
+trigger-designer-cli = "trigger_designer.cli:main"
 
 [tool.uv]
 # Installed (editable) into the venv so the `trigger-designer` console script
@@ -96,10 +101,21 @@ branch = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# src on the path for every test; per-module sys.path.insert blocks are gone.
+pythonpath = ["src"]
 # Layers are marked automatically from the directory a test lives in
 # (see tests/conftest.py); `--strict-markers` keeps a typo from silently
 # creating an unselectable layer.
-addopts = "-ra --strict-markers"
+# pytest-xdist: -n auto spreads the suite over one worker per logical CPU.
+# Each worker is its own process - its own QApplication, its own throwaway
+# trigger-designer data dir (tests/conftest.py), its own tmp_path and
+# in-process module state - so tests cannot interfere across workers. Tests
+# that ever grow shared state or a fixed order requirement get
+# @pytest.mark.xdist_group("name"); --dist loadgroup pins same-group tests
+# to one worker while untagged tests keep load-balancing. Nothing in the
+# suite needs a group today. Escape hatches: -n 0 for a strict serial run
+# (benchmarks measuring wall-clock, --pdb sessions).
+addopts = "-ra --strict-markers -n auto --dist loadgroup"
 qt_api = "pyside6"
 # A hung test is the failure mode that used to make this suite look slow:
 # one demo ran app.exec_() for ever. Per-test, with a thread dump on expiry.
@@ -120,6 +136,7 @@ dev = [
     "pytest==9.1.1",
     "pytest-qt==4.5.0",
     "pytest-timeout==2.4.0",
+    "pytest-xdist==3.8.0",
     "ruff==0.17.2",
     "ty==0.0.91",
 ]
@@ -127,4 +144,11 @@ profiling = [
     "objgraph==3.7.0",
     "py-spy==0.4.2",
     "scalene==2.4.0",
+]
+# Documentation site. `[imaging]` pulls the Pillow and CairoSVG dependencies the
+# optimize plugin needs to minify and cache built pages.
+docs = [
+    "mkdocs-material[imaging]>=9.6",
+    "mike>=2.1",
+    "pymdown-extensions>=10.0",
 ]

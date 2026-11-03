@@ -1,0 +1,1688 @@
+{
+  "id": 2714069131888,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2714017710528,
+      "title": "File Input",
+      "pos_x": -680.0,
+      "pos_y": 0.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 2714089756352,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\data",
+        "filePathRel": "data",
+        "input_schema_version": 2,
+        "file_type": "csv",
+        "record_limit": 0,
+        "output_filename_as_field": false,
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "selected_sheet": "",
+        "available_sheets": [],
+        "start_row": 1,
+        "schema_snapshot": [
+          {
+            "name": "Period",
+            "dtype": "String"
+          },
+          {
+            "name": "Org Code",
+            "dtype": "String"
+          },
+          {
+            "name": "Parent Org",
+            "dtype": "String"
+          },
+          {
+            "name": "Org name",
+            "dtype": "String"
+          },
+          {
+            "name": "A&E attendances Type 1",
+            "dtype": "String"
+          },
+          {
+            "name": "A&E attendances Type 2",
+            "dtype": "String"
+          },
+          {
+            "name": "A&E attendances Other A&E Department",
+            "dtype": "String"
+          },
+          {
+            "name": "A&E attendances Booked Appointments Type 1",
+            "dtype": "String"
+          },
+          {
+            "name": "A&E attendances Booked Appointments Type 2",
+            "dtype": "String"
+          },
+          {
+            "name": "A&E attendances Booked Appointments Other Department",
+            "dtype": "String"
+          },
+          {
+            "name": "Attendances over 4hrs Type 1",
+            "dtype": "String"
+          },
+          {
+            "name": "Attendances over 4hrs Type 2",
+            "dtype": "String"
+          },
+          {
+            "name": "Attendances over 4hrs Other Department",
+            "dtype": "String"
+          },
+          {
+            "name": "Attendances over 4hrs Booked Appointments Type 1",
+            "dtype": "String"
+          },
+          {
+            "name": "Attendances over 4hrs Booked Appointments Type 2",
+            "dtype": "String"
+          },
+          {
+            "name": "Attendances over 4hrs Booked Appointments Other Department",
+            "dtype": "String"
+          },
+          {
+            "name": "Patients who have waited 4-12 hs from DTA to admission",
+            "dtype": "String"
+          },
+          {
+            "name": "Patients who have waited 12+ hrs from DTA to admission",
+            "dtype": "String"
+          },
+          {
+            "name": "Emergency admissions via A&E - Type 1",
+            "dtype": "String"
+          },
+          {
+            "name": "Emergency admissions via A&E - Type 2",
+            "dtype": "String"
+          },
+          {
+            "name": "Emergency admissions via A&E - Other A&E department",
+            "dtype": "String"
+          },
+          {
+            "name": "Other emergency admissions",
+            "dtype": "String"
+          }
+        ],
+        "file_metadata": {
+          "size_bytes": 28844,
+          "modified_time": 1793425812,
+          "file_count": 12,
+          "total_size_bytes": 350081,
+          "newest_modified_time": 1793425812
+        },
+        "file_name_column_name": "FileName",
+        "file_name_value": "name",
+        "include_patterns": [],
+        "exclude_patterns": [
+          "~$*",
+          ".*",
+          "Thumbs.db",
+          "desktop.ini"
+        ],
+        "recursive": false,
+        "file_order": "name",
+        "schema_mismatch": "union",
+        "on_file_error": "stop",
+        "max_files": 10000,
+        "encoding": "utf8",
+        "read_as_text": false,
+        "json_nested": "text",
+        "sheet_mode": "one",
+        "selected_sheets": [],
+        "add_sheet_name_column": false,
+        "sheet_name_column_name": "SheetName",
+        "db_mode": "table",
+        "db_table": "",
+        "db_query": ""
+      },
+      "label_text": "12 monthly NHS files",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 2714089754624,
+      "title": "Cleansing",
+      "pos_x": -380.0,
+      "pos_y": 0.0,
+      "inputs": [
+        {
+          "id": 2714090047360,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714090047936,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "remove_null_rows": false,
+          "remove_null_rows_from_selected_columns": false,
+          "remove_null_columns": false,
+          "replace_null_strings": true,
+          "replace_null_numbers": true,
+          "strip_whitespace": true,
+          "normalize_spaces": true,
+          "remove_all_whitespace": false,
+          "case_modification": "none",
+          "remove_letters": false,
+          "remove_numbers": false,
+          "remove_punctuation": false,
+          "selected_fields": [
+            "Period",
+            "Org Code",
+            "Parent Org",
+            "Org name"
+          ]
+        }
+      },
+      "label_text": "Trim names",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "preparation",
+      "op": "preparation.cleansing"
+    },
+    {
+      "id": 2714090052928,
+      "title": "Filter",
+      "pos_x": -80.0,
+      "pos_y": 0.0,
+      "inputs": [
+        {
+          "id": 2714090458368,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714090459136,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2714090459904,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "mode": "builder",
+          "column": "Org Code",
+          "operation": "Not Equals",
+          "value": "TOTAL",
+          "value2": "",
+          "expression": ""
+        }
+      },
+      "label_text": "Drop TOTAL row",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2714090466752,
+      "title": "Select",
+      "pos_x": 220.0,
+      "pos_y": 0.0,
+      "inputs": [
+        {
+          "id": 2714090457152,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714089344512,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "columns": [
+            {
+              "name": "Period",
+              "selected": true,
+              "dtype": "String",
+              "rename": "Period",
+              "date_format": "",
+              "dtype_custom": false
+            },
+            {
+              "name": "Org Code",
+              "selected": true,
+              "dtype": "String",
+              "rename": "OrgCode",
+              "date_format": "",
+              "dtype_custom": false
+            },
+            {
+              "name": "Parent Org",
+              "selected": true,
+              "dtype": "String",
+              "rename": "Region",
+              "date_format": "",
+              "dtype_custom": false
+            },
+            {
+              "name": "Org name",
+              "selected": true,
+              "dtype": "String",
+              "rename": "Trust",
+              "date_format": "",
+              "dtype_custom": false
+            },
+            {
+              "name": "A&E attendances Type 1",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "AttT1",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "A&E attendances Type 2",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "AttT2",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "A&E attendances Other A&E Department",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "AttOther",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "A&E attendances Booked Appointments Type 1",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "BookT1",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "A&E attendances Booked Appointments Type 2",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "BookT2",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "A&E attendances Booked Appointments Other Department",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "BookOther",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Attendances over 4hrs Type 1",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "OverT1",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Attendances over 4hrs Type 2",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "OverT2",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Attendances over 4hrs Other Department",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "OverOther",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Attendances over 4hrs Booked Appointments Type 1",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "OverBookT1",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Attendances over 4hrs Booked Appointments Type 2",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "OverBookT2",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Attendances over 4hrs Booked Appointments Other Department",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "OverBookOther",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Patients who have waited 4-12 hs from DTA to admission",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "Wait4to12h",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Patients who have waited 12+ hrs from DTA to admission",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "Wait12h",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Emergency admissions via A&E - Type 1",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "EmAdmT1",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Emergency admissions via A&E - Type 2",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "EmAdmT2",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Emergency admissions via A&E - Other A&E department",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "EmAdmOther",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "Other emergency admissions",
+              "selected": true,
+              "dtype": "Int64",
+              "rename": "EmAdmOtherSrc",
+              "date_format": "",
+              "dtype_custom": true
+            }
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "Rename + cast",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 2714090806848,
+      "title": "Formula",
+      "pos_x": 520.0,
+      "pos_y": 0.0,
+      "inputs": [
+        {
+          "id": 2714090947584,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714090948288,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Month",
+              "formula_text": "strptime(regexp_extract([Period], '([A-Z]+)-([0-9]{4})$', 0), '%B-%Y')",
+              "target_dtype": "Date",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Attendances",
+              "formula_text": "[AttT1] + [AttT2] + [AttOther] + [BookT1] + [BookT2] + [BookOther]",
+              "target_dtype": "Integer",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Over4",
+              "formula_text": "[OverT1] + [OverT2] + [OverOther] + [OverBookT1] + [OverBookT2] + [OverBookOther]",
+              "target_dtype": "Integer",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Type1Att",
+              "formula_text": "[AttT1] + [BookT1]",
+              "target_dtype": "Integer",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Type1Over4",
+              "formula_text": "[OverT1] + [OverBookT1]",
+              "target_dtype": "Integer",
+              "editor_height": 120
+            }
+          ]
+        }
+      },
+      "label_text": "Totals",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2714090953856,
+      "title": "Formula",
+      "pos_x": 820.0,
+      "pos_y": 0.0,
+      "inputs": [
+        {
+          "id": 2714090960768,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714090961536,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Within4Pct",
+              "formula_text": "round(([Attendances] - [Over4]) * 100.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Type1Within4Pct",
+              "formula_text": "CASE WHEN [Type1Att] > 0 THEN round(([Type1Att] - [Type1Over4]) * 100.0 / [Type1Att], 2) ELSE NULL END",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Wait12Per1k",
+              "formula_text": "round([Wait12h] * 1000.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "GapTo95",
+              "formula_text": "round([Within4Pct] - 95, 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Severity",
+              "formula_text": "CASE WHEN [Type1Within4Pct] < 60 THEN 'Critical' WHEN [Type1Within4Pct] < 70 THEN 'Watch' ELSE 'OK' END",
+              "target_dtype": "String",
+              "editor_height": 120
+            }
+          ]
+        }
+      },
+      "label_text": "Rates + severity",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2714090984640,
+      "title": "Aggregate",
+      "pos_x": 1140.0,
+      "pos_y": -240.0,
+      "inputs": [
+        {
+          "id": 2714091096128,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714090046656,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "actions": [
+            {
+              "field": "Month",
+              "action": "GroupBy",
+              "output_name": "Month"
+            },
+            {
+              "field": "Attendances",
+              "action": "Sum",
+              "output_name": "Attendances"
+            },
+            {
+              "field": "Over4",
+              "action": "Sum",
+              "output_name": "Over4"
+            },
+            {
+              "field": "Type1Att",
+              "action": "Sum",
+              "output_name": "Type1Att"
+            },
+            {
+              "field": "Type1Over4",
+              "action": "Sum",
+              "output_name": "Type1Over4"
+            },
+            {
+              "field": "Wait12h",
+              "action": "Sum",
+              "output_name": "Wait12h"
+            },
+            {
+              "field": "Wait4to12h",
+              "action": "Sum",
+              "output_name": "Wait4to12h"
+            },
+            {
+              "field": "EmAdmT1",
+              "action": "Sum",
+              "output_name": "EmAdmT1"
+            }
+          ]
+        }
+      },
+      "label_text": "National by month",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2714091103168,
+      "title": "Formula",
+      "pos_x": 1440.0,
+      "pos_y": -240.0,
+      "inputs": [
+        {
+          "id": 2714091108096,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091108608,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Within4Pct",
+              "formula_text": "round(([Attendances] - [Over4]) * 100.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Type1Within4Pct",
+              "formula_text": "round(([Type1Att] - [Type1Over4]) * 100.0 / [Type1Att], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "GapTo95",
+              "formula_text": "round([Within4Pct] - 95, 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Wait12Per1k",
+              "formula_text": "round([Wait12h] * 1000.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            }
+          ]
+        }
+      },
+      "label_text": "Monthly rates",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2714085391424,
+      "title": "Sort",
+      "pos_x": 1740.0,
+      "pos_y": -240.0,
+      "inputs": [
+        {
+          "id": 2714091171840,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091172608,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "keys": [
+            {
+              "column": "Month",
+              "order": "Ascending"
+            }
+          ]
+        }
+      },
+      "label_text": "Order months",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2714089159744,
+      "title": "Unpivot",
+      "pos_x": 2040.0,
+      "pos_y": -240.0,
+      "inputs": [
+        {
+          "id": 2714091222592,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091223296,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "id_columns": [
+            "Month"
+          ],
+          "value_columns": [
+            "Within4Pct",
+            "Type1Within4Pct"
+          ],
+          "variable_name": "Metric",
+          "value_name": "Percent",
+          "drop_nulls": false
+        }
+      },
+      "label_text": "Long for chart",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "transform",
+      "op": "transform.unpivot"
+    },
+    {
+      "id": 2714091263872,
+      "title": "Graph",
+      "pos_x": 2340.0,
+      "pos_y": -240.0,
+      "inputs": [
+        {
+          "id": 2714091477184,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091476544,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "graph_type": "line",
+          "x_column": "Month",
+          "y_column": "Percent",
+          "color_column": "Metric",
+          "aggregation": "none",
+          "title": "A&E 4-hour performance, Apr 2025 - Mar 2026",
+          "renderer": "matplotlib"
+        }
+      },
+      "label_text": "Trend chart",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "report",
+      "op": "report.graph"
+    },
+    {
+      "id": 2714091418944,
+      "title": "File Output",
+      "pos_x": 2020.0,
+      "pos_y": -60.0,
+      "inputs": [
+        {
+          "id": 2714091408320,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "settings": {
+          "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\output\\national_monthly.csv",
+          "file_format": "csv",
+          "delimiter": ",",
+          "include_bom": false,
+          "compression": "snappy"
+        }
+      },
+      "label_text": "national_monthly.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2714091351872,
+      "title": "Aggregate",
+      "pos_x": 1140.0,
+      "pos_y": 120.0,
+      "inputs": [
+        {
+          "id": 2714091346816,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091396928,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "actions": [
+            {
+              "field": "OrgCode",
+              "action": "GroupBy",
+              "output_name": "OrgCode"
+            },
+            {
+              "field": "Trust",
+              "action": "Last",
+              "output_name": "Trust"
+            },
+            {
+              "field": "Region",
+              "action": "Last",
+              "output_name": "Region"
+            },
+            {
+              "field": "Attendances",
+              "action": "Sum",
+              "output_name": "Attendances"
+            },
+            {
+              "field": "Over4",
+              "action": "Sum",
+              "output_name": "Over4"
+            },
+            {
+              "field": "Type1Att",
+              "action": "Sum",
+              "output_name": "Type1Att"
+            },
+            {
+              "field": "Type1Over4",
+              "action": "Sum",
+              "output_name": "Type1Over4"
+            },
+            {
+              "field": "Wait12h",
+              "action": "Sum",
+              "output_name": "Wait12h"
+            },
+            {
+              "field": "Month",
+              "action": "Count",
+              "output_name": "MonthsReported"
+            }
+          ]
+        }
+      },
+      "label_text": "Annual by trust",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2714091522368,
+      "title": "Formula",
+      "pos_x": 1440.0,
+      "pos_y": 120.0,
+      "inputs": [
+        {
+          "id": 2714091525888,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091526656,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Within4Pct",
+              "formula_text": "round(([Attendances] - [Over4]) * 100.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Type1Within4Pct",
+              "formula_text": "CASE WHEN [Type1Att] > 0 THEN round(([Type1Att] - [Type1Over4]) * 100.0 / [Type1Att], 2) ELSE NULL END",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Wait12Per1k",
+              "formula_text": "round([Wait12h] * 1000.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "GapTo95",
+              "formula_text": "round([Within4Pct] - 95, 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Severity",
+              "formula_text": "CASE WHEN [Type1Within4Pct] < 60 THEN 'Critical' WHEN [Type1Within4Pct] < 70 THEN 'Watch' ELSE 'OK' END",
+              "target_dtype": "String",
+              "editor_height": 120
+            }
+          ]
+        }
+      },
+      "label_text": "Trust rates",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2714091536320,
+      "title": "Filter",
+      "pos_x": 1740.0,
+      "pos_y": 120.0,
+      "inputs": [
+        {
+          "id": 2714091720768,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091721408,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2714091722240,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "mode": "builder",
+          "column": "Type1Att",
+          "operation": "Greater Than",
+          "value": "0",
+          "value2": "",
+          "expression": ""
+        }
+      },
+      "label_text": "Major A&E only",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "preparation",
+      "op": "preparation.filter"
+    },
+    {
+      "id": 2714091731968,
+      "title": "Sort",
+      "pos_x": 2040.0,
+      "pos_y": 120.0,
+      "inputs": [
+        {
+          "id": 2714091785984,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091786688,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "keys": [
+            {
+              "column": "Type1Within4Pct",
+              "order": "Ascending"
+            }
+          ]
+        }
+      },
+      "label_text": "Worst first",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2714091797248,
+      "title": "Select Records",
+      "pos_x": 2340.0,
+      "pos_y": 120.0,
+      "inputs": [
+        {
+          "id": 2714091885696,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091886464,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2714091887296,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "mode": "first_n",
+          "n": 15,
+          "range_start": 1,
+          "range_end": 100,
+          "by": "",
+          "ties": "exact",
+          "group_by": []
+        }
+      },
+      "label_text": "Top 15",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 12,
+      "node_type": "preparation",
+      "op": "preparation.select_records"
+    },
+    {
+      "id": 2714091965056,
+      "title": "Graph",
+      "pos_x": 2640.0,
+      "pos_y": 120.0,
+      "inputs": [
+        {
+          "id": 2714091969920,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714091970496,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "graph_type": "bar",
+          "x_column": "OrgCode",
+          "y_column": "Type1Within4Pct",
+          "color_column": "",
+          "aggregation": "none",
+          "title": "Worst 15 trusts, Type 1 seen within 4 hours (2025/26)",
+          "renderer": "pyqtgraph"
+        }
+      },
+      "label_text": "Watchlist chart",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 1,
+      "node_type": "report",
+      "op": "report.graph"
+    },
+    {
+      "id": 2714092032320,
+      "title": "File Output",
+      "pos_x": 2300.0,
+      "pos_y": 280.0,
+      "inputs": [
+        {
+          "id": 2714092036224,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "settings": {
+          "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\output\\trust_watchlist.csv",
+          "file_format": "csv",
+          "delimiter": ",",
+          "include_bom": false,
+          "compression": "snappy"
+        }
+      },
+      "label_text": "trust_watchlist.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 2714092113024,
+      "title": "Aggregate",
+      "pos_x": 1140.0,
+      "pos_y": 340.0,
+      "inputs": [
+        {
+          "id": 2714092118016,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714092118720,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "actions": [
+            {
+              "field": "Region",
+              "action": "GroupBy",
+              "output_name": "Region"
+            },
+            {
+              "field": "Attendances",
+              "action": "Sum",
+              "output_name": "Attendances"
+            },
+            {
+              "field": "Over4",
+              "action": "Sum",
+              "output_name": "Over4"
+            },
+            {
+              "field": "Type1Att",
+              "action": "Sum",
+              "output_name": "Type1Att"
+            },
+            {
+              "field": "Type1Over4",
+              "action": "Sum",
+              "output_name": "Type1Over4"
+            },
+            {
+              "field": "Wait12h",
+              "action": "Sum",
+              "output_name": "Wait12h"
+            }
+          ]
+        }
+      },
+      "label_text": "By region",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 2714092180096,
+      "title": "Formula",
+      "pos_x": 1440.0,
+      "pos_y": 340.0,
+      "inputs": [
+        {
+          "id": 2714092184960,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714092185728,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "sections": [
+            {
+              "target_column": "Within4Pct",
+              "formula_text": "round(([Attendances] - [Over4]) * 100.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Type1Within4Pct",
+              "formula_text": "round(([Type1Att] - [Type1Over4]) * 100.0 / [Type1Att], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "Wait12Per1k",
+              "formula_text": "round([Wait12h] * 1000.0 / [Attendances], 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            },
+            {
+              "target_column": "GapTo95",
+              "formula_text": "round([Within4Pct] - 95, 2)",
+              "target_dtype": "Float",
+              "editor_height": 120
+            }
+          ]
+        }
+      },
+      "label_text": "Region rates",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "preparation",
+      "op": "preparation.formula"
+    },
+    {
+      "id": 2714092264576,
+      "title": "Sort",
+      "pos_x": 1740.0,
+      "pos_y": 340.0,
+      "inputs": [
+        {
+          "id": 2714092269248,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2714092270016,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "keys": [
+            {
+              "column": "Within4Pct",
+              "order": "Ascending"
+            }
+          ]
+        }
+      },
+      "label_text": "Worst first",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 2714092349696,
+      "title": "File Output",
+      "pos_x": 2040.0,
+      "pos_y": 340.0,
+      "inputs": [
+        {
+          "id": 2714092353664,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "settings": {
+          "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\output\\region_summary.csv",
+          "file_format": "csv",
+          "delimiter": ",",
+          "include_bom": false,
+          "compression": "snappy"
+        }
+      },
+      "label_text": "region_summary.csv",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    },
+    {
+      "id": 1886772921664,
+      "title": "Text to Columns",
+      "pos_x": -520.0,
+      "pos_y": -180.0,
+      "inputs": [
+        {
+          "id": 1886778881536,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 1886782745664,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "column": "Period",
+          "split_mode": "delimiter",
+          "pattern": "-",
+          "output": "columns",
+          "max_splits": 3,
+          "names": "Name, Month, Year",
+          "trim": true,
+          "keep_original": true,
+          "skip_empty": false,
+          "row_index_column": ""
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 15,
+      "node_type": "preparation",
+      "op": "preparation.text_to_columns"
+    }
+  ],
+  "edges": [
+    {
+      "id": 2714089255808,
+      "edge_type": 1,
+      "start": 2714089756352,
+      "end": 2714090047360,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714017515792,
+      "edge_type": 1,
+      "start": 2714090047936,
+      "end": 2714090458368,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714090315984,
+      "edge_type": 1,
+      "start": 2714090459136,
+      "end": 2714090457152,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714090639600,
+      "edge_type": 1,
+      "start": 2714089344512,
+      "end": 2714090947584,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714090640208,
+      "edge_type": 1,
+      "start": 2714090948288,
+      "end": 2714090960768,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714090679056,
+      "edge_type": 1,
+      "start": 2714090961536,
+      "end": 2714091096128,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091897728,
+      "edge_type": 1,
+      "start": 2714090046656,
+      "end": 2714091108096,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091898272,
+      "edge_type": 1,
+      "start": 2714091108608,
+      "end": 2714091171840,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714109020752,
+      "edge_type": 1,
+      "start": 2714091172608,
+      "end": 2714091222592,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714109021264,
+      "edge_type": 1,
+      "start": 2714091223296,
+      "end": 2714091477184,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091330672,
+      "edge_type": 2,
+      "start": 2714091172608,
+      "end": 2714091408320,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091331152,
+      "edge_type": 1,
+      "start": 2714090961536,
+      "end": 2714091346816,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714089912624,
+      "edge_type": 1,
+      "start": 2714091396928,
+      "end": 2714091525888,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091848208,
+      "edge_type": 1,
+      "start": 2714091526656,
+      "end": 2714091720768,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714092292624,
+      "edge_type": 1,
+      "start": 2714091721408,
+      "end": 2714091785984,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714109034960,
+      "edge_type": 1,
+      "start": 2714091786688,
+      "end": 2714092036224,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714109035344,
+      "edge_type": 1,
+      "start": 2714091786688,
+      "end": 2714091885696,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714090162848,
+      "edge_type": 1,
+      "start": 2714091886464,
+      "end": 2714091969920,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091575744,
+      "edge_type": 1,
+      "start": 2714090961536,
+      "end": 2714092118016,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091575920,
+      "edge_type": 1,
+      "start": 2714092118720,
+      "end": 2714092184960,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091576096,
+      "edge_type": 1,
+      "start": 2714092185728,
+      "end": 2714092269248,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2714091576272,
+      "edge_type": 1,
+      "start": 2714092270016,
+      "end": 2714092353664,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 1886786376272,
+      "edge_type": 5,
+      "start": 2714089756352,
+      "end": 1886778881536,
+      "label": "",
+      "input_index": 0
+    }
+  ],
+  "groups": [],
+  "comments": [],
+  "workflow_metadata": {
+    "schema_version": 2,
+    "app_version": "0.1.0",
+    "saved_at": "2026-10-31T15:52:58Z",
+    "workflow_uuid": "2ecc7364-2f02-450e-92d1-742a2ec82dbb"
+  }
+}

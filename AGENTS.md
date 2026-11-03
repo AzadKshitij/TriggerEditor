@@ -15,7 +15,7 @@
   for those states — `{button_hover}` is ~invisible against `{button_bg}`.
   Keep a constant 1px base border so hover does not shift layout.
 - Layout tokens: main `spacing 2, margins 5`; toolbar `H40 margins 0`;
-  controls `H30`; icon buttons `30x30 / 12px`.
+  controls `H30`; icon buttons `30x30 / 16px`.
 - Live-by-default with ~300ms debounce on text/search; history entries
   `"Noun Verbed"` and only on real diff.
 
@@ -46,8 +46,8 @@ Prefer the helpers on `TriggerContentUndoMixin` (inherited via
 |---|---|
 | `self.push_property_change(path, old, new, text, merge_key=...)` | one setting: a dtype, a filter operation, a selected column |
 | `self.push_list_change(path, old, new, text)` | a collection that changes *size*: formula sections, join mapping rows. Rebuilds widgets on restore. |
-| `self.registerInputWidget(w, text=..., merge_key=...)` | a Config Dock control. Handles debounce, diffing and the restore guard. |
-| `self.history.storeHistory(...)` | fallback. Serializes the whole scene; correct but heavy. Prefer the above. |
+| `self.registerInputWidget(w, text=..., merge_key=...)` | a Config Dock control. Debounces and diffs; **records a whole-scene snapshot (and for File Input re-reads the file) unless the node binds the control with an explicit `path=` through `push_property_change`**. |
+| `self.history.storeHistory(...)` | fallback. Serializes the whole scene; correct but heavy. |
 
 `path` is dotted on the **content** widget and may cross from an attribute into
 dict keys: `("changes", "rename_mapping")` sets `content.changes["rename_mapping"]`.

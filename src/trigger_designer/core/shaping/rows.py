@@ -70,7 +70,16 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     values, _capped = _generate(settings)
     generated = pl.DataFrame({name: values}).lazy()
     if frames and frames[0] is not None:
-        return [pl.concat([as_lazy(frames[0]), generated], how="horizontal")]
+        source = as_lazy(frames[0])
+        height = int(source.select(pl.len()).collect().item())
+        if height != len(values):
+            raise ShapingError(
+                "TD-SHAPE-130",
+                f"The input has {height:,} rows but Rows generated "
+                f"{len(values):,} values; the new column is placed beside the "
+                "input, so the counts must match",
+            )
+        return [pl.concat([source, generated], how="horizontal")]
     return [generated]
 
 

@@ -1,0 +1,187 @@
+site_name: Trigger Designer
+site_description: >-
+  User guide and node reference for Trigger Designer, a visual workbench for
+  building data pipelines without writing code.
+site_author: Azad Kshitij
+site_url: https://azadkshitij.github.io/TriggerEditor/
+repo_url: https://github.com/AzadKshitij/TriggerEditor
+repo_name: AzadKshitij/TriggerEditor
+
+docs_dir: docs
+site_dir: site
+
+# Engineering notes, archived guides and plans live in docs/internal/. They stay
+# in the repository for maintainers but are never published.
+exclude_docs: |
+  internal/
+
+theme:
+  name: material
+  custom_dir: overrides
+  language: en
+  logo: assets/logo.png
+  favicon: assets/logo.png
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.select
+    - content.tabs.link
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/shortcuts.js
+
+nav:
+  - Home: index.md
+  - Getting started: guide/README.md
+  - Concepts:
+      - The canvas and nodes: guide/canvas-and-nodes.md
+      - Config Dock, preview, logs and problems: guide/config-dock-and-preview.md
+      - Running workflows: guide/running-workflows.md
+      - Errors and problems: guide/errors-and-problems.md
+      - Files and formats: guide/files-and-formats.md
+      - Run history and the audit trail: guide/run-history-and-audit-trail.md
+      - Limits and performance: guide/limits-and-performance.md
+      - Security and privacy: guide/security-and-privacy.md
+      - Preferences: guide/preferences.md
+  - Nodes:
+      - Node reference: nodes/index.md
+      - Input and Output:
+          - nodes/input-output/index.md
+          - File Input: nodes/input-output/file-input.md
+          - File Output: nodes/input-output/file-output.md
+          - Workpaper Output: nodes/input-output/workpaper-output.md
+      - Preparation:
+          - nodes/preparation/index.md
+          - Cleansing: nodes/preparation/cleansing.md
+          - Filter: nodes/preparation/filter.md
+          - Formula: nodes/preparation/formula.md
+          - Multi-Field Formula: nodes/preparation/multi-field-formula.md
+          - Aggregate: nodes/preparation/aggregate.md
+          - Select: nodes/preparation/select.md
+          - Sort: nodes/preparation/sort.md
+          - Unique: nodes/preparation/unique.md
+          - Split: nodes/preparation/split.md
+          - Rows: nodes/preparation/rows.md
+          - Normalize: nodes/preparation/normalize.md
+          - Record ID: nodes/preparation/record-id.md
+          - Select Records: nodes/preparation/select-records.md
+          - Find and Replace: nodes/preparation/find-and-replace.md
+          - Date Helper: nodes/preparation/date-helper.md
+          - Text to Columns: nodes/preparation/text-to-columns.md
+      - Join:
+          - nodes/join/index.md
+          - Join: nodes/join/join.md
+          - Append: nodes/join/append.md
+          - Union: nodes/join/union.md
+          - Reconcile: nodes/join/reconcile.md
+          - Fuzzy Match: nodes/join/fuzzy-match.md
+      - Transform:
+          - nodes/transform/index.md
+          - Count: nodes/transform/count.md
+          - Running Total: nodes/transform/running-total.md
+          - Transpose: nodes/transform/transpose.md
+          - Pivot: nodes/transform/pivot.md
+          - Unpivot: nodes/transform/unpivot.md
+          - Window: nodes/transform/window.md
+          - SQL Query: nodes/transform/sql-query.md
+      - Report:
+          - nodes/report/index.md
+          - Graph: nodes/report/graph.md
+          - Data Profile: nodes/report/data-profile.md
+          - Comment: nodes/report/comment.md
+      - Audit:
+          - nodes/audit/index.md
+          - Duplicates: nodes/audit/duplicates.md
+          - Gaps: nodes/audit/gaps.md
+          - Benford: nodes/audit/benford.md
+          - Sample: nodes/audit/sample.md
+          - Risk Filters: nodes/audit/risk-filters.md
+  - Workpapers: guide/workpaper.md
+  - Command line: guide/cli.md
+  - Troubleshooting and FAQ: guide/troubleshooting-and-faq.md
+  - Versioning: versions.md
+  - Contributing:
+      - Writing node pages: contributing/writing-style.md
+      - Design system: DESIGN_SYSTEM.md
+
+plugins:
+  - search:
+      lang: en
+      separator: '[\s\u200b\-]'
+  - optimize:
+      cache: true
+      cache_dir: .cache/plugin/optimize
+      # Image optimisation shells out to pngquant and jpegoptim. Turn it on
+      # where those binaries exist (the CI workflow installs them); everywhere
+      # else the plugin still minifies HTML, CSS and JavaScript.
+      optimize: !ENV [DOCS_OPTIMIZE_IMAGES, false]
+      # Engineering notes are archived under docs/internal/ and excluded from
+      # the site; their images stay out of the image pipeline too.
+      optimize_exclude:
+        - "internal/**"
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+validation:
+  omitted_files: warn
+  absolute_links: warn
+  unrecognized_links: warn
+  anchors: warn
+
+extra:
+  version:
+    provider: mike
+    default: latest

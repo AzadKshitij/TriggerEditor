@@ -438,7 +438,7 @@ class WinCaption:
             if bytes(event_type) != b"windows_generic_MSG":
                 return (False, 0)
             native = wintypes.MSG.from_address(int(message))
-        except (TypeError, ValueError):  # pragma: no cover - not a real message
+        except TypeError, ValueError:  # pragma: no cover - not a real message
             return (False, 0)
         if int(native.hWnd) != self._hwnd:
             return (False, 0)

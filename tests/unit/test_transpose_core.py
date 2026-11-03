@@ -86,6 +86,18 @@ def test_missing_data_columns_are_skipped(action: str) -> None:
     ) == [("1 data column(s) missing", "warning")]
 
 
+def test_ignore_is_silent_and_warn_shows_the_chip() -> None:
+    settings = {"key_columns": ["gone_key"], "data_columns": ["gone", "a"]}
+    assert core.describe([_frame()], {**settings, "missing_action": "ignore"}) == []
+    assert core.describe([_frame()], {**settings, "missing_action": "warn"}) == [
+        ("1 data column(s) missing", "warning"),
+        ("1 key column(s) missing", "warning"),
+    ]
+    # Ignore still drops the missing column from the result.
+    out = core.run_node([_frame()], {**settings, "missing_action": "ignore"}).pop()
+    assert out.collect()["Name"].unique().to_list() == ["a"]
+
+
 def test_missing_data_column_with_error_raises() -> None:
     with pytest.raises(ShapingError) as error:
         core.run_node(

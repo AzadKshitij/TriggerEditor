@@ -44,10 +44,6 @@ ACTION_TO_FUNCTION = {
     "List": "list",
 }
 
-FUNCTION_TO_ACTION = {
-    function: action for action, function in ACTION_TO_FUNCTION.items()
-}
-
 PREFIX_MAP = {
     "GroupBy": "",
     "Count": "Count_",
@@ -162,7 +158,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         )
 
     if group_fields:
-        grouped = frame.group_by(group_fields)
+        grouped = frame.group_by(group_fields, maintain_order=True)
         result = (
             grouped.agg(expressions)
             if expressions

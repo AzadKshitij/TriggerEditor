@@ -740,12 +740,6 @@ class ColumnPicker(QPushButton):
         if emit and before != self.checked():
             self.changed.emit(self.checked())
 
-    def set_selected_quiet(self, names: Iterable[str]) -> None:
-        self._model.set_selected(names)
-        self._render()
-        if self._popup is not None:
-            self._popup.refresh()
-
     def checked(self) -> list[str]:
         return self._model.selected_names()
 
@@ -844,13 +838,6 @@ class ColumnPicker(QPushButton):
                 self.changed.emit(self.checked())
         if self._single:
             self.close_popup()
-
-    def _set_all(self, checked: bool) -> None:
-        """Compatibility helper used by older tests and callers."""
-        if checked:
-            self.select_all_visible()
-        else:
-            self.clear_visible()
 
     def display_tokens(self) -> tuple[list[str], int]:
         """Names shown in the trigger and how many are collapsed."""

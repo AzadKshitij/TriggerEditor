@@ -1,2 +1,0 @@
-- Do not touch incoming data keep it as it is.
-- Update self.data with the new data.

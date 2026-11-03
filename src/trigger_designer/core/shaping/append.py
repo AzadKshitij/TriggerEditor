@@ -10,6 +10,25 @@ DEFAULTS = {"how": "diagonal_relaxed"}
 HOW_VALUES = ("vertical", "horizontal", "diagonal", "diagonal_relaxed")
 
 
+def _schema_difference(left: dict, right: dict) -> str:
+    """Say what differs: missing columns, different types, or only the order."""
+    parts: list[str] = []
+    left_only = [name for name in left if name not in right]
+    right_only = [name for name in right if name not in left]
+    if left_only:
+        parts.append(f"left-only: {left_only}")
+    if right_only:
+        parts.append(f"right-only: {right_only}")
+    for name, dtype in left.items():
+        if name in right and right[name] != dtype:
+            parts.append(
+                f"'{name}' is {dtype} on the left but {right[name]} on the right"
+            )
+    if not parts:
+        parts.append("the same columns and types, but in a different order")
+    return "; ".join(parts)
+
+
 def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     left = as_lazy(frames[0])
     right = as_lazy(frames[1])
@@ -20,13 +39,11 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     if how == "vertical":
         left_schema = schema_of(left)
         right_schema = schema_of(right)
-        if left_schema != right_schema:
-            left_only = [name for name in left_schema if name not in right_schema]
-            right_only = [name for name in right_schema if name not in left_schema]
+        if list(left_schema.items()) != list(right_schema.items()):
             raise ShapingError(
                 "TD-SHAPE-004",
-                f"schemas differ (left-only: {left_only}, "
-                f"right-only: {right_only}). Try 'diagonal_relaxed'.",
+                f"schemas differ ({_schema_difference(left_schema, right_schema)}). "
+                "Try 'diagonal_relaxed'.",
             )
 
     return [pl.concat([left, right], how=how)]

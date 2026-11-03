@@ -1,12 +1,5 @@
 """Dependency ordering comes from nodeeditor.node_graph, not a private sort."""
 
-import os
-import sys
-from pathlib import Path
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-
 import pytest
 from nodeeditor.node_graph import GraphCycleError, topological_order
 from qtpy.QtWidgets import QApplication
@@ -66,21 +59,6 @@ def test_independent_nodes_keep_creation_order() -> None:
         ]
 
         assert topological_order(window.scene) == nodes
-        assert window.topologicalSort() == nodes
-    finally:
-        window.close()
-
-
-def test_topological_sort_wrapper_matches_package_order() -> None:
-    window = TriggerSubWindow()
-    try:
-        source = OrderNode(window.scene, [], [1], "source")
-        target = OrderNode(window.scene, [1], [], "target")
-        _edge(window.scene, source.outputs[0], target.inputs[0])
-
-        assert window.topologicalSort(window.getNodeConnections()) == (
-            topological_order(window.scene)
-        )
     finally:
         window.close()
 

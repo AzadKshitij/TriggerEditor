@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import codecs
+import locale
 import os
 import tempfile
+import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -10,7 +13,8 @@ from loguru import logger
 from nodeeditor.node_edge import Edge
 from nodeeditor.node_graphics_edge import QDMGraphicsEdge
 from nodeeditor.node_multi_input_node import MultiInputNode
-from nodeeditor.node_scene import Scene
+from nodeeditor.node_scene import InvalidFile, Scene
+from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
 from trigger_designer.qt.helpers.evaluation import EvaluationCoordinator
@@ -165,6 +169,7 @@ class TriggerScene(Scene):
         self._eval_depth = 0
         self.evaluator = EvaluationCoordinator(self)
         self.loaded_workflow_metadata: dict[str, object] = {}
+        self._workflow_uuid: str | None = None
         #: Set by helpers.eval_progress.eval_progress_dialog while a
         #: progress dialog is driving a load/recompute; None otherwise.
         self._eval_progress_cb = None
@@ -212,13 +217,33 @@ class TriggerScene(Scene):
         target = self._save_target or self.filename
         return os.path.dirname(os.path.abspath(target)) if target else None
 
+    _workflow_uuid: str | None = None
+
+    @property
+    def workflow_uuid(self) -> str:
+        """Identity of this document: stable across saves, new for File > New."""
+        if not self._workflow_uuid:
+            known = self.loaded_workflow_metadata.get("workflow_uuid")
+            self._workflow_uuid = str(known or uuid.uuid4())
+        return self._workflow_uuid
+
+    def reset_workflow_identity(self) -> None:
+        """File > New on an existing scene: a new document, a new identity."""
+        self._workflow_uuid = None
+        self.loaded_workflow_metadata = {}
+
     def serialize(self):
         data = super().serialize()
-        data["workflow_metadata"] = {
-            "schema_version": WORKFLOW_SCHEMA_VERSION,
-            "app_version": VERSION,
-            "saved_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        }
+        # Keys this version does not know (``parameters``, later additions)
+        # survive a load and save instead of being dropped.
+        metadata = dict(self.loaded_workflow_metadata)
+        metadata.update(
+            schema_version=WORKFLOW_SCHEMA_VERSION,
+            app_version=VERSION,
+            saved_at=datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            workflow_uuid=self.workflow_uuid,
+        )
+        data["workflow_metadata"] = metadata
         return data
 
     def saveToFile(self, filename: str) -> None:
@@ -256,10 +281,42 @@ class TriggerScene(Scene):
                 except OSError:
                     pass
 
+    def loadFromFile(self, filename: str) -> None:
+        """Read a workflow as UTF-8 (with or without BOM), falling back to the
+        legacy locale encoding for files the vendored saver wrote."""
+        with open(filename, "rb") as handle:
+            raw = handle.read()
+        raw = raw.removeprefix(codecs.BOM_UTF8)
+        try:
+            data = orjson.loads(raw)
+        except orjson.JSONDecodeError:
+            data = None
+            for encoding in (locale.getpreferredencoding(False), "cp1252"):
+                try:
+                    data = orjson.loads(raw.decode(encoding))
+                except UnicodeDecodeError, LookupError, orjson.JSONDecodeError:
+                    continue
+                logger.warning("{} is not UTF-8; decoded as {}", filename, encoding)
+                break
+            if data is None:
+                raise InvalidFile(
+                    f"{os.path.basename(filename)} is not a valid JSON file"
+                ) from None
+        try:
+            # Before deserialize: content resolving paths needs workflow_dir.
+            self.filename = filename
+            self.deserialize(data)
+            self.has_been_modified = False
+        except Exception as exc:  # noqa: BLE001 - same partial-load policy as the vendored loader
+            dumpException(exc)
+
     def deserialize(self, data, hashmap=None, restore_id: bool = True, *args, **kwargs):
         self.loaded_workflow_metadata = data.get(
             "workflow_metadata",
             {"schema_version": 0, "app_version": None},
+        )
+        self._workflow_uuid = (
+            str(self.loaded_workflow_metadata.get("workflow_uuid") or "") or None
         )
         return super().deserialize(data, hashmap, restore_id, *args, **kwargs)
 

@@ -48,26 +48,20 @@ def start_enrichment(
     on_done: Callable[[EnrichResult], None],
     *,
     timeout_s: float = 10.0,
-    store=None,
 ) -> None:
     runner = ErrorEnricher(job)
     state = {"done": False}
-    if store is not None:
-        store.begin_job()
 
     def finish(result: EnrichResult) -> None:
         if state["done"]:
             return
         state["done"] = True
         _ACTIVE.discard((runner, bridge))
-        if store is not None:
-            store.end_job()
         on_done(result)
 
     bridge = _Bridge(finish)
     runner.signals.done.connect(bridge.handle)
     runner._bridge = bridge  # type: ignore[attr-defined]
-    runner._store = store  # type: ignore[attr-defined]
     _ACTIVE.add((runner, bridge))
     QThreadPool.globalInstance().start(runner)
 

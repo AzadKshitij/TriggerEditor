@@ -1,18 +1,16 @@
 """Input file discovery and path helpers for File Input.
 
-This module is deliberately free of Polars, Qt and heavy readers: plans 02
-and 08 import :class:`ResolvedFile` and :func:`resolve_input_files` on startup
-paths where loading Polars would be wasteful. Reading lives in
-``trigger_designer.core.input_source``.
+This module is deliberately free of Polars, Qt and heavy readers. Reading lives
+in ``trigger_designer.core.input_source``.
 """
 
 from __future__ import annotations
 
-import hashlib
+import glob
 import os
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from functools import cache
 from typing import Any
 
 FILE_TYPES = ("csv", "txt", "excel", "parquet", "json", "ndjson", "sqlite", "duckdb")
@@ -27,6 +25,9 @@ DEFAULT_INCLUDE: dict[str, tuple[str, ...]] = {
     "sqlite": (),
     "duckdb": (),
 }
+
+#: Largest ``max_files`` the dock and the command line accept.
+MAX_FILES_LIMIT = 100_000
 
 DEFAULT_EXCLUDE = ("~$*", ".*", "Thumbs.db", "desktop.ini")
 GLOB_CHARS = "*?["
@@ -154,36 +155,18 @@ def natural_key(text: str) -> tuple:
     ) + ((2, text),)
 
 
+@cache
 def glob_to_regex(pattern: str) -> re.Pattern:
     """Compile a shell-like pattern; ``**`` crosses directories, always ci."""
-    text = pattern.replace("\\", "/")
-    out: list[str] = []
-    index = 0
-    while index < len(text):
-        char = text[index]
-        if text.startswith("**/", index):
-            out.append("(?:.*/)?")
-            index += 3
-            continue
-        if text.startswith("**", index):
-            out.append(".*")
-            index += 2
-            continue
-        if char == "*":
-            out.append("[^/]*")
-        elif char == "?":
-            out.append("[^/]")
-        elif char == "[":
-            end = text.find("]", index + 1)
-            if end == -1:
-                out.append(re.escape(char))
-            else:
-                out.append("[" + text[index + 1 : end].replace("\\", "\\\\") + "]")
-                index = end
-        else:
-            out.append(re.escape(char))
-        index += 1
-    return re.compile("^" + "".join(out) + "$", re.IGNORECASE)
+    return re.compile(
+        glob.translate(
+            pattern.replace("\\", "/"),
+            recursive=True,
+            include_hidden=True,
+            seps="/",
+        ),
+        re.IGNORECASE,
+    )
 
 
 def has_glob(text: str) -> bool:
@@ -201,6 +184,9 @@ def effective_mode(path_text: str) -> str:
         return "empty"
     if os.path.isdir(io_path(text)):
         return "folder"
+    # An existing file wins over glob characters: "[" and "]" are legal in names.
+    if os.path.isfile(io_path(text)):
+        return "single"
     if has_glob(text):
         return "pattern"
     return "single"
@@ -423,118 +409,3 @@ def resolve_stored_path(abs_path: str, rel_path: str, workflow_dir: str | None) 
         if os.path.exists(io_path(check)):
             return candidate
     return abs_path
-
-
-@dataclass(frozen=True)
-class ResolvedFile:
-    path: str
-    exists: bool
-    kind: str
-    sheet: str | None = None
-    size_bytes: int | None = None
-    modified_time: str | None = None
-    sha256: str | None = None
-    relative_path: str = ""
-    detail: str = ""
-
-
-def _iso_time(mtime: float) -> str:
-    return datetime.fromtimestamp(mtime, UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def _sha256(path: str) -> str:
-    digest = hashlib.sha256()
-    with open(io_path(path), "rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
-
-
-def resolve_input_files(
-    content_state: dict,
-    *,
-    base_dir: str | None = None,
-    hash: bool = False,
-) -> list[ResolvedFile]:
-    """Resolve a File Input content state into the files it will read.
-
-    Never raises: listing failures come back as one ``exists=False`` entry so
-    a run recorder or CLI pre-flight can report them without a try/except.
-    """
-    state = dict(content_state or {})
-    path_text = resolve_stored_path(
-        str(state.get("filePath") or ""),
-        str(state.get("filePathRel") or ""),
-        base_dir,
-    )
-    file_type = str(state.get("file_type") or detect_file_type(path_text or ""))
-    if not path_text:
-        return [ResolvedFile("", False, file_type)]
-
-    try:
-        listing = list_source_files(
-            path_text,
-            file_type,
-            include=state.get("include_patterns") or (),
-            exclude=state.get("exclude_patterns") or DEFAULT_EXCLUDE,
-            recursive=bool(state.get("recursive", False)),
-            order=str(state.get("file_order") or "name"),
-            max_files=int(state.get("max_files") or 10000),
-        )
-    except InputReadError:
-        return [ResolvedFile(path_text, False, file_type)]
-
-    hashes: dict[str, str] = {}
-    resolved: list[ResolvedFile] = []
-    for listed in listing.files:
-        digest = None
-        if hash:
-            if listed.path not in hashes:
-                try:
-                    hashes[listed.path] = _sha256(listed.path)
-                except OSError:
-                    hashes[listed.path] = ""
-            digest = hashes[listed.path] or None
-        modified = _iso_time(listed.mtime_ns / 1_000_000_000)
-        detail = ""
-        if file_type in _DB_TYPES:
-            detail = str(state.get("db_table") or "query")
-        resolved.append(
-            ResolvedFile(
-                path=listed.path,
-                exists=True,
-                kind=file_type,
-                size_bytes=listed.size_bytes,
-                modified_time=modified,
-                sha256=digest,
-                relative_path=listed.relative_path,
-                detail=detail,
-            )
-        )
-
-    if file_type == "excel" and str(state.get("sheet_mode") or "one") != "one":
-        try:
-            import fastexcel
-
-            sheets: list[ResolvedFile] = []
-            for entry in resolved:
-                reader = fastexcel.read_excel(io_path(entry.path))
-                for sheet in reader.sheet_names:
-                    sheets.append(
-                        ResolvedFile(
-                            path=entry.path,
-                            exists=True,
-                            kind=file_type,
-                            sheet=sheet,
-                            size_bytes=entry.size_bytes,
-                            modified_time=entry.modified_time,
-                            sha256=entry.sha256,
-                            relative_path=entry.relative_path,
-                            detail=entry.detail,
-                        )
-                    )
-            return sheets or resolved
-        except Exception:  # noqa: BLE001 - resolution must never raise
-            return resolved
-
-    return resolved

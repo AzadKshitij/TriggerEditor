@@ -44,12 +44,15 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.node_configuration import (
     JoinNodes,
     NodeTypes,
     register_node,
 )
 from trigger_designer.core.shaping.common import live_sample
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
+from trigger_designer.qt.helpers.shaping_support import clear_layout
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
@@ -83,7 +86,7 @@ def _as_lazy(frame: Any) -> Any:
     return frame
 
 
-class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
+class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHandler):
     """Vertical stack of N ordered input frames (SQL UNION ALL)."""
 
     evaluate = Signal()
@@ -404,7 +407,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if section is not None:
             try:
                 inputs = len(self.node.getOrderedEdges())
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 inputs = 0
             section.set_count(
                 f"{inputs} input{'s' if inputs > 1 else ''}" if inputs else ""
@@ -419,7 +422,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
     def _ordered_edge_labels(self) -> List[str]:
         try:
             edges = self.node.getOrderedEdges()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return []
         labels = []
         for pos, edge in enumerate(edges):
@@ -429,7 +432,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                     labels.append(f"#{pos + 1} {other.node.title} [out {other.index}]")
                 else:
                     labels.append(f"#{pos + 1} ?")
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 labels.append(f"#{pos + 1} ?")
         return labels
 
@@ -438,11 +441,11 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if section is None:
             return
         for layout in self._order_row_layouts:
-            self._delete_layout(layout)
+            clear_layout(layout, delete=True)
         self._order_row_layouts = []
         try:
             edges = self.node.getOrderedEdges()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             edges = []
         labels = self._ordered_edge_labels()
         for pos, (edge, label) in enumerate(zip(edges, labels)):
@@ -453,15 +456,11 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             row.addWidget(name, 1)
             up_btn = IconButton.themed(
                 f"Move input {pos + 1} earlier",
-                rsm_icon=None,
-                qss_fallback=":/qss_icons/dark/rc/arrow_up.png",
-                theme_fallback="go-up",
+                rsm_icon=self.node.rsm.get("icon_move_up"),
             )
             down_btn = IconButton.themed(
                 f"Move input {pos + 1} later",
-                rsm_icon=None,
-                qss_fallback=":/qss_icons/dark/rc/arrow_down.png",
-                theme_fallback="go-down",
+                rsm_icon=self.node.rsm.get("icon_move_down"),
             )
             up_btn.clicked.connect(
                 lambda _checked=False, e=edge, p=pos: self._move_input(e, p - 1)
@@ -629,7 +628,7 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
         try:
             changed = self.node.moveEdgeTo(edge, position)
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             return
         if not changed:
             return
@@ -703,23 +702,10 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
             return
         old = [dict(r, sources=list(r["sources"])) for r in self.column_map]
         self._map_rows.remove(entry)
-        self._delete_layout(entry["layout"])
+        clear_layout(entry["layout"], delete=True)
         new = self._read_mapping()
         self.column_map = new
         self.push_list_change(("column_map",), old, new, "Union Column Removed")
-
-    @staticmethod
-    def _delete_layout(layout: Optional[QLayout]) -> None:
-        if layout is None:
-            return
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-            elif item.layout() is not None:
-                UnionContent._delete_layout(item.layout())
-        layout.deleteLater()
 
     def _delete_section(self, parent: QVBoxLayout, section: ConfigSection) -> None:
         for i in range(parent.count()):
@@ -727,12 +713,6 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
                 parent.takeAt(i)
                 break
         section.deleteLater()
-
-    def _report_warnings(self) -> None:
-        try:
-            self.node.grNode.setToolTip("\n".join(self.coercion_warnings))
-        except RuntimeError:
-            pass
 
     # ------------------------------------------------------------------
     # Undo projection
@@ -780,13 +760,15 @@ class UnionContent(QDMNodeIconContentWidget, TriggerChangeHandler):
         if self.mode == "manual":
             return self._manual_code()
         lines = ["import polars as pl"]
-        lines.append(f"_union_inputs_{self.id} = [{', '.join(self.input_variables)}]")
+        lines.append(
+            f"_union_inputs_{ident_part(self.id)} = [{', '.join(self.input_variables)}]"
+        )
         lines.append(
             f"{self.variable_name} = pl.concat("
             f"[(f.lazy() if isinstance(f, pl.DataFrame) else f) "
-            f"for f in _union_inputs_{self.id}], how='diagonal_relaxed')"
+            f"for f in _union_inputs_{ident_part(self.id)}], how='diagonal_relaxed')"
         )
-        lines.append(f"del _union_inputs_{self.id}")
+        lines.append(f"del _union_inputs_{ident_part(self.id)}")
         return "\n".join(lines) + "\n"
 
     def _position_code(self) -> str:
@@ -869,7 +851,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
     def evalImplementation(self) -> Optional[List[Dict[str, Any]]]:
         try:
             ordered = self.getOrderedEdges()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             ordered = []
         if not ordered:
             self.markDirty(True)
@@ -883,7 +865,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
         for edge in ordered:
             try:
                 other = edge.getOtherSocket(socket)
-            except (AttributeError, RuntimeError):
+            except AttributeError, RuntimeError:
                 continue
             if other is None or getattr(other, "node", None) is None:
                 continue
@@ -914,7 +896,7 @@ class TriggerNode_Union(MultiInputNode, TriggerNode):
         self.content.input_variables = variables
         try:
             self.content.order_description = self.describeInputOrder()
-        except (AttributeError, RuntimeError):
+        except AttributeError, RuntimeError:
             self.content.order_description = ""
 
         # New edge while the dock is open: rebuild the mapping grid so the

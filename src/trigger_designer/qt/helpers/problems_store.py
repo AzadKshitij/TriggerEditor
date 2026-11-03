@@ -9,12 +9,10 @@ from trigger_designer.core.errors import NodeError
 
 class ProblemsStore(QObject):
     changed = Signal()
-    settled = Signal()
 
     def __init__(self, parent: QObject | None = None) -> None:
         super().__init__(parent)
         self._entries: dict[tuple[int | None, str], NodeError] = {}
-        self.pending = 0
 
     def upsert(self, error: NodeError, source: str) -> bool:
         key = (error.node_id, source)
@@ -76,12 +74,3 @@ class ProblemsStore(QObject):
             if (severity is None or error.severity == severity)
             and (not roots_only or not error.knock_on)
         )
-
-    def begin_job(self) -> None:
-        self.pending += 1
-
-    def end_job(self) -> None:
-        if self.pending > 0:
-            self.pending -= 1
-        if self.pending == 0:
-            self.settled.emit()

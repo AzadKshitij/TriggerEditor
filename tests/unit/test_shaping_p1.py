@@ -51,6 +51,14 @@ def test_record_id_errors() -> None:
     assert error.value.code == "TD-SHAPE-003"
 
 
+def test_record_id_accepts_negative_and_huge_start() -> None:
+    frame = pl.DataFrame({"v": [1, 2, 3]}).lazy()
+    negative = record_id.apply_record_id(frame, {"name": "ID", "start": -1})
+    assert negative.collect()["ID"].to_list() == [-1, 0, 1]
+    huge = record_id.apply_record_id(frame, {"name": "ID", "start": 4294967295})
+    assert huge.collect()["ID"].to_list() == [4294967295, 4294967296, 4294967297]
+
+
 def test_select_records_first_and_rest() -> None:
     frame = pl.DataFrame({"v": list(range(1, 6))}).lazy()
     selected, rest = select_records.apply_select_records(

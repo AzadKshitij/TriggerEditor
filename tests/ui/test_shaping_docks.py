@@ -142,3 +142,61 @@ def test_select_records_mode_is_one_step(qtbot) -> None:
     assert history.canUndo()
     history.undo()
     assert node.content.settings["mode"] == "first_n"
+
+
+def test_leaving_the_dock_flushes_and_cancels_debounce_timers(qtbot) -> None:
+    """A pending text edit is committed when the dock is left, and no timer that
+    captured a destroyed editor is left running."""
+    _window, node, dock = _node(
+        qtbot, PreparationNodes.RECORD_ID, NodeTypes.PREPARATION
+    )
+    content = node.content
+    field = content._widgets["name"]
+    field.setText("typed_before_leaving")
+    assert any(t.isActive() for t in content._timers)
+    dock.updateConfig([])  # the user clicks the canvas inside the debounce
+    assert content.settings["name"] == "typed_before_leaving"
+    assert not any(t.isActive() for t in content._timers)
+    qtbot.wait(450)  # a stale timer would fire on the deleted editor here
+
+
+def test_rebuilding_the_dock_drops_timers_of_the_old_widgets(qtbot) -> None:
+    _window, node, dock = _node(
+        qtbot, PreparationNodes.RECORD_ID, NodeTypes.PREPARATION
+    )
+    content = node.content
+    dock.updateConfig([])
+    dock.updateConfig([node.grNode])
+    first = list(content._timers)
+    dock.updateConfig([])
+    dock.updateConfig([node.grNode])
+    assert not set(first) & set(content._timers)  # old timers are gone, not piled up
+
+
+def test_float_field_honours_step_and_decimals(qtbot) -> None:
+    from qtpy.QtWidgets import QDoubleSpinBox
+
+    from trigger_designer.qt.helpers.shaping_support import Field
+
+    _window, node, _dock = _node(qtbot, JoinNodes.RECONCILE, NodeTypes.JOIN)
+    spec = Field("v", "V", "float", maximum=10, step=0.05, decimals=3)
+    widget = node.content._make_widget(spec, 0.125, lambda _v: None)
+    assert isinstance(widget, QDoubleSpinBox)
+    assert (widget.singleStep(), widget.decimals()) == (0.05, 3)
+    plain = node.content._make_widget(Field("v", "V", "float"), 1, lambda _v: None)
+    assert plain.singleStep() == 1.0  # unchanged default
+
+    def find(fields, key):
+        for f in fields:
+            if f.key == key:
+                return f
+            hit = find(f.items, key)
+            if hit:
+                return hit
+
+    tolerance = find(
+        [f for s in node.content._sections() for f in s.fields], "tolerance"
+    )
+    assert (tolerance.step, tolerance.decimals) == (0.01, 2)
+    built = node.content._make_widget(tolerance, 0.5, lambda _v: None)
+    assert built.singleStep() == 0.01

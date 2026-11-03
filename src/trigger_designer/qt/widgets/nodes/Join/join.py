@@ -328,6 +328,6 @@ class TriggerNode_Join(ShapingNode):
                 self.content.apply_upstream_renames(
                     upstream_rename_map(left), upstream_rename_map(right)
                 )
-        except (AttributeError, ValueError, RuntimeError):
+        except AttributeError, ValueError, RuntimeError:
             pass
         return super().processInputs(input_values)

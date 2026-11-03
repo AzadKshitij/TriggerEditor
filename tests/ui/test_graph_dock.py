@@ -12,16 +12,6 @@ after a successful run, and the non-modal chart window follows later setting
 edits through the debounce.
 """
 
-import os
-import sys
-
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-
-sys.path.insert(
-    0,
-    os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "src")),
-)
-
 import copy
 
 import polars as pl
@@ -37,6 +27,15 @@ from trigger_designer.core.node_configuration import (
 from trigger_designer.qt.design_window import TriggerSubWindow
 
 APP = QApplication.instance() or QApplication([])
+
+# matplotlib's Qt backend probes the deprecated AA_UseHighDpiPixmaps
+# attribute on every app it attaches to (fixed upstream in newer
+# matplotlib). Third-party noise; the message text contains colons
+# ("Qt::ApplicationAttribute"), which filterwarnings would misparse, so
+# only the "Enum value" prefix is matched.
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:Enum value.*:DeprecationWarning",
+)
 
 #: Contents built by this module, so teardown can dispose their chart windows.
 _BUILT: list = []

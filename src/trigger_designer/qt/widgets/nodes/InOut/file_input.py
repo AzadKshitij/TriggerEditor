@@ -1,7 +1,6 @@
 import copy
 import os
 from collections import Counter, OrderedDict
-from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
 import fastexcel
@@ -25,19 +24,21 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.core.codegen_safe import ident_part, safe_comment
 from trigger_designer.core.input_source import (
     SOURCE_KEYS,
     build_source,
     list_db_tables,
+    name_blank_columns,
 )
 from trigger_designer.core.inputs import (
     DEFAULT_EXCLUDE,
+    MAX_FILES_LIMIT,
     InputReadError,
     detect_file_type,
     effective_mode,
     io_path,
     list_source_files,
-    resolve_input_files,
     resolve_stored_path,
     to_stored_paths,
 )
@@ -45,6 +46,7 @@ from trigger_designer.core.node_configuration import IONodes, NodeTypes, registe
 from trigger_designer.core.shaping.common import live_sample
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.node_base import (
     TriggerChangeHandler,
     TriggerGraphicsNode,
@@ -61,7 +63,6 @@ from trigger_designer.qt.widgets.common import (
 )
 
 _FILENAME_COLUMN = "FileName"
-_BULK_QSS_FALLBACK = ":/qss_icons/dark/rc/up_arrow.png"
 
 
 def _workflow_dir(scene) -> str | None:
@@ -86,7 +87,10 @@ if TYPE_CHECKING:
 
 
 class FileInputContent(
-    QDMNodeIconContentWidget, TriggerChangeHandler, SerializableContentMixin
+    DeferredEvaluation,
+    QDMNodeIconContentWidget,
+    TriggerChangeHandler,
+    SerializableContentMixin,
 ):
     max_missing_file_attempts = 5
     evaluate = Signal()
@@ -282,7 +286,7 @@ class FileInputContent(
             else:
                 self._load_via_builder()
         self._refresh_files_table()
-        self._refresh_file_input_counts()
+        self.refresh_dock_context()
 
     # -- dock construction -------------------------------------------------
     def _build_source_section(self) -> None:
@@ -306,13 +310,11 @@ class FileInputContent(
         self.loadButton = IconButton.themed(
             "Browse for file",
             rsm_icon=self.node.rsm.get("icon_folder_open"),
-            qss_fallback=_BULK_QSS_FALLBACK,
         )
         self.loadButton.clicked.connect(self.openFileDialog)
         self.folderButton = IconButton.themed(
             "Browse for folder",
             rsm_icon=self.node.rsm.get("icon_files"),
-            qss_fallback=_BULK_QSS_FALLBACK,
         )
         self.folderButton.clicked.connect(self.openFolderDialog)
         buttons_layout.addWidget(self.loadButton)
@@ -345,7 +347,7 @@ class FileInputContent(
         self.files_section = section
 
         self.includeEdit = QLineEdit()
-        self.includeEdit.setPlaceholderText("*.csv; *.tsv")
+        self.includeEdit.setPlaceholderText("part_*.csv; sales*.csv")
         self.includeEdit.setAccessibleName("Include patterns")
         self.includeEdit.setMinimumHeight(30)
         self.includeEdit.setToolTip(
@@ -403,6 +405,17 @@ class FileInputContent(
         self.badFileCombo.addItem("Skip and report", "skip")
         self.badFileCombo.currentIndexChanged.connect(self._on_on_file_error_changed)
         section.addWidget(FormRow("Bad file", self.badFileCombo, label_width=64))
+
+        self.maxFilesSpin = QSpinBox()
+        self.maxFilesSpin.setMinimumHeight(30)
+        self.maxFilesSpin.setRange(1, MAX_FILES_LIMIT)
+        self.maxFilesSpin.setAccessibleName("Max files")
+        self.maxFilesSpin.setToolTip(
+            "Stop with TD-IN-012 when the folder or pattern matches more files than this"
+        )
+        self.maxFilesSpin.valueChanged.connect(self._on_max_files_changed)
+        self.max_files_row = FormRow("Max files", self.maxFilesSpin, label_width=64)
+        section.addWidget(self.max_files_row)
 
         self.filesTable = QTableView()
         self.filesTable.setObjectName("ColumnTable")
@@ -596,7 +609,6 @@ class FileInputContent(
         self.dbRefreshButton = IconButton.themed(
             "Reload table list",
             rsm_icon=self.node.rsm.get("icon_refresh"),
-            qss_fallback=_BULK_QSS_FALLBACK,
         )
         self.dbRefreshButton.clicked.connect(self._refresh_db_tables)
         self.db_table_row = FormRow(
@@ -655,7 +667,7 @@ class FileInputContent(
         if not pushed:
             # A folded push does not run redo(), so the projection did not
             # re-evaluate the graph. Do it here instead.
-            self.evaluate.emit()
+            self.request_evaluation()
         self._apply_visibility()
 
     def _after_setting_changed(self, key: str) -> None:
@@ -737,6 +749,11 @@ class FileInputContent(
 
     def _on_recursive_toggled(self, checked: bool) -> None:
         self._apply_setting("recursive", checked, "Subfolders Toggled")
+
+    def _on_max_files_changed(self, value: int) -> None:
+        self._apply_setting(
+            "max_files", int(value), "Max Files Changed", merge_key="fi-max-files"
+        )
 
     def _on_order_changed(self, _index: int) -> None:
         value = self.orderCombo.currentData()
@@ -878,13 +895,6 @@ class FileInputContent(
             if key in value:
                 setattr(self, key, copy.deepcopy(value[key]))
 
-    def resolved_input_files(self, *, hash: bool = False):
-        state = dict(self.get_serialized_state())
-        state["filePath"] = self.filePath
-        return resolve_input_files(
-            state, base_dir=_workflow_dir(self.node.scene), hash=hash
-        )
-
     def dock_context(self) -> tuple[list[tuple[str, str]], str]:
         """Configuration summary for the pane tooltip."""
         chips: list[tuple[str, str]] = []
@@ -913,8 +923,97 @@ class FileInputContent(
             label = os.path.basename(self.filePath.rstrip("\\/")) or self.filePath
         return chips, label
 
-    def _refresh_file_input_counts(self) -> None:
-        self.refresh_dock_context()
+    def describe_settings(self) -> list[tuple[str, str]]:
+        """Curated ``(label, value)`` rows for the workpaper's Workflow sheet.
+
+        Only what a reviewer needs to know how the data was read; internal
+        bookkeeping (schema snapshot, file metadata, versions) is left out.
+        """
+        rows: list[tuple[str, str]] = []
+        if not self.filePath:
+            return [("Source", "not set")]
+        mode = effective_mode(self.filePath)
+        kind = str(self.file_type)
+        rows.append(("Source", str(self.filePath).replace("\\", "/")))
+        rows.append(("Source type", kind))
+        if mode in ("folder", "pattern"):
+            rows.append(
+                (
+                    "Reads",
+                    "all files in a folder"
+                    if mode == "folder"
+                    else "files matching a pattern",
+                )
+            )
+            if self.include_patterns:
+                rows.append(("Include", ", ".join(self.include_patterns)))
+            if self.exclude_patterns:
+                rows.append(("Exclude", ", ".join(self.exclude_patterns)))
+            if mode == "folder":
+                rows.append(("Sub-folders", "yes" if self.recursive else "no"))
+            rows.append(("File order", str(self.file_order)))
+            rows.append(("Max files", str(self.max_files)))
+            rows.append(("If columns differ", str(self.schema_mismatch)))
+            rows.append(
+                (
+                    "Bad file",
+                    "skip and report"
+                    if self.on_file_error == "skip"
+                    else "stop with error",
+                )
+            )
+        if kind in ("csv", "txt"):
+            rows.append(
+                (
+                    "Delimiter",
+                    "tab" if self.delimiter == "	" else str(self.delimiter),
+                )
+            )
+            rows.append(
+                (
+                    "First row is the header",
+                    "yes" if self.first_row_contains_field_names else "no",
+                )
+            )
+            rows.append(("Encoding", str(self.encoding)))
+        elif kind == "excel":
+            if self.sheet_mode == "all":
+                rows.append(("Sheets", "all sheets"))
+            elif self.sheet_mode == "chosen":
+                rows.append(
+                    ("Sheets", ", ".join(self.selected_sheets) or "none chosen")
+                )
+            else:
+                rows.append(("Sheet", str(self.selected_sheet or "first sheet")))
+            if int(self.start_row or 1) != 1:
+                rows.append(("Start row", str(self.start_row)))
+            if self.add_sheet_name_column:
+                rows.append(("Sheet name column", str(self.sheet_name_column_name)))
+        elif kind in ("json", "ndjson"):
+            rows.append(
+                (
+                    "Nested values",
+                    "kept as is" if self.json_nested == "keep" else "as text",
+                )
+            )
+        elif kind in ("sqlite", "duckdb"):
+            if self.db_mode == "query":
+                rows.append(("Query", str(self.db_query)))
+            else:
+                rows.append(("Table", str(self.db_table)))
+        if self.read_as_text:
+            rows.append(("Columns read as", "text"))
+        rows.append(
+            ("Row limit", str(self.record_limit) if self.record_limit else "all rows")
+        )
+        if self.output_filename_as_field:
+            rows.append(
+                (
+                    "File name column",
+                    f"{self.file_name_column_name} ({self.file_name_value})",
+                )
+            )
+        return rows
 
     # -- visibility and projections ---------------------------------------
     def _apply_visibility(self) -> None:
@@ -961,12 +1060,6 @@ class FileInputContent(
 
         self.db_table_row.setVisible(has_path and is_db and self.db_mode == "table")
         self.db_query_row.setVisible(has_path and is_db and self.db_mode == "query")
-
-    def _hide_all_options(self) -> None:
-        self._apply_visibility()
-
-    def _update_ui_visibility(self, _file_type: str) -> None:
-        self._apply_visibility()
 
     def _refresh_files_table(self) -> None:
         if not hasattr(self, "filesTable"):
@@ -1119,6 +1212,7 @@ class FileInputContent(
         self._set_combo(self.orderCombo, self.file_order)
         self._set_combo(self.schemaCombo, self.schema_mismatch)
         self._set_combo(self.badFileCombo, self.on_file_error)
+        self._set_spin(self.maxFilesSpin, self.max_files)
         self._set_checked(self.outputFilenameCheckBox, self.output_filename_as_field)
         self._set_text(self.fileNameColumnEdit, self.file_name_column_name)
         self._set_combo(self.fileNameValueCombo, self.file_name_value)
@@ -1268,25 +1362,27 @@ class FileInputContent(
                 "size_bytes": file_stat.st_size,
                 "modified_time": int(file_stat.st_mtime),
             }
-        resolved = [item for item in self.resolved_input_files() if item.exists]
-        if not resolved:
+        try:
+            files = list_source_files(
+                self.filePath,
+                self.file_type,
+                include=self.include_patterns,
+                exclude=self.exclude_patterns,
+                recursive=self.recursive,
+                order=self.file_order,
+                max_files=self.max_files,
+            ).files
+        except InputReadError:
             return {}
-        epochs: list[int] = []
-        for item in resolved:
-            if item.modified_time:
-                try:
-                    epochs.append(
-                        int(datetime.fromisoformat(item.modified_time).timestamp())
-                    )
-                except ValueError:
-                    continue
-        first = resolved[0]
+        if not files:
+            return {}
         return {
-            "size_bytes": first.size_bytes or 0,
-            "modified_time": epochs[0] if epochs else 0,
-            "file_count": len(resolved),
-            "total_size_bytes": sum(item.size_bytes or 0 for item in resolved),
-            "newest_modified_time": max(epochs) if epochs else 0,
+            "size_bytes": files[0].size_bytes,
+            "modified_time": files[0].mtime_ns // 1_000_000_000,
+            "file_count": len(files),
+            "total_size_bytes": sum(item.size_bytes for item in files),
+            "newest_modified_time": max(item.mtime_ns for item in files)
+            // 1_000_000_000,
         }
 
     def _refresh_saved_input_metadata(
@@ -1426,7 +1522,8 @@ class FileInputContent(
         self._type_user_set = False
         self._apply_setting("source_state", new_state, "Source Chosen", rebuild=True)
         if detected == "excel":
-            self._show_sheet_selection_dialog(fileName)
+            self._refresh_sheets()
+            self._apply_visibility()
         self._apply_visibility()
 
     def _choose_folder(self, folder: str) -> None:
@@ -1446,15 +1543,8 @@ class FileInputContent(
         self._type_user_set = False
         self._apply_setting("source_state", new_state, "Source Chosen", rebuild=True)
         if chosen == "excel":
-            self._show_sheet_selection_dialog(folder)
-        self._apply_visibility()
-
-    def _auto_detect_file_type(self, fileName: str) -> str:
-        return detect_file_type(fileName)
-
-    def _show_sheet_selection_dialog(self, _fileName: str = "") -> None:
-        """Populate the sheet controls without discarding the chosen source."""
-        self._refresh_sheets()
+            self._refresh_sheets()
+            self._apply_visibility()
         self._apply_visibility()
 
     def _read_excel(self, fileName: str, n_rows: int | None = None) -> pl.DataFrame:
@@ -1533,7 +1623,7 @@ class FileInputContent(
             scan_options["separator"] = self.delimiter
         if not self.first_row_contains_field_names:
             scan_options["has_header"] = False
-        frame = pl.scan_csv(fileName, **scan_options)
+        frame = name_blank_columns(pl.scan_csv(fileName, **scan_options))
         if self.record_limit > 0:
             frame = frame.head(self.record_limit)
         if self.output_filename_as_field:
@@ -1556,7 +1646,7 @@ class FileInputContent(
                 frame = self._scan_csv_full(fileName)
             else:
                 # Default to CSV with memory optimization
-                frame = pl.scan_csv(fileName, infer_schema=False)
+                frame = name_blank_columns(pl.scan_csv(fileName, infer_schema=False))
 
             if self.output_filename_as_field and self.file_type not in ["csv", "txt"]:
                 filename_only = os.path.basename(fileName)
@@ -1571,15 +1661,6 @@ class FileInputContent(
             logger.error(f"Error reading file {fileName}: {e}")
             # Return empty DataFrame on error
             return pl.DataFrame()
-
-    def _preview_frame(self) -> pl.DataFrame:
-        """Small eager sample for the table viewer (live data stays lazy)."""
-        data = getattr(self, "data", None)
-        if data is None:
-            return pl.DataFrame()
-        if isinstance(data, pl.LazyFrame):
-            return data.head(self.preview_rows).collect()
-        return data.head(self.preview_rows)
 
     def loadFile(self, fileName: str) -> None:
         """Load file: full data for processing, preview sample for the viewer"""
@@ -1635,10 +1716,10 @@ class FileInputContent(
         return (
             "import polars as pl\n"
             "from trigger_designer.core.input_source import build_source\n"
-            f"# File Input ({spec['file_type']}, builder path)\n"
-            f"_spec_{self.id} = {spec!r}\n"
+            f"# File Input ({safe_comment(spec['file_type'])}, builder path)\n"
+            f"_spec_{ident_part(self.id)} = {spec!r}\n"
             f"{self.variable_name} = pl.DataFrame()\n"
-            f"{self.variable_name} = build_source(_spec_{self.id}).frame\n"
+            f"{self.variable_name} = build_source(_spec_{ident_part(self.id)}).frame\n"
         )
 
     def get_code(self) -> str:
@@ -1653,6 +1734,11 @@ class FileInputContent(
         code_lines = []
         code_lines.append("import polars as pl")
         code_lines.append("import os")
+        if self.file_type != "excel":
+            # Blank CSV header cells need a name before Select can pick them.
+            code_lines.append(
+                "from trigger_designer.core.input_source import name_blank_columns"
+            )
         code_lines.append("")
         code_lines.append("# Always use LazyFrame for memory efficiency")
 
@@ -1660,12 +1746,12 @@ class FileInputContent(
             # Excel file code generation using fastexcel with LazyFrame conversion
             code_lines.append("import fastexcel")
             code_lines.append(
-                f"reader_{self.id} = fastexcel.read_excel({self.filePath!r})"
+                f"reader_{ident_part(self.id)} = fastexcel.read_excel({self.filePath!r})"
             )
 
             # Build load_sheet parameters
             load_params = []
-            load_params.append(f"idx_or_name='{self.selected_sheet}'")
+            load_params.append(f"idx_or_name={str(self.selected_sheet)!r}")
 
             # Handle start row and header row logic
             skip_rows = self.start_row - 1
@@ -1680,27 +1766,31 @@ class FileInputContent(
             if self.record_limit > 0:
                 load_params.append(f"n_rows={self.record_limit}")
 
-            load_call = f"reader_{self.id}.load_sheet({', '.join(load_params)})"
+            load_call = (
+                f"reader_{ident_part(self.id)}.load_sheet({', '.join(load_params)})"
+            )
 
             # Generate code for conversion to LazyFrame
-            code_lines.append(f"excel_df_{self.id} = {load_call}")
+            code_lines.append(f"excel_df_{ident_part(self.id)} = {load_call}")
             code_lines.append("# Convert to polars LazyFrame for memory efficiency")
             code_lines.append("try:")
             code_lines.append(
-                f"    eager_df_{self.id} = excel_df_{self.id}.to_polars()"
+                f"    eager_df_{ident_part(self.id)} = excel_df_{ident_part(self.id)}.to_polars()"
             )
             code_lines.append("except AttributeError:")
             code_lines.append(
-                f"    eager_df_{self.id} = pl.from_arrow(excel_df_{self.id}.to_arrow())"
+                f"    eager_df_{ident_part(self.id)} = pl.from_arrow(excel_df_{ident_part(self.id)}.to_arrow())"
             )
             code_lines.append("# Convert to LazyFrame immediately")
-            code_lines.append(f"{self.variable_name} = eager_df_{self.id}.lazy()")
+            code_lines.append(
+                f"{self.variable_name} = eager_df_{ident_part(self.id)}.lazy()"
+            )
 
         elif self.file_type in ["csv", "txt"]:
             # CSV/TXT file code generation with LazyFrame
             read_params = ["infer_schema=False"]
             if self.delimiter != ",":
-                read_params.append(f"separator='{self.delimiter}'")
+                read_params.append(f"separator={str(self.delimiter)!r}")
             if not self.first_row_contains_field_names:
                 read_params.append("has_header=False")
 
@@ -1713,7 +1803,7 @@ class FileInputContent(
                 lazy_call += f", {', '.join(read_params)}"
             lazy_call += ")"
 
-            code_lines.append(f"{self.variable_name} = {lazy_call}")
+            code_lines.append(f"{self.variable_name} = name_blank_columns({lazy_call})")
 
             # Apply record limit using lazy operations if specified
             if self.record_limit > 0:
@@ -1725,12 +1815,13 @@ class FileInputContent(
             # Default to CSV with LazyFrame
             code_lines.append("# Default to CSV with LazyFrame")
             code_lines.append(
-                f"{self.variable_name} = pl.scan_csv({self.filePath!r}, infer_schema=False)"
+                f"{self.variable_name} = name_blank_columns("
+                f"pl.scan_csv({self.filePath!r}, infer_schema=False))"
             )
 
         # Add filename as field if requested - using lazy operations
         if self.output_filename_as_field:
-            filename_var = f"filename_{self.id}"
+            filename_var = f"filename_{ident_part(self.id)}"
             code_lines.append("# Add filename field using lazy operations")
             code_lines.append(f"{filename_var} = os.path.basename({self.filePath!r})")
             code_lines.append(
@@ -1831,16 +1922,6 @@ class TriggerNode_FileInput(TriggerNode):
         ]
 
         return self.param
-
-    def cleanup_memory(self):
-        """Explicit memory cleanup to reduce memory usage"""
-        if hasattr(self.content, "data") and self.content.data is not None:
-            del self.content.data
-            self.content.data = None
-        # Force garbage collection
-        import gc
-
-        gc.collect()
 
     def get_code(self):
         return self.content.get_code()

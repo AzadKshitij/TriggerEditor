@@ -38,7 +38,7 @@ def test_multiple_sum_columns() -> None:
 
 
 def test_missing_and_non_numeric_columns_are_ignored() -> None:
-    frame = pl.DataFrame({"a": [1, 2], "s": ["x", "y"]}).lazy()
+    frame = pl.DataFrame({"a": [1, 2], "s": [True, False]}).lazy()
     out = core.run_node([frame], {"sum_columns": ["s", "gone"]}).pop()
     assert isinstance(out, pl.LazyFrame)
     assert out.collect().columns == ["a", "s"]
@@ -63,3 +63,17 @@ def test_narrow_integers_are_normalised() -> None:
     out = core.run_node([frame], {"sum_columns": ["a"]}).pop().collect()
     assert out.schema["RunTot_a"] == pl.Int64
     assert out["RunTot_a"].to_list() == [1, 3]
+
+
+def test_text_columns_that_hold_numbers_are_summed() -> None:
+    frame = pl.DataFrame(
+        {"g": ["a", "a", "b", "b"], "v": ["1,000", " 2.5", "oops", "4"]}
+    ).lazy()
+    out = core.run_node([frame], {"sum_columns": ["v"]}).pop().collect()
+    assert out["RunTot_v"].to_list() == [1000.0, 1002.5, None, 1006.5]
+    grouped = (
+        core.run_node([frame], {"sum_columns": ["v"], "group_by_columns": ["g"]})
+        .pop()
+        .collect()
+    )
+    assert grouped["RunTot_v"].to_list() == [1000.0, 1002.5, None, 4.0]

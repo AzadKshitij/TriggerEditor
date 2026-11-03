@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 from nodeeditor.node_edge import Edge
 
+from tests.support.flush import live_value
 from trigger_designer.core.node_configuration import (
     NodeTypes,
     PreparationNodes,
@@ -57,7 +58,7 @@ def _node(qtbot):
 
 
 def _outputs(node):
-    return node.value[0]["data"].collect(), node.value[1]["data"].collect()
+    return live_value(node)[0]["data"].collect(), live_value(node)[1]["data"].collect()
 
 
 def test_mode_switch_shows_the_right_section(qtbot) -> None:

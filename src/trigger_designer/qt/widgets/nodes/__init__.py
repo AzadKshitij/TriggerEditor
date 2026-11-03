@@ -2,6 +2,7 @@ import os
 from os.path import dirname, join
 
 from trigger_designer.core.node_configuration import (
+    AuditNodes,
     IONodes,
     JoinNodes,
     NodeTypes,
@@ -25,6 +26,13 @@ _LAZY_NODE_SPECS = [
         "node_type": NodeTypes.IO,
         "node_title": "File Output",
         "icon": "node_file_output",
+    },
+    {
+        "module_path": "InOut.workpaper_output",
+        "node_code": IONodes.WORKPAPER_OUTPUT,
+        "node_type": NodeTypes.IO,
+        "node_title": "Workpaper Output",
+        "icon": "node_workpaper_output",
     },
     {
         "module_path": "Join.Append",
@@ -126,6 +134,20 @@ _LAZY_NODE_SPECS = [
         "icon": "node_graph",
     },
     {
+        "module_path": "Report.data_profile",
+        "node_code": ReportNodes.DATA_PROFILE,
+        "node_type": NodeTypes.REPORT,
+        "node_title": "Data Profile",
+        "icon": "node_data_profile",
+    },
+    {
+        "module_path": "Report.comment",
+        "node_code": ReportNodes.COMMENT,
+        "node_type": NodeTypes.REPORT,
+        "node_title": "Comment",
+        "icon": "node_comment",
+    },
+    {
         "module_path": "Transform.count_records",
         "node_code": TransformNodes.COUNT_RECORDS,
         "node_type": NodeTypes.TRANSFORM,
@@ -175,6 +197,20 @@ _LAZY_NODE_SPECS = [
         "icon": "node_date_helper",
     },
     {
+        "module_path": "Preparation.multi_field_formula",
+        "node_code": PreparationNodes.MULTI_FIELD_FORMULA,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Multi-Field Formula",
+        "icon": "node_multi_field_formula",
+    },
+    {
+        "module_path": "Preparation.text_to_columns",
+        "node_code": PreparationNodes.TEXT_TO_COLUMNS,
+        "node_type": NodeTypes.PREPARATION,
+        "node_title": "Text to Columns",
+        "icon": "node_text_to_columns",
+    },
+    {
         "module_path": "Transform.pivot",
         "node_code": TransformNodes.PIVOT,
         "node_type": NodeTypes.TRANSFORM,
@@ -189,11 +225,67 @@ _LAZY_NODE_SPECS = [
         "icon": "node_unpivot",
     },
     {
+        "module_path": "Transform.window",
+        "node_code": TransformNodes.WINDOW,
+        "node_type": NodeTypes.TRANSFORM,
+        "node_title": "Window",
+        "icon": "node_window",
+    },
+    {
+        "module_path": "Transform.sql_query",
+        "node_code": TransformNodes.SQL_QUERY,
+        "node_type": NodeTypes.TRANSFORM,
+        "node_title": "SQL Query",
+        "icon": "node_sql_query",
+    },
+    {
         "module_path": "Join.reconcile",
         "node_code": JoinNodes.RECONCILE,
         "node_type": NodeTypes.JOIN,
         "node_title": "Reconcile",
         "icon": "node_reconcile",
+    },
+    {
+        "module_path": "Join.fuzzy_match",
+        "node_code": JoinNodes.FUZZY_MATCH,
+        "node_type": NodeTypes.JOIN,
+        "node_title": "Fuzzy Match",
+        "icon": "node_fuzzy_match",
+    },
+    {
+        "module_path": "Audit.benford",
+        "node_code": AuditNodes.BENFORD,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Benford",
+        "icon": "node_benford",
+    },
+    {
+        "module_path": "Audit.gaps",
+        "node_code": AuditNodes.GAPS,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Gaps",
+        "icon": "node_gaps",
+    },
+    {
+        "module_path": "Audit.duplicates",
+        "node_code": AuditNodes.DUPLICATES,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Duplicates",
+        "icon": "node_duplicates",
+    },
+    {
+        "module_path": "Audit.risk_filters",
+        "node_code": AuditNodes.RISK_FILTERS,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Risk Filters",
+        "icon": "node_risk_filters",
+    },
+    {
+        "module_path": "Audit.sample",
+        "node_code": AuditNodes.SAMPLE,
+        "node_type": NodeTypes.AUDIT,
+        "node_title": "Sample",
+        "icon": "node_sample",
     },
 ]
 
@@ -205,6 +297,8 @@ _LAZY_MODULE_NAMES = {spec["module_path"] for spec in _LAZY_NODE_SPECS}
 #: is the shared contract and ``pyqtgraph_view`` the opt-in renderer: neither
 #: belongs to a node, and neither may drag a plotting library into startup.
 _LAZY_HELPER_MODULES = {
+    "Audit._base",
+    "Audit.benford_chart",
     "Report.chart_renderer",
     "Report.chart_view",
     "Report.chart_window",

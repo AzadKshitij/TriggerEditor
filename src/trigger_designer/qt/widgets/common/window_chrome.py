@@ -56,10 +56,12 @@ from trigger_designer.qt.helpers.win_caption import (
     native_caption_supported,
 )
 from trigger_designer.qt.theme_manager import get_theme_manager
-from trigger_designer.qt.widgets.common.config_widgets import ICON_SIZE, IconButton
+from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 #: Chrome row height and caption-button hit area (docs/DESIGN_SYSTEM.md §17).
 CHROME_H = 32
+#: Caption glyphs are hand-drawn on a 12px grid; independent of IconButton.
+CAPTION_ICON_SIZE = 12
 CAPTION_BUTTON_W = 44
 #: Width of the edge zone that starts a native resize on a frameless window.
 RESIZE_MARGIN = 5
@@ -107,7 +109,7 @@ def caption_icon(glyph: str, color: QColor) -> QIcon:
     """One 12px caption glyph as a multi-DPI ``QIcon``."""
     icon = QIcon()
     for dpr in (1.0, 1.25, 1.5, 2.0):
-        pixmap = QPixmap(round(ICON_SIZE * dpr), round(ICON_SIZE * dpr))
+        pixmap = QPixmap(round(CAPTION_ICON_SIZE * dpr), round(CAPTION_ICON_SIZE * dpr))
         pixmap.setDevicePixelRatio(dpr)
         pixmap.fill(Qt.GlobalColor.transparent)
         painter = QPainter(pixmap)
@@ -316,12 +318,22 @@ class WindowChrome(QWidget):
             self.caption.apply_theme(get_theme_manager().is_dark())
 
     def _left_group_width(self) -> int:
-        """Width of the app icon and the menus, left margin included."""
+        """Width of the app icon and the menus, left margin included.
+
+        ``QMainWindow`` still tracks the ``QMenuBar`` object it handed over,
+        so a style-sheet change resizes the reparented bar to the whole
+        window width for a moment. Trusting that transient in
+        :meth:`_balance_title` sizes the spacer from the entire window, the
+        row then cannot fit its children, and the bar collapses to its
+        overflow minimum - the title bar glitch after a theme change. A bar
+        is never legitimately wider than its own hint, so the smaller of the
+        two is the width the chrome's layout gives it.
+        """
         bar = self._menu_bar
         width = self.layout().contentsMargins().left()
         if self._icon_label.isVisibleTo(self):
             width += _ICON_SLOT_W
-        return width + max(bar.width(), bar.sizeHint().width())
+        return width + min(bar.width(), bar.sizeHint().width())
 
     def _balance_title(self) -> None:
         """Put the middle of the row back on the middle of the window.

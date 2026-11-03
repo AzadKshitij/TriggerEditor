@@ -23,7 +23,11 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.shaping import formula as core
-from trigger_designer.qt.helpers.shaping_support import ShapingContent, ShapingNode
+from trigger_designer.qt.helpers.shaping_support import (
+    ShapingContent,
+    ShapingNode,
+    clear_layout,
+)
 from trigger_designer.qt.widgets.common import (
     EmptyStateLabel,
     IconButton,
@@ -181,7 +185,7 @@ class FormulaContent(ShapingContent):
         *,
         structural: bool = False,
         merge_key: str | None = None,
-        evaluate: bool = True,
+        evaluate: bool | None = None,
     ) -> None:
         normalized = core.normalize({"sections": sections})["sections"]
         if normalized == self.settings.get("sections"):
@@ -280,27 +284,12 @@ class FormulaContent(ShapingContent):
         self.refresh_dock_context()
 
     # -- cards ------------------------------------------------------------
-    @staticmethod
-    def _clear_layout(layout: QVBoxLayout | None) -> bool:
-        if layout is None:
-            return False
-        try:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-        except RuntimeError:
-            # The Config Dock cleared while a modal dialog was open.
-            return False
-        return True
-
     def _rebuild_cards(self) -> None:
         layout = getattr(self, "sections_layout", None)
         if layout is None:
             return
         self.cancel_pending_evaluation()
-        if not self._clear_layout(layout):
+        if not clear_layout(layout):
             self.sections_layout = None
             self.section_widgets = []
             self.section_errors = {}
@@ -322,8 +311,10 @@ class FormulaContent(ShapingContent):
             target = section["target_column"]
             found = target_selector.findText(target or EMPTY_TARGET_OPTION)
             target_selector.setCurrentIndex(max(0, found))
+            # PySide passes the signal's argument through a partial, so the
+            # slots are wrapped in lambdas that ignore it.
             target_selector.activated.connect(
-                partial(self._on_target_selected, index, target_selector)
+                lambda _i, i=index, s=target_selector: self._on_target_selected(i, s)
             )
 
             dtype_selector = NoWheelComboBox()
@@ -333,7 +324,7 @@ class FormulaContent(ShapingContent):
             dtype_selector.setCurrentText(label)
             dtype_selector.setEnabled(enabled)
             dtype_selector.activated.connect(
-                partial(self._on_dtype_selected, index, dtype_selector)
+                lambda _i, i=index, s=dtype_selector: self._on_dtype_selected(i, s)
             )
 
             remove_button = IconButton.themed(
@@ -470,22 +461,25 @@ class FormulaContent(ShapingContent):
         sections[index]["target_dtype"] = target_dtype
         self._commit(sections, "Formula Type Changed")
 
-    def _commit_text(self, index: int, *, evaluate: bool = True) -> None:
+    def _commit_editor_text(self, *, evaluate: bool | None, only: int | None = None):
         # Capture every editor, not only the one whose debounce fired. A
         # model update re-projects the other cards, so committing one section
         # alone would write stale model text back into a sibling editor that
         # the user has typed in but whose debounce has not fired yet.
         sections, changed = self._editor_sections()
-        if changed:
-            merge_key = f"formula-text-{index}" if changed == [index] else None
-            self._commit(
-                sections,
-                "Formula Text Changed",
-                merge_key=merge_key,
-                evaluate=evaluate,
-            )
-            for changed_index in changed:
-                self._refresh_error(changed_index)
+        if not changed:
+            return
+        merge_key = None
+        if len(changed) == 1 and only in (None, changed[0]):
+            merge_key = f"formula-text-{changed[0]}"
+        self._commit(
+            sections, "Formula Text Changed", merge_key=merge_key, evaluate=evaluate
+        )
+        for index in changed:
+            self._refresh_error(index)
+
+    def _commit_text(self, index: int, *, evaluate: bool | None = None) -> None:
+        self._commit_editor_text(evaluate=evaluate, only=index)
         if evaluate:
             self._evaluate_pending()
 
@@ -520,22 +514,9 @@ class FormulaContent(ShapingContent):
 
     def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
         """Read every card's text into the model before the dock is destroyed."""
-        sections, changed = self._editor_sections()
-        if changed:
-            merge_key = f"formula-text-{changed[0]}" if len(changed) == 1 else None
-            self._commit(
-                sections,
-                "Formula Text Changed",
-                merge_key=merge_key,
-                evaluate=False,
-            )
-            for index in changed:
-                self._refresh_error(index)
-
+        self._commit_editor_text(evaluate=False)
         if evaluate:
             self._evaluate_pending()
-        else:
-            self.cancel_pending_evaluation()
 
     def _commit_height(self, index: int, height: int) -> None:
         sections = self._section_list()

@@ -12,10 +12,12 @@ from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
 from trigger_designer.qt.docks.problems_dock import ProblemsDock
+from trigger_designer.qt.docks.run_history_dock import RunHistoryDock
 from trigger_designer.qt.helpers.dock_chrome import (
     enable_tab_drag_out,
     install_tab_only_chrome,
 )
+from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 
 
@@ -33,7 +35,18 @@ class MainWindowMenuMixin:
         self.openRecentMenu.aboutToShow.connect(self._rebuild_recent_menu)
         self._rebuild_recent_menu()
 
+        self.fileMenu.insertAction(self.actExit, self.actExportWorkpaper)
+        self.fileMenu.insertSeparator(self.actExit)
+
         self.editMenu.addSeparator()
+        self.arrangeMenu = self.editMenu.addMenu("&Arrange")
+        for command in node_arrange.COMMANDS:
+            action = getattr(self, command.action, None)
+            if action is not None:
+                self.arrangeMenu.addAction(action)
+        self.arrangeMenu.addSeparator()
+        self.arrangeMenu.addAction(self.actToggleSnap)
+        self.arrangeMenu.aboutToShow.connect(self.syncSnapAction)
         self.editMenu.addAction(self.actSettings)
 
         self.windowMenu = self.menuBar().addMenu("&Window")
@@ -53,6 +66,7 @@ class MainWindowMenuMixin:
 
         self.actSave.setEnabled(has_mdi_child)
         self.actSaveAs.setEnabled(has_mdi_child)
+        self.actExportWorkpaper.setEnabled(has_mdi_child)
         self.actClose.setEnabled(has_mdi_child)
         self.actCloseAll.setEnabled(has_mdi_child)
         self.actTile.setEnabled(has_mdi_child)
@@ -78,8 +92,26 @@ class MainWindowMenuMixin:
             self.actUndo.setEnabled(has_mdi_child and active.canUndo())
             self.actRedo.setEnabled(has_mdi_child and active.canRedo())
             self._syncUndoRedoText(active)
+            self._updateArrangeActions(active, has_mdi_child)
         except Exception as exc:  # pragma: no cover - defensive logging
             dumpException(exc)
+
+    def _updateArrangeActions(self, active, has_mdi_child: bool) -> None:
+        """Light up only the arrangements the current selection can run."""
+        nodes = []
+        if has_mdi_child:
+            scene = getattr(active, "scene", None)
+            if scene is not None:
+                nodes = node_arrange.selected_nodes(scene)
+        for command in node_arrange.COMMANDS:
+            action = getattr(self, command.action, None)
+            if action is not None:
+                action.setEnabled(has_mdi_child and len(nodes) >= command.minimum)
+        toggle = getattr(self, "actToggleSnap", None)
+        if toggle is not None:
+            toggle.setEnabled(has_mdi_child)
+            if has_mdi_child:
+                self.syncSnapAction()
 
     def _syncUndoRedoText(self, active) -> None:
         """Label the undo/redo actions with the step they will apply.
@@ -126,6 +158,11 @@ class MainWindowMenuMixin:
             problems_action = self.problemsDock.toggleViewAction()
             problems_action.setText("Problems")
             self.windowMenu.addAction(problems_action)
+
+        if hasattr(self, "runHistoryDock") and self.runHistoryDock is not None:
+            history_action = self.runHistoryDock.toggleViewAction()
+            history_action.setText("Run History")
+            self.windowMenu.addAction(history_action)
 
         if hasattr(self, "configDock") and self.configDock is not None:
             config_action = self.configDock.toggleViewAction()
@@ -286,6 +323,18 @@ class MainWindowDockMixin:
         self.tabifyDockWidget(self.loggingDock, self.problemsDock)
         install_tab_only_chrome(self.problemsDock)
 
+    def createRunHistoryDock(self) -> None:
+        """Create the Run History dock, tabified with the other bottom docks."""
+        self.runHistoryDock = RunHistoryDock(self)
+        self.runHistoryDock.setObjectName("RunHistoryDock")
+        self.addDockWidget(Qt.BottomDockWidgetArea, self.runHistoryDock)
+        self.tabifyDockWidget(self.loggingDock, self.runHistoryDock)
+        install_tab_only_chrome(self.runHistoryDock)
+
+    def switchRunHistoryDock(self, design_window) -> None:
+        if hasattr(self, "runHistoryDock") and self.runHistoryDock:
+            self.runHistoryDock.switch_to_design_window(design_window)
+
     def getLoggingDock(self) -> LoggingDock:
         """Get the shared logging dock"""
         return getattr(self, "loggingDock", None)
@@ -319,6 +368,8 @@ class MainWindowDockMixin:
             self.dataPreviewDock.remove_design_window(design_window_id)
         if hasattr(self, "problemsDock") and self.problemsDock:
             self.problemsDock.remove_design_window(design_window_id)
+        if hasattr(self, "runHistoryDock") and self.runHistoryDock:
+            self.runHistoryDock.remove_design_window(design_window_id)
 
     def createStatusBar(self) -> None:
         """Build the status bar with the scene-position readout.
@@ -348,7 +399,7 @@ class MainWindowDockMixin:
         if previous is not None:
             try:
                 previous.scenePosChanged.disconnect(self.onScenePosChanged)
-            except (TypeError, RuntimeError):
+            except TypeError, RuntimeError:
                 # The view is already gone (its sub-window was closed).
                 pass
             self._status_view = None
@@ -359,7 +410,7 @@ class MainWindowDockMixin:
             return
         try:
             view.scenePosChanged.connect(self.onScenePosChanged)
-        except (TypeError, RuntimeError):
+        except TypeError, RuntimeError:
             self.status_mouse_pos.setText("")
             return
         self._status_view = view

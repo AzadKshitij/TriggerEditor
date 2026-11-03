@@ -136,7 +136,7 @@ class LoggingDock(QDockWidget):
         self.log_display = QTextEdit()
         self.log_display.setObjectName("LogsTextEdit")
         self.log_display.setReadOnly(True)
-        self.log_display.setFont(QFont("Consolas", 9))  # Monospace font
+        self._apply_log_font()
         self.log_display.setHtml("")
         main_layout.addWidget(self.log_display)
 
@@ -301,8 +301,14 @@ class LoggingDock(QDockWidget):
             timestamp_color=manager.color("text_tertiary", "#919ba6").name(),
         )
 
+    def _apply_log_font(self) -> None:
+        """Monospace log font, scaled with the application font size."""
+        scale = get_theme_manager().font_scale()
+        self.log_display.setFont(QFont("Consolas", round(9 * scale)))
+
     def apply_theme(self) -> None:
         """Repaint every entry with the active theme's colours."""
+        self._apply_log_font()
         self._full_refresh_required = True
         self._display_dirty = True
         self.refresh_display()
