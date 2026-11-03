@@ -51,7 +51,7 @@ from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers import node_arrange
-from trigger_designer.qt.helpers.problems_store import ProblemsStore
+from trigger_designer.qt.helpers.diagnostic_feed import DiagnosticFeed
 from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 from typing import Any, Callable, Optional, Union, TYPE_CHECKING
@@ -62,7 +62,6 @@ if TYPE_CHECKING:
     from trigger_designer.qt.node_base import TriggerNode
     from nodeeditor.node_node import Node
     from nodeeditor.node_socket import Socket
-    from trigger_designer.qt.docks.logging_dock import LoggingDock
 
 DEBUG = False
 #: Glyph size of the run/zoom/fit overlay buttons on the canvas.
@@ -116,12 +115,15 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         super().__init__(parent)
         # self.initUI()
         self.rsm: ResourceManager = ResourceManager()
-        self._logging_dock: Optional["LoggingDock"] = None
 
         self._last_scale: float = 1.0
 
         self.init_workflow_execution()
-        self.problems = ProblemsStore(self)
+        #: Every log line and node problem of this document, in one order. The
+        #: Logs dock paints it; ``NodeErrorState.by_source`` stays the badge
+        #: authority, so the panel can never disagree with the canvas.
+        self.diagnostics = DiagnosticFeed(self)
+        self.scene.diagnostics = self.diagnostics
         self.init_context_menu_support()
 
         self.setTitle()
@@ -739,22 +741,9 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         stem, _ = os.path.splitext(name.removesuffix("*"))
         return f"{stem}*" if modified else stem
 
-    def setLoggingDock(self, logging_dock: "LoggingDock") -> None:
-        """Set the logging dock for this design window"""
-        self._logging_dock = logging_dock
-
-    def getLoggingDock(self) -> Optional["LoggingDock"]:
-        """Get the logging dock for this design window"""
-        return self._logging_dock
-
     def log(self, level: str, message: str) -> None:
-        """Log a message to the shared logging dock"""
-        if self._logging_dock:
-            design_window_id = str(id(self))
-            self._logging_dock.log(level, message, design_window_id)
-        else:
-            # Fallback to print if no logging dock is available
-            print(f"[{level}] {message}")
+        """Append a log line to this document's diagnostic feed."""
+        self.diagnostics.add_log(level, message)
 
     def logTrace(self, message: str) -> None:
         """Log a TRACE message"""

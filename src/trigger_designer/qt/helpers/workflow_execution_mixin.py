@@ -175,9 +175,9 @@ class WorkflowExecutionMixin:
         try:
             self.execution_results.clear()
             self._last_run_codes = {}
-            problems = getattr(self, "problems", None)
-            if problems is not None:
-                problems.clear_source("run")
+            diagnostics = getattr(self, "diagnostics", None)
+            if diagnostics is not None:
+                diagnostics.clear_source("run")
             for node in self.getAllNodes():
                 node.markInvalid(False)
                 clear = getattr(node, "clear_error", None)
@@ -729,11 +729,11 @@ class WorkflowExecutionMixin:
         else:
             self._execution_cleanup(success=False)
 
-        problems = getattr(self, "problems", None)
-        count = problems.count("error", roots_only=True) if problems else 0
+        diagnostics = getattr(self, "diagnostics", None)
+        count = diagnostics.count("error", roots_only=True) if diagnostics else 0
         if count:
             self._log_to_dock(f"Run finished with {count} problem(s).")
-            raiser = getattr(self, "on_run_problems", None)
+            raiser = getattr(self, "on_run_diagnostics", None)
             if callable(raiser):
                 try:
                     raiser()

@@ -73,7 +73,7 @@ Gross value is used on purpose: debits and credits cancel in a net sum and would
 
 **Errors versus warnings.** A mistake in the settings stops the node with a plain sentence, for example
 *"Choose the amount column."* The node turns red and the message, a hint and its code appear in the
-Problems dock. Unreadable amounts or dates do **not** stop a test: those values are skipped, the status
+Logs dock. Unreadable amounts or dates do **not** stop a test: those values are skipped, the status
 is raised to at least `warn` and the message says how many were skipped.
 
 | Code | Stops the node? | Meaning and fix |

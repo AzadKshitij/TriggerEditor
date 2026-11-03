@@ -1,6 +1,6 @@
 # The Config Dock, Data Preview, Logs and Problems
 
-Around the canvas there are four panels. The **Node Configuration** dock (the Config Dock) is where you set up a node. The bottom panels (**Data Preview**, **Logs**, **Problems** and **Run History**) share one tab bar and show what the workflow is doing and what it produced.
+Around the canvas there are three panels. The **Node Configuration** dock (the Config Dock) is where you set up a node. The bottom panels (**Data Preview**, **Logs** and **Run History**) share one tab bar and show what the workflow is doing and what it produced.
 
 [Back to the guide index](README.md)
 
@@ -105,43 +105,39 @@ If a file cannot be written, a dialog titled **Export failed** appears ("The CSV
 
 Choose **Options > Open in standalone window**, or alt-click an output socket on the canvas (after a Run), to open the table in a separate resizable window. It has the same search and export controls and does not follow your selection.
 
-## Logs (the Logging dock)
+## Logs
 
-The tab named **Logs** is the app's running commentary for the active workflow: loading the file, evaluating, each Run, and any problems.
+The tab named **Logs** is the app's running commentary and its problem list for the active workflow: loading the file, evaluating, each Run, and every node that currently has an error or warning.
+
+One row is one record. A log line shows its time, a level glyph and its message. A problem row shows the node, the message and a chevron, and clicking it selects that node on the canvas and centres it.
+
+The strip above the list is both the filter and the count:
+
+| Chip | Shows |
+|---|---|
+| All | Everything, in the order it happened. |
+| N Errors | Errors, excluding type-conversion failures. |
+| N Conv | Type-conversion failures (`TD-TYP-...`). |
+| N Warnings | Warnings, including the knock-on ones a failed input raises. |
+| N Messages | Plain log lines. |
+
+`Ctrl+F` opens the search field. It matches a message, a code, a node name or a problem's detail, and settles 300 ms after you stop typing.
 
 | Control | Meaning |
 |---|---|
-| Level | Show messages at this level or above: TRACE, DEBUG, INFO, WARNING, ERROR, CRITICAL. The default shows everything. |
-| Filter | Show only messages that contain this text. |
-| Auto-scroll | Keep the newest message in view. |
-| Clear | Empty the log of the active workflow. |
+| Last Run / Configuration | Show the problems the last Run reported, or the ones the current workflow state reports. Log lines appear in both modes. |
+| Copy details (icon) | Copies the selected problems, or every problem the filter shows when nothing is selected, with the Fix lines. |
+| Show technical details (icon, toggle) | Adds the raw engine message and stack trace to the expanded rows and to the copied text. Your choice is remembered. |
+| Clear (icon) | Empties log lines only. A live problem is not yours to delete: it leaves when its node goes clean. |
+| Follow new entries (icon, toggle) | Keeps the newest record in view. |
 
-Messages are colour coded by level. The dock keeps the last 1,000 messages per workflow.
+Expand a problem row with a double-click or Space to see its code, the **Fix:** line, **Other fix:** alternatives, **Caused by:** when the real problem is in an earlier node, and the technical text when that toggle is on.
 
-After a Run, the Logs hold a summary: whether it completed, failed or was cancelled, how long it took, and the line "Run log saved: ..." with the path of the run record (see [Run history](run-history-and-audit-trail.md)). If a Run fails you also get "Run finished with N problem(s)." and the Problems tab comes to the front.
+The dock keeps the last 1,000 log lines per workflow. Problems are never trimmed away by that cap, and a fixed problem disappears the moment its node recomputes cleanly.
+
+After a Run, the Logs hold a summary: whether it completed, failed or was cancelled, how long it took, and the line "Run log saved: ..." with the path of the run record (see [Run history](run-history-and-audit-trail.md)). If a Run fails you also get "Run finished with N problem(s).", and the list switches to **Last Run** with the **Errors** chip selected.
 
 A technical log file for the whole session is also written to disk. It is meant for support: when the app is installed from the packaged build it is in `%APPDATA%\Trigger Designer\logs`, otherwise in a `logs` folder next to the source.
-
-## Problems
-
-The **Problems** tab lists every node that currently has an error or warning, one row per node. Its title carries the count: "Problems (2)".
-
-| Column | Meaning |
-|---|---|
-| Node | The node's title and label. A red name is an error, an amber one a warning. |
-| Code | The stable error code, for example `TD-SCH-001`. Look it up in the [error reference](errors-and-problems.md#error-code-reference). |
-| Problem | A one-sentence description. Hover for a longer tooltip. |
-
-Expand a row (the arrow on the left) to see the detail, then lines starting **Fix:** and **Other fix:**, and **Caused by:** when the real problem is in an earlier node.
-
-| Tool | What it does |
-|---|---|
-| Filter problems | Narrow the list by typing part of a node name, a code or a message. |
-| Click a row | Selects that node on the canvas and scrolls it into view. |
-| Copy details (icon) | Copies the selected problems (or all of them, if none is selected) as text for an email or ticket. |
-| Show technical details (icon, toggle) | Adds the raw engine message and stack trace to the rows and to the copied text. Your choice is remembered. |
-
-The list updates as you fix things: a node's entry disappears as soon as it recomputes cleanly. Problems from the last Run are cleared when the next Run starts.
 
 More on reading and fixing errors is in [Errors and problems](errors-and-problems.md).
 

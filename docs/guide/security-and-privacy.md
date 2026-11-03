@@ -93,7 +93,7 @@ You can also turn off the user and machine name, the embedded code, and the whol
 
 Error messages can quote the bad values they found ("contains 'abc' in row 3"). Tick **Edit > Settings > General > Error messages > Hide data values in error messages** to remove those values from:
 
-- the node tooltip and the Problems dock,
+- the node tooltip and the Logs dock,
 - the text you copy with **Copy details**,
 - the error stored in the run record,
 - the technical text and stack trace (the offending values are scrubbed),

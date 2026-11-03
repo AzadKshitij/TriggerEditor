@@ -149,7 +149,6 @@ class TriggerWindow(
         self.createConfigDock()
         self.createLoggingDock()
         self.createDataPreviewDock()
-        self.createProblemsDock()
         self.createRunHistoryDock()
 
         self.createMenus()
@@ -329,9 +328,6 @@ class TriggerWindow(
             refresh = getattr(preview_dock, "refresh_theme", None)
             if callable(refresh):
                 refresh()
-        problems_dock = getattr(self, "problemsDock", None)
-        if problems_dock is not None:
-            problems_dock.apply_theme()
         history_dock = getattr(self, "runHistoryDock", None)
         if history_dock is not None:
             history_dock.apply_theme()
@@ -568,7 +564,7 @@ class TriggerWindow(
         # Add the MDI window (which contains both the node editor and its dock) to the MDI area
         subwnd = self.mdiArea.addSubWindow(nodeeditor)
         subwnd.setWindowIcon(self.empty_icon)
-        nodeeditor.on_run_problems = self.raiseProblemsDock
+        nodeeditor.on_run_diagnostics = self.raiseDiagnosticsDock
         nodeeditor.scene.addItemSelectedListener(self.updateEditMenu)
         nodeeditor.scene.addItemSelectedListener(
             lambda: self.configDock.updateConfig(nodeeditor.getSelectedItems())
@@ -581,9 +577,6 @@ class TriggerWindow(
         nodeeditor.scene.history.addHistoryModifiedListener(self.updateEditMenu)
         nodeeditor.addCloseEventListener(self.onSubWndClose)
         # nodeeditor.itemSelected.connect(self.onNodeSelected)
-
-        # Connect the design window to the shared logging dock
-        nodeeditor.setLoggingDock(self.getLoggingDock())
 
         # Wire the preview dock: the hooks are installed once per window and
         # the dock ignores events from windows it does not follow.
@@ -619,11 +612,10 @@ class TriggerWindow(
         """Handle sub window activation to switch the dock contexts"""
         if sub_window:
             widget = sub_window.widget()
-            if hasattr(widget, "setLoggingDock"):  # Check if it's a design window
+            if hasattr(widget, "diagnostics"):  # Check if it's a design window
                 # Switch both docks to show content for this window
                 self.switchLoggingDock(widget)
                 self.switchDataPreviewDock(widget)
-                self.switchProblemsDock(widget)
                 self.switchRunHistoryDock(widget)
             # The status bar reports the cursor position of the canvas the
             # user is looking at.

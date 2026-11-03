@@ -1,7 +1,7 @@
 """Runtime state services that a ``TriggerNode`` delegates to.
 
 ``NodeErrorState`` owns a node's structured errors: the per-source map, the
-tooltip and badge projection, the Problems dock bridge and the knock-on clear.
+tooltip and badge projection, the diagnostic-feed bridge and the knock-on clear.
 ``NodeEvaluator`` owns the evaluation pipeline: cache and re-entrancy checks,
 progress reporting, input collection, the one failure transition and the one
 invalidation method. Neither imports ``node_base``; the node is only a type.
@@ -46,8 +46,8 @@ class NodeErrorState:
         self.apply()
         if old is None or old.fingerprint != error.fingerprint:
             self.log_new(error)
-        problems = self.problems_store()
-        if problems is not None and not (error.knock_on and source == "live"):
+        problems = self.diagnostics_feed()
+        if problems is not None:
             problems.upsert(error, source)
 
     def clear(
@@ -63,7 +63,7 @@ class NodeErrorState:
         else:
             removed = [source] if self.by_source.pop(source, None) is not None else []
         self.apply()
-        problems = self.problems_store()
+        problems = self.diagnostics_feed()
         if problems is not None:
             for item in removed:
                 problems.remove(self.node.id, item)
@@ -98,16 +98,19 @@ class NodeErrorState:
             except RuntimeError:
                 pass
 
-    def problems_store(self):
-        scene = self.node.scene
+    def diagnostics_feed(self):
+        """The document's diagnostic feed, or ``None`` outside a document."""
+        scene = getattr(self.node, "scene", None)
+        feed = getattr(scene, "diagnostics", None)
+        if feed is None:
+            return None
         try:
-            view = scene.getView() if hasattr(scene, "getView") else None
-        except IndexError, RuntimeError, AttributeError:
-            view = None
-        owner = view.parentWidget() if view is not None else None
-        while owner is not None and not hasattr(owner, "problems"):
-            owner = owner.parentWidget()
-        return getattr(owner, "problems", None)
+            # The scene outlives its window: after a close the attribute still
+            # holds the wrapper, but touching a deleted C++ object raises.
+            feed.changed  # noqa: B018 - attribute access is the liveness probe
+        except RuntimeError:
+            return None
+        return feed
 
     def log_new(self, error: NodeError) -> None:
         try:

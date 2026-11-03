@@ -56,7 +56,7 @@ registering a package.
 | Module | Role |
 |---|---|
 | `node_base.py` | `TriggerNode`: identity, sockets, persistence, `get_code`. Delegates evaluation to `NodeEvaluator` and errors to `NodeErrorState`. Re-exports every name that moved out, so `from trigger_designer.qt.node_base import ...` keeps working. |
-| `node_runtime.py` | `NodeEvaluator` (cache and re-entrancy checks, progress, input collection, the one `fail` transition, the one `invalidate`) and `NodeErrorState` (per-source error map, tooltip and badge, Problems dock bridge, knock-on clear). |
+| `node_runtime.py` | `NodeEvaluator` (cache and re-entrancy checks, progress, input collection, the one `fail` transition, the one `invalidate`) and `NodeErrorState` (per-source error map, tooltip and badge, diagnostic-feed bridge, knock-on clear). |
 | `node_content.py` | `ConfigContent` (canonical content base), `DockBinding` (Config Dock undo registration), `TriggerChangeHandler` (thin mixin over `DockBinding`), `TriggerContent` (legacy adapter over `ConfigContent`). |
 | `node_graphics.py` | `TriggerGraphicsNode`: geometry, painting, state-ring pens, badges, low-detail fallback. |
 | `design_window.py` | `TriggerSubWindow`: one per open workflow. Load/save, `doEvalOutputs`, `getPyFile`, node drop, logging helpers. |
@@ -68,7 +68,7 @@ registering a package.
 | `helpers/shaping_support.py` | `ShapingContent`, `ShapingNode`, `Field`, `FormSection`. See `adding-a-node.md`. |
 | `helpers/config_content.py` | Alias of `node_content.ConfigContent` (old import path). |
 | `helpers/audit_bridge.py`, `audit_tasks.py` | `RunSession` (the recorder as the Run button sees it), background tasks for the Run History dock. |
-| `helpers/problems_store.py`, `error_context.py`, `error_enricher.py` | Problems dock state, translator context, background enrichment. |
+| `helpers/diagnostic_feed.py`, `error_context.py`, `error_enricher.py` | Logs dock state (log lines and problem records in one order), translator context, background enrichment. |
 | `helpers/content_undo_mixin.py`, `undo/` | `QUndoStack`-based undo (AGENTS.md has the rules; see `conventions.md`). |
 | `helpers/state_mixin.py` | `SerializableContentMixin`: schema-driven `serialize`/`deserialize`. |
 | `docks/` | `node_config.py` (Config Dock), `data_preview.py`, `logging_dock.py`, `problems_dock.py`, `run_history_dock.py`, `nodes_list.py`. |
@@ -263,7 +263,7 @@ pure and idempotent. Rules every node follows:
 
 Exceptions are translated to `NodeError` (`core/errors`) and stored on the node
 per source (`"live"` / `"run"`), then shown as a canvas badge/tooltip, a row in
-the Problems dock and a line in the Logging dock. Details:
+the Logs dock and a line in the session log file. Details:
 `error-system.md`.
 
 ## 9. Corrections to `docs/plan/00-codebase-brief.md` (dated 2026-10-21)

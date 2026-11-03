@@ -112,7 +112,7 @@ Defaults: **Align Horizontal Centers** `Ctrl+Shift+H`, **Align Vertical Centers*
 | Find the offending row for conversion errors | On | Run a bounded second search to name the first bad row and a few bad values. (`errors/locate_rows`) |
 | Row search limit | 5,000,000 | How many rows that search may look at (100,000 to 100,000,000). (`errors/locate_row_cap`) |
 
-The Problems dock's **Show technical details** toggle is stored as `errors/show_technical` (default off) and is changed from the dock, not from this window.
+The Logs dock's **Show technical details** toggle is stored as `errors/show_technical` (default off) and is changed from the dock, not from this window.
 
 ### Audit trail
 

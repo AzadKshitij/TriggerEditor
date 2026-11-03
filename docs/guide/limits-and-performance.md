@@ -62,7 +62,7 @@ Row order: after joins, groups and unpivots the order of rows is not guaranteed 
 Editing is quick because it works on 100 rows. Run is the real work, on all of them. A workflow that feels instant while you build it may take minutes to Run on millions of rows, and a step that is fine on the sample may hit a limit on the full data. Two rules of thumb:
 
 - After you finish building, Run it once and look at the Logs and the run's duration before you rely on it.
-- Open **Problems** after a Run, not only while editing: some errors (a value that cannot be converted, 500+ pivot columns, too many fuzzy pairs) appear only on the full data.
+- Open **Logs** after a Run, not only while editing: some errors (a value that cannot be converted, 500+ pivot columns, too many fuzzy pairs) appear only on the full data.
 
 ## What the run record adds
 

@@ -38,7 +38,7 @@ Check the full result after a Run: the Data Preview dock labels a table *evaluat
 **Column types.** A CSV or text file arrives with every column as text. Pivot, Window, Running Total and SQL Query can read
 text that holds numbers. Use a *Select* node to change a column's type.
 
-**Errors.** A mistake in the settings turns the node red. The Problems dock shows a short message, a hint
+**Errors.** A mistake in the settings turns the node red. The Logs dock shows a short message, a hint
 and a code. The codes you can meet in this family:
 
 | Code | Message | What to do |

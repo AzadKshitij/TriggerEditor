@@ -24,7 +24,7 @@ from qtpy.QtWidgets import QMainWindow, QWidget
 
 from trigger_designer.qt.preferences import Preferences, get_preferences
 
-STATE_VERSION = 1
+STATE_VERSION = 2
 DEFAULT_WINDOW_SIZE = QSize(1280, 800)
 
 GEOMETRY_KEY = "layout/geometry"
@@ -139,6 +139,21 @@ class LayoutState:
 
         if not state_restored:
             self._restore_preview_fallback(window)
+            self._migrate_layout(window, version)
+
+    def _migrate_layout(self, window: QMainWindow, version: int) -> None:
+        """Bring an older saved layout forward.
+
+        Version 1 had a separate Problems tab. Restoring it would leave the
+        merged Logs dock hidden while the canvas can still show red nodes, so
+        the migration raises Logs and lets the rest of the layout default.
+        """
+        if version >= STATE_VERSION:
+            return
+        dock = getattr(window, "loggingDock", None)
+        if dock is not None:
+            dock.show()
+            dock.raise_()
 
     def _restore_legacy_geometry(self, window: QMainWindow) -> None:
         if not bool(self._prefs.get("layout/restore", True)):
@@ -227,12 +242,10 @@ def apply_default_layout(window: QMainWindow) -> None:
         ("configDock", Qt.DockWidgetArea.LeftDockWidgetArea),
         ("loggingDock", Qt.DockWidgetArea.BottomDockWidgetArea),
         ("dataPreviewDock", Qt.DockWidgetArea.BottomDockWidgetArea),
-        ("problemsDock", Qt.DockWidgetArea.BottomDockWidgetArea),
         ("runHistoryDock", Qt.DockWidgetArea.BottomDockWidgetArea),
     )
     logging: QWidget | None = None
     preview: QWidget | None = None
-    problems: QWidget | None = None
     history: QWidget | None = None
     for attribute, area in default_areas:
         dock = getattr(window, attribute, None)
@@ -245,14 +258,10 @@ def apply_default_layout(window: QMainWindow) -> None:
             logging = dock
         elif attribute == "dataPreviewDock":
             preview = dock
-        elif attribute == "problemsDock":
-            problems = dock
         elif attribute == "runHistoryDock":
             history = dock
     if logging is not None and preview is not None:
         window.tabifyDockWidget(logging, preview)
-    if logging is not None and problems is not None:
-        window.tabifyDockWidget(logging, problems)
     if logging is not None and history is not None:
         window.tabifyDockWidget(logging, history)
     if logging is not None:

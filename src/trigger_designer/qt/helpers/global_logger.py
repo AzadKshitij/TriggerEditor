@@ -49,7 +49,7 @@ class GlobalLogger:
             return None
 
     def get_logging_dock(self) -> Optional["LoggingDock"]:
-        """Get the logging dock from the main window"""
+        """Get the logging dock from the main window (view, not a sink)."""
         if not self._main_window:
             return None
 
@@ -77,21 +77,10 @@ class GlobalLogger:
             target_window = design_window or self.get_active_design_window()
 
             if target_window and hasattr(target_window, "log"):
-                # Log directly to the design window
+                # Every record belongs to the document that produced it.
                 target_window.log(level, message)
-            elif self._main_window:
-                # Fallback: try to log directly to the logging dock
-                logging_dock = self.get_logging_dock()
-                if logging_dock:
-                    # Get the current active window ID or use a default
-                    active_window = self.get_active_design_window()
-                    window_id = str(id(active_window)) if active_window else "global"
-                    logging_dock.log(level, message, window_id)
-                else:
-                    # Final fallback: print to console
-                    print(f"[GLOBAL-{level}] {message}")
             else:
-                # No main window available, print to console
+                # No document available, print to console
                 print(f"[GLOBAL-{level}] {message}")
 
         except Exception as e:

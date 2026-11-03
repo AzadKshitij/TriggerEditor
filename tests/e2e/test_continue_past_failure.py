@@ -88,7 +88,7 @@ def test_independent_branch_runs_and_dependents_are_skipped(
     assert by_op.count(("input.file_output", "ok")) == 1
     assert verify_store(store_dir_of(tds)).ok
 
-    problems = window.problems
+    problems = window.diagnostics
     codes = {error.code for _source, error in problems.entries()}
     assert "TD-RUN-008" in codes
     skipped_nodes = [
@@ -115,7 +115,7 @@ def test_preference_off_stops_at_the_first_failure(qtbot, tmp_path, clean_prefer
     assert rec["status"] == "failed"
     statuses = [n["status"] for n in rec["nodes"]]
     assert statuses.count("failed") == 1
-    assert "TD-RUN-008" not in {e.code for _s, e in window.problems.entries()}
+    assert "TD-RUN-008" not in {e.code for _s, e in window.diagnostics.entries()}
     # the loop stopped at the failure: nothing after it ran
     first_failed = statuses.index("failed")
     assert all(s == "skipped" for s in statuses[first_failed + 1 :])
