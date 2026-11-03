@@ -114,12 +114,6 @@ class NodeErrorState:
             logger.error(error.render_text(include_technical=True))
         except Exception:  # noqa: BLE001, S110 - logging must never break eval
             pass
-        try:
-            from trigger_designer.qt.helpers import global_logger
-
-            global_logger.error(error.render_summary())
-        except Exception:  # noqa: BLE001, S110 - dock may not exist in tests
-            pass
 
 
 class NodeEvaluator:
