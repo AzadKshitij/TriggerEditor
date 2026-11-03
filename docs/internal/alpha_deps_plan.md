@@ -49,7 +49,7 @@ command and be compared with
    uncommitted app-resave churn in `savedfiles/*.tds` discarded (approved).
 2. **Measurement fix (committed `c09c635`):** the committed sample workflows
    bake the authoring machine's absolute paths
-   (`C:/Users/KASHVINCHANDRASAN/...`, `docs/bugs.md` documents 16 files).
+   (`C:/Users/<you>/...`, `docs/bugs.md` documents 16 files).
    Before this fix the benchmark measured **failures**: `large_105node` ran
    29 nodes in 0.08 s (File Inputs gave up after 5 retries → "no incoming
    data"), and `small_2node`'s 1.01 s `last_execution_time` was the retry

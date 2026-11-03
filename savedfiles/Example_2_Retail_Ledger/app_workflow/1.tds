@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\channels.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\channels.csv",
         "filePathRel": "../data/channels.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -100,7 +100,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\orders.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\orders.csv",
         "filePathRel": "../data/orders.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -225,7 +225,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\customers.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\customers.csv",
         "filePathRel": "../data/customers.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -330,7 +330,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\products.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\products.csv",
         "filePathRel": "../data/products.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -431,7 +431,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\suppliers.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\suppliers.csv",
         "filePathRel": "../data/suppliers.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -516,7 +516,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\fx_rates.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\fx_rates.csv",
         "filePathRel": "../data/fx_rates.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -4015,7 +4015,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4151,7 +4151,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue_long.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue_long.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4279,7 +4279,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/category_revenue.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/category_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4355,7 +4355,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/region_channel_revenue.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/region_channel_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4560,7 +4560,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/top_customers.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/top_customers.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4679,7 +4679,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/supplier_performance.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/supplier_performance.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4864,7 +4864,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fx_exposure.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fx_exposure.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -4992,7 +4992,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/kpi_summary.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/kpi_summary.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -5939,7 +5939,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/segment_revenue.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/segment_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6015,7 +6015,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/01 enriched customer_id.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/01 enriched customer_id.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6047,7 +6047,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/02 enriched product_id.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/02 enriched product_id.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6079,7 +6079,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/03 enriched supplier_id.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/03 enriched supplier_id.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6111,7 +6111,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 enriched channel_id.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 enriched channel_id.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6143,7 +6143,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/05 enriched currency.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/05 enriched currency.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6484,7 +6484,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 dropped null key rows.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 dropped null key rows.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6516,7 +6516,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_quantity.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_quantity.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6548,7 +6548,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_price_outliers.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_price_outliers.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6580,7 +6580,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_future_dates.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_future_dates.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6612,7 +6612,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/duplicate_orders.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/duplicate_orders.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6644,7 +6644,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_customers.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_customers.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -6676,7 +6676,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_products.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_products.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -7241,7 +7241,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enriched.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enriched.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -7320,7 +7320,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enterprise.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enterprise.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -7399,7 +7399,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_high_risk.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_high_risk.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -7475,7 +7475,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_estimation.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_estimation.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -7507,7 +7507,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_validation.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_validation.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,
@@ -7928,7 +7928,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/reference_data_union.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/reference_data_union.csv",
           "file_format": "csv",
           "delimiter": ",",
           "use_streaming": true,

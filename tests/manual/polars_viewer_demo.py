@@ -24,7 +24,7 @@ import random
 import string
 
 # Add the src directory to the path to import our custom widgets
-sys.path.append(r"c:\Users\KASHVINCHANDRASAN\Desktop\Personal\Github\TriggerEditor\src")
+sys.path.append(r"C:/Users/<you>/TriggerEditor\src")
 
 try:
     from trigger_designer.qt.models.polars_table_viewer import PolarsTableViewer

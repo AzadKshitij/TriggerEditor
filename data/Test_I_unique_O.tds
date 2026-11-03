@@ -48,7 +48,7 @@
       ],
       "outputs": [],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_Data_unique.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor/src/test_Data_unique.csv",
         "file_format": "csv",
         "delimiter": ",",
         "use_streaming": true,

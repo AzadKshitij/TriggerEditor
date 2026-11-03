@@ -2,7 +2,7 @@
 
 Audience: the (cheaper) model that implements this. Every decision is made; do not re-decide.
 Read first: `docs/plan/00-codebase-brief.md` (sections 3.7 recipe, 3.8 skeleton, 4, 5, 6, 7.2, 9, 11.3) and `AGENTS.md`.
-All paths are relative to the repo root `C:\Users\KASHVINCHANDRASAN\Desktop\Personal\Github\TriggerEditor`.
+All paths are relative to the repo root `C:/Users/<you>/TriggerEditor`.
 `file.py:N` references were verified on 2026-10-21 against `main` @ `71b4041` (working tree dirty with unrelated edits; do not touch them).
 
 **Product-owner decision (binding): Excel files are WRITTEN with `xlsxwriter`. Application code imports it in exactly one place, `core/excel/engine.py`. Polars `write_excel` is not used. `openpyxl` stays installed/declared and is used ONLY as a test-time reader.**

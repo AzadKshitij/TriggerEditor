@@ -120,6 +120,23 @@ Records of earlier runs stay in the old `.runs` folder; move that folder with th
 | Is the file where you think? | Open the File Output node and read the path in **File**. Use a full path so there is no doubt where it goes. Check the run record's `outputs`, which lists the exact paths written. |
 | Is the run record there? | Run History lists it. "Run log saved: <path>" in the Logs says where it went. |
 
+## The Logs dock and the log file are quiet
+
+The program keeps routine detail out of the Logs dock and the log file. You see
+warnings, errors and the main steps of a Run. To see every detail, including the
+technical trace, start the program with the environment variable
+`TRIGGER_DESIGNER_LOG_LEVEL` set to `DEBUG`:
+
+```powershell
+$env:TRIGGER_DESIGNER_LOG_LEVEL = "DEBUG"
+& "C:\Tools\TriggerDesigner\TriggerEditor.exe"
+```
+
+Use `TRACE` for the most detail. Any other value, or no value, means `INFO`. The
+setting applies to the Logs dock, the console and the log file written to
+`%APPDATA%\Trigger Designer\logs`. Set the variable only while you investigate:
+the trace is long.
+
 ## Panels and layout
 
 | Problem | Fix |

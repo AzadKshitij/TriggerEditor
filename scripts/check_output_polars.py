@@ -4,7 +4,7 @@ import os
 # Always use LazyFrame for memory efficiency
 # Using LazyFrame for optimal memory usage
 var_file_input_2700637637200 = pl.scan_csv(
-    "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_customers.csv",
+    "C:/Users/<you>/TriggerEditor/src/test_customers.csv",
     infer_schema=False,
 )
 
@@ -16,7 +16,7 @@ import os
 # Always use LazyFrame for memory efficiency
 # Using LazyFrame for optimal memory usage
 var_file_input_2700637638960 = pl.scan_csv(
-    "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/test_orders.csv",
+    "C:/Users/<you>/TriggerEditor/src/test_orders.csv",
     infer_schema=False,
 )
 

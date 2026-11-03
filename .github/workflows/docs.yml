@@ -48,8 +48,14 @@ jobs:
         run: uv run --no-sync mike deploy --push dev
 
       - name: Publish tagged release
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref_name, '-')
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           uv run --no-sync mike deploy --push --update-aliases "$VERSION" latest
           uv run --no-sync mike set-default --push latest
+
+      - name: Publish pre-release docs version only
+        if: startsWith(github.ref, 'refs/tags/v') && contains(github.ref_name, '-')
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          uv run --no-sync mike deploy --push "$VERSION"

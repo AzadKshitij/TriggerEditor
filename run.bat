@@ -18,7 +18,7 @@ uv run --project . src\trigger_designer\main.py "C:\Projects\TriggerEditor\saved
 GOTO :EOF
 
 :COMP
-uv run --project . src\trigger_designer\main.py "C:\Users\KASHVINCHANDRASAN\Desktop\Personal\Github\TriggerEditor\savedfiles\0. All Node- Test.tds"
+uv run --project . src\trigger_designer\main.py "%~dp0savedfiles\0. All Node- Test.tds"
 GOTO :EOF
 
 :End1

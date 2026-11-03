@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/KASHVINCHANDRASAN/Desktop/Personal/Github/TriggerEditor/src/check.csv",
+        "filePath": "C:/Users/<you>/TriggerEditor/src/check.csv",
         "file_type": "csv",
         "record_limit": 0,
         "output_filename_as_field": false,

@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\data",
+        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_3_AE_Winter_Watch\\data",
         "filePathRel": "data",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -881,7 +881,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\output\\national_monthly.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_3_AE_Winter_Watch\\output\\national_monthly.csv",
           "file_format": "csv",
           "delimiter": ",",
           "include_bom": false,
@@ -1235,7 +1235,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\output\\trust_watchlist.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_3_AE_Winter_Watch\\output\\trust_watchlist.csv",
           "file_format": "csv",
           "delimiter": ",",
           "include_bom": false,
@@ -1432,7 +1432,7 @@
       "outputs": [],
       "content": {
         "settings": {
-          "filePath": "C:\\Users\\azadk\\.local\\share\\opencode\\worktree\\f02c226d0c50f053dbc941d477c1547441188e19\\feature\\savedfiles\\Example_3_AE_Winter_Watch\\output\\region_summary.csv",
+          "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_3_AE_Winter_Watch\\output\\region_summary.csv",
           "file_format": "csv",
           "delimiter": ",",
           "include_bom": false,

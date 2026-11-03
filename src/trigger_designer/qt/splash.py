@@ -12,7 +12,7 @@ from trigger_designer.qt.resource_manager import ResourceManager
 class Splash:
     """THe Custom Splash Screen widget for TriggerDesigner"""
 
-    COPYRIGHT_YEARS: str = "2024-2025"
+    COPYRIGHT_YEARS: str = "2024-2026"
     COPYRIGHT_STR: str = f"© {COPYRIGHT_YEARS} Azad Kshitij"
     VERSION_STR: str = (
         f"Version {VERSION} {(' (' + VERSION_BRANCH + ')') if VERSION_BRANCH else ''}"

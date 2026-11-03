@@ -19,6 +19,20 @@ from qtpy.QtCore import QObject, Signal
 
 from trigger_designer.core.errors import NodeError
 
+#: Environment variable that sets the lowest log level kept (console, log file,
+#: Logs dock). Unset or invalid means INFO. DEBUG or TRACE keeps the full trace.
+LOG_LEVEL_ENV = "TRIGGER_DESIGNER_LOG_LEVEL"
+_LOG_RANK = {"TRACE": 0, "DEBUG": 1, "INFO": 2, "WARNING": 3, "ERROR": 4, "CRITICAL": 5}
+
+
+def log_level() -> str:
+    """The lowest level kept, read from ``TRIGGER_DESIGNER_LOG_LEVEL``."""
+    import os
+
+    requested = os.getenv(LOG_LEVEL_ENV, "").strip().upper()
+    return requested if requested in _LOG_RANK else "INFO"
+
+
 #: A plain log line.
 KIND_LOG = "log"
 #: A node problem, carrying the whole :class:`NodeError`.
@@ -165,8 +179,10 @@ class DiagnosticFeed(QObject):
         self._notify()
         return True
 
-    def add_log(self, level: str, message: str) -> DiagnosticRecord:
-        """Append a log line and trim the oldest ones past the cap."""
+    def add_log(self, level: str, message: str) -> DiagnosticRecord | None:
+        """Append a log line below the configured level is dropped; the rest trim past the cap."""
+        if _LOG_RANK.get(level.upper(), 0) < _LOG_RANK[log_level()]:
+            return None
         record = DiagnosticRecord(
             seq=self._next_seq(),
             kind=KIND_LOG,

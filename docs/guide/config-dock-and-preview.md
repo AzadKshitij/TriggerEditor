@@ -9,8 +9,8 @@ Around the canvas there are three panels. The **Node Configuration** dock (the C
 - [Show, hide and arrange the panels](#show-hide-and-arrange-the-panels)
 - [Config Dock](#config-dock)
 - [Data Preview](#data-preview)
-- [Logs (the Logging dock)](#logs-the-logging-dock)
-- [Problems](#problems)
+- [Logs](#logs)
+- [Problems](#if-something-goes-wrong)
 - [If something goes wrong](#if-something-goes-wrong)
 
 Run History has its own page: [Run history and audit trail](run-history-and-audit-trail.md).

@@ -1,7 +1,7 @@
 # Signal — Trigger Designer Design System
 
 > Source of truth for the application UI.
-> Visual reference: [`design_system_preview.html`](assets/design_system_preview.html) — self-contained, no network required.
+> Visual reference: `docs/assets/design_system_preview.html` in the source tree (not part of the published site).
 > Config Dock contract: **§§1–7** (the sections `AGENTS.md` points at).
 > Reference implementations: the Data Preview strip (`qt/widgets/data_preview_panel.py`) and the Select tool (`qt/widgets/nodes/Preparation/select.py:134-259`).
 > Status: Signal 1.0 is the target contract. The Preview strip is the reference implementation; tokens and states marked **target** below are not in `base.qss` yet. The migration order is in §19.
@@ -732,7 +732,7 @@ Target guards still to add:
 - Theme engine: `qt/theme_manager.py`, theme editor `qt/dialogs/theme_editor_dialog.py`, swatches `qt/widgets/common/theme_widgets.py`
 - Preferences: `qt/preferences.py`, dialog `qt/dialogs/preferences_dialog.py`, host window `qt/main_window.py`
 - Layout and session: `qt/layout_state.py`, `qt/helpers/preview_dock_state.py` (legacy migration only)
-- Visual preview: [`design_system_preview.html`](assets/design_system_preview.html)
+- Visual preview: `docs/assets/design_system_preview.html` in the source tree
 
 ---
 
@@ -827,4 +827,4 @@ Target guards still to add:
 - Canvas: `src/trigger_designer/qt/node_base.py`, `src/trigger_designer/qt/node_editor_colors.py`
 - Theme hooks: `src/trigger_designer/resources/qt/themes/base.qss`, `src/trigger_designer/qss/_style.scss`
 - Icons: `src/trigger_designer/qt/resources.json:98-105`
-- Visual preview: [`design_system_preview.html`](assets/design_system_preview.html)
+- Visual preview: `docs/assets/design_system_preview.html` in the source tree
