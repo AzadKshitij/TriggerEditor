@@ -170,8 +170,12 @@ analysis = Analysis(
         "test",
         "_pytest",
         "pytest",
-        "setuptools",
-        "distutils",
+        # "setuptools" / "distutils" are deliberately NOT excluded. PyInstaller
+        # depends on setuptools, so it is always installed in the build venv,
+        # and hook-distutils aliases `distutils` onto setuptools' vendored copy.
+        # An exclude entry makes that alias raise
+        # `ValueError: Target module "distutils" already imported as
+        # ExcludedModule(...)`, which aborts the build at analysis time.
         "matplotlib.tests",
         "matplotlib.testing",
         "numpy.tests",

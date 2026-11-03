@@ -38,9 +38,11 @@ if exist "build\trigger" rmdir /s /q "build\trigger"
 REM Install the locked dependencies (nodeeditor-qtpy included) and the app
 REM itself, editable, into .venv. --frozen keeps uv.lock authoritative: a
 REM stale lock fails the build instead of silently resolving new versions.
-REM --all-groups keeps the profiling tools (py-spy, scalene, objgraph) installed.
+REM --all-groups used to pull in the profiling group too, but its setuptools
+REM build chain conflicts with PyInstaller's distutils hook and fails the
+REM build with a "distutils already imported as ExcludedModule" error.
 echo Installing locked dependencies...
-uv sync --frozen --all-groups
+uv sync --frozen --dev
 if %ERRORLEVEL% NEQ 0 (
     echo ERROR: uv sync failed.
     exit /b %ERRORLEVEL%
@@ -72,7 +74,10 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 
-REM Verify bundle assets
+REM Verify the bundle. Portable mode writes one self-contained exe and no CLI;
+REM the onedir build writes dist\TriggerEditor\ with the CLI beside the GUI.
+echo %* | findstr /C:"--portable" >nul
+if %ERRORLEVEL% EQU 0 goto Portable
 if not exist "dist\TriggerEditor\TriggerEditor.exe" (
     echo Build failed: dist\TriggerEditor\TriggerEditor.exe missing.
     exit /b 1
@@ -105,3 +110,15 @@ echo.
 echo Build completed successfully.
 echo Launch dist\TriggerEditor\TriggerEditor.exe to smoke-test, then compile
 echo the installer with Inno Setup on savedfiles\TriggerDesigner_Setup.iss
+exit /b 0
+
+:Portable
+if not exist "dist\TriggerEditor.exe" (
+    echo Build failed: dist\TriggerEditor.exe missing.
+    exit /b 1
+)
+echo.
+echo Portable build completed successfully: dist\TriggerEditor.exe
+echo The portable build is GUI-only; it does not include trigger-designer-cli.
+echo Package it as TriggerDesigner-0.1.0a1-windows-portable.zip with LICENSE
+echo alongside the exe, and publish SHA256SUMS.txt with the release.
