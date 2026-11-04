@@ -2,6 +2,14 @@
 
 ![Formula icon](../../assets/node_icons/Preparation/Formula.svg){ .node-icon }
 
+Adds calculated columns, or replaces the values of an existing column, using SQL expressions. One node holds up to **five** formulas; each can use the columns created by the ones above it.
+
+![Formula editor: Section 1 with a valid formula (green checkmark) and Section 2 with an error (red border and message)](../../assets/illustrations/formula-editor.svg)
+
+!!! tip "Quick links"
+    - **[Formula reference](formula-reference.md)**: every function family with examples (arithmetic, string, date, regex, and more).
+    - **[SQL expressions guide](../../guide/sql-expressions.md)**: column reference syntax, the CSV text pitfall, and the read-only guard.
+
 ## Purpose
 
 Adds calculated columns, or replaces the values of an existing column, using SQL expressions. One node holds up to **five** formulas; each can use the columns created by the ones above it.
