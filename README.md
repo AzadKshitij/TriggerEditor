@@ -190,22 +190,30 @@ src/trigger_designer/
 
 ## Documentation
 
-The user documentation is a MkDocs Material site. Its source lives in `docs/`
-and is published with [mike](https://github.com/jimporter/mike) so each release
-keeps its own copy.
+The site has two parts, published together to
+[the project's GitHub Pages](https://azadkshitij.github.io/TriggerEditor/):
+
+- `homepage/` — a standalone landing page at the site root. Plain HTML, CSS and
+  JavaScript, no build step.
+- `docs/` — the user guide, built by [Zensical](https://zensical.org/) into
+  `site/docs` and served at `/docs/`. Configuration is `zensical.toml`.
 
 ```bash
-uv sync --group docs          # install the docs toolchain
-uv run --group docs mkdocs serve    # live preview on http://127.0.0.1:8000
-uv run --group docs mkdocs build --strict
+uv sync --group docs                  # install the docs toolchain
+uv run --group docs zensical serve    # live preview on http://127.0.0.1:8000
+uv run --group docs zensical build --clean
 ```
+
+`.github/workflows/docs.yml` builds the documentation, copies `homepage/` over
+the root of `site/`, and force-pushes the result to `gh-pages`. There are no
+per-release doc versions: every push to `main` republishes the current docs.
 
 | Document | Contents |
 |---|---|
 | [`docs/index.md`](docs/index.md) | Site home: what the app is and where to start. |
 | [`docs/guide/`](docs/guide/README.md) | The user guide: first workflow, canvas, Config Dock, running, errors, audit trail. |
 | [`docs/nodes/`](docs/nodes/index.md) | One page per node, grouped by palette family. |
-| [`docs/versions.md`](docs/versions.md) | How versions are published with mike. |
+| [`docs/versions.md`](docs/versions.md) | How the public site is built and published. |
 | [`docs/contributing/writing-style.md`](docs/contributing/writing-style.md) | The node page template and voice. |
 | [`docs/internal/`](docs/internal/) | Engineering notes, plans and historical reports. Excluded from the site. |
 | [`docs/DESIGN_SYSTEM.md`](docs/DESIGN_SYSTEM.md) | Config Dock design system and UI conventions. |

@@ -1,7 +1,7 @@
 # Internal documentation
 
-Nothing in this folder is published. `mkdocs.yml` excludes `docs/internal/` from
-the site, so these notes are for maintainers only.
+Nothing in this folder is published. `zensical.toml` excludes `docs/internal/`
+from the site, so these notes are for maintainers only.
 
 | Folder or file | What it is |
 |---|---|

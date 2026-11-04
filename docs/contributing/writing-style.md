@@ -89,14 +89,14 @@ Never link into `src/`: the built site cannot serve it.
 - To a guide page: `[Running workflows](../../guide/running-workflows.md)`.
 - To a section on the same page: `[Settings](#settings)`.
 
-Use relative links only. An absolute path or a link starting with `/` fails the
-strict build.
+Use relative links only. An absolute path or a link starting with `/` breaks in
+the published site, because the documentation is served from `/docs/`.
 
 ## Before you commit a page
 
 1. Open the node in the app and read every control in the Config Dock. The page
    must list all of them.
 2. Check each message code against the app, not against an older note.
-3. Run `uv run --group docs mkdocs build --strict` and fix what it reports.
+3. Run `uv run --group docs zensical build --clean` and fix what it reports.
 4. Read the page once as a user who has never opened the app. If a sentence
    needs the source code to make sense, rewrite it.
