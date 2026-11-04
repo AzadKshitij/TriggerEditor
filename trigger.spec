@@ -22,7 +22,7 @@ app_name = "TriggerEditor"
 # Icon configuration
 icon_path = None
 if system in {"Windows", "Darwin"}:
-    icon_path = "src/trigger_designer/resources/TriEditorLogo.ico"
+    icon_path = "src/trigger_designer/resources/Icon.ico"
 
 # Verify icon exists
 if icon_path and not Path(icon_path).exists():
