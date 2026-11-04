@@ -415,6 +415,7 @@ class SQLFormulaEditor(QTextEdit):
         self.bracket_columns: bool = True
         self.errors: List[Dict] = []
         self.external_validator: Optional[Callable[[str], List[Dict]]] = None
+        self.schedule_validation: Optional[Callable[[str], None]] = None
         self._last_completion = ""
         self._last_completion_ts = 0.0
         self.error_timer = QTimer()
@@ -614,13 +615,60 @@ class SQLFormulaEditor(QTextEdit):
 
         if not text.strip():
             self.update_error_highlights()
-            # Emit clear signal for empty text
             self.allErrorsDetected.emit([])
+            # Notify the host widget so it can clear its error label too.
+            if self.schedule_validation is not None:
+                self.schedule_validation("")
             return
 
         # SQLGlot supplies locations; DuckDB remains authoritative when the
         # editor has a live validator (the two parsers need not agree).
         syntax_errors = self.validate_sql_syntax(text)
+
+        # Fast async path: show SQLGlot + column-reference results immediately;
+        # DuckDB result arrives later via apply_validation_results().
+        if self.schedule_validation is not None:
+            self.errors.extend(
+                {**error, "category": "syntax"} for error in syntax_errors
+            )
+            if self.bracket_columns and not any(
+                error.get("category") == "syntax" for error in self.errors
+            ):
+                self.errors.extend(self.validate_column_references(text))
+            seen: set[str] = set()
+            unique_errors: List[Dict] = []
+            for error in self.errors:
+                if error["message"] not in seen:
+                    unique_errors.append(error)
+                    seen.add(error["message"])
+            self.errors = unique_errors
+            self.update_error_highlights()
+            if self.errors:
+                first_error = self.errors[0]
+                if (
+                    first_error.get("line") is not None
+                    and first_error.get("column") is not None
+                ):
+                    self.errorDetected.emit(
+                        first_error["message"],
+                        first_error["line"],
+                        first_error["column"],
+                    )
+                self.allErrorsDetected.emit(
+                    [
+                        (
+                            f"Line {e['line']}, Col {e['column']}: "
+                            if e.get("line") is not None and e.get("column") is not None
+                            else ""
+                        )
+                        + e["message"]
+                        for e in self.errors
+                    ]
+                )
+            else:
+                self.allErrorsDetected.emit([])
+            self.schedule_validation(text)
+            return
 
         # DuckDB validates the actual generated query. SQLGlot provides source
         # positions only when DuckDB also rejects the expression as syntax.
@@ -686,6 +734,33 @@ class SQLFormulaEditor(QTextEdit):
             self.allErrorsDetected.emit(error_messages)
         else:
             # Clear errors
+            self.allErrorsDetected.emit([])
+
+    def apply_validation_results(self, errors: list[dict]) -> None:
+        """Apply DuckDB validation results delivered from a background worker."""
+        self.errors = list(errors)
+        self.update_error_highlights()
+        if self.errors:
+            first_error = self.errors[0]
+            if (
+                first_error.get("line") is not None
+                and first_error.get("column") is not None
+            ):
+                self.errorDetected.emit(
+                    first_error["message"], first_error["line"], first_error["column"]
+                )
+            self.allErrorsDetected.emit(
+                [
+                    (
+                        f"Line {e['line']}, Col {e['column']}: "
+                        if e.get("line") is not None and e.get("column") is not None
+                        else ""
+                    )
+                    + e["message"]
+                    for e in self.errors
+                ]
+            )
+        else:
             self.allErrorsDetected.emit([])
 
     @staticmethod

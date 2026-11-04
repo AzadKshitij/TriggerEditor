@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import threading
 from functools import partial
 from typing import Any
 
 import polars as pl
-from qtpy.QtCore import Qt, Signal
+from loguru import logger
+from qtpy.QtCore import Qt, QObject, QRunnable, QThreadPool, Signal
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -23,6 +25,7 @@ from trigger_designer.core.node_configuration import (
     register_node,
 )
 from trigger_designer.core.shaping import formula as core
+from trigger_designer.core.shaping.common import schema_of
 from trigger_designer.qt.helpers.shaping_support import (
     ShapingContent,
     ShapingNode,
@@ -154,6 +157,115 @@ class _FormulaCard(QFrame):
         self.set_collapsed(not self._collapsed)
 
 
+class _ValidationSignals(QObject):
+    """QObject companion that carries the signals for _ValidationRunner.
+
+    QRunnable cannot emit signals; this companion is created on the UI thread
+    and kept alive via _ValidationDispatcher._active until signal delivery.
+    """
+
+    finished = Signal(int, int, list)  # section_index, generation, errors
+    failed = Signal(int, int, str)     # section_index, generation, message
+
+
+class _ValidationRunner(QRunnable):
+    """Background worker that runs EXPLAIN + 100-row DuckDB validation."""
+
+    def __init__(
+        self,
+        section_index: int,
+        sections_snap: list[dict],
+        schema_only: pl.DataFrame,
+        rows_snap: pl.DataFrame | None,
+        cancel_token: threading.Event,
+        generation: int,
+        signals: _ValidationSignals,
+    ) -> None:
+        super().__init__()
+        self._section_index = section_index
+        self._sections_snap = sections_snap
+        self._schema_only = schema_only
+        self._rows_snap = rows_snap
+        self._cancel_token = cancel_token
+        self._generation = generation
+        self._signals = signals
+
+    def run(self) -> None:  # noqa: D102
+        try:
+            errors = core.validate_section_presampled(
+                self._sections_snap, self._section_index, self._schema_only, None
+            )
+            if self._cancel_token.is_set():
+                return
+            if self._rows_snap is not None and self._rows_snap.height > 0:
+                errors = core.validate_section_presampled(
+                    self._sections_snap,
+                    self._section_index,
+                    self._schema_only,
+                    self._rows_snap,
+                )
+            self._signals.finished.emit(self._section_index, self._generation, errors)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("ValidationRunner section %d failed", self._section_index)
+            self._signals.failed.emit(self._section_index, self._generation, str(exc))
+
+
+class _ValidationDispatcher:
+    """Manages per-section background validation runners.
+
+    Modeled on PreviewRequestController (generation-counter newest-wins) and
+    ErrorEnricher (_active set for GC safety).
+    """
+
+    def __init__(self, result_slot, failure_slot) -> None:
+        self._generation: int = 0
+        self._tokens: list[threading.Event] = []
+        self._active: dict[tuple[int, int], tuple] = {}
+        self._result_slot = result_slot
+        self._failure_slot = failure_slot
+
+    def dispatch(
+        self,
+        section_index: int,
+        sections_snap: list[dict],
+        schema_only: pl.DataFrame,
+        rows_snap: pl.DataFrame | None,
+        text: str,
+    ) -> None:
+        sections_snap = list(sections_snap)
+        if 0 <= section_index < len(sections_snap):
+            sections_snap[section_index] = dict(sections_snap[section_index])
+            sections_snap[section_index]["formula_text"] = text
+
+        cancel_token = threading.Event()
+        while len(self._tokens) <= section_index:
+            self._tokens.append(threading.Event())
+        self._tokens[section_index].set()
+        self._tokens[section_index] = cancel_token
+
+        self._generation += 1
+        generation = self._generation
+
+        signals = _ValidationSignals()
+        signals.finished.connect(self._result_slot, Qt.ConnectionType.QueuedConnection)
+        signals.failed.connect(self._failure_slot, Qt.ConnectionType.QueuedConnection)
+
+        runner = _ValidationRunner(
+            section_index, sections_snap, schema_only, rows_snap,
+            cancel_token, generation, signals,
+        )
+        runner.setAutoDelete(True)
+        self._active[(section_index, generation)] = (runner, signals)
+        QThreadPool.globalInstance().start(runner)
+
+    def cancel_from(self, section_index: int) -> None:
+        for i in range(section_index, len(self._tokens)):
+            self._tokens[i].set()
+
+    def bump_generation(self) -> None:
+        self._generation += 1
+
+
 class FormulaContent(ShapingContent):
     """Ordered formula cards; each card edits one section in settings."""
 
@@ -171,6 +283,10 @@ class FormulaContent(ShapingContent):
         self.section_widgets: list[dict] = []
         self.section_errors: dict[int, str] = {}
         self._collapsed_sections: set[int] = set()
+        self._dispatcher = _ValidationDispatcher(
+            self._on_validation_result,
+            self._on_validation_failed,
+        )
 
     # -- model helpers ----------------------------------------------------
     def _section_list(self) -> list[dict]:
@@ -289,6 +405,8 @@ class FormulaContent(ShapingContent):
         if layout is None:
             return
         self.cancel_pending_evaluation()
+        self._dispatcher.cancel_from(0)
+        self._dispatcher.bump_generation()
         if not clear_layout(layout):
             self.sections_layout = None
             self.section_widgets = []
@@ -345,7 +463,7 @@ class FormulaContent(ShapingContent):
             formula_input.set_available_columns(self._available_before(index))
             if section["formula_text"]:
                 formula_input.set_text(section["formula_text"])
-            formula_input.set_validate_callback(partial(self._validate_section, index))
+            formula_input.editor.schedule_validation = partial(self._dispatch_validation, index)
             formula_input.textChanged.connect(self._mark_text_dirty)
             self._debounced(
                 formula_input.textChanged,
@@ -475,8 +593,6 @@ class FormulaContent(ShapingContent):
         self._commit(
             sections, "Formula Text Changed", merge_key=merge_key, evaluate=evaluate
         )
-        for index in changed:
-            self._refresh_error(index)
 
     def _commit_text(self, index: int, *, evaluate: bool | None = None) -> None:
         self._commit_editor_text(evaluate=evaluate, only=index)
@@ -536,6 +652,7 @@ class FormulaContent(ShapingContent):
         sections = self._section_list()
         if len(sections) >= core.MAX_FORMULA_SECTIONS:
             return
+        self._dispatcher.cancel_from(len(sections))
         sections.append(dict(core.DEFAULT_SECTION))
         self._commit(sections, "Formula Section Added", structural=True)
 
@@ -543,6 +660,7 @@ class FormulaContent(ShapingContent):
         sections = self._section_list()
         if not 0 <= index < len(sections):
             return
+        self._dispatcher.cancel_from(index)
         del sections[index]
         self._commit(sections, "Formula Section Removed", structural=True)
 
@@ -572,6 +690,54 @@ class FormulaContent(ShapingContent):
             self.section_errors.pop(index, None)
             label.clear()
             label.hide()
+
+    def _dispatch_validation(self, section_index: int, text: str) -> None:
+        if not self.frames or self.frames[0] is None:
+            return
+        sections_snap = self._section_list()
+        schema_only = pl.DataFrame(schema=schema_of(self.frames[0]))
+        rows_snap = core.sample_rows(self.frames[0])
+        self._dispatcher.dispatch(section_index, sections_snap, schema_only, rows_snap, text)
+
+    def _on_validation_result(self, section_index: int, generation: int, errors: list) -> None:
+        self._dispatcher._active.pop((section_index, generation), None)
+        if generation != self._dispatcher._generation:
+            return
+        if section_index >= len(self.section_widgets):
+            return
+        widget = self.section_widgets[section_index]
+        label = widget["error_label"]
+        try:
+            widget["formula_input"].editor.apply_validation_results(errors)
+        except RuntimeError:
+            return
+        try:
+            if errors:
+                message = str(errors[0].get("message") or "Invalid formula")
+                self.section_errors[section_index] = message
+                label.setText(message)
+                label.show()
+            else:
+                self.section_errors.pop(section_index, None)
+                label.clear()
+                label.hide()
+        except RuntimeError:
+            pass
+
+    def _on_validation_failed(self, section_index: int, generation: int, message: str) -> None:
+        self._dispatcher._active.pop((section_index, generation), None)
+        if generation != self._dispatcher._generation:
+            return
+        logger.warning("Formula validation failed section %d: %s", section_index, message)
+        if section_index >= len(self.section_widgets):
+            return
+        widget = self.section_widgets[section_index]
+        try:
+            widget["formula_input"].editor.apply_validation_results(
+                [{"message": message, "line": 1, "column": 0, "length": 1}]
+            )
+        except RuntimeError:
+            pass
 
     # -- model -> widgets -------------------------------------------------
     def _sync_widgets_from_model(self) -> None:
