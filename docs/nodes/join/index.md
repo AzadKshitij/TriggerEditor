@@ -12,13 +12,39 @@ These nodes combine two or more tables. Pick the one that matches the question y
 
 ## Nodes in this family
 
-| Icon | Node | What it does |
-|---|---|---|
-| ![Join](../../assets/node_icons/Join/Join.svg) | **[Join](join.md)** | Combines two tables on matching key columns and also gives the unmatched rows from each side (outputs `L`, `J`, `R`). |
-| ![Append](../../assets/node_icons/Join/Append.svg) | **[Append](append.md)** | Puts the rows of a second table underneath the first. |
-| ![Union](../../assets/node_icons/Join/Union.svg) | **[Union](union.md)** | Stacks two or more tables, matching columns by name or by a mapping you set. |
-| ![Reconcile](../../assets/node_icons/Join/Reconcile.svg) | **[Reconcile](reconcile.md)** | Matches two tables on keys plus an amount tolerance and/or date window; gives matched pairs, both unmatched sides and a summary. |
-| ![Fuzzy Match](../../assets/node_icons/Join/FuzzyMatch.svg) | **[Fuzzy Match](fuzzy-match.md)** | Pairs similar text (such as vendor and supplier names) from two tables by similarity score. |
+<div class="grid cards" markdown>
+
+-   ![Join](../../assets/node_icons/Join/Join.svg){ .middle } **[Join](join.md)**
+
+    ---
+
+    Combines two tables on matching key columns and also gives the unmatched rows from each side (outputs `L`, `J`, `R`).
+
+-   ![Append](../../assets/node_icons/Join/Append.svg){ .middle } **[Append](append.md)**
+
+    ---
+
+    Puts the rows of a second table underneath the first.
+
+-   ![Union](../../assets/node_icons/Join/Union.svg){ .middle } **[Union](union.md)**
+
+    ---
+
+    Stacks two or more tables, matching columns by name or by a mapping you set.
+
+-   ![Reconcile](../../assets/node_icons/Join/Reconcile.svg){ .middle } **[Reconcile](reconcile.md)**
+
+    ---
+
+    Matches two tables on keys plus an amount tolerance and/or date window; gives matched pairs, both unmatched sides and a summary.
+
+-   ![Fuzzy Match](../../assets/node_icons/Join/FuzzyMatch.svg){ .middle } **[Fuzzy Match](fuzzy-match.md)**
+
+    ---
+
+    Pairs similar text (such as vendor and supplier names) from two tables by similarity score.
+
+</div>
 
 ## Before you start: left, right and the 100-row preview
 

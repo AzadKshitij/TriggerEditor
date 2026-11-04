@@ -10,11 +10,27 @@ Report nodes help you look at data and explain your work. They do not change you
 
 ## Nodes in this family
 
-| Icon | Node | What it does |
-|---|---|---|
-| ![Graph](../../assets/node_icons/Report/Graph.svg) | **[Graph](graph.md)** | Charts the incoming data in its own window after a successful Run; passes the data through unchanged. |
-| ![Data Profile](../../assets/node_icons/Report/Data%20Profile.svg) | **[Data Profile](data-profile.md)** | Profiles every column: empty cells, distinct values, ranges, common values and data-quality flags. |
-| ![Comment](../../assets/node_icons/Report/Comment.svg) | **[Comment](comment.md)** | A note on the canvas. It has no sockets and never runs. |
+<div class="grid cards" markdown>
+
+-   ![Graph](../../assets/node_icons/Report/Graph.svg){ .middle } **[Graph](graph.md)**
+
+    ---
+
+    Charts the incoming data in its own window after a successful Run; passes the data through unchanged.
+
+-   ![Data Profile](../../assets/node_icons/Report/Data%20Profile.svg){ .middle } **[Data Profile](data-profile.md)**
+
+    ---
+
+    Profiles every column: empty cells, distinct values, ranges, common values and data-quality flags.
+
+-   ![Comment](../../assets/node_icons/Report/Comment.svg){ .middle } **[Comment](comment.md)**
+
+    ---
+
+    A note on the canvas. It has no sockets and never runs.
+
+</div>
 
 ---
 

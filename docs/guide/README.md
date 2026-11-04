@@ -1,3 +1,7 @@
+---
+icon: lucide/rocket
+---
+
 # Trigger Designer user guide
 
 Trigger Designer is a desktop program for building data checks without writing code. You draw a **workflow** on a canvas: read a file, clean it, test it (for duplicates, gaps, Benford's law and similar audit tests), and write the result. Everything runs on your own computer, and every run leaves a verifiable record.
@@ -13,21 +17,87 @@ This guide is for auditors and analysts who use the program. It is task-oriented
 
 ## Where to find what
 
-| I want to... | Read |
-|---|---|
-| Learn the screen, add nodes, connect them, undo, arrange | [The canvas and nodes](canvas-and-nodes.md) |
-| Change a node's settings, look at data, read the logs and the problem list | [The Config Dock, Data Preview, Logs and Problems](config-dock-and-preview.md) |
-| Understand the difference between the quick preview and a real Run | [Running workflows](running-workflows.md) |
-| Understand an error message, or look up a `TD-` code | [Errors and problems](errors-and-problems.md) |
-| See the evidence of what I ran, verify it, compare two runs | [Run history and the audit trail](run-history-and-audit-trail.md) |
-| Know what a `.tds` file is, which files I can read and write, how paths are stored | [Files and formats](files-and-formats.md) |
-| Change the theme, shortcuts, error and audit settings | [Preferences](preferences.md) |
-| Know what the program does and does not guarantee, and how to open a workflow from someone else | [Security and privacy](security-and-privacy.md) |
-| Know how big my data can be and how to keep things fast | [Limits and performance](limits-and-performance.md) |
-| Fix a common problem, or look up a word | [Troubleshooting, FAQ and glossary](troubleshooting-and-faq.md) |
-| Find out what a particular node does | [Node reference](../nodes/index.md) |
-| Run a workflow unattended from the command line | [Command line](cli.md) |
-| Produce a formatted Excel workpaper | [Workpapers](workpaper.md) |
+<div class="grid cards" markdown>
+
+-   :lucide-layout-dashboard: **[The canvas and nodes](canvas-and-nodes.md)**
+
+    ---
+
+    Learn the screen, add nodes, connect them, undo, arrange.
+
+-   :lucide-panel-left: **[The Config Dock, Data Preview, Logs and Problems](config-dock-and-preview.md)**
+
+    ---
+
+    Change a node's settings, look at data, read the logs and the problem list.
+
+-   :lucide-play: **[Running workflows](running-workflows.md)**
+
+    ---
+
+    Understand the difference between the quick preview and a real Run.
+
+-   :lucide-triangle-alert: **[Errors and problems](errors-and-problems.md)**
+
+    ---
+
+    Understand an error message, or look up a `TD-` code.
+
+-   :lucide-history: **[Run history and the audit trail](run-history-and-audit-trail.md)**
+
+    ---
+
+    See the evidence of what I ran, verify it, compare two runs.
+
+-   :lucide-file-text: **[Files and formats](files-and-formats.md)**
+
+    ---
+
+    Know what a `.tds` file is, which files I can read and write, how paths are stored.
+
+-   :lucide-settings: **[Preferences](preferences.md)**
+
+    ---
+
+    Change the theme, shortcuts, error and audit settings.
+
+-   :lucide-shield-check: **[Security and privacy](security-and-privacy.md)**
+
+    ---
+
+    Know what the program does and does not guarantee, and how to open a workflow from someone else.
+
+-   :lucide-gauge: **[Limits and performance](limits-and-performance.md)**
+
+    ---
+
+    Know how big my data can be and how to keep things fast.
+
+-   :lucide-life-buoy: **[Troubleshooting, FAQ and glossary](troubleshooting-and-faq.md)**
+
+    ---
+
+    Fix a common problem, or look up a word.
+
+-   :lucide-layers: **[Node reference](../nodes/index.md)**
+
+    ---
+
+    Find out what a particular node does and how to set it up.
+
+-   :lucide-terminal: **[Command line](cli.md)**
+
+    ---
+
+    Run a workflow unattended from the command line.
+
+-   :lucide-file-spreadsheet: **[Workpapers](workpaper.md)**
+
+    ---
+
+    Produce a formatted Excel workpaper.
+
+</div>
 
 ## Conventions used in this guide
 

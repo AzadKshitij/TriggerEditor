@@ -1,3 +1,7 @@
+---
+icon: lucide/newspaper
+---
+
 # Blog
 
 Short how-to posts for Trigger Designer. Each post follows one task from start to

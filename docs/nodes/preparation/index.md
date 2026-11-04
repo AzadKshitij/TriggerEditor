@@ -6,24 +6,105 @@ This page covers all 16 Preparation nodes in the palette.
 
 ## Nodes in this family
 
-| Icon | Node | What it does |
-|---|---|---|
-| ![Cleansing](../../assets/node_icons/Preparation/Cleansing.svg) | **[Cleansing](cleansing.md)** | Per-column clean-up: trim, change case, handle empty values, convert type. |
-| ![Filter](../../assets/node_icons/Preparation/Filter.svg) | **[Filter](filter.md)** | Keeps or drops rows that meet conditions you set. |
-| ![Formula](../../assets/node_icons/Preparation/Formula.svg) | **[Formula](formula.md)** | Creates or changes columns from SQL-style expressions. |
-| ![Aggregate](../../assets/node_icons/Preparation/Groupby.svg) | **[Aggregate](aggregate.md)** | Collapses rows into groups and totals, counts or averages each group. |
-| ![Select](../../assets/node_icons/Preparation/Select.svg) | **[Select](select.md)** | Chooses, renames, reorders and changes the type of columns. |
-| ![Sort](../../assets/node_icons/Preparation/Sort.svg) | **[Sort](sort.md)** | Orders rows by one or more columns. |
-| ![Unique](../../assets/node_icons/Preparation/Unique.svg) | **[Unique](unique.md)** | Keeps the first row for each key and sends the repeats out separately. |
-| ![Split](../../assets/node_icons/Preparation/Split.svg) | **[Split](split.md)** | Divides the rows into two sets by percent (an estimation and a validation set). |
-| ![Rows](../../assets/node_icons/Preparation/Dynamic%20Row%20Generate.svg) | **[Rows](rows.md)** | Builds a series of rows from ranges, patterns or literal values. |
-| ![Normalize](../../assets/node_icons/Preparation/Select.svg) | **[Normalize](normalize.md)** | Tidies column names: trim, collapse spaces, apply one case rule. (Shares the Select icon.) |
-| ![Record ID](../../assets/node_icons/Preparation/RecordID.svg) | **[Record ID](record-id.md)** | Adds a numbered column, optionally restarting per group. |
-| ![Select Records](../../assets/node_icons/Preparation/SelectRecords.svg) | **[Select Records](select-records.md)** | Keeps the first, last, a range, the largest or smallest rows, and sends the rest out separately. |
-| ![Find and Replace](../../assets/node_icons/Preparation/FindReplace.svg) | **[Find and Replace](find-and-replace.md)** | Applies an ordered list of text or pattern replacements to chosen columns. |
-| ![Date Helper](../../assets/node_icons/Preparation/DateHelper.svg) | **[Date Helper](date-helper.md)** | Adds date parts, fiscal periods, day differences and business-day figures. |
-| ![Text to Columns](../../assets/node_icons/Preparation/TextToColumns.svg) | **[Text to Columns](text-to-columns.md)** | Splits one text column on a delimiter or pattern into columns or rows. |
-| ![Multi-Field Formula](../../assets/node_icons/Preparation/MultiFieldFormula.svg) | **[Multi-Field Formula](multi-field-formula.md)** | Applies one expression to many ticked columns at once. |
+<div class="grid cards" markdown>
+
+-   ![Cleansing](../../assets/node_icons/Preparation/Cleansing.svg){ .middle } **[Cleansing](cleansing.md)**
+
+    ---
+
+    Per-column clean-up: trim, change case, handle empty values, convert type.
+
+-   ![Filter](../../assets/node_icons/Preparation/Filter.svg){ .middle } **[Filter](filter.md)**
+
+    ---
+
+    Keeps or drops rows that meet conditions you set.
+
+-   ![Formula](../../assets/node_icons/Preparation/Formula.svg){ .middle } **[Formula](formula.md)**
+
+    ---
+
+    Creates or changes columns from SQL-style expressions.
+
+-   ![Aggregate](../../assets/node_icons/Preparation/Groupby.svg){ .middle } **[Aggregate](aggregate.md)**
+
+    ---
+
+    Collapses rows into groups and totals, counts or averages each group.
+
+-   ![Select](../../assets/node_icons/Preparation/Select.svg){ .middle } **[Select](select.md)**
+
+    ---
+
+    Chooses, renames, reorders and changes the type of columns.
+
+-   ![Sort](../../assets/node_icons/Preparation/Sort.svg){ .middle } **[Sort](sort.md)**
+
+    ---
+
+    Orders rows by one or more columns.
+
+-   ![Unique](../../assets/node_icons/Preparation/Unique.svg){ .middle } **[Unique](unique.md)**
+
+    ---
+
+    Keeps the first row for each key and sends the repeats out separately.
+
+-   ![Split](../../assets/node_icons/Preparation/Split.svg){ .middle } **[Split](split.md)**
+
+    ---
+
+    Divides the rows into two sets by percent (an estimation and a validation set).
+
+-   ![Rows](../../assets/node_icons/Preparation/Dynamic%20Row%20Generate.svg){ .middle } **[Rows](rows.md)**
+
+    ---
+
+    Builds a series of rows from ranges, patterns or literal values.
+
+-   ![Normalize](../../assets/node_icons/Preparation/Select.svg){ .middle } **[Normalize](normalize.md)**
+
+    ---
+
+    Tidies column names: trim, collapse spaces, apply one case rule. (Shares the Select icon.)
+
+-   ![Record ID](../../assets/node_icons/Preparation/RecordID.svg){ .middle } **[Record ID](record-id.md)**
+
+    ---
+
+    Adds a numbered column, optionally restarting per group.
+
+-   ![Select Records](../../assets/node_icons/Preparation/SelectRecords.svg){ .middle } **[Select Records](select-records.md)**
+
+    ---
+
+    Keeps the first, last, a range, the largest or smallest rows, and sends the rest out separately.
+
+-   ![Find and Replace](../../assets/node_icons/Preparation/FindReplace.svg){ .middle } **[Find and Replace](find-and-replace.md)**
+
+    ---
+
+    Applies an ordered list of text or pattern replacements to chosen columns.
+
+-   ![Date Helper](../../assets/node_icons/Preparation/DateHelper.svg){ .middle } **[Date Helper](date-helper.md)**
+
+    ---
+
+    Adds date parts, fiscal periods, day differences and business-day figures.
+
+-   ![Text to Columns](../../assets/node_icons/Preparation/TextToColumns.svg){ .middle } **[Text to Columns](text-to-columns.md)**
+
+    ---
+
+    Splits one text column on a delimiter or pattern into columns or rows.
+
+-   ![Multi-Field Formula](../../assets/node_icons/Preparation/MultiFieldFormula.svg){ .middle } **[Multi-Field Formula](multi-field-formula.md)**
+
+    ---
+
+    Applies one expression to many ticked columns at once.
+
+</div>
 
 ---
 

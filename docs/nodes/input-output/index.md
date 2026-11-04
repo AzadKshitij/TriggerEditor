@@ -4,11 +4,27 @@ These nodes connect your workflow to files. **File Input** reads data in. **File
 
 ## Nodes in this family
 
-| Icon | Node | What it does |
-|---|---|---|
-| ![File Input](../../assets/node_icons/Input/File%20Input.svg) | **[File Input](file-input.md)** | Reads a CSV or text file, an Excel workbook, Parquet, JSON, JSON Lines, SQLite or DuckDB (one file, a folder or a pattern; matching files are stacked by column name). CSV columns arrive as text. |
-| ![File Output](../../assets/node_icons/Input/File%20Output.svg) | **[File Output](file-output.md)** | Writes the incoming table to a CSV, Parquet or Excel file when you Run. |
-| ![Workpaper Output](../../assets/node_icons/Input/Workpaper%20Output.svg) | **[Workpaper Output](workpaper-output.md)** | Writes a formatted Excel workpaper with the test results and the evidence behind them. |
+<div class="grid cards" markdown>
+
+-   ![File Input](../../assets/node_icons/Input/File%20Input.svg){ .middle } **[File Input](file-input.md)**
+
+    ---
+
+    Reads a CSV or text file, an Excel workbook, Parquet, JSON, JSON Lines, SQLite or DuckDB (one file, a folder or a pattern; matching files are stacked by column name). CSV columns arrive as text.
+
+-   ![File Output](../../assets/node_icons/Input/File%20Output.svg){ .middle } **[File Output](file-output.md)**
+
+    ---
+
+    Writes the incoming table to a CSV, Parquet or Excel file when you Run.
+
+-   ![Workpaper Output](../../assets/node_icons/Input/Workpaper%20Output.svg){ .middle } **[Workpaper Output](workpaper-output.md)**
+
+    ---
+
+    Writes a formatted Excel workpaper with the test results and the evidence behind them.
+
+</div>
 
 ---
 

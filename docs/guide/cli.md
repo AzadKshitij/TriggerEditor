@@ -45,6 +45,12 @@ It does not build or edit workflows (use the editor), it has no screen to click,
 
 ## Installing and starting it
 
+!!! note "Not in the portable zip"
+
+    The single-file portable build of the alpha does not contain
+    `trigger-designer-cli`. Use a source checkout, or the program folder built by
+    `scripts\build.bat`.
+
 There are four ways to start the same program. Use whichever your installation provides.
 
 | How | When |

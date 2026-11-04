@@ -66,6 +66,12 @@ Keys that a newer version of the app added to `workflow_metadata` are carried th
 
 ## How file paths are stored
 
+!!! note "Paths are stored, not embedded"
+
+    A workflow records where your data lives, not the data itself. Keep the `.tds` and
+    its data folder together and a copied project still opens; move the `.tds` on its
+    own and the app falls back to the absolute path recorded at save time.
+
 File Input stores each source path twice:
 
 | Key | Content |

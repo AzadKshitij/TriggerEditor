@@ -167,6 +167,19 @@
   vertical-align: middle;
 }
 
+/* Node icons in a card: the source files are 100x100, so scale them onto the
+   title line instead of letting them set the card's height. */
+.md-typeset .grid.cards > ul > li > p:first-child img {
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* Keep the rule under a card title close to the title. */
+.md-typeset .grid.cards > ul > li > p:first-child {
+  margin-bottom: 0;
+}
+
 /* The icon at the top of a node page. */
 .md-typeset img.node-icon {
   width: 56px;

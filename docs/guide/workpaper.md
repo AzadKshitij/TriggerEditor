@@ -2,6 +2,12 @@
 
 A **workpaper** is the Excel file you file with your audit working papers: what you tested, on which data, how, what you found, and enough evidence for someone else to repeat it. Trigger Designer writes one for you, formatted, with the numbers tied together by formulas and with the evidence (file fingerprints, the steps that ran) already filled in. You add your conclusion and your tick marks.
 
+!!! tip "Run before you file it"
+
+    The Workpaper Output node writes its file during a **Run**, never from the live
+    preview. **File > Export Workpaper...** works from the last recorded run, so Run
+    again after changing a setting.
+
 ## On this page
 
 - [What a workpaper is, and why](#what-a-workpaper-is-and-why)

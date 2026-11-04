@@ -1,3 +1,7 @@
+---
+icon: lucide/book-open
+---
+
 # Trigger Designer
 
 Trigger Designer is a desktop workbench for building data pipelines as a graph of
@@ -44,16 +48,57 @@ or change their shape.
 
 ## Start here
 
-| I want to... | Read |
-|---|---|
-| Build my first workflow in ten minutes | [Getting started](guide/README.md) |
-| Understand the screen, sockets and undo | [The canvas and nodes](guide/canvas-and-nodes.md) |
-| Know what a node does and how to set it up | [Node reference](nodes/index.md) |
-| Understand preview versus Run | [Running workflows](guide/running-workflows.md) |
-| Read an error code | [Errors and problems](guide/errors-and-problems.md) |
-| Show what I ran | [Run history and the audit trail](guide/run-history-and-audit-trail.md) |
-| Produce an Excel workpaper | [Workpapers](guide/workpaper.md) |
-| Run a workflow unattended | [Command line](guide/cli.md) |
+<div class="grid cards" markdown>
+
+-   :lucide-rocket: **[Build your first workflow](guide/README.md)**
+
+    ---
+
+    Read a CSV, tidy it and find duplicate orders in about ten minutes.
+
+-   :lucide-layout-dashboard: **[The canvas and nodes](guide/canvas-and-nodes.md)**
+
+    ---
+
+    The screen, the sockets, undo, and how a workflow is wired together.
+
+-   :lucide-layers: **[Node reference](nodes/index.md)**
+
+    ---
+
+    Every node in the palette, with its settings, an example and its messages.
+
+-   :lucide-play: **[Running workflows](guide/running-workflows.md)**
+
+    ---
+
+    What the 100-row preview shows, and what a Run does, step by step.
+
+-   :lucide-triangle-alert: **[Errors and problems](guide/errors-and-problems.md)**
+
+    ---
+
+    Read a message, look up a `TD-` code, fix the workflow.
+
+-   :lucide-history: **[Run history and the audit trail](guide/run-history-and-audit-trail.md)**
+
+    ---
+
+    Show what ran, verify the record, compare two runs.
+
+-   :lucide-file-spreadsheet: **[Workpapers](guide/workpaper.md)**
+
+    ---
+
+    Produce the formatted Excel workpaper and tie it to the run record.
+
+-   :lucide-terminal: **[Command line](guide/cli.md)**
+
+    ---
+
+    Run a saved workflow unattended and read the exit code.
+
+</div>
 
 ## Two habits that save trouble
 

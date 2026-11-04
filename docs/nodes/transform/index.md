@@ -12,15 +12,51 @@ All seven icons are purple, the colour of the Transform family.
 
 ## Nodes in this family
 
-| Icon | Node | What it does |
-|---|---|---|
-| ![Count](../../assets/node_icons/Transform/Count.svg) | **[Count](count.md)** | Returns the number of rows as a one-row table. |
-| ![Running Total](../../assets/node_icons/Transform/Running%20Total.svg) | **[Running Total](running-total.md)** | Adds a cumulative sum column, optionally per group. |
-| ![Transpose](../../assets/node_icons/Transform/Transpose.svg) | **[Transpose](transpose.md)** | Turns chosen columns into Name and Value rows. |
-| ![Pivot](../../assets/node_icons/Transform/Pivot.svg) | **[Pivot](pivot.md)** | Turns the values of one column into columns and totals a value column in each. |
-| ![Unpivot](../../assets/node_icons/Transform/Unpivot.svg) | **[Unpivot](unpivot.md)** | Stacks several columns into a name column and a value column. |
-| ![Window](../../assets/node_icons/Transform/Window.svg) | **[Window](window.md)** | Adds previous or next row, row number, rank, running and rolling figures. |
-| ![SQL Query](../../assets/node_icons/Transform/SQL%20Query.svg) | **[SQL Query](sql-query.md)** | Runs one read-only SELECT over up to three tables (`t1`, `t2`, `t3`). |
+<div class="grid cards" markdown>
+
+-   ![Count](../../assets/node_icons/Transform/Count.svg){ .middle } **[Count](count.md)**
+
+    ---
+
+    Returns the number of rows as a one-row table.
+
+-   ![Running Total](../../assets/node_icons/Transform/Running%20Total.svg){ .middle } **[Running Total](running-total.md)**
+
+    ---
+
+    Adds a cumulative sum column, optionally per group.
+
+-   ![Transpose](../../assets/node_icons/Transform/Transpose.svg){ .middle } **[Transpose](transpose.md)**
+
+    ---
+
+    Turns chosen columns into Name and Value rows.
+
+-   ![Pivot](../../assets/node_icons/Transform/Pivot.svg){ .middle } **[Pivot](pivot.md)**
+
+    ---
+
+    Turns the values of one column into columns and totals a value column in each.
+
+-   ![Unpivot](../../assets/node_icons/Transform/Unpivot.svg){ .middle } **[Unpivot](unpivot.md)**
+
+    ---
+
+    Stacks several columns into a name column and a value column.
+
+-   ![Window](../../assets/node_icons/Transform/Window.svg){ .middle } **[Window](window.md)**
+
+    ---
+
+    Adds previous or next row, row number, rank, running and rolling figures.
+
+-   ![SQL Query](../../assets/node_icons/Transform/SQL%20Query.svg){ .middle } **[SQL Query](sql-query.md)**
+
+    ---
+
+    Runs one read-only SELECT over up to three tables (`t1`, `t2`, `t3`).
+
+</div>
 
 ## How these nodes behave
 

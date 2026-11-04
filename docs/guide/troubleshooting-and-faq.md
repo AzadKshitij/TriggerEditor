@@ -1,3 +1,7 @@
+---
+icon: lucide/life-buoy
+---
+
 # Troubleshooting and FAQ
 
 The problems people meet most often, with the fix for each, followed by a list of the dialogs you may see and a glossary.

@@ -4,14 +4,53 @@ Every node in the Trigger Designer palette, grouped by the six tabs you see abov
 groups appear in the Shift+A menu). Each node has its own page: what it is for, every setting in the Config
 Dock, a worked example, and the messages it can show.
 
-| Family | Page | Nodes |
-|---|---|---|
-| Input and Output | [Input and Output nodes](input-output/index.md) | File Input, File Output, Workpaper Output |
-| Preparation | [Preparation nodes](preparation/index.md) | 16 nodes: clean, filter, calculate, sort, select |
-| Join | [Join nodes](join/index.md) | Join, Append, Union, Reconcile, Fuzzy Match |
-| Transform | [Transform nodes](transform/index.md) | Count, Running Total, Transpose, Pivot, Unpivot, Window, SQL Query |
-| Report | [Report nodes](report/index.md) | Graph, Data Profile, Comment |
-| Audit | [Audit nodes](audit/index.md) | Duplicates, Gaps, Benford, Sample, Risk Filters |
+!!! warning "Every number before a Run is a sample"
+
+    The canvas preview reads the first **100 rows** of each input. A Count that says
+    100 means 100 rows in the sample. Run the workflow before you quote a count, a total
+    or an audit result, and before you hand over a file.
+
+## The six families
+
+<div class="grid cards" markdown>
+
+-   :lucide-import: **[Input and Output nodes](input-output/index.md)**
+
+    ---
+
+    File Input, File Output and Workpaper Output: where a workflow starts and ends.
+
+-   :lucide-wand-sparkles: **[Preparation nodes](preparation/index.md)**
+
+    ---
+
+    Sixteen nodes that clean, reshape and enrich a table before you analyse it.
+
+-   :lucide-git-merge: **[Join nodes](join/index.md)**
+
+    ---
+
+    Join, Append, Union, Reconcile and Fuzzy Match: combine two or more tables.
+
+-   :lucide-shuffle: **[Transform nodes](transform/index.md)**
+
+    ---
+
+    Count, Running Total, Transpose, Pivot, Unpivot, Window and SQL Query.
+
+-   :lucide-chart-column: **[Report nodes](report/index.md)**
+
+    ---
+
+    Graph, Data Profile and Comment: look at the data and explain it. The table passes through unchanged.
+
+-   :lucide-search-check: **[Audit nodes](audit/index.md)**
+
+    ---
+
+    Duplicates, Gaps, Benford, Sample and Risk Filters: the tests auditors run on ledgers.
+
+</div>
 
 ## Choosing a node
 

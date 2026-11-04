@@ -1,0 +1,22 @@
+{#-
+  "Copy as Markdown" beside the page title.
+
+  Zensical 0.0.74 ships this button in zensical_ui's partials/actions.html, but its
+  page object has no markdown_url, so the stock template renders nothing. The page
+  does expose page.edit_url, which ends in the source path, so the raw GitHub
+  address is derived from it; the bundled clipboard handler fetches that file and
+  copies the text.
+-#}
+{% if page.edit_url %}
+  {% set raw = page.edit_url | replace("//github.com/", "//raw.githubusercontent.com/") | replace("/edit/", "/") %}
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="{{ raw }}">
+    {% set icon = config.theme.icon.copy or "material/content-copy" %}
+    {% include ".icons/" ~ icon ~ ".svg" %}
+  </button>
+{% endif %}
+{% if page.edit_url and "content.action.edit" in features %}
+  <a href="{{ page.edit_url }}" title="Edit this page" aria-label="Edit this page" class="md-content__button md-icon" rel="edit">
+    {% set icon = config.theme.icon.edit or "material/file-edit-outline" %}
+    {% include ".icons/" ~ icon ~ ".svg" %}
+  </a>
+{% endif %}

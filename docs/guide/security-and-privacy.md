@@ -2,6 +2,11 @@
 
 This page says plainly what the app is built to guarantee, how it does it, and what it does not promise. It is written for people who handle client data and workflows from other people.
 
+!!! success "Nothing leaves this computer"
+
+    The program has no update check, no telemetry and no cloud feature, and it contains
+    no networking library. Your files, workflows and run records stay on your machine.
+
 [Back to the guide index](README.md)
 
 ## On this page

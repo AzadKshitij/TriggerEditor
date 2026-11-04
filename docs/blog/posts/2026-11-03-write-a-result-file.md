@@ -10,10 +10,10 @@ Most workflows end by saving a result. This post shows the File Output node: the
 settings, the formats, and the one thing that stops people, which is that nothing is
 written until you run the workflow.
 
+<!-- more -->
+
 You need a workflow with at least one table to save, such as the output of
 **Normalize** from the [first workflow post](2026-11-03-first-workflow-duplicates.md).
-
-<!-- more -->
 
 ## 1. Add File Output
 

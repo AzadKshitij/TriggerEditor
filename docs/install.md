@@ -1,7 +1,13 @@
+---
+icon: lucide/download
+---
+
 # Install Trigger Designer
 
-Trigger Designer `0.1.0a1` is an **alpha** release for Windows. It is a first public
-build: expect rough edges, and report what you find.
+!!! warning "Alpha build"
+
+    Trigger Designer `0.1.0a1` is an **alpha** release for Windows. It is a first
+    public build: expect rough edges, and report what you find.
 
 ## Download
 
@@ -39,9 +45,27 @@ not mean the file is known to be harmful. You can check the hash above first.
 
 ## Requirements
 
-- Windows 10 or Windows 11, 64-bit.
-- About 500 MB of free disk space for the program. Your data needs its own space.
-- Enough memory for the files you process. Large files need more memory.
+<div class="grid cards" markdown>
+
+-   :lucide-monitor: **Windows 10 or 11, 64-bit**
+
+    ---
+
+    The alpha ships as a 64-bit Windows build only. There is no Linux or macOS version.
+
+-   :lucide-hard-drive: **About 500 MB free**
+
+    ---
+
+    Space for the program itself. Your data needs its own space, on a drive you can write to.
+
+-   :lucide-memory-stick: **Memory for the files you open**
+
+    ---
+
+    Large files need more memory. See [Limits and performance](guide/limits-and-performance.md).
+
+</div>
 
 ## Where your data lives
 

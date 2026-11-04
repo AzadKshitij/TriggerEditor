@@ -10,10 +10,10 @@ A **Run** processes all the data, not the sample. Each Run also leaves a record 
 you can check later. This post follows the record from the first Run to a
 comparison of two Runs.
 
+<!-- more -->
+
 You need a saved workflow that has finished one Run, such as the one from the
 [first workflow post](2026-11-03-first-workflow-duplicates.md).
-
-<!-- more -->
 
 ## 1. Open Run History
 

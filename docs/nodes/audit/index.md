@@ -13,13 +13,39 @@ The Excel workpaper of a test (Summary, Exceptions, Run log, Workflow) is descri
 
 ## Nodes in this family
 
-| Icon | Node | What it does |
-|---|---|---|
-| ![Duplicates](../../assets/node_icons/Audit/Duplicates.svg) | **[Duplicates](duplicates.md)** | Finds exact and near-duplicate rows. |
-| ![Gaps](../../assets/node_icons/Audit/Gaps.svg) | **[Gaps](gaps.md)** | Finds missing, repeated and out-of-order numbers, and days with no entry. |
-| ![Benford](../../assets/node_icons/Audit/Benford.svg) | **[Benford](benford.md)** | Tests the leading digits of an amount column against Benford's law. |
-| ![Sample](../../assets/node_icons/Audit/Sample.svg) | **[Sample](sample.md)** | Draws a random, systematic, monetary-unit or stratified sample that can be repeated with its seed. |
-| ![Risk Filters](../../assets/node_icons/Audit/Risk%20Filters.svg) | **[Risk Filters](risk-filters.md)** | Flags entries that trip classic journal-entry risk indicators. |
+<div class="grid cards" markdown>
+
+-   ![Duplicates](../../assets/node_icons/Audit/Duplicates.svg){ .middle } **[Duplicates](duplicates.md)**
+
+    ---
+
+    Finds exact and near-duplicate rows.
+
+-   ![Gaps](../../assets/node_icons/Audit/Gaps.svg){ .middle } **[Gaps](gaps.md)**
+
+    ---
+
+    Finds missing, repeated and out-of-order numbers, and days with no entry.
+
+-   ![Benford](../../assets/node_icons/Audit/Benford.svg){ .middle } **[Benford](benford.md)**
+
+    ---
+
+    Tests the leading digits of an amount column against Benford's law.
+
+-   ![Sample](../../assets/node_icons/Audit/Sample.svg){ .middle } **[Sample](sample.md)**
+
+    ---
+
+    Draws a random, systematic, monetary-unit or stratified sample that can be repeated with its seed.
+
+-   ![Risk Filters](../../assets/node_icons/Audit/Risk%20Filters.svg){ .middle } **[Risk Filters](risk-filters.md)**
+
+    ---
+
+    Flags entries that trip classic journal-entry risk indicators.
+
+</div>
 
 ## Common to every audit node
 

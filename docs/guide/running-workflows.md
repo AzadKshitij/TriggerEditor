@@ -2,6 +2,12 @@
 
 While you build, the app shows you quick results on a small sample. When you press **Run**, it processes the whole data and writes your output files. This page explains the difference and what Run does, step by step.
 
+!!! warning "Preview first, Run last"
+
+    Every node reads the first **100 rows** while you edit. A count you see before a
+    Run is a count of that sample, not of your file. Press **Run** before you quote a
+    number or hand over a result.
+
 [Back to the guide index](README.md)
 
 ## On this page
