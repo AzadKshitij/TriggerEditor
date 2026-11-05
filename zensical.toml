@@ -14,6 +14,7 @@ site_dir = "site/docs"
 # in the repository for maintainers but are never published.
 exclude_docs = """
 internal/
+plans/
 assets/icon_proposals/
 assets/design_system_preview.html
 """

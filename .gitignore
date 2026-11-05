@@ -145,7 +145,8 @@ venv.bak/
 # macoS
 *.DS_Store
 
-# mkdocs documentation
+# Built site: Zensical writes site/docs, the deploy step copies the homepage
+# over the root. Never commit it.
 /site
 
 # mypy
@@ -306,3 +307,13 @@ savedfiles/Example_2_Retail_Ledger/compare_report/
 /logs/
 last_run/
 dataframe_export.csv
+/.claude/skills/gitnexus-cli
+/.claude/skills
+/.claude/skills
+/.claude/skills/gitnexus-exploring
+/brainstorm_reviews
+*.md
+!docs/plans/*.md
+
+# Browser-panel captures taken while checking the site.
+.openchamber/
