@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import polars as pl
 
-from trigger_designer.core.shaping.common import ShapingError, as_lazy
+from trigger_designer.core.shaping.common import (
+    ShapingError,
+    as_lazy,
+    schema_of,
+    unique_name,
+)
 
 DEFAULTS = {"estimation_percent": 70, "random_seed": 42, "is_random": True}
 SPLIT_COL = "__split_idx"
@@ -34,18 +39,15 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     settings = settings or {}
     percent = _percent(settings)
     frame = as_lazy(frames[0])
-    indexed = frame.with_row_index(SPLIT_COL)
+    col = unique_name(SPLIT_COL, schema_of(frame))
+    indexed = frame.with_row_index(col)
     if bool(settings.get("is_random", True)):
         seed = int(settings.get("random_seed", 42))
-        indexed = indexed.sort(pl.col(SPLIT_COL).shuffle(seed=seed))
+        indexed = indexed.sort(pl.col(col).shuffle(seed=seed))
 
     threshold = percent / 100.0
-    estimation = indexed.filter(
-        pl.col(SPLIT_COL) < pl.col(SPLIT_COL).max() * threshold
-    ).drop(SPLIT_COL)
-    validation = indexed.filter(
-        pl.col(SPLIT_COL) >= pl.col(SPLIT_COL).max() * threshold
-    ).drop(SPLIT_COL)
+    estimation = indexed.filter(pl.col(col) < pl.col(col).max() * threshold).drop(col)
+    validation = indexed.filter(pl.col(col) >= pl.col(col).max() * threshold).drop(col)
     return [estimation, validation]
 
 

@@ -10,6 +10,7 @@ import pytest
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.workflow_file import (
     file_nodes,
+    find_cycle,
     op_counts,
     parse_workflow_bytes,
     read_workflow,
@@ -125,6 +126,34 @@ def test_cycle_td_cli_004():
         [(11, 20), (21, 10)],
     )
     assert "TD-CLI-004" in _codes(static_validate(_doc(data)), "error")
+
+
+def test_duplicate_node_ids_without_edges_are_not_a_cycle():
+    data = _wf([_node(1, "input.file_input"), _node(1, "input.file_input")], [])
+    assert find_cycle(data) is False
+
+
+def test_two_node_loop_is_a_cycle():
+    data = _wf(
+        [
+            _node(1, "preparation.sort", ins=[10], outs=[11]),
+            _node(2, "preparation.sort", ins=[20], outs=[21]),
+        ],
+        [(11, 20), (21, 10)],
+    )
+    assert find_cycle(data) is True
+
+
+def test_acyclic_chain_is_not_a_cycle():
+    data = _wf(
+        [
+            _node(1, "preparation.sort", ins=[10], outs=[11]),
+            _node(2, "preparation.sort", ins=[20], outs=[21]),
+            _node(3, "preparation.sort", ins=[30], outs=[31]),
+        ],
+        [(11, 20), (21, 30)],
+    )
+    assert find_cycle(data) is False
 
 
 def test_clean_workflow_has_no_findings():

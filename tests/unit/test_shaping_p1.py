@@ -15,7 +15,7 @@ from trigger_designer.core.shaping import (
     reshape,
     select_records,
 )
-from trigger_designer.core.shaping.common import ShapingError
+from trigger_designer.core.shaping.common import LIVE_SAMPLE_ROWS, ShapingError
 
 
 def test_record_id_first_and_grouped() -> None:
@@ -208,6 +208,22 @@ def test_date_helper_add_days_and_business() -> None:
     ).collect()
     assert out["d_add_days"].to_list() == [date(2024, 4, 8)]
     assert out["d_add_business_days"].to_list() == [date(2024, 4, 9)]
+
+
+def test_date_helper_unreadable_count_capped_to_live_sample() -> None:
+    frame = pl.DataFrame({"d": ["not a date"] * 300}).lazy()
+    settings = {"ops": [{"op": "weekday_name", "source": "d"}]}
+    assert date_helper.parse_failures(frame, settings)["d"] == LIVE_SAMPLE_ROWS
+    chips = date_helper.describe([frame], settings)
+    assert len(chips) == 1
+    assert f"{LIVE_SAMPLE_ROWS} unreadable dates in d" in chips[0][0]
+    assert f"first {LIVE_SAMPLE_ROWS} rows" in chips[0][0]
+
+
+def test_date_helper_unreadable_count_below_live_sample() -> None:
+    frame = pl.DataFrame({"d": ["2024-04-01"] * 30 + ["not a date"] * 50}).lazy()
+    settings = {"ops": [{"op": "weekday_name", "source": "d"}]}
+    assert date_helper.parse_failures(frame, settings)["d"] == 50
 
 
 def test_pivot_unpivot_roundtrip() -> None:

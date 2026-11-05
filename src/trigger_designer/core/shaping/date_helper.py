@@ -212,7 +212,7 @@ def parse_failures(frame: Frame, settings: dict) -> dict[str, int]:
     if not text_sources:
         return {}
     try:
-        head = lf.head(10_000)
+        head = lf.head(LIVE_SAMPLE_ROWS)
         expressions = []
         for name in text_sources:
             parsed = date_expr(name, pl.String, s["date_format"])

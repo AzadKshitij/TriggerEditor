@@ -166,7 +166,7 @@ def find_cycle(data: dict) -> bool:
             indeg[nxt] -= 1
             if indeg[nxt] == 0:
                 queue.append(nxt)
-    return seen != len(ids)
+    return seen != len(indeg)
 
 
 def _writes_files(doc: WorkflowDoc) -> bool:

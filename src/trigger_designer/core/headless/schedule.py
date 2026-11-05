@@ -38,6 +38,7 @@ NON_WINDOWS_MESSAGE = (
     "Scheduling is implemented for Windows Task Scheduler only; call the CLI "
     "from cron, systemd or launchd instead (see docs/CLI.md)."
 )
+SCHTASKS_TIMEOUT_S = 60
 
 
 @dataclass
@@ -276,14 +277,22 @@ def xml_bytes(xml: str) -> bytes:
 # ------------------------------------------------------------------ schtasks
 def _run_schtasks(argv: list[str]) -> subprocess.CompletedProcess:
     """The only place a subprocess is started."""
-    return subprocess.run(
-        argv,
-        capture_output=True,
-        text=True,
-        errors="replace",
-        timeout=60,
-        check=False,
-    )
+    try:
+        return subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            errors="replace",
+            timeout=SCHTASKS_TIMEOUT_S,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        raise CliError(
+            ExitCode.SCHEDULER,
+            "TD-CLI-016",
+            f"schtasks did not answer within {SCHTASKS_TIMEOUT_S} seconds",
+            "Check that the Task Scheduler service is running, then try again.",
+        ) from None
 
 
 def create_argv(spec: ScheduleSpec) -> list[str]:
