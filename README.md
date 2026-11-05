@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src/trigger_designer/resources/TriEditorLogo.png" alt="Trigger Designer logo" width="160" />
+<img src="src/trigger_designer/resources/Icon.png" alt="Trigger Designer logo" width="160" />
 
 # Trigger Designer
 

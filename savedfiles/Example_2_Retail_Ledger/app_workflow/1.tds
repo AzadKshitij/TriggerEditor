@@ -87,8 +87,8 @@
     {
       "id": 2667100541712,
       "title": "File Input",
-      "pos_x": -675.7288818359375,
-      "pos_y": -115.49499511718741,
+      "pos_x": -1060.0,
+      "pos_y": -120.0,
       "inputs": [],
       "outputs": [
         {
@@ -580,8 +580,8 @@
     {
       "id": 2667100707312,
       "title": "Select",
-      "pos_x": -497.2991943359374,
-      "pos_y": -115.28015136718753,
+      "pos_x": -498.2991943359374,
+      "pos_y": -117.28015136718753,
       "inputs": [
         {
           "id": 2667100712272,
@@ -1233,8 +1233,8 @@
     {
       "id": 2206727594032,
       "title": "Cleansing",
-      "pos_x": 94.00939941406226,
-      "pos_y": -119.91882324218741,
+      "pos_x": 79.00939941406227,
+      "pos_y": -116.91882324218741,
       "inputs": [
         {
           "id": 2207682771728,
@@ -1283,8 +1283,8 @@
     {
       "id": 2699443889456,
       "title": "Filter",
-      "pos_x": 245.72814941406205,
-      "pos_y": -115.79284667968753,
+      "pos_x": 233.72814941406205,
+      "pos_y": -116.79284667968753,
       "inputs": [
         {
           "id": 2699443890576,
@@ -1377,7 +1377,7 @@
     {
       "id": 2699443578640,
       "title": "Filter",
-      "pos_x": 589.605102539062,
+      "pos_x": 600.605102539062,
       "pos_y": -120.09460449218741,
       "inputs": [
         {
@@ -1479,8 +1479,8 @@
     {
       "id": 2259315345840,
       "title": "Unique",
-      "pos_x": 785.7867431640618,
-      "pos_y": -132.44812011718741,
+      "pos_x": 786.7867431640618,
+      "pos_y": -122.44812011718741,
       "inputs": [
         {
           "id": 2259315346960,
@@ -1740,10 +1740,6 @@
               "source": "L"
             },
             {
-              "name": "order_id",
-              "source": "L"
-            },
-            {
               "name": "order_ts",
               "source": "L"
             },
@@ -1818,6 +1814,10 @@
             {
               "name": "signup_date",
               "source": "R"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
             }
           ]
         }
@@ -2063,10 +2063,6 @@
               "source": "L"
             },
             {
-              "name": "order_id",
-              "source": "L"
-            },
-            {
               "name": "order_ts",
               "source": "L"
             },
@@ -2149,6 +2145,10 @@
             {
               "name": "unit_price",
               "source": "R"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
             }
           ]
         }
@@ -2422,10 +2422,6 @@
               "source": "L"
             },
             {
-              "name": "order_id",
-              "source": "L"
-            },
-            {
               "name": "order_ts",
               "source": "L"
             },
@@ -2512,6 +2508,10 @@
             {
               "name": "supplier_name",
               "source": "R"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
             }
           ]
         }
@@ -2801,10 +2801,6 @@
               "source": "L"
             },
             {
-              "name": "order_id",
-              "source": "L"
-            },
-            {
               "name": "order_ts",
               "source": "L"
             },
@@ -2895,6 +2891,10 @@
             {
               "name": "is_digital",
               "source": "R"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
             }
           ]
         }
@@ -3204,10 +3204,6 @@
               "source": "L"
             },
             {
-              "name": "order_id",
-              "source": "L"
-            },
-            {
               "name": "order_ts",
               "source": "L"
             },
@@ -3294,6 +3290,10 @@
             {
               "name": "usd_rate",
               "source": "R"
+            },
+            {
+              "name": "order_id",
+              "source": "L"
             }
           ]
         }
@@ -3308,8 +3308,8 @@
     {
       "id": 2607196374192,
       "title": "Formula",
-      "pos_x": 1844.4780273437511,
-      "pos_y": 175.90600585937506,
+      "pos_x": 1999.356634245447,
+      "pos_y": 124.27980355880982,
       "inputs": [
         {
           "id": 2607196385232,
@@ -3341,7 +3341,7 @@
               "target_column": "gross_local",
               "formula_text": "ROUND([g], 2)",
               "editor_height": 60,
-              "target_dtype": ""
+              "target_dtype": "Float"
             },
             {
               "target_column": "discount_local",
@@ -3374,8 +3374,8 @@
     {
       "id": 2607193611536,
       "title": "Formula",
-      "pos_x": 2026.978027343749,
-      "pos_y": 175.90600585937506,
+      "pos_x": 2181.8566342454446,
+      "pos_y": 124.27980355880982,
       "inputs": [
         {
           "id": 2607193615216,
@@ -3610,8 +3610,8 @@
     {
       "id": 2074988497808,
       "title": "Formula",
-      "pos_x": 2181.508789062499,
-      "pos_y": 173.74999999999994,
+      "pos_x": 2336.3873959641946,
+      "pos_y": 122.1237976994347,
       "inputs": [
         {
           "id": 2074988502768,
@@ -3664,8 +3664,8 @@
     {
       "id": 2074988703216,
       "title": "Formula",
-      "pos_x": 2369.008789062499,
-      "pos_y": 168.74999999999994,
+      "pos_x": 2523.8873959641946,
+      "pos_y": 117.1237976994347,
       "inputs": [
         {
           "id": 2074988508528,
@@ -3730,8 +3730,8 @@
     {
       "id": 2073979223760,
       "title": "Formula",
-      "pos_x": 2532.758789062499,
-      "pos_y": 173.74999999999994,
+      "pos_x": 2687.6373959641946,
+      "pos_y": 122.1237976994347,
       "inputs": [
         {
           "id": 2073979213520,
@@ -3790,8 +3790,8 @@
     {
       "id": 2075644041232,
       "title": "Sort",
-      "pos_x": 2941.164550781249,
-      "pos_y": -336.41464233398415,
+      "pos_x": 3921.164550781249,
+      "pos_y": -316.41464233398415,
       "inputs": [
         {
           "id": 2075644035632,
@@ -3830,8 +3830,8 @@
     {
       "id": 2425882315824,
       "title": "Aggregate",
-      "pos_x": 2783.2495117187473,
-      "pos_y": -336.40487670898415,
+      "pos_x": 3760.0,
+      "pos_y": -439.99999999999994,
       "inputs": [
         {
           "id": 2425882317584,
@@ -3886,8 +3886,8 @@
     {
       "id": 2576898522352,
       "title": "Running Total",
-      "pos_x": 3134.4299316406245,
-      "pos_y": -330.9593200683592,
+      "pos_x": 4114.429931640624,
+      "pos_y": -310.9593200683592,
       "inputs": [
         {
           "id": 2576898508432,
@@ -3924,8 +3924,8 @@
     {
       "id": 2576898093168,
       "title": "Select",
-      "pos_x": 3306.3049316406245,
-      "pos_y": -330.9593200683592,
+      "pos_x": 4286.304931640624,
+      "pos_y": -310.9593200683592,
       "inputs": [
         {
           "id": 2576898088688,
@@ -4001,8 +4001,8 @@
     {
       "id": 2576898544400,
       "title": "File Output",
-      "pos_x": 3563.6291503906236,
-      "pos_y": -539.9436950683591,
+      "pos_x": 4543.629150390624,
+      "pos_y": -519.9436950683591,
       "inputs": [
         {
           "id": 2577497388400,
@@ -4018,9 +4018,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "monthly_revenue.csv",
@@ -4033,8 +4032,8 @@
     {
       "id": 2576898555280,
       "title": "Transpose",
-      "pos_x": 3554.3518066406227,
-      "pos_y": -327.0530700683593,
+      "pos_x": 4534.351806640622,
+      "pos_y": -307.0530700683593,
       "inputs": [
         {
           "id": 2576898542800,
@@ -4076,8 +4075,8 @@
     {
       "id": 2577542549008,
       "title": "Select",
-      "pos_x": 3728.1799316406227,
-      "pos_y": -327.05307006835926,
+      "pos_x": 4708.179931640622,
+      "pos_y": -307.05307006835926,
       "inputs": [
         {
           "id": 2577542550288,
@@ -4137,8 +4136,8 @@
     {
       "id": 2576898090768,
       "title": "File Output",
-      "pos_x": 3909.8205566406227,
-      "pos_y": -582.9124450683591,
+      "pos_x": 4889.820556640622,
+      "pos_y": -562.9124450683591,
       "inputs": [
         {
           "id": 2577542553008,
@@ -4154,9 +4153,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/monthly_revenue_long.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "monthly_revenue_long.csv",
@@ -4169,8 +4167,8 @@
     {
       "id": 2577497388560,
       "title": "Aggregate",
-      "pos_x": 2821.9299316406227,
-      "pos_y": -135.64682006835938,
+      "pos_x": 3760.0,
+      "pos_y": -280.0,
       "inputs": [
         {
           "id": 2577520393456,
@@ -4225,8 +4223,8 @@
     {
       "id": 2577520390736,
       "title": "Sort",
-      "pos_x": 2995.7580566406236,
-      "pos_y": -131.74057006835938,
+      "pos_x": 3975.758056640624,
+      "pos_y": -111.74057006835939,
       "inputs": [
         {
           "id": 2577520391856,
@@ -4265,8 +4263,8 @@
     {
       "id": 2576898516432,
       "title": "File Output",
-      "pos_x": 3226.2268066406227,
-      "pos_y": -127.83432006835943,
+      "pos_x": 4206.226806640622,
+      "pos_y": -107.83432006835945,
       "inputs": [
         {
           "id": 2577516291536,
@@ -4282,9 +4280,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/category_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "category_revenue.csv",
@@ -4297,8 +4294,8 @@
     {
       "id": 2577542556688,
       "title": "Sort",
-      "pos_x": 3001.6174316406236,
-      "pos_y": 61.61880493164051,
+      "pos_x": 3981.617431640624,
+      "pos_y": 81.61880493164051,
       "inputs": [
         {
           "id": 2577497385680,
@@ -4341,8 +4338,8 @@
     {
       "id": 2574905550448,
       "title": "File Output",
-      "pos_x": 3232.0861816406227,
-      "pos_y": 65.52505493164028,
+      "pos_x": 4212.086181640622,
+      "pos_y": 85.52505493164028,
       "inputs": [
         {
           "id": 2574905552848,
@@ -4358,9 +4355,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/region_channel_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "region_channel_revenue.csv",
@@ -4373,8 +4369,8 @@
     {
       "id": 2574905553968,
       "title": "Aggregate",
-      "pos_x": 2827.7893066406236,
-      "pos_y": 57.71255493164051,
+      "pos_x": 3760.0,
+      "pos_y": -120.00000000000001,
       "inputs": [
         {
           "id": 2577546006832,
@@ -4434,8 +4430,8 @@
     {
       "id": 2577546018512,
       "title": "Aggregate",
-      "pos_x": 2845.3674316406227,
-      "pos_y": 217.86880493164017,
+      "pos_x": 3760.0,
+      "pos_y": 360.0,
       "inputs": [
         {
           "id": 2577546014832,
@@ -4495,8 +4491,8 @@
     {
       "id": 2577546429616,
       "title": "Aggregate",
-      "pos_x": 2847.3205566406227,
-      "pos_y": 397.55630493164006,
+      "pos_x": 3760.0,
+      "pos_y": 520.0,
       "inputs": [
         {
           "id": 2577546443536,
@@ -4546,8 +4542,8 @@
     {
       "id": 2577546431376,
       "title": "File Output",
-      "pos_x": 3511.6174316406227,
-      "pos_y": 394.36880493163994,
+      "pos_x": 4491.617431640622,
+      "pos_y": 414.36880493163994,
       "inputs": [
         {
           "id": 2577546440336,
@@ -4563,9 +4559,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/top_customers.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "top_customers.csv",
@@ -4578,8 +4573,8 @@
     {
       "id": 2577546444176,
       "title": "Sort",
-      "pos_x": 3281.1486816406227,
-      "pos_y": 390.46255493163994,
+      "pos_x": 4261.148681640622,
+      "pos_y": 410.46255493163994,
       "inputs": [
         {
           "id": 2577546443056,
@@ -4618,8 +4613,8 @@
     {
       "id": 2577520381936,
       "title": "Filter",
-      "pos_x": 3050.3674316406245,
-      "pos_y": 403.40005493164085,
+      "pos_x": 4030.367431640624,
+      "pos_y": 423.40005493164085,
       "inputs": [
         {
           "id": 2577546444656,
@@ -4665,8 +4660,8 @@
     {
       "id": 2577598705776,
       "title": "File Output",
-      "pos_x": 3503.652343749997,
-      "pos_y": 553.2226562499995,
+      "pos_x": 4483.652343749997,
+      "pos_y": 573.2226562499995,
       "inputs": [
         {
           "id": 2577598697616,
@@ -4682,9 +4677,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/supplier_performance.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "supplier_performance.csv",
@@ -4697,8 +4691,8 @@
     {
       "id": 2577598707376,
       "title": "Aggregate",
-      "pos_x": 2839.3554687499977,
-      "pos_y": 556.4101562499995,
+      "pos_x": 3760.0,
+      "pos_y": 40.0,
       "inputs": [
         {
           "id": 2577598700976,
@@ -4768,8 +4762,8 @@
     {
       "id": 2577599133200,
       "title": "Sort",
-      "pos_x": 3048.5742187499977,
-      "pos_y": 554.1992187499997,
+      "pos_x": 4028.5742187499973,
+      "pos_y": 574.1992187499998,
       "inputs": [
         {
           "id": 2577599130960,
@@ -4808,8 +4802,8 @@
     {
       "id": 2576898550000,
       "title": "Formula",
-      "pos_x": 3278.808593749997,
-      "pos_y": 554.1992187499995,
+      "pos_x": 4258.808593749997,
+      "pos_y": 574.1992187499995,
       "inputs": [
         {
           "id": 2577610928080,
@@ -4850,8 +4844,8 @@
     {
       "id": 2577516289456,
       "title": "File Output",
-      "pos_x": 3504.1406249999964,
-      "pos_y": 710.9374999999995,
+      "pos_x": 4484.140624999996,
+      "pos_y": 730.9374999999995,
       "inputs": [
         {
           "id": 2577599124880,
@@ -4867,9 +4861,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fx_exposure.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "fx_exposure.csv",
@@ -4882,8 +4875,8 @@
     {
       "id": 2577610916240,
       "title": "Sort",
-      "pos_x": 3049.062499999998,
-      "pos_y": 711.9140624999995,
+      "pos_x": 4029.062499999998,
+      "pos_y": 731.9140624999995,
       "inputs": [
         {
           "id": 2577610923440,
@@ -4922,8 +4915,8 @@
     {
       "id": 2577599124080,
       "title": "Aggregate",
-      "pos_x": 2839.843749999998,
-      "pos_y": 714.1249999999995,
+      "pos_x": 3760.0,
+      "pos_y": 200.0,
       "inputs": [
         {
           "id": 2577610923120,
@@ -4978,8 +4971,8 @@
     {
       "id": 2577546008112,
       "title": "File Output",
-      "pos_x": 3899.109374999999,
-      "pos_y": 907.1250000000002,
+      "pos_x": 4879.109374999999,
+      "pos_y": 927.1250000000002,
       "inputs": [
         {
           "id": 2576898509072,
@@ -4995,9 +4988,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/kpi_summary.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "kpi_summary.csv",
@@ -5010,8 +5002,8 @@
     {
       "id": 2577504582416,
       "title": "Aggregate",
-      "pos_x": 3029.207031250001,
-      "pos_y": 882.6367187500001,
+      "pos_x": 4009.207031250001,
+      "pos_y": 902.6367187500002,
       "inputs": [
         {
           "id": 2577504581136,
@@ -5086,8 +5078,8 @@
     {
       "id": 2577504571056,
       "title": "Formula",
-      "pos_x": 2859.3749999999995,
-      "pos_y": 884.3749999999999,
+      "pos_x": 3760.0,
+      "pos_y": 680.0,
       "inputs": [
         {
           "id": 2577504570736,
@@ -5134,8 +5126,8 @@
     {
       "id": 2664157223248,
       "title": "Formula",
-      "pos_x": 3227.902343749998,
-      "pos_y": 1083.2148437499998,
+      "pos_x": 4207.902343749998,
+      "pos_y": 1103.2148437499998,
       "inputs": [
         {
           "id": 2664157224848,
@@ -5182,8 +5174,8 @@
     {
       "id": 2664158011760,
       "title": "Select",
-      "pos_x": 3078.906249999998,
-      "pos_y": 1080.4687499999995,
+      "pos_x": 4058.906249999998,
+      "pos_y": 1100.4687499999995,
       "inputs": [
         {
           "id": 2664158013200,
@@ -5283,8 +5275,8 @@
     {
       "id": 1692279061904,
       "title": "Select",
-      "pos_x": 2667.236328124998,
-      "pos_y": 878.9062499999993,
+      "pos_x": 3647.236328124998,
+      "pos_y": 898.9062499999993,
       "inputs": [
         {
           "id": 1692279060624,
@@ -5816,8 +5808,8 @@
     {
       "id": 1866593396176,
       "title": "Select",
-      "pos_x": 3358.7499999999995,
-      "pos_y": 928.7499999999998,
+      "pos_x": 4338.749999999999,
+      "pos_y": 948.7499999999998,
       "inputs": [
         {
           "id": 1866593399216,
@@ -5925,8 +5917,8 @@
     {
       "id": 1864102966480,
       "title": "File Output",
-      "pos_x": 3488.867187499998,
-      "pos_y": 197.36328124999994,
+      "pos_x": 4468.867187499998,
+      "pos_y": 217.36328124999994,
       "inputs": [
         {
           "id": 1864102966000,
@@ -5942,9 +5934,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/segment_revenue.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "segment_revenue.csv",
@@ -5957,8 +5948,8 @@
     {
       "id": 1866593386736,
       "title": "Sort",
-      "pos_x": 3031.249999999998,
-      "pos_y": 201.56249999999983,
+      "pos_x": 4011.249999999998,
+      "pos_y": 221.56249999999983,
       "inputs": [
         {
           "id": 1866593398576,
@@ -6018,9 +6009,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/01 enriched customer_id.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "01 enriched customer_id.csv",
@@ -6050,9 +6040,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/02 enriched product_id.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "02 enriched product_id.csv",
@@ -6082,9 +6071,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/03 enriched supplier_id.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "03 enriched supplier_id.csv",
@@ -6114,9 +6102,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 enriched channel_id.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "04 enriched channel_id.csv",
@@ -6146,9 +6133,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/05 enriched currency.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "05 enriched currency.csv",
@@ -6214,7 +6200,7 @@
       "id": 1757911060144,
       "title": "Select",
       "pos_x": 969.2382812499984,
-      "pos_y": -144.0429687499998,
+      "pos_y": -121.0429687499998,
       "inputs": [
         {
           "id": 1757911071344,
@@ -6370,8 +6356,8 @@
     {
       "id": 2907286822320,
       "title": "Transpose",
-      "pos_x": 3551.5624999999995,
-      "pos_y": 912.4999999999998,
+      "pos_x": 4531.562499999999,
+      "pos_y": 932.4999999999998,
       "inputs": [
         {
           "id": 2907286823600,
@@ -6417,8 +6403,8 @@
     {
       "id": 1561918502416,
       "title": "Select",
-      "pos_x": 3712.4999999999973,
-      "pos_y": 912.4999999999991,
+      "pos_x": 4692.499999999997,
+      "pos_y": 932.4999999999991,
       "inputs": [
         {
           "id": 1561918503696,
@@ -6470,8 +6456,8 @@
     {
       "id": 1564690265616,
       "title": "File Output",
-      "pos_x": 930.7861328124989,
-      "pos_y": -341.79687499999955,
+      "pos_x": 1000.0,
+      "pos_y": -340.0,
       "inputs": [
         {
           "id": 1565216039280,
@@ -6487,9 +6473,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/04 dropped null key rows.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "04 dropped null key rows.csv",
@@ -6502,8 +6487,8 @@
     {
       "id": 9000000000003,
       "title": "File Output",
-      "pos_x": 245.0,
-      "pos_y": -290.0,
+      "pos_x": 465.0,
+      "pos_y": -340.0,
       "inputs": [
         {
           "id": 9000000000002,
@@ -6519,9 +6504,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_quantity.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "rejected_quantity.csv",
@@ -6534,8 +6518,8 @@
     {
       "id": 9000000000006,
       "title": "File Output",
-      "pos_x": 421.0,
-      "pos_y": -290.0,
+      "pos_x": 640.0,
+      "pos_y": -340.0,
       "inputs": [
         {
           "id": 9000000000005,
@@ -6551,9 +6535,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_price_outliers.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "rejected_price_outliers.csv",
@@ -6566,8 +6549,8 @@
     {
       "id": 9000000000009,
       "title": "File Output",
-      "pos_x": 590.0,
-      "pos_y": -290.0,
+      "pos_x": 820.0,
+      "pos_y": -340.0,
       "inputs": [
         {
           "id": 9000000000008,
@@ -6583,9 +6566,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/rejected_future_dates.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "rejected_future_dates.csv",
@@ -6598,8 +6580,8 @@
     {
       "id": 9000000000012,
       "title": "File Output",
-      "pos_x": 786.0,
-      "pos_y": -290.0,
+      "pos_x": 1260.0,
+      "pos_y": 180.0,
       "inputs": [
         {
           "id": 9000000000011,
@@ -6615,9 +6597,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/duplicate_orders.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "duplicate_orders.csv",
@@ -6647,9 +6628,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_customers.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "orphan_customers.csv",
@@ -6679,9 +6659,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orphan_products.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "orphan_products.csv",
@@ -6694,8 +6673,8 @@
     {
       "id": 9000000000022,
       "title": "Select",
-      "pos_x": 2669.073486328125,
-      "pos_y": -1258.172607421875,
+      "pos_x": 3760.0,
+      "pos_y": -1080.0,
       "inputs": [
         {
           "id": 9000000000020,
@@ -7227,8 +7206,8 @@
     {
       "id": 9000000000025,
       "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -1258.172607421875,
+      "pos_x": 4049.073486328125,
+      "pos_y": -1238.172607421875,
       "inputs": [
         {
           "id": 9000000000024,
@@ -7244,9 +7223,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enriched.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "orders_enriched.csv",
@@ -7259,8 +7237,8 @@
     {
       "id": 9000000000030,
       "title": "Filter",
-      "pos_x": 2669.073486328125,
-      "pos_y": -1108.172607421875,
+      "pos_x": 3760.0,
+      "pos_y": -919.9999999999998,
       "inputs": [
         {
           "id": 9000000000027,
@@ -7306,8 +7284,8 @@
     {
       "id": 9000000000033,
       "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -1108.172607421875,
+      "pos_x": 4049.073486328125,
+      "pos_y": -1088.172607421875,
       "inputs": [
         {
           "id": 9000000000032,
@@ -7323,9 +7301,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_enterprise.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "orders_enterprise.csv",
@@ -7338,8 +7315,8 @@
     {
       "id": 9000000000038,
       "title": "Filter",
-      "pos_x": 2669.073486328125,
-      "pos_y": -958.1726074218749,
+      "pos_x": 3760.0,
+      "pos_y": -759.9999999999998,
       "inputs": [
         {
           "id": 9000000000035,
@@ -7385,8 +7362,8 @@
     {
       "id": 9000000000041,
       "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -958.1726074218749,
+      "pos_x": 4049.073486328125,
+      "pos_y": -938.1726074218748,
       "inputs": [
         {
           "id": 9000000000040,
@@ -7402,9 +7379,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/orders_high_risk.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "orders_high_risk.csv",
@@ -7417,8 +7393,8 @@
     {
       "id": 9000000000046,
       "title": "Split",
-      "pos_x": 2669.073486328125,
-      "pos_y": -808.1726074218749,
+      "pos_x": 3760.0,
+      "pos_y": -599.9999999999998,
       "inputs": [
         {
           "id": 9000000000043,
@@ -7461,8 +7437,8 @@
     {
       "id": 9000000000049,
       "title": "File Output",
-      "pos_x": 3069.073486328125,
-      "pos_y": -835.2844238281248,
+      "pos_x": 4049.073486328125,
+      "pos_y": -815.2844238281248,
       "inputs": [
         {
           "id": 9000000000048,
@@ -7478,9 +7454,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_estimation.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "fact_estimation.csv",
@@ -7493,8 +7468,8 @@
     {
       "id": 9000000000052,
       "title": "File Output",
-      "pos_x": 3080.517578125,
-      "pos_y": -678.0639648437498,
+      "pos_x": 4060.517578125,
+      "pos_y": -658.0639648437498,
       "inputs": [
         {
           "id": 9000000000051,
@@ -7510,9 +7485,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/fact_validation.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "fact_validation.csv",
@@ -7525,8 +7499,8 @@
     {
       "id": 9000000000056,
       "title": "Formula",
-      "pos_x": 683.7695312500001,
-      "pos_y": 2128.40625,
+      "pos_x": 1700.0,
+      "pos_y": -1980.0,
       "inputs": [
         {
           "id": 9000000000054,
@@ -7567,8 +7541,8 @@
     {
       "id": 9000000000060,
       "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2300.0,
+      "pos_x": 1700.0,
+      "pos_y": -1805.0,
       "inputs": [
         {
           "id": 9000000000058,
@@ -7609,8 +7583,8 @@
     {
       "id": 9000000000064,
       "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2450.0,
+      "pos_x": 1700.0,
+      "pos_y": -1630.0,
       "inputs": [
         {
           "id": 9000000000062,
@@ -7651,8 +7625,8 @@
     {
       "id": 9000000000068,
       "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2600.0,
+      "pos_x": 1700.0,
+      "pos_y": -1455.0,
       "inputs": [
         {
           "id": 9000000000066,
@@ -7693,8 +7667,8 @@
     {
       "id": 9000000000072,
       "title": "Formula",
-      "pos_x": 700.0,
-      "pos_y": 2750.0,
+      "pos_x": 1700.0,
+      "pos_y": -1280.0,
       "inputs": [
         {
           "id": 9000000000070,
@@ -7735,8 +7709,8 @@
     {
       "id": 9000000000076,
       "title": "Union",
-      "pos_x": 1050.0,
-      "pos_y": 2225.0,
+      "pos_x": 2050.0,
+      "pos_y": -1885.0,
       "inputs": [
         {
           "id": 9000000000074,
@@ -7769,8 +7743,8 @@
     {
       "id": 9000000000081,
       "title": "Union",
-      "pos_x": 1400.0,
-      "pos_y": 2340.0,
+      "pos_x": 2400.0,
+      "pos_y": -1770.0,
       "inputs": [
         {
           "id": 9000000000079,
@@ -7846,8 +7820,8 @@
     {
       "id": 9000000000086,
       "title": "Union",
-      "pos_x": 1750.0,
-      "pos_y": 2460.0,
+      "pos_x": 2750.0,
+      "pos_y": -1650.0,
       "inputs": [
         {
           "id": 9000000000084,
@@ -7880,8 +7854,8 @@
     {
       "id": 9000000000091,
       "title": "Union",
-      "pos_x": 2100.0,
-      "pos_y": 2580.0,
+      "pos_x": 3100.0,
+      "pos_y": -1530.0,
       "inputs": [
         {
           "id": 9000000000089,
@@ -7914,8 +7888,8 @@
     {
       "id": 9000000000095,
       "title": "File Output",
-      "pos_x": 2450.0,
-      "pos_y": 2580.0,
+      "pos_x": 3450.0,
+      "pos_y": -1530.0,
       "inputs": [
         {
           "id": 9000000000094,
@@ -7931,9 +7905,8 @@
           "filePath": "C:/Users/<you>/TriggerEditor/savedfiles/Example_2_Retail_Ledger/app_output/reference_data_union.csv",
           "file_format": "csv",
           "delimiter": ",",
-          "use_streaming": true,
           "include_bom": false,
-          "compression": null
+          "compression": "snappy"
         }
       },
       "label_text": "reference_data_union.csv",
@@ -7942,6 +7915,209 @@
       "node_code": 4,
       "node_type": "input",
       "op": "input.file_output"
+    },
+    {
+      "id": 2437882577728,
+      "title": "Split",
+      "pos_x": 5080.0,
+      "pos_y": -300.0,
+      "inputs": [
+        {
+          "id": 2437885712256,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2437886770368,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2437886154496,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "estimation_percent": 99,
+          "random_seed": 42,
+          "is_random": false
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 8,
+      "node_type": "preparation",
+      "op": "preparation.split"
+    },
+    {
+      "id": 2068689215232,
+      "title": "Window",
+      "pos_x": -500.0,
+      "pos_y": -280.0,
+      "inputs": [
+        {
+          "id": 2067363145920,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2067362742976,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "partition_by": [
+            "Status"
+          ],
+          "order_by": [],
+          "ops": []
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 7,
+      "node_type": "transform",
+      "op": "transform.window"
+    },
+    {
+      "id": 2068647085632,
+      "title": "SQL Query",
+      "pos_x": -920.0,
+      "pos_y": -260.0,
+      "inputs": [
+        {
+          "id": 2067363587520,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2068648657600,
+          "index": 1,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        },
+        {
+          "id": 2068700025664,
+          "index": 2,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2068700028096,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "sql": "SELECT *\nFROM t1"
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 8,
+      "node_type": "transform",
+      "op": "transform.sql_query"
+    },
+    {
+      "id": 2068695018112,
+      "title": "Comment",
+      "pos_x": -1240.0,
+      "pos_y": -360.0,
+      "inputs": [],
+      "outputs": [],
+      "content": {
+        "settings": {
+          "text": ""
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "report",
+      "op": "report.comment"
+    },
+    {
+      "id": 2068646575104,
+      "title": "Gaps",
+      "pos_x": -900.0,
+      "pos_y": -380.0,
+      "inputs": [
+        {
+          "id": 2068669253760,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 2068669266688,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        },
+        {
+          "id": 2068646511808,
+          "index": 1,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 1
+        }
+      ],
+      "content": {
+        "sequence_column": " Order ID ",
+        "mode": "prefixed",
+        "group_columns": [
+          " Order ID "
+        ],
+        "report_duplicates": true,
+        "report_out_of_order": true,
+        "range_start": null,
+        "range_end": null,
+        "date_format": "%Y-%m-%d",
+        "min_gap_days": 1,
+        "business_days_only": false,
+        "holidays": []
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 2,
+      "node_type": "audit",
+      "op": "audit.gaps"
     }
   ],
   "edges": [
@@ -8848,6 +9024,38 @@
       "end": 9000000000079,
       "label": "#2",
       "input_index": 1
+    },
+    {
+      "id": 2441048941520,
+      "edge_type": 5,
+      "start": 2577542550608,
+      "end": 2437885712256,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2068690128720,
+      "edge_type": 5,
+      "start": 2667100646896,
+      "end": 2067363145920,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2068693046096,
+      "edge_type": 5,
+      "start": 2667100646896,
+      "end": 2067363587520,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 2068698268112,
+      "edge_type": 5,
+      "start": 2667100646896,
+      "end": 2068669253760,
+      "label": "",
+      "input_index": 0
     }
   ],
   "groups": [
@@ -8857,9 +9065,9 @@
       "version": 2,
       "title": "Joins",
       "x": 637.244693756104,
-      "y": 1115.2636718749986,
-      "w": 1804.216243743897,
-      "h": 899.9470214843759,
+      "y": 1081.7636718749986,
+      "w": 1816.966243743897,
+      "h": 933.4470214843759,
       "collapsed": false,
       "children": [
         2607193616816,
@@ -8905,10 +9113,10 @@
       "type": "Group",
       "version": 2,
       "title": "Enriched",
-      "x": 1820.9780273437511,
-      "y": 115.24999999999994,
+      "x": 1975.856634245447,
+      "y": 30.123797699434647,
       "w": 855.280761718748,
-      "h": 216.1560058593751,
+      "h": 249.6560058593751,
       "collapsed": false,
       "children": [
         2073979223760,
@@ -8943,6 +9151,7 @@
   "workflow_metadata": {
     "schema_version": 2,
     "app_version": "0.1.0",
-    "saved_at": "2026-10-27T07:30:20Z"
+    "saved_at": "2026-10-31T03:50:12Z",
+    "workflow_uuid": "c8e1a178-8d20-4aa8-abdd-b4ff76949ceb"
   }
 }

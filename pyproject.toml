@@ -138,6 +138,7 @@ dev = [
     "pytest-qt==4.5.0",
     "pytest-timeout==2.4.0",
     "pytest-xdist==3.8.0",
+    "radon>=6.0.1",
     "ruff==0.17.2",
     "ty==0.0.91",
 ]
