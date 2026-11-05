@@ -110,19 +110,13 @@ class PolarsTableModel(QAbstractTableModel):
         self._column_types: Dict[str, pl.DataType] = {}
         self._update_column_info()
 
-        # Statistics
-        self._total_rows = len(self._dataframe) if not self._dataframe.is_empty() else 0
-        self._total_columns = (
-            len(self._dataframe.columns) if not self._dataframe.is_empty() else 0
-        )
-
         # Performance monitoring
         self._memory_usage = 0
         self._last_access_time = time.time()
 
     def _update_column_info(self):
         """Update cached column information."""
-        if not self._dataframe.is_empty():
+        if self._dataframe.width > 0:
             self._column_names = self._dataframe.columns
             self._column_types = dict(
                 zip(self._dataframe.columns, self._dataframe.dtypes)
@@ -1038,7 +1032,7 @@ class PolarsTableViewer(QWidget):
         if self.column_filter is not None:
             self.column_filter.clear()
             self.column_filter.addItem(ALL_COLUMNS_LABEL)
-            if not dataframe.is_empty():
+            if dataframe.width > 0:
                 for col in dataframe.columns:
                     self.column_filter.addItem(col)
 
@@ -1050,7 +1044,7 @@ class PolarsTableViewer(QWidget):
 
     def search_columns(self) -> list[str]:
         """Columns of the loaded frame, for a search-scope picker."""
-        if self.dataframe is None or self.dataframe.is_empty():
+        if self.dataframe is None or self.dataframe.width == 0:
             return []
         return list(self.dataframe.columns)
 
@@ -1067,7 +1061,7 @@ class PolarsTableViewer(QWidget):
             self.clear_search()
             return self.model.total_rows
 
-        if self.dataframe is None or self.dataframe.is_empty():
+        if self.dataframe is None or self.dataframe.width == 0:
             return 0
 
         if not column or column == ALL_COLUMNS_LABEL:
@@ -1090,8 +1084,8 @@ class PolarsTableViewer(QWidget):
                     .cast(pl.Utf8)
                     .str.contains(text, literal=False, strict=False)
                     .fill_null(False)
-                    for col in self.dataframe.columns
-                    if self.dataframe[col].dtype in [pl.Utf8, pl.String]
+                    for col, dtype in self.dataframe.schema.items()
+                    if not (dtype.is_nested() or dtype in (pl.Binary, pl.Object))
                 ]
                 condition = conditions[0] if conditions else None
                 for extra in conditions[1:]:
@@ -1100,7 +1094,7 @@ class PolarsTableViewer(QWidget):
             filtered = (
                 self.dataframe.filter(condition)
                 if condition is not None
-                else pl.DataFrame()
+                else self.dataframe.clear()
             )
             self.filtered_dataframe = filtered
             self.model.set_dataframe(filtered)

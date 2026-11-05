@@ -7,6 +7,7 @@ itself is covered by ``tests/unit/test_polars_table_model.py``.
 from __future__ import annotations
 
 import unittest
+from datetime import date
 
 import polars as pl
 from qtpy.QtCore import Qt
@@ -14,6 +15,7 @@ from qtpy.QtGui import QKeySequence, QShortcut
 from qtpy.QtWidgets import QApplication
 
 from trigger_designer.qt.models.polars_table_viewer import (
+    ALL_COLUMNS_LABEL,
     PolarsTableModel,
     PolarsTableViewer,
 )
@@ -162,3 +164,89 @@ class TestViewerSearchAndHeader(unittest.TestCase):
 
         viewer._clear_filter()
         self.assertEqual(viewer.model.total_rows, 2)
+
+    def _mixed_viewer(self) -> PolarsTableViewer:
+        viewer = PolarsTableViewer(
+            dataframe=pl.DataFrame(
+                {
+                    "id": [1001, 1002],
+                    "d": [date(2024, 1, 5), date(2024, 1, 6)],
+                    "s": ["x", "y"],
+                    "c": pl.Series(["red", "blue"], dtype=pl.Categorical),
+                }
+            ),
+            show_controls=False,
+            show_info=False,
+            show_search=False,
+            show_export=False,
+        )
+        self.addCleanup(viewer.close)
+        return viewer
+
+    def test_zero_row_frame_lists_its_search_columns(self):
+        viewer = PolarsTableViewer(
+            dataframe=pl.DataFrame(schema={"a": pl.Int64, "b": pl.String}),
+            show_controls=False,
+            show_info=False,
+            show_search=False,
+            show_export=False,
+        )
+        self.addCleanup(viewer.close)
+        self.assertEqual(viewer.search_columns(), ["a", "b"])
+        self.assertEqual(viewer.model.columnCount(), 2)
+
+    def test_column_filter_lists_columns_of_a_zero_row_frame(self):
+        viewer = PolarsTableViewer(dataframe=pl.DataFrame({"n": [1]}))
+        self.addCleanup(viewer.close)
+        viewer.set_dataframe(pl.DataFrame(schema={"a": pl.Int64, "b": pl.String}))
+        filter_items = [
+            viewer.column_filter.itemText(i)
+            for i in range(viewer.column_filter.count())
+        ]
+        self.assertEqual(filter_items, [ALL_COLUMNS_LABEL, "a", "b"])
+
+    def test_search_with_no_matches_keeps_the_headers(self):
+        viewer = self._viewer()
+        self.assertEqual(viewer.apply_search("Zurich"), 0)
+        self.assertEqual(viewer.model.columnCount(), 3)
+        self.assertEqual(
+            viewer.model.headerData(0, Qt.Horizontal, Qt.DisplayRole), "id (Int64)"
+        )
+
+    def test_all_columns_search_matches_integer_values(self):
+        self.assertEqual(self._mixed_viewer().apply_search("1001"), 1)
+
+    def test_all_columns_search_matches_date_values(self):
+        self.assertEqual(self._mixed_viewer().apply_search("2024-01-06"), 1)
+
+    def test_all_columns_search_matches_categorical_values(self):
+        self.assertEqual(self._mixed_viewer().apply_search("blu"), 1)
+
+    def test_all_columns_search_skips_nested_binary_and_object_columns(self):
+        viewer = PolarsTableViewer(
+            dataframe=pl.DataFrame(
+                {
+                    "s": ["x", "y"],
+                    "l": [[1001], [2002]],
+                    "b": [b"1001", b"2002"],
+                    "o": pl.Series([1001, "z"], dtype=pl.Object),
+                }
+            ),
+            show_controls=False,
+            show_info=False,
+            show_search=False,
+            show_export=False,
+        )
+        self.addCleanup(viewer.close)
+        self.assertEqual(viewer.apply_search("1001"), 0)
+        self.assertEqual(viewer.apply_search("x"), 1)
+
+    def test_single_column_search_casts_the_picked_column(self):
+        viewer = self._mixed_viewer()
+        self.assertEqual(viewer.apply_search("1001", "id"), 1)
+        self.assertEqual(viewer.apply_search("1001", "s"), 0)
+
+    def test_empty_search_restores_the_full_row_count(self):
+        viewer = self._mixed_viewer()
+        self.assertEqual(viewer.apply_search("x"), 1)
+        self.assertEqual(viewer.apply_search(""), 2)

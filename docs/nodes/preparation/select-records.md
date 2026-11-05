@@ -27,7 +27,7 @@ One section, **Mode**. A note says "Only the fields used by the chosen mode appe
 | **Mode** | First | always | First, Last, Range, Large, Small. |
 | **N** | 10 | First, Last, Large, Small | How many rows (1 to 100,000,000). |
 | **From row** / **To row** | 1 and 100 | Range | 1-based, inclusive, counted across the whole table (From must not exceed To). |
-| **Rank by** | blank | Large, Small | The column to rank. Text columns are read as numbers the way Audit reads amounts (`1,234.50`, `1.234,50` and `12,5` all work); unreadable values are never selected. |
+| **Rank by** | blank | Large, Small | The column to rank. Text columns are read as numbers the way Audit reads amounts (`1,234.50`, `1.234,50` and `12,5` all work); unreadable values are never selected. A text column with no readable numbers gives `TD-SHAPE-091`. |
 | **Ties** | Exact N | Large, Small | **Exact N** returns exactly N rows. **Include ties** also includes rows tied with the Nth. |
 | **Per group** | none | all except Range | Selects within each group of the chosen columns. For Range a note says it is global and per-group does not apply. |
 

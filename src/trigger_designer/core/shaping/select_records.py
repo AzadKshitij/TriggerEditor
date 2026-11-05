@@ -62,6 +62,32 @@ def apply_select_records(
         if not s["by"]:
             raise ShapingError("TD-SHAPE-001", "Pick the column to rank by")
         require_columns(schema, [s["by"]])
+        dtype = schema[s["by"]]
+        if not dtype.is_numeric():
+            if dtype not in (pl.String, pl.Categorical, pl.Enum):
+                raise ShapingError(
+                    "TD-SHAPE-091",
+                    f"'{s['by']}' must be a number or text holding numbers",
+                    [s["by"]],
+                )
+            # The only collect here: one aggregate pass, and only for text columns.
+            flags = (
+                as_lazy(frame)
+                .select(
+                    pl.col(s["by"]).is_not_null().any().alias("has_values"),
+                    numeric_expr(s["by"], dtype)
+                    .is_not_null()
+                    .any()
+                    .alias("has_numbers"),
+                )
+                .collect()
+            )
+            if flags["has_values"].item() and not flags["has_numbers"].item():
+                raise ShapingError(
+                    "TD-SHAPE-091",
+                    f"'{s['by']}' has no values that can be read as numbers",
+                    [s["by"]],
+                )
         largest = s["mode"] == "largest_n"
         lf = lf.with_columns(numeric_expr(s["by"], schema[s["by"]]).alias("__key"))
         method = "min" if s["ties"] == "include_ties" else "ordinal"

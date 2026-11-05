@@ -344,6 +344,34 @@ def test_empty_dataframe() -> None:
     assert data is None
 
 
+def test_zero_row_frame_keeps_its_columns() -> None:
+    model = PolarsTableModel(pl.DataFrame(schema={"a": pl.Int64, "b": pl.String}))
+
+    assert model.rowCount() == 0
+    assert model.columnCount() == 2
+    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "a (Int64)"
+    assert model.headerData(1, Qt.Horizontal, Qt.DisplayRole) == "b (String)"
+
+
+def test_zero_row_frame_from_empty_lists_keeps_its_columns() -> None:
+    model = PolarsTableModel(pl.DataFrame({"a": [], "b": []}))
+
+    assert model.rowCount() == 0
+    assert model.columnCount() == 2
+    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "a (Null)"
+
+
+def test_set_dataframe_with_zero_rows_keeps_its_columns() -> None:
+    model = PolarsTableModel(_small_df())
+
+    model.set_dataframe(pl.DataFrame(schema={"a": pl.Int64, "b": pl.String}))
+
+    assert model.rowCount() == 0
+    assert model.columnCount() == 2
+    assert model.headerData(0, Qt.Horizontal, Qt.DisplayRole) == "a (Int64)"
+    assert model.headerData(1, Qt.Horizontal, Qt.DisplayRole) == "b (String)"
+
+
 def test_single_row_dataframe() -> None:
     """Test handling of single-row dataframes."""
     single_df = pl.DataFrame({"a": [1], "b": ["test"]})

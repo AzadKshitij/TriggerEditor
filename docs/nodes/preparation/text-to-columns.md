@@ -30,7 +30,7 @@ Split `Surname, First name`, a `code-description` field, account strings such as
 | Output | **Piece number** (placeholder `n`; Rows only) | empty | Optional column holding the 1-based number of the piece within its cell. |
 | Options | **Trim spaces** | on | Trims spaces around each piece. |
 | Options | **Keep original** | on | Keeps the source column. In Rows mode the original text is kept in `<column>_original`. |
-| Options | **Skip empty** (Rows only) | off | Drops pieces that are empty. |
+| Options | **Skip empty** (Rows only) | off | Drops pieces that are empty. A cell with no pieces left (empty or missing) still gives one empty row, so no record disappears. |
 
 In Rows mode the piece goes into the original column's name and all other columns repeat for each piece. A chip reads "n rows become m (first 100 rows)".
 

@@ -466,8 +466,10 @@ def _prepare(lf: pl.LazyFrame, s: ProfileSettings, coll: _Collector):
     """Return (work frame, rows profiled, sampled)."""
     n = max(1, int(s.sample_rows))
     if s.sample_mode == "head":
-        df = coll.one(lf.head(n))
-        return df.lazy(), df.height, df.height >= n
+        df = coll.one(lf.head(n + 1))
+        sampled = df.height > n
+        df = df.head(n)
+        return df.lazy(), df.height, sampled
     total = int(coll.one(lf.select(pl.len())).item())
     if s.sample_mode == "random" and total > n:
         idx = sorted(random.Random(s.seed).sample(range(total), n))

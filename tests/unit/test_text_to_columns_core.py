@@ -157,6 +157,38 @@ def test_rows_mode_skip_empty_keeps_one_null_row_for_all_empty_cell() -> None:
     assert without.height == 3 + 3 + 1
 
 
+def test_rows_mode_without_skip_empty_keeps_null_and_empty_rows() -> None:
+    frame = pl.DataFrame({"s": ["a,b", None, "", "c,"]})
+    out = _cols(
+        {
+            "column": "s",
+            "pattern": ",",
+            "max_splits": 1,
+            "output": "rows",
+            "keep_original": False,
+        },
+        frame,
+    )
+    assert out["s"].to_list() == ["a", "b", None, "", "c", ""]
+    assert out.height == 6
+
+
+def test_rows_mode_skip_empty_keeps_one_row_for_null_and_blank_sources() -> None:
+    frame = pl.DataFrame({"k": [1, 2, 3, 4], "s": ["a,b", None, "", "c,"]})
+    out = _cols(
+        {
+            "column": "s",
+            "pattern": ",",
+            "max_splits": 0,
+            "output": "rows",
+            "skip_empty": True,
+            "keep_original": False,
+        },
+        frame,
+    )
+    assert out.rows() == [(1, "a"), (1, "b"), (2, None), (3, None), (4, "c")]
+
+
 def test_regex_mode_and_escape_delimiter() -> None:
     frame = pl.DataFrame({"s": ["a, b;c"]})
     out = _cols(

@@ -82,6 +82,58 @@ def test_select_records_range_and_ranked_ties() -> None:
     assert selected.collect()["v"].to_list() == [3, 2, 2]
 
 
+def test_select_records_text_without_numbers_raises() -> None:
+    frame = pl.DataFrame({"t": ["a", "b"]}).lazy()
+    for mode in ("largest_n", "smallest_n"):
+        with pytest.raises(ShapingError) as error:
+            select_records.apply_select_records(
+                frame, {"mode": mode, "n": 1, "by": "t"}
+            )
+        assert error.value.code == "TD-SHAPE-091"
+
+
+def test_select_records_text_with_some_numbers_still_ranks() -> None:
+    frame = pl.DataFrame({"t": ["10", "x", "3"]}).lazy()
+    selected, rest = select_records.apply_select_records(
+        frame, {"mode": "largest_n", "n": 1, "by": "t"}
+    )
+    assert selected.collect()["t"].to_list() == ["10"]
+    assert rest.collect()["t"].to_list() == ["x", "3"]
+
+
+def test_select_records_text_without_values_does_not_raise() -> None:
+    nulls = pl.DataFrame({"t": [None, None]}, schema={"t": pl.String}).lazy()
+    selected, rest = select_records.apply_select_records(
+        nulls, {"mode": "largest_n", "n": 1, "by": "t"}
+    )
+    assert selected.collect().height == 0
+    assert rest.collect().height == 2
+    empty = pl.DataFrame(schema={"t": pl.String}).lazy()
+    selected, rest = select_records.apply_select_records(
+        empty, {"mode": "largest_n", "n": 1, "by": "t"}
+    )
+    assert selected.collect().height == 0
+    assert rest.collect().height == 0
+
+
+def test_select_records_int_rank_unchanged() -> None:
+    frame = pl.DataFrame({"v": [3, 1, 2]}).lazy()
+    selected, rest = select_records.apply_select_records(
+        frame, {"mode": "largest_n", "n": 1, "by": "v"}
+    )
+    assert selected.collect()["v"].to_list() == [3]
+    assert rest.collect()["v"].to_list() == [1, 2]
+
+
+def test_select_records_date_rank_raises() -> None:
+    frame = pl.DataFrame({"d": [date(2024, 1, 1), date(2024, 1, 2)]}).lazy()
+    with pytest.raises(ShapingError) as error:
+        select_records.apply_select_records(
+            frame, {"mode": "largest_n", "n": 1, "by": "d"}
+        )
+    assert error.value.code == "TD-SHAPE-091"
+
+
 def test_find_replace_literal_regex_suffix() -> None:
     frame = pl.DataFrame({"s": ["Alpha", "beta", None]}).lazy()
     out = find_replace.apply_find_replace(
