@@ -78,8 +78,8 @@ empty, 100).
 
 ## Edge cases and limits
 
-- Rank, Dense rank and the running and rolling calculations read text as numbers (commas removed; other text
-  becomes empty). Previous and Next work on any column and keep its type. Choosing a column that is neither text nor a number gives `TD-SHAPE-091`.
+- Rank, Dense rank and the running and rolling calculations read text as numbers the way Audit reads amounts
+  (`1,234.50`, `1.234,50` and `12,5` all work; other text becomes empty). Previous and Next work on any column and keep its type. Choosing a column that is neither text nor a number gives `TD-SHAPE-091`.
 - Every Order by row needs a column (`TD-SHAPE-001`); an offset or window below 1 gives `TD-SHAPE-004`.
 - Running mean divides by the number of non-empty values so far.
 - Text dates sort correctly only when written year-month-day (`2025-01-03`). `03/01/2025` sorts as text.

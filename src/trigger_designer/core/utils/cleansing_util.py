@@ -15,6 +15,8 @@ from typing import (
     Union,
 )
 
+from trigger_designer.core.shaping.common import ShapingError
+
 
 @dataclass
 class CleansingStats:
@@ -92,21 +94,27 @@ class DataCleansing:
         elif strategy == NullStrategy.REMOVE_ALL_NULL_COLS:
             # One vectorised pass: check every column in a single collect.
             null_mask = self.df.select(pl.all().is_null().all()).row(0)
-            cols_to_keep = [c for c, all_null in zip(self.df.columns, null_mask) if not all_null]
+            cols_to_keep = [
+                c for c, all_null in zip(self.df.columns, null_mask) if not all_null
+            ]
             if not cols_to_keep:
-                raise ValueError(
-                    "Every column is entirely null; at least one column must be kept. "
-                    "Turn off 'Remove all-null columns' or supply non-null data."
+                raise ShapingError(
+                    "TD-SHAPE-005",
+                    "Every column is empty; keep at least one column or turn off "
+                    "Remove all-null columns",
                 )
             self.df = self.df.select(cols_to_keep)
         elif strategy == NullStrategy.REMOVE_ANY_NULL_COLS:
             # One vectorised pass: check every column in a single collect.
             null_mask = self.df.select(pl.all().is_null().any()).row(0)
-            cols_to_keep = [c for c, any_null in zip(self.df.columns, null_mask) if not any_null]
+            cols_to_keep = [
+                c for c, any_null in zip(self.df.columns, null_mask) if not any_null
+            ]
             if not cols_to_keep:
-                raise ValueError(
-                    "Every column contains a null value; at least one column must be kept. "
-                    "Turn off 'Remove any-null columns' or supply data without nulls."
+                raise ShapingError(
+                    "TD-SHAPE-005",
+                    "Every column has a null value; keep at least one column or "
+                    "turn off Remove columns with any null",
                 )
             self.df = self.df.select(cols_to_keep)
         elif strategy == NullStrategy.REPLACE_WITH_DEFAULT:

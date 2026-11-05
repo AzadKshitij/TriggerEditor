@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import polars as pl
 
-from trigger_designer.core.shaping.common import ShapingError, as_lazy, schema_of, unique_name
+from trigger_designer.core.shaping.common import (
+    ShapingError,
+    as_lazy,
+    schema_of,
+    unique_name,
+)
 from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 
 DEFAULTS = {
@@ -47,10 +52,13 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     # explicitly instead of inheriting the engine's default.
     #
     # Use sentinel internal names so an input column called "Name" or "Value"
-    # does not cause a DuplicateError from unpivot.
+    # does not cause a DuplicateError from unpivot, and give the output columns
+    # a free name when a key column already uses "Name" or "Value".
     existing = set(schema)
     var_tmp = unique_name("__td_var", existing)
     val_tmp = unique_name("__td_val", existing | {var_tmp})
+    name_out = unique_name("Name", key_columns)
+    value_out = unique_name("Value", [*key_columns, name_out])
     block = {name: position for position, name in enumerate(data_columns)}
     out = (
         frame.with_row_index("__row")
@@ -65,7 +73,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         )
         .sort(["__block", "__row"])
         .drop("__row", "__block")
-        .rename({var_tmp: "Name", val_tmp: "Value"})
+        .rename({var_tmp: name_out, val_tmp: value_out})
     )
     # Unpivot widens Value to a common supertype that is often outside the
     # Select dropdown (e.g. all-UInt32 in -> UInt32 out).

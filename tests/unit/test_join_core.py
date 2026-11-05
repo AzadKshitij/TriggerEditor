@@ -94,6 +94,57 @@ def test_invalid_pairs_are_dropped() -> None:
     assert left_only.height == 1
 
 
+def test_repeated_key_column_is_dropped_from_the_mapping() -> None:
+    mapping = [
+        {"left_column": "id", "right_column": "rid"},
+        {"left_column": "a", "right_column": "rid"},
+        {"left_column": "id", "right_column": "b"},
+    ]
+    assert core.sanitize_mapping(mapping, ["id", "a"], ["rid", "b"]) == [
+        {"left_column": "id", "right_column": "rid"}
+    ]
+
+
+def test_right_only_key_survives_a_same_named_left_column() -> None:
+    left = pl.DataFrame({"id": [1, 2], "customer": ["left-a", "left-b"]}).lazy()
+    right = pl.DataFrame({"customer": [1, 3], "amount": [10, 30]}).lazy()
+    settings = _settings(
+        mapping_data=[{"left_column": "id", "right_column": "customer"}]
+    )
+    _left_only, _joined, right_only = _run(settings, left=left, right=right)
+    assert right_only.to_dict(as_series=False) == {"amount": [30], "id": [3]}
+
+
+def test_rename_target_already_in_left_keeps_both_sides_apart() -> None:
+    left = pl.DataFrame({"id": [1, 2], "x_right": ["L1", "L2"], "x": ["a", "b"]}).lazy()
+    right = pl.DataFrame({"id": [1, 3], "x": ["R1", "R3"]}).lazy()
+    settings = _settings(mapping_data=[{"left_column": "id", "right_column": "id"}])
+    left_only, joined, right_only = _run(settings, left=left, right=right)
+    assert left_only.columns == ["id", "x_right", "x"]
+    assert joined.to_dict(as_series=False) == {
+        "id": [1],
+        "x_right": ["L1"],
+        "x": ["a"],
+        "x_right_2": ["R1"],
+    }
+    assert right_only.to_dict(as_series=False) == {"id": [3], "x_right_2": ["R3"]}
+
+
+def test_key_type_mismatch_is_a_coded_error_naming_both_columns() -> None:
+    right = pl.DataFrame({"rid": ["2", "3"], "b": ["p", "q"]}).lazy()
+    with pytest.raises(ShapingError) as error:
+        core.run_node([_left(), right], _settings())
+    assert error.value.code == "TD-SHAPE-004"
+    assert "'id' (Int64)" in error.value.detail
+    assert "'rid' (String)" in error.value.detail
+
+
+def test_compatible_integer_key_widths_still_join() -> None:
+    left = pl.DataFrame({"id": pl.Series([1, 2], dtype=pl.Int32)}).lazy()
+    _left_only, joined, _right_only = _run(_settings(), left=left)
+    assert joined["id"].to_list() == [2]
+
+
 def test_auto_accept_adds_unseen_columns() -> None:
     settings = core.sync_selected_with_schema(
         {

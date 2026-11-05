@@ -7,7 +7,11 @@ from pathlib import Path
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QDockWidget, QMainWindow
 
-from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
+from trigger_designer.qt.layout_state import (
+    STATE_VERSION_KEY,
+    LayoutState,
+    apply_default_layout,
+)
 
 
 def _window() -> QMainWindow:
@@ -152,3 +156,12 @@ def test_apply_default_layout_arranges_docks() -> None:
         == Qt.DockWidgetArea.BottomDockWidgetArea
     )
     assert window.dataPreviewDock in window.tabifiedDockWidgets(window.loggingDock)
+
+
+def test_corrupt_state_version_does_not_stop_the_window_opening(
+    clean_preferences,
+) -> None:
+    clean_preferences.settings.setValue(STATE_VERSION_KEY, "not-a-number")
+    window = QMainWindow()
+    LayoutState(clean_preferences).restore(window)
+    assert window.width() >= 640

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import date
+
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
@@ -32,6 +34,28 @@ def test_numeric_expr_handles_csv_text() -> None:
     frame = pl.DataFrame({"a": ["1,234.5", "x", None]})
     values = frame.select(numeric_expr("a", pl.String).alias("v"))["v"].to_list()
     assert values == [1234.5, None, None]
+
+
+def test_numeric_expr_reads_decimal_commas_like_audit_amounts() -> None:
+    frame = pl.DataFrame(
+        {"a": ["12,5", "1.234,50", "1 234,50", "1,234.50", "(12.00)", "abc"]}
+    )
+    values = frame.select(numeric_expr("a", pl.String).alias("v"))["v"].to_list()
+    assert values == [12.5, 1234.5, 1234.5, 1234.5, -12.0, None]
+
+
+def test_numeric_expr_reads_categorical_text() -> None:
+    frame = pl.DataFrame({"a": ["1,234.5", "12,5", "x"]}).with_columns(
+        pl.col("a").cast(pl.Categorical)
+    )
+    values = frame.select(numeric_expr("a", frame.schema["a"]).alias("v"))["v"]
+    assert values.to_list() == [1234.5, 12.5, None]
+
+
+def test_numeric_expr_keeps_non_text_non_numbers_empty() -> None:
+    frame = pl.DataFrame({"d": [date(2024, 1, 5)]})
+    values = frame.select(numeric_expr("d", frame.schema["d"]).alias("v"))["v"]
+    assert values.to_list() == [None]
 
 
 def test_estimate_pairs() -> None:

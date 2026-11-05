@@ -459,7 +459,7 @@ How a run decides which file to use for a File Input or File Output:
 | Order | Source | Notes |
 |---|---|---|
 | 1 | `--param NAME=VALUE` for a path parameter | Wins over everything. A relative value is relative to the folder you are in when you type the command (the "current folder"). |
-| 2 | `--input-dir` / `--output-dir` | Takes the file name from the saved path or the parameter's default (`/` and `\` both accepted) and puts it in `DIR`. |
+| 2 | `--input-dir` / `--output-dir` | Takes the file name from the saved path or the parameter's default (`/` and `\` both accepted) and puts it in `DIR`. A pattern such as `D:\in\*\data.csv` keeps everything from its first wildcard (`DIR\*\data.csv`), so it still reads the whole folder tree. |
 | 3 | The parameter's default (`--default`) | Relative defaults are relative to the workflow's folder. |
 | 4 | The path saved in the workflow | Relative paths are relative to the workflow's folder, never to the current folder. |
 

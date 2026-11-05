@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import polars as pl
+import pytest
 
 from trigger_designer.core.shaping import cleansing as core
+from trigger_designer.core.shaping.common import ShapingError
 
 
 def _run(frame: pl.DataFrame, **settings) -> pl.DataFrame:
@@ -21,6 +23,18 @@ def test_remove_all_null_columns() -> None:
     frame = pl.DataFrame({"a": [None, None], "b": [1, 2]})
     out = _run(frame, remove_null_columns=True)
     assert out.columns == ["b"]
+
+
+def test_remove_all_null_columns_keeps_every_row() -> None:
+    frame = pl.DataFrame({"a": [None, None], "b": [1, 2]})
+    assert _run(frame, remove_null_columns=True).height == 2
+
+
+def test_remove_all_null_columns_errors_when_nothing_would_be_left() -> None:
+    frame = pl.DataFrame({"a": [None, None], "b": [None, None]})
+    with pytest.raises(ShapingError) as error:
+        _run(frame, remove_null_columns=True)
+    assert error.value.code == "TD-SHAPE-005"
 
 
 def test_remove_rows_null_in_selected_fields() -> None:

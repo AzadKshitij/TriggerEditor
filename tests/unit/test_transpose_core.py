@@ -34,6 +34,53 @@ def test_key_and_data_columns_reshape_in_order() -> None:
     ]
 
 
+@pytest.mark.parametrize(
+    ("frame", "key", "data", "columns", "labels"),
+    [
+        (
+            {"Name": ["a"], "Jan": [1], "Feb": [2]},
+            ["Name"],
+            ["Jan", "Feb"],
+            ["Name", "Name_2", "Value"],
+            "Name_2",
+        ),
+        (
+            {"Value": ["a"], "Jan": [1], "Feb": [2]},
+            ["Value"],
+            ["Jan", "Feb"],
+            ["Value", "Name", "Value_2"],
+            "Name",
+        ),
+        (
+            {"k": ["a"], "Name": [1], "Jan": [2]},
+            ["k"],
+            ["Name", "Jan"],
+            ["k", "Name", "Value"],
+            "Name",
+        ),
+        (
+            {"k": ["a"], "Value": [1], "Jan": [2]},
+            ["k"],
+            ["Value", "Jan"],
+            ["k", "Name", "Value"],
+            "Name",
+        ),
+    ],
+)
+def test_name_and_value_columns_in_the_input_do_not_collide(
+    frame, key, data, columns, labels
+) -> None:
+    out = (
+        core.run_node(
+            [pl.DataFrame(frame).lazy()], {"key_columns": key, "data_columns": data}
+        )
+        .pop()
+        .collect()
+    )
+    assert out.columns == columns
+    assert out[labels].to_list() == data
+
+
 def test_multiple_key_columns() -> None:
     frame = pl.DataFrame({"id": [1], "g": ["x"], "a": [10], "b": [20]}).lazy()
     out = (

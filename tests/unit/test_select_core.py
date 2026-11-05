@@ -174,3 +174,14 @@ def test_dtype_matches_and_known_date_format() -> None:
         ),
     )[0].collect()
     assert out["d"].to_list() == [date(2024, 1, 31)]
+
+
+def test_infer_dtype_keeps_zero_padded_identifiers_as_text() -> None:
+    assert core.infer_dtype(["0001", "0002"]) == ("String", None)
+    assert core.infer_dtype(["-007", "5"]) == ("String", None)
+
+
+def test_infer_dtype_still_detects_plain_numbers() -> None:
+    assert core.infer_dtype(["0", "1", "2"]) == ("Int64", None)
+    assert core.infer_dtype(["10", "200"]) == ("Int64", None)
+    assert core.infer_dtype(["0.5", "1.5"]) == ("Float64", None)

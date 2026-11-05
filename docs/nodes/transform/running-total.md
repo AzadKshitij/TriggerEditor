@@ -43,9 +43,9 @@ With no Group by, the last column reads 100, 70, 120, 145, 70.
 
 - **Row order matters.** The total accumulates in the order the rows arrive. Sort first (a *Sort* node) if you
   want it in date order. Rows are never reordered.
-- **Text columns are read as numbers.** A CSV arrives as text, so its columns are offered too. A comma in the
-  text is dropped (`1,000` is 1000), spaces are trimmed, and a value that is not a number stays empty in the
-  new column (it is not an error). The result column is a decimal number. Columns that are neither numbers nor
+- **Text columns are read as numbers.** A CSV arrives as text, so its columns are offered too. Amounts are read
+  the way Audit reads them (`1,000` is 1000, `1.234,50` and `12,5` use a decimal comma, `(5)` is -5), spaces
+  are trimmed, and a value that is not a number stays empty in the new column (it is not an error). The result column is a decimal number. Columns that are neither numbers nor
   text (dates, yes/no) are not offered.
 - With no Sum column chosen, the node passes the table through unchanged (no error).
 - An empty cell stays empty in the new column and the total carries on past it (1, empty, 3 gives 1, empty, 4).

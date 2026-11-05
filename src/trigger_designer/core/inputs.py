@@ -217,6 +217,25 @@ def io_path(path: str) -> str:
     return "\\\\?\\" + expanded
 
 
+def _stat(path: str) -> os.stat_result:
+    """``os.stat`` that reports a vanished or unreadable file as ``InputReadError``."""
+    try:
+        return os.stat(io_path(path))
+    except OSError as exc:
+        kind = (
+            "file_not_found"
+            if isinstance(exc, FileNotFoundError)
+            else "permission"
+            if isinstance(exc, PermissionError)
+            else "unreadable"
+        )
+        raise InputReadError(
+            kind,
+            f"Cannot read the input file '{path}': {exc.strerror or exc}.",
+            path=path,
+        ) from exc
+
+
 def _glob_dir(text: str) -> str:
     """Directory prefix before the first glob segment, for existence checks."""
     parts = text.replace("\\", "/").split("/")
@@ -308,7 +327,7 @@ def list_source_files(
                 f"Cannot find the input file '{text}'.",
                 path=text,
             )
-        stat = os.stat(io_path(text))
+        stat = _stat(text)
         relative = os.path.basename(text)
         files = [ListedFile(text, relative, stat.st_size, stat.st_mtime_ns)]
         return FileListing(files, mode, os.path.dirname(text), 0, warnings)
@@ -330,7 +349,7 @@ def list_source_files(
             if _matches(name, exclude_patterns) or not _matches(name, include_patterns):
                 excluded_count += 1
                 continue
-            stat = os.stat(io_path(path))
+            stat = _stat(path)
             files.append(ListedFile(path, relative, stat.st_size, stat.st_mtime_ns))
     else:  # pattern
         normalized = text.replace("\\", "/")
@@ -360,7 +379,7 @@ def list_source_files(
             if _matches(name, exclude_patterns) or not matcher.match(relative):
                 excluded_count += 1
                 continue
-            stat = os.stat(io_path(path))
+            stat = _stat(path)
             files.append(ListedFile(path, relative, stat.st_size, stat.st_mtime_ns))
 
     if not files:
