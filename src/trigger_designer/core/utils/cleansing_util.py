@@ -90,18 +90,24 @@ class DataCleansing:
             # Remove rows where any value is null
             self.df = self.df.filter(~pl.any_horizontal(pl.all().is_null()))
         elif strategy == NullStrategy.REMOVE_ALL_NULL_COLS:
-            # Remove columns where all values are null
-            cols_to_keep = []
-            for col in self.df.columns:
-                if not self.df.select(pl.col(col).is_null().all()).item():
-                    cols_to_keep.append(col)
+            # One vectorised pass: check every column in a single collect.
+            null_mask = self.df.select(pl.all().is_null().all()).row(0)
+            cols_to_keep = [c for c, all_null in zip(self.df.columns, null_mask) if not all_null]
+            if not cols_to_keep:
+                raise ValueError(
+                    "Every column is entirely null; at least one column must be kept. "
+                    "Turn off 'Remove all-null columns' or supply non-null data."
+                )
             self.df = self.df.select(cols_to_keep)
         elif strategy == NullStrategy.REMOVE_ANY_NULL_COLS:
-            # Remove columns where any value is null
-            cols_to_keep = []
-            for col in self.df.columns:
-                if not self.df.select(pl.col(col).is_null().any()).item():
-                    cols_to_keep.append(col)
+            # One vectorised pass: check every column in a single collect.
+            null_mask = self.df.select(pl.all().is_null().any()).row(0)
+            cols_to_keep = [c for c, any_null in zip(self.df.columns, null_mask) if not any_null]
+            if not cols_to_keep:
+                raise ValueError(
+                    "Every column contains a null value; at least one column must be kept. "
+                    "Turn off 'Remove any-null columns' or supply data without nulls."
+                )
             self.df = self.df.select(cols_to_keep)
         elif strategy == NullStrategy.REPLACE_WITH_DEFAULT:
             # Replace nulls based on column data types

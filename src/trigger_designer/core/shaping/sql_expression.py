@@ -45,9 +45,10 @@ def replace_column_names(formula: str, column_name: str) -> str:
     """Rewrite ``[column]`` references to quoted identifiers, case-insensitively."""
     pattern = rf"\[\s*{re.escape(column_name)}\s*\]"
     replacement = quote_identifier(column_name)
+    literal_replacement = replacement.replace("\\", "\\\\")
     return apply_outside_string_literals(
         formula,
-        lambda segment: re.sub(pattern, replacement, segment, flags=re.IGNORECASE),
+        lambda segment: re.sub(pattern, literal_replacement, segment, flags=re.IGNORECASE),
     )
 
 

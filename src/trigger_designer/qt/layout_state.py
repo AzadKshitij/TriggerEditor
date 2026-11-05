@@ -113,7 +113,10 @@ class LayoutState:
 
         geometry = settings.value(GEOMETRY_KEY, None)
         state = settings.value(WINDOW_STATE_KEY, None)
-        version = int(settings.value(STATE_VERSION_KEY, 0) or 0)
+        try:
+            version = int(settings.value(STATE_VERSION_KEY, 0) or 0)
+        except (TypeError, ValueError):
+            version = 0
 
         geometry_restored = False
         if restore_enabled and geometry is not None:

@@ -14,6 +14,9 @@ from trigger_designer.core.shaping.common import as_lazy, schema_of
 BOOLEAN_TRUE_TOKENS = ("true", "1", "yes", "y", "t", "on")
 BOOLEAN_FALSE_TOKENS = ("false", "0", "no", "n", "f", "off")
 
+# Same pattern as LEAD0_RE in core/profile.py — keep the two in sync.
+_LEAD0_RE = re.compile(r"^[+-]?0\d+$")
+
 DEFAULTS = {
     "columns": [],
     "auto_accept_new_columns": True,
@@ -202,7 +205,10 @@ def infer_dtype(values: Iterable[Any]) -> tuple[str | None, str | None]:
         return "Boolean", None
     try:
         for value in clean:
-            int(str(value).strip())
+            s = str(value).strip()
+            if _LEAD0_RE.match(s):
+                raise ValueError("leading zero")
+            int(s)
         return "Int64", None
     except TypeError, ValueError:
         pass

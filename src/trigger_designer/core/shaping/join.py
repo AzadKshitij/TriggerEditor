@@ -26,16 +26,26 @@ RIGHT_TAG = "__right_present"
 
 def sanitize_mapping(mapping, left_names, right_names) -> list[dict]:
     out: list[dict] = []
-    seen: set[tuple] = set()
+    seen_pairs: set[tuple] = set()
+    seen_left: set[str] = set()
+    seen_right: set[str] = set()
     for item in mapping or []:
         if not isinstance(item, dict):
             continue
         left = item.get("left_column")
         right = item.get("right_column")
         key = (left, right)
-        if left in left_names and right in right_names and key not in seen:
+        if (
+            left in left_names
+            and right in right_names
+            and key not in seen_pairs
+            and left not in seen_left
+            and right not in seen_right
+        ):
             out.append({"left_column": left, "right_column": right})
-            seen.add(key)
+            seen_pairs.add(key)
+            seen_left.add(left)
+            seen_right.add(right)
     return out
 
 
@@ -250,13 +260,16 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             [name for name in result_columns if not name.startswith("__")]
         )
 
+    # H4 fix: left columns always keep their original names after a full join
+    # (Polars applies the suffix to the RIGHT frame's conflicts only).  The old
+    # endswith(LEFT_SUFFIX) condition incorrectly included columns that the join
+    # renamed from the right frame, adding a spurious null column to left-only
+    # output when the right had a column already named e.g. "x_right".
     left_final = [
         name
         for name in result_columns
-        if name in left_names
-        or (name.endswith(LEFT_SUFFIX) and name.replace(LEFT_SUFFIX, "") in left_names)
+        if name in left_names and not name.startswith("__")
     ]
-    left_final = [name for name in left_final if not name.startswith("__")]
     l_data = result.filter(left_only).select(left_final)
 
     # Right-only output carries the right frame's columns only. A conflicting
@@ -271,13 +284,25 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         if name in right_after_rename and not name.startswith("__")
     ]
     result_set = set(result_columns)
+    right_key_renames: dict[str, str] = {}
     for left_key, right_key in zip(left_cols, right_cols):
-        if (
-            right_key not in result_set
-            and left_key in result_set
-            and left_key not in right_final
-        ):
-            right_final.append(left_key)
+        if left_key == right_key:
+            if right_key not in result_set and left_key in result_set and left_key not in right_final:
+                right_final.append(left_key)
+        else:
+            # H3 fix: with coalesce=True the right key is merged into left_key.
+            # For right-only rows left_key holds the actual right key value.
+            if left_key in result_set and left_key not in right_final:
+                right_final.append(left_key)
+            # If right_key appears in result only as a left data column (it was
+            # coalesced away as the right key), remove the null placeholder and
+            # rename left_key to right_key so the output uses the right frame's
+            # column name.
+            if right_key in right_final and right_key in left_names:
+                right_final.remove(right_key)
+                right_key_renames[left_key] = right_key
     r_data = result.filter(right_only).select(right_final)
+    if right_key_renames:
+        r_data = r_data.rename(right_key_renames)
 
     return [l_data, data, r_data]
