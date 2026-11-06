@@ -310,6 +310,40 @@ def test_pivot_unpivot_roundtrip() -> None:
     ]
 
 
+def test_unpivot_keeps_id_column_named_like_the_row_index() -> None:
+    frame = pl.DataFrame({"__pos": [1, 2], "a": ["x", "y"], "b": ["p", "q"]})
+    settings = {"id_columns": ["__pos"], "value_columns": ["a", "b"]}
+    out = reshape.apply_unpivot(frame.lazy(), settings).collect()
+    plain = reshape.apply_unpivot(
+        frame.rename({"__pos": "id"}).lazy(),
+        {"id_columns": ["id"], "value_columns": ["a", "b"]},
+    ).collect()
+    assert out.columns == ["__pos", "Attribute", "Value"]
+    assert out.rename({"__pos": "id"}).equals(plain)
+
+
+@pytest.mark.parametrize(
+    ("variable_name", "value_name"),
+    [("__pos", "Value"), ("Attribute", "__pos")],
+)
+def test_unpivot_output_name_equal_to_row_index_is_kept(
+    variable_name: str, value_name: str
+) -> None:
+    frame = pl.DataFrame({"id": [1, 2], "a": ["x", "y"], "b": ["p", "q"]})
+    settings = {
+        "id_columns": ["id"],
+        "value_columns": ["a", "b"],
+        "variable_name": variable_name,
+        "value_name": value_name,
+    }
+    out = reshape.apply_unpivot(frame.lazy(), settings).collect()
+    plain = reshape.apply_unpivot(
+        frame.lazy(), {**settings, "variable_name": "n", "value_name": "v"}
+    ).collect()
+    assert out.columns == ["id", variable_name, value_name]
+    assert out.rename({variable_name: "n", value_name: "v"}).equals(plain)
+
+
 def test_pivot_numeric_sum_over_unreadable_text_warns() -> None:
     frame = pl.DataFrame(
         {"id": [1, 2], "attr": ["x", "x"], "value": ["abc", "def"]}

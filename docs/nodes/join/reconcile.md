@@ -171,6 +171,7 @@ The two O1 payments add up to 300 and are one match with two rows. O2 is 5 short
 - **N : N** ignores the date window (the date boxes are hidden) and compares groups of rows with the same key on each side by their totals.
 - **Which pair wins in 1 : 1.** The pairs with the smallest amount difference, then the smallest date gap, are taken first; a row can only be used once. The result is the same each time you run it.
 - **Ties** never depend on row order; the same inputs always give the same answer.
+- **Internal names.** A column named `__l` or `__r` in either input stops the node (`TD-SHAPE-002`); rename it first.
 
 ## Errors you may see
 

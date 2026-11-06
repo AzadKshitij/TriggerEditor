@@ -57,22 +57,26 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     existing = set(schema)
     var_tmp = unique_name("__td_var", existing)
     val_tmp = unique_name("__td_val", existing | {var_tmp})
+    row_tmp = unique_name("__row", existing | {var_tmp, val_tmp})
+    block_tmp = unique_name("__block", existing | {var_tmp, val_tmp, row_tmp})
     name_out = unique_name("Name", key_columns)
     value_out = unique_name("Value", [*key_columns, name_out])
     block = {name: position for position, name in enumerate(data_columns)}
     out = (
-        frame.with_row_index("__row")
+        frame.with_row_index(row_tmp)
         .unpivot(
-            index=["__row", *key_columns],
+            index=[row_tmp, *key_columns],
             on=data_columns,
             variable_name=var_tmp,
             value_name=val_tmp,
         )
         .with_columns(
-            __block=pl.col(var_tmp).replace_strict(block, return_dtype=pl.Int64)
+            pl.col(var_tmp)
+            .replace_strict(block, return_dtype=pl.Int64)
+            .alias(block_tmp)
         )
-        .sort(["__block", "__row"])
-        .drop("__row", "__block")
+        .sort([block_tmp, row_tmp])
+        .drop(row_tmp, block_tmp)
         .rename({var_tmp: name_out, val_tmp: value_out})
     )
     # Unpivot widens Value to a common supertype that is often outside the

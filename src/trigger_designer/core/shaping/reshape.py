@@ -205,16 +205,17 @@ def apply_unpivot(frame: Frame, settings: dict) -> pl.LazyFrame:
             else pl.String
         )
         lf = lf.with_columns(pl.col(values).cast(target))
+    pos = unique_name("__pos", [*schema, variable_name, value_name])
     out = (
-        lf.with_row_index("__pos")
+        lf.with_row_index(pos)
         .unpivot(
             on=values,
-            index=["__pos"] + ids,
+            index=[pos] + ids,
             variable_name=variable_name,
             value_name=value_name,
         )
-        .sort("__pos", maintain_order=True)
-        .drop("__pos")
+        .sort(pos, maintain_order=True)
+        .drop(pos)
     )
     if s["drop_nulls"]:
         out = out.filter(pl.col(value_name).is_not_null())

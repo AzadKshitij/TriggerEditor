@@ -13,6 +13,7 @@ from trigger_designer.core.shaping.common import (
     as_lazy,
     connect_duckdb,
     estimate_pairs,
+    reject_internal_names,
     require_columns,
     schema_of,
     unique_name,
@@ -198,6 +199,8 @@ def apply_fuzzy(left: Frame, right: Frame, settings: dict) -> FuzzyResult:
         schema_of(rf),
         [s["right_column"]] + [pair["right"] for pair in s["block_columns"]],
     )
+    reject_internal_names(schema_of(lf), ("__l", "__r"), "left")
+    reject_internal_names(schema_of(rf), ("__l", "__r"), "right")
     left_frame = lf.with_row_index("__l").collect()
     right_frame = rf.with_row_index("__r").collect()
 

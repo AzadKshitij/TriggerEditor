@@ -12,6 +12,7 @@ from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
     estimate_pairs,
+    reject_internal_names,
     require_columns,
     schema_of,
     unique_name,
@@ -444,6 +445,8 @@ def apply_reconcile(left: Frame, right: Frame, settings: dict) -> ReconcileResul
             name for name in (s[f"amount_{side}"], s[f"date_{side}"]) if name
         ]
         require_columns(schema, names)
+    reject_internal_names(schema_of(lf), ("__l", "__r"), "left")
+    reject_internal_names(schema_of(rf), ("__l", "__r"), "right")
     left_frame = lf.with_row_index("__l").collect()
     right_frame = rf.with_row_index("__r").collect()
     left_slim = _slim(left_frame, "l", s)

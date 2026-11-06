@@ -7,6 +7,7 @@ import pytest
 
 from trigger_designer.core.audit.common import amount_expr as audit_amount_expr
 from trigger_designer.core.shaping import reconcile
+from trigger_designer.core.shaping.common import ShapingError
 from trigger_designer.core.utils.amounts import amount_expr
 
 
@@ -59,3 +60,28 @@ def test_150_does_not_match_1_comma_50() -> None:
 def test_text_amount_forms(text, expected) -> None:
     out = pl.DataFrame({"a": [text]}).select(amount_expr("a", pl.String))["a"]
     assert out.to_list() == [expected]
+
+
+@pytest.mark.parametrize("side", ["left", "right"])
+@pytest.mark.parametrize("name", ["__l", "__r"])
+def test_internal_names_are_002_on_either_side(side: str, name: str) -> None:
+    left = pl.DataFrame({"k": ["k0"], "amt": ["1.00"]})
+    right = pl.DataFrame({"k": ["k0"], "amt": ["1.00"]})
+    if side == "left":
+        left = left.with_columns(pl.lit("x").alias(name))
+    else:
+        right = right.with_columns(pl.lit("x").alias(name))
+    with pytest.raises(ShapingError) as info:
+        reconcile.apply_reconcile(
+            left.lazy(),
+            right.lazy(),
+            {
+                "key_pairs": [{"left": "k", "right": "k"}],
+                "amount_left": "amt",
+                "amount_right": "amt",
+                "tolerance": 0.0,
+            },
+        )
+    assert info.value.code == "TD-SHAPE-002"
+    assert info.value.columns == (name,)
+    assert f"'{name}'" in str(info.value)

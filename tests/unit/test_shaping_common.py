@@ -5,12 +5,14 @@ from __future__ import annotations
 from datetime import date
 
 import polars as pl
+import pytest
 
 from trigger_designer.core.shaping.common import (
     ERROR_CODES,
     ShapingError,
     estimate_pairs,
     numeric_expr,
+    reject_internal_names,
     unique_name,
 )
 
@@ -62,3 +64,17 @@ def test_estimate_pairs() -> None:
     left = pl.DataFrame({"k": ["a", "a", "b"]})
     right = pl.DataFrame({"k": ["a", "b", "b"]})
     assert estimate_pairs(left, right, ["k"]) == 4
+
+
+def test_reject_internal_names_is_silent_without_a_clash() -> None:
+    reject_internal_names({"a": pl.String, "b": pl.Int64}, ("__l", "__r"), "left")
+
+
+def test_reject_internal_names_reports_code_columns_and_side() -> None:
+    schema = {"a": pl.String, "__r": pl.Int64}
+    with pytest.raises(ShapingError) as info:
+        reject_internal_names(schema, ("__l", "__r"), "right")
+    assert info.value.code == "TD-SHAPE-002"
+    assert info.value.columns == ("__r",)
+    assert "'__r'" in str(info.value)
+    assert "right input" in str(info.value)

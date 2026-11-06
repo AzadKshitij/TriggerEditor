@@ -99,6 +99,21 @@ def require_columns(frame_schema: dict, names: Iterable[str]) -> None:
         )
 
 
+def reject_internal_names(
+    frame_schema: dict, internal: Iterable[str], side: str
+) -> None:
+    """Stop with a clear message when an input column uses a name the node needs internally."""
+    clashes = [name for name in internal if name in frame_schema]
+    if clashes:
+        raise ShapingError(
+            "TD-SHAPE-002",
+            f"The {side} input has a column named "
+            f"{', '.join(repr(c) for c in clashes)}, "
+            "which this node uses internally; rename that column first",
+            clashes,
+        )
+
+
 def unique_name(base: str, taken: Iterable[str]) -> str:
     """``base`` if free, else ``base_2``, ``base_3`` ... (deterministic)."""
     taken = set(taken)

@@ -81,6 +81,24 @@ def test_name_and_value_columns_in_the_input_do_not_collide(
     assert out[labels].to_list() == data
 
 
+@pytest.mark.parametrize("key", ["__row", "__block"])
+def test_key_column_named_like_an_internal_column_is_kept(key: str) -> None:
+    frame = pl.DataFrame({key: [1, 2], "a": [10, 20], "b": [30, 40]}).lazy()
+    plain = pl.DataFrame({"k": [1, 2], "a": [10, 20], "b": [30, 40]}).lazy()
+    out = (
+        core.run_node([frame], {"key_columns": [key], "data_columns": ["a", "b"]})
+        .pop()
+        .collect()
+    )
+    expected = (
+        core.run_node([plain], {"key_columns": ["k"], "data_columns": ["a", "b"]})
+        .pop()
+        .collect()
+    )
+    assert out.columns == [key, "Name", "Value"]
+    assert out.rename({key: "k"}).equals(expected)
+
+
 def test_multiple_key_columns() -> None:
     frame = pl.DataFrame({"id": [1], "g": ["x"], "a": [10], "b": [20]}).lazy()
     out = (
