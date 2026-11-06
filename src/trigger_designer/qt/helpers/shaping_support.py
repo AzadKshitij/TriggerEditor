@@ -1087,7 +1087,8 @@ class ShapingContent(DeferredEvaluation, ConfigContent, SerializableContentMixin
     def serialize(self):
         return self.serialize_content_state(super().serialize())
 
-    def deserialize(self, data, hashmap={}):  # noqa: B006
+    def deserialize(self, data, hashmap=None):
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
         try:
             self.deserialize_content_state(data)

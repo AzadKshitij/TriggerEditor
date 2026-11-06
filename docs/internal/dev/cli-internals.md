@@ -141,7 +141,9 @@ calls `execute`.
    `reevaluate()`s, and for each node runs `apply_test_hooks`, `get_code()` and
    `validate_generated_code`. A rejected node is exit 6 (`TD-CLI-010`); a node that
    cannot make code is only a warning. It emits `--emit-script` if asked and
-   announces exit 0. No lock, no record, no files.
+   announces exit 0. No lock and no record. No output files: it makes a temporary
+   write-check file in each output folder and a temporary work copy, and removes
+   both before it exits.
 6. Real run: `RunLock.acquire()` (exit 7 on a live owner), `note_staged(...)` so a
    crash can be cleaned up, signal handlers (if hard), watchdog thread.
 7. `HeadlessSession.load(work_copy, expect_nodes, expect_edges)` loads the patched

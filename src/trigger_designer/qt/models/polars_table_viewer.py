@@ -176,6 +176,10 @@ class PolarsTableModel(QAbstractTableModel):
         """Total rows in the frame, across all pages."""
         return self._total_rows
 
+    def current_frame(self) -> pl.DataFrame:
+        """The frame the model holds, in its current sort order."""
+        return self._dataframe
+
     @property
     def sort_column(self) -> int | None:
         """Index of the sorted column, or None when unsorted."""
@@ -256,10 +260,11 @@ class PolarsTableModel(QAbstractTableModel):
     def refresh_theme(self) -> None:
         """Drop cached row tints and repaint after a theme change."""
         self._row_colors = None
-        if self._total_rows <= 0 or self.columnCount() <= 0:
+        rows = self.rowCount()
+        if rows <= 0 or self.columnCount() <= 0:
             return
         top = self.index(0, 0)
-        bottom = self.index(self._total_rows - 1, self.columnCount() - 1)
+        bottom = self.index(rows - 1, self.columnCount() - 1)
         self.dataChanged.emit(top, bottom, [Qt.ItemDataRole.BackgroundRole])
 
     def _get_chunk_key(self, row: int) -> int:
@@ -309,7 +314,8 @@ class PolarsTableModel(QAbstractTableModel):
 
     def _cache_cleanup(self):
         """Remove old entries from cache if it gets too large."""
-        if len(self._data_cache) <= self.cache_size // self.chunk_size:
+        limit = max(1, self.cache_size // self.chunk_size)
+        if len(self._data_cache) <= limit:
             return
 
         # Remove oldest accessed entries
@@ -319,8 +325,7 @@ class PolarsTableModel(QAbstractTableModel):
         sorted_entries = sorted(self._cache_access_times.items(), key=lambda x: x[1])
 
         # Remove oldest half of entries
-        max_entries = self.cache_size // self.chunk_size
-        entries_to_keep = max_entries // 2
+        entries_to_keep = max(1, limit // 2)
 
         for key, _ in sorted_entries[:-entries_to_keep]:
             entries_to_remove.append(key)
@@ -1168,11 +1173,7 @@ class PolarsTableViewer(QWidget):
     def export_csv(self) -> None:
         """Export the loaded frame to CSV (asks for a path first)."""
         try:
-            current_df = (
-                self.filtered_dataframe
-                if self.filtered_dataframe is not None
-                else self.dataframe
-            )
+            current_df = self.model.current_frame()
             if current_df is None or current_df.is_empty():
                 logger.debug("Export skipped: no data to export")
                 return
@@ -1201,11 +1202,7 @@ class PolarsTableViewer(QWidget):
     def export_excel(self) -> None:
         """Export the loaded frame to Excel (asks for a path first)."""
         try:
-            current_df = (
-                self.filtered_dataframe
-                if self.filtered_dataframe is not None
-                else self.dataframe
-            )
+            current_df = self.model.current_frame()
             if current_df is None or current_df.is_empty():
                 logger.debug("Export skipped: no data to export")
                 return

@@ -307,7 +307,8 @@ class DataProfileContent(ShapingContent):
             self._view = None
 
     # ---- persistence -----------------------------------------------------
-    def deserialize(self, data, hashmap={}):  # noqa: B006
+    def deserialize(self, data, hashmap=None):
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
         # An old file has no keys; a hand-edited one may be out of range.
         self.settings = core.normalize(self.settings)

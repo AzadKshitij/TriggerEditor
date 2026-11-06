@@ -310,7 +310,8 @@ class FileOutputContent(ShapingContent):
         )
 
     # -- persistence ------------------------------------------------------
-    def deserialize(self, data, hashmap={}):  # noqa: B006
+    def deserialize(self, data, hashmap=None):
+        hashmap = {} if hashmap is None else hashmap
         if "settings" not in data and ("filePath" in data or "file_format" in data):
             data = dict(data)
             data["settings"] = {

@@ -1854,9 +1854,10 @@ class FileInputContent(
     def deserialize(
         self,
         data: dict,
-        hashmap: dict = {},  # noqa: B006 - legacy signature kept for callers
+        hashmap: dict | None = None,  # legacy signature kept for callers
         restore_id: bool | None = True,
     ) -> bool:
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
 
         try:

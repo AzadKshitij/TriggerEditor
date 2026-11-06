@@ -734,12 +734,13 @@ class SelectContent(ShapingContent):
         )
 
     # ---- old saved workflow loader -------------------------------------
-    def deserialize(self, data, hashmap={}):  # noqa: B006
+    def deserialize(self, data, hashmap=None):
         """Load old Select content into the new ordered-columns setting.
 
         This is a one-way migration for checked-in workflows and existing
         files. The new runtime only ever writes ``settings``.
         """
+        hashmap = {} if hashmap is None else hashmap
         if "settings" not in data and ("table_data" in data or "changes" in data):
             data = dict(data)
             data["settings"] = self._legacy_settings(data)

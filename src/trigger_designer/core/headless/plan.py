@@ -288,8 +288,11 @@ def build_run_plan(
     mode: str = "run",
     check_files: bool = True,
 ) -> RunPlan:
-    """``mode``: ``run`` (everything), ``dry`` (no lock/files) or ``validate``
-    (no approval gate; output folders are not required to exist)."""
+    """``mode``: ``run`` (everything), ``dry`` (no run lock and no outputs
+    written; each output folder is probed for write access by creating and
+    removing a temporary probe file, and a temporary work copy is made that the
+    caller removes) or ``validate`` (no approval gate; output folders are not
+    required to exist)."""
     run_id = run_id or uuid.uuid4().hex
     run8 = run_id[:8]
     findings = static_validate(doc)

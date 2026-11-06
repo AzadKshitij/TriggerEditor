@@ -76,11 +76,15 @@ class TriggerNode(Node):
     def __init__(
         self,
         scene: "Scene",
-        inputs: List[int] = [2, 2],
-        outputs: List[int] = [1],
-        input_text: List[str] = [],
-        output_text: List[str] = [],
+        inputs: List[int] | None = None,
+        outputs: List[int] | None = None,
+        input_text: List[str] | None = None,
+        output_text: List[str] | None = None,
     ) -> None:
+        inputs = [2, 2] if inputs is None else inputs
+        outputs = [1] if outputs is None else outputs
+        input_text = [] if input_text is None else input_text
+        output_text = [] if output_text is None else output_text
         # Subclasses (e.g. File Input) call eval() immediately after super(),
         # and a constructor-time exception must never leave the guard stuck.
         self._evaluating = False
@@ -268,8 +272,9 @@ class TriggerNode(Node):
         return res
 
     def deserialize(
-        self, data: dict, hashmap: dict = {}, restore_id: bool = True
+        self, data: dict, hashmap: dict | None = None, restore_id: bool = True
     ) -> bool:
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap, restore_id)
         # The file carries the title it was saved with, so a node type that has
         # since been renamed would come back under its old name. The class owns

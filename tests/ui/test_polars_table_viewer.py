@@ -6,13 +6,16 @@ itself is covered by ``tests/unit/test_polars_table_model.py``.
 
 from __future__ import annotations
 
+import tempfile
 import unittest
 from datetime import date
+from pathlib import Path
+from unittest import mock
 
 import polars as pl
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence, QShortcut
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QFileDialog, QMessageBox
 
 from trigger_designer.qt.models.polars_table_viewer import (
     ALL_COLUMNS_LABEL,
@@ -74,6 +77,49 @@ class TestViewerSortingInteraction(unittest.TestCase):
             self.assertTrue(viewer.model.sort_descending)
             first = viewer.model.data(viewer.model.createIndex(0, 0), Qt.DisplayRole)
             self.assertEqual(first, "3")
+        finally:
+            viewer.close()
+
+    def _export_csv_frame(self, viewer: PolarsTableViewer) -> pl.DataFrame:
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / "export.csv"
+            with (
+                mock.patch.object(
+                    QFileDialog, "getSaveFileName", return_value=(str(target), "")
+                ),
+                mock.patch.object(QMessageBox, "warning") as warning,
+            ):
+                viewer.export_csv()
+            warning.assert_not_called()
+            return pl.read_csv(target)
+
+    def test_export_follows_the_model_sort_order(self):
+        viewer = PolarsTableViewer(
+            dataframe=pl.DataFrame({"n": [2, 3, 1], "s": ["b", "c", "a"]})
+        )
+        try:
+            viewer.model.sort_by(0, descending=True)
+            exported = self._export_csv_frame(viewer)
+            self.assertEqual(exported["n"].to_list(), [3, 2, 1])
+            self.assertEqual(exported["s"].to_list(), ["c", "b", "a"])
+        finally:
+            viewer.close()
+
+    def test_export_of_a_filtered_view_is_filtered_and_sorted(self):
+        viewer = PolarsTableViewer(
+            dataframe=pl.DataFrame(
+                {
+                    "n": [5, 1, 4, 2, 3],
+                    "city": ["Berlin", "Paris", "Berlin", "Paris", "Berlin"],
+                }
+            )
+        )
+        try:
+            viewer.apply_search("Berlin", "city")
+            viewer.model.sort_by(0)
+            exported = self._export_csv_frame(viewer)
+            self.assertEqual(exported["n"].to_list(), [3, 4, 5])
+            self.assertEqual(exported["city"].to_list(), ["Berlin"] * 3)
         finally:
             viewer.close()
 

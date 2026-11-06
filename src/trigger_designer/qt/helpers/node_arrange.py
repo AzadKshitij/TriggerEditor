@@ -210,10 +210,11 @@ def align_centers(
 def distribute(nodes: Sequence[Any], *, horizontal: bool) -> list[tuple[Any, QPointF]]:
     """Even out the gaps between node edges.
 
-    The outermost two nodes stay where they are and the rest are spread
-    between them with one equal gap. When the selection is too tight to hold
-    its neighbours without overlapping, the gap bottoms out at zero instead
-    of turning negative.
+    The first node stays where it is and the rest are spread after it with one
+    equal gap, so the last node stays put whenever the selection is wide enough.
+    When the selection is too tight to hold its nodes without overlapping, the
+    gap bottoms out at zero instead of turning negative and the last node moves
+    outward.
     """
     if len(nodes) < 3:
         return []

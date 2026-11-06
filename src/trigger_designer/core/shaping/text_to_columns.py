@@ -119,6 +119,7 @@ def apply_text_to_columns(frame: Frame, settings: dict) -> pl.LazyFrame:
     s = normalize(settings)
     lf = as_lazy(frame)
     schema = schema_of(lf)
+    pos = unique_name(POS, schema)
     require_columns(schema, [s["column"]])
     if schema[s["column"]] != pl.String:
         raise ShapingError(
@@ -148,7 +149,7 @@ def apply_text_to_columns(frame: Frame, settings: dict) -> pl.LazyFrame:
         pieces = pieces.list.eval(pl.element().str.strip_chars())
     if s["skip_empty"]:
         pieces = pieces.list.eval(pl.element().filter(pl.element() != ""))
-    out = lf.with_row_index(POS)
+    out = lf.with_row_index(pos)
     if s["keep_original"]:
         original = unique_name(f"{s['column']}_original", schema)
         out = out.with_columns(pl.col(s["column"]).alias(original))
@@ -158,9 +159,9 @@ def apply_text_to_columns(frame: Frame, settings: dict) -> pl.LazyFrame:
     if s["row_index_column"]:
         name = unique_name(s["row_index_column"], out.collect_schema().names())
         out = out.with_columns(
-            (pl.int_range(pl.len(), dtype=pl.Int64).over(POS) + 1).alias(name)
+            (pl.int_range(pl.len(), dtype=pl.Int64).over(pos) + 1).alias(name)
         )
-    return out.drop(POS)
+    return out.drop(pos)
 
 
 def describe(frames: list, settings: dict) -> list[tuple[str, str]]:

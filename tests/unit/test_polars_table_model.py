@@ -259,6 +259,22 @@ def test_chunk_cache_uses_absolute_offsets() -> None:
     assert 200 in model._data_cache  # chunk starting at row 200
 
 
+def test_chunk_cache_stays_bounded_when_cache_is_smaller_than_a_chunk() -> None:
+    model = PolarsTableModel(
+        pl.DataFrame({"id": range(100)}), chunk_size=10, cache_size=5
+    )
+    for row in (0, 10, 20, 30, 40):
+        model.data(model.createIndex(row, 0), Qt.DisplayRole)
+        assert len(model._data_cache) <= 2
+
+
+def test_default_cache_keeps_several_chunks() -> None:
+    model = PolarsTableModel(pl.DataFrame({"id": range(3000)}))
+    for row in (0, 1000, 2000):
+        model.data(model.createIndex(row, 0), Qt.DisplayRole)
+    assert len(model._data_cache) == 3
+
+
 def test_vertical_header_numbers_are_absolute() -> None:
     model = PolarsTableModel(pl.DataFrame({"id": range(600)}))
     assert model.headerData(0, Qt.Vertical, Qt.DisplayRole) == "1"
@@ -272,6 +288,31 @@ def test_page_size_change_keeps_first_visible_row() -> None:
     model.set_page(2)  # offset 500
     model.set_page_size(100)
     assert model.page_offset == 500
+
+
+def test_refresh_theme_bottom_index_stays_on_the_current_page() -> None:
+    model = PolarsTableModel(pl.DataFrame({"id": range(5)}))
+    model.page_size = 2
+    bottoms = []
+    model.dataChanged.connect(lambda top, bottom, roles: bottoms.append(bottom))
+
+    model.refresh_theme()
+
+    assert len(bottoms) == 1
+    assert bottoms[0].isValid()
+    assert bottoms[0].row() < model.rowCount()
+
+
+def test_refresh_theme_on_empty_frame_emits_nothing() -> None:
+    emitted = []
+    empty_models = [
+        PolarsTableModel(),
+        PolarsTableModel(pl.DataFrame(schema={"a": pl.Int64})),
+    ]
+    for model in empty_models:
+        model.dataChanged.connect(lambda *args: emitted.append(args))
+        model.refresh_theme()
+    assert emitted == []
 
 
 def test_sort_ascending_and_descending() -> None:

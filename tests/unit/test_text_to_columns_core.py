@@ -130,6 +130,22 @@ def test_rows_mode_keeps_original_and_limits_pieces() -> None:
     assert out.height == 8
 
 
+def test_rows_mode_input_column_named_like_the_row_index_is_kept_in_place() -> None:
+    frame = TT.with_columns(pl.Series("__pos", [9, 5, 9, 5, 1]))
+    settings = {
+        "column": "acct",
+        "pattern": "-",
+        "max_splits": 2,
+        "output": "rows",
+        "row_index_column": "n",
+    }
+    out = _cols(settings, frame)
+    plain = _cols(settings)
+    assert out.columns == ["id", "acct", "__pos", "acct_original", "n"]
+    assert out["__pos"].to_list() == [9, 9, 9, 5, 9, 9, 5, 1]
+    assert out.drop("__pos").equals(plain)
+
+
 def test_rows_mode_skip_empty_keeps_one_null_row_for_all_empty_cell() -> None:
     frame = pl.DataFrame({"k": [1, 2, 3], "s": ["a,,b", ",,", "c"]})
     out = _cols(

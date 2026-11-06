@@ -59,6 +59,22 @@ def test_record_id_accepts_negative_and_huge_start() -> None:
     assert huge.collect()["ID"].to_list() == [4294967295, 4294967296, 4294967297]
 
 
+def test_record_id_grouped_keeps_input_column_named_like_the_row_index() -> None:
+    settings = {
+        "name": "ID",
+        "start": 1,
+        "position": "last",
+        "group_by": ["g"],
+        "order_by": [{"column": "v", "descending": True}],
+    }
+    frame = pl.DataFrame({"g": ["b", "a", "a"], "__pos": [30, 20, 10], "v": [1, 2, 2]})
+    out = record_id.apply_record_id(frame.lazy(), settings).collect()
+    plain = record_id.apply_record_id(frame.drop("__pos").lazy(), settings).collect()
+    assert out.columns == ["g", "__pos", "v", "ID"]
+    assert out["__pos"].to_list() == [30, 20, 10]
+    assert out.drop("__pos").equals(plain)
+
+
 def test_select_records_first_and_rest() -> None:
     frame = pl.DataFrame({"v": list(range(1, 6))}).lazy()
     selected, rest = select_records.apply_select_records(
@@ -132,6 +148,51 @@ def test_select_records_date_rank_raises() -> None:
             frame, {"mode": "largest_n", "n": 1, "by": "d"}
         )
     assert error.value.code == "TD-SHAPE-091"
+
+
+def test_ranked_select_keeps_input_column_named_like_the_row_index() -> None:
+    settings = {"mode": "largest_n", "n": 2, "by": "v", "ties": "include_ties"}
+    frame = pl.DataFrame({"v": [3, 1, 2, 2], "__pos": [40, 10, 30, 20]})
+    selected, rest = select_records.apply_select_records(frame.lazy(), settings)
+    plain_selected, plain_rest = select_records.apply_select_records(
+        frame.drop("__pos").lazy(), settings
+    )
+    out_selected, out_rest = selected.collect(), rest.collect()
+    assert out_selected.columns == ["v", "__pos"]
+    assert out_selected["__pos"].to_list() == [40, 30, 20]
+    assert out_rest.columns == ["v", "__pos"]
+    assert out_rest["__pos"].to_list() == [10]
+    assert out_selected.drop("__pos").equals(plain_selected.collect())
+    assert out_rest.drop("__pos").equals(plain_rest.collect())
+
+
+def test_select_records_ranked_keeps_input_columns_named_key_and_keep() -> None:
+    settings = {"mode": "largest_n", "n": 2, "by": "v", "ties": "include_ties"}
+    frame = pl.DataFrame(
+        {
+            "v": [3, 1, 2, 2],
+            "__key": [40, 10, 30, 20],
+            "__keep": ["a", "b", "c", "d"],
+        }
+    )
+    selected, rest = select_records.apply_select_records(frame.lazy(), settings)
+    out_selected, out_rest = selected.collect(), rest.collect()
+    assert out_selected.columns == ["v", "__key", "__keep"]
+    assert out_selected.rows() == [(3, 40, "a"), (2, 30, "c"), (2, 20, "d")]
+    assert out_rest.columns == ["v", "__key", "__keep"]
+    assert out_rest.rows() == [(1, 10, "b")]
+
+
+def test_select_records_first_n_keeps_input_column_named_keep() -> None:
+    frame = pl.DataFrame({"v": [1, 2, 3, 4, 5], "__keep": ["p", "q", "r", "s", "t"]})
+    selected, rest = select_records.apply_select_records(
+        frame.lazy(), {"mode": "first_n", "n": 2}
+    )
+    out_selected, out_rest = selected.collect(), rest.collect()
+    assert out_selected.columns == ["v", "__keep"]
+    assert out_selected.rows() == [(1, "p"), (2, "q")]
+    assert out_rest.columns == ["v", "__keep"]
+    assert out_rest.rows() == [(3, "r"), (4, "s"), (5, "t")]
 
 
 def test_find_replace_literal_regex_suffix() -> None:
