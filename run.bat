@@ -23,4 +23,4 @@ GOTO :EOF
 
 :End1
 uv run --project . src\trigger_designer\main.py 
-GOTO :EOF
+GOTO :EOF"v run trigger-designer" 

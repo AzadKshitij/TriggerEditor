@@ -7,7 +7,7 @@
 **A visual, node-based data-processing workbench — cleanse, transform, join and
 preview data without writing a pipeline by hand.**
 
-<img src="docs/assets/screenshot_main.webp" alt="Trigger Designer main window: node canvas, node palette, node configuration dock and logging dock" width="100%" />
+<img src="docs/assets/screenshot_main.png" alt="Trigger Designer main window: node canvas, node palette, node configuration dock and logging dock" width="100%" />
 
 <sub>A workflow loaded in the node canvas, with the Config Dock editing a Cleansing node.</sub>
 
