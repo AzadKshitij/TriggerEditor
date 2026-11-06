@@ -181,3 +181,56 @@ def test_validate_section_survives_an_input_that_cannot_be_sampled() -> None:
     settings = {"sections": [_section("y", "[g] + 1")]}
 
     assert core.validate_section([frame], settings, 0) == []
+
+
+def _probe(calls: list[int], data: dict) -> pl.LazyFrame:
+    """A lazy input that records each time its rows are actually read."""
+    return pl.DataFrame(data).lazy().map_batches(lambda df: (calls.append(1), df)[1])
+
+
+def test_validate_section_without_rows_reads_no_data() -> None:
+    """The typing check binds names and syntax against the schema only."""
+    calls: list[int] = []
+    probe = _probe(calls, {"x": [1, 2, 3], "s": ["a", "b", "c"]})
+    settings = {"sections": [_section("y", "[x] * 2")]}
+
+    assert core.validate_section([probe], settings, 0, run_rows=False) == []
+    assert calls == []
+
+
+def test_validate_section_reads_the_sample_by_default() -> None:
+    calls: list[int] = []
+    probe = _probe(calls, {"x": [1, 2, 3], "s": ["a", "b", "c"]})
+    settings = {"sections": [_section("y", "[x] * 2")]}
+
+    assert core.validate_section([probe], settings, 0) == []
+    assert calls
+
+
+def test_validate_section_without_rows_defers_a_value_error_to_the_node() -> None:
+    """``number + ""`` binds on the schema; only real rows make DuckDB reject it."""
+    calls: list[int] = []
+    probe = _probe(calls, {"g": [1.234, 2.5]})
+    settings = {"sections": [_section("g", 'ROUND([g], 2) + ""')]}
+
+    assert core.validate_section([probe], settings, 0, run_rows=False) == []
+    assert calls == []
+
+    errors = core.validate_section([probe], settings, 0)
+    assert errors
+    assert "Could not convert string" in errors[0]["message"]
+
+
+@pytest.mark.parametrize("formula", ["(((", "nosuchcol + 1"])
+def test_validate_section_without_rows_still_reports_a_bad_formula(
+    formula: str,
+) -> None:
+    calls: list[int] = []
+    probe = _probe(calls, {"x": [1, 2, 3], "s": ["a", "b", "c"]})
+
+    errors = core.validate_section(
+        [probe], {"sections": [_section("y", formula)]}, 0, run_rows=False
+    )
+
+    assert errors and errors[0]["message"]
+    assert calls == []

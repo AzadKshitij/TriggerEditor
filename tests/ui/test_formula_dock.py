@@ -39,10 +39,10 @@ def _frame() -> pl.DataFrame:
     return pl.DataFrame({"x": [1, 2, 3], "s": ["a", "b", "c"]})
 
 
-def _node(qtbot):
+def _node(qtbot, frame: pl.LazyFrame | None = None):
     window = TriggerSubWindow()
     qtbot.addWidget(window)
-    source = Source(window.scene, _frame().lazy())
+    source = Source(window.scene, _frame().lazy() if frame is None else frame)
     cls = get_class_from_opcode(PreparationNodes.FORMULA, NodeTypes.PREPARATION)
     node = cls(window.scene)
     Edge(window.scene, source.outputs[0], node.inputs[0])
@@ -56,6 +56,12 @@ def _node(qtbot):
 
 def _output(node) -> pl.DataFrame:
     return live_value(node)[0]["data"].collect()
+
+
+def _probe_frame(calls: list[int]) -> pl.LazyFrame:
+    """A lazy input that records each time its rows are actually read."""
+    data = pl.DataFrame({"g": [1.234, 2.5]}).lazy()
+    return data.map_batches(lambda df: (calls.append(1), df)[1])
 
 
 def _section(target: str, formula: str, dtype: str = "") -> dict:
@@ -396,17 +402,44 @@ def test_remove_button_click_removes_the_card(qtbot) -> None:
     assert len(content.settings["sections"]) == 1
 
 
-def test_number_plus_empty_string_shows_a_live_error(qtbot) -> None:
-    """The card reports the conversion failure while typing, not only on Run."""
+def test_number_plus_empty_string_waits_for_the_node_to_run(qtbot) -> None:
+    """Typing checks names and syntax; the conversion error shows on the node."""
     _window, _source, node, _dock = _node(qtbot)
     content = node.content
     content.set_setting("sections", [_section("x", '[x] + ""')], "Baseline")
 
     content._refresh_error(0)
 
-    assert 0 in content.section_errors
-    assert "Could not convert string" in content.section_errors[0]
-    assert not content.section_widgets[0]["error_label"].isHidden()
+    assert 0 not in content.section_errors
+    assert content.section_widgets[0]["error_label"].isHidden()
+
+    flush(content)
+
+    assert node.current_error is not None
+    assert "Could not convert string" in node.current_error.title
+
+
+def test_typing_reads_no_rows_and_leaving_the_node_does(qtbot) -> None:
+    calls: list[int] = []
+    _window, _source, node, _dock = _node(qtbot, _probe_frame(calls))
+    content = node.content
+    content.set_setting("sections", [_section("g", "")], "Baseline")
+    calls.clear()
+
+    assert content._validate_section(0, "ROUND([g], 2)") == []
+    assert content._validate_section(0, 'ROUND([g], 2) + ""') == []
+
+    editor = content.section_widgets[0]["formula_input"]
+    editor.set_text('ROUND([g], 2) + ""')
+    content._refresh_error(0)
+
+    assert 0 not in content.section_errors
+    assert calls == []
+
+    flush(content)
+
+    assert calls  # leaving the node runs it on the sample, so rows are read
+    assert "Could not convert string" in node.current_error.title
 
 
 def test_late_error_enrichment_does_not_resurrect_a_fixed_error(qtbot) -> None:

@@ -294,7 +294,7 @@ def test_pivot_unpivot_roundtrip() -> None:
     wide = reshape.apply_pivot(
         frame,
         {"index_columns": ["id"], "header_column": "attr", "value_column": "value"},
-    )
+    ).collect()
     long = reshape.apply_unpivot(
         wide.lazy(),
         {
@@ -308,6 +308,32 @@ def test_pivot_unpivot_roundtrip() -> None:
         (1, "y", 20.0),
         (2, "x", 30.0),
     ]
+
+
+def test_pivot_defers_the_aggregation_until_collected() -> None:
+    calls: list[int] = []
+
+    def record(batch: pl.DataFrame) -> pl.DataFrame:
+        calls.append(1)
+        return batch
+
+    probe = (
+        pl.DataFrame({"id": [1, 1, 2], "attr": ["x", "y", "x"], "value": [10, 20, 30]})
+        .lazy()
+        .map_batches(record)
+    )
+    settings = {
+        "index_columns": ["id"],
+        "header_column": "attr",
+        "value_column": "value",
+    }
+    (wide,) = reshape.run_pivot([probe], settings)
+    assert isinstance(wide, pl.LazyFrame)
+    assert len(calls) == 1  # only the distinct-header query runs at call time
+    out = wide.collect()
+    assert len(calls) == 2  # the aggregation runs on collect
+    assert out.columns == ["id", "x", "y"]
+    assert out.rows() == [(1, 10.0, 20.0), (2, 30.0, None)]
 
 
 def test_unpivot_keeps_id_column_named_like_the_row_index() -> None:

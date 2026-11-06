@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import warnings
+from collections.abc import Callable
+
 import polars as pl
 import pytest
+from polars.testing import assert_frame_equal
 
 from trigger_designer.core.shaping import cleansing as core
 from trigger_designer.core.shaping.common import ShapingError
+from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy
 
 
 def _run(frame: pl.DataFrame, **settings) -> pl.DataFrame:
@@ -164,3 +169,103 @@ def test_strip_whitespace_takes_trim_as_a_parameter() -> None:
     )
     assert trimmed.df["c"].to_list() == ["a b", "x"]
     assert kept.df["c"].to_list() == [" a b ", " x "]
+
+
+def _counted(frame: pl.DataFrame, calls: list[int]) -> pl.LazyFrame:
+    """A LazyFrame whose plan appends to ``calls`` each time it is executed."""
+
+    def record(batch: pl.DataFrame) -> pl.DataFrame:
+        calls.append(1)
+        return batch
+
+    return frame.lazy().map_batches(record)
+
+
+def test_text_and_replace_rules_do_not_read_the_input() -> None:
+    calls: list[int] = []
+    source = _counted(pl.DataFrame({"s": [" a  b ", None], "n": [None, 2]}), calls)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", pl.exceptions.PerformanceWarning)
+        outs = core.run_node(
+            [source], {"selected_fields": ["s"], "case_modification": "upper"}
+        )
+    assert calls == []
+    assert outs[0].collect().rows() == [("A B", 0), ("", 2)]
+    assert len(calls) == 1
+
+
+def test_remove_null_rows_does_not_read_the_input() -> None:
+    calls: list[int] = []
+    source = _counted(
+        pl.DataFrame({"s": ["x", None, None], "n": [1, None, None]}), calls
+    )
+    outs = core.run_node([source], {"remove_null_rows": True})
+    assert calls == []
+    assert outs[0].collect().rows() == [("x", 1)]
+    assert len(calls) == 1
+
+
+def test_remove_null_columns_reads_one_summary_then_stays_lazy() -> None:
+    calls: list[int] = []
+    source = _counted(pl.DataFrame({"gone": [None, None], "kept": [1, 2]}), calls)
+    outs = core.run_node([source], {"remove_null_columns": True})
+    # Only the one-row null summary runs inside run_node.
+    assert len(calls) == 1
+    assert_frame_equal(outs[0].collect(), pl.DataFrame({"kept": [1, 2]}))
+    # The output is still a plan over the input, so collecting reads it again.
+    assert len(calls) == 2
+
+
+MIXED = pl.DataFrame(
+    {
+        "name": ["  Ann ", None, "Bob  Lee", None],
+        "city": ["  Paris", "Rome  ", None, None],
+        "qty": [1, None, 3, None],
+        "price": [2.5, None, 1.0, None],
+        "gone": [None, None, None, None],
+        "full": [" x ", "y  z", "w", " v"],
+    },
+    schema={
+        "name": pl.String,
+        "city": pl.String,
+        "qty": pl.Int64,
+        "price": pl.Float64,
+        "gone": pl.String,
+        "full": pl.String,
+    },
+)
+
+
+@pytest.mark.parametrize("strategy", list(NullStrategy), ids=lambda s: s.value)
+def test_lazy_handle_nulls_matches_dataframe(strategy: NullStrategy) -> None:
+    eager = DataCleansing(MIXED).handle_nulls(strategy).get_result()
+    lazy = DataCleansing(MIXED.lazy()).handle_nulls(strategy).get_result()
+    assert isinstance(eager, pl.DataFrame)
+    assert isinstance(lazy, pl.LazyFrame)
+    assert_frame_equal(lazy.collect(), eager)
+
+
+STEPS: list[Callable[[DataCleansing], DataCleansing]] = [
+    lambda c: c.replace_null_defaults(),
+    lambda c: c.replace_null_defaults(replace_strings=False, default_num=-1),
+    lambda c: c.strip_whitespace(fields=["name", "city"]),
+    lambda c: c.strip_whitespace(remove_all=True),
+    lambda c: c.remove_characters(remove_letters=True),
+    lambda c: c.remove_characters(remove_numbers=True, fields=["full"]),
+    lambda c: c.modify_case("title"),
+    lambda c: c.modify_case("lower", fields=["city"]),
+    lambda c: c.handle_nulls(NullStrategy.REMOVE_ALL_NULL_COLS).strip_whitespace(),
+]
+
+
+@pytest.mark.parametrize("step", STEPS)
+def test_lazy_text_and_default_steps_match_dataframe(step) -> None:
+    eager = step(DataCleansing(MIXED)).get_result()
+    lazy = step(DataCleansing(MIXED.lazy())).get_result()
+    assert isinstance(lazy, pl.LazyFrame)
+    assert_frame_equal(lazy.collect(), eager)
+
+
+def test_set_data_accepts_a_lazyframe() -> None:
+    cleaner = DataCleansing().set_data(MIXED.lazy())
+    assert isinstance(cleaner.get_result(), pl.LazyFrame)

@@ -10,16 +10,14 @@ DEFAULTS: dict = {}
 
 
 def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
-    """Return one row holding the number of input rows.
+    """Return one row holding the number of input rows, as a lazy frame.
 
     ``settings`` is accepted for the shared runner API but Count has no
-    options. Counting a lazy frame collects it; that is the work this node
-    exists to do.
+    options. Nothing runs until the returned frame is collected.
     """
     del settings
     frame = as_lazy(frames[0])
-    total = frame.select(pl.len()).collect().item()
-    return [pl.DataFrame({"Count": [int(total)]}, schema={"Count": pl.Int64}).lazy()]
+    return [frame.select(pl.len().cast(pl.Int64).alias("Count"))]
 
 
 def describe(frames: list, settings: dict) -> list[tuple[str, str]]:

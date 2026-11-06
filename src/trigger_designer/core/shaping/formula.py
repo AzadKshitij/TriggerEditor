@@ -268,12 +268,19 @@ def _sample_rows(frame) -> pl.DataFrame | None:
         return None
 
 
-def validate_section(frames: list, settings: dict, section_index: int) -> list[dict]:
+def validate_section(
+    frames: list, settings: dict, section_index: int, *, run_rows: bool = True
+) -> list[dict]:
     """Check one section: EXPLAIN on the live schema, then run it on a row sample.
 
     DuckDB binds ``[price] + ""`` without complaint and only fails when it
     converts the string for a real row, so a zero-row check alone would let
     that formula look valid until the workflow runs.
+
+    The row run (the default) is for callers that apply the node.
+    ``run_rows=False`` returns after the EXPLAIN stage without reading any
+    data. The formula editor passes it while you edit, so a value error like
+    the one above shows when the node runs on its sample instead.
     """
     if not frames or frames[0] is None:
         return []
@@ -282,7 +289,7 @@ def validate_section(frames: list, settings: dict, section_index: int) -> list[d
         return []
     schema_only = pl.DataFrame(schema=schema_of(frames[0]))
     errors = _first_error(sections, section_index, schema_only, explain=True)
-    if errors:
+    if errors or not run_rows:
         return errors
     rows = _sample_rows(frames[0])
     if rows is None or rows.height == 0:

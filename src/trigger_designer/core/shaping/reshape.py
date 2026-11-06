@@ -51,7 +51,13 @@ def _agg_expr(aggregation: str, column: str) -> pl.Expr:
     }[aggregation].alias(column)
 
 
-def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
+def apply_pivot(frame: Frame, settings: dict) -> pl.LazyFrame:
+    """Pivot ``frame`` into a lazy wide table.
+
+    Only the distinct header values are read at call time, in one small query,
+    so the new column names and the column limit are known up front. The
+    aggregation runs when the returned frame is collected.
+    """
     s = {**PIVOT_DEFAULTS, **(settings or {})}
     lf = as_lazy(frame)
     schema = schema_of(lf)
@@ -81,12 +87,11 @@ def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
     aggregated = base.group_by(indexes + [header]).agg(
         _agg_expr(s["aggregation"], value_name)
     )
-    aggregated = aggregated.collect()
-
     distinct = (
-        aggregated.select(header)
+        base.select(pl.col(header))
         .unique()
-        .sort(header, nulls_last=True)[header]
+        .sort(header, nulls_last=True)
+        .collect()[header]
         .to_list()
     )
     if len(distinct) > MAX_PIVOT_COLUMNS:
@@ -138,7 +143,7 @@ def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
 
 
 def run_pivot(frames: list, settings: dict) -> list[pl.LazyFrame]:
-    return [apply_pivot(frames[0], settings).lazy()]
+    return [apply_pivot(frames[0], settings)]
 
 
 def describe(frames: list, settings: dict) -> list[tuple[str, str]]:

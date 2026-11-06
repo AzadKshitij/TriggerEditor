@@ -180,11 +180,17 @@ a loaded laptop is not a regression until it repeats.
 * **Unit (`test_<node>_core.py`)**: test the Qt-free function with frames built in
   the test; expected values written by hand from the input (not copied from output);
   one parametrised case per error code, asserting the *code*; the
-  `ERROR_CODES`/catalogue registration check; laziness (`LazyFrame` in, `LazyFrame`
-  out, no eager collect of the input); zero-row input keeps its dtypes; **live ==
-  generated code** (`node.eval()` then `exec(node.get_code())` and
+  `ERROR_CODES`/catalogue registration check; zero-row input keeps its dtypes;
+  **live == generated code** (`node.eval()` then `exec(node.get_code())` and
   `generated.equals(live)`); an unwired node's code still defines every output
   variable; Qt-free (`test_core_has_no_qt_import`).
+* **Lazy contract (`tests/unit/test_lazy_contract.py`)**: one shared, table-driven
+  test for every shaping runner. `run_node` must return a plan and leave its input
+  unexecuted: each input is wrapped in a probe, and the count is taken before any
+  output is collected. A new node goes into its `CASES` table, or into
+  `NOT_COVERED` with a one-line reason. A node that must run its input during the
+  call goes into `EAGER_BY_DESIGN` (or `BOUNDED_BY_DESIGN`, with an exact count),
+  with its reason. A stale entry fails the test.
 * **UI (`test_<node>_dock.py`)**: build the node in a `TriggerSubWindow` (or
   `demo_graph` for audit nodes), `ConfigDock().updateConfig([node.grNode])`, call
   `scene.history.storeHistory("Baseline")` first, drive a control, `flush(node)`,

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import polars as pl
 
-from trigger_designer.core.shaping.common import as_lazy
+from trigger_designer.core.shaping.common import as_lazy, schema_of
 from trigger_designer.core.utils.cleansing_util import DataCleansing, NullStrategy
 
 DEFAULTS = {
@@ -25,13 +25,18 @@ DEFAULTS = {
 
 
 def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
-    """Apply the null, whitespace, character and case rules in order."""
+    """Apply the null, whitespace, character and case rules in order.
+
+    The rules are chained onto the input's lazy plan, so nothing is read until
+    the output is collected. The one exception is "remove all-null columns": it
+    reads a one-row summary of the input here, because the columns it keeps
+    depend on the data.
+    """
     settings = {**DEFAULTS, **(settings or {})}
-    data = as_lazy(frames[0]).collect()
-    cleaner = DataCleansing(data)
-    fields = [
-        name for name in settings.get("selected_fields") or [] if name in data.columns
-    ]
+    source = as_lazy(frames[0])
+    cleaner = DataCleansing(source)
+    names = list(schema_of(source))
+    fields = [name for name in settings.get("selected_fields") or [] if name in names]
 
     if settings["remove_null_rows"]:
         cleaner.handle_nulls(NullStrategy.REMOVE_ALL_NULL_ROWS)
@@ -71,7 +76,7 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         if settings["case_modification"] != "none":
             cleaner.modify_case(str(settings["case_modification"]), fields=fields)
 
-    return [cleaner.get_result().lazy()]
+    return [cleaner.get_result()]
 
 
 _TEXT_RULES = (
