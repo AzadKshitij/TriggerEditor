@@ -6,6 +6,7 @@ import os
 import shutil
 
 import orjson
+import polars as pl
 
 from tests.support.input_fixtures import multi_sheet_xlsx
 from trigger_designer.core.input_source import SOURCE_KEYS
@@ -276,3 +277,28 @@ def test_workflow_dir_helper_uses_scene_filename(tmp_path) -> None:
 
     assert _workflow_dir(Scene()) == str(tmp_path)
     assert os.path.isdir(_workflow_dir(Scene()))
+
+
+def test_excel_preview_error_skips_polars_fallback(tmp_path, monkeypatch) -> None:
+    book = multi_sheet_xlsx(tmp_path)
+    content = _legacy_content(str(book))
+    content.selected_sheet = "Feb"
+    polars_calls: list[str] = []
+
+    class BrokenReader:
+        def load_sheet(self, **_kwargs):
+            raise RuntimeError("fastexcel cannot read this sheet")
+
+    def broken_read_excel(*_args, **_kwargs):
+        return BrokenReader()
+
+    def polars_read_excel(*_args, **_kwargs):
+        polars_calls.append("pl.read_excel")
+        raise AssertionError("fallback must not be used")
+
+    monkeypatch.setattr("fastexcel.read_excel", broken_read_excel)
+    monkeypatch.setattr("polars.read_excel", polars_read_excel)
+    preview = content._read_excel(str(book), 10)
+    assert polars_calls == []
+    assert isinstance(preview, pl.DataFrame)
+    assert preview.shape == (0, 0)

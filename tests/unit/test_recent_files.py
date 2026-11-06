@@ -10,14 +10,14 @@ from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 app = QApplication.instance() or QApplication([])
 
 
-def _manager(max_items=10):
-    QSettings("TestRecentOrg", "TestRecentApp").clear()
-    settings = QSettings("TestRecentOrg", "TestRecentApp")
+def _manager(tmp_path, max_items=10):
+    QSettings(str(tmp_path / "recent.ini"), QSettings.Format.IniFormat).clear()
+    settings = QSettings(str(tmp_path / "recent.ini"), QSettings.Format.IniFormat)
     return RecentFilesManager(settings=settings, max_items=max_items)
 
 
-def test_add_moves_to_front_and_dedupes() -> None:
-    manager = _manager()
+def test_add_moves_to_front_and_dedupes(tmp_path) -> None:
+    manager = _manager(tmp_path)
     manager.add_recent("/tmp/b.tds")
     manager.add_recent("/tmp/a.tds")
     manager.add_recent("/tmp/b.tds")
@@ -25,8 +25,8 @@ def test_add_moves_to_front_and_dedupes() -> None:
     assert len(manager.recents()) == 2
 
 
-def test_caps_at_max_items() -> None:
-    manager = _manager(max_items=3)
+def test_caps_at_max_items(tmp_path) -> None:
+    manager = _manager(tmp_path, max_items=3)
     for name in ["a", "b", "c", "d"]:
         manager.add_recent(f"/tmp/{name}.tds")
     recents = manager.recents()
@@ -35,14 +35,14 @@ def test_caps_at_max_items() -> None:
     assert not any(p.endswith("a.tds") for p in recents)
 
 
-def test_normalizes_to_absolute() -> None:
-    manager = _manager()
+def test_normalizes_to_absolute(tmp_path) -> None:
+    manager = _manager(tmp_path)
     added = manager.add_recent("relative.tds")
     assert os.path.isabs(added[0])
 
 
-def test_remove_and_clear() -> None:
-    manager = _manager()
+def test_remove_and_clear(tmp_path) -> None:
+    manager = _manager(tmp_path)
     manager.add_recent("/tmp/a.tds")
     manager.add_recent("/tmp/b.tds")
     manager.remove_recent("/tmp/a.tds")
@@ -51,8 +51,8 @@ def test_remove_and_clear() -> None:
     assert manager.recents() == []
 
 
-def test_welcome_flag_defaults_true_and_persists() -> None:
-    manager = _manager()
+def test_welcome_flag_defaults_true_and_persists(tmp_path) -> None:
+    manager = _manager(tmp_path)
     assert manager.is_welcome_enabled() is True
     manager.set_welcome_enabled(False)
     assert manager.is_welcome_enabled() is False
@@ -60,8 +60,8 @@ def test_welcome_flag_defaults_true_and_persists() -> None:
     assert manager.is_welcome_enabled() is True
 
 
-def test_reads_legacy_single_string() -> None:
-    settings = QSettings("TestRecentOrg", "TestRecentApp")
+def test_reads_legacy_single_string(tmp_path) -> None:
+    settings = QSettings(str(tmp_path / "recent.ini"), QSettings.Format.IniFormat)
     settings.clear()
     settings.setValue("recentFiles", "/tmp/only.tds")
     manager = RecentFilesManager(settings=settings)

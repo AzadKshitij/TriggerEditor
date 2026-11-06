@@ -310,6 +310,75 @@ def test_pivot_unpivot_roundtrip() -> None:
     ]
 
 
+def test_pivot_numeric_sum_over_unreadable_text_warns() -> None:
+    frame = pl.DataFrame(
+        {"id": [1, 2], "attr": ["x", "x"], "value": ["abc", "def"]}
+    ).lazy()
+    settings = {
+        "index_columns": ["id"],
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    chips = reshape.describe([frame], settings)
+    assert len(chips) == 1
+    assert chips[0][1] == "warning"
+    assert "value" in chips[0][0]
+    assert f"first {LIVE_SAMPLE_ROWS} rows" in chips[0][0]
+
+
+def test_pivot_numeric_sum_over_readable_text_has_no_chip() -> None:
+    frame = pl.DataFrame({"attr": ["x", "x"], "value": ["1,5", "2"]}).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_numeric_column_has_no_chip() -> None:
+    frame = pl.DataFrame(
+        {"attr": ["x", "x"], "value": [1, 2]},
+        schema={"attr": pl.String, "value": pl.Int64},
+    ).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_non_numeric_aggregation_on_text_has_no_chip() -> None:
+    frame = pl.DataFrame({"attr": ["x", "y"], "value": ["abc", "def"]}).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "first",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_all_null_text_column_has_no_chip() -> None:
+    frame = pl.DataFrame(
+        {"attr": ["x", "y"], "value": [None, None]},
+        schema={"attr": pl.String, "value": pl.String},
+    ).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_missing_value_column_setting_has_no_chip() -> None:
+    frame = pl.DataFrame({"attr": ["x"], "value": ["abc"]}).lazy()
+    settings = {"header_column": "attr", "aggregation": "sum"}
+    assert reshape.describe([frame], settings) == []
+
+
 def test_reconcile_one_to_one_summary() -> None:
     left = pl.DataFrame({"k": ["a", "b"], "amt": [10.0, 20.0]}).lazy()
     right = pl.DataFrame({"k": ["a", "c"], "amt": [10.5, 20.0]}).lazy()

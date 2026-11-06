@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
+    LIVE_SAMPLE_ROWS,
     Frame,
     ShapingError,
     as_lazy,
@@ -138,6 +139,38 @@ def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
 
 def run_pivot(frames: list, settings: dict) -> list[pl.LazyFrame]:
     return [apply_pivot(frames[0], settings).lazy()]
+
+
+def describe(frames: list, settings: dict) -> list[tuple[str, str]]:
+    s = {**PIVOT_DEFAULTS, **(settings or {})}
+    name = s["value_column"]
+    if s["aggregation"] not in NUMERIC_AGGS or not name:
+        return []
+    try:
+        lf = as_lazy(frames[0])
+        dtype = schema_of(lf).get(name)
+        if dtype is None or dtype.is_numeric():
+            return []
+        has_values, has_numbers = (
+            lf.head(LIVE_SAMPLE_ROWS)
+            .select(
+                pl.col(name).is_not_null().any().alias("has_values"),
+                numeric_expr(name, dtype).is_not_null().any().alias("has_numbers"),
+            )
+            .collect()
+            .row(0)
+        )
+    except Exception:  # noqa: BLE001
+        return []
+    if has_values and not has_numbers:
+        scope = f"first {LIVE_SAMPLE_ROWS} rows"
+        return [
+            (
+                f"{name} has no readable numbers, so {s['aggregation']} is empty ({scope})",
+                "warning",
+            )
+        ]
+    return []
 
 
 def apply_unpivot(frame: Frame, settings: dict) -> pl.LazyFrame:

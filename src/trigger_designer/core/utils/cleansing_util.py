@@ -1,6 +1,5 @@
 import string
 import re
-from dataclasses import dataclass
 from enum import Enum
 import polars as pl
 from typing import (
@@ -16,18 +15,6 @@ from typing import (
 )
 
 from trigger_designer.core.shaping.common import ShapingError
-
-
-@dataclass
-class CleansingStats:
-    """Statistics for tracking cleansing operations"""
-
-    rows_removed: int = 0
-    columns_removed: int = 0
-    nulls_replaced: int = 0
-    whitespace_changes: int = 0
-    case_changes: int = 0
-    character_removals: int = 0
 
 
 class NullStrategy(Enum):
@@ -60,7 +47,6 @@ class DataCleansing:
 
     def __init__(self, df: Optional[pl.DataFrame] = None):
         self.df = df.clone() if df is not None else pl.DataFrame()
-        self.stats = CleansingStats()
         self._validate_input()
 
     def _validate_input(self) -> None:
@@ -81,10 +67,6 @@ class DataCleansing:
         default_num: Union[int, float] = 0,
     ) -> "DataCleansing":
         """Handle null values according to specified strategy"""
-        original_size = len(self.df)
-        original_cols = len(self.df.columns)
-        original_nulls = self.df.null_count().sum_horizontal().item()
-
         if strategy == NullStrategy.REMOVE_ALL_NULL_ROWS:
             # Remove rows where all values are null
             self.df = self.df.filter(~pl.all_horizontal(pl.all().is_null()))
@@ -140,13 +122,6 @@ class DataCleansing:
 
             self.df = self.df.with_columns(expressions)
 
-            # Count nulls replaced
-            current_nulls = self.df.null_count().sum_horizontal().item()
-            self.stats.nulls_replaced += original_nulls - current_nulls
-
-        self.stats.rows_removed += original_size - len(self.df)
-        self.stats.columns_removed += original_cols - len(self.df.columns)
-
         return self
 
     def remove_rows_with_nulls(
@@ -160,10 +135,8 @@ class DataCleansing:
         if not selected_fields:
             return self
 
-        original_size = len(self.df)
         null_checks = [pl.col(field).is_null() for field in selected_fields]
         self.df = self.df.filter(~pl.any_horizontal(*null_checks))
-        self.stats.rows_removed += original_size - len(self.df)
         return self
 
     def replace_null_defaults(
@@ -191,10 +164,6 @@ class DataCleansing:
         }
         string_dtypes = {pl.Utf8, pl.String}
 
-        original_nulls = 0
-        if self.df.width > 0:
-            original_nulls = self.df.null_count().sum_horizontal().item()
-
         expressions = []
         for column_name, dtype in self.df.schema.items():
             expr = pl.col(column_name)
@@ -206,10 +175,6 @@ class DataCleansing:
 
         if expressions:
             self.df = self.df.with_columns(expressions)
-
-        if self.df.width > 0:
-            current_nulls = self.df.null_count().sum_horizontal().item()
-            self.stats.nulls_replaced += original_nulls - current_nulls
 
         return self
 
@@ -251,8 +216,6 @@ class DataCleansing:
                         # Replace multiple spaces with single space
                         expr = expr.str.replace_all(r"\s+", " ")
                 expressions.append(expr.alias(col))
-                # Count changes (approximate)
-                self.stats.whitespace_changes += len(self.df)
             else:
                 expressions.append(pl.col(col))
 
@@ -294,8 +257,6 @@ class DataCleansing:
                     expr = expr.str.replace_all(f"[{re.escape(punctuation_chars)}]", "")
 
                 expressions.append(expr.alias(col))
-                # Count changes (approximate)
-                self.stats.character_removals += len(self.df)
             else:
                 expressions.append(pl.col(col))
 
@@ -329,8 +290,6 @@ class DataCleansing:
                     expr = expr.str.to_titlecase()
 
                 expressions.append(expr.alias(col))
-                # Count changes (approximate)
-                self.stats.case_changes += len(self.df)
             else:
                 expressions.append(pl.col(col))
 
@@ -340,7 +299,3 @@ class DataCleansing:
     def get_result(self) -> pl.DataFrame:
         """Get the cleansed DataFrame"""
         return self.df.clone()
-
-    def get_stats(self) -> CleansingStats:
-        """Get cleansing statistics"""
-        return self.stats

@@ -102,6 +102,7 @@ With **Delimiter** `;` and **Include BOM** on, the same data is written as `Invo
 - **JSON** loads the entire table into memory before writing.
 - **Nested values** (lists, records) are not suitable for CSV. Convert them to text first.
 - **Dates in Excel** are real Excel dates formatted `yyyy-mm-dd`; whole numbers use `#,##0` and decimals `#,##0.00`. A text cell longer than Excel's 32,767-character limit is shortened.
+- Empty text and missing values are both written as blank cells, because Excel cannot store an empty string; reading the file back gives blanks for both.
 - **Leading zeros** survive CSV (they are text in the file) but Excel will drop them when *you* open the CSV and Excel guesses it is a number. Write the file as Excel or open the CSV with column type Text.
 
 ## Errors you may see

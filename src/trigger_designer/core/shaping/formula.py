@@ -196,6 +196,21 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             code, detail = guard.groups() if guard else ("TD-SHAPE-004", errors[index])
             raise ShapingError(code, f"Section {index + 1}: {detail}") from None
 
+    wanted: dict[str, str] = {}
+    for _, section in configured:
+        wanted[section["target_column"]] = section["target_dtype"]
+    categorical = [
+        name
+        for name, kind in wanted.items()
+        if kind == "Categorical"
+        and name in result.columns
+        and result.schema[name] == pl.String
+    ]
+    if categorical:
+        result = result.with_columns(
+            pl.col(name).cast(pl.Categorical) for name in categorical
+        )
+
     return [normalize_to_supported_dtypes(result).lazy()]
 
 
