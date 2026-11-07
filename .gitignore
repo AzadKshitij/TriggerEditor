@@ -317,3 +317,7 @@ dataframe_export.csv
 
 # Browser-panel captures taken while checking the site.
 .openchamber/
+
+# GitNexus local code-intelligence index and generated skills; never publish.
+.gitnexus/
+.claude/skills/gitnexus-*/
