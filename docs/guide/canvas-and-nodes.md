@@ -167,6 +167,8 @@ After an undo, the Config Dock refreshes to show the restored values for the nod
 
 A node tells you its state in three places: a ring around its body, a round badge on its bottom edge, and a tooltip.
 
+![Six node states: Idle (no ring), Selected (orange ring), Running (purple ring), Completed (green ring), Error (red ring with red badge), Warning (amber badge)](../assets/illustrations/node-states.svg)
+
 ### The ring
 
 | Ring | Meaning |

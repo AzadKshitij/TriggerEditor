@@ -17,6 +17,8 @@ When something is wrong, the app tells you which node, what is wrong, and what t
 
 ## Where you see an error
 
+![Six node states from left to right: Idle, Selected (orange ring), Running (purple ring), Completed (green ring), Error (red ring with red badge), Warning (amber badge)](../assets/illustrations/node-states.svg)
+
 | Where | What you see |
 |---|---|
 | **The node** | A red ring and a red round "!" badge on its bottom edge (amber for a warning). Hover the node to read a short message. |
@@ -29,16 +31,15 @@ Errors come in two kinds. A **live** error appears while you edit (it is about t
 
 ## How to read a message
 
-Here is a real message, copied from the Logs dock with **Copy details**:
-
-```text
-[TD-TYP-001] Select 'Amounts': Column 'Amount' has values that cannot be read as whole numbers.
-Fix: Clean or correct the value in the source data.
-Other fixes: Add a Select node before this one and set 'Amount' to a whole number; values that cannot be converted become empty instead of stopping the run.
-Columns: Amount
-Rows/values: 'abc'
-Phase: run   Severity: error   Time: 2026-10-30T16:59:07+00:00
-```
+!!! failure "Example: a real error from the Logs dock (copied with **Copy details**)"
+    ```text
+    [TD-TYP-001] Select 'Amounts': Column 'Amount' has values that cannot be read as whole numbers.
+    Fix: Clean or correct the value in the source data.
+    Other fixes: Add a Select node before this one and set 'Amount' to a whole number; values that cannot be converted become empty instead of stopping the run.
+    Columns: Amount
+    Rows/values: 'abc'
+    Phase: run   Severity: error   Time: 2026-10-30T16:59:07+00:00
+    ```
 
 | Line | Meaning |
 |---|---|
@@ -51,7 +52,8 @@ Phase: run   Severity: error   Time: 2026-10-30T16:59:07+00:00
 | `Phase:` | `run` (you pressed Run) or `live` (editing). |
 | `Severity:` | `error` stops the node; `warning` does not. |
 
-A **warning** (amber) means the node produced a result but something deserves attention, for example "Only 12 rows were tested; at least 50 are needed for a reliable result" from an Audit node.
+!!! warning "Warnings (amber badge) are not errors"
+    A warning means the node produced a result but something deserves attention, for example "Only 12 rows were tested; at least 50 are needed for a reliable result" from an Audit node. The node still passes data downstream.
 
 ## Row numbers, values and "did you mean"
 
@@ -100,11 +102,12 @@ The setting is read when an error is created, so it affects errors raised after 
 
 ## A fixing routine that works
 
-1. Open **Logs** and pick the **Errors** chip. Start with the topmost, most upstream node.
-2. Read the **Fix:** line and apply it.
-3. Click away from the node (to let it recompute) and check that the red mark is gone.
-4. If the same column keeps failing, look at the data type: text columns that hold numbers are the usual cause. See [Troubleshooting](troubleshooting-and-faq.md#my-numbers-are-treated-as-text).
-5. Still stuck? **Show technical details**, **Copy details**, and send the text with the workflow file to support.
+!!! success "Follow these steps in order"
+    1. Open **Logs** and pick the **Errors** chip. Start with the topmost, most upstream node.
+    2. Read the **Fix:** line and apply it.
+    3. Click away from the node (to let it recompute) and check that the red mark is gone.
+    4. If the same column keeps failing, look at the data type: text columns that hold numbers are the usual cause. See [Troubleshooting](troubleshooting-and-faq.md#my-numbers-are-treated-as-text).
+    5. Still stuck? **Show technical details**, **Copy details**, and send the text with the workflow file to support.
 
 ## Error code reference
 

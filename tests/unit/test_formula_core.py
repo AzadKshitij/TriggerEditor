@@ -234,3 +234,50 @@ def test_validate_section_without_rows_still_reports_a_bad_formula(
 
     assert errors and errors[0]["message"]
     assert calls == []
+
+
+def test_sample_rows_returns_at_most_validation_sample_rows() -> None:
+    large = pl.DataFrame({"x": list(range(200))}).lazy()
+    result = core.sample_rows(large)
+    assert result is not None
+    assert result.height == core.VALIDATION_SAMPLE_ROWS
+
+
+def test_sample_rows_returns_none_on_error() -> None:
+    def explode(_frame: pl.DataFrame) -> pl.DataFrame:
+        raise RuntimeError("boom")
+
+    broken = pl.DataFrame({"x": [1]}).lazy().map_batches(explode, schema={"x": pl.Int64})
+    assert core.sample_rows(broken) is None
+
+
+def test_validate_section_presampled_accepts_good_formula() -> None:
+    frame = pl.DataFrame({"x": [1, 2, 3]})
+    schema_only = pl.DataFrame(schema=frame.schema)
+    sections = [_section("y", "[x] * 2")]
+    assert core.validate_section_presampled(sections, 0, schema_only, frame) == []
+
+
+def test_validate_section_presampled_reports_bad_formula() -> None:
+    frame = pl.DataFrame({"x": [1, 2, 3]})
+    schema_only = pl.DataFrame(schema=frame.schema)
+    sections = [_section("y", "(((")]
+    errors = core.validate_section_presampled(sections, 0, schema_only, frame)
+    assert errors and errors[0]["message"]
+
+
+def test_validate_section_presampled_catches_runtime_error() -> None:
+    frame = pl.DataFrame({"g": [1.234, 2.5]})
+    schema_only = pl.DataFrame(schema=frame.schema)
+    sections = [_section("g", 'ROUND([g], 2) + ""')]
+    errors = core.validate_section_presampled(sections, 0, schema_only, frame)
+    assert errors and "Could not convert string" in errors[0]["message"]
+
+
+def test_validate_section_presampled_skips_rows_pass_when_rows_snap_is_none() -> None:
+    frame = pl.DataFrame({"g": [1.234, 2.5]})
+    schema_only = pl.DataFrame(schema=frame.schema)
+    sections = [_section("g", 'ROUND([g], 2) + ""')]
+    # EXPLAIN passes fine; rows_snap=None means we never execute the query
+    errors = core.validate_section_presampled(sections, 0, schema_only, None)
+    assert errors == []

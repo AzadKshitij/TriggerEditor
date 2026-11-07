@@ -261,7 +261,7 @@ def _first_error(
     return []
 
 
-def _sample_rows(frame) -> pl.DataFrame | None:
+def sample_rows(frame) -> pl.DataFrame | None:
     try:
         return as_lazy(frame).head(VALIDATION_SAMPLE_ROWS).collect()
     except Exception:  # noqa: BLE001 - validation must never break editing
@@ -281,6 +281,9 @@ def validate_section(
     ``run_rows=False`` returns after the EXPLAIN stage without reading any
     data. The formula editor passes it while you edit, so a value error like
     the one above shows when the node runs on its sample instead.
+
+    Prefer :func:`validate_section_presampled` when calling from a background
+    thread, to avoid running ``.collect()`` off the Qt main thread.
     """
     if not frames or frames[0] is None:
         return []
@@ -291,7 +294,29 @@ def validate_section(
     errors = _first_error(sections, section_index, schema_only, explain=True)
     if errors or not run_rows:
         return errors
-    rows = _sample_rows(frames[0])
+    rows = sample_rows(frames[0])
     if rows is None or rows.height == 0:
         return []
     return _first_error(sections, section_index, rows, explain=False)
+
+
+def validate_section_presampled(
+    sections: list[dict],
+    section_index: int,
+    schema_only: pl.DataFrame,
+    rows_snap: pl.DataFrame | None,
+) -> list[dict]:
+    """Like validate_section but accepts pre-collected DataFrames.
+
+    Pass rows_snap=None to run only the EXPLAIN pass (schema check).
+    Preferred over validate_section when calling from a background thread,
+    because .collect() is not called here.
+    """
+    if not 0 <= section_index < len(sections):
+        return []
+    errors = _first_error(sections, section_index, schema_only, explain=True)
+    if errors:
+        return errors
+    if rows_snap is None or rows_snap.height == 0:
+        return []
+    return _first_error(sections, section_index, rows_snap, explain=False)

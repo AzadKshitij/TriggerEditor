@@ -97,3 +97,30 @@ def test_a_fixed_error_leaves_no_underline_behind() -> None:
 
     assert editor.extraSelections() == []
     editor.deleteLater()
+
+
+def test_apply_validation_results_replaces_errors() -> None:
+    """DuckDB result delivered from a background worker overwrites fast-path errors."""
+    editor = _editor()
+    editor.errors = [{"message": "fast-path guess", "line": 1, "column": 0, "length": 1}]
+    editor.update_error_highlights()
+
+    new_errors = [{"message": "authoritative DuckDB error", "line": 2, "column": 1, "length": 1}]
+    editor.apply_validation_results(new_errors)
+
+    assert len(editor.errors) == 1
+    assert editor.errors[0]["message"] == "authoritative DuckDB error"
+    assert len(editor.extraSelections()) == 1
+    editor.deleteLater()
+
+
+def test_apply_validation_results_clears_errors_on_empty_list() -> None:
+    editor = _editor()
+    editor.errors = [{"message": "stale error", "line": 1, "column": 0, "length": 1}]
+    editor.update_error_highlights()
+
+    editor.apply_validation_results([])
+
+    assert editor.errors == []
+    assert editor.extraSelections() == []
+    editor.deleteLater()
