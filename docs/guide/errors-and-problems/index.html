@@ -1,0 +1,3962 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/guide/errors-and-problems/">
+      
+      
+      
+        <link rel="prev" href="../running-workflows/">
+      
+      
+        <link rel="next" href="../sql-expressions/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Errors and problems - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Errors and problems
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-you-see-an-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where you see an error
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-a-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How to read a message
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#row-numbers-values-and-did-you-mean" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Row numbers, values and "did you mean"
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors-caused-by-an-earlier-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors caused by an earlier node
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-details-and-copying-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Technical details and copying details
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#privacy-hiding-data-values-in-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Privacy: hiding data values in messages
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-fixing-routine-that-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A fixing routine that works
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-code-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Error code reference
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preferences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/input-output/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workpaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting-and-faq/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DESIGN_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-you-see-an-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where you see an error
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-read-a-message" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How to read a message
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#row-numbers-values-and-did-you-mean" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Row numbers, values and "did you mean"
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors-caused-by-an-earlier-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors caused by an earlier node
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#technical-details-and-copying-details" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Technical details and copying details
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#privacy-hiding-data-values-in-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Privacy: hiding data values in messages
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-fixing-routine-that-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A fixing routine that works
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#error-code-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Error code reference
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/guide/errors-and-problems.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="errors-and-problems">Errors and problems<a class="headerlink" href="#errors-and-problems" title="Permanent link">&para;</a></h1>
+<p>When something is wrong, the app tells you which node, what is wrong, and what to try. Every message carries a stable code such as <code>TD-SCH-001</code> so that you, a colleague and a support person all mean the same thing. This page explains where messages appear, how to read them, and lists every code.</p>
+<p><a href="../">Back to the guide index</a></p>
+<h2 id="on-this-page">On this page<a class="headerlink" href="#on-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#where-you-see-an-error">Where you see an error</a></li>
+<li><a href="#how-to-read-a-message">How to read a message</a></li>
+<li><a href="#row-numbers-values-and-did-you-mean">Row numbers, values and "did you mean"</a></li>
+<li><a href="#errors-caused-by-an-earlier-node">Errors caused by an earlier node</a></li>
+<li><a href="#technical-details-and-copying-details">Technical details and copying details</a></li>
+<li><a href="#privacy-hiding-data-values-in-messages">Privacy: hiding data values in messages</a></li>
+<li><a href="#a-fixing-routine-that-works">A fixing routine that works</a></li>
+<li><a href="#error-code-reference">Error code reference</a></li>
+</ul>
+<h2 id="where-you-see-an-error">Where you see an error<a class="headerlink" href="#where-you-see-an-error" title="Permanent link">&para;</a></h2>
+<p><img alt="Six node states from left to right: Idle, Selected (orange ring), Running (purple ring), Completed (green ring), Error (red ring with red badge), Warning (amber badge)" src="../../assets/illustrations/node-states.svg" /></p>
+<table>
+<thead>
+<tr>
+<th>Where</th>
+<th>What you see</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>The node</strong></td>
+<td>A red ring and a red round "!" badge on its bottom edge (amber for a warning). Hover the node to read a short message.</td>
+</tr>
+<tr>
+<td><strong>The Logs dock</strong></td>
+<td>One row per node with a problem, mixed into the log stream: node, one-sentence description, and an expandable code plus <strong>Fix:</strong> line. Click a row to jump to the node. See <a href="../config-dock-and-preview/#logs">Logs</a>.</td>
+</tr>
+<tr>
+<td><strong>The log file</strong></td>
+<td>The error is written once, when it first appears, with its full technical text.</td>
+</tr>
+<tr>
+<td><strong>The run record</strong></td>
+<td>A failed node's error is stored in the run record (see <a href="../run-history-and-audit-trail/">Run history</a>).</td>
+</tr>
+<tr>
+<td><strong>A dialog</strong></td>
+<td>Only for things outside a node: a file that cannot be opened, an Excel export that failed, a workflow with unknown nodes.</td>
+</tr>
+</tbody>
+</table>
+<p>Errors come in two kinds. A <strong>live</strong> error appears while you edit (it is about the sample of 100 rows). A <strong>run</strong> error appears when you press Run (it is about all the data). A node can have both. A live error disappears as soon as you fix the setting and the node recomputes. A run error disappears when you start the next Run, or when you change the node or its connections.</p>
+<h2 id="how-to-read-a-message">How to read a message<a class="headerlink" href="#how-to-read-a-message" title="Permanent link">&para;</a></h2>
+<div class="admonition failure">
+<p class="admonition-title">Example: a real error from the Logs dock (copied with <strong>Copy details</strong>)</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>[TD-TYP-001] Select 'Amounts': Column 'Amount' has values that cannot be read as whole numbers.
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Fix: Clean or correct the value in the source data.
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Other fixes: Add a Select node before this one and set 'Amount' to a whole number; values that cannot be converted become empty instead of stopping the run.
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Columns: Amount
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Rows/values: 'abc'
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Phase: run   Severity: error   Time: 2026-10-30T16:59:07+00:00
+</span></code></pre></div>
+</div>
+<table>
+<thead>
+<tr>
+<th>Line</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[TD-TYP-001]</code></td>
+<td>The code. The letters say the family (TYP = data types, SCH = columns, IN = input files, OUT = output files, SHAPE = node settings, RUN = running, AUDIT = audit nodes). Look it up in the <a href="#error-code-reference">reference below</a>.</td>
+</tr>
+<tr>
+<td><code>Select 'Amounts': ...</code></td>
+<td>The node (its title, then its label in quotes if it has one) and what is wrong, in one sentence.</td>
+</tr>
+<tr>
+<td><code>Fix:</code></td>
+<td>The first thing to try.</td>
+</tr>
+<tr>
+<td><code>Other fixes:</code></td>
+<td>Alternatives.</td>
+</tr>
+<tr>
+<td><code>Columns:</code></td>
+<td>The columns involved.</td>
+</tr>
+<tr>
+<td><code>Rows/values:</code></td>
+<td>An example of the offending data, when the app can find it.</td>
+</tr>
+<tr>
+<td><code>Phase:</code></td>
+<td><code>run</code> (you pressed Run) or <code>live</code> (editing).</td>
+</tr>
+<tr>
+<td><code>Severity:</code></td>
+<td><code>error</code> stops the node; <code>warning</code> does not.</td>
+</tr>
+</tbody>
+</table>
+<div class="admonition warning">
+<p class="admonition-title">Warnings (amber badge) are not errors</p>
+<p>A warning means the node produced a result but something deserves attention, for example "Only 12 rows were tested; at least 50 are needed for a reliable result" from an Audit node. The node still passes data downstream.</p>
+</div>
+<h2 id="row-numbers-values-and-did-you-mean">Row numbers, values and "did you mean"<a class="headerlink" href="#row-numbers-values-and-did-you-mean" title="Permanent link">&para;</a></h2>
+<p>The app does a little detective work for you.</p>
+<p><strong>Row and value location.</strong> When a column cannot be converted (to a number, a date and so on, codes <code>TD-TYP-001</code>, <code>TD-TYP-003</code> and <code>TD-TYP-005</code>), the app runs a second, bounded search to find the first offending row and a few bad values, and rewrites the message:</p>
+<blockquote>
+<p>Column 'Amount' contains 'abc' in row 3, which cannot be read as whole numbers.</p>
+</blockquote>
+<p>Things to know about row numbers:</p>
+<ul>
+<li>Row 1 is the <strong>first data row</strong> of the table going <strong>into the failing node</strong>, after any earlier nodes have filtered or sorted it. It is not the line number in the CSV file or the row number you see in Excel (which would also count the header).</li>
+<li>The search looks at no more than a set number of rows (default <strong>5,000,000</strong>). In a bigger table, the first bad value might be beyond the limit and the message stays general.</li>
+<li>Both the search and its limit are in <strong>Edit &gt; Settings &gt; General &gt; Error messages</strong> (see <a href="../preferences/">Preferences</a>).</li>
+</ul>
+<p><strong>Did you mean.</strong> If a column, a sheet or a function name is not found, the app compares the name with the real ones and suggests the closest, ignoring case, spaces, hyphens and underscores:</p>
+<blockquote>
+<p>[TD-SCH-001] Duplicates: Column 'Order_Id' was not found.
+Fix: Use the column 'Order_ID' instead.</p>
+</blockquote>
+<h2 id="errors-caused-by-an-earlier-node">Errors caused by an earlier node<a class="headerlink" href="#errors-caused-by-an-earlier-node" title="Permanent link">&para;</a></h2>
+<p>Often the node that fails is only where the problem <em>shows</em>. A Select node may complain about a column, when the real cause is a File Input that read the column as text. The app tries to find the real cause:</p>
+<ul>
+<li>The real culprit is shown with its own error, and the nodes after it show "Stopped because 'X' has a problem" or "Skipped because 'X' failed" (codes <code>TD-RUN-003</code>, <code>TD-RUN-008</code>). These are <strong>knock-on</strong> errors: fix the first node and they clear by themselves.</li>
+<li>In the Logs dock a line <strong>Caused by:</strong> names the culprit node.</li>
+</ul>
+<p>When you see several errors, start with the one that is <strong>furthest upstream</strong> (closest to the File Input).</p>
+<h2 id="technical-details-and-copying-details">Technical details and copying details<a class="headerlink" href="#technical-details-and-copying-details" title="Permanent link">&para;</a></h2>
+<p>Messages are written for people, but the engine's own words are kept for support.</p>
+<ul>
+<li>In the <strong>Logs</strong> dock, click the <strong>Show technical details</strong> icon button in the toolbar (hover to see its tooltip). An expanded problem row then also shows the engine's exception text and, for run errors, the stack trace. The toggle is remembered between sessions (preference <code>errors/show_technical</code>, off by default).</li>
+<li>Click <strong>Copy details</strong> to put the selected problems (or all of them, when none is selected) on the clipboard. If technical details are on, they are included. Paste this into an email or ticket.</li>
+</ul>
+<h2 id="privacy-hiding-data-values-in-messages">Privacy: hiding data values in messages<a class="headerlink" href="#privacy-hiding-data-values-in-messages" title="Permanent link">&para;</a></h2>
+<p>By default a message can include a few of the offending values ("contains 'abc'"). That is useful, but values from a ledger can be sensitive. Tick <strong>Edit &gt; Settings &gt; General &gt; Error messages &gt; "Hide data values in error messages"</strong> (preference <code>errors/redact_values</code>, off by default) and:</p>
+<ul>
+<li>messages keep the code, the column and the row number but leave the values out (the row line says "values hidden by privacy setting"),</li>
+<li>the engine text and stack trace have the offending values scrubbed,</li>
+<li>the error stored in the <strong>run record</strong> is redacted the same way.</li>
+</ul>
+<p>The setting is read when an error is created, so it affects errors raised after you switch it on; recompute the node or Run again to refresh one that is already on screen. It removes values from <em>messages</em>; it does not change what is in your data or your output files. See <a href="../security-and-privacy/">Security and privacy</a>.</p>
+<h2 id="a-fixing-routine-that-works">A fixing routine that works<a class="headerlink" href="#a-fixing-routine-that-works" title="Permanent link">&para;</a></h2>
+<div class="admonition success">
+<p class="admonition-title">Follow these steps in order</p>
+<ol>
+<li>Open <strong>Logs</strong> and pick the <strong>Errors</strong> chip. Start with the topmost, most upstream node.</li>
+<li>Read the <strong>Fix:</strong> line and apply it.</li>
+<li>Click away from the node (to let it recompute) and check that the red mark is gone.</li>
+<li>If the same column keeps failing, look at the data type: text columns that hold numbers are the usual cause. See <a href="../troubleshooting-and-faq/#my-numbers-are-treated-as-text">Troubleshooting</a>.</li>
+<li>Still stuck? <strong>Show technical details</strong>, <strong>Copy details</strong>, and send the text with the workflow file to support.</li>
+</ol>
+</div>
+<h2 id="error-code-reference">Error code reference<a class="headerlink" href="#error-code-reference" title="Permanent link">&para;</a></h2>
+<p>Codes are stable: a code is never reused for something else. Placeholders in braces, such as <code>{column}</code>, are filled in with the real name when the message is shown. A few codes are marked <em>flagged reserved in the catalogue</em>; they are defined but the catalogue marks them as not yet raised in that form.</p>
+<p>The table is generated from the code. To regenerate it after the catalogue changes, run from the repository root:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>.venv\Scripts\python.exe scripts/gen_error_reference.py
+</span></code></pre></div>
+<p>Add <code>--check</code> to see whether the page is out of date without changing it.</p>
+<!-- BEGIN GENERATED ERROR TABLE (scripts/gen_error_reference.py) -->
+
+<p><em>117 codes. Generated from <code>core/errors/catalogue.py</code> and <code>core/shaping/common.py</code>; do not edit by hand.</em></p>
+<h4 id="reading-input-files-td-in">Reading input files (TD-IN)<a class="headerlink" href="#reading-input-files-td-in" title="Permanent link">&para;</a></h4>
+<p>File Input, folders, databases.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-IN-001</code></td>
+<td>The file '{path_name}' was not found.</td>
+<td>1. Check that the file exists and that the drive or network share is reachable.<br>2. Choose the file again with Browse in the File Input node.</td>
+</tr>
+<tr>
+<td><code>TD-IN-002</code></td>
+<td>'{path_name}' cannot be read: it is open in another program or access is denied.</td>
+<td>1. Close the file in Excel or any other program, then run again.<br>2. Ask for read permission on the folder.</td>
+</tr>
+<tr>
+<td><code>TD-IN-003</code></td>
+<td>Sheet '{sheet}' does not exist in '{path_name}'.</td>
+<td>1. Pick one of the available sheets in the node settings.<br>2. Use the sheet '{suggestion}' instead.</td>
+</tr>
+<tr>
+<td><code>TD-IN-004</code></td>
+<td>'{path_name}' is not UTF-8 text.</td>
+<td>Open the file in Excel or Notepad and save it again as 'CSV UTF-8'.</td>
+</tr>
+<tr>
+<td><code>TD-IN-005</code></td>
+<td>'{path_name}' is empty.</td>
+<td>Check that the export that produced the file finished, then reload it.</td>
+</tr>
+<tr>
+<td><code>TD-IN-006</code></td>
+<td>'{path_name}' is not a readable Excel workbook.</td>
+<td>1. Open it in Excel and save it again as .xlsx.<br>2. If it is really a text file, rename it to .csv and choose File type CSV.</td>
+</tr>
+<tr>
+<td><code>TD-IN-007</code></td>
+<td>Some rows have more fields than the header.</td>
+<td>1. Check the delimiter in the node settings.<br>2. Make sure values containing the delimiter are wrapped in quotes.</td>
+</tr>
+<tr>
+<td><code>TD-IN-010</code></td>
+<td>I could not read the data in this file</td>
+<td>Check the file type and delimiter; the details name the column.</td>
+</tr>
+<tr>
+<td><code>TD-IN-011</code></td>
+<td>The input file could not be opened</td>
+<td>Check the path and your access rights.</td>
+</tr>
+<tr>
+<td><code>TD-IN-012</code></td>
+<td>The folder matches too many files</td>
+<td>Narrow the include pattern or raise "Max files".</td>
+</tr>
+<tr>
+<td><code>TD-IN-013</code></td>
+<td>The database could not be read as requested</td>
+<td>Check the table name and use a single SELECT statement; databases are read-only.</td>
+</tr>
+<tr>
+<td><code>TD-IN-014</code></td>
+<td>The File Input settings need attention</td>
+<td>Open File Input and fix the highlighted setting.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="columns-and-schemas-td-sch">Columns and schemas (TD-SCH)<a class="headerlink" href="#columns-and-schemas-td-sch" title="Permanent link">&para;</a></h4>
+<p>A column is missing, renamed or differs between files.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-SCH-001</code></td>
+<td>Column '{column}' was not found.</td>
+<td>1. Use the column '{suggestion}' instead.<br>2. Select the column again in this node; it may have been renamed, dropped or typed differently upstream.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-002</code></td>
+<td>The column name '{column}' appears more than once.</td>
+<td>Rename one of the columns with a Select node before this step.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-003</code></td>
+<td>The columns in '{path_name}' changed since the workflow was saved. <em>(warning, flagged reserved in the catalogue)</em></td>
+<td>Review the nodes that use the changed columns.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-004</code></td>
+<td>The two tables have different columns or types.</td>
+<td>Make both inputs have the same columns and types (use Select nodes), or use a mode that fills missing columns.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-005</code></td>
+<td>Columns have different numbers of rows.</td>
+<td>Check the upstream step that builds these columns from separate lists.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-010</code></td>
+<td>An added column name already exists in the data</td>
+<td>Rename the filename/sheet column in File Input.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-011</code></td>
+<td>Files in the folder have different columns</td>
+<td>Use "Union by name" or fix the odd file named in the details.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="data-types-and-conversion-td-typ">Data types and conversion (TD-TYP)<a class="headerlink" href="#data-types-and-conversion-td-typ" title="Permanent link">&para;</a></h4>
+<p>A value could not be read as a number, date or other type.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-TYP-001</code></td>
+<td>Column '{column}' has values that cannot be read as {target_human}.</td>
+<td>1. Clean or correct the value{row_hint} in the source data.<br>2. Add a Select node before this one and set '{column}' to {target_one}; values that cannot be converted become empty instead of stopping the run.<br>3. In the formula, use TRY_CAST([{column}] AS {target_sql}) so bad values become empty.</td>
+</tr>
+<tr>
+<td><code>TD-TYP-002</code></td>
+<td>Join keys have different types: '{left_key}' is {left_type} but '{right_key}' is {right_type}.</td>
+<td>1. Add a Select node on one side and set the key column to the same type (usually Text).<br>2. Check that both columns really contain the same kind of value.</td>
+</tr>
+<tr>
+<td><code>TD-TYP-003</code></td>
+<td>Column '{column}' is text, so it cannot be {op_past}.</td>
+<td>1. Clean or correct the value{row_hint}.<br>2. Add a Select node before this one and set '{column}' to Decimal.</td>
+</tr>
+<tr>
+<td><code>TD-TYP-004</code></td>
+<td>Text and numbers cannot be compared.</td>
+<td>Set the column to a number type with a Select node, or put the value in quotes if the column is text.</td>
+</tr>
+<tr>
+<td><code>TD-TYP-005</code></td>
+<td>A value in '{column}' does not fit in the target type ({target}).</td>
+<td>Use a wider type (for example Int64 or Decimal) in a Select node.</td>
+</tr>
+<tr>
+<td><code>TD-TYP-006</code></td>
+<td>This step needs a {expected} column but '{column}' is {got}.</td>
+<td>Check which column this node uses and its type in the Select node.</td>
+</tr>
+<tr>
+<td><code>TD-TYP-007</code></td>
+<td>The filter condition must give true or false, not {got}.</td>
+<td>Write a comparison such as [Amount] &gt; 0.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="joins-td-joi">Joins (TD-JOI)<a class="headerlink" href="#joins-td-joi" title="Permanent link">&para;</a></h4>
+<p>Join and union problems.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-JOI-001</code></td>
+<td>No columns are mapped. <em>(flagged reserved in the catalogue)</em></td>
+<td>Map at least one column in the node settings.</td>
+</tr>
+<tr>
+<td><code>TD-JOI-002</code></td>
+<td>Both inputs must be connected. <em>(flagged reserved in the catalogue)</em></td>
+<td>Connect a node to each input.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="node-settings-and-data-shaping-td-shape">Node settings and data shaping (TD-SHAPE)<a class="headerlink" href="#node-settings-and-data-shaping-td-shape" title="Permanent link">&para;</a></h4>
+<p>Select, Formula, Filter, SQL Query, Pivot, Reconcile, Fuzzy Match and the other shaping nodes.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-SHAPE-001</code></td>
+<td>A required setting is missing</td>
+<td>Fill in the missing setting.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-002</code></td>
+<td>An output column name is empty, duplicated or already exists</td>
+<td>Choose a unique name.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-003</code></td>
+<td>A selected column is not in the input any more</td>
+<td>Select the column again.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-004</code></td>
+<td>A setting value is out of range or unknown</td>
+<td>Pick a value from the list or inside the range.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-005</code></td>
+<td>A required input has no data</td>
+<td>Connect and fix the upstream node.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-040</code></td>
+<td>The pattern is not a valid regular expression</td>
+<td>Escape special characters with a backslash.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-041</code></td>
+<td>The pattern is too long</td>
+<td>Shorten the pattern.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-042</code></td>
+<td>Find text is empty</td>
+<td>Type the text to find.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-043</code></td>
+<td>Too many rules</td>
+<td>Remove rules or split them over two nodes.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-044</code></td>
+<td>The column must be text</td>
+<td>Convert the column to text with a Select node.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-050</code></td>
+<td>The column is not a date and not text</td>
+<td>Choose a date or text column.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-052</code></td>
+<td>A holiday is not a YYYY-MM-DD date</td>
+<td>Type holidays as year-month-day.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-053</code></td>
+<td>Working days must name at least one weekday</td>
+<td>Tick at least one weekday.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-060</code></td>
+<td>Index, header and value columns must be different</td>
+<td>Pick three different columns.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-061</code></td>
+<td>Too many new columns</td>
+<td>Filter the header column to fewer distinct values.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-070</code></td>
+<td>Amount or date column is set on one side only</td>
+<td>Pick it on both sides, or on neither.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-071</code></td>
+<td>Add a key column pair or a date column</td>
+<td>Add a key pair or a date window.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-072</code></td>
+<td>Too many possible matches</td>
+<td>Add key column pairs or narrow the date window.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-081</code></td>
+<td>Too many possible fuzzy pairs</td>
+<td>Use a longer prefix or add a 'Must also match' column.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-082</code></td>
+<td>Too many rows to compare without blocking</td>
+<td>Turn on prefix or first-word blocking.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-091</code></td>
+<td>The column must be a number</td>
+<td>Pick a numeric column, or a text column that holds numbers.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-101</code></td>
+<td>The split pattern can match nothing</td>
+<td>Use a pattern that needs at least one character, such as \s+ not \s*.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-110</code></td>
+<td>Only one statement is allowed</td>
+<td>Remove everything after the first statement.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-111</code></td>
+<td>Only SELECT queries are allowed</td>
+<td>Write a SELECT query; changing data or settings is not allowed.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-112</code></td>
+<td>The SQL uses a function or file access that is not allowed</td>
+<td>Remove file-reading, system or random functions.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-113</code></td>
+<td>The SQL could not be parsed or run</td>
+<td>Check the SQL syntax.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-114</code></td>
+<td>The SQL is too long</td>
+<td>Shorten the SQL.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-115</code></td>
+<td>The query took too long</td>
+<td>Simplify the query or filter the data first.</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-120</code></td>
+<td>The formula must use the column placeholder</td>
+<td>Write {col} where the column goes, for example UPPER({col}).</td>
+</tr>
+<tr>
+<td><code>TD-SHAPE-130</code></td>
+<td>The generated rows do not match the input rows</td>
+<td>Set Start, Increment and End so the number of generated values equals the number of input rows, or remove the input.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="writing-output-files-td-out">Writing output files (TD-OUT)<a class="headerlink" href="#writing-output-files-td-out" title="Permanent link">&para;</a></h4>
+<p>File Output and workpaper export.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-OUT-001</code></td>
+<td>The output folder does not exist.</td>
+<td>Create the folder, or choose an existing one in the File Output node.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-002</code></td>
+<td>'{path_name}' cannot be written: it is open in another program or read-only.</td>
+<td>1. Close the file in Excel or any other program, then run again.<br>2. Choose a different file name or clear the read-only flag.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-003</code></td>
+<td>Excel export is not available in this installation.</td>
+<td>1. Export as CSV or Parquet instead.<br>2. Reinstall the application.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-004</code></td>
+<td>'{path_name}' is not a valid output file name.</td>
+<td>1. Remove characters such as &lt; &gt; : " | ? * and keep the path short.<br>2. Choose a file, not a folder.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-005</code></td>
+<td>The disk is full.</td>
+<td>Free some space or write to another drive.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-006</code></td>
+<td>Nothing is connected to this output.</td>
+<td>Connect the node whose result you want to save to the File Output node.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-010</code></td>
+<td>A workpaper with this name already exists</td>
+<td>Choose another file name, or set "If the file exists" to New version.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-011</code></td>
+<td>The table has too many columns for Excel</td>
+<td>Excel allows at most 16,384 columns; select fewer columns before writing.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-012</code></td>
+<td>The workpaper settings are not valid</td>
+<td>Check the output file (it must end in .xlsx) and the Prepared on date (YYYY-MM-DD).</td>
+</tr>
+<tr>
+<td><code>TD-OUT-013</code></td>
+<td>The table is too large for an Excel sheet</td>
+<td>An Excel sheet holds at most 1,048,575 data rows; save it as CSV or Parquet instead.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-014</code></td>
+<td>Excel could not create the workbook</td>
+<td>A sheet name or cell content is not valid for Excel; rename the sheet or shorten the text.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-015</code></td>
+<td>Excel output must use the .xlsx extension</td>
+<td>Change the output file name to end in .xlsx (the writer cannot create the old .xls format).</td>
+</tr>
+</tbody>
+</table>
+<h4 id="running-a-workflow-td-run">Running a workflow (TD-RUN)<a class="headerlink" href="#running-a-workflow-td-run" title="Permanent link">&para;</a></h4>
+<p>Problems found while a run executes.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-RUN-001</code></td>
+<td>This step took longer than {seconds} seconds and was stopped.</td>
+<td>1. Filter or sample the data earlier in the workflow.<br>2. Write large results to Parquet instead of CSV or Excel.</td>
+</tr>
+<tr>
+<td><code>TD-RUN-002</code></td>
+<td>This step ran out of memory.</td>
+<td>1. Filter rows or drop unused columns earlier in the workflow.<br>2. Close other programs and run again.</td>
+</tr>
+<tr>
+<td><code>TD-RUN-003</code></td>
+<td>Stopped because '{culprit_label}' has a problem.</td>
+<td>Fix '{culprit_label}' first, then run again.</td>
+</tr>
+<tr>
+<td><code>TD-RUN-004</code></td>
+<td>The run was cancelled before this step. <em>(warning, flagged reserved in the catalogue)</em></td>
+<td>Run the workflow again.</td>
+</tr>
+<tr>
+<td><code>TD-RUN-005</code></td>
+<td>Input {input_number} is not connected. <em>(warning)</em></td>
+<td>Connect a node to this input.</td>
+</tr>
+<tr>
+<td><code>TD-RUN-006</code></td>
+<td>This step needs the result of an earlier step that is not available.</td>
+<td>1. Fix the earlier step ('{culprit_label}') and run again.<br>2. Open the earlier step so it is calculated, then run again.</td>
+</tr>
+<tr>
+<td><code>TD-RUN-008</code></td>
+<td>Skipped because '{culprit_label}' failed. <em>(warning)</em></td>
+<td>Fix '{culprit_label}' and run again.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="expressions-and-formulas-td-exp">Expressions and formulas (TD-EXP)<a class="headerlink" href="#expressions-and-formulas-td-exp" title="Permanent link">&para;</a></h4>
+<p>Problems in formula or expression text.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-EXP-001</code></td>
+<td>The expression has a syntax error.</td>
+<td>Check brackets, quotes and operators near the marked spot.</td>
+</tr>
+<tr>
+<td><code>TD-EXP-002</code></td>
+<td>Unknown function '{function}'.</td>
+<td>1. Use '{suggestion}' instead.<br>2. Check the function name in the formula help list.</td>
+</tr>
+<tr>
+<td><code>TD-EXP-003</code></td>
+<td>The expression cannot be evaluated.</td>
+<td>Check the column names and types used in the expression.</td>
+</tr>
+<tr>
+<td><code>TD-EXP-004</code></td>
+<td>The pattern (regular expression) is not valid.</td>
+<td>Escape special characters such as ( ) [ ] with a backslash.</td>
+</tr>
+<tr>
+<td><code>TD-EXP-005</code></td>
+<td>A function received a value it cannot use.</td>
+<td>Check the arguments of the function, or use TRY_CAST for conversions.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="system-and-resources-td-sys">System and resources (TD-SYS)<a class="headerlink" href="#system-and-resources-td-sys" title="Permanent link">&para;</a></h4>
+<p>Memory, time and environment.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-SYS-001</code></td>
+<td>{message}</td>
+<td>Check this node's settings.</td>
+</tr>
+<tr>
+<td><code>TD-SYS-100</code></td>
+<td>The data engine could not run this step.</td>
+<td>Check the node settings and the upstream data; copy the details if you need help.</td>
+</tr>
+<tr>
+<td><code>TD-SYS-998</code></td>
+<td>The data engine stopped unexpectedly.</td>
+<td>Run again; if it repeats, copy the details and report it.</td>
+</tr>
+<tr>
+<td><code>TD-SYS-999</code></td>
+<td>Something unexpected went wrong.</td>
+<td>Copy the details and report it if it repeats.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="audit-nodes-td-audit">Audit nodes (TD-AUDIT)<a class="headerlink" href="#audit-nodes-td-audit" title="Permanent link">&para;</a></h4>
+<p>Benford, Duplicates, Gaps, Sample and the risk filters.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-AUDIT-001</code></td>
+<td>Choose the {label} column.</td>
+<td>Pick the column in the node settings.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-002</code></td>
+<td>Column '{col}' is not in the input data.</td>
+<td>Pick the column again; it may have been renamed upstream.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-003</code></td>
+<td>Column '{col}' holds nested values and cannot be used for this test.</td>
+<td>Choose a plain text, number or date column.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-004</code></td>
+<td>{label} must be {rule}.</td>
+<td>Enter a value inside the allowed range.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-005</code></td>
+<td>The input already has a column named '{name}', which this node adds.</td>
+<td>Rename the existing column first.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-006</code></td>
+<td>'{text}' is not a date. Use YYYY-MM-DD.</td>
+<td>Type the date as year-month-day.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-007</code></td>
+<td>Date format '{fmt}' is not supported.</td>
+<td>Choose one of the formats in the list.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-008</code></td>
+<td>Switch on at least one risk test.</td>
+<td>Tick at least one test in the node settings.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-009</code></td>
+<td>{label}: {detail}.</td>
+<td>Fix the list of numbers (count and order).</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-010</code></td>
+<td>No row has a readable amount in '{col}', so a value-based sample cannot be drawn.</td>
+<td>Choose a numeric amount column or clean the values.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-101</code></td>
+<td>Only {n} rows were tested; at least {min} are needed for a reliable result. <em>(warning)</em></td>
+<td>Treat the result as indicative only.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-102</code></td>
+<td>{n} values could not be read as {kind} and were skipped. <em>(warning)</em></td>
+<td>Clean those values or convert the column with a Select node.</td>
+</tr>
+<tr>
+<td><code>TD-AUDIT-103</code></td>
+<td>Requested {k} but only {n} rows exist; the whole population was selected. <em>(warning)</em></td>
+<td>Lower the sample size.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="command-line-td-cli">Command line (TD-CLI)<a class="headerlink" href="#command-line-td-cli" title="Permanent link">&para;</a></h4>
+<p>Raised by the command-line runner; see <a href="../cli/">cli.md</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it says</th>
+<th>How to fix it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-CLI-001</code></td>
+<td>The workflow file could not be read.</td>
+<td>Check the path and that it is a .tds file.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-002</code></td>
+<td>The workflow was saved by a newer Trigger Designer.</td>
+<td>Update this program.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-003</code></td>
+<td>The workflow uses an unknown node type.</td>
+<td>Open and re-save it in a compatible version.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-004</code></td>
+<td>The workflow has a cycle.</td>
+<td>Remove the connection that loops back.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-005</code></td>
+<td>Unknown or missing parameter.</td>
+<td>Use one of the listed parameter names.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-006</code></td>
+<td>A parameter value is not valid.</td>
+<td>Use the example format shown.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-007</code></td>
+<td>This parameter target is not supported.</td>
+<td>Choose a supported setting.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-008</code></td>
+<td>The workflow has not been approved to run unattended.</td>
+<td>Approve it first (<code>approve</code>).</td>
+</tr>
+<tr>
+<td><code>TD-CLI-009</code></td>
+<td>The approved workflow changed since approval.</td>
+<td>Approve it again.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-010</code></td>
+<td>The generated code was refused by the safety policy.</td>
+<td>Remove the flagged node or setting.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-011</code></td>
+<td>A custom-code node was refused.</td>
+<td>Remove the custom-code node.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-012</code></td>
+<td>Another run of this workflow is in progress.</td>
+<td>Wait and try again.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-013</code></td>
+<td>The outputs could not be saved.</td>
+<td>Close the output files in other programs and run again.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-014</code></td>
+<td>The output folder is missing or not writable.</td>
+<td>Create it or use <code>--create-output-dirs</code>.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-015</code></td>
+<td>There is not enough free disk space.</td>
+<td>Free space or lower <code>--min-free-mb</code>.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-016</code></td>
+<td>The scheduler could not be configured.</td>
+<td>Check Windows Task Scheduler permissions.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-017</code></td>
+<td>The run log failed verification.</td>
+<td>Treat the log as modified.</td>
+</tr>
+<tr>
+<td><code>TD-CLI-018</code></td>
+<td>This workflow writes no files. <em>(warning)</em></td>
+<td>Add a File Output node.</td>
+</tr>
+</tbody>
+</table>
+<!-- END GENERATED ERROR TABLE -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../running-workflows/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Running workflows">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Running workflows
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../sql-expressions/" class="md-footer__link md-footer__link--next" aria-label="Next: SQL expressions">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                SQL expressions
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>

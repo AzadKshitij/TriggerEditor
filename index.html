@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trigger Designer: data preparation you can defend</title>
+<meta name="description" content="Trigger Designer is a desktop, node-based workbench for auditors and analysts: prepare data, check it, and hand over a workflow that explains its own numbers.">
+<link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/">
+<meta name="theme-color" content="#F7F3E9">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Trigger Designer: data preparation you can defend">
+<meta property="og:description" content="A desktop, node-based workbench for auditors and analysts. Wire nodes, inspect every frame, hand over a workflow that explains itself.">
+<meta property="og:url" content="https://azadkshitij.github.io/TriggerEditor/">
+<meta property="og:image" content="https://azadkshitij.github.io/TriggerEditor/assets/screenshot_main.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<script>
+  (function () {
+    var root = document.documentElement;
+    var stored;
+    try { stored = localStorage.getItem("td-theme"); } catch (e) { stored = null; }
+    if (stored !== "light" && stored !== "dark") {
+      stored = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    }
+    root.setAttribute("data-theme", stored);
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="shell header-inner">
+    <a class="brand" href="./" aria-label="Trigger Designer home">
+      <img class="brand-mark" src="assets/logo.png" alt="" width="32" height="32">
+      <span class="brand-name">Trigger Designer</span>
+    </a>
+
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#purpose">Overview</a>
+      <a href="#nodes">Nodes</a>
+      <a href="docs/guide/">Guide</a>
+      <a href="docs/release-notes/v0.1.0-alpha.1/">Releases</a>
+      <a href="https://github.com/AzadKshitij/TriggerEditor" rel="noopener">GitHub</a>
+    </nav>
+
+    <div class="header-tools">
+      <button class="theme-toggle" type="button" id="theme-toggle" aria-pressed="false" aria-label="Switch to dark theme" title="Switch to dark theme">
+        <svg class="icon icon-sun" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round">
+          <circle cx="12" cy="12" r="4.2"></circle>
+          <path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"></path>
+        </svg>
+        <svg class="icon icon-moon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20.4 14.6A8.6 8.6 0 0 1 9.4 3.6a8.6 8.6 0 1 0 11 11Z"></path>
+        </svg>
+      </button>
+      <a class="btn btn-small btn-solid" href="docs/"><span class="label-long">Documentation</span><span class="label-short">Docs</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="shell hero-grid">
+      <div class="hero-copy">
+        <p class="kicker"><span class="kicker-dot" aria-hidden="true"></span><span class="kicker-version">Alpha · v0.1.0-alpha.1</span><span class="rule-sep">/</span><span class="kicker-platform">Windows, macOS, Linux</span></p>
+        <h1>Data preparation<br>you can <em>defend</em>.</h1>
+        <p class="lede">Trigger Designer is a desktop workbench for auditors and analysts. Wire nodes into a pipeline, inspect every intermediate frame, and hand over a workflow that explains its own numbers.</p>
+        <div class="cta-row">
+          <a class="btn btn-solid" href="docs/">Read the documentation <span class="arrow" aria-hidden="true">→</span></a>
+          <a class="btn btn-outline" href="https://github.com/AzadKshitij/TriggerEditor/releases">Download the alpha</a>
+        </div>
+        <p class="hero-meta">MIT licensed<span class="rule-sep">·</span>39 nodes<span class="rule-sep">·</span>Polars engine<span class="rule-sep">·</span>No account</p>
+      </div>
+
+      <aside class="dossier" aria-label="At a glance">
+        <p class="dossier-title">The working file</p>
+        <dl class="dossier-list">
+          <div class="dossier-row">
+            <dt>Engine</dt>
+            <dd>Polars frames, DuckDB formulas</dd>
+          </div>
+          <div class="dossier-row">
+            <dt>Canvas</dt>
+            <dd>Node graph with a full undo timeline</dd>
+          </div>
+          <div class="dossier-row">
+            <dt>Reads</dt>
+            <dd>CSV, Excel, Parquet, JSON</dd>
+          </div>
+          <div class="dossier-row">
+            <dt>Writes</dt>
+            <dd>Portable <code>.tds</code> workflows, Excel workpapers</dd>
+          </div>
+        </dl>
+        <p class="dossier-note">Runs on the machine in front of you. Nothing is uploaded, and there is no account to create.</p>
+      </aside>
+    </div>
+
+    <div class="shell">
+      <figure class="plate">
+        <div class="plate-head">
+          <span class="plate-label">Exhibit A</span>
+          <span class="plate-note">Canvas, Config Dock, preview and log</span>
+        </div>
+        <div class="plate-frame">
+          <img src="assets/screenshot_main.webp" width="1924" height="1055" alt="Trigger Designer main window: a loaded workflow on the node canvas, the Config Dock editing a Cleansing node, the data preview below, and the logging dock on the right.">
+        </div>
+        <figcaption>A loaded workflow. The Config Dock edits a Cleansing node while the preview shows the frame after each step, so a wrong type or a dropped row is visible before the file leaves the app.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="purpose">
+    <div class="shell rail">
+      <div class="rail-num" aria-hidden="true">01</div>
+      <div class="rail-body">
+        <p class="eyebrow">Purpose</p>
+        <h2>Every step is a claim you can check.</h2>
+        <p class="section-lede">An audit file is only as good as the trail behind it. Trigger Designer keeps the trail: the graph is the documentation, the preview is the evidence, and the run history records what changed between the two.</p>
+
+        <div class="columns">
+          <article class="claim">
+            <h3>Prepare</h3>
+            <p>Sixteen preparation nodes fix types, trim text, filter rows and calculate columns. The Formula node runs DuckDB expressions against the live frame with syntax highlighting and error detection.</p>
+            <p class="claim-list">Cleansing · Filter · Formula · Aggregate · Select · Sort</p>
+          </article>
+          <article class="claim">
+            <h3>Test</h3>
+            <p>Five audit nodes look for duplicates, sequence gaps, Benford outliers and risky rows. Findings arrive as frames you can filter, not as a verdict you have to trust.</p>
+            <p class="claim-list">Duplicates · Gaps · Benford · Sample · Risk Filters</p>
+          </article>
+          <article class="claim">
+            <h3>Deliver</h3>
+            <p>Write CSV, Parquet or Excel. Workpaper Output adds the pipeline, the parameters and the result as separate sheets, so the workbook carries its own working papers.</p>
+            <p class="claim-list">File Output · Workpaper Output</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tinted" id="nodes">
+    <div class="shell rail">
+      <div class="rail-num" aria-hidden="true">02</div>
+      <div class="rail-body">
+        <p class="eyebrow">Node index</p>
+        <h2>Thirty-nine nodes, six families.</h2>
+        <p class="section-lede">The palette covers the work between a raw file and a reviewable answer. Each node page lists its settings, its output shape and the edge cases worth knowing.</p>
+
+        <div class="table-wrap">
+          <table class="index-table">
+            <caption class="visually-hidden">Node families in Trigger Designer</caption>
+            <colgroup>
+              <col class="col-family">
+              <col class="col-count">
+              <col class="col-covers">
+              <col class="col-action">
+            </colgroup>
+            <thead>
+              <tr>
+                <th scope="col">Family</th>
+                <th scope="col" class="num">Nodes</th>
+                <th scope="col">Covers</th>
+                <th scope="col" class="col-link"><span class="visually-hidden">Reference</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><a href="docs/nodes/input-output/">Input &amp; Output</a></th>
+                <td class="num">3</td>
+                <td>Files in; files and workpapers out</td>
+                <td class="col-link"><a class="row-link" href="docs/nodes/input-output/" aria-label="Input and Output node reference"><span aria-hidden="true">→</span></a></td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="docs/nodes/preparation/">Preparation</a></th>
+                <td class="num">16</td>
+                <td>Clean, filter, calculate, reshape</td>
+                <td class="col-link"><a class="row-link" href="docs/nodes/preparation/" aria-label="Preparation node reference"><span aria-hidden="true">→</span></a></td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="docs/nodes/join/">Join</a></th>
+                <td class="num">5</td>
+                <td>Join, append, union, reconcile, fuzzy match</td>
+                <td class="col-link"><a class="row-link" href="docs/nodes/join/" aria-label="Join node reference"><span aria-hidden="true">→</span></a></td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="docs/nodes/transform/">Transform</a></th>
+                <td class="num">7</td>
+                <td>Count, running totals, pivot, window, SQL</td>
+                <td class="col-link"><a class="row-link" href="docs/nodes/transform/" aria-label="Transform node reference"><span aria-hidden="true">→</span></a></td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="docs/nodes/report/">Report</a></th>
+                <td class="num">3</td>
+                <td>Graphs, data profiles, annotations</td>
+                <td class="col-link"><a class="row-link" href="docs/nodes/report/" aria-label="Report node reference"><span aria-hidden="true">→</span></a></td>
+              </tr>
+              <tr>
+                <th scope="row"><a href="docs/nodes/audit/">Audit</a></th>
+                <td class="num">5</td>
+                <td>Duplicates, gaps, Benford, sampling, risk</td>
+                <td class="col-link"><a class="row-link" href="docs/nodes/audit/" aria-label="Audit node reference"><span aria-hidden="true">→</span></a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="table-foot"><a href="docs/nodes/">Browse the full node reference <span aria-hidden="true">→</span></a></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="run">
+    <div class="shell rail">
+      <div class="rail-num" aria-hidden="true">03</div>
+      <div class="rail-body">
+        <p class="eyebrow">A run, end to end</p>
+        <h2>Four moves from file to finding.</h2>
+
+        <ol class="steps">
+          <li>
+            <span class="step-num">01</span>
+            <h3>Wire</h3>
+            <p>Drop a node, connect the sockets, name the branch. The graph saves as a portable <code>.tds</code> file you can keep beside the workpaper.</p>
+          </li>
+          <li>
+            <span class="step-num">02</span>
+            <h3>Configure</h3>
+            <p>The Config Dock follows the selected node. Controls are live, and every edit lands on the undo timeline as a named step.</p>
+          </li>
+          <li>
+            <span class="step-num">03</span>
+            <h3>Inspect</h3>
+            <p>Read the frame in the preview, the messages in the log, and anything unresolved in the problems panel.</p>
+          </li>
+          <li>
+            <span class="step-num">04</span>
+            <h3>Export</h3>
+            <p>Write the result, then run the same workflow from the command line when the file has to be rebuilt next month.</p>
+          </li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="alpha">
+    <div class="shell rail">
+      <div class="rail-num" aria-hidden="true">04</div>
+      <div class="rail-body">
+        <aside class="alpha-note">
+          <p class="alpha-label">Status</p>
+          <h2>Alpha means alpha.</h2>
+          <p>v0.1.0-alpha.1 is a working build, not a finished product. Workflow files may change between releases, the node set is still moving, and the interface will keep being revised. The release notes say what is in this build and what is known to be missing.</p>
+          <p class="alpha-link"><a href="docs/release-notes/v0.1.0-alpha.1/">Read the v0.1.0-alpha.1 release notes <span aria-hidden="true">→</span></a></p>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tinted" id="documentation">
+    <div class="shell">
+      <p class="eyebrow">Documentation</p>
+      <h2 class="docs-heading">Start where you are.</h2>
+      <div class="docs-grid">
+        <a class="doc-card" href="docs/install/">
+          <span class="doc-index">A</span>
+          <h3>Install</h3>
+          <p>Get the app running on Windows, macOS or Linux, then build a first workflow from a CSV.</p>
+          <span class="doc-go">Getting started <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="doc-card" href="docs/nodes/">
+          <span class="doc-index">B</span>
+          <h3>Node reference</h3>
+          <p>All 39 nodes, with settings, output shape and the edge cases that catch people out.</p>
+          <span class="doc-go">Open the index <span aria-hidden="true">→</span></span>
+        </a>
+        <a class="doc-card" href="docs/guide/cli/">
+          <span class="doc-index">C</span>
+          <h3>Command line</h3>
+          <p>Run saved workflows in batch, script a rebuild, and check the exit codes.</p>
+          <span class="doc-go">Read the CLI guide <span aria-hidden="true">→</span></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="./" aria-label="Trigger Designer home">
+        <img class="brand-mark" src="assets/logo.png" alt="" width="32" height="32">
+        <span class="brand-name">Trigger Designer</span>
+      </a>
+      <p>A desktop workbench for defensible data preparation.</p>
+    </div>
+    <nav class="footer-col" aria-label="Documentation">
+      <p class="footer-title">Documentation</p>
+      <a href="docs/install/">Install</a>
+      <a href="docs/guide/">Getting started</a>
+      <a href="docs/nodes/">Node reference</a>
+      <a href="docs/guide/troubleshooting-and-faq/">Troubleshooting</a>
+    </nav>
+    <nav class="footer-col" aria-label="Project">
+      <p class="footer-title">Project</p>
+      <a href="https://github.com/AzadKshitij/TriggerEditor" rel="noopener">GitHub</a>
+      <a href="https://github.com/AzadKshitij/TriggerEditor/releases">Releases</a>
+      <a href="docs/release-notes/v0.1.0-alpha.1/">Release notes</a>
+      <a href="docs/blog/">Blog</a>
+    </nav>
+  </div>
+  <div class="shell footer-base">
+    <p>© <span id="year">2026</span> Azad Kshitij · MIT licensed</p>
+    <p class="footer-built">Built with <a href="https://zensical.org" rel="noopener">Zensical</a></p>
+  </div>
+</footer>
+
+<script src="assets/main.js" defer></script>
+</body>
+</html>

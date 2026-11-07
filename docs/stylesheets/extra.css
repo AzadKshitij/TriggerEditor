@@ -1,0 +1,349 @@
+/* ==========================================================================
+   Trigger Designer — documentation theme
+   Warm paper, navy ink, one magenta mark. Matches the project homepage.
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap");
+
+/* ------------------------------------------------------------------ palette */
+
+[data-md-color-scheme="default"] {
+  --td-ink: #06004c;
+  --td-ink-2: #3d3769;
+  --td-ink-3: #5c5580;
+  --td-paper: #f7f3e9;
+  --td-rule: #ddd5c2;
+  --td-accent: #b800b0;
+
+  --md-primary-fg-color: #06004c;
+  --md-primary-fg-color--light: #1b1568;
+  --md-primary-fg-color--dark: #04003a;
+  --md-primary-bg-color: #fbf8f0;
+  --md-primary-bg-color--light: #fbf8f0b3;
+
+  --md-accent-fg-color: #b800b0;
+  --md-accent-fg-color--transparent: #b800b01a;
+  --md-accent-bg-color: #ffffff;
+  --md-accent-bg-color--light: #ffffffb3;
+
+  --md-default-fg-color: #06004c;
+  --md-default-fg-color--light: #3d3769;
+  --md-default-fg-color--lighter: #5c5580;
+  --md-default-fg-color--lightest: #06004c1f;
+  --md-default-bg-color: #f7f3e9;
+  --md-default-bg-color--light: #f7f3e9d9;
+  --md-default-bg-color--lighter: #f7f3e980;
+  --md-default-bg-color--lightest: #f7f3e933;
+
+  --md-code-bg-color: #efe9db;
+  --md-code-fg-color: #06004c;
+  --md-code-hl-color: #b800b0;
+  --md-typeset-color: #06004c;
+  --md-typeset-a-color: #06004c;
+  --md-typeset-mark-color: #ff00f529;
+}
+
+[data-md-color-scheme="slate"] {
+  --td-ink: #f4f1ea;
+  --td-ink-2: #c8c3dd;
+  --td-ink-3: #928cb2;
+  --td-paper: #0a0722;
+  --td-rule: #2a2454;
+  --td-accent: #ff4ef7;
+
+  --md-primary-fg-color: #ff8df9;
+  --md-primary-fg-color--light: #ffb3fb;
+  --md-primary-fg-color--dark: #ff4ef7;
+  --md-primary-bg-color: #0a0722;
+  --md-primary-bg-color--light: #0a0722b3;
+
+  --md-accent-fg-color: #ff4ef7;
+  --md-accent-fg-color--transparent: #ff4ef71f;
+  --md-accent-bg-color: #0a0722;
+  --md-accent-bg-color--light: #0a0722b3;
+
+  --md-default-fg-color: #f4f1ea;
+  --md-default-fg-color--light: #c8c3dd;
+  --md-default-fg-color--lighter: #928cb2;
+  --md-default-fg-color--lightest: #f4f1ea1f;
+  --md-default-bg-color: #0a0722;
+  --md-default-bg-color--light: #0a0722d9;
+  --md-default-bg-color--lighter: #0a072280;
+  --md-default-bg-color--lightest: #0a072233;
+
+  --md-code-bg-color: #120d33;
+  --md-code-fg-color: #f4f1ea;
+  --md-code-hl-color: #ff4ef7;
+  --md-typeset-color: #f4f1ea;
+  --md-typeset-a-color: #ff8df9;
+  --md-typeset-mark-color: #ff4ef73d;
+}
+
+/* ------------------------------------------------------------------ header */
+
+.md-header {
+  border-top: 3px solid var(--td-accent);
+  border-bottom: 1px solid var(--td-rule);
+}
+
+.md-header__title {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.md-tabs {
+  border-bottom: 1px solid var(--td-rule);
+}
+
+.md-tabs__link {
+  font-size: 0.78rem;
+  opacity: 0.82;
+}
+
+.md-tabs__link--active,
+.md-tabs__link:hover {
+  opacity: 1;
+}
+
+/* ------------------------------------------------------------------ type */
+
+.md-typeset h1,
+.md-typeset h2 {
+  font-family: "Newsreader", Georgia, "Times New Roman", serif;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  color: var(--td-ink);
+}
+
+.md-typeset h1 {
+  font-size: 2.35rem;
+  line-height: 1.1;
+  margin-bottom: 0.6em;
+}
+
+.md-typeset h2 {
+  font-size: 1.6rem;
+  line-height: 1.2;
+}
+
+.md-typeset h3 {
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+
+.md-typeset a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.md-typeset a:hover {
+  color: var(--td-accent);
+}
+
+.md-typeset hr {
+  border-bottom: 1px solid var(--td-rule);
+}
+
+.md-typeset blockquote {
+  color: var(--td-ink-2);
+  border-left: 3px solid var(--td-accent);
+}
+
+.md-typeset .admonition,
+.md-typeset details {
+  border-width: 1px;
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+/* ------------------------------------------------------------------ icons */
+
+/* Node icons inside tables and inline text stay small and aligned. */
+.md-typeset table img {
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* Node icons in a card: the source files are 100x100, so scale them onto the
+   title line instead of letting them set the card's height. */
+.md-typeset .grid.cards > ul > li > p:first-child img {
+  height: 1.6em;
+  width: auto;
+  vertical-align: middle;
+}
+
+/* Keep the rule under a card title close to the title. */
+.md-typeset .grid.cards > ul > li > p:first-child {
+  margin-bottom: 0;
+}
+
+/* The icon at the top of a node page. */
+.md-typeset img.node-icon {
+  width: 56px;
+  height: 56px;
+}
+
+/* ------------------------------------------------------------------ images */
+
+/* Full-width screenshots. */
+.md-typeset img.screenshot {
+  width: 100%;
+  height: auto;
+  border-radius: 2px;
+}
+
+/* The app screenshot is dark, so on the night theme it needs an edge. */
+[data-md-color-scheme="slate"] .md-typeset img.screenshot {
+  outline: 1px solid var(--td-rule);
+  outline-offset: -1px;
+}
+
+.md-typeset img {
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ tables */
+
+/* Wide node tables scroll instead of squeezing their columns. */
+.md-typeset table:not([class]) {
+  display: block;
+  overflow-x: auto;
+  border-radius: 0;
+}
+
+.md-typeset table:not([class]) th {
+  background-color: transparent;
+  border-bottom: 1px solid var(--td-rule);
+}
+
+/* ------------------------------------------------------------------ header logo */
+
+.md-header__button.md-logo img {
+  height: 1.75rem;
+  width: auto;
+}
+
+/* ------------------------------------------------------------------ navigation */
+
+/* The left rail is the whole site tree; sections read as small caps labels. */
+.md-nav__title {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--td-ink-3);
+}
+
+.md-nav__link {
+  font-size: 0.74rem;
+}
+
+.md-nav__link--active,
+.md-nav__link--active:not(:hover) {
+  color: var(--td-accent);
+  font-weight: 600;
+}
+
+.md-nav__item--section > .md-nav__link {
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ repository */
+
+/* The header carries the repository name next to the GitHub mark; Zensical's
+   fetched star/fork counters are left out so the row stays one line. */
+.md-header .md-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  height: 100%;
+  padding: 0 0.35rem;
+  font-size: 0.72rem;
+}
+
+.md-header .md-source__facts {
+  display: none;
+}
+
+.md-header .md-source__icon {
+  width: auto;
+  height: auto;
+}
+
+.md-header .md-source__icon svg {
+  height: 1.15rem;
+  width: 1.15rem;
+  margin: 0;
+}
+
+.md-header .md-source__repository {
+  display: inline-block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: inherit;
+}
+
+/* Under 60em the theme drops the repository link altogether. Keep the mark
+   alone there, so the way back to GitHub is still one tap away. */
+@media screen and (max-width: 59.9375em) {
+  .md-header__source {
+    display: block;
+    width: auto;
+    max-width: none;
+  }
+
+  .md-header .md-source__repository {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ scrollbars */
+
+/* The nav rail scrolls; keep the bar quiet and drop the Windows arrows. */
+.md-sidebar__scrollwrap {
+  scrollbar-width: thin;
+  scrollbar-color: var(--td-rule) transparent;
+}
+
+.md-sidebar__scrollwrap::-webkit-scrollbar {
+  width: 6px;
+}
+
+.md-sidebar__scrollwrap::-webkit-scrollbar-thumb {
+  background-color: var(--td-rule);
+  border-radius: 3px;
+}
+
+.md-sidebar__scrollwrap::-webkit-scrollbar-track,
+.md-sidebar__scrollwrap::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ footer */
+
+/* The site does not use the copyright / "Made with" strip. */
+.md-footer-meta {
+  display: none;
+}
+
+/* ------------------------------------------------------------------ search */
+
+.md-search__form {
+  border-radius: 2px;
+}
+
+[data-md-color-scheme="slate"] .md-search__form {
+  background-color: #120d33;
+}
+
+.md-search__input::placeholder {
+  color: var(--td-ink-3);
+}

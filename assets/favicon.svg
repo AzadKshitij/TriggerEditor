@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Trigger Designer">
+  <rect width="32" height="32" rx="4" fill="#06004C"/>
+  <g fill="none" stroke="#F7F3E9" stroke-width="2" stroke-linecap="round">
+    <path d="M9 9h6M17 9v6M17 23h6"/>
+  </g>
+  <circle cx="8" cy="9" r="3" fill="#FF00F5"/>
+  <circle cx="17" cy="9" r="3" fill="#F7F3E9"/>
+  <circle cx="17" cy="22" r="3" fill="#F7F3E9"/>
+  <circle cx="24" cy="23" r="3" fill="#FF00F5"/>
+</svg>
