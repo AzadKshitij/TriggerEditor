@@ -40,11 +40,17 @@ def _live_rows() -> tuple[list[dict], str | None]:
     """The scheduler's own view; a failure only costs the live columns."""
     try:
         proc = sched._run_schtasks(sched.query_argv())
-    except (OSError, subprocess.SubprocessError) as exc:
+    except (OSError, subprocess.SubprocessError, CliError) as exc:
         return [], str(exc)
     if proc.returncode != 0:
         return [], (proc.stderr or proc.stdout or "").strip()
     return sched.parse_query_csv(proc.stdout or ""), None
+
+
+def _discard_spec_files(folder: Path, name: str) -> None:
+    for suffix in (".json", ".xml"):
+        with contextlib.suppress(OSError):
+            (folder / f"{name}{suffix}").unlink()
 
 
 def _add(args, ctx) -> int:
@@ -98,11 +104,13 @@ def _add(args, ctx) -> int:
         print(sched.build_task_xml(spec))
         return 0
     sched.save_spec(spec)
-    proc = sched._run_schtasks(create)
+    try:
+        proc = sched._run_schtasks(create)
+    except CliError:
+        _discard_spec_files(folder, args.name)
+        raise
     if proc.returncode != 0:
-        for suffix in (".json", ".xml"):
-            with contextlib.suppress(OSError):
-                (folder / f"{args.name}{suffix}").unlink()
+        _discard_spec_files(folder, args.name)
         raise sched.scheduler_error("/Create", proc)
     print(f"Scheduled '{args.name}' ({sched.TASK_FOLDER}\\{args.name}).")
     return 0

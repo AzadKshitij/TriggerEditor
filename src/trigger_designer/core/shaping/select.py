@@ -9,6 +9,7 @@ from typing import Any
 
 import polars as pl
 
+from trigger_designer.core.profile import LEAD0_RE
 from trigger_designer.core.shaping.common import as_lazy, schema_of
 
 BOOLEAN_TRUE_TOKENS = ("true", "1", "yes", "y", "t", "on")
@@ -200,6 +201,9 @@ def infer_dtype(values: Iterable[Any]) -> tuple[str | None, str | None]:
     lowered = [str(v).strip().lower() for v in clean]
     if all(v in ("true", "false") for v in lowered):
         return "Boolean", None
+    # Zero-padded identifiers ("0001") are text: a number type would drop the zeros.
+    if any(re.match(LEAD0_RE, str(value).strip()) for value in clean):
+        return "String", None
     try:
         for value in clean:
             int(str(value).strip())

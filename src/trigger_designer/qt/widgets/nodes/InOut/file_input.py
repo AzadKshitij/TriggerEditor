@@ -1592,21 +1592,7 @@ class FileInputContent(
                 logger.error(
                     f"Failed to read Excel preview with fastexcel: {fastexcel_error}"
                 )
-                # Fallback to polars native Excel reading
-                try:
-                    logger.debug("Trying fallback with polars native Excel reading")
-                    df = pl.read_excel(fileName, sheet_id=0)
-                    if read_limit and len(df) > read_limit:
-                        df = df.head(read_limit)
-                    logger.debug(
-                        "Fallback: Successfully read Excel preview with polars"
-                    )
-                    return df
-                except Exception as fallback_error:  # noqa: BLE001
-                    logger.error(
-                        f"All Excel preview reading methods failed: {fallback_error}"
-                    )
-                    return pl.DataFrame()
+                return pl.DataFrame()
 
         except Exception as e:  # noqa: BLE001
             logger.error(f"Error reading Excel preview {fileName}: {e}")
@@ -1854,9 +1840,10 @@ class FileInputContent(
     def deserialize(
         self,
         data: dict,
-        hashmap: dict = {},  # noqa: B006 - legacy signature kept for callers
+        hashmap: dict | None = None,  # legacy signature kept for callers
         restore_id: bool | None = True,
     ) -> bool:
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
 
         try:

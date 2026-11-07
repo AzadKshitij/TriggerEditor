@@ -4,7 +4,12 @@ from __future__ import annotations
 
 import polars as pl
 
-from trigger_designer.core.shaping.common import ShapingError, as_lazy, schema_of
+from trigger_designer.core.shaping.common import (
+    ShapingError,
+    as_lazy,
+    schema_of,
+    unique_name,
+)
 from trigger_designer.core.utils.dtype_utils import normalize_to_supported_dtypes
 
 DEFAULTS = {
@@ -45,20 +50,34 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     # Polars 2.0's unpivot emits rows interleaved by row. The node has always
     # emitted one block per data column, in input order, so restore that order
     # explicitly instead of inheriting the engine's default.
+    #
+    # Use sentinel internal names so an input column called "Name" or "Value"
+    # does not cause a DuplicateError from unpivot, and give the output columns
+    # a free name when a key column already uses "Name" or "Value".
+    existing = set(schema)
+    var_tmp = unique_name("__td_var", existing)
+    val_tmp = unique_name("__td_val", existing | {var_tmp})
+    row_tmp = unique_name("__row", existing | {var_tmp, val_tmp})
+    block_tmp = unique_name("__block", existing | {var_tmp, val_tmp, row_tmp})
+    name_out = unique_name("Name", key_columns)
+    value_out = unique_name("Value", [*key_columns, name_out])
     block = {name: position for position, name in enumerate(data_columns)}
     out = (
-        frame.with_row_index("__row")
+        frame.with_row_index(row_tmp)
         .unpivot(
-            index=["__row", *key_columns],
+            index=[row_tmp, *key_columns],
             on=data_columns,
-            variable_name="Name",
-            value_name="Value",
+            variable_name=var_tmp,
+            value_name=val_tmp,
         )
         .with_columns(
-            __block=pl.col("Name").replace_strict(block, return_dtype=pl.Int64)
+            pl.col(var_tmp)
+            .replace_strict(block, return_dtype=pl.Int64)
+            .alias(block_tmp)
         )
-        .sort(["__block", "__row"])
-        .drop("__row", "__block")
+        .sort([block_tmp, row_tmp])
+        .drop(row_tmp, block_tmp)
+        .rename({var_tmp: name_out, val_tmp: value_out})
     )
     # Unpivot widens Value to a common supertype that is often outside the
     # Select dropdown (e.g. all-UInt32 in -> UInt32 out).

@@ -15,7 +15,7 @@ from trigger_designer.core.shaping import (
     reshape,
     select_records,
 )
-from trigger_designer.core.shaping.common import ShapingError
+from trigger_designer.core.shaping.common import LIVE_SAMPLE_ROWS, ShapingError
 
 
 def test_record_id_first_and_grouped() -> None:
@@ -59,6 +59,22 @@ def test_record_id_accepts_negative_and_huge_start() -> None:
     assert huge.collect()["ID"].to_list() == [4294967295, 4294967296, 4294967297]
 
 
+def test_record_id_grouped_keeps_input_column_named_like_the_row_index() -> None:
+    settings = {
+        "name": "ID",
+        "start": 1,
+        "position": "last",
+        "group_by": ["g"],
+        "order_by": [{"column": "v", "descending": True}],
+    }
+    frame = pl.DataFrame({"g": ["b", "a", "a"], "__pos": [30, 20, 10], "v": [1, 2, 2]})
+    out = record_id.apply_record_id(frame.lazy(), settings).collect()
+    plain = record_id.apply_record_id(frame.drop("__pos").lazy(), settings).collect()
+    assert out.columns == ["g", "__pos", "v", "ID"]
+    assert out["__pos"].to_list() == [30, 20, 10]
+    assert out.drop("__pos").equals(plain)
+
+
 def test_select_records_first_and_rest() -> None:
     frame = pl.DataFrame({"v": list(range(1, 6))}).lazy()
     selected, rest = select_records.apply_select_records(
@@ -80,6 +96,103 @@ def test_select_records_range_and_ranked_ties() -> None:
         frame, {"mode": "largest_n", "n": 2, "by": "v", "ties": "include_ties"}
     )
     assert selected.collect()["v"].to_list() == [3, 2, 2]
+
+
+def test_select_records_text_without_numbers_raises() -> None:
+    frame = pl.DataFrame({"t": ["a", "b"]}).lazy()
+    for mode in ("largest_n", "smallest_n"):
+        with pytest.raises(ShapingError) as error:
+            select_records.apply_select_records(
+                frame, {"mode": mode, "n": 1, "by": "t"}
+            )
+        assert error.value.code == "TD-SHAPE-091"
+
+
+def test_select_records_text_with_some_numbers_still_ranks() -> None:
+    frame = pl.DataFrame({"t": ["10", "x", "3"]}).lazy()
+    selected, rest = select_records.apply_select_records(
+        frame, {"mode": "largest_n", "n": 1, "by": "t"}
+    )
+    assert selected.collect()["t"].to_list() == ["10"]
+    assert rest.collect()["t"].to_list() == ["x", "3"]
+
+
+def test_select_records_text_without_values_does_not_raise() -> None:
+    nulls = pl.DataFrame({"t": [None, None]}, schema={"t": pl.String}).lazy()
+    selected, rest = select_records.apply_select_records(
+        nulls, {"mode": "largest_n", "n": 1, "by": "t"}
+    )
+    assert selected.collect().height == 0
+    assert rest.collect().height == 2
+    empty = pl.DataFrame(schema={"t": pl.String}).lazy()
+    selected, rest = select_records.apply_select_records(
+        empty, {"mode": "largest_n", "n": 1, "by": "t"}
+    )
+    assert selected.collect().height == 0
+    assert rest.collect().height == 0
+
+
+def test_select_records_int_rank_unchanged() -> None:
+    frame = pl.DataFrame({"v": [3, 1, 2]}).lazy()
+    selected, rest = select_records.apply_select_records(
+        frame, {"mode": "largest_n", "n": 1, "by": "v"}
+    )
+    assert selected.collect()["v"].to_list() == [3]
+    assert rest.collect()["v"].to_list() == [1, 2]
+
+
+def test_select_records_date_rank_raises() -> None:
+    frame = pl.DataFrame({"d": [date(2024, 1, 1), date(2024, 1, 2)]}).lazy()
+    with pytest.raises(ShapingError) as error:
+        select_records.apply_select_records(
+            frame, {"mode": "largest_n", "n": 1, "by": "d"}
+        )
+    assert error.value.code == "TD-SHAPE-091"
+
+
+def test_ranked_select_keeps_input_column_named_like_the_row_index() -> None:
+    settings = {"mode": "largest_n", "n": 2, "by": "v", "ties": "include_ties"}
+    frame = pl.DataFrame({"v": [3, 1, 2, 2], "__pos": [40, 10, 30, 20]})
+    selected, rest = select_records.apply_select_records(frame.lazy(), settings)
+    plain_selected, plain_rest = select_records.apply_select_records(
+        frame.drop("__pos").lazy(), settings
+    )
+    out_selected, out_rest = selected.collect(), rest.collect()
+    assert out_selected.columns == ["v", "__pos"]
+    assert out_selected["__pos"].to_list() == [40, 30, 20]
+    assert out_rest.columns == ["v", "__pos"]
+    assert out_rest["__pos"].to_list() == [10]
+    assert out_selected.drop("__pos").equals(plain_selected.collect())
+    assert out_rest.drop("__pos").equals(plain_rest.collect())
+
+
+def test_select_records_ranked_keeps_input_columns_named_key_and_keep() -> None:
+    settings = {"mode": "largest_n", "n": 2, "by": "v", "ties": "include_ties"}
+    frame = pl.DataFrame(
+        {
+            "v": [3, 1, 2, 2],
+            "__key": [40, 10, 30, 20],
+            "__keep": ["a", "b", "c", "d"],
+        }
+    )
+    selected, rest = select_records.apply_select_records(frame.lazy(), settings)
+    out_selected, out_rest = selected.collect(), rest.collect()
+    assert out_selected.columns == ["v", "__key", "__keep"]
+    assert out_selected.rows() == [(3, 40, "a"), (2, 30, "c"), (2, 20, "d")]
+    assert out_rest.columns == ["v", "__key", "__keep"]
+    assert out_rest.rows() == [(1, 10, "b")]
+
+
+def test_select_records_first_n_keeps_input_column_named_keep() -> None:
+    frame = pl.DataFrame({"v": [1, 2, 3, 4, 5], "__keep": ["p", "q", "r", "s", "t"]})
+    selected, rest = select_records.apply_select_records(
+        frame.lazy(), {"mode": "first_n", "n": 2}
+    )
+    out_selected, out_rest = selected.collect(), rest.collect()
+    assert out_selected.columns == ["v", "__keep"]
+    assert out_selected.rows() == [(1, "p"), (2, "q")]
+    assert out_rest.columns == ["v", "__keep"]
+    assert out_rest.rows() == [(3, "r"), (4, "s"), (5, "t")]
 
 
 def test_find_replace_literal_regex_suffix() -> None:
@@ -158,6 +271,22 @@ def test_date_helper_add_days_and_business() -> None:
     assert out["d_add_business_days"].to_list() == [date(2024, 4, 9)]
 
 
+def test_date_helper_unreadable_count_capped_to_live_sample() -> None:
+    frame = pl.DataFrame({"d": ["not a date"] * 300}).lazy()
+    settings = {"ops": [{"op": "weekday_name", "source": "d"}]}
+    assert date_helper.parse_failures(frame, settings)["d"] == LIVE_SAMPLE_ROWS
+    chips = date_helper.describe([frame], settings)
+    assert len(chips) == 1
+    assert f"{LIVE_SAMPLE_ROWS} unreadable dates in d" in chips[0][0]
+    assert f"first {LIVE_SAMPLE_ROWS} rows" in chips[0][0]
+
+
+def test_date_helper_unreadable_count_below_live_sample() -> None:
+    frame = pl.DataFrame({"d": ["2024-04-01"] * 30 + ["not a date"] * 50}).lazy()
+    settings = {"ops": [{"op": "weekday_name", "source": "d"}]}
+    assert date_helper.parse_failures(frame, settings)["d"] == 50
+
+
 def test_pivot_unpivot_roundtrip() -> None:
     frame = pl.DataFrame(
         {"id": [1, 1, 2], "attr": ["x", "y", "x"], "value": [10, 20, 30]}
@@ -165,7 +294,7 @@ def test_pivot_unpivot_roundtrip() -> None:
     wide = reshape.apply_pivot(
         frame,
         {"index_columns": ["id"], "header_column": "attr", "value_column": "value"},
-    )
+    ).collect()
     long = reshape.apply_unpivot(
         wide.lazy(),
         {
@@ -179,6 +308,135 @@ def test_pivot_unpivot_roundtrip() -> None:
         (1, "y", 20.0),
         (2, "x", 30.0),
     ]
+
+
+def test_pivot_defers_the_aggregation_until_collected() -> None:
+    calls: list[int] = []
+
+    def record(batch: pl.DataFrame) -> pl.DataFrame:
+        calls.append(1)
+        return batch
+
+    probe = (
+        pl.DataFrame({"id": [1, 1, 2], "attr": ["x", "y", "x"], "value": [10, 20, 30]})
+        .lazy()
+        .map_batches(record)
+    )
+    settings = {
+        "index_columns": ["id"],
+        "header_column": "attr",
+        "value_column": "value",
+    }
+    (wide,) = reshape.run_pivot([probe], settings)
+    assert isinstance(wide, pl.LazyFrame)
+    assert len(calls) == 1  # only the distinct-header query runs at call time
+    out = wide.collect()
+    assert len(calls) == 2  # the aggregation runs on collect
+    assert out.columns == ["id", "x", "y"]
+    assert out.rows() == [(1, 10.0, 20.0), (2, 30.0, None)]
+
+
+def test_unpivot_keeps_id_column_named_like_the_row_index() -> None:
+    frame = pl.DataFrame({"__pos": [1, 2], "a": ["x", "y"], "b": ["p", "q"]})
+    settings = {"id_columns": ["__pos"], "value_columns": ["a", "b"]}
+    out = reshape.apply_unpivot(frame.lazy(), settings).collect()
+    plain = reshape.apply_unpivot(
+        frame.rename({"__pos": "id"}).lazy(),
+        {"id_columns": ["id"], "value_columns": ["a", "b"]},
+    ).collect()
+    assert out.columns == ["__pos", "Attribute", "Value"]
+    assert out.rename({"__pos": "id"}).equals(plain)
+
+
+@pytest.mark.parametrize(
+    ("variable_name", "value_name"),
+    [("__pos", "Value"), ("Attribute", "__pos")],
+)
+def test_unpivot_output_name_equal_to_row_index_is_kept(
+    variable_name: str, value_name: str
+) -> None:
+    frame = pl.DataFrame({"id": [1, 2], "a": ["x", "y"], "b": ["p", "q"]})
+    settings = {
+        "id_columns": ["id"],
+        "value_columns": ["a", "b"],
+        "variable_name": variable_name,
+        "value_name": value_name,
+    }
+    out = reshape.apply_unpivot(frame.lazy(), settings).collect()
+    plain = reshape.apply_unpivot(
+        frame.lazy(), {**settings, "variable_name": "n", "value_name": "v"}
+    ).collect()
+    assert out.columns == ["id", variable_name, value_name]
+    assert out.rename({variable_name: "n", value_name: "v"}).equals(plain)
+
+
+def test_pivot_numeric_sum_over_unreadable_text_warns() -> None:
+    frame = pl.DataFrame(
+        {"id": [1, 2], "attr": ["x", "x"], "value": ["abc", "def"]}
+    ).lazy()
+    settings = {
+        "index_columns": ["id"],
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    chips = reshape.describe([frame], settings)
+    assert len(chips) == 1
+    assert chips[0][1] == "warning"
+    assert "value" in chips[0][0]
+    assert f"first {LIVE_SAMPLE_ROWS} rows" in chips[0][0]
+
+
+def test_pivot_numeric_sum_over_readable_text_has_no_chip() -> None:
+    frame = pl.DataFrame({"attr": ["x", "x"], "value": ["1,5", "2"]}).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_numeric_column_has_no_chip() -> None:
+    frame = pl.DataFrame(
+        {"attr": ["x", "x"], "value": [1, 2]},
+        schema={"attr": pl.String, "value": pl.Int64},
+    ).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_non_numeric_aggregation_on_text_has_no_chip() -> None:
+    frame = pl.DataFrame({"attr": ["x", "y"], "value": ["abc", "def"]}).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "first",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_all_null_text_column_has_no_chip() -> None:
+    frame = pl.DataFrame(
+        {"attr": ["x", "y"], "value": [None, None]},
+        schema={"attr": pl.String, "value": pl.String},
+    ).lazy()
+    settings = {
+        "header_column": "attr",
+        "value_column": "value",
+        "aggregation": "sum",
+    }
+    assert reshape.describe([frame], settings) == []
+
+
+def test_pivot_missing_value_column_setting_has_no_chip() -> None:
+    frame = pl.DataFrame({"attr": ["x"], "value": ["abc"]}).lazy()
+    settings = {"header_column": "attr", "aggregation": "sum"}
+    assert reshape.describe([frame], settings) == []
 
 
 def test_reconcile_one_to_one_summary() -> None:

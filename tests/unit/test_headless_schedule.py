@@ -12,6 +12,7 @@ from pathlib import Path
 import pytest
 
 from tests.support.cli import call_main, synthetic_workflow, write_workflow
+from trigger_designer.cli.commands import schedule as schedule_cli
 from trigger_designer.core.headless import schedule as sched
 from trigger_designer.core.headless.approvals import make_entry, store_for
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
@@ -261,6 +262,47 @@ def test_nonzero_schtasks_exit_9_includes_stderr_and_cleans_up(
     assert result.code == 9
     assert "Access is denied" in result.stderr and "TD-CLI-016" in result.stderr
     assert not list((tmp_path / "state" / "schedules").glob("*"))
+
+
+def test_run_schtasks_timeout_is_a_coded_scheduler_error(monkeypatch):
+    def hang(*args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd="schtasks", timeout=60)
+
+    monkeypatch.setattr(subprocess, "run", hang)
+    with pytest.raises(CliError) as caught:
+        sched._run_schtasks(sched.query_argv())
+    assert caught.value.td_code == "TD-CLI-016"
+    assert caught.value.code == ExitCode.SCHEDULER
+
+
+def test_add_timeout_discards_saved_files_and_reports_td_cli_016(
+    tmp_path, approved, monkeypatch
+):
+    def timed_out(argv):
+        raise CliError(
+            ExitCode.SCHEDULER,
+            "TD-CLI-016",
+            "schtasks did not answer within 60 seconds",
+        )
+
+    monkeypatch.setattr(sched, "_run_schtasks", timed_out)
+    result = _add(tmp_path, approved)
+    assert result.code == int(ExitCode.SCHEDULER)
+    assert "TD-CLI-016" in result.stderr
+    assert not list((tmp_path / "state" / "schedules").glob("*"))
+
+
+def test_live_rows_degrade_on_scheduler_timeout(monkeypatch):
+    def timed_out(argv):
+        raise CliError(
+            ExitCode.SCHEDULER,
+            "TD-CLI-016",
+            "schtasks did not answer within 60 seconds",
+        )
+
+    monkeypatch.setattr(sched, "_run_schtasks", timed_out)
+    rows, problem = schedule_cli._live_rows()
+    assert rows == [] and "did not answer within 60 seconds" in problem
 
 
 def test_existing_name_needs_force(tmp_path, approved, fake):

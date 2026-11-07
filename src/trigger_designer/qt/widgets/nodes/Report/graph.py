@@ -503,7 +503,8 @@ class GraphContent(ShapingContent):
         self._update_open_graph_button_state()
 
     # -- persistence -----------------------------------------------------
-    def deserialize(self, data, hashmap={}):  # noqa: B006
+    def deserialize(self, data, hashmap=None):
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
         self.workflow_ran_successfully = False
         self._run_frame = None

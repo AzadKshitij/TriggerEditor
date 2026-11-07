@@ -10,6 +10,7 @@ import pytest
 
 from tests.support.cli import synthetic_workflow, write_workflow
 from trigger_designer.core.headless import op_catalog
+from trigger_designer.core.headless import plan as plan_module
 from trigger_designer.core.headless.approvals import make_entry, store_for
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.plan import RunOptions, build_run_plan
@@ -90,6 +91,38 @@ def test_dry_run_does_not_create_dirs(env):
     target = env["tmp"] / "new2"
     _plan(env, output_dir=str(target), create_output_dirs=True, dry_run=True)
     assert not target.exists()
+
+
+def test_dry_run_probes_each_output_folder_once(env, monkeypatch):
+    real_probe = plan_module._probe_writable
+    probed = []
+
+    def recording(directory):
+        probed.append(directory)
+        real_probe(directory)
+
+    monkeypatch.setattr(plan_module, "_probe_writable", recording)
+    build_run_plan(
+        RunOptions(allow_unapproved=True, dry_run=True),
+        env["doc"],
+        env["state"],
+        "ab12cd34" * 4,
+        mode="dry",
+    )
+    assert probed == [str(env["tmp"] / "out")]
+
+
+def test_dry_run_leaves_output_folder_as_it_was(env):
+    out = env["tmp"] / "out"
+    before = sorted(os.listdir(out))
+    build_run_plan(
+        RunOptions(allow_unapproved=True, dry_run=True),
+        env["doc"],
+        env["state"],
+        "ab12cd34" * 4,
+        mode="dry",
+    )
+    assert sorted(os.listdir(out)) == before
 
 
 def test_output_equal_to_input_path_is_refused(env):

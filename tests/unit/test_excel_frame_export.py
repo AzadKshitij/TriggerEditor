@@ -49,6 +49,14 @@ def test_roundtrip_dates_nulls_floats_bools_nan(tmp_path):
     assert ws["D2"].value is True and ws["D3"].value is None
 
 
+def test_empty_text_and_null_are_both_blank_cells(tmp_path):
+    out = tmp_path / "o.xlsx"
+    assert write_frame_xlsx(pl.DataFrame({"s": ["", None, "x"]}), str(out)) == 3
+    ws = openpyxl.load_workbook(out).active
+    assert ws["A2"].value is None and ws["A3"].value is None
+    assert ws["A4"].value == "x"
+
+
 def test_header_is_bold_frozen_and_filtered(tmp_path):
     out = tmp_path / "o.xlsx"
     write_frame_xlsx(pl.LazyFrame({"a": [1, 2], "b": ["x", "y"]}), str(out))

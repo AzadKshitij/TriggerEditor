@@ -50,6 +50,7 @@ _EXPORTS: dict[str, str] = {
     "VerifyReport": "store",
     "RunAlreadySealed": "store",
     "StoreLockTimeout": "store",
+    "StoreCorrupt": "store",
     "resolve_store_dir": "store",
     "verify_store": "store",
     "verify_record_file": "store",

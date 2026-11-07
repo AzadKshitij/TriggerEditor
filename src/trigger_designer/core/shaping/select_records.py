@@ -11,6 +11,7 @@ from trigger_designer.core.shaping.common import (
     numeric_expr,
     require_columns,
     schema_of,
+    unique_name,
 )
 
 POS = "__pos"
@@ -33,6 +34,11 @@ def apply_select_records(
     s = {**DEFAULTS, **(settings or {})}
     lf = as_lazy(frame)
     schema = schema_of(lf)
+    pos = unique_name(POS, schema)
+    taken = {*schema, pos}
+    key_name = unique_name("__key", taken)
+    taken.add(key_name)
+    keep_name = unique_name("__keep", taken)
     if s["mode"] not in MODES:
         raise ShapingError("TD-SHAPE-004", f"Unknown mode {s['mode']!r}")
     n = int(s["n"])
@@ -48,38 +54,64 @@ def apply_select_records(
     def over(expr: pl.Expr) -> pl.Expr:
         return expr.over(groups) if groups else expr
 
-    lf = lf.with_row_index(POS)
+    lf = lf.with_row_index(pos)
     ranked = None
     if s["mode"] == "first_n":
         keep = over(pl.int_range(pl.len())) < n
     elif s["mode"] == "last_n":
         keep = over(pl.int_range(pl.len())) >= over(pl.len()) - n
     elif s["mode"] == "row_range":
-        keep = pl.col(POS).is_between(
+        keep = pl.col(pos).is_between(
             int(s["range_start"]) - 1, int(s["range_end"]) - 1
         )
     else:
         if not s["by"]:
             raise ShapingError("TD-SHAPE-001", "Pick the column to rank by")
         require_columns(schema, [s["by"]])
+        dtype = schema[s["by"]]
+        if not dtype.is_numeric():
+            if dtype not in (pl.String, pl.Categorical, pl.Enum):
+                raise ShapingError(
+                    "TD-SHAPE-091",
+                    f"'{s['by']}' must be a number or text holding numbers",
+                    [s["by"]],
+                )
+            # The only collect here: one aggregate pass, and only for text columns.
+            flags = (
+                as_lazy(frame)
+                .select(
+                    pl.col(s["by"]).is_not_null().any().alias("has_values"),
+                    numeric_expr(s["by"], dtype)
+                    .is_not_null()
+                    .any()
+                    .alias("has_numbers"),
+                )
+                .collect()
+            )
+            if flags["has_values"].item() and not flags["has_numbers"].item():
+                raise ShapingError(
+                    "TD-SHAPE-091",
+                    f"'{s['by']}' has no values that can be read as numbers",
+                    [s["by"]],
+                )
         largest = s["mode"] == "largest_n"
-        lf = lf.with_columns(numeric_expr(s["by"], schema[s["by"]]).alias("__key"))
+        lf = lf.with_columns(numeric_expr(s["by"], schema[s["by"]]).alias(key_name))
         method = "min" if s["ties"] == "include_ties" else "ordinal"
-        keep = (over(pl.col("__key").rank(method, descending=largest)) <= n).fill_null(
+        keep = (over(pl.col(key_name).rank(method, descending=largest)) <= n).fill_null(
             False
         )
         ranked = largest
-    lf = lf.with_columns(keep.alias("__keep"))
-    selected = lf.filter(pl.col("__keep"))
+    lf = lf.with_columns(keep.alias(keep_name))
+    selected = lf.filter(pl.col(keep_name))
     if ranked is not None:
         selected = selected.sort(
-            ["__key", POS],
+            [key_name, pos],
             descending=[ranked, False],
             nulls_last=True,
             maintain_order=True,
         )
-    rest = lf.filter(~pl.col("__keep"))
-    drop = ["__keep", "__key", POS]
+    rest = lf.filter(~pl.col(keep_name))
+    drop = [keep_name, key_name, pos]
     return (
         selected.drop(drop, strict=False),
         rest.drop(drop, strict=False),

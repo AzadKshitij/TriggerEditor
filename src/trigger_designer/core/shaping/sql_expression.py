@@ -6,13 +6,17 @@ import re
 
 #: Matches '...' and "..." literals, SQL-style ''/"" escapes included.
 STRING_LITERAL_RE = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"")
+STRING_OR_BRACKET_RE = re.compile(r"'([^']|'')*'|\"([^\"]|\"\")*\"|\[[^\]]*\]")
 
 
-def apply_outside_string_literals(formula: str, transform) -> str:
+def apply_outside_string_literals(
+    formula: str, transform, *, skip_brackets: bool = False
+) -> str:
     """Apply ``transform`` to the code segments, never inside literals."""
+    pattern = STRING_OR_BRACKET_RE if skip_brackets else STRING_LITERAL_RE
     parts: list[str] = []
     current_pos = 0
-    for match in STRING_LITERAL_RE.finditer(formula):
+    for match in pattern.finditer(formula):
         parts.append(transform(formula[current_pos : match.start()]))
         parts.append(match.group())
         current_pos = match.end()
@@ -41,13 +45,27 @@ def quote_identifier(identifier: str) -> str:
     return '"' + identifier.replace('"', '""') + '"'
 
 
-def replace_column_names(formula: str, column_name: str) -> str:
+def resolve_column_references(formula: str, available_columns: list[str]) -> str:
     """Rewrite ``[column]`` references to quoted identifiers, case-insensitively."""
-    pattern = rf"\[\s*{re.escape(column_name)}\s*\]"
-    replacement = quote_identifier(column_name)
+    if not available_columns:
+        return formula
+    names = sorted(available_columns, key=len, reverse=True)
+    pattern = re.compile(
+        r"\[\s*(" + "|".join(re.escape(name) for name in names) + r")\s*\]",
+        re.IGNORECASE,
+    )
+
+    def resolve(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        if inner in available_columns:
+            return quote_identifier(inner)
+        for column in available_columns:
+            if column.lower() == inner.lower():
+                return quote_identifier(column)
+        return match.group()
+
     return apply_outside_string_literals(
-        formula,
-        lambda segment: re.sub(pattern, replacement, segment, flags=re.IGNORECASE),
+        formula, lambda segment: pattern.sub(resolve, segment)
     )
 
 
@@ -78,11 +96,9 @@ def prepare_expression_sql(
             sql_expression, translate_in_between
         )
     sql_expression = apply_outside_string_literals(
-        sql_expression, translate_function_aliases
+        sql_expression, translate_function_aliases, skip_brackets=True
     )
-    for column_name in available_columns:
-        sql_expression = replace_column_names(sql_expression, column_name)
-    return sql_expression
+    return resolve_column_references(sql_expression, available_columns)
 
 
 def shorten_error(message: str) -> str:

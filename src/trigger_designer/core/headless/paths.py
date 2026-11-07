@@ -6,6 +6,7 @@ import os
 import re
 
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
+from trigger_designer.core.inputs import has_glob
 
 _URL = re.compile(r"^[A-Za-z][A-Za-z0-9+.\-]+://")
 _WIN_DRIVE = re.compile(r"^[A-Za-z]:[\\/]")
@@ -18,6 +19,15 @@ def basename_any(raw: str) -> str:
 
 
 def remap_into_dir(raw: str, directory: str) -> str:
+    """Put the saved file name in ``directory``; a pattern keeps its glob tail.
+
+    ``D:\\in\\*\\data.csv`` becomes ``<directory>\\*\\data.csv``, so a File Input
+    saved in pattern mode stays in pattern mode.
+    """
+    parts = re.split(r"[\\/]", raw.rstrip("\\/"))
+    for index, part in enumerate(parts):
+        if has_glob(part):
+            return os.path.normpath(os.path.join(directory, *parts[index:]))
     return os.path.normpath(os.path.join(directory, basename_any(raw)))
 
 

@@ -23,6 +23,7 @@ from trigger_designer.core.audit.canonical import (
 from trigger_designer.core.audit.store import (
     RunAlreadySealed,
     RunStore,
+    StoreCorrupt,
     StoreLockTimeout,
     resolve_store_dir,
     verify_record_file,
@@ -175,6 +176,27 @@ def test_corrupt_middle_index_line_stops_the_walk(tmp_path):
     report = store.verify(directory)
     assert "index_corrupt" in _kinds(report)
     assert report.checked == 1
+
+
+def test_seal_refuses_after_a_corrupt_middle_index_line(tmp_path):
+    store, directory, _sealed = _seed(tmp_path, 3)
+    index = directory / "index.jsonl"
+    lines = index.read_bytes().splitlines(keepends=True)
+    index.write_bytes(lines[0] + b"garbage\n" + lines[2])
+    index_bytes = index.read_bytes()
+    listing = sorted(p.name for p in directory.iterdir())
+    with pytest.raises(StoreCorrupt):
+        store.seal_and_save(make_record(), directory)
+    assert index.read_bytes() == index_bytes
+    assert sorted(p.name for p in directory.iterdir()) == listing
+
+
+def test_list_runs_stops_at_a_corrupt_middle_index_line(tmp_path):
+    store, directory, (r1, _r2, _r3) = _seed(tmp_path, 3)
+    index = directory / "index.jsonl"
+    lines = index.read_bytes().splitlines(keepends=True)
+    index.write_bytes(lines[0] + b"garbage\n" + lines[2])
+    assert [r.run_id for r in store.list_runs(directory)] == [r1.run_id]
 
 
 def test_missing_index_with_records_is_corrupt(tmp_path):

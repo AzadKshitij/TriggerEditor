@@ -196,6 +196,21 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             code, detail = guard.groups() if guard else ("TD-SHAPE-004", errors[index])
             raise ShapingError(code, f"Section {index + 1}: {detail}") from None
 
+    wanted: dict[str, str] = {}
+    for _, section in configured:
+        wanted[section["target_column"]] = section["target_dtype"]
+    categorical = [
+        name
+        for name, kind in wanted.items()
+        if kind == "Categorical"
+        and name in result.columns
+        and result.schema[name] == pl.String
+    ]
+    if categorical:
+        result = result.with_columns(
+            pl.col(name).cast(pl.Categorical) for name in categorical
+        )
+
     return [normalize_to_supported_dtypes(result).lazy()]
 
 
@@ -253,12 +268,19 @@ def sample_rows(frame) -> pl.DataFrame | None:
         return None
 
 
-def validate_section(frames: list, settings: dict, section_index: int) -> list[dict]:
+def validate_section(
+    frames: list, settings: dict, section_index: int, *, run_rows: bool = True
+) -> list[dict]:
     """Check one section: EXPLAIN on the live schema, then run it on a row sample.
 
     DuckDB binds ``[price] + ""`` without complaint and only fails when it
     converts the string for a real row, so a zero-row check alone would let
     that formula look valid until the workflow runs.
+
+    The row run (the default) is for callers that apply the node.
+    ``run_rows=False`` returns after the EXPLAIN stage without reading any
+    data. The formula editor passes it while you edit, so a value error like
+    the one above shows when the node runs on its sample instead.
 
     Prefer :func:`validate_section_presampled` when calling from a background
     thread, to avoid running ``.collect()`` off the Qt main thread.
@@ -270,7 +292,7 @@ def validate_section(frames: list, settings: dict, section_index: int) -> list[d
         return []
     schema_only = pl.DataFrame(schema=schema_of(frames[0]))
     errors = _first_error(sections, section_index, schema_only, explain=True)
-    if errors:
+    if errors or not run_rows:
         return errors
     rows = sample_rows(frames[0])
     if rows is None or rows.height == 0:

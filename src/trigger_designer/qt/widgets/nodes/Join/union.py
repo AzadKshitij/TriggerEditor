@@ -814,7 +814,10 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
         res["column_map"] = self.column_map
         return res
 
-    def deserialize(self, data: Dict[str, Any], hashmap: Dict[str, Any] = {}) -> bool:
+    def deserialize(
+        self, data: Dict[str, Any], hashmap: Dict[str, Any] | None = None
+    ) -> bool:
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
         try:
             mode = data.get("mode", "by_name")

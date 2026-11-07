@@ -130,6 +130,22 @@ def test_rows_mode_keeps_original_and_limits_pieces() -> None:
     assert out.height == 8
 
 
+def test_rows_mode_input_column_named_like_the_row_index_is_kept_in_place() -> None:
+    frame = TT.with_columns(pl.Series("__pos", [9, 5, 9, 5, 1]))
+    settings = {
+        "column": "acct",
+        "pattern": "-",
+        "max_splits": 2,
+        "output": "rows",
+        "row_index_column": "n",
+    }
+    out = _cols(settings, frame)
+    plain = _cols(settings)
+    assert out.columns == ["id", "acct", "__pos", "acct_original", "n"]
+    assert out["__pos"].to_list() == [9, 9, 9, 5, 9, 9, 5, 1]
+    assert out.drop("__pos").equals(plain)
+
+
 def test_rows_mode_skip_empty_keeps_one_null_row_for_all_empty_cell() -> None:
     frame = pl.DataFrame({"k": [1, 2, 3], "s": ["a,,b", ",,", "c"]})
     out = _cols(
@@ -155,6 +171,38 @@ def test_rows_mode_skip_empty_keeps_one_null_row_for_all_empty_cell() -> None:
         frame,
     )
     assert without.height == 3 + 3 + 1
+
+
+def test_rows_mode_without_skip_empty_keeps_null_and_empty_rows() -> None:
+    frame = pl.DataFrame({"s": ["a,b", None, "", "c,"]})
+    out = _cols(
+        {
+            "column": "s",
+            "pattern": ",",
+            "max_splits": 1,
+            "output": "rows",
+            "keep_original": False,
+        },
+        frame,
+    )
+    assert out["s"].to_list() == ["a", "b", None, "", "c", ""]
+    assert out.height == 6
+
+
+def test_rows_mode_skip_empty_keeps_one_row_for_null_and_blank_sources() -> None:
+    frame = pl.DataFrame({"k": [1, 2, 3, 4], "s": ["a,b", None, "", "c,"]})
+    out = _cols(
+        {
+            "column": "s",
+            "pattern": ",",
+            "max_splits": 0,
+            "output": "rows",
+            "skip_empty": True,
+            "keep_original": False,
+        },
+        frame,
+    )
+    assert out.rows() == [(1, "a"), (1, "b"), (2, None), (3, None), (4, "c")]
 
 
 def test_regex_mode_and_escape_delimiter() -> None:

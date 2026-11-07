@@ -8,6 +8,7 @@ from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
     schema_of,
+    unique_name,
 )
 
 DEFAULTS = {
@@ -26,16 +27,26 @@ RIGHT_TAG = "__right_present"
 
 def sanitize_mapping(mapping, left_names, right_names) -> list[dict]:
     out: list[dict] = []
-    seen: set[tuple] = set()
+    seen_pairs: set[tuple] = set()
+    seen_left: set[str] = set()
+    seen_right: set[str] = set()
     for item in mapping or []:
         if not isinstance(item, dict):
             continue
         left = item.get("left_column")
         right = item.get("right_column")
         key = (left, right)
-        if left in left_names and right in right_names and key not in seen:
+        if (
+            left in left_names
+            and right in right_names
+            and key not in seen_pairs
+            and left not in seen_left
+            and right not in seen_right
+        ):
             out.append({"left_column": left, "right_column": right})
-            seen.add(key)
+            seen_pairs.add(key)
+            seen_left.add(left)
+            seen_right.add(right)
     return out
 
 
@@ -171,8 +182,10 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     settings = {**DEFAULTS, **(settings or {})}
     left = as_lazy(frames[0])
     right = as_lazy(frames[1])
-    left_names = list(schema_of(left))
-    right_names = list(schema_of(right))
+    left_schema = schema_of(left)
+    right_schema = schema_of(right)
+    left_names = list(left_schema)
+    right_names = list(right_schema)
     settings = sync_selected_with_schema(settings, left_names, right_names)
     mapping = settings["mapping_data"]
     if not mapping:
@@ -185,11 +198,14 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     conflicting = [
         name for name in right_names if name in left_names and name not in right_cols
     ]
-    right_renamed = (
-        right.rename({name: f"{name}{RIGHT_SUFFIX}" for name in conflicting})
-        if conflicting
-        else right
-    )
+    # Rename targets must be free in BOTH frames, or Polars would suffix the
+    # renamed column again and the two sides would swap places in the output.
+    taken = {*left_names, *right_names}
+    rename_map: dict[str, str] = {}
+    for name in conflicting:
+        rename_map[name] = unique_name(f"{name}{RIGHT_SUFFIX}", taken)
+        taken.add(rename_map[name])
+    right_renamed = right.rename(rename_map) if rename_map else right
 
     left_tagged = left.with_columns(pl.lit(1).alias(LEFT_TAG))
     right_tagged = right_renamed.with_columns(pl.lit(1).alias(RIGHT_TAG))
@@ -201,7 +217,20 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
         suffix=LEFT_SUFFIX,
         coalesce=True,
     )
-    result_columns = result.collect_schema().names()
+    try:
+        result_columns = result.collect_schema().names()
+    except pl.exceptions.SchemaError:
+        differing = [
+            f"'{lk}' ({left_schema[lk]}) and '{rk}' ({right_schema[rk]})"
+            for lk, rk in zip(left_cols, right_cols)
+            if left_schema[lk] != right_schema[rk]
+        ]
+        raise ShapingError(
+            "TD-SHAPE-004",
+            "Key columns must have the same type: "
+            f"{'; '.join(differing)}. Convert one side with a Select node.",
+            [*left_cols, *right_cols],
+        ) from None
 
     if selected_columns:
         selected: list[str] = []
@@ -217,8 +246,8 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             else:
                 if name in right_cols:
                     selected.append(name)
-                elif f"{name}{RIGHT_SUFFIX}" in result_columns:
-                    selected.append(f"{name}{RIGHT_SUFFIX}")
+                elif name in rename_map:
+                    selected.append(rename_map[name])
                 else:
                     selected.append(name)
 
@@ -250,21 +279,24 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
             [name for name in result_columns if not name.startswith("__")]
         )
 
+    # H4 fix: left columns always keep their original names after a full join
+    # (Polars applies the suffix to the RIGHT frame's conflicts only).  The old
+    # endswith(LEFT_SUFFIX) condition incorrectly included columns that the join
+    # renamed from the right frame, adding a spurious null column to left-only
+    # output when the right had a column already named e.g. "x_right".
     left_final = [
         name
         for name in result_columns
-        if name in left_names
-        or (name.endswith(LEFT_SUFFIX) and name.replace(LEFT_SUFFIX, "") in left_names)
+        if name in left_names and not name.startswith("__")
     ]
-    left_final = [name for name in left_final if not name.startswith("__")]
     l_data = result.filter(left_only).select(left_final)
 
     # Right-only output carries the right frame's columns only. A conflicting
     # right column was renamed before the join, so its original name belongs
     # to the left frame and must not be pulled in here.
-    right_after_rename = {name for name in right_names if name not in conflicting} | {
-        f"{name}{RIGHT_SUFFIX}" for name in conflicting
-    }
+    right_after_rename = {
+        name for name in right_names if name not in conflicting
+    } | set(rename_map.values())
     right_final = [
         name
         for name in result_columns
@@ -272,12 +304,14 @@ def run_node(frames: list, settings: dict) -> list[pl.LazyFrame]:
     ]
     result_set = set(result_columns)
     for left_key, right_key in zip(left_cols, right_cols):
-        if (
-            right_key not in result_set
-            and left_key in result_set
-            and left_key not in right_final
-        ):
+        # coalesce=True merges the right key into the left key column, so for a
+        # right-only row the key value lives under the left key's name.
+        if left_key in result_set and left_key not in right_final:
             right_final.append(left_key)
+        # A same-named left data column can shadow the merged right key; it is
+        # all null for right-only rows, so it must not stand in for the key.
+        if left_key != right_key and right_key in left_names:
+            right_final = [name for name in right_final if name != right_key]
     r_data = result.filter(right_only).select(right_final)
 
     return [l_data, data, r_data]

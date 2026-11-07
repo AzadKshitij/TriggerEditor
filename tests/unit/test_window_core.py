@@ -244,6 +244,25 @@ def test_input_columns_are_preserved() -> None:
     assert out.select("acct", "d", "v").equals(WN)
 
 
+def test_input_column_named_like_the_row_index_is_kept_in_place() -> None:
+    frame = WN.with_columns(pl.Series("__pos", [60, 50, 40, 30, 20, 10]))
+    out = _run(
+        {
+            **PART,
+            "ops": [
+                {"op": "row_number", "name": "rn"},
+                _op("cum_sum", name="cs"),
+            ],
+        },
+        frame,
+    )
+    assert out.columns == ["acct", "d", "v", "__pos", "rn", "cs"]
+    assert out["__pos"].to_list() == [60, 50, 40, 30, 20, 10]
+    assert out.select("acct", "d", "v").equals(WN)
+    assert out["rn"].to_list() == [3, 1, 1, 2, 2, 3]
+    assert out["cs"].to_list() == [17.0, None, 5.0, 7.0, 13.0, 22.0]
+
+
 # ----------------------------------------------------------------- errors
 def _code(settings: dict, frame: pl.DataFrame = WN) -> str:
     with pytest.raises(ShapingError) as info:

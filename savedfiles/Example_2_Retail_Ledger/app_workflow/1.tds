@@ -19,7 +19,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\channels.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\channels.csv",
         "filePathRel": "../data/channels.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -100,7 +100,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\orders.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\orders.csv",
         "filePathRel": "../data/orders.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -225,7 +225,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\customers.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\customers.csv",
         "filePathRel": "../data/customers.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -330,7 +330,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\products.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\products.csv",
         "filePathRel": "../data/products.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -431,7 +431,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\suppliers.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\suppliers.csv",
         "filePathRel": "../data/suppliers.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -516,7 +516,7 @@
         }
       ],
       "content": {
-        "filePath": "C:/Users/<you>/TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\fx_rates.csv",
+        "filePath": "C:\\Users\\KASHVINCHANDRASAN\\Desktop\\Personal\\Github\\TriggerEditor\\savedfiles\\Example_2_Retail_Ledger\\data\\fx_rates.csv",
         "filePathRel": "../data/fx_rates.csv",
         "input_schema_version": 2,
         "file_type": "csv",
@@ -6147,8 +6147,8 @@
     {
       "id": 1752844827568,
       "title": "Cleansing",
-      "pos_x": -64.45312499999994,
-      "pos_y": -119.14062499999989,
+      "pos_x": -60.0,
+      "pos_y": -120.0,
       "inputs": [
         {
           "id": 1752844828368,
@@ -8070,8 +8070,8 @@
     {
       "id": 2068646575104,
       "title": "Gaps",
-      "pos_x": -900.0,
-      "pos_y": -380.0,
+      "pos_x": -500.0,
+      "pos_y": -440.0,
       "inputs": [
         {
           "id": 2068669253760,
@@ -9114,8 +9114,8 @@
       "version": 2,
       "title": "Enriched",
       "x": 1975.856634245447,
-      "y": 30.123797699434647,
-      "w": 855.280761718748,
+      "y": 30.123797699434704,
+      "w": 855.2807617187477,
       "h": 249.6560058593751,
       "collapsed": false,
       "children": [
@@ -9150,8 +9150,8 @@
   "comments": [],
   "workflow_metadata": {
     "schema_version": 2,
-    "app_version": "0.1.0",
-    "saved_at": "2026-10-31T03:50:12Z",
+    "app_version": "0.1.0a1",
+    "saved_at": "2026-11-06T19:13:06Z",
     "workflow_uuid": "c8e1a178-8d20-4aa8-abdd-b4ff76949ceb"
   }
 }

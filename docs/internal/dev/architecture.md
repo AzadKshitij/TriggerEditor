@@ -157,11 +157,26 @@ thing to understand before changing a node.
 
 See `run-pipeline.md` for the full sequence. Key facts:
 
-* Nothing is collected by the executor. Generated code builds `LazyFrame`
-  plans; only sinks (File Output), Graph, Count and the audit one-row summaries
-  materialise data. Since the executor *verifies plans*
-  (`NodeExecutor.verify_plans`, default `True`), a broken plan (missing column,
-  bad join key) fails at the node that built it instead of at some later sink.
+* Nothing is collected by the executor. Shaping nodes are lazy: `run_node`
+  returns `LazyFrame` plans, and Run collects them at a sink (File Output), in
+  the Graph chart after Run, or in an audit one-row summary. These nodes run
+  their input during the call, on purpose. `tests/unit/test_lazy_contract.py`
+  asserts each one, and fails on a stale entry:
+  * DuckDB runs the SQL at call time: Filter (expression mode), Formula,
+    Multi Formula and SQL Query. Multi Formula collects its input first, since
+    DuckDB workers must not enter `LazyFrame.collect` off the Qt thread.
+  * Fuzzy Match and Reconcile collect both inputs to pair rows.
+  * Data Profile computes its profile at call time, so a Run error surfaces there.
+  * Rows checks the input height when an input is connected (TD-SHAPE-130).
+  * Select Records ranking a TEXT column collects one aggregate (TD-SHAPE-091).
+  * Cleansing with "Remove all-null columns" (not the rows option) collects a
+    one-row null summary, because the columns it keeps depend on the data.
+  * Pivot collects only the distinct header values, once; the pivot stays lazy.
+
+  Count is fully lazy, and Cleansing is lazy apart from that summary. Since the
+  executor *verifies plans* (`NodeExecutor.verify_plans`, default `True`), a
+  broken plan (missing column, bad join key) fails at the node that built it
+  instead of at some later sink.
 * Run executes `get_code()` text with `exec`, on one pooled worker thread, with
   one shared globals dict across nodes, so output variable names must be
   globally unique (`var_<kind>_<node id>`).

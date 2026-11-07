@@ -77,3 +77,31 @@ def test_lock_name_is_stable_and_case_insensitive_on_nt(tmp_path):
     assert a != lock_path(tmp_path, str(tmp_path / "other.tds"))
     if os.name == "nt":
         assert a == lock_path(tmp_path, str(tmp_path / "WF.TDS"))
+
+
+def test_freshly_created_empty_lock_is_busy_not_stale(tmp_path):
+    path = tmp_path / "x.lock"
+    path.write_bytes(b"")  # another process created it and has not written yet
+    with pytest.raises(CliError) as exc:
+        RunLock(path, "second").acquire()
+    assert exc.value.td_code == "TD-CLI-012"
+    assert path.exists()
+
+
+def test_old_unreadable_lock_is_swept(tmp_path):
+    path = tmp_path / "x.lock"
+    path.write_bytes(b"")
+    long_ago = path.stat().st_mtime - 60
+    os.utime(path, (long_ago, long_ago))
+    RunLock(path, "second").acquire()
+
+
+def test_unreadable_create_time_does_not_make_a_live_pid_stale(monkeypatch, tmp_path):
+    from trigger_designer.core.headless import locks
+
+    monkeypatch.setattr(locks, "_create_time", lambda pid: None)
+    path = tmp_path / "x.lock"
+    path.write_text(json.dumps({"pid": os.getpid(), "create_time": 1.0, "staged": []}))
+    with pytest.raises(CliError) as exc:
+        RunLock(path, "second").acquire()
+    assert exc.value.td_code == "TD-CLI-012"

@@ -1,6 +1,5 @@
 import string
 import re
-from dataclasses import dataclass
 from enum import Enum
 import polars as pl
 from typing import (
@@ -15,17 +14,7 @@ from typing import (
     Union,
 )
 
-
-@dataclass
-class CleansingStats:
-    """Statistics for tracking cleansing operations"""
-
-    rows_removed: int = 0
-    columns_removed: int = 0
-    nulls_replaced: int = 0
-    whitespace_changes: int = 0
-    case_changes: int = 0
-    character_removals: int = 0
+from trigger_designer.core.shaping.common import Frame, ShapingError, schema_of
 
 
 class NullStrategy(Enum):
@@ -40,7 +29,12 @@ class NullStrategy(Enum):
 
 class DataCleansing:
     """
-    Data cleansing class for Polars DataFrames.
+    Data cleansing class for Polars DataFrames and LazyFrames.
+
+    A LazyFrame stays lazy: nothing is read until the result is collected, except
+    the one-row summary that the REMOVE_ALL_NULL_COLS and REMOVE_ANY_NULL_COLS
+    strategies need to pick the columns to keep. The result is the same kind as
+    the input.
 
     Example:
         >>> df = pl.DataFrame({
@@ -56,18 +50,17 @@ class DataCleansing:
         ...     .get_result())
     """
 
-    def __init__(self, df: Optional[pl.DataFrame] = None):
+    def __init__(self, df: Optional[Frame] = None):
         self.df = df.clone() if df is not None else pl.DataFrame()
-        self.stats = CleansingStats()
         self._validate_input()
 
     def _validate_input(self) -> None:
-        """Validate input DataFrame"""
-        if not isinstance(self.df, pl.DataFrame):
-            raise TypeError("Input must be a Polars DataFrame")
+        """Validate input: a DataFrame or a LazyFrame"""
+        if not isinstance(self.df, (pl.DataFrame, pl.LazyFrame)):
+            raise TypeError("Input must be a Polars DataFrame or LazyFrame")
 
-    def set_data(self, df: pl.DataFrame) -> "DataCleansing":
-        """Set the DataFrame to be cleaned"""
+    def set_data(self, df: Frame) -> "DataCleansing":
+        """Set the frame to be cleaned"""
         self.df = df.clone()
         self._validate_input()
         return self
@@ -79,10 +72,6 @@ class DataCleansing:
         default_num: Union[int, float] = 0,
     ) -> "DataCleansing":
         """Handle null values according to specified strategy"""
-        original_size = len(self.df)
-        original_cols = len(self.df.columns)
-        original_nulls = self.df.null_count().sum_horizontal().item()
-
         if strategy == NullStrategy.REMOVE_ALL_NULL_ROWS:
             # Remove rows where all values are null
             self.df = self.df.filter(~pl.all_horizontal(pl.all().is_null()))
@@ -90,24 +79,42 @@ class DataCleansing:
             # Remove rows where any value is null
             self.df = self.df.filter(~pl.any_horizontal(pl.all().is_null()))
         elif strategy == NullStrategy.REMOVE_ALL_NULL_COLS:
-            # Remove columns where all values are null
-            cols_to_keep = []
-            for col in self.df.columns:
-                if not self.df.select(pl.col(col).is_null().all()).item():
-                    cols_to_keep.append(col)
+            # Which columns survive depends on the data, so this one-row summary
+            # is collected here. Every other step stays a lazy expression.
+            summary = self.df.select(pl.all().is_null().all())
+            if isinstance(summary, pl.LazyFrame):
+                summary = summary.collect()
+            null_mask = summary.row(0)
+            cols_to_keep = [
+                c for c, all_null in zip(schema_of(self.df), null_mask) if not all_null
+            ]
+            if not cols_to_keep:
+                raise ShapingError(
+                    "TD-SHAPE-005",
+                    "Every column is empty; keep at least one column or turn off "
+                    "Remove all-null columns",
+                )
             self.df = self.df.select(cols_to_keep)
         elif strategy == NullStrategy.REMOVE_ANY_NULL_COLS:
-            # Remove columns where any value is null
-            cols_to_keep = []
-            for col in self.df.columns:
-                if not self.df.select(pl.col(col).is_null().any()).item():
-                    cols_to_keep.append(col)
+            # Same one-row summary, for "any null".
+            summary = self.df.select(pl.all().is_null().any())
+            if isinstance(summary, pl.LazyFrame):
+                summary = summary.collect()
+            null_mask = summary.row(0)
+            cols_to_keep = [
+                c for c, any_null in zip(schema_of(self.df), null_mask) if not any_null
+            ]
+            if not cols_to_keep:
+                raise ShapingError(
+                    "TD-SHAPE-005",
+                    "Every column has a null value; keep at least one column or "
+                    "turn off Remove columns with any null",
+                )
             self.df = self.df.select(cols_to_keep)
         elif strategy == NullStrategy.REPLACE_WITH_DEFAULT:
             # Replace nulls based on column data types
             expressions = []
-            for col in self.df.columns:
-                dtype = self.df.select(pl.col(col)).dtypes[0]
+            for col, dtype in schema_of(self.df).items():
                 if dtype in [
                     pl.Int8,
                     pl.Int16,
@@ -126,13 +133,6 @@ class DataCleansing:
 
             self.df = self.df.with_columns(expressions)
 
-            # Count nulls replaced
-            current_nulls = self.df.null_count().sum_horizontal().item()
-            self.stats.nulls_replaced += original_nulls - current_nulls
-
-        self.stats.rows_removed += original_size - len(self.df)
-        self.stats.columns_removed += original_cols - len(self.df.columns)
-
         return self
 
     def remove_rows_with_nulls(
@@ -142,14 +142,13 @@ class DataCleansing:
         if not fields:
             return self
 
-        selected_fields = [field for field in fields if field in self.df.columns]
+        names = list(schema_of(self.df))
+        selected_fields = [field for field in fields if field in names]
         if not selected_fields:
             return self
 
-        original_size = len(self.df)
         null_checks = [pl.col(field).is_null() for field in selected_fields]
         self.df = self.df.filter(~pl.any_horizontal(*null_checks))
-        self.stats.rows_removed += original_size - len(self.df)
         return self
 
     def replace_null_defaults(
@@ -177,12 +176,8 @@ class DataCleansing:
         }
         string_dtypes = {pl.Utf8, pl.String}
 
-        original_nulls = 0
-        if self.df.width > 0:
-            original_nulls = self.df.null_count().sum_horizontal().item()
-
         expressions = []
-        for column_name, dtype in self.df.schema.items():
+        for column_name, dtype in schema_of(self.df).items():
             expr = pl.col(column_name)
             if replace_numbers and dtype in numeric_dtypes:
                 expr = expr.fill_null(default_num)
@@ -192,10 +187,6 @@ class DataCleansing:
 
         if expressions:
             self.df = self.df.with_columns(expressions)
-
-        if self.df.width > 0:
-            current_nulls = self.df.null_count().sum_horizontal().item()
-            self.stats.nulls_replaced += original_nulls - current_nulls
 
         return self
 
@@ -212,9 +203,9 @@ class DataCleansing:
         runs of whitespace into one space without touching the ends.
         """
         # Get string columns
+        schema = schema_of(self.df)
         str_cols = []
-        for col in self.df.columns:
-            dtype = self.df.select(pl.col(col)).dtypes[0]
+        for col, dtype in schema.items():
             if dtype in [pl.Utf8, pl.String]:
                 str_cols.append(col)
 
@@ -223,7 +214,7 @@ class DataCleansing:
             str_cols = [col for col in str_cols if col in fields]
 
         expressions = []
-        for col in self.df.columns:
+        for col in schema:
             if col in str_cols:
                 if remove_all:
                     # Remove all whitespace
@@ -237,8 +228,6 @@ class DataCleansing:
                         # Replace multiple spaces with single space
                         expr = expr.str.replace_all(r"\s+", " ")
                 expressions.append(expr.alias(col))
-                # Count changes (approximate)
-                self.stats.whitespace_changes += len(self.df)
             else:
                 expressions.append(pl.col(col))
 
@@ -254,9 +243,9 @@ class DataCleansing:
     ) -> "DataCleansing":
         """Remove specified character types"""
         # Get string columns
+        schema = schema_of(self.df)
         str_cols = []
-        for col in self.df.columns:
-            dtype = self.df.select(pl.col(col)).dtypes[0]
+        for col, dtype in schema.items():
             if dtype in [pl.Utf8, pl.String]:
                 str_cols.append(col)
 
@@ -265,7 +254,7 @@ class DataCleansing:
             str_cols = [col for col in str_cols if col in fields]
 
         expressions = []
-        for col in self.df.columns:
+        for col in schema:
             if col in str_cols:
                 expr = pl.col(col)
 
@@ -280,8 +269,6 @@ class DataCleansing:
                     expr = expr.str.replace_all(f"[{re.escape(punctuation_chars)}]", "")
 
                 expressions.append(expr.alias(col))
-                # Count changes (approximate)
-                self.stats.character_removals += len(self.df)
             else:
                 expressions.append(pl.col(col))
 
@@ -293,9 +280,9 @@ class DataCleansing:
     ) -> "DataCleansing":
         """Modify string case"""
         # Get string columns
+        schema = schema_of(self.df)
         str_cols = []
-        for col in self.df.columns:
-            dtype = self.df.select(pl.col(col)).dtypes[0]
+        for col, dtype in schema.items():
             if dtype in [pl.Utf8, pl.String]:
                 str_cols.append(col)
 
@@ -304,7 +291,7 @@ class DataCleansing:
             str_cols = [col for col in str_cols if col in fields]
 
         expressions = []
-        for col in self.df.columns:
+        for col in schema:
             if col in str_cols:
                 expr = pl.col(col)
                 if case.lower() == "upper":
@@ -315,18 +302,12 @@ class DataCleansing:
                     expr = expr.str.to_titlecase()
 
                 expressions.append(expr.alias(col))
-                # Count changes (approximate)
-                self.stats.case_changes += len(self.df)
             else:
                 expressions.append(pl.col(col))
 
         self.df = self.df.with_columns(expressions)
         return self
 
-    def get_result(self) -> pl.DataFrame:
-        """Get the cleansed DataFrame"""
+    def get_result(self) -> Frame:
+        """Get the cleansed frame (same kind as the input)"""
         return self.df.clone()
-
-    def get_stats(self) -> CleansingStats:
-        """Get cleansing statistics"""
-        return self.stats

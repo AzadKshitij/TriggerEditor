@@ -118,6 +118,20 @@ def test_after_node_can_replace_a_variable() -> None:
     assert executor.execution_context["x"] == 9
 
 
+def test_after_node_that_raises_keeps_the_node_result() -> None:
+    expected = NodeExecutor().execute_node(StubNode("x = 1"))
+    executor = NodeExecutor()
+
+    def boom(node, variables, result) -> None:
+        raise RuntimeError("boom")
+
+    executor.after_node = boom
+    result = executor.execute_node(StubNode("x = 1"))
+    assert result.success is True
+    assert result.variables == expected.variables
+    assert executor.execution_context["x"] == 1
+
+
 def test_system_exit_is_a_failure_and_the_worker_survives() -> None:
     executor = NodeExecutor()
     result = executor.execute_node(StubNode("raise SystemExit(3)"))

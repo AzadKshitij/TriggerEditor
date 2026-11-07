@@ -32,7 +32,7 @@ The Config Dock shows one **card** per formula. The dock toolbar has an **Add fo
 | Control | Default | Effect |
 |---|---|---|
 | **Target column** (drop-down) | "Select target column" | Where the result goes. Choose an existing column to **replace** it, or **+ add column** to create a new one (an "Add Column" box asks for the name). Columns made by earlier cards are listed too. |
-| **Data type** (drop-down) | Auto | Applied to the result with `CAST`, for a new column or for one that is replaced. Choices: Auto, String, Integer, Float, Boolean, Date, Datetime, Time, Categorical. Auto keeps whatever the SQL produces. If the target is a column of the input the box is greyed and shows that column's type. |
+| **Data type** (drop-down) | Auto | Applied to the result with `CAST`, for a new column or for one that is replaced. Choices: Auto, String, Integer, Float, Boolean, Date, Datetime, Time, Categorical. Auto keeps whatever the SQL produces. If the target is a column of the input the box is greyed and shows that column's type. Categorical results are Categorical columns. Time results are kept as text (`HH:MM:SS`) because the app has no Time column type. |
 | Formula (SQL editor; placeholder `Enter formula e.g.:` / `CASE WHEN [Age] > 30 THEN 'Adult' ELSE 'Young' END`) | empty | A SQL expression; see [Writing SQL expressions](index.md#writing-sql-expressions). Drag the grip under the editor to make it taller. A message under the editor explains any error. |
 | Card header arrow | expanded | Collapse a card. |
 
@@ -82,7 +82,8 @@ UPPER([vendor]) || '-' || CAST([id] AS VARCHAR)
 
 ## Edge cases and limits
 
-- [Preview uses 100 rows](index.md#preview-vs-run). The card also trial-runs the formula on the first 100 rows so errors such as "text plus number" show before you Run.
+- [Preview uses 100 rows](index.md#preview-vs-run).
+- While you type, Formula checks names and syntax against the columns. An error that depends on the values (for example text that cannot be converted for a real row) appears when you leave the node, from the first 100 rows.
 - At most **five** formulas per node (the add button stops at five); a file with more stops with `TD-SHAPE-004`. Chain two Formula nodes for more, or use [Multi-Field Formula](multi-field-formula.md) to apply one rule to many columns.
 - Results are stored as the app's standard types (whole numbers, decimals, text, dates, yes/no); unusual SQL result types are converted.
 - Empty cells: most functions return empty when an input is empty. Use `COALESCE([x], 0)` to substitute a value.

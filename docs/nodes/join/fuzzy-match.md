@@ -104,6 +104,7 @@ With **Algorithm** Levenshtein ratio, the third pair scores 0.8571 instead of 0.
 - **Ties** are broken the same way every time (higher score first, then row order), so a re-run gives the same result.
 - **Score** is rounded to four decimals.
 - **Column names.** `Match_ID` and `Match_Score` are reserved: a left column with one of those names is renamed with a `_2` suffix.
+- **Internal names.** A column named `__l` or `__r` in either input stops the node (`TD-SHAPE-002`); rename it first.
 
 ## Errors you may see
 

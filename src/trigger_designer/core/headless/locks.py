@@ -14,6 +14,9 @@ from pathlib import Path
 from trigger_designer.core.headless.atomic import write_bytes_atomic
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 
+#: A lock file with no readable payload this young is still being written.
+_PARTIAL_LOCK_GRACE_S = 2.0
+
 
 def lock_path(state: Path, workflow: str) -> Path:
     key = os.path.normcase(os.path.abspath(workflow))
@@ -39,7 +42,9 @@ def _owner_alive(info: dict) -> bool:
     started = _create_time(pid)
     recorded = info.get("create_time")
     if started is None:
-        return False
+        # The pid exists but its start time is unreadable (another user's
+        # process): it is not provably dead, so never sweep its lock.
+        return True
     return not (
         isinstance(recorded, (int, float)) and abs(started - float(recorded)) >= 1.0
     )
@@ -73,6 +78,19 @@ class RunLock:
             return data if isinstance(data, dict) else {}
         except OSError, ValueError:
             return {}
+
+    def _is_being_written(self, info: dict) -> bool:
+        """A lock with no readable payload that was created moments ago.
+
+        ``O_EXCL`` creates the file before its payload is written, so a second
+        process can see it empty. Only an old unreadable lock counts as stale.
+        """
+        if info:
+            return False
+        try:
+            return time.time() - self.path.stat().st_mtime < _PARTIAL_LOCK_GRACE_S
+        except OSError:
+            return False
 
     @staticmethod
     def sweep(info: dict) -> None:
@@ -109,12 +127,18 @@ class RunLock:
                 fd = os.open(self.path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             except FileExistsError:
                 info = self._read()
-                if _owner_alive(info) and attempt == 0:
+                if attempt == 0 and (
+                    _owner_alive(info) or self._is_being_written(info)
+                ):
+                    owner = (
+                        f" (pid {info['pid']}, run {str(info.get('run_id'))[:8]})"
+                        if info.get("pid")
+                        else ""
+                    )
                     raise CliError(
                         ExitCode.BUSY,
                         "TD-CLI-012",
-                        f"This workflow is already running (pid {info.get('pid')}, "
-                        f"run {str(info.get('run_id'))[:8]}).",
+                        f"This workflow is already running{owner}.",
                         "Wait for the other run to finish; if none is running, run "
                         "again (stale locks clear themselves).",
                     ) from None

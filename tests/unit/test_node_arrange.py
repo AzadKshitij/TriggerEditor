@@ -153,6 +153,39 @@ def test_distribute_clamps_a_negative_gap_to_zero():
     }
 
 
+def test_distribute_wide_selection_keeps_both_outer_nodes_in_place():
+    first = FakeNode(0.0, 0.0, width=100.0)
+    middle = FakeNode(150.0, 0.0, width=100.0)
+    last = FakeNode(400.0, 0.0, width=100.0)
+
+    moves = node_arrange.distribute([first, middle, last], horizontal=True)
+
+    # Span 0..500 holds 300 of body, so two gaps of 100 put the middle at 200.
+    assert at([first, middle, last], moves) == {id(middle): (200.0, 0.0)}
+
+
+def test_distribute_tight_selection_moves_the_last_node_outward():
+    first = FakeNode(0.0, 0.0, width=100.0)
+    middle = FakeNode(100.0, 0.0, width=100.0)
+    last = FakeNode(150.0, 0.0, width=100.0)
+
+    moves = node_arrange.distribute([first, middle, last], horizontal=True)
+
+    # Span 0..250 is too short for 300 of body, so the gap clamps to zero and
+    # the nodes pack at 0, 100 and 200. Only the last node has to move.
+    assert at([first, middle, last], moves) == {id(last): (200.0, 0.0)}
+
+
+def test_distribute_tight_vertical_selection_moves_the_last_node_outward():
+    top = FakeNode(0.0, 0.0, height=100.0)
+    middle = FakeNode(0.0, 100.0, height=100.0)
+    bottom = FakeNode(0.0, 150.0, height=100.0)
+
+    moves = node_arrange.distribute([top, middle, bottom], horizontal=False)
+
+    assert at([top, middle, bottom], moves) == {id(bottom): (0.0, 200.0)}
+
+
 def test_distribute_needs_three_nodes():
     assert (
         node_arrange.distribute(

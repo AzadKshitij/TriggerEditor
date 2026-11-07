@@ -48,7 +48,7 @@ def test_viewer_export_failure_shows_warning(qtbot, monkeypatch, tmp_path) -> No
     viewer = PolarsTableViewer()
     qtbot.addWidget(viewer)
     df = pl.DataFrame({"a": [1]})
-    viewer.dataframe = df
+    viewer.set_dataframe(df)
     viewer.filtered_dataframe = None
     target = tmp_path / "x.xlsx"
     monkeypatch.setattr(

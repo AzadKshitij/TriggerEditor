@@ -42,6 +42,10 @@ class RunAlreadySealed(Exception):
     """A run record was sealed already; sealed records are never rewritten."""
 
 
+class StoreCorrupt(ValueError):
+    """The run log index has an unreadable line before its end; sealing would append past it."""
+
+
 class StoreLockTimeout(Exception):
     """The store lock could not be taken in time."""
 
@@ -532,6 +536,11 @@ class RunStore:
             if target.exists():
                 raise RunAlreadySealed(record.run_id)
             index = _read_index(folder)
+            if index.corrupt_line is not None:
+                raise StoreCorrupt(
+                    f"run log index line {index.corrupt_line} cannot be read; "
+                    f"verify the run log before recording more runs: {folder}"
+                )
             notes: list[str] = []
             if index.truncated_tail:
                 self._repair_index_tail(folder, index)
@@ -620,7 +629,11 @@ class RunStore:
         """Runs in sequence order, from the index alone (no record is opened)."""
         folder = self._directory(directory, workflow_path)
         headers: list[RunHeader] = []
-        for entry in _read_index(folder).entries:
+        index = _read_index(folder)
+        entries = index.entries
+        if index.corrupt_line is not None:
+            entries = _entries_before(folder, index.corrupt_line)
+        for entry in entries:
             try:
                 headers.append(
                     RunHeader(

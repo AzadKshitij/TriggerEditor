@@ -363,16 +363,12 @@ class NodeExecutor:
                         f"after_execution hook failed for {node_name}: {hook_error}"
                     )
 
-            try:
-                self._call_hook(self.after_node, node, local_variables, result)
-                # An observer may have added or replaced a variable; the result
-                # and the shared context must agree on what the node produced.
-                result.variables = {**result.variables, **local_variables}
-                # Update shared execution context with new variables
-                self.execution_context.update(local_variables)
-            except Exception as hook_error:
-                logger.warning(f"after_node hook failed for {node_name}: {hook_error}")
-                raise
+            self._call_hook(self.after_node, node, local_variables, result)
+            # An observer may have added or replaced a variable; the result
+            # and the shared context must agree on what the node produced.
+            result.variables = {**result.variables, **local_variables}
+            # Update shared execution context with new variables
+            self.execution_context.update(local_variables)
 
             # Log successful execution
             logger.debug(f"Successfully executed node {node_name}")

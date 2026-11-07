@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import polars as pl
+import pytest
 from nodeeditor.node_edge import Edge
 from polars.testing import assert_frame_equal
 
@@ -56,6 +57,32 @@ def test_count_empty_frame_is_zero() -> None:
     out = core.run_node([frame], {}).pop().collect()
     assert out.rows() == [(0,)]
     assert out.schema["Count"] == pl.Int64
+
+
+@pytest.mark.parametrize(
+    ("frame", "expected"),
+    [
+        (pl.DataFrame({"a": [1, 2, 3]}), 3),
+        (pl.DataFrame(schema={"a": pl.String}), 0),
+    ],
+    ids=["rows", "empty"],
+)
+def test_count_runs_only_when_the_result_is_collected(
+    frame: pl.DataFrame, expected: int
+) -> None:
+    calls: list[int] = []
+
+    def record(batch: pl.DataFrame) -> pl.DataFrame:
+        calls.append(1)
+        return batch
+
+    (out,) = core.run_node([frame.lazy().map_batches(record)], {})
+    assert isinstance(out, pl.LazyFrame)
+    assert calls == []
+    collected = out.collect()
+    assert collected.rows() == [(expected,)]
+    assert collected.schema["Count"] == pl.Int64
+    assert len(calls) == 1
 
 
 def test_count_returns_one_lazy_frame_and_imports_no_qt() -> None:

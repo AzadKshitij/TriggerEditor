@@ -342,6 +342,21 @@ def test_unknown_column_is_003_on_either_side() -> None:
     assert code_of(_run, FRR, FL) == "TD-SHAPE-003"
 
 
+@pytest.mark.parametrize("side", ["left", "right"])
+@pytest.mark.parametrize("name", ["__l", "__r"])
+def test_internal_names_are_002_on_either_side(side: str, name: str) -> None:
+    left, right = _names(["acme"]), _suppliers(["acme"])
+    if side == "left":
+        left = left.with_columns(pl.lit("x").alias(name))
+    else:
+        right = right.with_columns(pl.lit("x").alias(name))
+    with pytest.raises(ShapingError) as info:
+        _run(left, right)
+    assert info.value.code == "TD-SHAPE-002"
+    assert info.value.columns == (name,)
+    assert f"'{name}'" in str(info.value)
+
+
 @pytest.mark.parametrize(
     "settings",
     [

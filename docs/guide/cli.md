@@ -142,7 +142,7 @@ In a script (no one to answer) pass `--yes`. Without a terminal and without `--y
 
 ### 4. Dry run
 
-A dry run does everything except run the nodes and write files: it checks the approval, the parameters, that the inputs exist, that the output folders can be written and that every node's code passes the safety check.
+A dry run does everything except run the nodes and write output files: it checks the approval, the parameters, that the inputs exist, that the output folders can be written (it creates and removes a temporary test file in each one) and that every node's code passes the safety check. It also makes a temporary work copy of the workflow and removes it when it finishes.
 
 ```text
 > trigger-designer-cli run select.tds --dry-run --input-dir Y:\audit\in --output-dir Y:\audit\out
@@ -233,7 +233,7 @@ Runs the workflow. All outputs are first written to temporary files next to thei
 | `--input-dir DIR` | none | Read every File Input from `DIR`, using the file name saved in the workflow. The Workpaper Output's **Source files** list follows it too. |
 | `--output-dir DIR` | none | Write every File Output and every Workpaper Output into `DIR`, using the file name saved in the workflow. |
 | `--create-output-dirs` | off | Create output folders that do not exist. Without it a missing folder is an error (exit 2). |
-| `--dry-run` | off | Check everything and print the plan. Runs nothing and writes nothing. |
+| `--dry-run` | off | Check everything and print the plan. Runs nothing and writes no output; it only makes a temporary write-check file in each output folder and a temporary work copy, and removes them. |
 | `--timeout SEC` | `3600` | Stop the whole run after `SEC` seconds. `0` means no limit. Exit 4. |
 | `--max-memory MB` | none | Stop if the program uses more than `MB` of memory. Exit 5. |
 | `--threads N` | all | Limit the data engine (Polars) to `N` threads. |
@@ -459,7 +459,7 @@ How a run decides which file to use for a File Input or File Output:
 | Order | Source | Notes |
 |---|---|---|
 | 1 | `--param NAME=VALUE` for a path parameter | Wins over everything. A relative value is relative to the folder you are in when you type the command (the "current folder"). |
-| 2 | `--input-dir` / `--output-dir` | Takes the file name from the saved path or the parameter's default (`/` and `\` both accepted) and puts it in `DIR`. |
+| 2 | `--input-dir` / `--output-dir` | Takes the file name from the saved path or the parameter's default (`/` and `\` both accepted) and puts it in `DIR`. A pattern such as `D:\in\*\data.csv` keeps everything from its first wildcard (`DIR\*\data.csv`), so it still reads the whole folder tree. |
 | 3 | The parameter's default (`--default`) | Relative defaults are relative to the workflow's folder. |
 | 4 | The path saved in the workflow | Relative paths are relative to the workflow's folder, never to the current folder. |
 

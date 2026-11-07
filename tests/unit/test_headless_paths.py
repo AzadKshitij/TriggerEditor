@@ -130,3 +130,11 @@ def test_codegen_unsafe_chars(bad):
 
 def test_codegen_safe_plain_and_unicode():
     assert is_codegen_safe_dir("C:/out/r\xe9sum\xe9 data")
+
+
+def test_remap_into_dir_keeps_a_glob_tail(tmp_path):
+    for raw in (r"D:\in\*\data.csv", "/srv/in/*/data.csv"):
+        assert remap_into_dir(raw, str(tmp_path)) == str(tmp_path / "*" / "data.csv")
+    assert remap_into_dir(r"D:\in\2024-*.csv", str(tmp_path)) == str(
+        tmp_path / "2024-*.csv"
+    )

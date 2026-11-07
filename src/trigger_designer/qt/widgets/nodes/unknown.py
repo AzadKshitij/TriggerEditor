@@ -46,7 +46,10 @@ class UnknownContent(QDMNodeIconContentWidget):
         res.update(self.raw_content)
         return res
 
-    def deserialize(self, data: Dict[str, Any], hashmap: Dict[str, Any] = {}) -> bool:
+    def deserialize(
+        self, data: Dict[str, Any], hashmap: Dict[str, Any] | None = None
+    ) -> bool:
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap)
         self.raw_content = dict(data)
         return res
@@ -94,8 +97,9 @@ class TriggerNode_Unknown(TriggerNode):
         return res
 
     def deserialize(
-        self, data: dict, hashmap: dict = {}, restore_id: bool = True
+        self, data: dict, hashmap: dict | None = None, restore_id: bool = True
     ) -> bool:
+        hashmap = {} if hashmap is None else hashmap
         res = super().deserialize(data, hashmap, restore_id)
         # This type stands in for a node that cannot be resolved, so the name
         # the file saved is the only name it has: restore what the base class

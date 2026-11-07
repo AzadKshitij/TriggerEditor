@@ -295,6 +295,15 @@ def no_modal_dialogs(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def _reset_run_record_provider():
+    from trigger_designer.core.audit.recorder import set_run_record_provider
+
+    set_run_record_provider(None)
+    yield
+    set_run_record_provider(None)
+
+
+@pytest.fixture(autouse=True)
 def _e2e_default_no_modal_dialogs(request):
     """Every ``tests/e2e`` test runs with the modal-dialog stub applied.
 

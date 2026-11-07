@@ -11,6 +11,7 @@ from trigger_designer.core.shaping.common import (
     numeric_expr,
     require_columns,
     schema_of,
+    unique_name,
 )
 
 POS = "__pos"
@@ -173,10 +174,11 @@ def apply_window(frame: Frame, settings: dict) -> pl.LazyFrame:
     s = normalize(settings)
     lf = as_lazy(frame)
     schema = schema_of(lf)
+    pos = unique_name(POS, schema)
     order_cols = [item["column"] for item in s["order_by"]]
     sources = [op["source"] for op in s["ops"] if op["op"] != "row_number"]
     require_columns(schema, [*s["partition_by"], *order_cols, *sources])
-    taken = set(schema) | {POS}
+    taken = set(schema) | {pos}
     for op in s["ops"]:
         if op["name"] in taken:
             raise ShapingError(
@@ -199,16 +201,16 @@ def apply_window(frame: Frame, settings: dict) -> pl.LazyFrame:
         return lf.with_columns(exprs)
     # Sort-compute-restore: `over(order_by=)` takes one direction for every
     # key, so sort by partition, each key's own direction, then input position.
-    keys = [*parts, *order_cols, POS]
+    keys = [*parts, *order_cols, pos]
     descending = (
         [False] * len(parts) + [item["descending"] for item in s["order_by"]] + [False]
     )
     return (
-        lf.with_row_index(POS)
+        lf.with_row_index(pos)
         .sort(keys, descending=descending, nulls_last=True, maintain_order=True)
         .with_columns(exprs)
-        .sort(POS, maintain_order=True)
-        .drop(POS)
+        .sort(pos, maintain_order=True)
+        .drop(pos)
     )
 
 

@@ -126,6 +126,22 @@ def test_expression_string_literals_are_not_column_names() -> None:
     assert matched.collect()["n"].to_list() == [10, 600]
 
 
+def test_backslash_in_an_unused_column_name_does_not_break_the_expression() -> None:
+    frame = pl.DataFrame({"n": [10, 600], "Net\\Gross": [1, 2]}).lazy()
+    matched, _other = core.run_node(
+        [frame], {"mode": "expression", "expression": "[n] > 100"}
+    )
+    assert matched.collect()["n"].to_list() == [600]
+
+
+def test_expression_can_reference_a_backslash_column() -> None:
+    frame = pl.DataFrame({"n": [10, 600], "Net\\Gross": [1, 2]}).lazy()
+    matched, _other = core.run_node(
+        [frame], {"mode": "expression", "expression": "[Net\\Gross] = 2"}
+    )
+    assert matched.collect()["n"].to_list() == [600]
+
+
 def test_bad_expression_is_a_shaping_error() -> None:
     with pytest.raises(ShapingError) as error:
         core.run_node([_frame()], {"mode": "expression", "expression": "(((("})

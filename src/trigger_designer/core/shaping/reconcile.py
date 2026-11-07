@@ -12,6 +12,7 @@ from trigger_designer.core.shaping.common import (
     ShapingError,
     as_lazy,
     estimate_pairs,
+    reject_internal_names,
     require_columns,
     schema_of,
     unique_name,
@@ -444,6 +445,8 @@ def apply_reconcile(left: Frame, right: Frame, settings: dict) -> ReconcileResul
             name for name in (s[f"amount_{side}"], s[f"date_{side}"]) if name
         ]
         require_columns(schema, names)
+    reject_internal_names(schema_of(lf), ("__l", "__r"), "left")
+    reject_internal_names(schema_of(rf), ("__l", "__r"), "right")
     left_frame = lf.with_row_index("__l").collect()
     right_frame = rf.with_row_index("__r").collect()
     left_slim = _slim(left_frame, "l", s)
@@ -469,13 +472,6 @@ def apply_reconcile(left: Frame, right: Frame, settings: dict) -> ReconcileResul
         left_hit, right_hit = candidates["__l"], candidates["__r"]
         left_ok, right_ok = ok["__l"], ok["__r"]
 
-    left_columns = [name for name in left_frame.columns if name != "__l"]
-    right_names: dict[str, str] = {}
-    for column in [name for name in right_frame.columns if name != "__r"]:
-        right_names[column] = unique_name(
-            f"{column}_right" if column in left_columns else column,
-            left_columns + list(right_names.values()),
-        )
     lead = {
         "Match_ID": pl.col("__mid"),
         "Match_Status": pl.col("Match_Status"),
@@ -484,14 +480,26 @@ def apply_reconcile(left: Frame, right: Frame, settings: dict) -> ReconcileResul
         lead["Amount_Diff"] = pl.col("__diff")
     if s["has_date"]:
         lead["Date_Gap_Days"] = pl.col("__gap")
+    # Lead names are reserved; a clashing input column gets a _2 suffix.
+    taken = list(lead)
+    left_columns = [name for name in left_frame.columns if name != "__l"]
+    left_names: dict[str, str] = {}
+    for column in left_columns:
+        left_names[column] = unique_name(column, taken)
+        taken.append(left_names[column])
+    right_names: dict[str, str] = {}
+    for column in [name for name in right_frame.columns if name != "__r"]:
+        base = f"{column}_right" if column in left_names.values() else column
+        right_names[column] = unique_name(base, taken)
+        taken.append(right_names[column])
     matched = (
         pairs.select(
             "__l", "__r", *[expression.alias(name) for name, expression in lead.items()]
         )
-        .join(left_frame, on="__l", how="left")
+        .join(left_frame.rename(left_names), on="__l", how="left")
         .join(right_frame.rename(right_names), on="__r", how="left")
         .sort(["Match_ID", "__l", "__r"], nulls_last=True)
-        .select(list(lead) + left_columns + list(right_names.values()))
+        .select(list(lead) + list(left_names.values()) + list(right_names.values()))
     )
     left_unmatched = _unmatched(
         left_frame, "l", pairs["__l"].drop_nulls(), left_hit, left_ok, s

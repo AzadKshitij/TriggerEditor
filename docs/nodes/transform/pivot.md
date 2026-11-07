@@ -63,8 +63,10 @@ Jan 2; Beta: Jan 1, Mar 0.
 
 - **Columns are sorted by name**, not by the order they appear (Feb, Jan, Mar above). Number the headers
   (`01 Jan`, `02 Feb`) if you need calendar order, or reorder with *Select* afterwards.
-- Sum, Mean, Min, Max and Median read text as numbers (commas are removed; text that is not a number is
-  ignored). First, Last and Count work on any column and Count counts non-empty values.
+- Sum, Mean, Min, Max and Median read text as numbers the way Audit reads amounts (`1,234.50`, `1.234,50`,
+  `12,5` and `(12.00)` all work; text that is not a number is ignored). First, Last and Count work on any
+  column and Count counts non-empty values.
+- When the value column is text and none of the first 100 rows can be read as a number, a warning chip says so.
 - A Sum of cells that are all empty is empty, not 0.
 - Count shows 0 for a header that exists for that row (a row with only empty values), and blank when no row
   has that combination. Choose *Zero* to show 0 everywhere.

@@ -28,6 +28,8 @@ def amount_expr(name: str, dtype: pl.DataType) -> pl.Expr:
     silently producing wrong digits.
     """
     col = pl.col(name)
+    if dtype in (pl.Categorical, pl.Enum):
+        col, dtype = col.cast(pl.String), pl.String
     if dtype == pl.String:
         s = (
             col.str.strip_chars()

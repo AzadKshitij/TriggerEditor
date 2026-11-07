@@ -7,6 +7,8 @@ from collections.abc import Iterable
 import duckdb
 import polars as pl
 
+from trigger_designer.core.utils.amounts import amount_expr
+
 Frame = pl.LazyFrame | pl.DataFrame
 
 #: DuckDB workers can enter Polars' ``LazyFrame.collect`` off the Qt main
@@ -97,6 +99,21 @@ def require_columns(frame_schema: dict, names: Iterable[str]) -> None:
         )
 
 
+def reject_internal_names(
+    frame_schema: dict, internal: Iterable[str], side: str
+) -> None:
+    """Stop with a clear message when an input column uses a name the node needs internally."""
+    clashes = [name for name in internal if name in frame_schema]
+    if clashes:
+        raise ShapingError(
+            "TD-SHAPE-002",
+            f"The {side} input has a column named "
+            f"{', '.join(repr(c) for c in clashes)}, "
+            "which this node uses internally; rename that column first",
+            clashes,
+        )
+
+
 def unique_name(base: str, taken: Iterable[str]) -> str:
     """``base`` if free, else ``base_2``, ``base_3`` ... (deterministic)."""
     taken = set(taken)
@@ -109,16 +126,17 @@ def unique_name(base: str, taken: Iterable[str]) -> str:
 
 
 def numeric_expr(name: str, dtype: pl.DataType) -> pl.Expr:
-    """Column as Float64; text is cast with strict=False (bad values -> null)."""
+    """Column as Float64; text is read like Audit reads amounts (bad values -> null).
+
+    Text goes through ``amount_expr``, so ``1.234,50`` and ``12,5`` are read as
+    decimal-comma numbers instead of having their commas dropped.
+    """
     column = pl.col(name)
     if dtype.is_numeric():
         return column.cast(pl.Float64)
-    return (
-        column.cast(pl.String)
-        .str.replace_all(",", "")
-        .str.strip_chars()
-        .cast(pl.Float64, strict=False)
-    )
+    if dtype in (pl.String, pl.Categorical, pl.Enum):
+        return amount_expr(name, dtype)
+    return column.cast(pl.String).cast(pl.Float64, strict=False)
 
 
 def estimate_pairs(left: pl.DataFrame, right: pl.DataFrame, keys: list[str]) -> int:

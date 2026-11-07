@@ -304,6 +304,34 @@ def test_head_sample():
     assert short.sampled is False
 
 
+def test_head_sample_exactly_n_rows_is_not_sampled():
+    frame = pl.DataFrame({"n": list(range(100))})
+    p = pf.profile_frame(
+        frame, settings=pf.ProfileSettings(sample_mode="head", sample_rows=100)
+    )
+    assert (p.row_count, p.sampled) == (100, False)
+    assert p.columns[0].sampled is False
+
+
+def test_head_sample_one_row_over_n_is_sampled():
+    frame = pl.DataFrame({"n": list(range(101))})
+    p = pf.profile_frame(
+        frame, settings=pf.ProfileSettings(sample_mode="head", sample_rows=100)
+    )
+    assert (p.row_count, p.sampled) == (100, True)
+    assert p.columns[0].max == "99"
+    assert p.columns[0].sampled is True
+
+
+def test_head_sample_fewer_rows_than_n_is_not_sampled():
+    frame = pl.DataFrame({"n": list(range(99))})
+    p = pf.profile_frame(
+        frame, settings=pf.ProfileSettings(sample_mode="head", sample_rows=100)
+    )
+    assert (p.row_count, p.sampled) == (99, False)
+    assert p.columns[0].sampled is False
+
+
 def test_random_sample_is_reproducible():
     frame = pl.DataFrame({"n": list(range(1000))})
 
@@ -319,6 +347,15 @@ def test_random_sample_is_reproducible():
     whole = run(42, rows=5000)
     assert whole.sampled is False
     assert whole.row_count == 1000
+
+
+def test_random_sample_stays_sampled_when_frame_exceeds_n():
+    frame = pl.DataFrame({"n": list(range(1000))})
+    p = pf.profile_frame(
+        frame, settings=pf.ProfileSettings(sample_mode="random", sample_rows=100)
+    )
+    assert (p.row_count, p.sampled) == (100, True)
+    assert p.columns[0].sampled is True
 
 
 def test_profile_is_byte_identical_across_runs():

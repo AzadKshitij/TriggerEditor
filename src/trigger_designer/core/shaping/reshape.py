@@ -5,6 +5,7 @@ from __future__ import annotations
 import polars as pl
 
 from trigger_designer.core.shaping.common import (
+    LIVE_SAMPLE_ROWS,
     Frame,
     ShapingError,
     as_lazy,
@@ -50,7 +51,13 @@ def _agg_expr(aggregation: str, column: str) -> pl.Expr:
     }[aggregation].alias(column)
 
 
-def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
+def apply_pivot(frame: Frame, settings: dict) -> pl.LazyFrame:
+    """Pivot ``frame`` into a lazy wide table.
+
+    Only the distinct header values are read at call time, in one small query,
+    so the new column names and the column limit are known up front. The
+    aggregation runs when the returned frame is collected.
+    """
     s = {**PIVOT_DEFAULTS, **(settings or {})}
     lf = as_lazy(frame)
     schema = schema_of(lf)
@@ -80,12 +87,11 @@ def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
     aggregated = base.group_by(indexes + [header]).agg(
         _agg_expr(s["aggregation"], value_name)
     )
-    aggregated = aggregated.collect()
-
     distinct = (
-        aggregated.select(header)
+        base.select(pl.col(header))
         .unique()
-        .sort(header, nulls_last=True)[header]
+        .sort(header, nulls_last=True)
+        .collect()[header]
         .to_list()
     )
     if len(distinct) > MAX_PIVOT_COLUMNS:
@@ -137,7 +143,39 @@ def apply_pivot(frame: Frame, settings: dict) -> pl.DataFrame:
 
 
 def run_pivot(frames: list, settings: dict) -> list[pl.LazyFrame]:
-    return [apply_pivot(frames[0], settings).lazy()]
+    return [apply_pivot(frames[0], settings)]
+
+
+def describe(frames: list, settings: dict) -> list[tuple[str, str]]:
+    s = {**PIVOT_DEFAULTS, **(settings or {})}
+    name = s["value_column"]
+    if s["aggregation"] not in NUMERIC_AGGS or not name:
+        return []
+    try:
+        lf = as_lazy(frames[0])
+        dtype = schema_of(lf).get(name)
+        if dtype is None or dtype.is_numeric():
+            return []
+        has_values, has_numbers = (
+            lf.head(LIVE_SAMPLE_ROWS)
+            .select(
+                pl.col(name).is_not_null().any().alias("has_values"),
+                numeric_expr(name, dtype).is_not_null().any().alias("has_numbers"),
+            )
+            .collect()
+            .row(0)
+        )
+    except Exception:  # noqa: BLE001
+        return []
+    if has_values and not has_numbers:
+        scope = f"first {LIVE_SAMPLE_ROWS} rows"
+        return [
+            (
+                f"{name} has no readable numbers, so {s['aggregation']} is empty ({scope})",
+                "warning",
+            )
+        ]
+    return []
 
 
 def apply_unpivot(frame: Frame, settings: dict) -> pl.LazyFrame:
@@ -172,16 +210,17 @@ def apply_unpivot(frame: Frame, settings: dict) -> pl.LazyFrame:
             else pl.String
         )
         lf = lf.with_columns(pl.col(values).cast(target))
+    pos = unique_name("__pos", [*schema, variable_name, value_name])
     out = (
-        lf.with_row_index("__pos")
+        lf.with_row_index(pos)
         .unpivot(
             on=values,
-            index=["__pos"] + ids,
+            index=[pos] + ids,
             variable_name=variable_name,
             value_name=value_name,
         )
-        .sort("__pos", maintain_order=True)
-        .drop("__pos")
+        .sort(pos, maintain_order=True)
+        .drop(pos)
     )
     if s["drop_nulls"]:
         out = out.filter(pl.col(value_name).is_not_null())

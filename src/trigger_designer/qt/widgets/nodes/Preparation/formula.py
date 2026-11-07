@@ -669,7 +669,12 @@ class FormulaContent(ShapingContent):
         sections = self._section_list()
         if 0 <= index < len(sections):
             sections[index]["formula_text"] = text
-        return core.validate_section(self.frames, {"sections": sections}, index)
+        # Typing checks names and syntax against the schema only. A value error
+        # (text that cannot be converted for a real row) shows when the node
+        # runs on its sample, so the editor never reads rows here.
+        return core.validate_section(
+            self.frames, {"sections": sections}, index, run_rows=False
+        )
 
     def _refresh_error(self, index: int) -> None:
         if index >= len(self.section_widgets):

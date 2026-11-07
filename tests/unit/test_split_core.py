@@ -74,3 +74,17 @@ def test_describe_reports_percent_and_mode() -> None:
         "sequential",
         "",
     )
+
+
+def test_input_column_named_like_the_split_index_keeps_the_partition() -> None:
+    settings = {"is_random": True, "estimation_percent": 70, "random_seed": 7}
+    marked = pl.DataFrame(
+        {"v": list(range(20)), "__split_idx": [100 + i for i in range(20)]}
+    ).lazy()
+    plain = core.run_node([_frame(20)], settings)
+    shaped = core.run_node([marked], settings)
+    for expected, actual in zip(plain, shaped, strict=True):
+        out = actual.collect()
+        assert out.columns == ["v", "__split_idx"]
+        assert out["v"].to_list() == expected.collect()["v"].to_list()
+        assert out["__split_idx"].to_list() == [100 + v for v in out["v"].to_list()]

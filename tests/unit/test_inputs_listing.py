@@ -323,3 +323,29 @@ def test_glob_negated_class() -> None:
     pattern = glob_to_regex("[!a].csv")
     assert pattern.match("b.csv")
     assert not pattern.match("a.csv")
+
+
+@pytest.mark.parametrize(
+    ("error", "kind"),
+    [
+        (FileNotFoundError(2, "gone"), "file_not_found"),
+        (PermissionError(13, "denied"), "permission"),
+        (OSError(5, "I/O error"), "unreadable"),
+    ],
+)
+def test_stat_failure_is_an_input_error_naming_the_file(
+    monkeypatch, tmp_path, error, kind
+) -> None:
+    write_text(tmp_path / "a.csv", "x\n1\n")
+    real_stat = os.stat
+
+    def flaky(target, *args, **kwargs):
+        if str(target).endswith("a.csv"):
+            raise error
+        return real_stat(target, *args, **kwargs)
+
+    monkeypatch.setattr(os, "stat", flaky)
+    with pytest.raises(InputReadError) as raised:
+        list_source_files(str(tmp_path), "csv")
+    assert raised.value.kind == kind
+    assert "a.csv" in str(raised.value)
