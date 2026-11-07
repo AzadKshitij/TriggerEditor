@@ -417,7 +417,7 @@ UPPER([vendor]) || '-' || CAST([id] AS VARCHAR)
 
 **Edge cases and limits.**
 
-- [Preview uses 100 rows](#preview-vs-run). The card also trial-runs the formula on the first 100 rows so errors such as "text plus number" show before you Run.
+- [Preview uses 100 rows](#preview-vs-run). While you type, the card checks names and syntax against the columns. An error that depends on the values (such as "text plus number" on a real row) shows when you leave the node, from the first 100 rows, before you Run.
 - At most **five** formulas per node (the add button stops at five); a file with more stops with `TD-SHAPE-004`. Chain two Formula nodes for more, or use [Multi-Field Formula](#multi-field-formula) to apply one rule to many columns.
 - Results are stored as the app's standard types (whole numbers, decimals, text, dates, yes/no); unusual SQL result types are converted.
 - Empty cells: most functions return empty when an input is empty. Use `COALESCE([x], 0)` to substitute a value.

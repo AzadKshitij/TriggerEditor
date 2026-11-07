@@ -58,6 +58,7 @@ Four sections.
 - `Match_Status` is `Matched` when no amounts are set, `Within tolerance` when the amounts agree, `Outside tolerance` when they do not. For 1:1, rows only become a match when the amounts agree, so you see `Within tolerance`. For 1:N, N:1 and N:N, rows are grouped by the keys and compared in total, so a group whose total is off still appears in `M`, marked `Outside tolerance`.
 - `Amount_Diff` is always **right amount minus left amount** (for a group, the group totals).
 - `Date_Gap_Days` is right date minus left date, in days.
+- An input column named like one of these outputs (`Match_ID`, `Match_Status`, and `Amount_Diff` or `Date_Gap_Days` when those are set) is renamed in `M` with a `_2` suffix, for example `Match_ID_2` (`_3` if that name is taken too).
 
 `L` and `R` (unmatched). The original columns plus `Unmatched_Reason`, one of:
 

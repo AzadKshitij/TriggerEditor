@@ -156,6 +156,76 @@ def test_acyclic_chain_is_not_a_cycle():
     assert find_cycle(data) is False
 
 
+def test_repeated_ids_joined_by_a_chain_are_not_a_cycle():
+    data = _wf(
+        [
+            _node(1, "preparation.sort", ins=[10], outs=[11]),
+            _node(1, "preparation.sort", ins=[20], outs=[21]),
+            _node(2, "preparation.sort", ins=[30], outs=[31]),
+        ],
+        [(11, 20), (21, 30)],
+    )
+    assert find_cycle(data) is False
+
+
+def test_real_loop_beside_a_node_sharing_its_id_is_a_cycle():
+    data = _wf(
+        [
+            _node(1, "preparation.sort", ins=[10], outs=[11]),
+            _node(2, "preparation.sort", ins=[20], outs=[21]),
+            _node(1, "preparation.sort", ins=[30], outs=[31]),
+        ],
+        [(11, 20), (21, 10)],
+    )
+    assert find_cycle(data) is True
+
+
+def test_repeated_node_id_is_td_cli_001_and_not_a_cycle():
+    data = _wf(
+        [
+            _node(1, "preparation.sort", ins=[10], outs=[11]),
+            _node(1, "preparation.sort", ins=[20], outs=[21]),
+        ],
+        [(11, 20)],
+    )
+    findings = static_validate(_doc(data))
+    dupes = [f for f in findings if f.td_code == "TD-CLI-001"]
+    assert [(f.level, f.message, f.node_id) for f in dupes] == [
+        ("error", "node id 1 is used by more than one node", 1)
+    ]
+    assert "TD-CLI-004" not in _codes(findings)
+
+
+def test_each_repeated_id_is_reported_once_in_ascending_order():
+    data = _wf(
+        [
+            _node(7, "preparation.sort"),
+            _node(3, "preparation.sort"),
+            _node(7, "preparation.sort"),
+            _node(3, "preparation.sort"),
+            _node(7, "preparation.sort"),
+        ],
+        [],
+    )
+    dupes = [f for f in static_validate(_doc(data)) if f.td_code == "TD-CLI-001"]
+    assert [f.message for f in dupes] == [
+        "node id 3 is used by more than one node",
+        "node id 7 is used by more than one node",
+    ]
+
+
+def test_distinct_ids_get_no_duplicate_id_error():
+    data = _wf(
+        [
+            _node(1, "preparation.sort", ins=[10], outs=[11]),
+            _node(2, "preparation.sort", ins=[20], outs=[21]),
+            _node(3, "preparation.sort", ins=[30], outs=[31]),
+        ],
+        [(11, 20), (21, 30)],
+    )
+    assert "TD-CLI-001" not in _codes(static_validate(_doc(data)))
+
+
 def test_clean_workflow_has_no_findings():
     assert static_validate(_doc(_simple())) == []
 

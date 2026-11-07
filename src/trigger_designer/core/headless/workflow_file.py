@@ -6,7 +6,7 @@ import hashlib
 import json
 import locale
 import os
-from collections import deque
+from collections import Counter, deque
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -132,23 +132,26 @@ def _title(node: dict) -> str:
     return str(node.get("title") or node.get("node_title") or node.get("id") or "?")
 
 
-def _socket_owner(nodes: list[dict]) -> dict[Any, Any]:
-    owner: dict[Any, Any] = {}
-    for node in nodes:
+def _socket_owner(nodes: list[dict]) -> dict[Any, int]:
+    """Socket id -> the node's position in ``nodes``, not its id, so repeated
+    node ids cannot merge two nodes."""
+    owner: dict[Any, int] = {}
+    for pos, node in enumerate(nodes):
         for key in ("inputs", "outputs"):
             for sock in node.get(key) or []:
                 if isinstance(sock, dict) and "id" in sock:
-                    owner[sock["id"]] = node.get("id")
+                    owner[sock["id"]] = pos
     return owner
 
 
 def find_cycle(data: dict) -> bool:
-    """Kahn's algorithm over node ids; True when the graph has a loop."""
+    """Kahn's algorithm over node positions so repeated ids cannot merge two
+    nodes; True when the graph has a loop."""
     nodes = [n for n in data.get("nodes", []) if isinstance(n, dict)]
     owner = _socket_owner(nodes)
-    ids = [n.get("id") for n in nodes]
-    indeg = dict.fromkeys(ids, 0)
-    out: dict[Any, list] = {i: [] for i in ids}
+    positions = range(len(nodes))
+    indeg = dict.fromkeys(positions, 0)
+    out: dict[int, list] = {i: [] for i in positions}
     for edge in data.get("edges", []):
         if not isinstance(edge, dict):
             continue
@@ -213,6 +216,16 @@ def static_validate(doc: WorkflowDoc) -> list[Finding]:
                     nid,
                 )
             )
+    id_counts = Counter(n["id"] for n in doc.nodes if isinstance(n.get("id"), int))
+    for nid in sorted(i for i, count in id_counts.items() if count > 1):
+        findings.append(
+            Finding(
+                "error",
+                "TD-CLI-001",
+                f"node id {nid} is used by more than one node",
+                nid,
+            )
+        )
     if find_cycle(doc.data):
         findings.append(Finding("error", "TD-CLI-004", "the graph has a cycle"))
     owner = _socket_owner(doc.nodes)
