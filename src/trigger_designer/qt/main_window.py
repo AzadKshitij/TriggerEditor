@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
     QTabWidget,
     QShortcut,
 )
-from qtpy.QtCore import Qt, QSignalMapper
+from qtpy.QtCore import Qt
 
 import orjson as json
 from orjson import JSONDecodeError
@@ -115,7 +115,6 @@ class TriggerWindow(
     def initUI(self, parent: Optional[QWidget] = None) -> None:
 
         # super(CalculatorWindow, self).__init__(parent)
-        self.windowMapper = QSignalMapper(self)
 
         # Create logger
         self.empty_icon = QIcon(".")
