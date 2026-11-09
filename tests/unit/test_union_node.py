@@ -301,6 +301,36 @@ def test_create_layout_empty_state_and_mode() -> None:
     assert node.content.mode_combo.currentText() == "Auto by Name"
 
 
+def test_switching_to_manual_builds_the_mapping_grid_without_reselect() -> None:
+    """The rebuild path must create the grid when it was never built."""
+    from trigger_designer.qt.performance_scene import TriggerScene
+    from trigger_designer.qt.widgets.nodes.Join.union import MODES, TriggerNode_Union
+
+    node = TriggerNode_Union(TriggerScene())
+    content = node.content
+    content.input_frames = [
+        pl.DataFrame({"id": [1], "name": ["x"]}),
+        pl.DataFrame({"id": [2], "name": ["y"]}),
+    ]
+    content.input_variables = ["in0", "in1"]
+    layout = QVBoxLayout()
+    content.create_layout(layout)
+    assert content.mode == "by_name"
+    assert content._mapping_section is None
+
+    content.mode_combo.setCurrentText(MODES["manual"])
+
+    section = content._mapping_section
+    assert content.mode == "manual"
+    assert section is not None
+    assert len(content._map_rows) == len(content.column_map) == 2
+    widgets = [
+        content._main_layout.itemAt(i).widget()
+        for i in range(content._main_layout.count())
+    ]
+    assert section in widgets
+
+
 def main() -> None:
     test_by_name_unions_columns_with_null_fill()
     test_by_position_ignores_names_pads_short_rows()
@@ -313,6 +343,7 @@ def main() -> None:
     test_serialize_round_trip()
     test_get_code_executes()
     test_create_layout_empty_state_and_mode()
+    test_switching_to_manual_builds_the_mapping_grid_without_reselect()
     print("ok")
 
 
