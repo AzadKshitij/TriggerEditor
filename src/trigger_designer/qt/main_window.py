@@ -624,22 +624,42 @@ class TriggerWindow(
             self.connectStatusScene(None)
 
     def onSubWndClose(self, widget: QWidget, event: Optional[QCloseEvent]) -> None:
-        # Activate the window being closed first so ``maybeSave`` targets the
-        # right document (``findMdiChild`` matches by filename, as upstream).
-        existing = self.findMdiChild(widget.filename)
-        self.mdiArea.setActiveSubWindow(existing)
+        # ``maybeSave`` and the save handlers work on the *active* window, so
+        # activate the document being closed first. It has to be matched by
+        # identity: every untitled document has ``filename is None``, and
+        # ``findMdiChild(None)`` returns whichever of them came first.
+        previous = self.mdiArea.activeSubWindow()
+        closing = self.findSubWindowFor(widget)
+        if closing is not None:
+            self.mdiArea.setActiveSubWindow(closing)
 
         if self.maybeSave():
             # The close is really happening: drop per-window dock state.
             self.onDesignWindowClose(widget, event)
             if event is not None:
                 event.accept()
-        elif event is not None:
-            event.ignore()
+        else:
+            if event is not None:
+                event.ignore()
+            # A vetoed close must not leave the window the user was working
+            # in replaced by the one they decided to keep.
+            if (
+                previous is not None
+                and previous is not closing
+                and previous in self.mdiArea.subWindowList()
+            ):
+                self.mdiArea.setActiveSubWindow(previous)
 
     def findMdiChild(self, filename):
         for window in self.mdiArea.subWindowList():
             if window.widget().filename == filename:
+                return window
+        return None
+
+    def findSubWindowFor(self, widget: QWidget) -> QMdiSubWindow | None:
+        """Return the MDI window that owns ``widget``, or ``None``."""
+        for window in self.mdiArea.subWindowList():
+            if window.widget() is widget:
                 return window
         return None
 
