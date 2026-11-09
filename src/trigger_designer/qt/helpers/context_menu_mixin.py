@@ -346,13 +346,20 @@ class ContextMenuMixin:
 
         item = self.scene.getItemAt(event.pos())
         selected_edge = getattr(item, "edge", None)
-
-        if selected_edge and action == bezierAct:
-            selected_edge.edge_type = EDGE_TYPE_BEZIER
-        if selected_edge and action == directAct:
-            selected_edge.edge_type = EDGE_TYPE_DIRECT
-        if selected_edge and action == squareAct:
-            selected_edge.edge_type = EDGE_TYPE_SQUARE
+        if selected_edge is None or action is None:
+            return
+        new_type = {
+            bezierAct: EDGE_TYPE_BEZIER,
+            directAct: EDGE_TYPE_DIRECT,
+            squareAct: EDGE_TYPE_SQUARE,
+        }.get(action)
+        # The vendor setter only recalculates the graphics path: it neither
+        # records an undo step nor marks the document modified, so a style
+        # change was silently lost on close (issue #21). Snapshot the scene
+        # *after* the assignment - the stamp's inverse is the previous one.
+        if new_type is not None and new_type != selected_edge.edge_type:
+            selected_edge.edge_type = new_type
+            self.scene.history.storeHistory("Edge Style Changed", setModified=True)
 
     def handleNewNodeContextMenu(self, event: QContextMenuEvent) -> None:
         debug_context = getattr(self, "DEBUG_CONTEXT", False)
