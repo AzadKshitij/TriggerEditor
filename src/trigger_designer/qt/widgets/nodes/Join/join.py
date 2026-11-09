@@ -120,9 +120,14 @@ class JoinContent(ShapingContent):
         output_toolbar.addWidget(self.auto_accept_check)
         output_toolbar.addStretch()
         all_button = TextButton("All", "Select all output columns")
-        none_button = TextButton("None", "Deselect all output columns")
+        # Issue #20: the core join reads an empty selection as "all columns",
+        # so "no output" is not a state the model can keep. Do not offer the
+        # toggle; the next sync would only re-check every box.
+        none_button = TextButton("None", "At least one output column is required.")
+        none_button.setEnabled(False)
         all_button.clicked.connect(lambda: self._check_all(True))
-        none_button.clicked.connect(lambda: self._check_all(False))
+        self.all_button = all_button
+        self.none_button = none_button
         output_toolbar.addWidget(all_button)
         output_toolbar.addWidget(none_button)
         output_section.addLayout(output_toolbar)
@@ -256,6 +261,9 @@ class JoinContent(ShapingContent):
         return f"{entry['source']}: {entry['name']}"
 
     def _checked_labels(self) -> list[str]:
+        # An empty `selected_columns` means "all columns" in the core join
+        # (there `[]` is the never-configured default), so the checklist has
+        # to project the same meaning.
         selected = self.settings.get("selected_columns") or []
         if not selected:
             return [self._label(entry) for entry in self._output_items()]
@@ -273,6 +281,17 @@ class JoinContent(ShapingContent):
             self.output_picker.blockSignals(blocked)
 
     def _on_output_changed(self, labels: list[str]) -> None:
+        if not labels:
+            # Unchecking the last box by hand reaches the same dead state the
+            # disabled None toggle guards: [] would read back as "all
+            # columns" on the next sync. Reject the clear and put the
+            # checklist back the way the model has it.
+            blocked = self.output_picker.blockSignals(True)
+            try:
+                self.output_picker.setChecked(self._checked_labels())
+            finally:
+                self.output_picker.blockSignals(blocked)
+            return
         selected = []
         for label in labels:
             source, _, name = label.partition(": ")
