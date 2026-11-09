@@ -87,6 +87,37 @@ def test_type_change_rebuilds_editors_and_undoes(qtbot) -> None:
     assert isinstance(content._value_widgets["initial_value"], QSpinBox)
 
 
+def test_type_change_is_one_undo_step(qtbot) -> None:
+    window, _source, node, _dock = _node(qtbot)
+    content = node.content
+    history = window.scene.history
+    content._value_widgets["initial_value"].setValue(2)
+    content._value_widgets["max_value"].setValue(11)
+    before = history.controller.count
+
+    content.type_combo.setCurrentIndex(content.type_combo.findData("string"))
+
+    assert history.controller.count == before + 1
+    assert content.settings["field_type"] == "string"
+    assert content.settings["initial_value"] == "2"
+    assert content.settings["max_value"] == "11"
+    assert isinstance(content._value_widgets["initial_value"], QLineEdit)
+
+    history.undo()
+
+    assert content.settings["field_type"] == "int"
+    assert content.settings["initial_value"] == 2
+    assert content.settings["max_value"] == 11
+    assert isinstance(content._value_widgets["initial_value"], QSpinBox)
+    assert isinstance(content._value_widgets["max_value"], QSpinBox)
+
+    history.redo()
+
+    assert content.settings["field_type"] == "string"
+    assert content.settings["initial_value"] == "2"
+    assert isinstance(content._value_widgets["initial_value"], QLineEdit)
+
+
 def test_maximum_hides_for_text_and_strings_are_generated(qtbot) -> None:
     _window, _source, node, _dock = _node(qtbot)
     content = node.content

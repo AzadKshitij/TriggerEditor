@@ -514,11 +514,12 @@ class UnionContent(DeferredEvaluation, QDMNodeIconContentWidget, TriggerChangeHa
 
     def _refresh_mapping_section(self) -> None:
         """Rebuild the mapping grid from the model (restore-time path)."""
-        if self._main_layout is None or self._mapping_section is None:
+        if self._main_layout is None:
             return
-        self._delete_section(self._main_layout, self._mapping_section)
-        self._mapping_section = None
-        self._map_rows = []
+        if self._mapping_section is not None:
+            self._delete_section(self._main_layout, self._mapping_section)
+            self._mapping_section = None
+            self._map_rows = []
         if self.mode == "manual":
             self._sanitize_column_map(len(self.input_frames))
             self._build_mapping_section_at(self._mapping_index)

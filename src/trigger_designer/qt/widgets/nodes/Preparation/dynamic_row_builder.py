@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 from datetime import datetime
 
 from qtpy.QtCore import QDateTime
@@ -272,16 +273,26 @@ class RowsContent(ShapingContent):
         if value == str(self.settings.get("field_type") or "int"):
             return
         changes = self._converted_values(value)
+        before = copy.deepcopy(self.settings)
+        self.settings.update(changes)
+        self.settings["field_type"] = value
+        self._mark_scene_modified()
+        self._update_visibility()
+        self.after_change()
+        self.refresh_dock_context()
+        # One user action, one history entry: the converted values and the
+        # dtype that gives them meaning have to come back together, so the
+        # whole settings dict is the unit of change instead of one setting
+        # per command (their paths would never merge).
         previous = getattr(self, "_suspend_node_evaluation", False)
         self._suspend_node_evaluation = True
         try:
-            for key, converted in changes.items():
-                self.set_setting(
-                    key,
-                    converted,
-                    f"Rows {dict(_VALUE_LABELS)[key]} Changed",
-                )
-            self.set_setting("field_type", value, "Rows Field type Changed")
+            self.push_property_change(
+                ("settings",),
+                before,
+                copy.deepcopy(self.settings),
+                "Rows Field type Changed",
+            )
         finally:
             self._suspend_node_evaluation = previous
         self.request_evaluation()

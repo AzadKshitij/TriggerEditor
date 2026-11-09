@@ -32,6 +32,12 @@ class ConfigDock(QDockWidget):
         #: restore replays the selection recorded in the stamp, which for the
         #: pre-edit stamp is whatever was selected when the file was loaded.
         self._current_node = None
+        #: The displayed content's ``ready()`` state, or ``None`` when the
+        #: content has no such concept. A shaping node picked before its
+        #: inputs compute shows only the empty-state label; when evaluation
+        #: later succeeds, the refresh reaches this dock with the same node,
+        #: so the readiness flip is what must trigger the rebuild (#22).
+        self._current_ready: Optional[bool] = None
         #: (logic node, slot) for the floating-label sync installed by
         #: :meth:`_add_label_section`. The slot is a plain Python closure
         #: owned by the long-lived node, so Qt cannot auto-disconnect it
@@ -49,6 +55,21 @@ class ConfigDock(QDockWidget):
     def currentNode(self) -> Optional[Any]:
         """The node this dock is currently showing, or ``None``."""
         return self._current_node
+
+    @staticmethod
+    def _content_ready(content: Any) -> Optional[bool]:
+        """``content.ready()``, or ``None`` when the content has no such concept.
+
+        Exceptions (a content whose C++ object died mid-refresh) read as
+        ``None`` so a refresh cannot force a rebuild loop over a dying node.
+        """
+        ready = getattr(content, "ready", None)
+        if not callable(ready):
+            return None
+        try:
+            return bool(ready())
+        except Exception:  # noqa: BLE001 - a dying node must not break the dock
+            return None
 
     def initUI(self) -> None:
         self.dock_widget = QWidget()
@@ -97,6 +118,7 @@ class ConfigDock(QDockWidget):
         if len(nodes) != 1:
             self._current_key = None
             self._current_node = None
+            self._current_ready = None
             self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
@@ -104,6 +126,7 @@ class ConfigDock(QDockWidget):
         if not (hasattr(node, "node") or hasattr(node, "socket")):
             self._current_key = None
             self._current_node = None
+            self._current_ready = None
             self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
@@ -116,16 +139,24 @@ class ConfigDock(QDockWidget):
         if content is None:
             self._current_key = None
             self._current_node = None
+            self._current_ready = None
             self.setWindowTitle(self.BASE_TITLE)
             self.clear_dock()
             return
-        if id(content) == self._current_key and not force:
-            # Already showing this node: skip the wipe so focused editors
-            # keep focus and scroll positions survive. Live widgets refresh
-            # themselves through their own non-destructive paths.
+        ready = self._content_ready(content)
+        if (
+            id(content) == self._current_key
+            and not force
+            and ready == self._current_ready
+        ):
+            # Already showing this node in this readiness state: skip the
+            # wipe so focused editors keep focus and scroll positions
+            # survive. Live widgets refresh themselves through their own
+            # non-destructive paths.
             return
         self._current_key = id(content)
         self._current_node = node
+        self._current_ready = ready
         try:
             logger.debug(f"Updating config for node type: {type(node)}")
             self.setWindowTitle(f"{self.BASE_TITLE} ({self._node_name(node)})")

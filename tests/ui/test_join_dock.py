@@ -95,6 +95,32 @@ def test_output_selection_changes_the_joined_columns(qtbot) -> None:
     assert _outputs(node)[1].columns == ["b", "id"]
 
 
+def test_none_toggle_cannot_clear_the_selection(qtbot) -> None:
+    """Issue #20: an empty output is not a state the join model can keep."""
+    window, node, _dock = _node(qtbot)
+    content = node.content
+    history = window.scene.history
+    history.storeHistory("Baseline")
+
+    # The bulk None toggle is disabled: the core join reads an empty
+    # selection as "all columns", so the model cannot store "no output".
+    assert content.all_button.isEnabled()
+    assert not content.none_button.isEnabled()
+    content.none_button.click()  # a disabled button must be a no-op
+    assert content.settings["selected_columns"] == []
+    assert history.controller.count == 0  # baseline is not a step
+
+    # Unchecking the last box by hand is rejected the same way: the stored
+    # selection and the visible checklist both keep "R: b".
+    content._on_output_changed(["R: b"])
+    assert content.settings["selected_columns"] == [{"name": "b", "source": "R"}]
+    count = history.controller.count
+    content.output_picker.set_selected([], emit=True)
+    assert content.settings["selected_columns"] == [{"name": "b", "source": "R"}]
+    assert content.output_picker.checked() == ["R: b"]
+    assert history.controller.count == count
+
+
 def test_mapping_add_is_undoable(qtbot) -> None:
     window, node, _dock = _node(qtbot)
     content = node.content
