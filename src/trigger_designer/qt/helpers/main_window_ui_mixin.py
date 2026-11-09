@@ -193,8 +193,14 @@ class MainWindowMenuMixin:
             action = self.windowMenu.addAction(text)
             action.setCheckable(True)
             action.setChecked(child is self.getCurrentNodeEditorWidget())
-            action.triggered.connect(self.windowMapper.map)
-            self.windowMapper.setMapping(action, window)
+            # Bind the target directly: ``QSignalMapper.map`` emitted a signal
+            # nothing consumed, and Qt 6 renamed ``mapped`` to
+            # ``mappedObject``/``mappedInt``/``mappedString``.
+            action.triggered.connect(
+                lambda _checked=False, window=window: self.mdiArea.setActiveSubWindow(
+                    window
+                )
+            )
 
     def onWindowNodesToolbar(self) -> None:
         if self.nodesDock.isVisible():
