@@ -1,5 +1,6 @@
 from loguru import logger
 from contextlib import contextmanager, nullcontext
+import math
 import os
 import sys
 import time
@@ -66,6 +67,12 @@ if TYPE_CHECKING:
 DEBUG = False
 #: Glyph size of the run/zoom/fit overlay buttons on the canvas.
 CANVAS_ICON_SIZE = 20
+#: The view's zoom step at 1:1. ``QDMGraphicsView`` starts here.
+ZOOM_NEUTRAL_STEP = 10
+#: Ten 1.25x steps either side of 1:1: about 0.11x to 9.3x. The stock
+#: ``[0, 10]`` range puts the neutral step at its maximum, so zoom-in clamps
+#: instead of scaling.
+ZOOM_RANGE = [0, 20]
 DEBUG_CONTEXT = False
 
 # Header prepended to exported scripts (see TriggerSubWindow.getPyFile).
@@ -117,6 +124,10 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         self.rsm: ResourceManager = ResourceManager()
 
         self._last_scale: float = 1.0
+
+        # Give the zoom counter headroom on both sides of 1:1 instead of the
+        # view's stock maximum-at-neutral range.
+        self.view.zoomRange = list(ZOOM_RANGE)
 
         self.init_workflow_execution()
         #: Every log line and node problem of this document, in one order. The
@@ -269,7 +280,15 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
             self.view.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
             self._last_scale = self.view.transform().m11()  # Store current scale
-            self.view.zoom = self._last_scale * 10
+            # ``view.zoom`` is a step counter, not a scale. Put the fitted
+            # scale back on that counter so the next wheel step multiplies the
+            # fitted transform by exactly one factor instead of walking dead
+            # steps through the clamp.
+            steps = math.log(self._last_scale) / math.log(self.view.zoomInFactor)
+            self.view.zoom = min(
+                self.view.zoomRange[1],
+                max(self.view.zoomRange[0], ZOOM_NEUTRAL_STEP + steps),
+            )
             self.view.centerOn(rect.center())
 
             logger.debug(
