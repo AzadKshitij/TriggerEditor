@@ -93,3 +93,39 @@ def test_fit_view_puts_every_node_inside_the_viewport(window) -> None:
     for node in nodes:
         screen = _screen_rect(window.view, node.grNode.sceneBoundingRect())
         assert viewport.contains(screen), f"{node.title} is outside {viewport}"
+
+
+@pytest.mark.parametrize(
+    ("step", "expected_factor"),
+    [
+        ("zoomOut", 1 / 1.25),
+        ("zoomIn", 1.25),
+    ],
+)
+def test_fit_view_leaves_the_zoom_counter_room_each_way(
+    window, step: str, expected_factor: float
+) -> None:
+    """The first wheel step after Fit View must scale exactly one step.
+
+    A single node fits at a scale above 1.0. ``fitView`` used to write that
+    scale into ``view.zoom`` (the step counter), pushing the counter out of
+    range. Both wheel directions then sat at a clamp until enough steps walked
+    it back, and the first step that did apply jumped by the whole fit scale.
+    """
+    node = SelectNode(window.scene)
+    window.scene.nodes.append(node)
+    node.grNode.setPos(0, 0)
+    _APP.processEvents()
+
+    window.fitView()
+    _APP.processEvents()
+    fitted = window.view.transform().m11()
+    assert fitted > 1.0, "the fit has to exceed 1:1 to exercise the old bug"
+
+    zoom_factor = getattr(window.view, step)()
+    window.view.applyZoom(zoom_factor)
+    _APP.processEvents()
+
+    assert window.view.transform().m11() == pytest.approx(fitted * expected_factor)
+    low, high = window.view.zoomRange
+    assert low <= window.view.zoom <= high
