@@ -1,0 +1,3795 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/guide/preferences/">
+      
+      
+      
+        <link rel="prev" href="../security-and-privacy/">
+      
+      
+        <link rel="next" href="../../nodes/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Preferences - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Preferences
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors-and-problems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-the-preferences-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Open the Preferences window
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-changes-take-effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How changes take effect
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appearance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Appearance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Node Editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shortcuts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Shortcuts
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        General
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="General">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        General section
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Error messages
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit-trail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Audit trail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reset
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-list-of-stored-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Complete list of stored preferences
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-preferences-are-stored-and-how-to-reset-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where preferences are stored and how to reset them
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#if-something-goes-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        If something goes wrong
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/input-output/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workpaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting-and-faq/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DESIGN_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#open-the-preferences-window" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Open the Preferences window
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-changes-take-effect" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How changes take effect
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appearance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Appearance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#node-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Node Editor
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shortcuts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Shortcuts
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#general" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        General
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="General">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#general-section" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        General section
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#error-messages" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Error messages
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#audit-trail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Audit trail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reset" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Reset
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-list-of-stored-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Complete list of stored preferences
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-preferences-are-stored-and-how-to-reset-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where preferences are stored and how to reset them
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#if-something-goes-wrong" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        If something goes wrong
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/guide/preferences.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="preferences">Preferences<a class="headerlink" href="#preferences" title="Permanent link">&para;</a></h1>
+<p>Preferences are the settings that belong to <strong>you and your computer</strong>, not to a workflow: theme, font size, canvas behaviour, how errors are shown, and how run records are kept. They are stored in one file and apply to every workflow you open.</p>
+<p><a href="../">Back to the guide index</a></p>
+<h2 id="on-this-page">On this page<a class="headerlink" href="#on-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#open-the-preferences-window">Open the Preferences window</a></li>
+<li><a href="#how-changes-take-effect">How changes take effect</a></li>
+<li><a href="#appearance">Appearance</a></li>
+<li><a href="#layout">Layout</a></li>
+<li><a href="#editor">Editor</a></li>
+<li><a href="#node-editor">Node Editor</a></li>
+<li><a href="#shortcuts">Shortcuts</a></li>
+<li><a href="#general">General</a></li>
+<li><a href="#complete-list-of-stored-preferences">Complete list of stored preferences</a></li>
+<li><a href="#where-preferences-are-stored-and-how-to-reset-them">Where preferences are stored and how to reset them</a></li>
+<li><a href="#if-something-goes-wrong">If something goes wrong</a></li>
+</ul>
+<h2 id="open-the-preferences-window">Open the Preferences window<a class="headerlink" href="#open-the-preferences-window" title="Permanent link">&para;</a></h2>
+<p>Choose <strong>Edit &gt; Settings</strong>. The window is titled <strong>Preferences</strong> and has six pages in a list on the left: <strong>Appearance</strong>, <strong>Layout</strong>, <strong>Editor</strong>, <strong>Node Editor</strong>, <strong>Shortcuts</strong> and <strong>General</strong>. The buttons at the bottom are <strong>Cancel</strong>, <strong>Apply</strong> and <strong>OK</strong>.</p>
+<h2 id="how-changes-take-effect">How changes take effect<a class="headerlink" href="#how-changes-take-effect" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Kind of setting</th>
+<th>Behaviour</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Theme</strong></td>
+<td>Previewed as you click. <strong>Apply</strong> keeps it and leaves the window open, <strong>OK</strong> keeps it and closes, <strong>Cancel</strong> goes back to the theme you had.</td>
+</tr>
+<tr>
+<td><strong>Accent colour and font size</strong></td>
+<td>Applied as you change them. <strong>Cancel</strong> restores the values you had when you opened the window.</td>
+</tr>
+<tr>
+<td><strong>Everything else</strong> (check boxes, numbers, paths, colours of nodes)</td>
+<td>Saved <strong>the moment you change them</strong>. Cancel does not undo these.</td>
+</tr>
+<tr>
+<td><strong>Shortcuts</strong></td>
+<td>Validated when you press <strong>OK</strong>; if one is invalid the window stays open and says why.</td>
+</tr>
+</tbody>
+</table>
+<p>The values are read each time they are needed: error settings take effect on the next error, audit settings on the next Run.</p>
+<h2 id="appearance">Appearance<a class="headerlink" href="#appearance" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Theme</td>
+<td>Dark</td>
+<td>The colour scheme. <strong>System - follow Windows appearance</strong> switches between a light and a dark theme with Windows. Built in: Dark, Light, Catppuccin Latte, Catppuccin Mocha, Dracula, Gruvbox Dark, Gruvbox Light, Monokai, Nord, Rose Pine Dawn, Solarized Light, Tokyo Night. Built-in themes are read-only.</td>
+</tr>
+<tr>
+<td>Customize...</td>
+<td></td>
+<td>Makes an editable copy of the selected theme and opens the theme editor.</td>
+</tr>
+<tr>
+<td>Import... / Export... / Delete</td>
+<td></td>
+<td>Share a theme as a <code>.json</code> file; delete one of your own themes.</td>
+</tr>
+<tr>
+<td>Accent</td>
+<td>Theme default</td>
+<td>The highlight colour. Choose one of seven swatches or a custom colour; <strong>Theme Default</strong> clears it.</td>
+</tr>
+<tr>
+<td>Application text (font size)</td>
+<td>System default</td>
+<td>8 to 20 pt. <strong>Default</strong> goes back to the system size.</td>
+</tr>
+</tbody>
+</table>
+<p>Stored as <code>appearance/theme</code>, <code>appearance/accent</code> (empty means the theme's own) and <code>appearance/font_size</code> (0 means the system size).</p>
+<h2 id="layout">Layout<a class="headerlink" href="#layout" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Restore window and dock layout on startup</td>
+<td>On</td>
+<td>Reopen the app with the window size, position and panel arrangement you left. (<code>layout/restore</code>)</td>
+</tr>
+<tr>
+<td>Reopen files from the last session</td>
+<td>Off</td>
+<td>At startup, open the workflows that were open when you closed the app. Not used if you start the app with a file name. (<code>layout/session</code>)</td>
+</tr>
+<tr>
+<td>Save Current Layout</td>
+<td></td>
+<td>Store the arrangement now. Same as <strong>Window &gt; Save Current Layout</strong>.</td>
+</tr>
+<tr>
+<td>Reset Layout</td>
+<td></td>
+<td>Forget the saved arrangement and restore the default. Same as <strong>Window &gt; Reset Layout</strong>.</td>
+</tr>
+</tbody>
+</table>
+<p>The list of open workflows is always remembered; it is reopened only when the second check box is on.</p>
+<h2 id="editor">Editor<a class="headerlink" href="#editor" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Range</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Grid size</td>
+<td>20 px</td>
+<td>10 to 100</td>
+<td>Spacing of the canvas grid and of snapping. (<code>editor/grid_size</code>)</td>
+</tr>
+<tr>
+<td>Show grid</td>
+<td>On</td>
+<td></td>
+<td>Draw the grid lines. (<code>editor/show_grid</code>)</td>
+</tr>
+<tr>
+<td>Snap nodes to the grid while dragging</td>
+<td>On</td>
+<td></td>
+<td>Hold <code>Alt</code> while dragging to move freely. Also the <strong>Snap to Grid</strong> item of <strong>Edit &gt; Arrange</strong>. (<code>editor/snap_to_grid</code>)</td>
+</tr>
+<tr>
+<td>Simplify below</td>
+<td>50 %</td>
+<td>0 to 100</td>
+<td>Below this zoom level the canvas may draw simpler nodes to stay fast. 0 % keeps every node fully drawn. (<code>editor/render_detail_threshold</code>)</td>
+</tr>
+<tr>
+<td>Node card</td>
+<td>Auto</td>
+<td>Always / Auto / Never</td>
+<td>Draw the full node card. (<code>editor/render_detail_card</code>)</td>
+</tr>
+<tr>
+<td>Sockets</td>
+<td>Auto</td>
+<td></td>
+<td>Draw the sockets. (<code>editor/render_detail_sockets</code>)</td>
+</tr>
+<tr>
+<td>Label</td>
+<td>Always</td>
+<td></td>
+<td>Draw the floating label. (<code>editor/render_detail_label</code>)</td>
+</tr>
+<tr>
+<td>Status indicator</td>
+<td>Auto</td>
+<td></td>
+<td>Draw the badge on the node's bottom edge. (<code>editor/render_detail_indicator</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>For each of the four elements: <strong>Always</strong> draws it at every zoom, <strong>Never</strong> hides it at every zoom, <strong>Auto</strong> draws it only above the threshold. These settings change drawing only.</p>
+<h2 id="node-editor">Node Editor<a class="headerlink" href="#node-editor" title="Permanent link">&para;</a></h2>
+<p>Colours of the lines and sockets on the canvas. Click a swatch to choose a colour.</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Item</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Edges</td>
+<td>Default</td>
+<td><code>#B08848</code></td>
+</tr>
+<tr>
+<td>Edges</td>
+<td>Selected</td>
+<td><code>#ff00d0</code></td>
+</tr>
+<tr>
+<td>Edges</td>
+<td>Hovered</td>
+<td><code>#FF37A6FF</code></td>
+</tr>
+<tr>
+<td>Edges</td>
+<td>Dragging</td>
+<td><code>#333334</code></td>
+</tr>
+<tr>
+<td>Sockets</td>
+<td>Outline</td>
+<td><code>#FF000000</code></td>
+</tr>
+<tr>
+<td>Sockets</td>
+<td>Highlight</td>
+<td><code>#FF37A6FF</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Reset Node Colours</strong> restores these. They are stored under <code>node_editor_colors/</code>.</p>
+<h2 id="shortcuts">Shortcuts<a class="headerlink" href="#shortcuts" title="Permanent link">&para;</a></h2>
+<p>One row per <a href="../canvas-and-nodes/#arrange-grid-and-snapping">Arrange</a> command, plus <strong>Snap to Grid</strong>. Click the box and press the keys. A shortcut needs <code>Ctrl</code>, <code>Alt</code> or <code>Shift</code>, or must be a function key. <code>Backspace</code> clears one, and the circular arrow next to a row restores its default. <strong>Restore Defaults</strong> resets all of them. A shortcut that is already used elsewhere in the window is refused with a message.</p>
+<p>Defaults: <strong>Align Horizontal Centers</strong> <code>Ctrl+Shift+H</code>, <strong>Align Vertical Centers</strong> <code>Ctrl+Shift+V</code>; the others have none. Stored as a single value <code>editor/shortcuts</code> holding only the ones you changed.</p>
+<h2 id="general">General<a class="headerlink" href="#general" title="Permanent link">&para;</a></h2>
+<h3 id="general-section">General section<a class="headerlink" href="#general-section" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Show the welcome dialog on startup</td>
+<td>On</td>
+<td>The startup dialog with your recent files. (<code>show_welcome_dialog</code>)</td>
+</tr>
+<tr>
+<td>Recent files</td>
+<td>10</td>
+<td>How many files <strong>File &gt; Open Recent</strong> keeps (1 to 50). (<code>general/recent_limit</code>)</td>
+</tr>
+<tr>
+<td>Clear Recent Files</td>
+<td></td>
+<td>Forget every recent path.</td>
+</tr>
+<tr>
+<td>Open Preferences Folder</td>
+<td></td>
+<td>Opens <code>%APPDATA%\Trigger Designer</code> in Explorer.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="error-messages">Error messages<a class="headerlink" href="#error-messages" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Keep running independent branches after a failure</td>
+<td>On</td>
+<td>When on, a Run continues with the branches that do not depend on the failed node; nodes that do depend on it are skipped with <code>TD-RUN-008</code>. When off, a Run stops at the first failed node. See <a href="../running-workflows/#when-a-step-fails">Running workflows</a>. (<code>errors/continue_past_failure</code>)</td>
+</tr>
+<tr>
+<td>Hide data values in error messages</td>
+<td>Off</td>
+<td>Messages, copied details and stored errors show the code, column and row but not the offending values. See <a href="../errors-and-problems/#privacy-hiding-data-values-in-messages">Errors and problems</a>. (<code>errors/redact_values</code>)</td>
+</tr>
+<tr>
+<td>Find the offending row for conversion errors</td>
+<td>On</td>
+<td>Run a bounded second search to name the first bad row and a few bad values. (<code>errors/locate_rows</code>)</td>
+</tr>
+<tr>
+<td>Row search limit</td>
+<td>5,000,000</td>
+<td>How many rows that search may look at (100,000 to 100,000,000). (<code>errors/locate_row_cap</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The Logs dock's <strong>Show technical details</strong> toggle is stored as <code>errors/show_technical</code> (default off) and is changed from the dock, not from this window.</p>
+<h3 id="audit-trail">Audit trail<a class="headerlink" href="#audit-trail" title="Permanent link">&para;</a></h3>
+<p>These control the <a href="../run-history-and-audit-trail/">run records</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Record every run (run history)</td>
+<td>On</td>
+<td>Write a tamper-evident record after each Run. (<code>audit/record_runs</code>)</td>
+</tr>
+<tr>
+<td>Record the user and machine name</td>
+<td>On</td>
+<td>Off leaves the user and machine fields empty. (<code>audit/record_identity</code>)</td>
+</tr>
+<tr>
+<td>Fingerprint input files (SHA-256)</td>
+<td>On</td>
+<td>Hash each input file before it is read. (<code>audit/hash_inputs</code>)</td>
+</tr>
+<tr>
+<td>Fingerprint output files (SHA-256)</td>
+<td>On</td>
+<td>Hash each output file after it is written. (<code>audit/hash_outputs</code>)</td>
+</tr>
+<tr>
+<td>Store the generated code in each record</td>
+<td>On</td>
+<td>The code's hash is always kept; this also keeps the text. (<code>audit/embed_code</code>)</td>
+</tr>
+<tr>
+<td>Warn when an input changed since the previous run</td>
+<td>On</td>
+<td>One Logs line per changed input; never blocks a Run. (<code>audit/warn_on_input_change</code>)</td>
+</tr>
+<tr>
+<td>Run log folder</td>
+<td>empty</td>
+<td>Keep every run log in this folder instead of next to each workflow. <strong>Browse</strong> chooses it. (<code>audit/run_log_dir</code>)</td>
+</tr>
+<tr>
+<td>Row counts</td>
+<td>Auto</td>
+<td>Auto, All nodes, Sinks only or Off. (<code>audit/row_counts</code>)</td>
+</tr>
+<tr>
+<td>Count every node up to (MB)</td>
+<td>256</td>
+<td>The input size at which Auto changes from "All nodes" to "Sinks only". (<code>audit/exact_counts_max_mb</code>)</td>
+</tr>
+<tr>
+<td>Skip hashing files above (MB)</td>
+<td>2048</td>
+<td>Bigger files are not fingerprinted. (<code>audit/hash_max_mb</code>)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="engagement">Engagement<a class="headerlink" href="#engagement" title="Permanent link">&para;</a></h3>
+<p>Defaults used when you export a workpaper: <strong>Client</strong>, <strong>Engagement</strong>, <strong>Period</strong>, <strong>Prepared by</strong> (blank means your Windows user name) and a <strong>Logo</strong> image (PNG or JPG). They are stored as <code>engagement/client_name</code>, <code>engagement/engagement_name</code>, <code>engagement/period</code>, <code>engagement/preparer</code> and <code>engagement/logo_path</code>; the workpaper folder is <code>export/workpaper_dir</code>. See <a href="../workpaper/">workpaper.md</a>.</p>
+<h3 id="reset">Reset<a class="headerlink" href="#reset" title="Permanent link">&para;</a></h3>
+<p><strong>Reset All Preferences</strong> (after a confirmation) puts everything back to the defaults above, resets the layout and node colours, and refreshes the open workflows. Your own themes are kept.</p>
+<h2 id="complete-list-of-stored-preferences">Complete list of stored preferences<a class="headerlink" href="#complete-list-of-stored-preferences" title="Permanent link">&para;</a></h2>
+<p>Every key in the program's table of defaults:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>general/schema_version</code></td>
+<td>2 (internal)</td>
+</tr>
+<tr>
+<td><code>appearance/theme</code></td>
+<td><code>dark</code></td>
+</tr>
+<tr>
+<td><code>appearance/accent</code></td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>appearance/font_size</code></td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>layout/restore</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>layout/session</code></td>
+<td>false</td>
+</tr>
+<tr>
+<td><code>editor/grid_size</code></td>
+<td>20</td>
+</tr>
+<tr>
+<td><code>editor/show_grid</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>editor/snap_to_grid</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>editor/shortcuts</code></td>
+<td><code>{}</code></td>
+</tr>
+<tr>
+<td><code>editor/render_detail_threshold</code></td>
+<td>50</td>
+</tr>
+<tr>
+<td><code>editor/render_detail_card</code></td>
+<td><code>auto</code></td>
+</tr>
+<tr>
+<td><code>editor/render_detail_sockets</code></td>
+<td><code>auto</code></td>
+</tr>
+<tr>
+<td><code>editor/render_detail_label</code></td>
+<td><code>always</code></td>
+</tr>
+<tr>
+<td><code>editor/render_detail_indicator</code></td>
+<td><code>auto</code></td>
+</tr>
+<tr>
+<td><code>errors/continue_past_failure</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>errors/redact_values</code></td>
+<td>false</td>
+</tr>
+<tr>
+<td><code>errors/locate_rows</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>errors/locate_row_cap</code></td>
+<td>5000000</td>
+</tr>
+<tr>
+<td><code>errors/show_technical</code></td>
+<td>false</td>
+</tr>
+<tr>
+<td><code>audit/record_runs</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>audit/run_log_dir</code></td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>audit/record_identity</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>audit/hash_inputs</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>audit/hash_outputs</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>audit/hash_max_mb</code></td>
+<td>2048</td>
+</tr>
+<tr>
+<td><code>audit/row_counts</code></td>
+<td><code>auto</code></td>
+</tr>
+<tr>
+<td><code>audit/exact_counts_max_mb</code></td>
+<td>256</td>
+</tr>
+<tr>
+<td><code>audit/embed_code</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>audit/warn_on_input_change</code></td>
+<td>true</td>
+</tr>
+<tr>
+<td><code>engagement/client_name</code>, <code>engagement/engagement_name</code>, <code>engagement/period</code>, <code>engagement/preparer</code>, <code>engagement/logo_path</code></td>
+<td>empty</td>
+</tr>
+<tr>
+<td><code>export/workpaper_dir</code></td>
+<td>empty</td>
+</tr>
+</tbody>
+</table>
+<p>A few more values are written by the app itself and are not in that table: <code>show_welcome_dialog</code> (default on), <code>general/recent_limit</code> (default 10), <code>recentFiles</code>, the window geometry and dock state under <code>layout/</code>, the open-file list <code>layout/session_files</code> and <code>layout/session_active</code>, and the node colours under <code>node_editor_colors/</code>.</p>
+<h2 id="where-preferences-are-stored-and-how-to-reset-them">Where preferences are stored and how to reset them<a class="headerlink" href="#where-preferences-are-stored-and-how-to-reset-them" title="Permanent link">&para;</a></h2>
+<p>All preferences are in one text file, <code>preferences.ini</code>, in <code>%APPDATA%\Trigger Designer\</code> (set the environment variable <code>TRIGGER_DESIGNER_DATA_DIR</code> to use another folder, for a portable installation). <strong>Edit &gt; Settings &gt; General &gt; Open Preferences Folder</strong> opens it. Your own themes are in the <code>themes</code> folder beside it.</p>
+<p>The first time the app starts with no <code>preferences.ini</code>, it copies the theme, grid size, recent files and node colours from the settings older versions kept in the Windows registry.</p>
+<p>To reset everything: <strong>Reset All Preferences</strong>, or close the app and delete <code>preferences.ini</code>.</p>
+<h2 id="if-something-goes-wrong">If something goes wrong<a class="headerlink" href="#if-something-goes-wrong" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>My change to a setting did not seem to apply</td>
+<td>Theme, accent and font apply at once. Audit settings apply to the next Run. Error settings apply to the next error.</td>
+</tr>
+<tr>
+<td>I pressed Cancel but a setting stayed changed</td>
+<td>Only theme, accent and font size are undone by Cancel. Other settings are saved as you change them.</td>
+</tr>
+<tr>
+<td>A shortcut is refused</td>
+<td>It is already in use, or it has no <code>Ctrl</code>, <code>Alt</code> or <code>Shift</code> and is not a function key.</td>
+</tr>
+<tr>
+<td>The window looks wrong after choosing a theme</td>
+<td><strong>Theme Default</strong> under Accent, then pick the theme again; or <strong>Reset All Preferences</strong>.</td>
+</tr>
+<tr>
+<td>Preferences are lost between sessions</td>
+<td>The data folder may not be writable. Check <code>%APPDATA%\Trigger Designer</code> or the folder named by <code>TRIGGER_DESIGNER_DATA_DIR</code>.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../security-and-privacy/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Security and privacy">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Security and privacy
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../nodes/" class="md-footer__link md-footer__link--next" aria-label="Next: Node reference">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Node reference
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>

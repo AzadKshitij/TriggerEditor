@@ -1,0 +1,5783 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/DESIGN_SYSTEM/">
+      
+      
+      
+        <link rel="prev" href="../contributing/writing-style/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Design system - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="./.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Design system
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/errors-and-problems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/preferences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/input-output/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/input-output/file-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/input-output/file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/input-output/workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../nodes/audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nodes/audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/workpaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/troubleshooting-and-faq/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0-foundations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0. Foundations
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0. Foundations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#01-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.1 Principles
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#02-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.2 Color
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#03-typography" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.3 Typography
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#04-spacing-size-and-radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.4 Spacing, size and radius
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#05-depth-and-motion" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.5 Depth and motion
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#06-app-shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.6 App shell
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-layout-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Layout tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-two-allowed-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Two allowed patterns
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Two allowed patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-toolbar-table-select-preferred-for-columnrow-lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A. Toolbar + Table (Select, preferred for column/row lists)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-form-stack-for-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        B. Form stack (for settings)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-shared-widgets-must-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Shared widgets (must reuse)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-icon-first-buttons-mandatory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Icon-first buttons (mandatory)
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Icon-first buttons (mandatory)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.1 Sizes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-action-icon-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.2 Action → icon map
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-exceptions-text-allowed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.3 Exceptions (text allowed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-bulk-toggles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.4 Bulk toggles
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-hover-pressed-states-are-mandatory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.5 Hover / pressed states are mandatory
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-empty-loading-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Empty / loading / error
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-interaction-live-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Interaction: live-by-default
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-qss-theming" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. QSS / theming
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. QSS &#x2f; theming">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-view-delegates" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom view delegates
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#themes-user-themes-and-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Themes, user themes and preferences
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-chrome-strip-signature-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        8. Chrome strip (signature component)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-chips-and-badges" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        9. Chips and badges
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Chips and badges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chips-identity-and-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Chips — identity and counts
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#badges-status-by-exception" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Badges — status by exception
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-fields-combos-and-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        10. Fields, combos and focus
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        11. Tables
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-menus-and-dialogs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        12. Menus and dialogs
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Menus and dialogs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#menus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Menus
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dialogs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dialogs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-canvas-nodes-states-and-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        13. Canvas: nodes, states and edges
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. Canvas: nodes, states and edges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Node body
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        State matrix
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edges-and-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Edges and grid
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#snapping-and-arrangement" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Snapping and arrangement
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canvas-chrome" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Canvas chrome
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-logs-and-status-bar" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        14. Logs and status bar
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. Logs and status bar">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-feed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Diagnostic feed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-bar" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Status bar
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        15. Accessibility
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-content-and-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        16. Content and copy
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-implementation-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        17. Implementation map
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17. Implementation map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-painted-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Python-painted surfaces
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-widget-constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Shared widget constants
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#objectname-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ObjectName registry
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Guards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-anti-patterns-do-not-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        18. Anti-patterns (do not copy)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        19. Migration checklist
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19. Migration checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-tokens-and-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 1 — tokens and guards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-qss-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 2 — QSS foundation
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-shared-chrome" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 3 — shared chrome
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-config-dock" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 4 — Config Dock
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-canvas" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 5 — canvas
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-polish-and-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 6 — polish and proof
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-dock-backlog-from-the-original-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Config Dock backlog (from the original contract)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        20. References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0-foundations" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0. Foundations
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="0. Foundations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#01-principles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.1 Principles
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#02-color" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.2 Color
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#03-typography" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.3 Typography
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#04-spacing-size-and-radius" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.4 Spacing, size and radius
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#05-depth-and-motion" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.5 Depth and motion
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#06-app-shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        0.6 App shell
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-layout-tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Layout tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-two-allowed-patterns" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Two allowed patterns
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="2. Two allowed patterns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#a-toolbar-table-select-preferred-for-columnrow-lists" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A. Toolbar + Table (Select, preferred for column/row lists)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#b-form-stack-for-settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        B. Form stack (for settings)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-shared-widgets-must-reuse" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Shared widgets (must reuse)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-icon-first-buttons-mandatory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Icon-first buttons (mandatory)
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="4. Icon-first buttons (mandatory)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#41-sizes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.1 Sizes
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#42-action-icon-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.2 Action → icon map
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#43-exceptions-text-allowed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.3 Exceptions (text allowed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#44-bulk-toggles" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.4 Bulk toggles
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#45-hover-pressed-states-are-mandatory" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4.5 Hover / pressed states are mandatory
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-empty-loading-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Empty / loading / error
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-interaction-live-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Interaction: live-by-default
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-qss-theming" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        7. QSS / theming
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="7. QSS &#x2f; theming">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#custom-view-delegates" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Custom view delegates
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#themes-user-themes-and-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Themes, user themes and preferences
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-chrome-strip-signature-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        8. Chrome strip (signature component)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-chips-and-badges" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        9. Chips and badges
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="9. Chips and badges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#chips-identity-and-counts" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Chips — identity and counts
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#badges-status-by-exception" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Badges — status by exception
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#10-fields-combos-and-focus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        10. Fields, combos and focus
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#11-tables" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        11. Tables
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#12-menus-and-dialogs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        12. Menus and dialogs
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="12. Menus and dialogs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#menus" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Menus
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dialogs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dialogs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#13-canvas-nodes-states-and-edges" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        13. Canvas: nodes, states and edges
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="13. Canvas: nodes, states and edges">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#node-body" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Node body
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#state-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        State matrix
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#edges-and-grid" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Edges and grid
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#snapping-and-arrangement" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Snapping and arrangement
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#canvas-chrome" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Canvas chrome
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#14-logs-and-status-bar" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        14. Logs and status bar
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="14. Logs and status bar">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#logs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#diagnostic-feed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Diagnostic feed
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#status-bar" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Status bar
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#15-accessibility" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        15. Accessibility
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#16-content-and-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        16. Content and copy
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#17-implementation-map" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        17. Implementation map
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="17. Implementation map">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#tokens" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tokens
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#python-painted-surfaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Python-painted surfaces
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#shared-widget-constants" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Shared widget constants
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#objectname-registry" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        ObjectName registry
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Guards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        References
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#18-anti-patterns-do-not-copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        18. Anti-patterns (do not copy)
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#19-migration-checklist" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        19. Migration checklist
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19. Migration checklist">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#phase-1-tokens-and-guards" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 1 — tokens and guards
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-2-qss-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 2 — QSS foundation
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-3-shared-chrome" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 3 — shared chrome
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-4-config-dock" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 4 — Config Dock
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-5-canvas" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 5 — canvas
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#phase-6-polish-and-proof" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Phase 6 — polish and proof
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#config-dock-backlog-from-the-original-contract" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Config Dock backlog (from the original contract)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#20-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        20. References
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/DESIGN_SYSTEM.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="signal-trigger-designer-design-system">Signal — Trigger Designer Design System<a class="headerlink" href="#signal-trigger-designer-design-system" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Source of truth for the application UI.
+Visual reference: <code>docs/assets/design_system_preview.html</code> in the source tree (not part of the published site).
+Config Dock contract: <strong>§§1–7</strong> (the sections <code>AGENTS.md</code> points at).
+Reference implementations: the Data Preview strip (<code>qt/widgets/data_preview_panel.py</code>) and the Select tool (<code>qt/widgets/nodes/Preparation/select.py:134-259</code>).
+Status: Signal 1.0 is the target contract. The Preview strip is the reference implementation; tokens and states marked <strong>target</strong> below are not in <code>base.qss</code> yet. The migration order is in §19.</p>
+</blockquote>
+<hr />
+<h2 id="0-foundations">0. Foundations<a class="headerlink" href="#0-foundations" title="Permanent link">&para;</a></h2>
+<h3 id="01-principles">0.1 Principles<a class="headerlink" href="#01-principles" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Dense over spacious.</strong> One row does the work of three. A panel earns its air; a control does not.</li>
+<li><strong>Live over Apply.</strong> Evaluate on change. Debounce heavy text work (§6); never add an Apply button to avoid wiring a signal.</li>
+<li><strong>Icons over text.</strong> Every repeated action is an icon-only <code>IconButton</code>. Text survives only in dialogs and the paired <code>All</code> / <code>None</code> toggles.</li>
+<li><strong>One chrome strip.</strong> Identity left, search flexible, counts before actions. No second toolbar, no footer repeating the strip.</li>
+<li><strong>Semantic tokens over hex.</strong> A widget asks for <code>surface.raised</code> or <code>text.tertiary</code>; it never owns a colour.</li>
+<li><strong>Borders over shadows.</strong> Depth comes from four surfaces and one hairline. Shadows are reserved for floating things: menus, dialogs, canvas nodes.</li>
+<li><strong>Accent is state.</strong> Selection, focus, checked, active tab, active path. Accent is never decoration.</li>
+<li><strong>Status by exception.</strong> <code>limited</code>, <code>failed</code>, <code>running</code>, <code>pinned</code> — a badge or a dot appears only when the normal state does not apply.</li>
+</ol>
+<h3 id="02-color">0.2 Color<a class="headerlink" href="#02-color" title="Permanent link">&para;</a></h3>
+<p>The palette is intentionally narrow. Surfaces carry hierarchy; type carries emphasis; status carries meaning.</p>
+<h4 id="surfaces">Surfaces<a class="headerlink" href="#surfaces" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bg.canvas</code></td>
+<td><code>#0E1115</code></td>
+<td><code>#F3F5F7</code></td>
+<td>Node canvas behind the grid</td>
+</tr>
+<tr>
+<td><code>bg.base</code></td>
+<td><code>#14171B</code></td>
+<td><code>#FFFFFF</code></td>
+<td>Window, dock body, editor body, table background</td>
+</tr>
+<tr>
+<td><code>bg.raised</code></td>
+<td><code>#191E22</code></td>
+<td><code>#F7F8FA</code></td>
+<td>Chrome strips, toolbars, tab bars, palette, status bar</td>
+</tr>
+<tr>
+<td><code>bg.overlay</code></td>
+<td><code>#1E242A</code></td>
+<td><code>#FFFFFF</code></td>
+<td>Menus, popups, dialogs</td>
+</tr>
+<tr>
+<td><code>bg.inset</code></td>
+<td><code>#101418</code></td>
+<td><code>#F1F3F5</code></td>
+<td>Fields, chips, code panes, log panes, checkboxes</td>
+</tr>
+<tr>
+<td><code>bg.hover</code></td>
+<td><code>#22282E</code></td>
+<td><code>#EDF0F3</code></td>
+<td>Hover fill for buttons and rows</td>
+</tr>
+<tr>
+<td><code>bg.pressed</code></td>
+<td><code>#2C333A</code></td>
+<td><code>#E1E6EB</code></td>
+<td>Pressed fill</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Rule:</strong> <code>bg.hover</code> must be a visible step from the surface it sits on. The old <code>button_hover</code> (<code>#1A1F23</code>) was within 1–2 RGB points of <code>button_bg</code> (<code>#191E21</code>), so hover was invisible. Do not reintroduce that pair.</p>
+<h4 id="text">Text<a class="headerlink" href="#text" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>text.primary</code></td>
+<td><code>#F5F7F9</code></td>
+<td><code>#10151A</code></td>
+<td>Titles, active values, selected rows</td>
+</tr>
+<tr>
+<td><code>text.secondary</code></td>
+<td><code>#C6CDD5</code></td>
+<td><code>#39434D</code></td>
+<td>Body, labels, chips</td>
+</tr>
+<tr>
+<td><code>text.tertiary</code></td>
+<td><code>#919BA6</code></td>
+<td><code>#68737F</code></td>
+<td>Meta, counts, placeholders, table headers</td>
+</tr>
+<tr>
+<td><code>text.disabled</code></td>
+<td><code>#5C6672</code></td>
+<td><code>#9AA5B1</code></td>
+<td>Disabled controls only</td>
+</tr>
+</tbody>
+</table>
+<h4 id="accent-and-borders">Accent and borders<a class="headerlink" href="#accent-and-borders" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>accent</code></td>
+<td><code>#5680C2</code></td>
+<td><code>#2F6FB5</code></td>
+<td>Selection, focus border, checked pin, active tab</td>
+</tr>
+<tr>
+<td><code>accent.hover</code></td>
+<td><code>#6A96D7</code></td>
+<td><code>#3D82CE</code></td>
+<td>Hover on accent-filled controls</td>
+</tr>
+<tr>
+<td><code>accent.pressed</code></td>
+<td><code>#3A76BA</code></td>
+<td><code>#245A96</code></td>
+<td>Pressed / active path</td>
+</tr>
+<tr>
+<td><code>border.subtle</code></td>
+<td><code>#242A30</code></td>
+<td><code>#E8EBEE</code></td>
+<td>Chip edges, row separators, internal hairlines</td>
+</tr>
+<tr>
+<td><code>border.default</code></td>
+<td><code>#2F363D</code></td>
+<td><code>#D6DBE0</code></td>
+<td>Field, panel and toolbar edges</td>
+</tr>
+<tr>
+<td><code>border.strong</code></td>
+<td><code>#3E4750</code></td>
+<td><code>#BCC5CD</code></td>
+<td>Menus, dialogs, table outer edge</td>
+</tr>
+</tbody>
+</table>
+<h4 id="status">Status<a class="headerlink" href="#status" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>success</code></td>
+<td><code>#48A878</code></td>
+<td><code>#2E8B5F</code></td>
+<td>Executed node, paid state, success badge</td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td><code>#D9A441</code></td>
+<td><code>#A9751A</code></td>
+<td>Limited preview, refund, non-fatal warning</td>
+</tr>
+<tr>
+<td><code>danger</code></td>
+<td><code>#E0686C</code></td>
+<td><code>#C1484D</code></td>
+<td>Failed node, validation error, destructive action</td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>#5BA8D6</code></td>
+<td><code>#2A7DAE</code></td>
+<td>Neutral informational badge</td>
+</tr>
+<tr>
+<td><code>activity</code></td>
+<td><code>#9B7BD4</code></td>
+<td><code>#7452B4</code></td>
+<td>Running / executing state</td>
+</tr>
+<tr>
+<td><code>node.selection</code></td>
+<td><code>#FFA637</code></td>
+<td><code>#B26700</code></td>
+<td>Canvas selection ring only</td>
+</tr>
+</tbody>
+</table>
+<h4 id="node-categories">Node categories<a class="headerlink" href="#node-categories" title="Permanent link">&para;</a></h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Dark</th>
+<th>Light</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>node.input</code></td>
+<td><code>#C4574F</code></td>
+<td><code>#B84E47</code></td>
+</tr>
+<tr>
+<td><code>node.prepare</code></td>
+<td><code>#3F9E63</code></td>
+<td><code>#34875A</code></td>
+</tr>
+<tr>
+<td><code>node.join</code></td>
+<td><code>#4F7FD1</code></td>
+<td><code>#3F6FBF</code></td>
+</tr>
+<tr>
+<td><code>node.transform</code></td>
+<td><code>#7C5CBF</code></td>
+<td><code>#7452B4</code></td>
+</tr>
+<tr>
+<td><code>node.report</code></td>
+<td><code>#C99A3C</code></td>
+<td><code>#A87C22</code></td>
+</tr>
+</tbody>
+</table>
+<p>Node colour identifies the <strong>category</strong>, never the state. State lives in the ring and the status dot (§13).</p>
+<h4 id="current-theme-keys-signal-tokens">Current theme keys → Signal tokens<a class="headerlink" href="#current-theme-keys-signal-tokens" title="Permanent link">&para;</a></h4>
+<p><code>base.qss</code> is a <code>str.format</code> template. Every <code>{token}</code> must exist in <strong>every</strong> built-in theme, or startup raises. During migration, keep the existing keys as aliases.</p>
+<table>
+<thead>
+<tr>
+<th>Signal token</th>
+<th>Theme JSON key today</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bg.base</code></td>
+<td><code>background_primary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>bg.raised</code></td>
+<td><code>background_secondary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>bg.overlay</code></td>
+<td><code>menu_background</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>bg.inset</code></td>
+<td><code>editor_background</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>bg.hover</code></td>
+<td><code>background_hover</code></td>
+<td>keep, retune to <code>#22282E</code></td>
+</tr>
+<tr>
+<td><code>bg.pressed</code></td>
+<td><code>background_pressed</code></td>
+<td>keep, retune to <code>#2C333A</code></td>
+</tr>
+<tr>
+<td><code>text.primary</code></td>
+<td><code>text_primary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>text.secondary</code></td>
+<td><code>text_secondary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>text.tertiary</code></td>
+<td><code>text_inactive</code></td>
+<td>alias</td>
+</tr>
+<tr>
+<td><code>text.disabled</code></td>
+<td><code>text_disabled</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>accent</code></td>
+<td><code>accent_primary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>accent.hover</code></td>
+<td><code>accent_secondary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>accent.pressed</code></td>
+<td><code>accent_tertiary</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>border.subtle</code></td>
+<td><code>border_primary</code></td>
+<td>alias</td>
+</tr>
+<tr>
+<td><code>border.default</code></td>
+<td><code>card_border</code></td>
+<td>keep</td>
+</tr>
+<tr>
+<td><code>border.strong</code></td>
+<td><code>border_light</code></td>
+<td>alias</td>
+</tr>
+<tr>
+<td><code>danger</code></td>
+<td><code>error_text</code></td>
+<td>alias</td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td><code>background_warning</code></td>
+<td>add a foreground token too</td>
+</tr>
+<tr>
+<td><code>success</code>, <code>info</code>, <code>activity</code>, <code>node.*</code></td>
+<td>—</td>
+<td>add to every theme JSON</td>
+</tr>
+</tbody>
+</table>
+<h3 id="03-typography">0.3 Typography<a class="headerlink" href="#03-typography" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Role</th>
+<th>Size / weight</th>
+<th>Line</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Display</td>
+<td>20 / 600</td>
+<td>24</td>
+<td>Splash, about, empty application state</td>
+</tr>
+<tr>
+<td>Title</td>
+<td>16 / 600</td>
+<td>20</td>
+<td>Dialog and window titles</td>
+</tr>
+<tr>
+<td>Heading</td>
+<td>13 / 600</td>
+<td>18</td>
+<td>Dock titles, section titles</td>
+</tr>
+<tr>
+<td>Body</td>
+<td>12 / 400</td>
+<td>18</td>
+<td>Default UI text, values, descriptions</td>
+</tr>
+<tr>
+<td>Label</td>
+<td>11 / 500</td>
+<td>16</td>
+<td>Chips, buttons, tabs, table headers, meta</td>
+</tr>
+<tr>
+<td>Micro</td>
+<td>10 / 600</td>
+<td>14</td>
+<td>Overlines, config info, dtypes, <code>letter-spacing .06em</code>, uppercase</td>
+</tr>
+<tr>
+<td>Mono</td>
+<td>11 / 400</td>
+<td>16</td>
+<td>Logs, SQL, formulas, counts where alignment matters</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>UI face: <strong>Segoe UI Variable Text</strong>, falling back to <strong>Segoe UI</strong>. Data face: <strong>Cascadia Mono</strong>, falling back to <strong>Consolas</strong>.</li>
+<li>No webfonts. No per-widget font sizes. Table headers use Micro; numeric cells use Mono with tabular figures.</li>
+<li>Body text is 12px, not 13px. Header text in the old <code>QHeaderView</code> was 13px; the table header is now 11px Micro.</li>
+</ul>
+<h3 id="04-spacing-size-and-radius">0.4 Spacing, size and radius<a class="headerlink" href="#04-spacing-size-and-radius" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Value</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Space hairline</td>
+<td>2</td>
+<td>Inside a chip, icon/label gap</td>
+</tr>
+<tr>
+<td>Space chrome</td>
+<td>4</td>
+<td>Strip gaps, button groups</td>
+</tr>
+<tr>
+<td>Space strip</td>
+<td>6</td>
+<td>Strip horizontal padding, <code>QHBoxLayout</code> spacing</td>
+</tr>
+<tr>
+<td>Space panel</td>
+<td>8</td>
+<td>Dock/panel padding, card padding</td>
+</tr>
+<tr>
+<td>Space group</td>
+<td>12</td>
+<td>Gap between sections</td>
+</tr>
+<tr>
+<td>Space dialog</td>
+<td>16</td>
+<td>Dialog body padding</td>
+</tr>
+<tr>
+<td>Space section</td>
+<td>24</td>
+<td>Page/section separation</td>
+</tr>
+<tr>
+<td>Chrome strip</td>
+<td>36</td>
+<td><code>PreviewStrip</code> and all shared chrome rows</td>
+</tr>
+<tr>
+<td>Toolbar</td>
+<td>40</td>
+<td>Config Dock <code>Pattern A</code> toolbar</td>
+</tr>
+<tr>
+<td>Control</td>
+<td>30</td>
+<td><code>QLineEdit</code>, <code>QPushButton</code>, <code>QComboBox</code></td>
+</tr>
+<tr>
+<td>Chip</td>
+<td>24</td>
+<td>Node, socket, scope and counts chips</td>
+</tr>
+<tr>
+<td>Dense row</td>
+<td>24</td>
+<td>Read-only preview tables</td>
+</tr>
+<tr>
+<td>Default row</td>
+<td>28</td>
+<td>Editable/data tables</td>
+</tr>
+<tr>
+<td>Icon</td>
+<td>12</td>
+<td>Dock actions; 16 maximum for a primary action</td>
+</tr>
+<tr>
+<td>Radius badge</td>
+<td>3</td>
+<td>Status badges</td>
+</tr>
+<tr>
+<td>Radius control</td>
+<td>4</td>
+<td>Buttons, fields, chips, tables</td>
+</tr>
+<tr>
+<td>Radius panel</td>
+<td>6</td>
+<td>Cards, menus, dialogs</td>
+</tr>
+<tr>
+<td>Radius node</td>
+<td>10</td>
+<td>Canvas node tiles</td>
+</tr>
+<tr>
+<td>Node scene body</td>
+<td>120</td>
+<td>Graphics item units; unchanged by this system</td>
+</tr>
+<tr>
+<td>Node tile</td>
+<td>120</td>
+<td>The visible tile at 100% zoom; palette tiles scale down from it</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Density rule:</strong> 2 / 4 / 6 inside a panel; 8 / 12 only between groups. If a panel feels tight, remove a control or split the panel — do not grow the controls.</p>
+<h3 id="05-depth-and-motion">0.5 Depth and motion<a class="headerlink" href="#05-depth-and-motion" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Four surfaces (<code>canvas</code>, <code>base</code>, <code>raised</code>, <code>overlay</code>) plus <code>inset</code> for controls. One 1px border marks each edge.</li>
+<li>No shadows on docks, strips, panels or chips. Shadows are allowed only on floating nodes, menus and dialogs.</li>
+<li>Hover is an instant fill change. Do not animate QSS colours or add fades; Qt stylesheets do not transition reliably.</li>
+<li>The only timed behaviour in the UI is the 300ms debounce on text input (§6) and the 300ms preview coalescing.</li>
+</ul>
+<h3 id="06-app-shell">0.6 App shell<a class="headerlink" href="#06-app-shell" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>QMainWindow
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├─ Window chrome (32) — app icon, menus, window controls, drag row
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├─ NodesDock (top, max height 105)
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>├─ ConfigDock (left, min width 300)
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>├─ QMdiArea / node canvas
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>├─ LoggingDock + DataPreviewDock (bottom, tabbed)
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>└─ Status bar (20)
+</span></code></pre></div>
+<ul>
+<li>The window is frameless (<code>install_window_chrome</code>, <code>qt/widgets/common/window_chrome.py</code>): the real <code>QMenuBar</code>, the centred document title and the caption buttons share the row that used to hold the menu bar alone. The title is centred on the <em>window</em>, not on the gap the menus leave: <code>_balance_title</code> sizes a spacer before the buttons to cancel the surplus the left group needs. Alt, mnemonics and every shortcut stay native; drag and edge resize go through <code>startSystemMove</code> / <code>startSystemResize</code>.</li>
+<li>The Config Dock spans the main work area; the bottom docks span the full width.</li>
+<li>The preview and logs share one bottom dock area as tabs. The Preview panel owns its own 36px strip; the dock adds no second header.</li>
+<li>A tabbed dock wears the tab bar as its only chrome: its own title bar (name, float and close buttons) is hidden while it is a tab, and returns when the panel floats. Dragging a tab out of the bar pops that panel out, into a window with a normal frame (<code>QMainWindow.DockOption.GroupedDragging</code>, <code>qt/helpers/dock_chrome.py</code>). A dock with no tab bar beside it keeps its title bar, the only handle that moves it.</li>
+<li>The canvas is the only surface that fills remaining space. Everything else is fixed-height chrome.</li>
+<li>Window and dock titles label the surface: <code>Node Configuration (Select)</code>, <code>Logs</code>, <code>Data Preview</code>. The document name stays in the MDI window (no <code>.tds</code> suffix) and in the chrome row.</li>
+</ul>
+<hr />
+<h2 id="1-layout-tokens">1. Layout tokens<a class="headerlink" href="#1-layout-tokens" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Value</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dock min width</td>
+<td><code>300</code></td>
+<td><code>qt/docks/node_config.py</code></td>
+</tr>
+<tr>
+<td>Main <code>QVBoxLayout</code></td>
+<td><code>spacing 2, margins 5,5,5,5</code></td>
+<td><code>transpose.py:77</code>, <code>cleansing.py:173</code></td>
+</tr>
+<tr>
+<td>Toolbar <code>QWidget + QHBoxLayout</code></td>
+<td><code>fixedHeight 40, margins 0,0,0,0</code></td>
+<td><code>select.py:158-161</code></td>
+</tr>
+<tr>
+<td>Control height</td>
+<td><code>30</code> min (<code>QLineEdit</code>, <code>QPushButton</code>, <code>QComboBox</code>)</td>
+<td><code>select.py:168,175,205</code></td>
+</tr>
+<tr>
+<td>Icon button</td>
+<td><code>30x30</code>, icon <code>12x12</code> (<code>16x16</code> max for primary)</td>
+<td><code>select.py:172-180</code></td>
+</tr>
+<tr>
+<td>Chrome strip</td>
+<td><code>36</code> high; chip <code>24</code>; search <code>26</code>; action <code>30</code></td>
+<td><code>data_preview_panel.py</code></td>
+</tr>
+<tr>
+<td>Window chrome</td>
+<td><code>32</code> high; caption button <code>44x32</code>, icon <code>12x12</code>; app icon slot <code>32</code>; edge resize zone <code>5</code></td>
+<td><code>window_chrome.py</code></td>
+</tr>
+<tr>
+<td>Checkbox column width</td>
+<td><code>50</code> (<code>header.resizeSection(0, 50)</code>)</td>
+<td><code>select.py:249</code></td>
+</tr>
+<tr>
+<td>Scroll threshold</td>
+<td><code>ColumnChecklist max_height 150-220</code></td>
+<td><code>config_widgets.py:71</code>, <code>cleansing.py:173</code></td>
+</tr>
+<tr>
+<td>Default table row</td>
+<td><code>28</code> (<code>24</code> for dense read-only previews)</td>
+<td><code>polars_table_viewer.py</code></td>
+</tr>
+<tr>
+<td>End layout</td>
+<td><code>addStretch()</code> last, never an empty <code>HBox</code> after stretch</td>
+<td><code>filter.py:104</code> violates this</td>
+</tr>
+</tbody>
+</table>
+<p>Docks must <code>dock_layout.addWidget(toolbar)</code> then <code>dock_layout.addWidget(view, 1)</code> — stretch factor <code>1</code> on the main view. No <code>dock.setContentsMargins(0,0,0,0)</code> (see <code>file_output.py:71</code> violation).</p>
+<hr />
+<h2 id="2-two-allowed-patterns">2. Two allowed patterns<a class="headerlink" href="#2-two-allowed-patterns" title="Permanent link">&para;</a></h2>
+<h3 id="a-toolbar-table-select-preferred-for-columnrow-lists">A. Toolbar + Table (Select, preferred for column/row lists)<a class="headerlink" href="#a-toolbar-table-select-preferred-for-columnrow-lists" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>QVBoxLayout (dock_layout)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├─ QWidget toolbar [fixedH 40, QHBox margins 0]
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│   ├─ QLineEdit search ("Search columns...", clear button, minH 30)
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>│   ├─ TextButton All / None
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>│   ├─ IconButton up / down
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>│   └─ IconButton options (menu)
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>└─ SelectTableView [stretch 1] via SelectFilterProxy
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    ├─ CaseInsensitive over name, rename and dtype
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    ├─ ExtendedSelection + SelectRows, 28px rows, no row numbers
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    ├─ Interactive data columns (checkbox fixed at 50), widths kept on the content
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    ├─ DtypeDelegate (single-click dropdown)
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    └─ RenameDelegate (Enter/focus-out commits, Escape cancels)
+</span></code></pre></div>
+<p>Use for: Select, GroupBy, Join mappings, Unique lists.
+Do not use <code>ConfigSection</code> here — the toolbar is the section.</p>
+<h3 id="b-form-stack-for-settings">B. Form stack (for settings)<a class="headerlink" href="#b-form-stack-for-settings" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>QVBoxLayout [spacing 2, margins 5]
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>├─ ConfigSection("Title", info="one-line hint") [spacing 2, no overrides]
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>│   ├─ NoWheelComboBox / QLineEdit / QSpinBox
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>│   └─ ColumnChecklist(columns, checked)
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>└─ addStretch()
+</span></code></pre></div>
+<p>Use for: Filter, Sort, Split, Transpose, Formula sections, File In/Out.
+Reference: <code>transpose.py:77</code>, <code>running_total.py:99</code>. Never raw <code>QComboBox</code> (wheel-steal bug) — use <code>NoWheelComboBox</code>.</p>
+<p>Pattern C — the chrome strip — is for shared docks, not a third Config Dock layout. See §8.</p>
+<hr />
+<h2 id="3-shared-widgets-must-reuse">3. Shared widgets (must reuse)<a class="headerlink" href="#3-shared-widgets-must-reuse" title="Permanent link">&para;</a></h2>
+<p>Import from <code>qt/widgets/common/__init__.py</code>:</p>
+<ul>
+<li><code>EmptyStateLabel</code> — only empty state. Centered gray, default text <code>"No incoming data available"</code>. Gate at top of <code>create_layout</code>: <code>if incom_data is None: dock.addWidget(EmptyStateLabel()); return</code>.</li>
+<li><code>ConfigSection(title, info)</code> — <code>QGroupBox#ConfigSection</code> + <code>QLabel#ConfigSectionInfo</code> (wordWrap). Never <code>layout().setSpacing(10)</code> / <code>setMargins(15)</code> — see <code>unique.py:87</code> violation. <strong>Target:</strong> flatten the group-box border; the heading + hairline is the section.</li>
+<li><code>ColumnChecklist(columns, checked, max_height)</code> — scrollable checkboxes, <code>changed(list)</code> signal. Never hand-rolled <code>QListWidget</code> checkboxes (<code>unique.py</code>, <code>join.py</code> violations).</li>
+<li><code>ColumnPicker(columns, checked)</code> — 30px token field with a searchable popover checklist and <code>All</code> / <code>None</code>. Use it when a node has several column roles (Pivot, Unpivot, group selectors) instead of stacking full checklists. The popover reuses <code>ColumnChecklist</code>; the picker is one undo composite.</li>
+<li><code>RuleStack</code> — ordered cards with an optional summary header, collapse and duplicate. A collapsed card keeps the list readable; the summary states the rule in the user's terms. Use <code>duplicate_requested</code> only when the list item is copyable.</li>
+<li><code>NoWheelComboBox</code> — drops wheel events unless popup open. Use everywhere a combo sits in a scrollable dock.</li>
+<li><code>IconButton</code> / <code>TextButton</code> — see §4.</li>
+</ul>
+<p>Table helpers: <code>SelectTableModel</code>, <code>RowData</code>, <code>SelectFilterProxy</code>, <code>DtypeDelegate</code>, <code>RenameDelegate</code> and <code>SelectTableView</code> in <code>qt/widgets/select_table_widget.py</code> — reuse the model/delegate split for any editable column list. <code>SelectTableWidget</code> and <code>ComboBoxDelegate</code> remain aliases for older imports.</p>
+<p><strong>Target shared primitives:</strong> <code>Chip</code>, <code>StatusBadge</code> and <code>ToolbarStrip</code> belong in <code>config_widgets.py</code>, not in a node. Do not fork them per dock.</p>
+<hr />
+<h2 id="4-icon-first-buttons-mandatory">4. Icon-first buttons (mandatory)<a class="headerlink" href="#4-icon-first-buttons-mandatory" title="Permanent link">&para;</a></h2>
+<p>Rule: icon-only <code>QPushButton()</code> + <code>setIcon</code> + <code>setToolTip</code> + <code>setAccessibleName</code>. No <code>setText</code> except dialogs (§4.3).</p>
+<h3 id="41-sizes">4.1 Sizes<a class="headerlink" href="#41-sizes" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="n">btn</span> <span class="o">=</span> <span class="n">QPushButton</span><span class="p">()</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="n">btn</span><span class="o">.</span><span class="n">setIcon</span><span class="p">(</span><span class="n">QIcon</span><span class="p">(</span><span class="n">rsm</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"icon_add"</span><span class="p">)))</span>  <span class="c1"># never QIcon.fromTheme on Windows</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="n">btn</span><span class="o">.</span><span class="n">setIconSize</span><span class="p">(</span><span class="n">QSize</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">btn</span><span class="o">.</span><span class="n">setFixedSize</span><span class="p">(</span><span class="n">QSize</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">btn</span><span class="o">.</span><span class="n">setToolTip</span><span class="p">(</span><span class="s2">"Add mapping"</span><span class="p">)</span>  <span class="c1"># mandatory</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">btn</span><span class="o">.</span><span class="n">setAccessibleName</span><span class="p">(</span><span class="s2">"Add mapping"</span><span class="p">)</span>  <span class="c1"># mandatory, screen reader</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">btn</span><span class="o">.</span><span class="n">setObjectName</span><span class="p">(</span><span class="s2">"IconButton"</span><span class="p">)</span>
+</span></code></pre></div>
+<p>Use <code>IconButton.themed(...)</code> when the icon comes from <code>ResourceManager</code>, with a <code>:/qss_icons</code> fallback. <code>QIcon.fromTheme</code> is last resort and is blank on Windows.</p>
+<h3 id="42-action-icon-map">4.2 Action → icon map<a class="headerlink" href="#42-action-icon-map" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Action</th>
+<th><code>resources.json</code> id</th>
+<th>Fallback <code>:/qss_icons/dark/rc/</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Move up / down</td>
+<td><code>icon_move_up</code> / <code>icon_move_down</code> — ADD</td>
+<td><code>arrow_up.png</code> / <code>arrow_down.png</code></td>
+</tr>
+<tr>
+<td>Add / Remove</td>
+<td><code>icon_add</code> / <code>icon_remove</code> — EXISTS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Options menu</td>
+<td><code>icon_options</code> — EXISTS (sliders)</td>
+<td><code>arrow_down.png</code></td>
+</tr>
+<tr>
+<td>Check all / Uncheck all</td>
+<td><code>icon_check_all</code> / <code>icon_uncheck_all</code> — ADD</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Apply / Evaluate / Run</td>
+<td><code>icon_apply</code> — EXISTS</td>
+<td><code>media-playback-start</code> theme equivalent</td>
+</tr>
+<tr>
+<td>Load / Save file</td>
+<td><code>icon_folder_open</code> / <code>icon_save</code> — EXISTS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Refresh</td>
+<td><code>icon_refresh</code> — EXISTS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Clear filter</td>
+<td><code>icon_clear</code> — ADD</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Export CSV / Excel</td>
+<td><code>icon_export</code> — ADD (one icon, menu picks format)</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Open in window</td>
+<td><code>icon_external</code> — EXISTS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Pin / Unpin</td>
+<td><code>icon_pin</code> / <code>icon_unpin</code> — EXISTS</td>
+<td>—</td>
+</tr>
+<tr>
+<td>Search</td>
+<td><code>icon_search</code> — EXISTS</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>Until ids are added, use <code>QIcon(":/qss_icons/dark/rc/&lt;name&gt;.png")</code> directly — never <code>fromTheme</code>.</p>
+<h3 id="43-exceptions-text-allowed">4.3 Exceptions (text allowed)<a class="headerlink" href="#43-exceptions-text-allowed" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>QDialogButtonBox</code> / <code>QMessageBox</code>: <code>Save / Cancel / Close</code> text stays (<code>settings_panel.py:79</code>, <code>about.py:164</code>).</li>
+<li>Destructive confirmations keep text.</li>
+<li><strong>Paired bulk toggles</strong> use <code>TextButton</code> with the labels <code>All</code> / <code>None</code>. Two near-identical checkbox glyphs cannot be told apart at a glance, so these keep their words. Used in <code>Preparation/cleansing.py</code> and <code>Preparation/unique.py</code>. <code>TextButton</code> is <code>H30</code>, <code>objectName="TextButton"</code>, and inherits the same hover/pressed treatment as <code>IconButton</code> (§4.5).</li>
+<li>Nothing else. These stay icons: <code>join.py</code> bulk L/R actions (folded into the Options menu), <code>Evaluate</code>, <code>groupby.py</code> Add/Remove/Apply, <code>formula.py</code> add/remove, <code>file_input.py</code>/<code>file_output.py</code> browse, <code>graph.py</code> open-in-window.</li>
+</ul>
+<h3 id="44-bulk-toggles">4.4 Bulk toggles<a class="headerlink" href="#44-bulk-toggles" title="Permanent link">&para;</a></h3>
+<p>No <code>All / None</code> <em>icon</em> rows. Either fold them into the toolbar <code>Options</code> <code>QMenu</code> (Join's four L/R actions) or use the <code>All</code> / <code>None</code> <code>TextButton</code> pair when the action pair is genuinely ambiguous.</p>
+<h3 id="45-hover-pressed-states-are-mandatory">4.5 Hover / pressed states are mandatory<a class="headerlink" href="#45-hover-pressed-states-are-mandatory" title="Permanent link">&para;</a></h3>
+<p>Qt gives an <code>objectName</code> selector (<code>QPushButton#IconButton</code>) higher specificity than a pseudo-state (<code>QPushButton:hover</code>). Any widget that sets its own <code>background-color</code>/<code>border</code> via <code>objectName</code> <strong>must restate</strong> <code>:hover</code>, <code>:pressed</code> and <code>:disabled</code>, or hover silently does nothing.</p>
+<ul>
+<li>Base <code>QPushButton</code> / <code>QToolButton</code> use a constant <code>1px solid {button_bg}</code> border so recolouring the border on hover does not shift the button by a pixel.</li>
+<li>Hover fill is <code>{background_hover}</code> (a real contrast step). Do <strong>not</strong> use <code>{button_hover}</code> for hover: in the shipped themes it is within 1–2 RGB points of <code>{button_bg}</code>, so the state is invisible.</li>
+<li>Restated for <code>#IconButton</code>, <code>#OptionsButton</code>, <code>#TextButton</code>, <code>#PreviewPinButton</code>.</li>
+<li>A button that carries its own glyph <strong>and</strong> has a <code>QMenu</code> must suppress the menu indicator, otherwise Qt stacks a second down arrow next to the icon:</li>
+</ul>
+<div class="language-css highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nt">QPushButton</span><span class="p">#</span><span class="nn">OptionsButton</span><span class="p">::</span><span class="nd">menu-indicator</span><span class="w"> </span><span class="p">{</span><span class="err">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="k">width</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="kt">px</span><span class="p">;</span><span class="w"> </span><span class="k">height</span><span class="p">:</span><span class="w"> </span><span class="mi">0</span><span class="kt">px</span><span class="p">;</span><span class="w"> </span><span class="k">border</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span><span class="w"> </span><span class="n">image</span><span class="p">:</span><span class="w"> </span><span class="kc">none</span><span class="p">;</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span><span class="n">subcontrol-origin</span><span class="p">:</span><span class="w"> </span><span class="k">padding</span><span class="p">;</span><span class="w"> </span><span class="n">subcontrol-position</span><span class="p">:</span><span class="w"> </span><span class="kc">center</span><span class="p">;</span><span class="w"> </span><span class="p">}</span><span class="err">}</span>
+</span></code></pre></div>
+<p>Do not achieve this with inline <code>setStyleSheet</code>, and do not use <code>setLayoutDirection(Qt.RightToLeft)</code> as a substitute — it moves the glyph instead of removing the arrow.</p>
+<hr />
+<h2 id="5-empty-loading-error">5. Empty / loading / error<a class="headerlink" href="#5-empty-loading-error" title="Permanent link">&para;</a></h2>
+<ul>
+<li>No data: <code>EmptyStateLabel()</code> only. Delete custom variants (<code>count_records.py:61</code> italic label, <code>file_input.py</code> <code>_hide_all_options</code>). The label is one quiet line; if a hint is needed, a second 10px line is allowed, nothing else.</li>
+<li>Join/Append need both inputs: <code>if left is None or right is None: EmptyState</code> (fix <code>join.py</code> <code>and</code>-logic, <code>Append.py:74</code> inverted gate).</li>
+<li>Never connect signals outside the <code>if data is not None</code> branch (fix <code>filter.py:104</code> crash).</li>
+<li>Node errors surface via <code>grNode.setToolTip(...)</code>, not red inline labels (fix <code>sort.py:94</code>).</li>
+<li>Loading: use <code>EmptyStateLabel("Loading...")</code> as the placeholder. Do not invent spinners or skeleton cards until they are specified.</li>
+<li>Error: a failed preview or workflow uses one sentence plus the underlying message, in <code>text.secondary</code>; the failure colour appears in the badge or node ring, not across the panel.</li>
+</ul>
+<hr />
+<h2 id="6-interaction-live-by-default">6. Interaction: live-by-default<a class="headerlink" href="#6-interaction-live-by-default" title="Permanent link">&para;</a></h2>
+<p>Every <code>setData / move / check / sort</code> → <code>data_processed → handleDataChanged → process_data_changes + apply_changes + evaluate.emit</code>, as in <code>select.py:255</code>, <code>groupby</code> equivalent.</p>
+<ul>
+<li>Debounce: <code>300ms</code> for text search / rename edits; immediate for check/move/combo.</li>
+<li>Heavy nodes (Join, GroupBy) still live — debounce, don't add Apply buttons. <code>groupby.py:278</code> Apply and <code>join.py:197</code> Evaluate are migration targets, not patterns.</li>
+<li>Formula sections and the Filter expression editor are the SQL-text exception. Text updates the model and diagnostics live, but node evaluation waits until focus leaves the node's SQL editors, the user Runs, or selection/save/close needs the current text. Do not add Apply buttons for that path.</li>
+<li>History: store diff only (<code>old != new</code>), verb format <code>"Noun Verbed"</code> e.g. <code>"Column Selection/Rename/Type Changed"</code>.</li>
+<li>Dock preservation: <code>ConfigDock.updateConfig</code> (<code>node_config.py:30</code>) skips wipe when <code>id(content) == _current_key</code>, suspends <code>_suspend_input_tracking/_suspend_node_evaluation</code> during <code>create_layout</code>. Do not rebuild widgets on every keystroke.</li>
+</ul>
+<hr />
+<h2 id="7-qss-theming">7. QSS / theming<a class="headerlink" href="#7-qss-theming" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Zero inline <code>setStyleSheet</code> in node files and shared dock chrome. Use <code>objectName</code> + <code>resources/qt/themes/base.qss</code> / <code>qss/_style.scss</code>.</li>
+<li>Required Config Dock objectNames: <code>ConfigSection</code>, <code>ConfigSectionInfo</code>, <code>EmptyStateLabel</code>, <code>ColumnChecklist</code>, <code>ColumnPicker</code>, <code>ColumnPickerPopup</code>, <code>ColumnToken</code>, <code>ConfigSummary</code>, <code>RuleSummary</code>, <code>RuleNumber</code>, <code>DayToggle</code>, <code>SuffixEdit</code>, <code>IconButton</code>, <code>OptionsButton</code>, <code>TextButton</code>, <code>DataTypeCombo</code>, <code>JoinSourceLeft</code>/<code>JoinSourceRight</code>, <code>JoinSourceHeaderLeft</code>/<code>Right</code>, <code>JoinDtypeLabel</code>.</li>
+<li>Dock chrome objectNames: <code>PreviewStrip</code>, <code>PreviewNodeChip</code>, <code>PreviewNodeLabel</code>, <code>PreviewPinDot</code>, <code>PreviewSocketChip</code>, <code>PreviewSocketCombo</code>, <code>PreviewSearchEdit</code>, <code>PreviewScopeCombo</code>, <code>PreviewCountsChip</code>, <code>PreviewStatusLabel</code>, <code>PreviewLimitedBadge</code>, <code>PreviewSourceBadge</code>, <code>PreviewPinButton</code>, <code>DockTabOnlyTitleBar</code>.</li>
+<li>The dock-chrome boundary is explicit: §§1–7 govern node config docks; shared dock chrome follows §7 and the new §§8–14. Both use <code>objectName</code> + <code>base.qss</code>/<code>_style.scss</code>, restate hover/pressed per <code>objectName</code>, and use no inline QSS.</li>
+<li><code>base.qss</code> is a <code>str.format</code> template: only keys present in the theme JSONs may be used. The full key set is grouped in <code>qt/theme_manager.py</code> (<code>TOKEN_GROUPS</code>): <strong>Surfaces, Text, Accent, Status, Borders, Controls, Canvas, Code, Nodes</strong>. <code>tests/unit/test_theme_tokens.py</code> asserts every <code>{token}</code> exists in every built-in theme (they all define the same key set) and that every colour token is exposed in the editor — run it after editing any theme file.</li>
+<li>Same rule in <code>_style.scss</code>, using the <code>$COLOR_*</code> names from <code>_variable.scss</code>: <code>$COLOR_BACKGROUND_1..6</code>, <code>$COLOR_TEXT_1..4</code>, <code>$COLOR_DISABLED</code>, <code>$COLOR_ACCENT_1..4</code>, <code>$SIZE_BORDER_RADIUS</code>, <code>$BORDER_1..3</code>.</li>
+<li>Never hand-edit generated QSS in one place only; keep <code>base.qss</code> and <code>_style.scss</code> in agreement. The generated <code>runtime_theme.qss</code> is gone: <code>ThemeManager</code> renders <code>base.qss</code> from the active theme at runtime, so there is nothing to regenerate by hand.</li>
+<li><strong>Target</strong> hooks to add: <code>ChromeStrip</code>, <code>Chip</code>, <code>ChipDot</code>, <code>StatusBadge</code>, <code>CountsChip</code>, <code>PrimaryButton</code>, <code>DangerButton</code>, <code>DialogSurface</code>, <code>MenuSurface</code>, <code>TableHeader</code>, <code>TableRow</code>. Add them to both QSS sources and to the objectName registry in §17.</li>
+</ul>
+<h3 id="custom-view-delegates">Custom view delegates<a class="headerlink" href="#custom-view-delegates" title="Permanent link">&para;</a></h3>
+<p>Never hand a bare <code>QStyleOptionComboBox</code> to <code>drawComplexControl</code> — with no <code>palette</code> set, Qt falls back to the application default (light grey in Fusion) and the cell clashes with the themed surface. <code>ComboBoxDelegate.paint</code> in <code>select_table_widget.py</code> therefore paints from <code>option.palette</code>/<code>option.font</code> directly. If you add a delegate, copy the palette and font, and keep <code>setAutoFillBackground(True)</code> off editors that have a themed <code>objectName</code>.</p>
+<h3 id="themes-user-themes-and-preferences">Themes, user themes and preferences<a class="headerlink" href="#themes-user-themes-and-preferences" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>qt/theme_manager.py</code> is the <strong>only</strong> owner of <code>QApplication.setStyleSheet()</code>; every other surface listens to <code>ThemeManager.themeChanged</code> (<code>TriggerWindow.apply_appearance</code>, <code>LoggingDock.apply_theme</code>, <code>SQLFormulaEditor.apply_theme</code>, <code>NodeBase.apply_theme</code>). Never call <code>setStyleSheet</code> on the application or a window directly.</li>
+<li>Theme files are schema 2 — a flat token dictionary is still read, but new files use:</li>
+</ul>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="p">{</span><span class="nt">"schema"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="nt">"id"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dark"</span><span class="p">,</span><span class="w"> </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Dark"</span><span class="p">,</span><span class="w"> </span><span class="nt">"appearance"</span><span class="p">:</span><span class="w"> </span><span class="s2">"dark"</span><span class="p">,</span><span class="w"> </span><span class="nt">"extends"</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w"> </span><span class="nt">"tokens"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">"background_primary"</span><span class="p">:</span><span class="w"> </span><span class="s2">"#14171b"</span><span class="p">}}</span>
+</span></code></pre></div>
+<p><code>extends</code> inherits a parent's tokens; a token missing from a user theme falls back to built-in dark with a warning. <code>appearance</code> (<code>dark</code>/<code>light</code>) drives System mode and the title-bar contrast, not the tokens.
+- Built-ins live in <code>src/trigger_designer/resources/qt/themes/</code> (twelve ship: Dark, Light, and the Nord, Dracula, Monokai, Gruvbox Dark, Gruvbox Light, Tokyo Night, Catppuccin Mocha, Catppuccin Latte, Solarized Light and Rose Pine Dawn palettes; every one carries the full token set, and a new built-in is just another JSON file there — discovery is a glob). User themes live in <code>%APPDATA%\Trigger Designer\themes</code> (env override <code>TRIGGER_DESIGNER_DATA_DIR</code>) and shadow a built-in with the same id. <code>duplicate_theme</code> is the supported way to fork a built-in; a shadowing theme must not <code>extends</code> the id it shadows (that resolves to itself and is reported as circular).
+- Everything the editor exposes is a <strong>colour</strong> token. Geometry, spacing, control heights and radius are design-system-owned (§§1, 4.1) and intentionally not themeable.
+- Preferences are one INI at <code>%APPDATA%\Trigger Designer\preferences.ini</code> (<code>qt/preferences.py</code>); the first run migrates the legacy <code>QSettings</code> scopes (<code>Blue Octa/Trigger Designer</code>, <code>Trigger/Trigger Designer</code>, <code>Trigger/NodeEditor</code>). Do not add new <code>QSettings</code> scopes.
+- The canvas rendering settings live in the same INI under <code>editor/render_detail_*</code> and are applied by <code>qt/render_settings.py</code>: one threshold (<code>render_detail_threshold</code>, a percentage of full size) plus a mode per element (<code>render_detail_card</code>, <code>_sockets</code>, <code>_label</code>, <code>_indicator</code>), each <code>always</code>, <code>auto</code> or <code>never</code>. The scene owns the policy (<code>QDMGraphicsScene.set_detail_policy</code>) and resolves it into one on/off map per element; the status indicator is painted by this application, so it is registered as the <code>badge</code> element.
+- Layout is one auto-saved record (<code>qt/layout_state.py</code>): <code>saveGeometry()</code> plus <code>saveState(1)</code> over stable dock objectNames (<code>NodesDock</code>, <code>ConfigDock</code>, <code>LoggingDock</code>, <code>DataPreviewDock</code>), with Window ▸ Save Current Layout / Reset Layout. There are no layout presets and no named workspaces.
+- The last session's file list is captured on close but only reopened when <code>layout/session</code> is on; it defaults off ("layout on, files off").
+- <code>QMdiArea</code> paints its own <code>background</code> brush, which no stylesheet rule reaches: <code>TriggerWindow._theme_mdi_background()</code> sets it from <code>canvas_background</code>.</p>
+<hr />
+<h2 id="8-chrome-strip-signature-component">8. Chrome strip (signature component)<a class="headerlink" href="#8-chrome-strip-signature-component" title="Permanent link">&para;</a></h2>
+<p>The Preview strip is the only app chrome pattern. Generalise it; do not clone it with per-dock styling.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>QFrame#ChromeStrip [fixedH 36, bg raised, bottom hairline]
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>└─ QHBoxLayout [spacing 4, margins 6,3,6,3]
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    ├─ node chip       [24]  identity, optional pin dot
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    ├─ socket chip     [24]  only when the host has several outputs
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    ├─ search field    [26]  the only flexible element
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    ├─ scope combo     [24]  search scope
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    ├─ stretch
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>    ├─ counts chip     [24]  "1,284 rows · 12 cols", optional "limited" badge
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    ├─ pin action      [30]  checkable
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    ├─ refresh action  [30]
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    └─ options action  [30]  QMenu, indicator suppressed
+</span></code></pre></div>
+<p>Rules:</p>
+<ul>
+<li>The strip is <strong>36px</strong>. Chips are <strong>24px</strong>, fields <strong>26px</strong>, actions <strong>30×30 / 12px</strong>.</li>
+<li>Order is fixed: identity → search → scope → counts → actions. Counts sit immediately before actions; they are not a footer.</li>
+<li>Only the search field flexes. It has <code>min-width 110</code>, <code>max-width 200</code>, a leading search glyph and a clear button.</li>
+<li>The strip owns no title. The dock/window title identifies the host; the strip identifies the node and data.</li>
+<li>No pager footer. The whole collected frame is one page; the table scrolls.</li>
+<li>Standalone hosts (Data Preview window) hide node, socket and pin. They are not disabled or replaced with placeholders; they are absent.</li>
+<li>Collapse order on a narrow host: socket → scope → counts → node label. Keep identity, search and actions longest.</li>
+<li>A <code>limited</code> badge appears only when collection stopped at the size limit. It is not a permanent status.</li>
+</ul>
+<p>Target objectNames: <code>ChromeStrip</code>, <code>ChromeChip</code>, <code>ChromeChipDot</code>, <code>ChromeSearch</code>, <code>ChromeScope</code>, <code>ChromeCounts</code>, <code>ChromeBadge</code>, <code>ChromeAction</code>. <code>Preview*</code> names remain as aliases until migration.</p>
+<hr />
+<h2 id="9-chips-and-badges">9. Chips and badges<a class="headerlink" href="#9-chips-and-badges" title="Permanent link">&para;</a></h2>
+<h3 id="chips-identity-and-counts">Chips — identity and counts<a class="headerlink" href="#chips-identity-and-counts" title="Permanent link">&para;</a></h3>
+<ul>
+<li>24px high, <code>bg.base</code> on <code>bg.raised</code>, <code>1px border.subtle</code>, <code>radius 4</code>, 11px Label text, 6px dot.</li>
+<li>Use for node identity, socket, search scope and counts.</li>
+<li>Truncate a long node title with <code>Qt.ElideMiddle</code> and keep the full title in the tooltip.</li>
+<li>Counts format: <code>1,284 rows · 12 cols</code>. When filtered: <code>48 / 1,284 rows · 12 cols</code>. When counting: <code>1,284 rows · counting…</code>.</li>
+</ul>
+<h3 id="badges-status-by-exception">Badges — status by exception<a class="headerlink" href="#badges-status-by-exception" title="Permanent link">&para;</a></h3>
+<ul>
+<li>18px high, <code>radius 3</code>, 10px Micro/600, horizontal padding 5.</li>
+<li><code>limited</code> → <code>warning</code> background (<code>background_warning</code> / <code>warn_text</code>), text primary.</li>
+<li><code>Executed</code> → success soft; <code>Failed</code> → danger soft; <code>Pending</code> → info soft.</li>
+<li>A badge is not a chip. Do not use it for counts or identity.</li>
+</ul>
+<hr />
+<h2 id="10-fields-combos-and-focus">10. Fields, combos and focus<a class="headerlink" href="#10-fields-combos-and-focus" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Field height <strong>30px</strong> (26px inside a chrome strip), <code>bg.inset</code>, <code>border.default</code>, <code>radius 4</code>, 12px Body.</li>
+<li>Hover: <code>border.accent</code>. Focus: <code>border.accent</code> + a 2px <code>accent-soft</code> ring. Never remove the ring; never use a native 3px dotted outline.</li>
+<li>Placeholder is <code>text.tertiary</code>; disabled text is <code>text.disabled</code>; selection is <code>accent</code> with white text.</li>
+<li><strong>Always</strong> <code>NoWheelComboBox</code> in a scrollable dock. A raw combo steals wheel events from the panel.</li>
+<li>Search fields: leading search glyph, clear button, debounce 300ms. Enter does not submit; the field is the truth.</li>
+<li>Checkboxes stay native in size and painting; theme via <code>QCheckBox::indicator</code>, not a custom widget.</li>
+</ul>
+<hr />
+<h2 id="11-tables">11. Tables<a class="headerlink" href="#11-tables" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Property</th>
+<th>Default</th>
+<th>Dense preview</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Row height</td>
+<td>28</td>
+<td>24</td>
+</tr>
+<tr>
+<td>Header</td>
+<td>11px Micro, uppercase, <code>text.tertiary</code>, <code>bg.base</code></td>
+<td>same</td>
+</tr>
+<tr>
+<td>Grid</td>
+<td>horizontal hairline only</td>
+<td>horizontal hairline only</td>
+</tr>
+<tr>
+<td>Selection</td>
+<td><code>accent</code> at 18% + <code>text.primary</code></td>
+<td>same</td>
+</tr>
+<tr>
+<td>Hover row</td>
+<td><code>bg.hover</code></td>
+<td>same</td>
+</tr>
+<tr>
+<td>Numeric cells</td>
+<td>Mono, right-aligned, tabular figures</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Dtype</td>
+<td>10px Micro after the column name</td>
+<td>same</td>
+</tr>
+<tr>
+<td>Sort indicator</td>
+<td>small chevron, accent</td>
+<td>same</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Do not draw vertical grid lines. The row separator is enough.</li>
+<li><code>QHeaderView::section</code> must use the theme tokens; no default Fusion header.</li>
+<li>Editable tables keep the checkbox column fixed and every data column
+  <code>Interactive</code>; keep the widths on the content so a dock rebuild does not
+  reset them, and let spare width grow the name column.</li>
+<li>Delegates must paint from <code>option.palette</code>/<code>option.font</code>; never hand a bare <code>QStyleOptionComboBox</code> to <code>drawComplexControl</code>.</li>
+<li>The Preview table is dense (24px); editable tables are 28px. Do not mix densities in one view.</li>
+<li>Copy/export menus stay in the strip's Options menu; no table footer.</li>
+</ul>
+<hr />
+<h2 id="12-menus-and-dialogs">12. Menus and dialogs<a class="headerlink" href="#12-menus-and-dialogs" title="Permanent link">&para;</a></h2>
+<h3 id="menus">Menus<a class="headerlink" href="#menus" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>bg.overlay</code>, <code>1px border.default</code>, <code>radius 6</code>, shadow allowed.</li>
+<li>Items <strong>27–28px</strong> high, 8px horizontal padding, 4px radius, 12px Body.</li>
+<li>Hover/selected: <code>accent-soft</code> fill + <code>text.primary</code>. No accent bar.</li>
+<li>Separators: 1px <code>border.subtle</code>, 4px vertical margin.</li>
+<li>Shortcut text: 10px Mono, <code>text.tertiary</code>; only for real shortcuts.</li>
+<li>Dialog-opening items end in <code>…</code>; immediate commands do not.</li>
+</ul>
+<h3 id="dialogs">Dialogs<a class="headerlink" href="#dialogs" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>bg.base</code>, <code>1px border.strong</code>, <code>radius 8</code>, shadow allowed.</li>
+<li>Header <strong>34px</strong>, Title 16/600, close icon 22×22.</li>
+<li>Body padding <strong>16px</strong>, one column, 8px gap.</li>
+<li>Footer <strong>42–48px</strong>, right-aligned buttons, 6px gap. <code>QDialogButtonBox</code> text stays.</li>
+<li>Exactly one primary action per dialog. Destructive confirmations use <code>DangerButton</code> + explicit noun.</li>
+<li>No custom title bar, no illustration headers, no multi-column forms unless the dialog is a dedicated manager.</li>
+</ul>
+<hr />
+<h2 id="13-canvas-nodes-states-and-edges">13. Canvas: nodes, states and edges<a class="headerlink" href="#13-canvas-nodes-states-and-edges" title="Permanent link">&para;</a></h2>
+<h3 id="node-body">Node body<a class="headerlink" href="#node-body" title="Permanent link">&para;</a></h3>
+<ul>
+<li>120×120 scene units, radius 10, category fill, white glyph.</li>
+<li>Node title: 11px Label, <code>text.secondary</code>, centred under the tile; elide middle, full text in tooltip.</li>
+<li>Palette tiles scale the same artwork to 22–32px; they are not a second icon set.</li>
+</ul>
+<h3 id="state-matrix">State matrix<a class="headerlink" href="#state-matrix" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>State</th>
+<th>Ring</th>
+<th>Status dot</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Idle</td>
+<td>none</td>
+<td>none</td>
+<td>Category fill is the only signal</td>
+</tr>
+<tr>
+<td>Hover</td>
+<td>1px <code>rgba(255,255,255,.30)</code></td>
+<td>none</td>
+<td>Must not shift layout</td>
+</tr>
+<tr>
+<td>Selected</td>
+<td>2px <code>node.selection</code> (<code>#FFA637</code>)</td>
+<td>optional success</td>
+<td>Selection outranks hover</td>
+</tr>
+<tr>
+<td>Running</td>
+<td>2px <code>activity</code></td>
+<td>spinner/dot optional</td>
+<td>No pulsing fill on the whole tile</td>
+</tr>
+<tr>
+<td>Executed</td>
+<td>2px <code>success</code></td>
+<td>success check, bottom edge (centred)</td>
+<td>Clears when the node is dirtied</td>
+</tr>
+<tr>
+<td>Error</td>
+<td>2px <code>danger</code></td>
+<td>danger glyph, bottom edge (centred)</td>
+<td>Tooltip carries the message; replaces the status glyph</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>State is never colour alone: the ring plus dot/glyph plus tooltip.</li>
+<li>One status glyph per node. An error or warning replaces the executed/dirty
+  glyph in the same place; never draw a second indicator in a corner.</li>
+<li>The ring is drawn outside the tile and must not change the node's hit area.</li>
+</ul>
+<h3 id="edges-and-grid">Edges and grid<a class="headerlink" href="#edges-and-grid" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Grid: 22px minor, 110px major, <code>rgba(255,255,255,.035)</code> / <code>.06</code> in dark; dark ink at equivalent alpha in light.</li>
+<li>Edge default: <code>#454D57</code> (light: <code>#AAB4BE</code>), 1.4px screen width, <code>vector-effect: non-scaling-stroke</code>.</li>
+<li>Edge active/selected: <code>accent</code>, 1.8px. No magenta/tan defaults; those are legacy and belong to the old editor skin.</li>
+<li>Edge hover: lighten one step, do not change width.</li>
+<li>No animated dashes or particles by default; execution state belongs to the node ring.</li>
+<li>Canvas and grid colours are tokens — <code>canvas_background</code>, <code>canvas_grid_light</code>, <code>canvas_grid_dark</code> — applied by <code>apply_theme_to_scene()</code>; state rings read <code>node_selection</code> / <code>activity</code> / <code>success</code> / <code>danger</code> through <code>NodeBase._pen_role</code>. Keep paint methods token-driven; a literal <code>QColor("#...")</code> in a <code>paint()</code> is a bug.</li>
+<li>The workspace frame behind the sub-windows is <code>canvas_background</code> too (<code>TriggerWindow._theme_mdi_background</code>), so the graph and the frame read as one surface. Edge and socket colours are user settings, not theme tokens (<code>qt/node_editor_colors.py</code>).</li>
+</ul>
+<h3 id="snapping-and-arrangement">Snapping and arrangement<a class="headerlink" href="#snapping-and-arrangement" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Snapping</strong> is a preference (<code>editor/snap_to_grid</code>) copied onto the graphics scene by
+  <code>apply_theme_to_scene()</code>, because the drag handler reads it once per mouse move.
+  The same value is the check item under <strong>Edit › Arrange</strong> and the node context menu;
+  hold <code>Alt</code> while dragging to bypass it. New nodes dropped from the palette land on the grid.</li>
+<li><strong>Arrange commands</strong> live in one table, <code>qt/helpers/node_arrange.py</code>: align horizontal /
+  vertical centres, distribute horizontally / vertically, arrange in row / column / grid,
+  snap selection. Both menus and the shortcut page read that table, so labels, minimum
+  selections and defaults cannot drift apart.</li>
+<li>Geometry rules: align shares the selection's bounding-box centre; arrange starts at its
+  top-left with a 40-unit gap; a grid uses <code>ceil(sqrt(n))</code> columns; distribute keeps the
+  outer nodes fixed and evens the edge gaps (never negative). A command that changes
+  nothing records no undo step.</li>
+<li>Each command is one <code>MoveNodesCommand</code> per press - positions only, not a scene snapshot.
+  A group whose child moved is refitted explicitly, since the vendored <code>Group</code> only refits
+  from a mouse-driven <code>positionChanged</code>.</li>
+<li><strong>Shortcuts</strong> are per-command, edited under <strong>Preferences › Shortcuts</strong>, and stored as a
+  JSON object under <code>editor/shortcuts</code> (INI holds scalars only). Missing key = default,
+  empty string = cleared. A sequence needs Ctrl/Alt/Shift or a function key, so it cannot
+  shadow typing in the node editors; clashes are checked against the window's live actions.</li>
+<li>Known limitation: dragging a group by its header moves every child through the vendored
+  <code>Group.mouseMoveEvent</code>, which does not pass through the node's snap correction.</li>
+</ul>
+<h3 id="canvas-chrome">Canvas chrome<a class="headerlink" href="#canvas-chrome" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Floating toolbar top-left, 30px actions, no background plate beyond their own buttons.</li>
+<li>No minimap, no floating legend, no permanent help text. The status bar carries hints.</li>
+</ul>
+<hr />
+<h2 id="14-logs-and-status-bar">14. Logs and status bar<a class="headerlink" href="#14-logs-and-status-bar" title="Permanent link">&para;</a></h2>
+<h3 id="logs">Logs<a class="headerlink" href="#logs" title="Permanent link">&para;</a></h3>
+<ul>
+<li>11px Mono, row 22, timestamp <code>text.tertiary</code>, level badge 10px Micro, message <code>text.secondary</code>.</li>
+<li>Level is the only colour: <code>INFO</code> info, <code>WARN</code> warning, <code>ERROR</code> danger, <code>CRITICAL</code> danger + bold, <code>DEBUG</code> tertiary.</li>
+<li>No card per line. The log pane is one <code>bg.inset</code> surface with hairline separators.</li>
+<li>Auto-scroll is a checkbox in the dock controls, not a footer button.</li>
+<li>Colours come from the theme (<code>text_*</code>, <code>info</code>, <code>warning</code>, <code>danger</code>) via <code>LoggingDock.apply_theme()</code>; the SQL editor's syntax colours are the <code>Code</code> token group (<code>syntax_*</code>, <code>editor_line_number_*</code>, <code>editor_current_line</code>). No hardcoded log or syntax colours.</li>
+</ul>
+<h3 id="diagnostic-feed">Diagnostic feed<a class="headerlink" href="#diagnostic-feed" title="Permanent link">&para;</a></h3>
+<p>The Logs dock is one list of records, not a tab per kind. A record is a log line or
+a node problem; a problem carries the whole <code>NodeError</code>, so code, Fix, Caused-by and
+technical text stay structured.</p>
+<ul>
+<li><strong>Row.</strong> 22px: a 12px severity glyph, <code>HH:MM:SS</code> in <code>text.tertiary</code>, then the node
+  name as a link (<code>accent.secondary</code>) with its numeric id in <code>text.tertiary</code> for a
+  problem, or the message directly for a log line. The message is
+  <code>text.secondary</code>, elided right, never wrapped.</li>
+<li><strong>Glyph.</strong> Shape carries the kind so colour is never the only signal (§15):
+  circle-with-bang error, triangle warning, ring info, square debug, dot below that.</li>
+<li><strong>Expansion.</strong> A problem row expands in place (double-click, Space, or the chevron)
+  to <code>code  Fix: …</code>, then <code>Caused by: …</code>, then the first technical line when the
+  toggle is on. Detail text is 11px Mono in <code>text.tertiary</code>, 16px per line.</li>
+<li><strong>Strip.</strong> 40px, <code>background.secondary</code>. Counted chips are the filter and the count:
+  <code>All</code>, <code>N Errors</code>, <code>N Conv</code>, <code>N Warnings</code>, <code>N Messages</code>, then the icon actions and
+  the <code>Last Run</code> / <code>Configuration</code> segmented control. A zero count uses
+  <code>text.inactive</code> through <code>[zero="true"]</code>; the selected chip is <code>accent.primary</code>.
+  Chips are 30px tall, so the hit area meets §15.</li>
+<li><strong>Colour owner.</strong> The delegate resolves every colour from the active theme and
+  re-reads it in <code>apply_theme()</code>. No <code>setForeground</code>, no inline <code>style=</code>.</li>
+<li><strong>Empty state.</strong> One <code>EmptyStateLabel</code>, wording per filter: "No messages yet",
+  "No problems", "The last run reported nothing", "Nothing matches this filter".</li>
+</ul>
+<h3 id="status-bar">Status bar<a class="headerlink" href="#status-bar" title="Permanent link">&para;</a></h3>
+<ul>
+<li>20px high, <code>bg.raised</code>, top hairline, 10px Label, <code>text.tertiary</code>.</li>
+<li>Left: file path or current action. Right: <code>Ready</code>, encoding, column count. Truncate the path, never the state.</li>
+</ul>
+<hr />
+<h2 id="15-accessibility">15. Accessibility<a class="headerlink" href="#15-accessibility" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Minimum interactive target: <strong>30×30</strong>. A 24px chip is not a button; do not make it clickable without a 30px hit area.</li>
+<li>Every icon-only control has a tooltip <strong>and</strong> <code>setAccessibleName</code>. The two strings match.</li>
+<li>Focus is always visible: 1px accent + 2px soft ring. No <code>outline: none</code> without a replacement.</li>
+<li>Status is not colour-only: pair the colour with a word, glyph or dot.</li>
+<li>Contrast: <code>text.secondary</code> on <code>bg.base</code> ≥ 4.5:1; <code>text.tertiary</code> is for meta only, never body copy; disabled text is exempt.</li>
+<li>Keyboard: <code>Ctrl+F</code> focuses preview search, <code>Ctrl+R</code> refreshes, <code>Esc</code> closes overlays, <code>Tab</code> reaches every control in visual order.</li>
+<li>No motion that cannot be disabled. QSS transitions are not used; debounce is not a visual animation.</li>
+</ul>
+<hr />
+<h2 id="16-content-and-copy">16. Content and copy<a class="headerlink" href="#16-content-and-copy" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Sentence case for labels, menu items and tooltips. Title Case for window and dialog titles.</li>
+<li>Menu items that open a dialog end in <code>…</code>; immediate commands do not.</li>
+<li>Counts: <code>1,284 rows · 12 cols</code>; use a thin middot and thousands separators.</li>
+<li>History: <code>"Noun Verbed"</code> — <code>Column Selection Changed</code>, <code>Node Label Changed</code>, <code>Dtype Changed</code>.</li>
+<li>Empty: one sentence plus, at most, one hint line. No exclamation marks, no jokes.</li>
+<li>Tooltips: sentence case, no trailing period, describe the action not the icon (<code>Refresh preview</code>, not <code>Refresh</code>).</li>
+<li>Errors: what failed, on what, and the next action. Keep the raw exception out of the badge; put it in the tooltip or log.</li>
+<li>Numbers in tables: right-aligned, tabular, consistent decimals.</li>
+</ul>
+<hr />
+<h2 id="17-implementation-map">17. Implementation map<a class="headerlink" href="#17-implementation-map" title="Permanent link">&para;</a></h2>
+<h3 id="tokens">Tokens<a class="headerlink" href="#tokens" title="Permanent link">&para;</a></h3>
+<ol>
+<li>Add the token to <strong>every</strong> built-in theme JSON in <code>resources/qt/themes/</code> — <code>dark.json</code>, <code>light.json</code> and each palette theme (schema 2, under <code>tokens</code>) — and to the matching <code>TOKEN_GROUPS</code> group in <code>qt/theme_manager.py</code> so the editor exposes it.</li>
+<li>Add the matching <code>$COLOR_*</code> values to <code>qss/_variable.scss</code> and the selectors to <code>qss/_style.scss</code>.</li>
+<li>Add the same selectors to <code>resources/qt/themes/base.qss</code>; write <code>{{</code> / <code>}}</code> for QSS blocks, <code>{token}</code> for values.</li>
+<li>Run <code>tests/unit/test_theme_tokens.py</code> — it collects every <code>{token}</code> in <code>base.qss</code> and fails if any built-in theme (or the editor's group list) is missing one.</li>
+</ol>
+<h3 id="python-painted-surfaces">Python-painted surfaces<a class="headerlink" href="#python-painted-surfaces" title="Permanent link">&para;</a></h3>
+<p><code>qt/theme_manager.py</code> is the single accessor: <code>ThemeManager.color(token)</code> returns a <code>QColor</code>, <code>token()</code> the raw value, both cached per theme. <code>ResourceManager.get_theme_color</code> delegates to it, so older call sites keep working.</p>
+<p>Route these through it:</p>
+<ul>
+<li>node category fills and state rings (<code>node_base.py</code>)</li>
+<li>table row parity (<code>polars_table_viewer.py</code>)</li>
+<li>canvas grid and background (<code>apply_theme_to_scene</code>)</li>
+<li>log levels and the SQL editor's syntax colours (<code>apply_theme</code>)</li>
+<li>the workspace frame (<code>TriggerWindow._theme_mdi_background</code>)</li>
+<li>the caption glyphs and app icon in the window chrome (<code>window_chrome.py</code>)</li>
+</ul>
+<p>Missing tokens fall back to the built-in dark value, and a user theme that omits one gets it filled with a warning. No widget should call <code>QColor("#...")</code> in a <code>paint()</code> method. Edge and socket colours are a <strong>user setting</strong>, not a token (<code>qt/node_editor_colors.py</code>).</p>
+<h3 id="shared-widget-constants">Shared widget constants<a class="headerlink" href="#shared-widget-constants" title="Permanent link">&para;</a></h3>
+<p><code>qt/widgets/common/config_widgets.py</code> owns:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">STRIP_H</span> <span class="o">=</span> <span class="mi">36</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">TOOLBAR_H</span> <span class="o">=</span> <span class="mi">40</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="n">CONTROL_H</span> <span class="o">=</span> <span class="mi">30</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="n">CHIP_H</span> <span class="o">=</span> <span class="mi">24</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="n">ROW_H</span> <span class="o">=</span> <span class="mi">28</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a><span class="n">DENSE_ROW_H</span> <span class="o">=</span> <span class="mi">24</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="n">ICON_SIZE</span> <span class="o">=</span> <span class="mi">16</span>
+</span></code></pre></div>
+<p><code>IconButton</code>, <code>TextButton</code>, <code>Chip</code> and <code>StatusBadge</code> use these constants. Do not repeat the numbers in node files.</p>
+<p><code>qt/widgets/common/window_chrome.py</code> owns the window row: <code>CHROME_H = 32</code>, <code>CAPTION_BUTTON_W = 44</code>, <code>RESIZE_MARGIN = 5</code>. Pure Qt on purpose: the 5px zone replaces the native border (no 1px hover assist), the frameless window gets no DWM shadow or rounded corners, and Win11's Snap Layouts flyout does not open from the maximize button. Those need Win32 calls and stay out until asked for.</p>
+<h3 id="objectname-registry">ObjectName registry<a class="headerlink" href="#objectname-registry" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>objectName</th>
+<th>Owner</th>
+<th>States to restate</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>IconButton</code></td>
+<td>shared</td>
+<td>hover, pressed, disabled, checked</td>
+</tr>
+<tr>
+<td><code>OptionsButton</code></td>
+<td>shared</td>
+<td>hover, pressed, disabled, menu-indicator</td>
+</tr>
+<tr>
+<td><code>TextButton</code></td>
+<td>shared</td>
+<td>hover, pressed, disabled</td>
+</tr>
+<tr>
+<td><code>ConfigSection</code></td>
+<td>shared</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>ConfigSectionInfo</code></td>
+<td>shared</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>ColumnChecklist</code></td>
+<td>shared</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>EmptyStateLabel</code></td>
+<td>shared</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>WindowChrome</code></td>
+<td>main window</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>WindowChromeIcon</code>, <code>WindowChromeTitle</code></td>
+<td>main window</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>WindowChromeButton</code></td>
+<td>main window</td>
+<td>hover, pressed, <code>[danger="true"]</code> tone</td>
+</tr>
+<tr>
+<td><code>PreviewStrip</code> → <code>ChromeStrip</code></td>
+<td>Preview / shared chrome</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>PreviewNodeChip</code> → <code>ChromeChip</code></td>
+<td>Preview / shared chrome</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>PreviewSearchEdit</code> → <code>ChromeSearch</code></td>
+<td>Preview / shared chrome</td>
+<td>hover, focus, disabled</td>
+</tr>
+<tr>
+<td><code>PreviewScopeCombo</code> → <code>ChromeScope</code></td>
+<td>Preview / shared chrome</td>
+<td>hover, focus, disabled</td>
+</tr>
+<tr>
+<td><code>PreviewCountsChip</code> → <code>ChromeCounts</code></td>
+<td>Preview / shared chrome</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>PreviewLimitedBadge</code> → <code>ChromeBadge</code></td>
+<td>Preview / shared chrome</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>PreviewSourceBadge</code> → <code>ChromeBadge</code></td>
+<td>Preview / shared chrome</td>
+<td><code>[source="run"]</code> tone</td>
+</tr>
+<tr>
+<td><code>PreviewPinButton</code></td>
+<td>Preview</td>
+<td>hover, pressed, disabled, checked</td>
+</tr>
+<tr>
+<td><code>PrimaryButton</code></td>
+<td>dialogs</td>
+<td>hover, pressed, disabled</td>
+</tr>
+<tr>
+<td><code>DangerButton</code></td>
+<td>dialogs</td>
+<td>hover, pressed, disabled</td>
+</tr>
+<tr>
+<td><code>MenuSurface</code></td>
+<td>menus</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>DialogSurface</code></td>
+<td>dialogs</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>PreferencesDialog</code>, <code>ThemeEditorDialog</code></td>
+<td>preferences / theme editor</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>PreferencesSidebar</code>, <code>PreferencesPages</code>, <code>PreferencesPage</code></td>
+<td>preferences</td>
+<td>item hover, selected</td>
+</tr>
+<tr>
+<td><code>ThemeList</code>, <code>ThemePreview</code></td>
+<td>preferences</td>
+<td>item hover, selected</td>
+</tr>
+<tr>
+<td><code>ThemeEditorScroll</code>, <code>ThemeEditorContent</code></td>
+<td>theme editor</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>ThemeNameEdit</code>, <code>ThemeAppearanceCombo</code>, <code>GridSizeSpin</code>, <code>RecentLimitSpin</code>, <code>RenderDetailSpin</code></td>
+<td>preferences / theme editor</td>
+<td>hover, focus, disabled</td>
+</tr>
+<tr>
+<td><code>RenderDetailCardCombo</code>, <code>RenderDetailSocketsCombo</code>, <code>RenderDetailLabelCombo</code>, <code>RenderDetailIndicatorCombo</code></td>
+<td>preferences</td>
+<td>hover, focus, disabled</td>
+</tr>
+<tr>
+<td><code>ColorHexEdit</code>, <code>ColorSwatch</code>, <code>ThemeTokenRow</code>, <code>ContrastLabel</code></td>
+<td>theme editor</td>
+<td>hover, focus</td>
+</tr>
+<tr>
+<td><code>FieldLabel</code>, <code>FieldHint</code>, <code>SectionTitleText</code></td>
+<td>preferences / theme editor</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>LoggingDockWidget</code>, <code>LoggingToolbar</code></td>
+<td>logs</td>
+<td>—</td>
+</tr>
+<tr>
+<td><code>DiagnosticCount</code></td>
+<td>logs</td>
+<td>hover, pressed, checked, <code>[zero="true"]</code></td>
+</tr>
+<tr>
+<td><code>DiagnosticSearch</code></td>
+<td>logs</td>
+<td>focus</td>
+</tr>
+<tr>
+<td><code>DiagnosticTree</code></td>
+<td>logs</td>
+<td>item hover, selected</td>
+</tr>
+<tr>
+<td><code>FormulaCompleterPopup</code></td>
+<td>SQL editor</td>
+<td>hover, selected</td>
+</tr>
+</tbody>
+</table>
+<h3 id="guards">Guards<a class="headerlink" href="#guards" title="Permanent link">&para;</a></h3>
+<p>Tests that fail fast, all under <code>tests/</code> (the shared fixtures live in <code>tests/conftest.py</code> and keep the preference store in a temp dir):</p>
+<ul>
+<li><strong>Theme parity:</strong> parse <code>base.qss</code>, collect every <code>{token}</code>, assert it exists in both theme JSONs, and assert every colour token is exposed by <code>TOKEN_GROUPS</code> (<code>test_theme_tokens.py</code>).</li>
+<li><strong>Theme manager:</strong> schema 2, <code>extends</code>, missing-token fallback, invalid colours, accent variants, preview/commit/cancel, save/import/export/delete (<code>test_theme_manager.py</code>).</li>
+<li><strong>Preferences:</strong> defaults, typed coercion, legacy migration, reset (<code>test_preferences.py</code>).</li>
+<li><strong>Layout:</strong> geometry and dock-state round trip, session gating and filtering, off-screen guard (<code>test_layout_state.py</code>).</li>
+</ul>
+<p>Target guards still to add:</p>
+<ul>
+<li><strong>No inline QSS:</strong> no <code>setStyleSheet</code> in <code>qt/widgets/nodes/**</code> or the shared dock chrome.</li>
+<li><strong>Accessible actions:</strong> every <code>QPushButton</code> with an empty <code>text()</code> has a non-empty <code>toolTip()</code> and <code>accessibleName()</code>.</li>
+<li><strong>No <code>fromTheme</code> in nodes:</strong> a grep test for <code>QIcon.fromTheme</code> outside the documented fallback helper.</li>
+</ul>
+<h3 id="references">References<a class="headerlink" href="#references" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Preview strip: <code>qt/widgets/data_preview_panel.py</code></li>
+<li>Window chrome: <code>qt/widgets/common/window_chrome.py</code></li>
+<li>Preview dock host: <code>qt/docks/data_preview.py</code></li>
+<li>Config dock host: <code>qt/docks/node_config.py</code></li>
+<li>Shared widgets: <code>qt/widgets/common/config_widgets.py</code></li>
+<li>Table: <code>qt/models/polars_table_viewer.py</code>, <code>qt/widgets/select_table_widget.py</code></li>
+<li>Canvas: <code>qt/node_base.py</code>, <code>qt/node_editor_colors.py</code></li>
+<li>Theme: <code>resources/qt/themes/</code> (<code>base.qss</code> plus one JSON per built-in theme), <code>qss/_variable.scss</code>, <code>qss/_style.scss</code></li>
+<li>Theme engine: <code>qt/theme_manager.py</code>, theme editor <code>qt/dialogs/theme_editor_dialog.py</code>, swatches <code>qt/widgets/common/theme_widgets.py</code></li>
+<li>Preferences: <code>qt/preferences.py</code>, dialog <code>qt/dialogs/preferences_dialog.py</code>, host window <code>qt/main_window.py</code></li>
+<li>Layout and session: <code>qt/layout_state.py</code>, <code>qt/helpers/preview_dock_state.py</code> (legacy migration only)</li>
+<li>Visual preview: <code>docs/assets/design_system_preview.html</code> in the source tree</li>
+</ul>
+<hr />
+<h2 id="18-anti-patterns-do-not-copy">18. Anti-patterns (do not copy)<a class="headerlink" href="#18-anti-patterns-do-not-copy" title="Permanent link">&para;</a></h2>
+<ol>
+<li>Inline QSS per button (<code>groupby.py:219</code>, <code>select.py:191</code>).</li>
+<li><code>QIcon.fromTheme</code> on Windows — invisible icons.</li>
+<li>Text <code>All/None</code> rows (<code>join.py:162</code>, <code>cleansing.py:198</code>) unless they are the paired <code>TextButton</code> exception.</li>
+<li>Custom spacing <code>10/15</code> on sections (<code>unique.py:87</code>, <code>split.py:92</code>).</li>
+<li>Raw <code>QComboBox</code> in docks, raw <code>QListWidget</code> checkboxes.</li>
+<li>Signals connected when data is <code>None</code> (<code>filter.py</code>).</li>
+<li><code>dock.setContentsMargins(0,0,0,0)</code> wiping dock padding (<code>file_output.py:71</code>).</li>
+<li>Stub nodes with no <code>create_layout</code> (<code>union.py</code>, <code>find_replace.py</code>) — add <code>EmptyStateLabel</code> gate at minimum.</li>
+<li>A second toolbar or a footer that repeats the strip.</li>
+<li>Accent used as decoration or category colour.</li>
+<li>Status communicated by colour alone, or a whole dock repainted for one error.</li>
+<li>Shadows on panels, strips, chips or table cells.</li>
+<li>44px controls or 16px gaps inside a dock.</li>
+<li>Per-node forks of <code>Chip</code>, <code>StatusBadge</code>, <code>IconButton</code> or <code>ConfigSection</code>.</li>
+</ol>
+<hr />
+<h2 id="19-migration-checklist">19. Migration checklist<a class="headerlink" href="#19-migration-checklist" title="Permanent link">&para;</a></h2>
+<h3 id="phase-1-tokens-and-guards">Phase 1 — tokens and guards<a class="headerlink" href="#phase-1-tokens-and-guards" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add Signal keys to every built-in theme JSON (schema 2; <code>TOKEN_GROUPS</code> in <code>qt/theme_manager.py</code> is the authoritative list).</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Route Python-painted colours through <code>ThemeManager.color()</code> — <code>qt/style_tokens.py</code> turned out to be unnecessary, the manager is the accessor.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add theme-parity, inline-QSS, accessible-action and <code>fromTheme</code> tests.</li>
+</ul>
+<h3 id="phase-2-qss-foundation">Phase 2 — QSS foundation<a class="headerlink" href="#phase-2-qss-foundation" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add surface, text, accent, status and node tokens to <code>base.qss</code> and <code>_style.scss</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add <code>ChromeStrip</code>, <code>Chip</code>, <code>StatusBadge</code>, <code>PrimaryButton</code>, <code>DangerButton</code> hooks.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Restate hover/pressed/disabled per <code>objectName</code>; keep a constant 1px base border.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Verify the light theme, not just dark.</li>
+</ul>
+<h3 id="phase-3-shared-chrome">Phase 3 — shared chrome<a class="headerlink" href="#phase-3-shared-chrome" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Move the Preview strip to the shared <code>ChromeStrip</code> composition; keep <code>Preview*</code> aliases.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Apply the strip rhythm to the Logs dock and Config Dock header.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Align the status bar and tab bars to 20 / 24px.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Update the standalone Preview window to hide node, socket and pin.</li>
+</ul>
+<h3 id="phase-4-config-dock">Phase 4 — Config Dock<a class="headerlink" href="#phase-4-config-dock" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Flatten <code>ConfigSection</code>: heading + hairline, 4px gaps, no group-box border.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Normalise toolbars to 40px, controls to 30px, icons to 12px.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Replace hand-rolled checklists with <code>ColumnChecklist</code>; use <code>TextButton</code> only for All/None.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Gate every dock on <code>EmptyStateLabel</code>; remove custom empty variants.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Align tables to 28px rows and the 11px header.</li>
+</ul>
+<h3 id="phase-5-canvas">Phase 5 — canvas<a class="headerlink" href="#phase-5-canvas" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Move node category colours to <code>node.*</code> tokens.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add 2px state rings and status dots; selected ring uses <code>node.selection</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Replace tan/magenta edge defaults with neutral + accent.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Set the 22 / 110px grid and canvas surface.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Keep the 120-unit node body; do not shrink the scene without a separate decision.</li>
+</ul>
+<h3 id="phase-6-polish-and-proof">Phase 6 — polish and proof<a class="headerlink" href="#phase-6-polish-and-proof" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Menus and dialogs: 6/8px radius, 27px items, one primary action.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add a light-theme screenshot for each surface.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Delete ad-hoc colours and spacing that now have tokens.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Re-run the Select, Join, GroupBy, Filter, Preview and Logs smoke tests.</li>
+</ul>
+<h3 id="config-dock-backlog-from-the-original-contract">Config Dock backlog (from the original contract)<a class="headerlink" href="#config-dock-backlog-from-the-original-contract" title="Permanent link">&para;</a></h3>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <code>IconButton</code> exists in <code>widgets/common/config_widgets.py</code> and is exported.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Add the missing icon ids (move up/down, check all/uncheck all, clear, export) to <code>qt/resources.json</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled checked/><span class="task-list-indicator"></span></label> <code>select.py</code>: drop <code>"Options"</code> text → <code>icon_options</code>, swap <code>fromTheme go-up/go-down</code> → bundled arrows.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>join.py</code>: icon-ify All/None→Options menu, Evaluate→apply icon, <code>QListWidget</code>→<code>ColumnChecklist</code>, fix empty gate to <code>or</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>groupby.py</code>: kill blue-pill QSS, Add/Remove/Apply→icons, bold labels→<code>ConfigSectionInfo</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>formula.py</code>: <code>+ Add formula</code>→icon, remove→<code>icon_remove</code>, adopt <code>NoWheelComboBox</code>.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>filter/sort/split/unique/cleansing</code>: adopt Pattern B tokens, <code>NoWheelComboBox</code>, fix <code>filter.py</code> signal crash, <code>unique.py</code> spacing.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>file_input/output</code>: Load/Save→icons, remove <code>setContentsMargins(0)</code>, add <code>EmptyStateLabel</code> path.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> <code>graph.py</code>, <code>count_records.py</code>, <code>union.py</code>, <code>find_replace.py</code>: add empty gates + sections.</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> Move all inline QSS to <code>base.qss</code> + <code>_style.scss</code>.</li>
+</ul>
+<hr />
+<h2 id="20-references">20. References<a class="headerlink" href="#20-references" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Select dock: <code>src/trigger_designer/qt/widgets/nodes/Preparation/select.py:134-280</code></li>
+<li>Table model/delegate: <code>src/trigger_designer/qt/widgets/select_table_widget.py:36-771</code></li>
+<li>Dock host: <code>src/trigger_designer/qt/docks/node_config.py:10-129</code></li>
+<li>Shared widgets: <code>src/trigger_designer/qt/widgets/common/config_widgets.py:1-139</code></li>
+<li>Preview panel: <code>src/trigger_designer/qt/widgets/data_preview_panel.py</code></li>
+<li>Preview dock: <code>src/trigger_designer/qt/docks/data_preview.py</code></li>
+<li>Polars viewer: <code>src/trigger_designer/qt/models/polars_table_viewer.py</code></li>
+<li>Canvas: <code>src/trigger_designer/qt/node_base.py</code>, <code>src/trigger_designer/qt/node_editor_colors.py</code></li>
+<li>Theme hooks: <code>src/trigger_designer/resources/qt/themes/base.qss</code>, <code>src/trigger_designer/qss/_style.scss</code></li>
+<li>Icons: <code>src/trigger_designer/qt/resources.json:98-105</code></li>
+<li>Visual preview: <code>docs/assets/design_system_preview.html</code> in the source tree</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../contributing/writing-style/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Writing node pages">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Writing node pages
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>

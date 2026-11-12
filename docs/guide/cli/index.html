@@ -1,0 +1,5184 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/guide/cli/">
+      
+      
+      
+        <link rel="prev" href="../workpaper/">
+      
+      
+        <link rel="next" href="../troubleshooting-and-faq/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Command line - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Command line
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors-and-problems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preferences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/input-output/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workpaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is-for-and-what-it-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What it is for, and what it is not
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-and-starting-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Installing and starting it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quick start
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-look-at-the-file-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Look at the file first
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Validate
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-approve-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Approve it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Dry run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-run-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Run it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-read-the-exit-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Read the exit code
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Commands at a glance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        run
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-you-get-when-it-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What you get when it fails
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        validate
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#info" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        info
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approve-and-the-approval-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        approve and the approval flow
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="approve and the approval flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The flow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#params" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        params
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="params">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-settings-can-be-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Which settings can be parameters
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        paths
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters-and-path-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Parameters and path overrides
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workpaper-output-on-the-command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workpaper Output on the command line
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-records-and-verify-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run records and verify-log
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exit codes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logs-and-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs and events
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeouts-memory-and-threads" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Timeouts, memory and threads
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduling-on-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scheduling on Windows
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduling on Windows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step-a-nightly-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step by step: a nightly run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logged-on-or-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logged on or not
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#before-you-rely-on-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you rely on it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-schedulers-and-containers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Other schedulers and containers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Safety
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-files-go" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the files go
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Troubleshooting
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headless-qt-and-no-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Headless Qt and "no display"
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locked-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Locked files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-stale-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A stale lock
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cp1252-and-other-console-encodings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        cp1252 and other console encodings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paths-quotes-and-drives" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Paths, quotes and drives
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#something-is-slow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Something is slow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        See also
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting-and-faq/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DESIGN_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-it-is-for-and-what-it-is-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What it is for, and what it is not
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#installing-and-starting-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Installing and starting it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-start" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quick start
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Quick start">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-look-at-the-file-first" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. Look at the file first
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. Validate
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-approve-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. Approve it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-dry-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. Dry run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-run-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. Run it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-read-the-exit-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        6. Read the exit code
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#commands-at-a-glance" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Commands at a glance
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        run
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="run">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#what-you-get-when-it-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What you get when it fails
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        validate
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#info" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        info
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#approve-and-the-approval-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        approve and the approval flow
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="approve and the approval flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The flow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#params" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        params
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="params">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#which-settings-can-be-parameters" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Which settings can be parameters
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#paths" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        paths
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parameters-and-path-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Parameters and path overrides
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#workpaper-output-on-the-command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workpaper Output on the command line
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-records-and-verify-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run records and verify-log
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#exit-codes" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exit codes
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logs-and-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logs and events
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timeouts-memory-and-threads" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Timeouts, memory and threads
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#scheduling-on-windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Scheduling on Windows
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Scheduling on Windows">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#step-by-step-a-nightly-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Step by step: a nightly run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#logged-on-or-not" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Logged on or not
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#before-you-rely-on-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Before you rely on it
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-schedulers-and-containers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Other schedulers and containers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safety" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Safety
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-the-files-go" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Where the files go
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#troubleshooting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Troubleshooting
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Troubleshooting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#headless-qt-and-no-display" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Headless Qt and "no display"
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#locked-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Locked files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#a-stale-lock" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A stale lock
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cp1252-and-other-console-encodings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        cp1252 and other console encodings
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#paths-quotes-and-drives" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Paths, quotes and drives
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#something-is-slow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Something is slow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        See also
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/guide/cli.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="the-command-line">The command line<a class="headerlink" href="#the-command-line" title="Permanent link">&para;</a></h1>
+<p><code>trigger-designer-cli</code> runs a saved workflow with no window and nobody at the keyboard. It is meant for two situations: you want the same check to run every night or every month without opening the program, or IT wants to start a workflow from a script or a job scheduler and read a clear pass/fail answer.</p>
+<p>It runs the same nodes as the editor, so a workflow gives the same result headless as it does when you press <strong>Run</strong>. It writes the same <a href="../run-history-and-audit-trail/">run record</a>, and it adds protections that matter when nobody is watching: outputs are never left half-written, a workflow written by someone else will not run until you have approved it, and every outcome is a fixed exit code.</p>
+<p><a href="../">Back to the guide index</a></p>
+<p>This page is both the guide and the command reference.</p>
+<h2 id="on-this-page">On this page<a class="headerlink" href="#on-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#what-it-is-for-and-what-it-is-not">What it is for, and what it is not</a></li>
+<li><a href="#installing-and-starting-it">Installing and starting it</a></li>
+<li><a href="#quick-start">Quick start</a></li>
+<li><a href="#commands-at-a-glance">Commands at a glance</a></li>
+<li><a href="#run">run</a></li>
+<li><a href="#validate">validate</a></li>
+<li><a href="#info">info</a></li>
+<li><a href="#approve-and-the-approval-flow">approve and the approval flow</a></li>
+<li><a href="#params">params</a></li>
+<li><a href="#paths">paths</a></li>
+<li><a href="#parameters-and-path-overrides">Parameters and path overrides</a></li>
+<li><a href="#workpaper-output-on-the-command-line">Workpaper Output on the command line</a></li>
+<li><a href="#run-records-and-verify-log">Run records and verify-log</a></li>
+<li><a href="#exit-codes">Exit codes</a></li>
+<li><a href="#logs-and-events">Logs and events</a></li>
+<li><a href="#timeouts-memory-and-threads">Timeouts, memory and threads</a></li>
+<li><a href="#scheduling-on-windows">Scheduling on Windows</a></li>
+<li><a href="#other-schedulers-and-containers">Other schedulers and containers</a></li>
+<li><a href="#safety">Safety</a></li>
+<li><a href="#where-the-files-go">Where the files go</a></li>
+<li><a href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+<h2 id="what-it-is-for-and-what-it-is-not">What it is for, and what it is not<a class="headerlink" href="#what-it-is-for-and-what-it-is-not" title="Permanent link">&para;</a></h2>
+<p>Use it to:</p>
+<ul>
+<li>run a workflow you have already built and saved in the editor, on a schedule or from a script;</li>
+<li>check a workflow without running it (<code>validate</code>, <code>run --dry-run</code>);</li>
+<li>run the same workflow on a different input file or into a different folder without editing it;</li>
+<li>check later that an output file is still the one a run produced (<code>verify-log</code>).</li>
+</ul>
+<p>It does not build or edit workflows (use the editor), it has no screen to click, and it never asks questions while running. If something needs a decision, it stops with an exit code and a message.</p>
+<h2 id="installing-and-starting-it">Installing and starting it<a class="headerlink" href="#installing-and-starting-it" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Not in the portable zip</p>
+<p>The single-file portable build of the alpha does not contain
+<code>trigger-designer-cli</code>. Use a source checkout, or the program folder built by
+<code>scripts\build.bat</code>.</p>
+</div>
+<p>There are four ways to start the same program. Use whichever your installation provides.</p>
+<table>
+<thead>
+<tr>
+<th>How</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>trigger-designer-cli</code></td>
+<td>Installed copy with the folder on <code>PATH</code>, or a developer copy with the project's environment active.</td>
+</tr>
+<tr>
+<td><code>trigger-designer-cli.exe</code></td>
+<td>Next to <code>TriggerEditor.exe</code> in the program folder. The Windows installer puts it there.</td>
+</tr>
+<tr>
+<td><code>python -m trigger_designer.cli</code></td>
+<td>A developer copy. Works from any folder if the package is installed in that Python.</td>
+</tr>
+<tr>
+<td><code>uv run trigger-designer-cli</code></td>
+<td>A developer copy, started through <code>uv</code>.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>The installed program.</strong> The installer copies <code>trigger-designer-cli.exe</code> beside the editor. On the <strong>Select Additional Tasks</strong> page there is an unticked option, <strong>Add trigger-designer-cli to PATH</strong> (the task is called <code>addtopath</code> if you install silently with <code>/TASKS="addtopath"</code>). Tick it if you want to type <code>trigger-designer-cli</code> in any terminal. Open a new terminal window after installing; windows that were already open do not see the change. Without that option, call it by its full path, for example <code>"C:\Program Files\Trigger Designer\trigger-designer-cli.exe"</code>.</p>
+<p><strong>A source checkout.</strong> From the project folder:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>.venv\Scripts\python.exe -m trigger_designer.cli --version
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>trigger-designer-cli 0.1.0 (workflow schema 2)
+</span></code></pre></div>
+<p><strong>Building the program folder</strong> (for IT). <code>scripts\build.bat</code> runs PyInstaller with <code>trigger.spec</code>. The spec builds the CLI as a second program that shares every library file with the editor, so it adds only a few megabytes. The build script then starts <code>trigger-designer-cli.exe --version</code> and a deep validation of a sample workflow, and fails if either does not work. The single-file "portable" build does not contain the CLI.</p>
+<p>The program is a console program. It prints to the terminal and returns an exit code; it never opens a window.</p>
+<p>Starting up takes about a second for the commands that only read files (<code>info</code>, <code>validate</code>, <code>approve</code>, <code>params</code>, <code>paths</code>, <code>schedule</code>, <code>verify-log</code>), because they do not load the data engine. A <code>run</code>, a dry run or a <code>validate --deep</code> takes about two seconds in total even for a tiny workflow, because it loads the editor's node classes and the data engine.</p>
+<h2 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">&para;</a></h2>
+<p>You have a workflow <code>select.tds</code> that reads <code>check.csv</code> and writes a cleaned CSV. This was saved on someone else's computer, so its paths point at <code>C:\Projects\TriggerEditor\...</code>, which does not exist here. The examples below use a work folder <code>Y:\audit</code> with three sub-folders <code>wf</code> (the workflow), <code>in</code> (the input) and <code>out</code> (the results). Output lines are trimmed with <code>...</code>, and the <code>[exit code N]</code> lines are not printed by the program: they show the exit code the shell reports.</p>
+<h3 id="1-look-at-the-file-first">1. Look at the file first<a class="headerlink" href="#1-look-at-the-file-first" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>&gt; trigger-designer-cli info select.tds
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>workflow:   Y:\audit\wf\select.tds
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>sha256:     21ca314bd088785936bfb4955987066a9b4f07b2252af36bf2f1c957e4eeb445
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>size:       4326 bytes, encoding utf-8
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>schema:     0 (saved by app None, None)
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>approved:   no
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>nodes:      3
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>  input.file_input: 1
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  input.file_output: 1
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  preparation.select: 1
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>reads:
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>  [1429604924240] C:/Projects/TriggerEditor/check.csv
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>       -&gt; C:\Projects\TriggerEditor\check.csv (MISSING)
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>writes:
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>  [2441464837840] C:/Projects/TriggerEditor/out_check_W_select.csv
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>       -&gt; C:\Projects\TriggerEditor\out_check_W_select.csv (new)
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>parameters:
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>  (none)
+</span></code></pre></div>
+<p><code>info</code> tells you what the workflow reads and writes, whether you have approved it, and whether the files exist. Nothing is run.</p>
+<h3 id="2-validate">2. Validate<a class="headerlink" href="#2-validate" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>&gt; trigger-designer-cli validate select.tds
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>WARNING TD-CLI-001: legacy v1 file (no workflow_metadata)
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>WARNING TD-IN-001: input file not found: C:\Projects\TriggerEditor\check.csv
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>OK
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>[exit code 0]
+</span></code></pre></div>
+<p>Warnings do not fail <code>validate</code> unless you add <code>--strict</code>. Here the missing input is expected, because we will point at the real file with <code>--input-dir</code>. The legacy warning means the file was saved by an older version; open and save it in the editor once to remove it.</p>
+<h3 id="3-approve-it">3. Approve it<a class="headerlink" href="#3-approve-it" title="Permanent link">&para;</a></h3>
+<p>A workflow is code that will be run. Before it runs unattended you must say you have looked at it. <code>approve</code> prints what the file reads and writes and asks you:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&gt; trigger-designer-cli approve select.tds --note "reviewed demo"
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>workflow: Y:\audit\wf\select.tds
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>sha256:   21ca314bd088785936bfb4955987066a9b4f07b2252af36bf2f1c957e4eeb445
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>operations:
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  input.file_input: 1
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  input.file_output: 1
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  preparation.select: 1
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>reads:
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  C:\Projects\TriggerEditor\check.csv
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>writes:
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  C:\Projects\TriggerEditor\out_check_W_select.csv
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>parameters:
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>  (none)
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>Approve? [y/N] y
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>Approved.
+</span></code></pre></div>
+<p>In a script (no one to answer) pass <code>--yes</code>. Without a terminal and without <code>--yes</code> it stops with exit code 64.</p>
+<h3 id="4-dry-run">4. Dry run<a class="headerlink" href="#4-dry-run" title="Permanent link">&para;</a></h3>
+<p>A dry run does everything except run the nodes and write output files: it checks the approval, the parameters, that the inputs exist, that the output folders can be written (it creates and removes a temporary test file in each one) and that every node's code passes the safety check. It also makes a temporary work copy of the workflow and removes it when it finishes.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>&gt; trigger-designer-cli run select.tds --dry-run --input-dir Y:\audit\in --output-dir Y:\audit\out
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>... INFO    run.started workflow=Y:\audit\wf\select.tds sha256=21ca314b... trigger=manual pid=26108 dry_run=True
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>... INFO    plan.resolved approved=True inputs=[{'node_id': 1429604924240, 'path': 'Y:\\audit\\in\\check.csv', 'exists': True, 'files': 1, 'size_bytes': 1257}] outputs=[{'node_id': 2441464837840, 'final': 'Y:\\audit\\out\\out_check_W_select.csv', ...}] ...
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>... WARNING warning message=TD-CLI-001: legacy v1 file (no workflow_metadata)
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>... INFO    run.finished status=ok exit_code=0 duration_s=1.327 nodes_ok=0 nodes_failed=0
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>[exit code 0]
+</span></code></pre></div>
+<p><code>--input-dir</code> says "read every File Input from this folder, using the same file name as saved". <code>--output-dir</code> does the same for outputs. This is how a workflow made on another computer runs here.</p>
+<h3 id="5-run-it">5. Run it<a class="headerlink" href="#5-run-it" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>&gt; trigger-designer-cli run select.tds --input-dir Y:\audit\in --output-dir Y:\audit\out
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>... INFO    run.started ...
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>... INFO    plan.resolved ...
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>... INFO    node.started node_id=1429604924240 title=File Input op=input.file_input index=0 total=3
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>... INFO    node.finished node_id=1429604924240 title=File Input status=ok duration_s=0.01
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>... INFO    node.started node_id=1429614326224 title=Select op=preparation.select index=1 total=3
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>... INFO    node.finished node_id=1429614326224 title=Select status=ok duration_s=0.003
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>... INFO    node.started node_id=2441464837840 title=File Output op=input.file_output index=2 total=3
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>... INFO    node.finished node_id=2441464837840 title=File Output status=ok duration_s=0.009
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>... INFO    output.committed path=Y:\audit\out\out_check_W_select.csv size_bytes=840 sha256=dd1e6c4e...
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>... INFO    run.finished status=ok exit_code=0 duration_s=1.578 nodes_ok=3 nodes_failed=0 record_path=Y:\audit\wf\select.runs\963d5edc374a4fcbbd834457e20e2ae3.json ...
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>[exit code 0]
+</span></code></pre></div>
+<h3 id="6-read-the-exit-code">6. Read the exit code<a class="headerlink" href="#6-read-the-exit-code" title="Permanent link">&para;</a></h3>
+<p>The exit code is the answer. In a script:</p>
+<ul>
+<li>Command Prompt: <code>echo %ERRORLEVEL%</code></li>
+<li>PowerShell: <code>$LASTEXITCODE</code></li>
+<li>Bash: <code>echo $?</code></li>
+</ul>
+<p><code>0</code> means every node ran and the outputs are in place. Anything else is a specific problem; see <a href="#exit-codes">Exit codes</a>. When a node fails, the last lines say which one:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>... ERROR   node.finished node_id=2676751646608 title=Formula status=failed duration_s=0.097 error={'code': 'TD-SHAPE-004', ...}
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>... ERROR   run.finished status=failed exit_code=1 duration_s=2.222 nodes_ok=1 nodes_failed=1 record_path=Y:\audit\wf\formula.runs\755fa3af....json ...
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>FAILED at node 'Formula' [TD-SHAPE-004] Section 1: Cannot compare values of type VARCHAR and type INTEGER_LITERAL - an explicit c... - Pick a value from the list or inside the range.
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>[exit code 1]
+</span></code></pre></div>
+<p>The <code>TD-</code> code is the same plain-language code the editor shows; look it up in <a href="../errors-and-problems/">Errors and problems</a>. The output files from a failed run are not touched: whatever was there before is still there.</p>
+<h2 id="commands-at-a-glance">Commands at a glance<a class="headerlink" href="#commands-at-a-glance" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>trigger-designer-cli [--version] [--state-dir DIR] &lt;command&gt; [options]
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+<th>Loads the data engine?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run</code></td>
+<td>Run a workflow and write its outputs</td>
+<td>yes</td>
+</tr>
+<tr>
+<td><code>validate</code></td>
+<td>Check a workflow file; <code>--deep</code> also loads it like the editor</td>
+<td>only with <code>--deep</code></td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td>Show what a workflow reads, writes and needs</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>approve</code></td>
+<td>Pin a reviewed workflow file so it may run unattended</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>verify-log</code></td>
+<td>Check a run record against the files it describes</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>params</code></td>
+<td>List, add or remove run-time parameters stored in a workflow</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>paths</code></td>
+<td>Show saved file paths; optionally make them relative</td>
+<td>no</td>
+</tr>
+<tr>
+<td><code>schedule</code></td>
+<td>Create, list, show or remove Windows scheduled runs</td>
+<td>no</td>
+</tr>
+</tbody>
+</table>
+<p>Options that belong before the command name:</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--version</code></td>
+<td>Print the program version and the workflow file format it understands, then stop.</td>
+</tr>
+<tr>
+<td><code>--state-dir DIR</code></td>
+<td>The folder for approvals, locks and schedules. Default: <code>%LOCALAPPDATA%\Trigger Designer\cli</code>. The environment variable <code>TRIGGER_DESIGNER_STATE_DIR</code> does the same; the option wins.</td>
+</tr>
+<tr>
+<td><code>-h</code>, <code>--help</code></td>
+<td>Help. Also works after a command name: <code>trigger-designer-cli run --help</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Abbreviated option names are not accepted (write <code>--timeout</code>, not <code>--time</code>), so a script cannot change meaning when a new option is added later.</p>
+<h2 id="run">run<a class="headerlink" href="#run" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>trigger-designer-cli run WORKFLOW [options]
+</span></code></pre></div>
+<p>Runs the workflow. All outputs are first written to temporary files next to their final place, named like <code>.name.tdtmp-&lt;run&gt;.ext</code>. Only when every node has succeeded are they moved over the final files, in one step. A run that fails, is cancelled, times out or is killed leaves the previous outputs exactly as they were. (The temporary files of a killed run are cleaned up by the next run of the same workflow.)</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WORKFLOW</code></td>
+<td>required</td>
+<td>The <code>.tds</code> file.</td>
+</tr>
+<tr>
+<td><code>--param NAME=VALUE</code></td>
+<td>none</td>
+<td>Set a parameter defined in the workflow. Repeat for more. Split at the first <code>=</code>. See <a href="#parameters-and-path-overrides">Parameters and path overrides</a>.</td>
+</tr>
+<tr>
+<td><code>--input-dir DIR</code></td>
+<td>none</td>
+<td>Read every File Input from <code>DIR</code>, using the file name saved in the workflow. The Workpaper Output's <strong>Source files</strong> list follows it too.</td>
+</tr>
+<tr>
+<td><code>--output-dir DIR</code></td>
+<td>none</td>
+<td>Write every File Output and every Workpaper Output into <code>DIR</code>, using the file name saved in the workflow.</td>
+</tr>
+<tr>
+<td><code>--create-output-dirs</code></td>
+<td>off</td>
+<td>Create output folders that do not exist. Without it a missing folder is an error (exit 2).</td>
+</tr>
+<tr>
+<td><code>--dry-run</code></td>
+<td>off</td>
+<td>Check everything and print the plan. Runs nothing and writes no output; it only makes a temporary write-check file in each output folder and a temporary work copy, and removes them.</td>
+</tr>
+<tr>
+<td><code>--timeout SEC</code></td>
+<td><code>3600</code></td>
+<td>Stop the whole run after <code>SEC</code> seconds. <code>0</code> means no limit. Exit 4.</td>
+</tr>
+<tr>
+<td><code>--max-memory MB</code></td>
+<td>none</td>
+<td>Stop if the program uses more than <code>MB</code> of memory. Exit 5.</td>
+</tr>
+<tr>
+<td><code>--threads N</code></td>
+<td>all</td>
+<td>Limit the data engine (Polars) to <code>N</code> threads.</td>
+</tr>
+<tr>
+<td><code>--cancel-grace SEC</code></td>
+<td><code>10</code></td>
+<td>After Ctrl+C, how long to wait for the running node before giving up.</td>
+</tr>
+<tr>
+<td><code>--min-free-mb N</code></td>
+<td><code>64</code></td>
+<td>Refuse to start if an output drive has less than <code>N</code> MB free (exit 2).</td>
+</tr>
+<tr>
+<td><code>--strict</code></td>
+<td>off</td>
+<td>Treat warnings as errors (exit 2). A warning is, for example, a file saved by an older version.</td>
+</tr>
+<tr>
+<td><code>--keep-going</code></td>
+<td>off</td>
+<td>After a node fails, still run the branches that do not depend on it, and commit the outputs that did succeed. The exit code is still 1.</td>
+</tr>
+<tr>
+<td><code>--allow-unapproved</code></td>
+<td>off</td>
+<td>Run a file that has not been approved. For interactive use; ignored when <code>--trigger schedule</code>.</td>
+</tr>
+<tr>
+<td><code>--allow-custom-code</code></td>
+<td>off</td>
+<td>Allow nodes that contain user-written code. Needs approval too. No current node has user code.</td>
+</tr>
+<tr>
+<td><code>--record-dir DIR</code></td>
+<td>next to the workflow</td>
+<td>Where to write the run record.</td>
+</tr>
+<tr>
+<td><code>--no-record</code></td>
+<td>off</td>
+<td>Write no run record.</td>
+</tr>
+<tr>
+<td><code>--no-hash</code></td>
+<td>off</td>
+<td>Do not compute the SHA-256 fingerprints of inputs and outputs (faster on very large files; <code>verify-log</code> then cannot check the files).</td>
+</tr>
+<tr>
+<td><code>--emit-script FILE</code></td>
+<td>none</td>
+<td>Also save the Python script that was run.</td>
+</tr>
+<tr>
+<td><code>--log-format {text,json}</code></td>
+<td><code>text</code></td>
+<td><code>text</code>: readable lines on stderr. <code>json</code>: one JSON object per line on stdout. See <a href="#logs-and-events">Logs and events</a>.</td>
+</tr>
+<tr>
+<td><code>--log-file FILE</code></td>
+<td>none</td>
+<td>Also append the JSON lines to <code>FILE</code>, whatever <code>--log-format</code> is.</td>
+</tr>
+<tr>
+<td><code>-v</code>, <code>-vv</code></td>
+<td>off</td>
+<td>More detail from the program's own log: <code>-v</code> adds information messages, <code>-vv</code> adds debugging.</td>
+</tr>
+<tr>
+<td><code>--quiet</code></td>
+<td>off</td>
+<td>In text mode print only warnings, errors and the start and end of the run.</td>
+</tr>
+<tr>
+<td><code>--trigger {manual,schedule}</code></td>
+<td><code>manual</code></td>
+<td>Who started the run. Recorded in the log. A <code>schedule</code> run never accepts <code>--allow-unapproved</code>. The scheduler sets it for you.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Stopping a run.</strong> Ctrl+C, Ctrl+Break or a termination request asks the run to stop after the node that is running. A node that has already started cannot be interrupted in the middle, because it is inside the data engine. If it has not finished after <code>--cancel-grace</code> seconds the program ends with exit 130; the outputs are not touched. A second Ctrl+C ends it at once.</p>
+<p><strong>Example with several options:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>trigger-designer-cli run sales.tds --param input_file=D:\in\today.csv --log-format json --log-file D:\logs\sales.jsonl --timeout 1800
+</span></code></pre></div>
+<h3 id="what-you-get-when-it-fails">What you get when it fails<a class="headerlink" href="#what-you-get-when-it-fails" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Seen as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Not approved</td>
+<td><code>FAILED at the run [TD-CLI-008] This workflow has not been approved to run. - Review it with approve &lt;workflow&gt;; scheduled runs always need approval.</code> exit 6</td>
+</tr>
+<tr>
+<td>Edited after approval</td>
+<td><code>... [TD-CLI-008] The workflow changed after it was approved (approved 2026-10-30T17:48:06Z by alice). - Check who changed it, then approve it again</code> exit 6</td>
+</tr>
+<tr>
+<td>Missing input</td>
+<td><code>FAILED at the run [TD-IN-001] Cannot find the input file 'Y:\audit\in\nothere.csv'. - Use --input-dir to remap saved paths, or fix the path in the editor.</code> exit 2</td>
+</tr>
+<tr>
+<td>Missing output folder</td>
+<td><code>FAILED at the run [TD-CLI-014] The output folder does not exist: Y:\audit\out2 - Create it, or pass --create-output-dirs.</code> exit 2</td>
+</tr>
+<tr>
+<td>Unknown or missing parameter</td>
+<td><code>FAILED at the run [TD-CLI-005] Required parameter 'input_file' was not given. - Pass --param input_file=VALUE.</code> exit 2</td>
+</tr>
+<tr>
+<td>Same workflow already running</td>
+<td><code>FAILED at the run [TD-CLI-012] This workflow is already running (pid 24656, run 3d4e9781). - Wait for the other run to finish; ...</code> exit 7</td>
+</tr>
+<tr>
+<td>Output locked</td>
+<td><code>FAILED at the run [TD-CLI-013] could not write Y:\audit\out\select_default.csv: The process cannot access the file because it is being used by another process - Close the file in other programs (Excel keeps it locked) and run again. Previous files are unchanged.</code> exit 8</td>
+</tr>
+</tbody>
+</table>
+<h2 id="validate">validate<a class="headerlink" href="#validate" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>trigger-designer-cli validate WORKFLOW [--deep] [--no-files] [--strict] [--param NAME=VALUE] [--input-dir DIR] [--output-dir DIR] [--format {text,json}]
+</span></code></pre></div>
+<p>Checks a workflow without running it. The default check is instant and does not load the data engine: the file is valid JSON, the version is not newer than this program, every node type is known, there is no loop, and each File Input exists. <code>--deep</code> also loads the workflow the way the editor does and checks the code each node would run against the <a href="#safety">safety policy</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WORKFLOW</code></td>
+<td>required</td>
+<td>The <code>.tds</code> file.</td>
+</tr>
+<tr>
+<td><code>--deep</code></td>
+<td>off</td>
+<td>Load it like the editor; resolve inputs; check each node's generated code. Takes a couple of seconds.</td>
+</tr>
+<tr>
+<td><code>--no-files</code></td>
+<td>off</td>
+<td>Skip the "input file exists" check. Useful on a build server that does not have the data.</td>
+</tr>
+<tr>
+<td><code>--strict</code></td>
+<td>off</td>
+<td>Treat warnings as errors.</td>
+</tr>
+<tr>
+<td><code>--param</code>, <code>--input-dir</code>, <code>--output-dir</code></td>
+<td>none</td>
+<td>Same meaning as for <code>run</code>; used by <code>--deep</code>. A required parameter must be given for <code>--deep</code> to pass.</td>
+</tr>
+<tr>
+<td><code>-v</code>, <code>-vv</code></td>
+<td>off</td>
+<td>With <code>--deep</code>: show the editor's own warnings (<code>-vv</code>: everything it logs) on stderr. Hidden by default.</td>
+</tr>
+<tr>
+<td><code>--format {text,json}</code></td>
+<td><code>text</code></td>
+<td><code>json</code> prints <code>{"ok": ..., "findings": [...]}</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>Exit <code>0</code> means no errors (and, with <code>--strict</code>, no warnings). Exit <code>2</code> means invalid. Note that in the quick check a missing input file is a warning (exit 0), while with <code>--deep</code> it is an error (exit 2), because <code>--deep</code> resolves the inputs the way a run would. If a gate must fail on any warning, always pass <code>--strict</code>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>&gt; trigger-designer-cli validate wf\select.tds --deep
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>ERROR   TD-CLI-005: Required parameter 'input_file' was not given.
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>INVALID
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>[exit code 2]
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>&gt; trigger-designer-cli validate wf\select.tds --deep --param input_file=in\check.csv
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>OK
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>[exit code 0]
+</span></code></pre></div>
+<p>A file that cannot be read or is not a workflow gives exit 2 with a one-line message:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>error [TD-CLI-001]: bad.tds is not valid JSON (Expecting property name enclosed in double quotes: line 1 column 2 (char 1)).
+</span></code></pre></div>
+<h2 id="info">info<a class="headerlink" href="#info" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>trigger-designer-cli info WORKFLOW [--format {text,json}]
+</span></code></pre></div>
+<p>Shows the workflow's SHA-256 and size, the version that saved it, the node counts, every file it reads and writes (as saved and as resolved, and whether it exists), its parameters and whether it is approved. It does not need the input files. <code>--format json</code> prints the same facts as one JSON object, for scripts. See the example in the <a href="#quick-start">Quick start</a>.</p>
+<p><code>approved:</code> shows one of three things: <code>yes (by &lt;user&gt; at &lt;time&gt;)</code>, <code>no</code>, or <code>no - changed since approval of &lt;path&gt;</code> (you approved an earlier version of the same file).</p>
+<h2 id="approve-and-the-approval-flow">approve and the approval flow<a class="headerlink" href="#approve-and-the-approval-flow" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>trigger-designer-cli approve WORKFLOW [--yes] [--note TEXT] [--format {text,json}]
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>trigger-designer-cli approve --list [--format {text,json}]
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>trigger-designer-cli approve --revoke WORKFLOW
+</span></code></pre></div>
+<p>An approval is the SHA-256 fingerprint of the exact bytes of the <code>.tds</code> file, together with who approved it and when. It is stored per user in <code>approvals.json</code> in the state folder. Changing the file in any way, even saving it again in the editor without changing anything, changes the fingerprint, and the file must be approved again.</p>
+<table>
+<thead>
+<tr>
+<th>Option</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>WORKFLOW</code></td>
+<td>The file to review and approve.</td>
+</tr>
+<tr>
+<td><code>--yes</code></td>
+<td>Do not ask. Required when there is no terminal (a script, CI, a scheduler).</td>
+</tr>
+<tr>
+<td><code>--note TEXT</code></td>
+<td>A note stored with the approval, such as a ticket number.</td>
+</tr>
+<tr>
+<td><code>--list</code></td>
+<td>List approvals: first 12 characters of the fingerprint, time (UTC), user and path.</td>
+</tr>
+<tr>
+<td><code>--revoke WORKFLOW</code></td>
+<td>Remove the approval of a file. Accepts the path or the full fingerprint. Exit 2 if nothing matched.</td>
+</tr>
+</tbody>
+</table>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>&gt; trigger-designer-cli approve --list
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>21ca314bd088  2026-10-30T17:48:06Z  alice  Y:\audit\wf\select.tds
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>d8a13dc49053  2026-10-30T17:48:50Z  alice  Y:\audit\wf\select.tds
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>b90b21cab1f9  2026-10-30T17:51:26Z  alice  Y:\audit\proj\filter.tds
+</span></code></pre></div>
+<p>(The first two are the same file before and after adding parameters; each version needs its own approval.)</p>
+<h3 id="the-flow">The flow<a class="headerlink" href="#the-flow" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>A workflow arrives.</strong> You wrote it, or someone sent it, or it was edited.</li>
+<li><strong>You review it.</strong> <code>info</code> and <code>approve</code> print what it reads, writes and the operations it contains. Open it in the editor if you need more. Read <a href="../security-and-privacy/">Security and privacy</a> first if the file came from someone else.</li>
+<li><strong>You approve it.</strong> <code>approve</code> pins that exact file.</li>
+<li><strong>It runs.</strong> <code>run</code> and scheduled runs check the file's fingerprint against the approvals. If it matches, the run proceeds.</li>
+<li><strong>It changes.</strong> The next run refuses with exit 6. A scheduled run reports <code>TD-CLI-009</code>; a manual run reports <code>TD-CLI-008</code> with the message "changed after it was approved" and who approved the earlier version. Review the change and approve again.</li>
+</ol>
+<p>Rules to remember:</p>
+<ul>
+<li><code>approve</code> asks <code>Approve? [y/N]</code> only on a terminal. With no terminal, or no input (stdin redirected from a file or <code>NUL</code>, as in a scheduled task or CI job), it prints the review block, says to pass <code>--yes</code> and exits 64 instead of failing.</li>
+<li>An interactive <code>run</code> may use <code>--allow-unapproved</code> to skip this once. A scheduled run (<code>--trigger schedule</code>) ignores that option; it always needs approval.</li>
+<li>The approvals file is not signed. It stops accidents and casual changes, not someone who can edit your files. On a build server, create the approval as part of the pipeline (<code>approve --yes</code>) from a reviewed commit, and keep the state folder read-only afterwards.</li>
+<li>The review block, <code>info</code> and <code>paths</code> list every file a node reads or writes: File Input, File Output and Workpaper Output (its <code>output_path</code>). New file-touching nodes appear there once they are in the op catalogue.</li>
+<li><code>--input-dir</code>, <code>--output-dir</code> and <code>--param</code> are typed by you, so they are trusted. What the file itself says is not. Approving a workflow approves the paths it contains; pointing it at other folders from the command line is your decision.</li>
+</ul>
+<h2 id="params">params<a class="headerlink" href="#params" title="Permanent link">&para;</a></h2>
+<p>A <strong>parameter</strong> is a named setting of a node that you can replace on the command line with <code>--param NAME=VALUE</code>, so the workflow does not have to be edited for each month's file.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-16-1"><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a>trigger-designer-cli params list WORKFLOW [--format {text,json}]
+</span><span id="__span-16-2"><a id="__codelineno-16-2" name="__codelineno-16-2" href="#__codelineno-16-2"></a>trigger-designer-cli params add WORKFLOW --name NAME --node ID_OR_TITLE --setting SETTING
+</span><span id="__span-16-3"><a id="__codelineno-16-3" name="__codelineno-16-3" href="#__codelineno-16-3"></a>                                [--type {path_in,path_out,string,int}] [--default VALUE]
+</span><span id="__span-16-4"><a id="__codelineno-16-4" name="__codelineno-16-4" href="#__codelineno-16-4"></a>                                [--required] [--label TEXT]
+</span><span id="__span-16-5"><a id="__codelineno-16-5" name="__codelineno-16-5" href="#__codelineno-16-5"></a>trigger-designer-cli params remove WORKFLOW --name NAME
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option (<code>add</code>)</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--name</code></td>
+<td>required</td>
+<td>Lower-case letters, digits and <code>_</code>, starting with a letter, up to 40 characters.</td>
+</tr>
+<tr>
+<td><code>--node</code></td>
+<td>required</td>
+<td>The node's id (a number, see <code>info</code>) or its title if the title is unique, such as <code>"File Input"</code>.</td>
+</tr>
+<tr>
+<td><code>--setting</code></td>
+<td>required</td>
+<td>Which setting. Only the ones listed in the table below.</td>
+</tr>
+<tr>
+<td><code>--type</code></td>
+<td>from the setting</td>
+<td>Only a check: it must match the setting's kind.</td>
+</tr>
+<tr>
+<td><code>--default</code></td>
+<td>none</td>
+<td>Used when no <code>--param</code> is given.</td>
+</tr>
+<tr>
+<td><code>--required</code></td>
+<td>off</td>
+<td><code>run</code> fails with exit 2 if there is no value and no default.</td>
+</tr>
+<tr>
+<td><code>--label</code></td>
+<td>the name, prettified</td>
+<td>A friendlier name for tools.</td>
+</tr>
+</tbody>
+</table>
+<p><code>add</code> and <code>remove</code> change the file. The first time, they copy it to <code>WORKFLOW.bak</code> (an existing <code>.bak</code> is never overwritten). <strong>The file's fingerprint changes, so it needs to be approved again.</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-17-1"><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a>&gt; trigger-designer-cli params add select.tds --name input_file --node "File Input" --setting filePath --required
+</span><span id="__span-17-2"><a id="__codelineno-17-2" name="__codelineno-17-2" href="#__codelineno-17-2"></a>Added parameter 'input_file' -&gt; node 1429604924240.filePath (backup: select.tds.bak)
+</span><span id="__span-17-3"><a id="__codelineno-17-3" name="__codelineno-17-3" href="#__codelineno-17-3"></a>
+</span><span id="__span-17-4"><a id="__codelineno-17-4" name="__codelineno-17-4" href="#__codelineno-17-4"></a>&gt; trigger-designer-cli params add select.tds --name output_file --node "File Output" --setting filePath --default Y:/audit/out/select_default.csv
+</span><span id="__span-17-5"><a id="__codelineno-17-5" name="__codelineno-17-5" href="#__codelineno-17-5"></a>Added parameter 'output_file' -&gt; node 2441464837840.filePath
+</span><span id="__span-17-6"><a id="__codelineno-17-6" name="__codelineno-17-6" href="#__codelineno-17-6"></a>
+</span><span id="__span-17-7"><a id="__codelineno-17-7" name="__codelineno-17-7" href="#__codelineno-17-7"></a>&gt; trigger-designer-cli params list select.tds
+</span><span id="__span-17-8"><a id="__codelineno-17-8" name="__codelineno-17-8" href="#__codelineno-17-8"></a>input_file           path_in   node 1429604924240.filePath [required]
+</span><span id="__span-17-9"><a id="__codelineno-17-9" name="__codelineno-17-9" href="#__codelineno-17-9"></a>output_file          path_out  node 2441464837840.filePath default='Y:/audit/out/select_default.csv'
+</span></code></pre></div>
+<h3 id="which-settings-can-be-parameters">Which settings can be parameters<a class="headerlink" href="#which-settings-can-be-parameters" title="Permanent link">&para;</a></h3>
+<p>Only a short list of safe settings can be changed from the command line, because these values end up inside generated code. Anything else is refused with <code>TD-CLI-007</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Node</th>
+<th>Setting</th>
+<th>Kind</th>
+<th>Allowed values</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>File Input</td>
+<td><code>filePath</code></td>
+<td><code>path_in</code></td>
+<td>a local path or folder or pattern</td>
+</tr>
+<tr>
+<td>File Input</td>
+<td><code>include_patterns</code>, <code>exclude_patterns</code></td>
+<td><code>string</code></td>
+<td>comma-separated list; no quotes, backslash or line breaks</td>
+</tr>
+<tr>
+<td>File Input</td>
+<td><code>max_files</code></td>
+<td><code>int</code></td>
+<td>1 to 100000</td>
+</tr>
+<tr>
+<td>File Input</td>
+<td><code>selected_sheet</code></td>
+<td><code>string</code></td>
+<td>no quotes, backslash or line breaks</td>
+</tr>
+<tr>
+<td>File Input</td>
+<td><code>db_table</code></td>
+<td><code>string</code></td>
+<td>a plain table name (<code>orders</code>, <code>main.orders</code>)</td>
+</tr>
+<tr>
+<td>File Input</td>
+<td><code>record_limit</code></td>
+<td><code>int</code></td>
+<td>0 to 2000000000</td>
+</tr>
+<tr>
+<td>File Output</td>
+<td><code>filePath</code></td>
+<td><code>path_out</code></td>
+<td>a local path</td>
+</tr>
+<tr>
+<td>Workpaper Output</td>
+<td><code>output_path</code></td>
+<td><code>path_out</code></td>
+<td>a local path ending in <code>.xlsx</code></td>
+</tr>
+<tr>
+<td>Filter</td>
+<td><code>value</code>, <code>value2</code></td>
+<td><code>string</code></td>
+<td>only when the Filter is in builder mode; no quotes, backslash or line breaks</td>
+</tr>
+<tr>
+<td>Split</td>
+<td><code>random_seed</code></td>
+<td><code>int</code></td>
+<td>0 to 2147483647</td>
+</tr>
+<tr>
+<td>Split</td>
+<td><code>estimation_percent</code></td>
+<td><code>int</code></td>
+<td>1 to 99</td>
+</tr>
+</tbody>
+</table>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-18-1"><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a>&gt; trigger-designer-cli params add select.tds --name bad --node "Select" --setting x
+</span><span id="__span-18-2"><a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>error [TD-CLI-007]: preparation.select.x cannot be a parameter.
+</span><span id="__span-18-3"><a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a>  hint: Supported settings: input.file_input.db_table, input.file_input.exclude_patterns, ...
+</span></code></pre></div>
+<p>The editor keeps the parameters when you save the workflow again.</p>
+<h2 id="paths">paths<a class="headerlink" href="#paths" title="Permanent link">&para;</a></h2>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-19-1"><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a>trigger-designer-cli paths WORKFLOW [--relativize] [--write] [--format {text,json}]
+</span></code></pre></div>
+<p>Lists every file path saved in the workflow, where it resolves to, and whether it exists. With <code>--relativize</code> it shows (and with <code>--write</code> it applies) a rewrite of every path that is inside the workflow's folder into a relative path. <code>--write</code> first makes <code>WORKFLOW.bak</code>. The file changes, so approve it again.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-20-1"><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a>&gt; trigger-designer-cli paths filter.tds --relativize
+</span><span id="__span-20-2"><a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>[1728622098256] input  D:/Audit/proj/data/check.csv
+</span><span id="__span-20-3"><a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a>        -&gt; D:\Audit\proj\data\check.csv (exists)
+</span><span id="__span-20-4"><a id="__codelineno-20-4" name="__codelineno-20-4" href="#__codelineno-20-4"></a>[1728622028944] output D:/Audit/proj/out/6. out_check_W_filter.csv
+</span><span id="__span-20-5"><a id="__codelineno-20-5" name="__codelineno-20-5" href="#__codelineno-20-5"></a>        -&gt; D:\Audit\proj\out\6. out_check_W_filter.csv (MISSING)
+</span><span id="__span-20-6"><a id="__codelineno-20-6" name="__codelineno-20-6" href="#__codelineno-20-6"></a>relative paths (preview):
+</span><span id="__span-20-7"><a id="__codelineno-20-7" name="__codelineno-20-7" href="#__codelineno-20-7"></a>  [1728622098256] D:/Audit/proj/data/check.csv -&gt; data/check.csv
+</span><span id="__span-20-8"><a id="__codelineno-20-8" name="__codelineno-20-8" href="#__codelineno-20-8"></a>  [1728622028944] D:/Audit/proj/out/6. out_check_W_filter.csv -&gt; out/6. out_check_W_filter.csv
+</span><span id="__span-20-9"><a id="__codelineno-20-9" name="__codelineno-20-9" href="#__codelineno-20-9"></a>
+</span><span id="__span-20-10"><a id="__codelineno-20-10" name="__codelineno-20-10" href="#__codelineno-20-10"></a>&gt; trigger-designer-cli paths filter.tds --relativize --write
+</span><span id="__span-20-11"><a id="__codelineno-20-11" name="__codelineno-20-11" href="#__codelineno-20-11"></a>...
+</span><span id="__span-20-12"><a id="__codelineno-20-12" name="__codelineno-20-12" href="#__codelineno-20-12"></a>backup: filter.tds.bak
+</span></code></pre></div>
+<p>(The path prefix in this example was shortened to <code>D:\Audit</code> for the page.)</p>
+<p>This is the way to make a <strong>deployment copy</strong> that works from wherever the folder is copied or mounted. For a File Input the relative path is stored in both <code>filePath</code> and <code>filePathRel</code>, the way the editor does it. Paths outside the workflow's folder are left alone; use <code>--input-dir</code>, <code>--output-dir</code> or parameters for those. "MISSING" for an output is normal before the first run.</p>
+<h2 id="parameters-and-path-overrides">Parameters and path overrides<a class="headerlink" href="#parameters-and-path-overrides" title="Permanent link">&para;</a></h2>
+<p>How a run decides which file to use for a File Input or File Output:</p>
+<table>
+<thead>
+<tr>
+<th>Order</th>
+<th>Source</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>--param NAME=VALUE</code> for a path parameter</td>
+<td>Wins over everything. A relative value is relative to the folder you are in when you type the command (the "current folder").</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>--input-dir</code> / <code>--output-dir</code></td>
+<td>Takes the file name from the saved path or the parameter's default (<code>/</code> and <code>\</code> both accepted) and puts it in <code>DIR</code>. A pattern such as <code>D:\in\*\data.csv</code> keeps everything from its first wildcard (<code>DIR\*\data.csv</code>), so it still reads the whole folder tree.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>The parameter's default (<code>--default</code>)</td>
+<td>Relative defaults are relative to the workflow's folder.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>The path saved in the workflow</td>
+<td>Relative paths are relative to the workflow's folder, never to the current folder.</td>
+</tr>
+</tbody>
+</table>
+<p>Two things follow:</p>
+<ul>
+<li><strong>Paths saved in the workflow are relative to the workflow file's folder</strong>, not to wherever you or the scheduler happened to start the program. A scheduled task starts in the Windows system folder; this rule is what makes relative paths work there.</li>
+<li><strong>Command-line paths are relative to your current folder</strong>, as every other command is.</li>
+</ul>
+<p><strong><code>filePathRel</code>.</strong> When the editor saves a File Input it stores the absolute path in <code>filePath</code> and, if possible, a path relative to the workflow in <code>filePathRel</code>. When the relative path leads to an existing file, the editor (and the CLI) uses it; this is why a project folder that was copied to another drive still finds its data. When you override the input with <code>--param</code> or <code>--input-dir</code>, the stale <code>filePathRel</code> is dropped for that run.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-21-1"><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a>&gt; trigger-designer-cli run wf\select.tds --param input_file=in\check.csv --output-dir Y:\audit\out2
+</span><span id="__span-21-2"><a id="__codelineno-21-2" name="__codelineno-21-2" href="#__codelineno-21-2"></a>... [TD-CLI-014] The output folder does not exist: Y:\audit\out2 - Create it, or pass --create-output-dirs.
+</span><span id="__span-21-3"><a id="__codelineno-21-3" name="__codelineno-21-3" href="#__codelineno-21-3"></a>[exit code 2]
+</span><span id="__span-21-4"><a id="__codelineno-21-4" name="__codelineno-21-4" href="#__codelineno-21-4"></a>
+</span><span id="__span-21-5"><a id="__codelineno-21-5" name="__codelineno-21-5" href="#__codelineno-21-5"></a>&gt; trigger-designer-cli run wf\select.tds --param input_file=in\check.csv --output-dir Y:\audit\out2 --create-output-dirs
+</span><span id="__span-21-6"><a id="__codelineno-21-6" name="__codelineno-21-6" href="#__codelineno-21-6"></a>... INFO    run.finished status=ok exit_code=0 ...
+</span></code></pre></div>
+<p>(Here <code>in\check.csv</code> was resolved from the current folder <code>Y:\audit</code>; <code>output_file</code> has a default, so <code>--output-dir</code> put <code>select_default.csv</code> into <code>out2</code>.)</p>
+<p>The program also refuses these before any node runs (exit 2, <code>TD-CLI-014</code>): two File Outputs with the same file, a File Output that would overwrite one of the inputs, and an output folder that cannot be written. Remote paths such as <code>http://...</code> or <code>s3://...</code> are not supported (<code>TD-CLI-006</code>); the program never touches the network.</p>
+<h2 id="workpaper-output-on-the-command-line">Workpaper Output on the command line<a class="headerlink" href="#workpaper-output-on-the-command-line" title="Permanent link">&para;</a></h2>
+<p>A <a href="../../nodes/input-output/workpaper-output/">Workpaper Output</a> node runs the same way as in the editor, with these points:</p>
+<ul>
+<li><strong>Where it is written.</strong> <code>--output-dir DIR</code> puts the workbook into <code>DIR</code> under the file name saved in the node, and <code>--param NAME=PATH</code> can set its <code>output_path</code> (add the parameter with <code>params add ... --setting output_path</code>). Both go through the same precedence as for a File Output; see <a href="#parameters-and-path-overrides">Parameters and path overrides</a>.</li>
+<li><strong>If the file exists</strong> is honoured. With <strong>New version</strong> (the default) the CLI picks the first free name before it starts, so a second run writes <code>name (2).xlsx</code> and keeps <code>name.xlsx</code>. <strong>Replace</strong> keeps the name. <strong>Stop with error</strong> refuses an existing file before any node runs: exit 2, <code>TD-OUT-010</code>.</li>
+<li><strong>The full exceptions list.</strong> When the Row limit cuts the listing, the file <code>&lt;name&gt;_exceptions_full.csv</code> is written next to the final workbook (with the final name, not the temporary one). Unlike the workbook it is written straight to its place, not as part of the all-or-nothing move at the end of the run.</li>
+<li><strong>Source files.</strong> The node's <strong>Source files</strong> (one path per line) follow <code>--input-dir</code> like a File Input, and relative lines are relative to the workflow's folder. They are listed by <code>info</code>, <code>approve</code>, <code>validate</code> and <code>paths</code>, and <code>paths --relativize --write</code> rewrites them like any other path.</li>
+<li><strong>Run log sheet.</strong> The workbook has a <strong>Run log</strong> sheet, as in the editor: a snapshot of the run so far, listing each step before the workpaper with its status, start time and duration. With <code>--no-record</code> nothing is recorded, so the sheet is left out and the Summary says that run recording is off. The finished run record is written next to the workflow (or in <code>--record-dir</code>), and it lists the workpaper with its SHA-256.</li>
+<li><strong>Workflow sheet.</strong> It shows the nodes that feed the workpaper. A File Input moved with <code>--input-dir</code> appears with the path that was actually read.</li>
+</ul>
+<h2 id="run-records-and-verify-log">Run records and verify-log<a class="headerlink" href="#run-records-and-verify-log" title="Permanent link">&para;</a></h2>
+<p>Every real run writes a <strong>run record</strong>, the same sealed, hash-chained record the editor writes when you press Run. It lists the nodes, their results and row counts, the fingerprint of every input and output, and the code that ran. It goes to a folder named <code>&lt;workflow name&gt;.runs</code> next to the workflow (the folder the editor's Run History tab shows), or to <code>--record-dir</code>. A record is written for every outcome, including failed, cancelled and timed-out runs; <code>--no-record</code> turns it off (a dry run never writes one).</p>
+<p>Alongside it, the CLI writes a small file <code>&lt;record id&gt;.cli.json</code> into <code>logs</code> in the <a href="#where-the-files-go">state folder</a>: the command line, the resolved parameters, the host name, the exit code and the fingerprint of the approval that allowed it.</p>
+<p><code>verify-log</code> asks: is this record still intact, and do the files on disk still match it?</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-22-1"><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a>trigger-designer-cli verify-log [RECORD_OR_FOLDER] [--workflow WORKFLOW] [--no-files] [--format {text,json}]
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Argument</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>RECORD_OR_FOLDER</code></td>
+<td>A record file, or a folder of records (all of them are checked, plus the chain between them). Left out: the newest record in the folder of <code>--workflow</code>, or, without <code>--workflow</code>, in the program's own run folder.</td>
+</tr>
+<tr>
+<td><code>--workflow WORKFLOW</code></td>
+<td>Also check that this is the workflow file that was run.</td>
+</tr>
+<tr>
+<td><code>--no-files</code></td>
+<td>Skip the file checks (outputs and inputs); check only the record.</td>
+</tr>
+<tr>
+<td><code>--format {text,json}</code></td>
+<td><code>json</code> prints <code>{"target": ..., "ok": ..., "findings": [...]}</code>.</td>
+</tr>
+</tbody>
+</table>
+<p>What it checks:</p>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Result if it fails</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The record is readable, follows the schema and its own hash matches its content</td>
+<td>error</td>
+</tr>
+<tr>
+<td>The overall status agrees with the node results</td>
+<td>error</td>
+</tr>
+<tr>
+<td>The workflow file's fingerprint equals the one recorded (needs <code>--workflow</code>)</td>
+<td>error</td>
+</tr>
+<tr>
+<td>Each output file exists and still has the recorded size and SHA-256</td>
+<td>error</td>
+</tr>
+<tr>
+<td>Each input file still exists and has the recorded SHA-256</td>
+<td>warning only (inputs are legitimately refreshed)</td>
+</tr>
+<tr>
+<td>For a folder: the chain of records is unbroken</td>
+<td>error</td>
+</tr>
+</tbody>
+</table>
+<p>Exit <code>0</code> means no errors. Exit <code>10</code> means a mismatch.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-23-1"><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a>&gt; trigger-designer-cli verify-log select.runs\a9153285a43e41248c0ad03b9129da2d.json --workflow select.tds
+</span><span id="__span-23-2"><a id="__codelineno-23-2" name="__codelineno-23-2" href="#__codelineno-23-2"></a>checked: select.runs\a9153285a43e41248c0ad03b9129da2d.json
+</span><span id="__span-23-3"><a id="__codelineno-23-3" name="__codelineno-23-3" href="#__codelineno-23-3"></a>VERIFIED
+</span><span id="__span-23-4"><a id="__codelineno-23-4" name="__codelineno-23-4" href="#__codelineno-23-4"></a>[exit code 0]
+</span><span id="__span-23-5"><a id="__codelineno-23-5" name="__codelineno-23-5" href="#__codelineno-23-5"></a>
+</span><span id="__span-23-6"><a id="__codelineno-23-6" name="__codelineno-23-6" href="#__codelineno-23-6"></a>&gt; trigger-designer-cli verify-log select.runs
+</span><span id="__span-23-7"><a id="__codelineno-23-7" name="__codelineno-23-7" href="#__codelineno-23-7"></a>checked: select.runs
+</span><span id="__span-23-8"><a id="__codelineno-23-8" name="__codelineno-23-8" href="#__codelineno-23-8"></a>VERIFIED
+</span><span id="__span-23-9"><a id="__codelineno-23-9" name="__codelineno-23-9" href="#__codelineno-23-9"></a>[exit code 0]
+</span></code></pre></div>
+<p>After an output file was edited:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-24-1"><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a>&gt; trigger-designer-cli verify-log select.runs\a9153285a43e41248c0ad03b9129da2d.json --workflow select.tds
+</span><span id="__span-24-2"><a id="__codelineno-24-2" name="__codelineno-24-2" href="#__codelineno-24-2"></a>checked: select.runs\a9153285a43e41248c0ad03b9129da2d.json
+</span><span id="__span-24-3"><a id="__codelineno-24-3" name="__codelineno-24-3" href="#__codelineno-24-3"></a>ERROR   TD-CLI-017: output size changed: Y:/audit/out/out_check_W_select.csv
+</span><span id="__span-24-4"><a id="__codelineno-24-4" name="__codelineno-24-4" href="#__codelineno-24-4"></a>VERIFICATION FAILED
+</span><span id="__span-24-5"><a id="__codelineno-24-5" name="__codelineno-24-5" href="#__codelineno-24-5"></a>[exit code 10]
+</span></code></pre></div>
+<p>Two limits to know. A run with <code>--no-hash</code> has no fingerprints, so the file checks have nothing to compare. And, as in the editor, removing the newest records from the end of a folder cannot be detected by the chain; note the head hash from a run when you need to prove completeness (see <a href="../run-history-and-audit-trail/">Run history and the audit trail</a>). When a record cannot be found at all, <code>verify-log</code> says so (<code>TD-CLI-001</code>, exit 2).</p>
+<h2 id="exit-codes">Exit codes<a class="headerlink" href="#exit-codes" title="Permanent link">&para;</a></h2>
+<p>The exit code is part of the program's contract and does not change between versions. When more than one thing applies, the first row of this order wins: cancelled, timed out, memory, output not written, refused, node failed, ok.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>Name</th>
+<th>Meaning</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>OK</td>
+<td>Every node ran and the outputs are in place (or a dry run or validation passed).</td>
+<td>Nothing.</td>
+</tr>
+<tr>
+<td>1</td>
+<td>NODE_FAILED</td>
+<td>A node failed (with <code>--keep-going</code>, at least one). Old outputs are untouched.</td>
+<td>A data or logic problem. Read the failing node and its <code>TD-</code> code in the message or in <code>run.finished</code>. Fix the data or the workflow. Do not just retry.</td>
+</tr>
+<tr>
+<td>2</td>
+<td>INVALID</td>
+<td>The workflow or the request is wrong: unreadable file, newer file format, unknown node, loop, bad or missing parameter, missing input, missing output folder, low disk space, or a warning under <code>--strict</code>.</td>
+<td>A set-up problem. Fix it (<code>validate</code>, <code>paths</code>, <code>--input-dir</code>), then run again.</td>
+</tr>
+<tr>
+<td>3</td>
+<td>INTERNAL</td>
+<td>An unexpected error in the program. A traceback is on stderr.</td>
+<td>Report it with the traceback. Retrying will not help.</td>
+</tr>
+<tr>
+<td>4</td>
+<td>TIMEOUT</td>
+<td><code>--timeout</code> was exceeded. Staged outputs were discarded.</td>
+<td>Raise <code>--timeout</code>, or investigate why it is slow. May be retried.</td>
+</tr>
+<tr>
+<td>5</td>
+<td>MEMORY</td>
+<td><code>--max-memory</code> was exceeded. Staged outputs were discarded.</td>
+<td>Raise <code>--max-memory</code>, use a smaller input, or free memory. May be retried.</td>
+</tr>
+<tr>
+<td>6</td>
+<td>REFUSED</td>
+<td>Not approved, edited since approval, contains a user-code node without the permission, or the generated code was rejected by the safety policy.</td>
+<td>A person must look. Check who changed the file, then <code>approve</code> it again. If the policy rejected it, do not run the file.</td>
+</tr>
+<tr>
+<td>7</td>
+<td>BUSY</td>
+<td>Another run of the same workflow holds the lock.</td>
+<td>Retry later. If no run is active, run again: a dead run's lock clears itself.</td>
+</tr>
+<tr>
+<td>8</td>
+<td>COMMIT_FAILED</td>
+<td>The nodes ran but the outputs could not be moved into place (a file is open in Excel, the disk is full). Previous files were restored.</td>
+<td>Close the file or free the disk, then retry.</td>
+</tr>
+<tr>
+<td>9</td>
+<td>SCHEDULER</td>
+<td><code>schtasks</code> failed, or the <code>schedule</code> command was used on a system that is not Windows.</td>
+<td>Read the message from Windows. Run from an account allowed to create tasks.</td>
+</tr>
+<tr>
+<td>10</td>
+<td>VERIFY_FAILED</td>
+<td><code>verify-log</code> found a mismatch.</td>
+<td>Treat the output as changed since the run; investigate.</td>
+</tr>
+<tr>
+<td>64</td>
+<td>USAGE</td>
+<td>The command line is wrong (an unknown option, a missing argument). Nothing ran.</td>
+<td>Fix the command; see <code>--help</code>.</td>
+</tr>
+<tr>
+<td>130</td>
+<td>CANCELLED</td>
+<td>Ctrl+C, Ctrl+Break or a termination request. Outputs untouched.</td>
+<td>Run again if it was not intended.</td>
+</tr>
+</tbody>
+</table>
+<p>For a wrapper script: treat <code>0</code> as success; retry later on <code>4</code>, <code>5</code>, <code>7</code> and <code>8</code>; alert a person on <code>1</code>, <code>2</code>, <code>6</code>, <code>3</code>, <code>9</code>, <code>10</code> and <code>64</code>; do not retry <code>1</code>, <code>2</code>, <code>3</code> and <code>6</code> blindly.</p>
+<h2 id="logs-and-events">Logs and events<a class="headerlink" href="#logs-and-events" title="Permanent link">&para;</a></h2>
+<p><strong>Text mode (the default).</strong> Human-readable lines on <strong>stderr</strong>, one per event, with a time, a level and the event name. A failure ends with one summary line, <code>FAILED at node '...' [TD-...] ... - hint</code>. <code>stdout</code> stays empty. Use <code>--quiet</code> for only warnings, errors and the start and end.</p>
+<p><strong>JSON mode (<code>--log-format json</code>).</strong> One JSON object per line on <strong>stdout</strong>. Everything else, including anything a node prints, goes to stderr, so a script can read stdout as clean JSON lines. <code>--log-file FILE</code> writes the same lines to a file in either mode (UTF-8, appended). The file is rotated at 10 MB and three older copies are kept. In PowerShell, do not redirect with <code>&gt;</code> to capture the JSON (that writes UTF-16); use <code>--log-file</code>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-25-1"><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a>{"ts":"2026-10-30T17:48:18.111Z","level":"INFO","event":"run.started","run_id":"cd53d445...","workflow":"Y:\\audit\\wf\\select.tds","sha256":"21ca314b...","trigger":"manual","pid":21980,"version":"0.1.0","dry_run":false,"params":{}}
+</span><span id="__span-25-2"><a id="__codelineno-25-2" name="__codelineno-25-2" href="#__codelineno-25-2"></a>{"ts":"2026-10-30T17:48:19.590Z","level":"INFO","event":"node.started","run_id":"cd53d445...","node_id":1429604924240,"title":"File Input","op":"input.file_input","index":0,"total":3}
+</span><span id="__span-25-3"><a id="__codelineno-25-3" name="__codelineno-25-3" href="#__codelineno-25-3"></a>{"ts":"2026-10-30T17:48:19.615Z","level":"INFO","event":"node.finished","run_id":"cd53d445...","node_id":1429604924240,"title":"File Input","status":"ok","duration_s":0.025,"error":null}
+</span><span id="__span-25-4"><a id="__codelineno-25-4" name="__codelineno-25-4" href="#__codelineno-25-4"></a>{"ts":"2026-10-30T17:48:19.798Z","level":"INFO","event":"output.committed","run_id":"cd53d445...","path":"Y:\\audit\\out\\out_check_W_select.csv","size_bytes":840,"sha256":"dd1e6c4e..."}
+</span><span id="__span-25-5"><a id="__codelineno-25-5" name="__codelineno-25-5" href="#__codelineno-25-5"></a>{"ts":"2026-10-30T17:48:19.849Z","level":"INFO","event":"run.finished","run_id":"cd53d445...","status":"ok","exit_code":0,"duration_s":1.741,"nodes_ok":3,"nodes_failed":0,"record_path":"Y:\\audit\\wf\\select.runs\\a9153285....json","record_run_id":"a9153285...","errors":[]}
+</span></code></pre></div>
+<p>Every line has <code>ts</code> (UTC, to the millisecond, ending <code>Z</code>), <code>level</code>, <code>event</code> and <code>run_id</code>. Fields are only ever added in later versions, never renamed or removed, so a script that reads the fields it knows keeps working.</p>
+<p>Note that <code>run_id</code> in the log is the id of this command-line run. The run record has its own id, given as <code>record_run_id</code> in <code>run.finished</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Event</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>run.started</code></td>
+<td>At the start. Workflow, fingerprint, who started it (<code>trigger</code>), process id, version, parameters.</td>
+</tr>
+<tr>
+<td><code>plan.resolved</code></td>
+<td>After parameters and paths were resolved: approval, inputs (exists, size), outputs (final and temporary path), warnings.</td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td>Something to read but not fatal.</td>
+</tr>
+<tr>
+<td><code>node.started</code>, <code>node.finished</code>, <code>node.skipped</code></td>
+<td>Each node. <code>node.finished</code> has <code>status</code> (<code>ok</code>, <code>failed</code>), <code>duration_s</code> and, on failure, <code>error</code> with <code>code</code>, <code>title</code> and <code>hint</code>. <code>node.skipped</code> names the node whose failure blocked it (<code>--keep-going</code>).</td>
+</tr>
+<tr>
+<td><code>log</code></td>
+<td>A message from the program's own log (see <code>-v</code>).</td>
+</tr>
+<tr>
+<td><code>output.committed</code>, <code>output.commit_failed</code></td>
+<td>An output was moved into place (size and SHA-256), or could not be.</td>
+</tr>
+<tr>
+<td><code>run.cancelling</code>, <code>run.cancel_forced</code></td>
+<td>Ctrl+C was received; the grace period ran out.</td>
+</tr>
+<tr>
+<td><code>run.timeout</code>, <code>run.memory_exceeded</code></td>
+<td>A limit was hit.</td>
+</tr>
+<tr>
+<td><code>script.written</code></td>
+<td><code>--emit-script</code> saved the script.</td>
+</tr>
+<tr>
+<td><code>run.finished</code></td>
+<td>Always the last event. <code>status</code> (<code>ok</code>, <code>failed</code>, <code>cancelled</code>, <code>refused</code>, <code>invalid</code>), <code>exit_code</code>, <code>duration_s</code>, <code>nodes_ok</code>, <code>nodes_failed</code>, <code>record_path</code>, <code>record_run_id</code> and <code>errors</code>: a list of <code>{node_id, title, code, message, hint, node}</code> using the same plain-language wording as the editor.</td>
+</tr>
+</tbody>
+</table>
+<p>A busy workflow (exit 7) reports <code>status</code> <code>invalid</code>; use <code>exit_code</code>, not <code>status</code>, in scripts.</p>
+<p>Reading the result in PowerShell:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-26-1"><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a>$last = Get-Content D:\logs\sales.jsonl | Select-Object -Last 1 | ConvertFrom-Json
+</span><span id="__span-26-2"><a id="__codelineno-26-2" name="__codelineno-26-2" href="#__codelineno-26-2"></a>if ($last.exit_code -ne 0) { $last.errors | Format-Table node, code, message }
+</span></code></pre></div>
+<h2 id="timeouts-memory-and-threads">Timeouts, memory and threads<a class="headerlink" href="#timeouts-memory-and-threads" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>--timeout SEC</code> is a limit for the whole run, from the moment the run starts, including loading. It defaults to 3600 (one hour); <code>0</code> removes it. When it fires the program stops, the temporary outputs are removed, a record is written and the exit code is 4.</li>
+<li><code>--max-memory MB</code> is a ceiling for the whole program, checked four times a second. The program needs roughly 70 MB before it has read any data (in a test, a 17-row workflow with a limit of 50 MB was stopped at about 72 MB), so set the limit generously. When it fires the exit code is 5.</li>
+<li><code>--threads N</code> limits the data engine to <code>N</code> threads, so a scheduled run does not use every core while people work. It does not change the result.</li>
+<li>A node that is already running cannot be stopped in the middle; the limits act when the watchdog sees them and then end the process. The previous outputs are never changed by such a stop.</li>
+<li>Before it starts, the program checks that each output drive has at least <code>--min-free-mb</code> (64) free. Large outputs need more room than that: the temporary file and the old file exist side by side until the move.</li>
+</ul>
+<p>See also <a href="../limits-and-performance/">Limits and performance</a>.</p>
+<h2 id="scheduling-on-windows">Scheduling on Windows<a class="headerlink" href="#scheduling-on-windows" title="Permanent link">&para;</a></h2>
+<p><code>schedule</code> creates a task in Windows Task Scheduler for you, so you do not have to build one by hand. It is Windows only; on other systems it exits with 9.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-27-1"><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a>trigger-designer-cli schedule add NAME WORKFLOW (--daily HH:MM | --weekdays HH:MM | --weekly DAYS@HH:MM | --hourly N | --once YYYY-MM-DDTHH:MM)
+</span><span id="__span-27-2"><a id="__codelineno-27-2" name="__codelineno-27-2" href="#__codelineno-27-2"></a>                                  [--param NAME=VALUE]... [--run-whether-logged-on] [--skip-missed]
+</span><span id="__span-27-3"><a id="__codelineno-27-3" name="__codelineno-27-3" href="#__codelineno-27-3"></a>                                  [--timeout SEC] [--max-memory MB] [--print-only] [--force]
+</span><span id="__span-27-4"><a id="__codelineno-27-4" name="__codelineno-27-4" href="#__codelineno-27-4"></a>trigger-designer-cli schedule list [--format {text,json}]
+</span><span id="__span-27-5"><a id="__codelineno-27-5" name="__codelineno-27-5" href="#__codelineno-27-5"></a>trigger-designer-cli schedule show NAME
+</span><span id="__span-27-6"><a id="__codelineno-27-6" name="__codelineno-27-6" href="#__codelineno-27-6"></a>trigger-designer-cli schedule remove NAME
+</span></code></pre></div>
+<table>
+<thead>
+<tr>
+<th>Option (<code>add</code>)</th>
+<th>Default</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>NAME</code></td>
+<td>required</td>
+<td>Letters, digits, <code>-</code> and <code>_</code>, up to 64 characters. The task appears as <code>TriggerDesigner\NAME</code> in Task Scheduler.</td>
+</tr>
+<tr>
+<td><code>WORKFLOW</code></td>
+<td>required</td>
+<td>The workflow. It must already be approved.</td>
+</tr>
+<tr>
+<td><code>--daily HH:MM</code></td>
+<td>one trigger is required</td>
+<td>Every day at that time (24 hours).</td>
+</tr>
+<tr>
+<td><code>--weekdays HH:MM</code></td>
+<td></td>
+<td>Monday to Friday.</td>
+</tr>
+<tr>
+<td><code>--weekly DAYS@HH:MM</code></td>
+<td></td>
+<td>For example <code>MON,THU@06:30</code>. Days: <code>MON TUE WED THU FRI SAT SUN</code>.</td>
+</tr>
+<tr>
+<td><code>--hourly N</code></td>
+<td></td>
+<td>Every <code>N</code> hours, 1 to 720, starting now.</td>
+</tr>
+<tr>
+<td><code>--once YYYY-MM-DDTHH:MM</code></td>
+<td></td>
+<td>One time, for example <code>2026-11-02T06:30</code>.</td>
+</tr>
+<tr>
+<td><code>--param NAME=VALUE</code></td>
+<td>none</td>
+<td>Parameters for each scheduled run. Checked when you add. Path values are made absolute at that moment.</td>
+</tr>
+<tr>
+<td><code>--run-whether-logged-on</code></td>
+<td>off</td>
+<td>Run even when you are not logged on (see below).</td>
+</tr>
+<tr>
+<td><code>--skip-missed</code></td>
+<td>off</td>
+<td>If the computer was off at the scheduled time, do not run later. Default: run as soon as possible.</td>
+</tr>
+<tr>
+<td><code>--timeout SEC</code></td>
+<td><code>3600</code></td>
+<td>Passed to <code>run</code>. The task's own limit is this plus 5 minutes.</td>
+</tr>
+<tr>
+<td><code>--max-memory MB</code></td>
+<td>none</td>
+<td>Passed to <code>run</code>.</td>
+</tr>
+<tr>
+<td><code>--print-only</code></td>
+<td>off</td>
+<td>Show the exact commands and the task definition; create nothing.</td>
+</tr>
+<tr>
+<td><code>--force</code></td>
+<td>off</td>
+<td>Replace an existing task of the same name.</td>
+</tr>
+</tbody>
+</table>
+<p>Times are your computer's local time. Records and log timestamps are UTC.</p>
+<h3 id="step-by-step-a-nightly-run">Step by step: a nightly run<a class="headerlink" href="#step-by-step-a-nightly-run" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>Prepare a deployment copy.</strong> Make paths relative or use parameters, so the task does not depend on your current folder:
+   <code>trigger-designer-cli paths wf\select.tds --relativize --write</code></li>
+<li><strong>Make sure it runs by hand.</strong> <code>trigger-designer-cli run wf\select.tds --dry-run ...</code>, then a real run, and check the output.</li>
+<li><strong>Approve it.</strong> Scheduling refuses a file that is not approved:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-28-1"><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a>&gt; trigger-designer-cli schedule add bad wf\filter.tds --daily 02:00
+</span><span id="__span-28-2"><a id="__codelineno-28-2" name="__codelineno-28-2" href="#__codelineno-28-2"></a>error [TD-CLI-008]: This workflow has not been approved, and scheduled runs always need approval.
+</span><span id="__span-28-3"><a id="__codelineno-28-3" name="__codelineno-28-3" href="#__codelineno-28-3"></a>  hint: Review it with `approve wf/filter.tds` first.
+</span><span id="__span-28-4"><a id="__codelineno-28-4" name="__codelineno-28-4" href="#__codelineno-28-4"></a>[exit code 6]
+</span></code></pre></div>
+   Run <code>trigger-designer-cli approve wf\select.tds</code>.</li>
+<li><strong>Look before you create.</strong> <code>--print-only</code> shows what would be created and creates nothing:
+   <div class="language-text highlight"><pre><span></span><code><span id="__span-29-1"><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a>&gt; trigger-designer-cli schedule add nightly wf\select.tds --daily 02:30 --param input_file=Y:\audit\in\check.csv --print-only
+</span><span id="__span-29-2"><a id="__codelineno-29-2" name="__codelineno-29-2" href="#__codelineno-29-2"></a>command: C:\...\python.exe -m trigger_designer.cli --state-dir Y:\state run Y:\audit\wf\select.tds --param input_file=Y:\audit\in\check.csv --trigger schedule --log-format json --log-file Y:\state\logs\nightly.jsonl --timeout 3600
+</span><span id="__span-29-3"><a id="__codelineno-29-3" name="__codelineno-29-3" href="#__codelineno-29-3"></a>schtasks: schtasks /Create /TN TriggerDesigner\nightly /XML Y:\state\schedules\nightly.xml /F
+</span><span id="__span-29-4"><a id="__codelineno-29-4" name="__codelineno-29-4" href="#__codelineno-29-4"></a>&lt;?xml version="1.0" encoding="UTF-16"?&gt;
+</span><span id="__span-29-5"><a id="__codelineno-29-5" name="__codelineno-29-5" href="#__codelineno-29-5"></a>&lt;Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"&gt;
+</span><span id="__span-29-6"><a id="__codelineno-29-6" name="__codelineno-29-6" href="#__codelineno-29-6"></a>  ...
+</span><span id="__span-29-7"><a id="__codelineno-29-7" name="__codelineno-29-7" href="#__codelineno-29-7"></a>  &lt;Triggers&gt;&lt;CalendarTrigger&gt;&lt;StartBoundary&gt;2026-10-30T02:30:00&lt;/StartBoundary&gt;...&lt;ScheduleByDay&gt;&lt;DaysInterval&gt;1&lt;/DaysInterval&gt;&lt;/ScheduleByDay&gt;&lt;/CalendarTrigger&gt;&lt;/Triggers&gt;
+</span><span id="__span-29-8"><a id="__codelineno-29-8" name="__codelineno-29-8" href="#__codelineno-29-8"></a>  &lt;Principals&gt;&lt;Principal id="Author"&gt;&lt;UserId&gt;DOMAIN\alice&lt;/UserId&gt;&lt;LogonType&gt;InteractiveToken&lt;/LogonType&gt;&lt;RunLevel&gt;LeastPrivilege&lt;/RunLevel&gt;&lt;/Principal&gt;&lt;/Principals&gt;
+</span><span id="__span-29-9"><a id="__codelineno-29-9" name="__codelineno-29-9" href="#__codelineno-29-9"></a>  &lt;Settings&gt;
+</span><span id="__span-29-10"><a id="__codelineno-29-10" name="__codelineno-29-10" href="#__codelineno-29-10"></a>    &lt;MultipleInstancesPolicy&gt;IgnoreNew&lt;/MultipleInstancesPolicy&gt;
+</span><span id="__span-29-11"><a id="__codelineno-29-11" name="__codelineno-29-11" href="#__codelineno-29-11"></a>    &lt;StartWhenAvailable&gt;true&lt;/StartWhenAvailable&gt;
+</span><span id="__span-29-12"><a id="__codelineno-29-12" name="__codelineno-29-12" href="#__codelineno-29-12"></a>    ...
+</span><span id="__span-29-13"><a id="__codelineno-29-13" name="__codelineno-29-13" href="#__codelineno-29-13"></a>    &lt;ExecutionTimeLimit&gt;PT3900S&lt;/ExecutionTimeLimit&gt;
+</span><span id="__span-29-14"><a id="__codelineno-29-14" name="__codelineno-29-14" href="#__codelineno-29-14"></a>  &lt;/Settings&gt;
+</span><span id="__span-29-15"><a id="__codelineno-29-15" name="__codelineno-29-15" href="#__codelineno-29-15"></a>  &lt;Actions Context="Author"&gt;&lt;Exec&gt;&lt;Command&gt;C:\...\python.exe&lt;/Command&gt;&lt;Arguments&gt;-m trigger_designer.cli ... &lt;/Arguments&gt;&lt;WorkingDirectory&gt;Y:\audit\wf&lt;/WorkingDirectory&gt;&lt;/Exec&gt;&lt;/Actions&gt;
+</span><span id="__span-29-16"><a id="__codelineno-29-16" name="__codelineno-29-16" href="#__codelineno-29-16"></a>&lt;/Task&gt;
+</span></code></pre></div>
+   With the installed program the command is <code>trigger-designer-cli.exe</code> (the program that is running when you add it); in a source checkout it is <code>python -m trigger_designer.cli</code>. The state folder is written into the command, so the task finds your approvals whichever way it is started.</li>
+<li><strong>Create it.</strong> The same command without <code>--print-only</code>. It prints <code>Scheduled 'nightly' (TriggerDesigner\nightly).</code> If a task of that name exists it refuses; add <code>--force</code> to replace.</li>
+<li><strong>Try it once from Task Scheduler.</strong> Open Task Scheduler, find <code>TriggerDesigner</code> in the Task Scheduler Library, right-click the task and choose <strong>Run</strong>. Then read the log <code>logs\nightly.jsonl</code> in the state folder. Do this before you rely on the schedule.</li>
+<li><strong>Look after it.</strong></li>
+<li><code>trigger-designer-cli schedule list</code> shows each task with when it runs (for example <code>daily at 02:30</code>), its next run time, status and the exit code of the last run (the <code>last result</code>; <code>0</code> is success, other numbers are the <a href="#exit-codes">exit codes</a>).</li>
+<li><code>trigger-designer-cli schedule show nightly</code> prints one task as JSON (its definition and the live state).</li>
+<li><code>trigger-designer-cli schedule remove nightly</code> deletes the task and its stored files. Removing a task that Windows no longer has only warns.</li>
+</ol>
+<p>What the task is set up to do:</p>
+<ul>
+<li>Starts in the <strong>workflow's folder</strong>, so relative paths work.</li>
+<li>Never overlaps itself: Windows ignores a new start while the previous one still runs, and the CLI's own lock (exit 7) is a second guard.</li>
+<li>A missed run starts as soon as possible (turn off with <code>--skip-missed</code>).</li>
+<li>Runs at the lowest privilege level, as you.</li>
+<li>The run is marked <code>--trigger schedule</code>: it needs approval and cannot use <code>--allow-unapproved</code>. If the workflow file changes after scheduling, the next run exits with 6 (<code>TD-CLI-009</code>) until you approve it again. Update the approval, and the task keeps working: it is the file's fingerprint that matters, not the task.</li>
+<li>Logs JSON lines to <code>&lt;state folder&gt;\logs\NAME.jsonl</code>.</li>
+</ul>
+<h3 id="logged-on-or-not">Logged on or not<a class="headerlink" href="#logged-on-or-not" title="Permanent link">&para;</a></h3>
+<p>By default the task runs <strong>only while you are logged on</strong>. That is the most reliable setting for mapped network drives and anything that needs your sign-in. A task that is set up this way does nothing when nobody is logged on; that is the first thing to check for "my task did not run".</p>
+<p><code>--run-whether-logged-on</code> runs the task with no one logged on (the Windows setting S4U). It has no password, because <strong>the program never asks for or stores a password</strong>. The price is that the task has no network credentials: it can read local drives, but not network shares or mapped drives that need your sign-in. Use local paths, or a service account set up by IT in Task Scheduler directly.</p>
+<h3 id="before-you-rely-on-it">Before you rely on it<a class="headerlink" href="#before-you-rely-on-it" title="Permanent link">&para;</a></h3>
+<p>The XML, the command line, the argument handling and the way <code>list</code> reads Windows's answer are tested against a stand-in for <code>schtasks</code>, and <code>--print-only</code> is checked by eye. A real create, run, list and remove cycle on a Windows machine has not yet been recorded. On your first task, do steps 4 to 6 and check that the task starts and that the log appears.</p>
+<h2 id="other-schedulers-and-containers">Other schedulers and containers<a class="headerlink" href="#other-schedulers-and-containers" title="Permanent link">&para;</a></h2>
+<p>The CLI only generates Windows Task Scheduler tasks. Anything else just runs the command:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-30-1"><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a>30 2 * * *  trigger-designer-cli run /srv/wf.tds --trigger schedule --log-format json --log-file /var/log/td/wf.jsonl
+</span></code></pre></div>
+<p>A cron line, a systemd timer, launchd, a CI job or a container entry point all work the same: run the command, read the exit code. You do not need <code>flock</code> or similar, because the program has its own run lock. The container recipe below is a sketch that has not been built or run yet; treat it as a starting point for IT, not a tested image. The scheduling commands (<code>schedule ...</code>) exit with 9 on systems other than Windows.</p>
+<h2 id="safety">Safety<a class="headerlink" href="#safety" title="Permanent link">&para;</a></h2>
+<p>A <code>.tds</code> file can come from anyone, and the program runs code that the file's nodes generate. The editor takes care that a workflow's text becomes values and never programs; the command line, which runs unattended, adds four more layers.</p>
+<ol>
+<li><strong>The file is checked.</strong> The format must be readable and not newer than this program, node types must be known, and there must be no loop.</li>
+<li><strong>The exact file must be approved.</strong> See <a href="#approve-and-the-approval-flow">the approval flow</a>.</li>
+<li><strong>Nodes with user-written code are refused</strong> unless you pass <code>--allow-custom-code</code> and the file is approved. No node in the current version contains user-written code, so today this protects only future versions.</li>
+<li><strong>The code of every node is checked before it runs.</strong> The check allows only the program shapes and imports that the program's own nodes produce, and it blocks:</li>
+<li>opening files with Python's <code>open</code>, <code>eval</code>, <code>exec</code>, <code>compile</code>, <code>getattr</code>, <code>__import__</code> and any name that starts with two underscores;</li>
+<li>system and process access: <code>os.system</code>, <code>subprocess</code>, <code>sys</code>, <code>socket</code>, <code>shutil</code>, <code>pathlib</code>, <code>ctypes</code>, environment variables, deleting or creating folders;</li>
+<li>network and database access from the data engine: <code>read_database</code>, extensions, <code>http</code>, <code>s3</code>, <code>ATTACH</code>, <code>COPY</code>, <code>read_csv('...')</code> inside SQL, and anything other than a single <code>SELECT</code> or <code>WITH</code> query;</li>
+<li>any file path that is not one the approved workflow declared. A tampered path in a setting stops the run with exit 6;</li>
+<li>imports other than a fixed list.</li>
+</ol>
+<p>While it runs the code also gets a reduced set of built-in functions.</p>
+<p>A refusal looks like this (a deliberately tampered node, exit 6):</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-31-1"><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a>FAILED at the run [TD-CLI-010] The safety policy refused the code of 'Select': line 1: import of 'subprocess' is not allowed - Open the workflow in the editor and look at that node; do not run files you do not trust.
+</span><span id="__span-31-2"><a id="__codelineno-31-2" name="__codelineno-31-2" href="#__codelineno-31-2"></a>[exit code 6]
+</span></code></pre></div>
+<p>The program never needs and never uses the network.</p>
+<p><strong>What this is not.</strong> It is a strong safety net against mistakes and against the kind of tampering that edits a setting in a file. It is not an operating-system sandbox. A file you approve may read and overwrite the paths it declares. That is what the approval is for. For unattended jobs:</p>
+<ul>
+<li>Do not approve files you do not trust. Open them in the editor first.</li>
+<li>Run scheduled jobs under an ordinary account with access to only the folders they need; if you can, give it write access only to the output folder.</li>
+<li>Keep the approvals file and the workflows in places others cannot write to.</li>
+<li>For an audit trail, keep the run records and use <code>verify-log</code>.</li>
+</ul>
+<h2 id="where-the-files-go">Where the files go<a class="headerlink" href="#where-the-files-go" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>What</th>
+<th>Where</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The program's own state (<code>--state-dir</code>, <code>TRIGGER_DESIGNER_STATE_DIR</code>)</td>
+<td><code>%LOCALAPPDATA%\Trigger Designer\cli</code></td>
+</tr>
+<tr>
+<td>Approvals</td>
+<td><code>&lt;state&gt;\approvals.json</code></td>
+</tr>
+<tr>
+<td>Run locks and temporary work copies</td>
+<td><code>&lt;state&gt;\locks</code>, <code>&lt;state&gt;\work</code> (deleted after the run)</td>
+</tr>
+<tr>
+<td>Temporary outputs</td>
+<td>Next to each final file as <code>.name.tdtmp-&lt;run&gt;.ext</code>; for an output folder with a quote or brace in its name, under <code>&lt;state&gt;\staging</code></td>
+</tr>
+<tr>
+<td>Schedules</td>
+<td><code>&lt;state&gt;\schedules\NAME.json</code> and <code>NAME.xml</code></td>
+</tr>
+<tr>
+<td>Logs and run sidecars</td>
+<td><code>&lt;state&gt;\logs</code> (<code>NAME.jsonl</code> for scheduled runs, <code>&lt;record id&gt;.cli.json</code> for each run)</td>
+</tr>
+<tr>
+<td>Run records</td>
+<td><code>--record-dir</code>, otherwise <code>&lt;workflow name&gt;.runs</code> next to the workflow</td>
+</tr>
+<tr>
+<td>The script of a run</td>
+<td><code>--emit-script FILE</code> only; the editor's own is in its application data folder</td>
+</tr>
+</tbody>
+</table>
+<p>A run never modifies the workflow file. It works on a private copy in the <code>work</code> folder.</p>
+<h2 id="troubleshooting">Troubleshooting<a class="headerlink" href="#troubleshooting" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Symptom</th>
+<th>What it means and what to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Exit 6, <code>This workflow has not been approved</code></td>
+<td>Run <code>trigger-designer-cli info wf.tds</code>; the <code>approved:</code> line says <code>no</code> or <code>no - changed since approval</code>. Review and <code>approve</code>.</td>
+</tr>
+<tr>
+<td>Exit 6 after a save in the editor</td>
+<td>Saving changes the fingerprint even when nothing changed. Approve again. After <code>params add</code> or <code>paths --write</code> too.</td>
+</tr>
+<tr>
+<td>Exit 7 <code>This workflow is already running</code></td>
+<td>Another run holds the lock (the message names its process id). If that run is gone, run again; locks of dead runs clear themselves. A lock is per workflow file, so two different files can run together.</td>
+</tr>
+<tr>
+<td>Exit 8 <code>could not write ...</code></td>
+<td>The output is open in Excel or another program, or the disk is full. Close the file, then run again. Nothing was changed; the previous files are still there.</td>
+</tr>
+<tr>
+<td>Exit 2 <code>Cannot find the input file</code> (<code>TD-IN-001</code>)</td>
+<td><code>trigger-designer-cli paths wf.tds</code> shows which saved path is missing. Map it with <code>--input-dir</code>, or a parameter.</td>
+</tr>
+<tr>
+<td>Exit 2 <code>TD-CLI-014</code></td>
+<td>The output folder is missing or not writable, or two outputs have the same file, or an output would overwrite an input. Use <code>--create-output-dirs</code>, or fix the names.</td>
+</tr>
+<tr>
+<td>Exit 2 on a file that works in the editor, with <code>--strict</code></td>
+<td>A warning such as "legacy v1 file" counts as an error under <code>--strict</code>. Open the file in the editor, save it, approve it again, or drop <code>--strict</code>.</td>
+</tr>
+<tr>
+<td>Exit 3, a Python traceback</td>
+<td>Report it with the traceback. A frequent cause is an unreadable console encoding, below.</td>
+</tr>
+<tr>
+<td>A scheduled task that never ran</td>
+<td>Without <code>--run-whether-logged-on</code> the task only runs while you are logged on. Open Task Scheduler and check its History, and <code>schedule list</code> for the last result. Also check <code>logs\NAME.jsonl</code>.</td>
+</tr>
+<tr>
+<td>A scheduled task ends with exit 6 (<code>TD-CLI-009</code>)</td>
+<td>The workflow was edited after it was scheduled. Approve it again; no need to recreate the task.</td>
+</tr>
+<tr>
+<td><code>could not query Windows</code> in <code>schedule list</code></td>
+<td><code>schtasks</code> was not available or was refused. Your own task definitions are still shown.</td>
+</tr>
+<tr>
+<td>You want to see what the editor's node code prints or logs while loading</td>
+<td>Run with <code>-vv</code> (<code>run</code> and <code>validate --deep</code>): its <code>print</code> output and log lines are shown as debug lines. By default they are hidden, and <code>stdout</code> is never touched, so <code>--log-format json</code> stays clean.</td>
+</tr>
+<tr>
+<td>Nothing at all appears and the exit code is 64</td>
+<td>The command line was wrong. The usage and the reason are on stderr.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="headless-qt-and-no-display">Headless Qt and "no display"<a class="headerlink" href="#headless-qt-and-no-display" title="Permanent link">&para;</a></h3>
+<p>The nodes are the editor's own, and they need Qt even though nothing is drawn. The CLI starts Qt itself on its "offscreen" platform (no window, no screen, no graphics card) and ignores the <code>QT_QPA_PLATFORM</code> of the environment, so it works on a server with no desktop. (<code>TRIGGER_CLI_QPA</code> can name another platform for diagnosis.) No window is ever created. If it will not start on a Linux container, the offscreen platform needs a few system libraries; see the container sketch below.</p>
+<h3 id="locked-files">Locked files<a class="headerlink" href="#locked-files" title="Permanent link">&para;</a></h3>
+<p>Windows does not let a program replace a file that another program has open. Excel is the usual one. The CLI checks that the folder can be written before it starts, but it cannot know in advance that you will open the file during the run. That case ends with exit 8 after the nodes have run, and your earlier output is intact. For a scheduled job that writes into a folder that people open in Excel, write to a folder they do not use and copy from there.</p>
+<h3 id="a-stale-lock">A stale lock<a class="headerlink" href="#a-stale-lock" title="Permanent link">&para;</a></h3>
+<p>If the computer lost power during a run, the next run of the same workflow removes the dead run's temporary files and, if an output was parked during the move, puts it back. It does not need any action from you.</p>
+<h3 id="cp1252-and-other-console-encodings">cp1252 and other console encodings<a class="headerlink" href="#cp1252-and-other-console-encodings" title="Permanent link">&para;</a></h3>
+<p>Older Windows consoles, redirected output and scheduled tasks use a "code page" such as cp1252 that cannot show every character. The program now prints UTF-8 when its output is piped or redirected, and replaces (with <code>?</code>) a character the console cannot show, so a Cyrillic or Chinese file name no longer stops a command. If you choose the encoding yourself with <code>PYTHONIOENCODING</code> (for example <code>cp1252</code>) the program honours it and replaces what does not fit. To keep every character on a console or in a pipe that reads a code page, tell Python to use UTF-8 before you start the program:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-32-1"><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a>set PYTHONUTF8=1
+</span></code></pre></div>
+<p>(or <code>$env:PYTHONUTF8 = "1"</code> in PowerShell, or <code>set PYTHONIOENCODING=utf-8</code>), and for the console itself <code>chcp 65001</code>. Put the variable into the scheduled task's environment or into a small <code>.bat</code> that sets it and calls the program. Workflow files themselves can be UTF-8 or the machine's code page; both are read. The JSON log lines and <code>--log-file</code> are always UTF-8.</p>
+<h3 id="paths-quotes-and-drives">Paths, quotes and drives<a class="headerlink" href="#paths-quotes-and-drives" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Put paths with spaces in double quotes. In Command Prompt and PowerShell a backslash before the closing quote swallows the quote: write <code>--input-dir "D:\in"</code> or <code>--input-dir D:/in</code>, not <code>--input-dir "D:\in\"</code>.</li>
+<li>Both <code>/</code> and <code>\</code> work in paths given to the program.</li>
+<li>A workflow on a mapped network drive or a <code>subst</code> drive works: <code>paths --relativize</code> compares the paths as saved first and, if that finds them apart, their real locations, so both spellings of the folder are recognised.</li>
+</ul>
+<h3 id="something-is-slow">Something is slow<a class="headerlink" href="#something-is-slow" title="Permanent link">&para;</a></h3>
+<p>A single run has a fixed cost of about two seconds for loading Qt and the data engine, plus the time the nodes need. A virus scanner can add to that. If many small workflows must run, call the program as a library or batch them into one workflow; ask a developer. For big files see <a href="../limits-and-performance/">Limits and performance</a>.</p>
+<h2 id="see-also">See also<a class="headerlink" href="#see-also" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../running-workflows/">Running workflows</a>: the same run, from the editor.</li>
+<li><a href="../run-history-and-audit-trail/">Run history and the audit trail</a>: what is in a record, and how to verify and compare in the editor.</li>
+<li><a href="../errors-and-problems/">Errors and problems</a>: the <code>TD-</code> codes.</li>
+<li><a href="../security-and-privacy/">Security and privacy</a>: before you open a file from someone else.</li>
+<li><a href="../../nodes/input-output/workpaper-output/">Workpaper Output</a>: the node that builds a formatted workbook.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../workpaper/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Workpapers">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Workpapers
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../troubleshooting-and-faq/" class="md-footer__link md-footer__link--next" aria-label="Next: Troubleshooting and FAQ">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Troubleshooting and FAQ
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,3866 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/nodes/input-output/file-input/">
+      
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../file-output/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>File Input - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              File Input
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/errors-and-problems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/preferences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="true">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Purpose
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        When to use it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-and-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Inputs and outputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Source
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-folder-and-pattern-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Files (folder and pattern sources)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#columns-and-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Columns and rows
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csv-and-text-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CSV and text files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#excel-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Excel files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parquet-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Parquet files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-and-json-lines-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        JSON and JSON Lines files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-and-duckdb-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        SQLite and DuckDB databases
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Worked examples
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#edge-cases-and-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Edge cases and limits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors-you-may-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors you may see
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tips
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/workpaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../guide/troubleshooting-and-faq/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../DESIGN_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#purpose" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Purpose
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#when-to-use-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        When to use it
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs-and-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Inputs and outputs
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#settings" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Settings
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Settings">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#source" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Source
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-folder-and-pattern-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Files (folder and pattern sources)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#columns-and-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Columns and rows
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csv-and-text-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CSV and text files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#excel-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Excel files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#parquet-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Parquet files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-and-json-lines-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        JSON and JSON Lines files
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sqlite-and-duckdb-databases" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        SQLite and DuckDB databases
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-examples" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Worked examples
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#edge-cases-and-limits" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Edge cases and limits
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors-you-may-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors you may see
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tips
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/nodes/input-output/file-input.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="file-input">File Input<a class="headerlink" href="#file-input" title="Permanent link">&para;</a></h1>
+<p><img alt="File Input icon" class="node-icon" src="../../../assets/node_icons/Input/File%20Input.svg" /></p>
+<h2 id="purpose">Purpose<a class="headerlink" href="#purpose" title="Permanent link">&para;</a></h2>
+<p>File Input reads one file, every matching file in a folder, or every file that matches a pattern such as <code>D:\data\2025-*.csv</code>, and hands the rows to the next node. It reads CSV, text, Excel, Parquet, JSON, JSON Lines, SQLite and DuckDB files. When it reads several files it stacks them into one table and tells you which files had different columns.</p>
+<h2 id="when-to-use-it">When to use it<a class="headerlink" href="#when-to-use-it" title="Permanent link">&para;</a></h2>
+<ul>
+<li>You start a workflow from a file, a folder of monthly exports, or a database.</li>
+<li>You need to stack many files that share a layout (twelve monthly ledgers, one file per entity) into one table, with a column telling you which file each row came from.</li>
+<li>You need only part of a database: write a read-only <code>SELECT</code>.</li>
+</ul>
+<p>If you already have a table inside the workflow and want to put two tables together, use <a href="../../join/">Append, Union or Join</a> instead.</p>
+<h2 id="inputs-and-outputs">Inputs and outputs<a class="headerlink" href="#inputs-and-outputs" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Socket</th>
+<th>Direction</th>
+<th>Carries</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>(none)</td>
+<td>Input</td>
+<td>File Input has no input socket. It is a starting point.</td>
+</tr>
+<tr>
+<td>Output (one socket on the right)</td>
+<td>Output</td>
+<td>The table read from the source.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="settings">Settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h2>
+<p>The Config Dock shows only the controls that matter for the source you chose. Until there is a path, only the <strong>Source</strong> box is shown.</p>
+<p>All edits apply on their own, about a third of a second after you stop typing. There is no Apply button. Each change is one entry in the undo history (for example "Source Path Changed", "Delimiter Changed", "Bad File Mode Changed").</p>
+<h3 id="source">Source<a class="headerlink" href="#source" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Source</strong> (text box, with two icon buttons)</td>
+<td>The file, folder or pattern to read. Type or paste a path, or use the buttons. A path that is a folder reads the folder; a path containing <code>*</code>, <code>?</code> or <code>[</code> reads every match; anything else is a single file. Icon buttons: <strong>Browse for file</strong> and <strong>Browse for folder</strong>.</td>
+<td>Empty</td>
+</tr>
+<tr>
+<td><strong>Type</strong></td>
+<td>How to read the source: CSV, Text, Excel, Parquet, JSON, JSON Lines, SQLite or DuckDB. Appears once there is a path.</td>
+<td>CSV</td>
+</tr>
+</tbody>
+</table>
+<p>Details:</p>
+<ul>
+<li><strong>The type is detected for you</strong> from the file extension, as long as you have not picked a type yourself: <code>.csv</code> and <code>.tsv</code> become CSV; <code>.txt</code> Text; <code>.xlsx</code>, <code>.xlsm</code>, <code>.xls</code> Excel; <code>.parquet</code>, <code>.pq</code> Parquet; <code>.json</code> JSON; <code>.ndjson</code>, <code>.jsonl</code> JSON Lines; <code>.sqlite</code>, <code>.sqlite3</code> SQLite; <code>.duckdb</code>, <code>.ddb</code> DuckDB. A <code>.db</code> file is opened and its first bytes are checked, so it becomes SQLite or DuckDB correctly. Anything else is treated as CSV. Once you choose a type yourself, typing another path no longer changes it; picking a file with the browse button detects the type again.</li>
+<li><strong>Browse for folder</strong> picks the folder, sets the type to the most common file type found directly in it, and turns on <strong>Output filename as field</strong> (see below).</li>
+<li><strong>A file that exists wins over pattern characters.</strong> If your real file name contains <code>[</code> or <code>]</code>, it is read as a file, not as a pattern.</li>
+<li>Very long Windows paths (over about 240 characters) are handled.</li>
+</ul>
+<h4 id="how-the-path-is-saved-in-the-workflow">How the path is saved in the workflow<a class="headerlink" href="#how-the-path-is-saved-in-the-workflow" title="Permanent link">&para;</a></h4>
+<p>When you save a workflow, File Input stores the full path and also the path relative to the workflow file's folder. When you open the workflow, the relative path is used if the file is found there; otherwise the full path is used. So a workflow and its data folder can be copied together to another PC or share and still open. The relative form is not stored when the workflow has never been saved, when the data is on a different drive, or when it sits more than six folder levels above the workflow.</p>
+<h3 id="files-folder-and-pattern-sources">Files (folder and pattern sources)<a class="headerlink" href="#files-folder-and-pattern-sources" title="Permanent link">&para;</a></h3>
+<p>The <strong>Files</strong> section only appears when the Source is a folder or a pattern. It is how you control which files are read and how a mismatch is handled.</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Shown for</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Include</strong></td>
+<td>Folder</td>
+<td>Name patterns (separated by <code>;</code>) that a file name must match, for example <code>part_*.csv; sales*.csv</code>. Empty means "every file of this Type" (see the table below). Case does not matter.</td>
+<td>Empty</td>
+</tr>
+<tr>
+<td><strong>Exclude</strong></td>
+<td>Folder and pattern</td>
+<td>Name patterns to skip, separated by <code>;</code>.</td>
+<td><code>~$*; .*; Thumbs.db; desktop.ini</code> (Excel lock files, hidden files, Windows clutter)</td>
+</tr>
+<tr>
+<td><strong>Include subfolders</strong></td>
+<td>Folder</td>
+<td>Also read files in folders below the Source. Shortcuts (symbolic links) to folders are not followed.</td>
+<td>Off</td>
+</tr>
+<tr>
+<td><strong>Order</strong></td>
+<td>Folder and pattern</td>
+<td>The order in which files are stacked: <strong>Name (natural)</strong> or <strong>Modified date</strong>.</td>
+<td>Name (natural)</td>
+</tr>
+<tr>
+<td><strong>Columns</strong></td>
+<td>Folder and pattern</td>
+<td>What to do when files do not have the same columns: <strong>Union by name</strong> or <strong>Must match</strong>.</td>
+<td>Union by name</td>
+</tr>
+<tr>
+<td><strong>Bad file</strong></td>
+<td>Folder and pattern</td>
+<td>What to do with a file that cannot be read: <strong>Stop with error</strong> or <strong>Skip and report</strong>.</td>
+<td>Stop with error</td>
+</tr>
+<tr>
+<td><strong>Max files</strong></td>
+<td>Folder and pattern</td>
+<td>The most files the source may match, 1 to 100,000. A source that matches more stops with <code>TD-IN-012</code>; raise the number to read it.</td>
+<td>10,000</td>
+</tr>
+<tr>
+<td><strong>Files read</strong> (table)</td>
+<td>Folder and pattern</td>
+<td>One row per file (and per sheet): <strong>File</strong>, <strong>Status</strong>, <strong>Columns</strong>. Hover a row for the details.</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>What "Include" means when empty: the files of the chosen type.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Files read when Include is empty</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CSV</td>
+<td><code>*.csv</code></td>
+</tr>
+<tr>
+<td>Text</td>
+<td><code>*.txt</code></td>
+</tr>
+<tr>
+<td>Excel</td>
+<td><code>*.xlsx</code>, <code>*.xlsm</code>, <code>*.xls</code></td>
+</tr>
+<tr>
+<td>Parquet</td>
+<td><code>*.parquet</code>, <code>*.pq</code></td>
+</tr>
+<tr>
+<td>JSON</td>
+<td><code>*.json</code></td>
+</tr>
+<tr>
+<td>JSON Lines</td>
+<td><code>*.ndjson</code>, <code>*.jsonl</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>.tsv</code> files are not in the CSV list. To read a folder of <code>.tsv</code> files, set <strong>Include</strong> to <code>*.tsv</code> and <strong>Delimiter</strong> to <code>\t</code>.</p>
+<p><strong>Patterns.</strong> In a pattern source, <code>*</code> matches any characters within one folder level, <code>?</code> one character, <code>[abc]</code> one of those characters, and <code>**</code> crosses folder levels (so <code>D:\data\**\*.csv</code> reads all subfolders). Without <code>**</code> a pattern only looks as deep as it is written. Matching ignores upper and lower case. Because a pattern already says which files to read, the <strong>Include</strong> box and <strong>Include subfolders</strong> are hidden for pattern sources.</p>
+<p><strong>Natural name order.</strong> Numbers inside names sort as numbers and case is ignored, so <code>part_2.csv</code> comes before <code>part_10.csv</code> (a plain alphabetical sort would put <code>part_10</code> first). Files in subfolders are ordered by their relative path. <strong>Modified date</strong> reads the oldest file first, with ties broken by name. The order matters: with <strong>Union by name</strong>, columns appear in the order they are first seen, and with stacked rows the first file's rows come first.</p>
+<p><strong>Columns: Union by name.</strong> All files are stacked. Where a file lacks a column, the cells are empty (null). A column that only some files have is added after the columns of the first file. When the same column has different types in different files (for example whole numbers in one Parquet file and text in another), numbers with numbers combine to a common number type, and anything else becomes text. The <strong>Files read</strong> table shows "missing N", "+N column(s)" or "types differ" next to files that differ, and the node's tooltip gives a summary such as <code>3 files, 3 differ (first: part_1.csv: missing Region)</code>.</p>
+<p><strong>Columns: Must match.</strong> The Run stops with <code>TD-SCH-011</code> as soon as any file has a column the others lack or lacks one the others have. The message names the file that introduces the difference and the column. Use this when a different layout means something is wrong and you want to be told.</p>
+<p><strong>Bad file: Skip and report.</strong> A file that cannot be opened or recognised is left out, the <strong>Files read</strong> table shows "skipped: " and the reason, and the node chip shows "N skipped". If every file is skipped you get an error (<code>TD-IN-014</code>, "None of the N files ... could be read"). Skipping covers problems found when a file is opened and its header read, and, for CSV, text and JSON Lines files, problems in the <strong>first 2,000 rows</strong> of the body (an invalid byte, a row with too many fields): such a file is skipped and named. A problem deeper in a file is found later, when the rows are actually read, and then still stops the run even with Skip selected. See <a href="#edge-cases-and-limits">Edge cases</a>.</p>
+<p>The node holds at most <strong>Max files</strong> files (default 10,000). A source that matches more stops with <code>TD-IN-012</code>; raise <strong>Max files</strong> in the Files section.</p>
+<h3 id="columns-and-rows">Columns and rows<a class="headerlink" href="#columns-and-rows" title="Permanent link">&para;</a></h3>
+<p>These controls apply to all file types.</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Shown for</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Output filename as field</strong> (checkbox)</td>
+<td>All</td>
+<td>Adds a column that says which file each row came from.</td>
+<td>Off for a single file; on automatically when you pick a folder with the folder button</td>
+</tr>
+<tr>
+<td><strong>Column name</strong></td>
+<td>When the box above is checked</td>
+<td>Name of the added column.</td>
+<td><code>FileName</code></td>
+</tr>
+<tr>
+<td><strong>Value</strong></td>
+<td>When the box above is checked</td>
+<td>What goes in it: <strong>File name</strong> (<code>part_1.csv</code>), <strong>Full path</strong> (<code>D:\data\jan\part_1.csv</code>) or <strong>Relative path</strong> (the path from the Source folder, for example <code>sub/part_5.csv</code>; for a single file it is the file name).</td>
+<td>File name</td>
+</tr>
+<tr>
+<td><strong>Read all columns as text</strong></td>
+<td>Every type except CSV and Text</td>
+<td>Turns every column into text, including nested values. Useful when you want to keep leading zeros, or compare values exactly as stored.</td>
+<td>Off</td>
+</tr>
+<tr>
+<td><strong>Row limit</strong></td>
+<td>All</td>
+<td>Read only the first N rows. <code>All</code> (0) reads everything. For several files or sheets, the limit applies to the combined table, not to each file.</td>
+<td>All</td>
+</tr>
+</tbody>
+</table>
+<p>If the file already has a column with the added name, the run stops with <code>TD-SCH-010</code> ("already has a column named 'FileName'. Rename the filename column in File Input."). Change <strong>Column name</strong> to something else.</p>
+<p>The added columns (filename and sheet name) are placed <strong>after</strong> the data's own columns.</p>
+<h3 id="csv-and-text-files">CSV and text files<a class="headerlink" href="#csv-and-text-files" title="Permanent link">&para;</a></h3>
+<p>Types <strong>CSV</strong> and <strong>Text</strong> read the same way. These controls appear:</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Delimiter</strong></td>
+<td>The character that separates fields. Type <code>\t</code> for a tab. One character only; a longer entry makes the read fail.</td>
+<td><code>,</code></td>
+</tr>
+<tr>
+<td><strong>First row holds field names</strong></td>
+<td>On: the first row is the header. Off: there is no header and the columns are named <code>column_0</code>, <code>column_1</code>, and so on (counted from 0).</td>
+<td>On</td>
+</tr>
+<tr>
+<td><strong>Encoding</strong></td>
+<td><strong>UTF-8</strong>, or <strong>UTF-8 (replace bad bytes)</strong>.</td>
+<td>UTF-8</td>
+</tr>
+</tbody>
+</table>
+<p>Important behaviours:</p>
+<ul>
+<li><strong>Every CSV column arrives as text.</strong> Numbers, dates and amounts are not converted. This is deliberate: it keeps leading zeros (<code>007</code>), long account numbers and odd values exactly as they are in the file. Convert columns with a <a href="../../preparation/">Select node</a> when you need numbers or dates.</li>
+<li><strong>Empty cells become null.</strong> A cell with nothing between the delimiters is an empty (null) value.</li>
+<li><strong>Blank header cells get a name.</strong> A header cell that is empty is named <code>column_N</code>, where N is its position counted from 1 (<code>column_2</code> for the second column), so the column is not lost. This differs on purpose from a file with no header row at all, whose columns count from 0 (<code>column_0</code> is the first). If that name is taken, a suffix is added.</li>
+<li><strong>Duplicate header names</strong> are renamed by the reader (for example <code>Amount_duplicated_0</code>) and the node reports a note that mentions <code>TD-SCH-002</code>. Fix the source file or rename the columns with a Select node.</li>
+<li><strong>Encoding.</strong> The app reads UTF-8. A file saved as Windows-1252 or Latin-1 (accented letters such as <code>é</code> stored as one byte) is not valid UTF-8 and stops with <code>TD-IN-004</code>. Choose <strong>UTF-8 (replace bad bytes)</strong> to read it anyway: the unreadable characters are replaced by a placeholder character (<code>�</code>), nothing is dropped. Re-saving the file as "CSV UTF-8" in Excel is the clean fix.</li>
+</ul>
+<h3 id="excel-files">Excel files<a class="headerlink" href="#excel-files" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Shown when</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sheets</strong></td>
+<td>Always for Excel</td>
+<td><strong>One sheet</strong>, <strong>All sheets</strong>, or <strong>Chosen sheets</strong>.</td>
+<td>One sheet</td>
+</tr>
+<tr>
+<td><strong>Sheet</strong></td>
+<td>One sheet</td>
+<td>Which sheet. The list comes from the workbook; the first sheet is picked when you choose the file.</td>
+<td>First sheet</td>
+</tr>
+<tr>
+<td><strong>Chosen</strong></td>
+<td>Chosen sheets</td>
+<td>A checklist of the workbook's sheets. At least one must be ticked.</td>
+<td>None ticked</td>
+</tr>
+<tr>
+<td><strong>Start row</strong></td>
+<td>Always for Excel</td>
+<td>The row in the sheet where the table starts (the header row). Use it to skip title lines above the table.</td>
+<td>1</td>
+</tr>
+<tr>
+<td><strong>Add sheet name column</strong></td>
+<td>Always for Excel</td>
+<td>Adds a column holding the name of the sheet each row came from.</td>
+<td>Off</td>
+</tr>
+<tr>
+<td><strong>Column name</strong></td>
+<td>Add sheet name column is on</td>
+<td>Name of that column.</td>
+<td><code>SheetName</code></td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Excel columns <strong>keep their types</strong> (numbers are numbers, dates are dates), unlike CSV. Whole-number cells come in as decimal numbers (<code>10.0</code>).</li>
+<li>The header is the row at <strong>Start row</strong>; rows above it are skipped. There is no control for reading Excel without a header: the <strong>First row holds field names</strong> box is only shown for CSV and Text.</li>
+<li>With <strong>All sheets</strong> or <strong>Chosen sheets</strong>, every sheet is read with the same Start row and stacked following the <strong>Columns</strong> rule. Sheets with different layouts produce mostly-empty columns, as in the example below. Use <strong>Must match</strong> to be told, or read the odd sheet on its own.</li>
+<li>A folder or pattern of workbooks reads the chosen sheet (or all sheets) of each workbook. The sheet list shown in the dock comes from the first workbook.</li>
+<li>Excel files are read completely, even while you edit. A very large workbook is slow to open for this reason; Parquet or CSV is much faster.</li>
+<li>A workbook that is locked by another program stops with <code>TD-IN-002</code>.</li>
+</ul>
+<h3 id="parquet-files">Parquet files<a class="headerlink" href="#parquet-files" title="Permanent link">&para;</a></h3>
+<p>No type-specific controls. Parquet files carry their own column types, which are kept. Folder and pattern settings, <strong>Output filename as field</strong>, <strong>Read all columns as text</strong> and <strong>Row limit</strong> all work. Parquet is the fastest format to read and the one to prefer for large intermediate files.</p>
+<h3 id="json-and-json-lines-files">JSON and JSON Lines files<a class="headerlink" href="#json-and-json-lines-files" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Nested values</strong></td>
+<td>How to treat a column that holds a list or a record (for example <code>"tags": ["x","y"]</code> or <code>"addr": {"city": "Oslo"}</code>). <strong>As text</strong> turns it into a JSON text value. <strong>Keep as is</strong> leaves it as a nested value.</td>
+<td>As text</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li><strong>JSON</strong> must be a file containing a list of records (<code>[{"id": 1, ...}, {...}]</code>). The whole file is read at once.</li>
+<li><strong>JSON Lines</strong> (<code>.ndjson</code>, <code>.jsonl</code>) has one record per line and is read without loading the whole file first.</li>
+<li>Column types come from the data (<code>1</code> is a whole number, <code>10.5</code> a decimal).</li>
+</ul>
+<h3 id="sqlite-and-duckdb-databases">SQLite and DuckDB databases<a class="headerlink" href="#sqlite-and-duckdb-databases" title="Permanent link">&para;</a></h3>
+<p>A <strong>database section</strong> appears with the note "Read-only. One SELECT statement. The database is never modified."</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>What it does</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Read</strong></td>
+<td><strong>Table</strong> or <strong>SQL query</strong>.</td>
+<td>Table</td>
+</tr>
+<tr>
+<td><strong>Table</strong> (with a <strong>Reload table list</strong> icon button)</td>
+<td>The table or view to read. The list is filled from the database and the first one is chosen for you. Click the reload button after the database changes.</td>
+<td>First table</td>
+</tr>
+<tr>
+<td><strong>Query</strong></td>
+<td>A single <code>SELECT</code> statement, for example <code>SELECT vendor, SUM(amt) AS total FROM payments GROUP BY vendor</code>.</td>
+<td>Empty</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>The database is opened <strong>read-only</strong>. A statement that tries to change data, or use files, is refused. Only one statement is allowed (a second one after a <code>;</code> is refused).</li>
+<li><strong>Row limit</strong> is applied inside the query (as a <code>LIMIT</code>).</li>
+<li>A database source takes exactly one file. Giving it a folder or pattern is an error.</li>
+<li>A database that is open for writing in another program cannot be read: you get <code>TD-IN-002</code> with the message "the database is open for writing in another program".</li>
+<li>SQLite and DuckDB files are read whole, even while editing.</li>
+</ul>
+<h2 id="worked-examples">Worked examples<a class="headerlink" href="#worked-examples" title="Permanent link">&para;</a></h2>
+<p><strong>1. One CSV file.</strong> Source <code>inv.csv</code>:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Invoice,Amount,Date
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>INV-001,100.50,2025-01-03
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>INV-002,2000,2025-01-04
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>INV-003,,2025-01-05
+</span></code></pre></div>
+<p>Output (note that everything is text, and the empty amount is null):</p>
+<table>
+<thead>
+<tr>
+<th>Invoice</th>
+<th>Amount</th>
+<th>Date</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>INV-001</td>
+<td>100.50</td>
+<td>2025-01-03</td>
+</tr>
+<tr>
+<td>INV-002</td>
+<td>2000</td>
+<td>2025-01-04</td>
+</tr>
+<tr>
+<td>INV-003</td>
+<td>null</td>
+<td>2025-01-05</td>
+</tr>
+</tbody>
+</table>
+<p>With <strong>Row limit</strong> set to 2 and <strong>Output filename as field</strong> on, you would get only the first two rows plus a <code>FileName</code> column holding <code>inv.csv</code>.</p>
+<p><strong>2. A folder of monthly files with a changed layout.</strong> Source is a folder containing <code>part_1.csv</code>, <code>part_2.csv</code>, <code>part_10.csv</code>, a leftover <code>~$part_3.csv</code> (Excel lock file) and <code>notes.txt</code>. <code>part_10.csv</code> has an extra <code>Region</code> column.</p>
+<p><code>part_1.csv</code>: <code>Invoice,Amount</code> / <code>A1,10</code> / <code>A2,20</code>
+<code>part_2.csv</code>: <code>Invoice,Amount</code> / <code>A3,30</code>
+<code>part_10.csv</code>: <code>Invoice,Amount,Region</code> / <code>A4,40,North</code></p>
+<p>Settings: Type CSV, <strong>Columns</strong> = Union by name, <strong>Output filename as field</strong> on. The lock file and <code>notes.txt</code> are ignored. Files are stacked in natural order (1, 2, 10). Output:</p>
+<table>
+<thead>
+<tr>
+<th>Invoice</th>
+<th>Amount</th>
+<th>Region</th>
+<th>FileName</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>10</td>
+<td>null</td>
+<td>part_1.csv</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>20</td>
+<td>null</td>
+<td>part_1.csv</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>30</td>
+<td>null</td>
+<td>part_2.csv</td>
+</tr>
+<tr>
+<td>A4</td>
+<td>40</td>
+<td>North</td>
+<td>part_10.csv</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Files read</strong> table shows <code>part_1.csv</code> "missing 1", <code>part_2.csv</code> "missing 1", <code>part_10.csv</code> "+1 column", and the node tooltip reads <code>3 files, 3 differ (first: part_1.csv: missing Region)</code>. With <strong>Columns</strong> = Must match, the same folder stops with: <code>The files have different columns: 'part_10.csv' differs at 'Region'.</code> (<code>TD-SCH-011</code>).</p>
+<p><strong>3. One workbook, two chosen sheets.</strong> <code>book.xlsx</code> has sheets <code>Jan</code> (Invoice, Amount), <code>Feb</code> (Invoice, Amount, Note) and <code>Notes</code>. Settings: Type Excel, <strong>Sheets</strong> = Chosen sheets with <code>Jan</code> and <code>Feb</code> ticked, <strong>Add sheet name column</strong> on. Output:</p>
+<table>
+<thead>
+<tr>
+<th>Invoice</th>
+<th>Amount</th>
+<th>Note</th>
+<th>SheetName</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>10.0</td>
+<td>null</td>
+<td>Jan</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>20.0</td>
+<td>null</td>
+<td>Jan</td>
+</tr>
+<tr>
+<td>B1</td>
+<td>30.0</td>
+<td>late</td>
+<td>Feb</td>
+</tr>
+</tbody>
+</table>
+<p>If the real table on a sheet starts below a title (say the headers are in row 3), set <strong>Start row</strong> to 3.</p>
+<p><strong>4. A database query.</strong> Type SQLite, <strong>Read</strong> = SQL query, with <code>payments</code> holding (1, Acme, 10.5), (2, Beta, 20.0), (3, Acme, 5.0) and the query <code>SELECT vendor, SUM(amt) AS total FROM payments GROUP BY vendor ORDER BY vendor</code>:</p>
+<table>
+<thead>
+<tr>
+<th>vendor</th>
+<th>total</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Acme</td>
+<td>15.5</td>
+</tr>
+<tr>
+<td>Beta</td>
+<td>20.0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>5. A JSON file with nested values.</strong> <code>[{"id":1,"name":"A","tags":["x","y"],"addr":{"city":"Oslo"}}, {"id":2,"name":"B","tags":[],"addr":{"city":"Rome"}}]</code>, with <strong>Nested values</strong> = As text:</p>
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+<th>tags</th>
+<th>addr</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>A</td>
+<td>["x","y"]</td>
+<td>{"city":"Oslo"}</td>
+</tr>
+<tr>
+<td>2</td>
+<td>B</td>
+<td>[]</td>
+<td>{"city":"Rome"}</td>
+</tr>
+</tbody>
+</table>
+<h2 id="edge-cases-and-limits">Edge cases and limits<a class="headerlink" href="#edge-cases-and-limits" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>Live preview shows 100 rows; Run reads all rows.</strong> See <a href="../#live-preview-and-run">Live preview and Run</a>. CSV, Parquet and JSON Lines are read lazily while you edit, so opening a workflow with big files stays quick.</li>
+<li><strong>No row cap.</strong> There is no fixed limit on rows or file size. The practical limit is memory: Excel, JSON and database sources are loaded whole. The folder limit is <strong>Max files</strong> (10,000 by default).</li>
+<li><strong>Empty file.</strong> An empty file (no header and no rows) stops with <code>TD-IN-005</code>, or is skipped when <strong>Bad file</strong> is <strong>Skip and report</strong>. A file with a header and no rows is read as a table with no rows.</li>
+<li><strong>Nulls.</strong> Empty CSV cells and missing columns are null. They are not zeros or empty strings.</li>
+<li><strong>Types differ across files.</strong> With Union by name: numbers combine, everything else becomes text for that column, and the Files read table marks the files "types differ".</li>
+<li><strong>Errors deep inside a file body are found late.</strong> With <strong>Skip and report</strong>, the first 2,000 rows of each CSV, text or JSON Lines file are test-read, so a bad byte or an over-long row there skips (and names) that file. An invalid byte or a row with too many fields further down is found only when all rows are read, and it still stops the run. Reading every row of every file just to check them would cost a full extra pass. When it happens with several files, the error names the file when it can find it, otherwise it says "one of the N input files".</li>
+<li><strong>Files that disappear.</strong> If the source path is missing the node is marked invalid and its tooltip says so ("File '...' does not exist" or the <code>TD-IN-001</code> message). The app logs this a few times, then stops repeating itself.</li>
+<li><strong>Workflow opened later.</strong> When a saved workflow is opened, File Input checks that the file, sheet and columns still match what was saved and warns you about missing or new columns and changed types.</li>
+<li><strong>Column order.</strong> Columns follow the first file's order; columns found only in later files follow, in the order first seen; Filename and Sheet name columns come last.</li>
+</ul>
+<h2 id="errors-you-may-see">Errors you may see<a class="headerlink" href="#errors-you-may-see" title="Permanent link">&para;</a></h2>
+<p>The node tooltip shows the plain message. When you Run, the error list shows the code, a plain-language explanation and the fix.</p>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-IN-001</code></td>
+<td>The file was not found, or the folder/pattern matched no files (<code>No files in '...' match ...</code>).</td>
+<td>Check the path; check that the drive or network share is reachable; check <strong>Include</strong> and <strong>Exclude</strong>.</td>
+</tr>
+<tr>
+<td><code>TD-IN-002</code></td>
+<td>The file is open in another program, or access is denied.</td>
+<td>Close the file in Excel (or whichever program), or ask for permission to the folder.</td>
+</tr>
+<tr>
+<td><code>TD-IN-003</code></td>
+<td>The chosen sheet does not exist in the workbook.</td>
+<td>Pick one of the available sheets in the node settings.</td>
+</tr>
+<tr>
+<td><code>TD-IN-004</code></td>
+<td>The file is not UTF-8 text.</td>
+<td>Set <strong>Encoding</strong> to <strong>UTF-8 (replace bad bytes)</strong>, or save the file again as "CSV UTF-8".</td>
+</tr>
+<tr>
+<td><code>TD-IN-005</code></td>
+<td>The file is empty.</td>
+<td>Check the export that made it finished, then reload.</td>
+</tr>
+<tr>
+<td><code>TD-IN-006</code></td>
+<td>The file is not a readable Excel workbook (damaged or not really Excel).</td>
+<td>Open it in Excel and save it again as <code>.xlsx</code>. If it is really text, rename it <code>.csv</code> and set Type to CSV.</td>
+</tr>
+<tr>
+<td><code>TD-IN-007</code></td>
+<td>Some rows have more fields than the header.</td>
+<td>Check the <strong>Delimiter</strong>; make sure values that contain the delimiter are quoted.</td>
+</tr>
+<tr>
+<td><code>TD-IN-010</code></td>
+<td>The data in a file could not be read; the details name the column when known.</td>
+<td>Check the file Type and Delimiter.</td>
+</tr>
+<tr>
+<td><code>TD-IN-011</code></td>
+<td>The input file could not be opened.</td>
+<td>Check the path and your access rights.</td>
+</tr>
+<tr>
+<td><code>TD-IN-012</code></td>
+<td>The source matches more files than <strong>Max files</strong> (10,000 by default).</td>
+<td>Narrow the <strong>Include</strong> pattern or the folder, or raise <strong>Max files</strong>.</td>
+</tr>
+<tr>
+<td><code>TD-IN-013</code></td>
+<td>The database could not be read as asked (unknown table, not a single <code>SELECT</code>, a statement that tries to change data).</td>
+<td>Check the table name; use one <code>SELECT</code>.</td>
+</tr>
+<tr>
+<td><code>TD-IN-014</code></td>
+<td>The File Input settings need attention. Examples: <code>Choose a file, folder or pattern.</code>, <code>Choose a table.</code>, <code>Write a SELECT query.</code>, <code>Choose at least one sheet.</code>, <code>Database sources take exactly one file, not a folder or pattern</code>, or every file was skipped.</td>
+<td>Open File Input and fix the named setting.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-010</code></td>
+<td>The added filename or sheet-name column has the same name as a column already in the data.</td>
+<td>Change <strong>Column name</strong>.</td>
+</tr>
+<tr>
+<td><code>TD-SCH-011</code></td>
+<td><strong>Columns</strong> is <strong>Must match</strong> and files have different columns.</td>
+<td>Use <strong>Union by name</strong>, or fix the odd file the message names.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tips">Tips<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Put one File Input per source and give the real work to other nodes. A File Input followed by a <a href="../../preparation/">Select node</a> that sets the types is the standard start.</li>
+<li>For a folder of exports, turn on <strong>Output filename as field</strong>. Later you can see which file a suspicious row came from.</li>
+<li>Keep <strong>Columns</strong> on <strong>Union by name</strong> while you explore, and switch to <strong>Must match</strong> once the process is stable so a changed layout stops the run instead of quietly adding empty columns.</li>
+<li>Check the <strong>Files read</strong> table after pointing at a folder. Make sure the file count is what you expect, and that no file says "skipped".</li>
+<li>Prefer <code>D:\data\2025-*.csv</code> over a folder if the folder also holds files you do not want.</li>
+<li>Convert large CSV inputs to Parquet once (File Output, Parquet) and read the Parquet afterwards.</li>
+</ul>
+<p>Back to the <a href="../">Input and Output node index</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Input and Output nodes">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Input and Output nodes
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../file-output/" class="md-footer__link md-footer__link--next" aria-label="Next: File Output">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                File Output
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../../..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>

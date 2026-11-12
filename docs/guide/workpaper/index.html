@@ -1,0 +1,4465 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/guide/workpaper/">
+      
+      
+      
+        <link rel="prev" href="../../nodes/audit/risk-filters/">
+      
+      
+        <link rel="next" href="../cli/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Workpapers - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Workpapers
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors-and-problems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preferences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/input-output/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-workpaper-is-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What a workpaper is, and why
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-ways-to-produce-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two ways to produce one
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-workpaper-output-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Workpaper Output node
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-config-dock-setting-by-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Config Dock, setting by setting
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Config Dock, setting by setting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement-open-by-default-can-be-collapsed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement (open by default; can be collapsed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Test
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Values
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sheets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sources-collapsed-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sources (collapsed by default)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#engagement-defaults-in-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement defaults in Preferences
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-export-workpaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File &gt; Export Workpaper...
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-each-sheet-contains" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What each sheet contains
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What each sheet contains">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exceptions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run log
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-names-versions-and-replacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File names, versions and replacing
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safe-by-construction-formulas-in-your-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Safe by construction: formulas in your data
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#excels-limits-and-what-happens-at-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Excel's limits and what happens at them
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-workpaper-ties-to-the-audit-trail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How a workpaper ties to the audit trail
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Worked example
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Worked example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#summary-trimmed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary (trimmed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exceptions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-log-trimmed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run log (trimmed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-trimmed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workflow (trimmed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-audit-trail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The audit trail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-whole-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The whole run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-the-command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        From the command line
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors-you-may-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors you may see
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tips
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../troubleshooting-and-faq/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DESIGN_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-a-workpaper-is-and-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What a workpaper is, and why
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#two-ways-to-produce-one" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Two ways to produce one
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-workpaper-output-node" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Workpaper Output node
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-config-dock-setting-by-setting" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Config Dock, setting by setting
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="The Config Dock, setting by setting">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#file" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#engagement-open-by-default-can-be-collapsed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement (open by default; can be collapsed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#test" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Test
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#values" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Values
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sheets" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sheets
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sources-collapsed-by-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Sources (collapsed by default)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#engagement-defaults-in-preferences" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Engagement defaults in Preferences
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-export-workpaper" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File &gt; Export Workpaper...
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-each-sheet-contains" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        What each sheet contains
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What each sheet contains">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exceptions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-log" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run log
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#file-names-versions-and-replacing" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        File names, versions and replacing
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#safe-by-construction-formulas-in-your-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Safe by construction: formulas in your data
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#excels-limits-and-what-happens-at-them" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Excel's limits and what happens at them
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-a-workpaper-ties-to-the-audit-trail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        How a workpaper ties to the audit trail
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#worked-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Worked example
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Worked example">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#summary-trimmed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Summary (trimmed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#exceptions_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Exceptions
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#run-log-trimmed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run log (trimmed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-trimmed" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Workflow (trimmed)
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-audit-trail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The audit trail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#the-whole-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The whole run
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#from-the-command-line" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        From the command line
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#errors-you-may-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Errors you may see
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tips" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Tips
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/guide/workpaper.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="workpapers-excel">Workpapers (Excel)<a class="headerlink" href="#workpapers-excel" title="Permanent link">&para;</a></h1>
+<p>A <strong>workpaper</strong> is the Excel file you file with your audit working papers: what you tested, on which data, how, what you found, and enough evidence for someone else to repeat it. Trigger Designer writes one for you, formatted, with the numbers tied together by formulas and with the evidence (file fingerprints, the steps that ran) already filled in. You add your conclusion and your tick marks.</p>
+<div class="admonition tip">
+<p class="admonition-title">Run before you file it</p>
+<p>The Workpaper Output node writes its file during a <strong>Run</strong>, never from the live
+preview. <strong>File &gt; Export Workpaper...</strong> works from the last recorded run, so Run
+again after changing a setting.</p>
+</div>
+<h2 id="on-this-page">On this page<a class="headerlink" href="#on-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#what-a-workpaper-is-and-why">What a workpaper is, and why</a></li>
+<li><a href="#two-ways-to-produce-one">Two ways to produce one</a></li>
+<li><a href="#the-workpaper-output-node">The Workpaper Output node</a></li>
+<li><a href="#the-config-dock-setting-by-setting">The Config Dock, setting by setting</a></li>
+<li><a href="#engagement-defaults-in-preferences">Engagement defaults in Preferences</a></li>
+<li><a href="#file-export-workpaper">File &gt; Export Workpaper...</a></li>
+<li><a href="#what-each-sheet-contains">What each sheet contains</a></li>
+<li><a href="#file-names-versions-and-replacing">File names, versions and replacing</a></li>
+<li><a href="#safe-by-construction-formulas-in-your-data">Safe by construction: formulas in your data</a></li>
+<li><a href="#excels-limits-and-what-happens-at-them">Excel's limits and what happens at them</a></li>
+<li><a href="#how-a-workpaper-ties-to-the-audit-trail">How a workpaper ties to the audit trail</a></li>
+<li><a href="#worked-example">Worked example</a></li>
+<li><a href="#from-the-command-line">From the command line</a></li>
+<li><a href="#errors-you-may-see">Errors you may see</a></li>
+<li><a href="#tips">Tips</a></li>
+</ul>
+<hr />
+<h2 id="what-a-workpaper-is-and-why">What a workpaper is, and why<a class="headerlink" href="#what-a-workpaper-is-and-why" title="Permanent link">&para;</a></h2>
+<p>A workpaper is <strong>reperformable evidence</strong>. A reviewer who opens it should be able to answer, without asking you:</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Where the workpaper answers it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Who prepared it, for whom, for which period?</td>
+<td><strong>Summary</strong> (Engagement block, logo)</td>
+</tr>
+<tr>
+<td>What was the test and what rule was applied?</td>
+<td><strong>Summary</strong> (Objective, Procedure, Criteria)</td>
+</tr>
+<tr>
+<td>How many items were tested and how many failed?</td>
+<td><strong>Summary</strong> (Results, with formulas tied to the Exceptions sheet)</td>
+</tr>
+<tr>
+<td>Which items failed?</td>
+<td><strong>Exceptions</strong> (one row each, with space for a tick mark and a comment)</td>
+</tr>
+<tr>
+<td>Which data was used? Is it the same file I have?</td>
+<td><strong>Summary</strong> (Source files with SHA-256 fingerprints) and <strong>Run log</strong></td>
+</tr>
+<tr>
+<td>What steps turned the raw file into the exceptions?</td>
+<td><strong>Workflow</strong> (every step and its settings)</td>
+</tr>
+<tr>
+<td>What was the result of the review?</td>
+<td><strong>Summary</strong> (Conclusion and Auditor notes: yellow cells you fill in)</td>
+</tr>
+</tbody>
+</table>
+<p>The four sheets are <strong>Summary</strong>, <strong>Exceptions</strong>, <strong>Run log</strong> and <strong>Workflow</strong>. The workpaper is a normal <code>.xlsx</code> file: you can annotate it, print it (the sheets are set to landscape, one page wide, with a footer) and attach it to your engagement file. It does not need Trigger Designer to be read.</p>
+<p>The fingerprints are SHA-256 values: a short code that changes if even one byte of a file changes. If your copy of an input file has the same SHA-256 as the one in the workpaper, it is the same file.</p>
+<hr />
+<h2 id="two-ways-to-produce-one">Two ways to produce one<a class="headerlink" href="#two-ways-to-produce-one" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Workpaper Output node</th>
+<th><strong>File &gt; Export Workpaper...</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Covers</td>
+<td><strong>One test</strong>: the exceptions of one audit node</td>
+<td><strong>The whole last run</strong>: every audit test of it</td>
+</tr>
+<tr>
+<td>When it is written</td>
+<td>During <strong>Run</strong>, as the node's step</td>
+<td>When you choose the menu entry, from the last recorded run</td>
+</tr>
+<tr>
+<td>Sheets</td>
+<td>Summary, Exceptions, Run log, Workflow</td>
+<td>Summary (one row per audit test), Run log, Workflow. <strong>No Exceptions sheet.</strong></td>
+</tr>
+<tr>
+<td>The Run log is</td>
+<td>A snapshot taken while the run is in flight</td>
+<td>The completed run</td>
+</tr>
+<tr>
+<td>Needs</td>
+<td>Nothing special (the Run log needs run recording on)</td>
+<td>A recorded run (<strong>Record every run</strong> on in Preferences)</td>
+</tr>
+<tr>
+<td>Use it for</td>
+<td>The workpaper of one test, with the exception list to tick</td>
+<td>A one-page overview of everything the run did</td>
+</tr>
+</tbody>
+</table>
+<p>Use the node for each test you will file separately. Use the menu entry for a cover sheet of the whole run.</p>
+<hr />
+<h2 id="the-workpaper-output-node">The Workpaper Output node<a class="headerlink" href="#the-workpaper-output-node" title="Permanent link">&para;</a></h2>
+<p><img alt="Workpaper Output icon (shared with File Output)" class="node-icon" src="../../assets/node_icons/Input/File%20Output.svg" /></p>
+<p>Find <strong>Workpaper Output</strong> on the <strong>Input</strong> tab of the node palette, next to File Input and File Output. It is an end point: it has three inputs and no output.</p>
+<table>
+<thead>
+<tr>
+<th>Socket</th>
+<th>Letter</th>
+<th>Carries</th>
+<th>Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Input 1</td>
+<td><strong>E</strong></td>
+<td><strong>Exceptions</strong>: the rows to list (for example the Duplicates output of a <strong>Duplicates</strong> node)</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td>Input 2</td>
+<td><strong>P</strong></td>
+<td><strong>Population</strong>: everything that was tested (for example the File Input), used to count the population and its value</td>
+<td>No</td>
+</tr>
+<tr>
+<td>Input 3</td>
+<td><strong>S</strong></td>
+<td><strong>Summary</strong>: the one-row result of an audit node, so the test name, rule and counts are copied and reconciled</td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>With nothing on <strong>E</strong> the node is red, its tooltip says "Connect the Exceptions input" and the Config Dock shows the same words. If <strong>P</strong> or <strong>S</strong> is connected but has failed upstream, the node is red too ("Population input has no data" / "Summary input has no data"): it does not silently ignore a broken input.</p>
+<p><strong>Nothing is written while you edit.</strong> The workbook is written by <strong>Run workflow</strong>, as a step of the run. In the live preview the node produces nothing.</p>
+<p>If the <strong>Amount column</strong> you chose is not in the Exceptions input, the node's tooltip says "The amount column 'x' is not in the Exceptions input".</p>
+<hr />
+<h2 id="the-config-dock-setting-by-setting">The Config Dock, setting by setting<a class="headerlink" href="#the-config-dock-setting-by-setting" title="Permanent link">&para;</a></h2>
+<p>Select the node to open its Config Dock. The header shows three chips (<code>xlsx</code>, the row limit such as <code>100,000 row limit</code>, and the "If it exists" choice in lower case) and the file name. The dock has six sections, in this order. Edits take effect on the next Run; every change is one undo step named "Workpaper <em>Setting</em> Changed".</p>
+<h3 id="file">File<a class="headerlink" href="#file" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>File</strong> (text box, with a <strong>Browse for save location</strong> icon button)</td>
+<td>empty (placeholder "Enter file path (.xlsx)")</td>
+<td>The workbook to write. Must end in <code>.xlsx</code>, and the folder must exist. The browse button opens a Save dialog ("Save workpaper", filter "Excel workbook (*.xlsx)"), adds <code>.xlsx</code> if you leave it off, starts in the folder of the last workpaper, and remembers the folder you choose.</td>
+</tr>
+<tr>
+<td><strong>If it exists</strong></td>
+<td><strong>New version</strong></td>
+<td>What to do when the file is already there. <strong>New version</strong> keeps the old file and writes <code>name (2).xlsx</code> (then <code>(3)</code>...). <strong>Replace</strong> overwrites. <strong>Stop with error</strong> refuses (<code>TD-OUT-010</code>). Hover text: "New version keeps a workpaper you already annotated".</td>
+</tr>
+</tbody>
+</table>
+<h3 id="engagement-open-by-default-can-be-collapsed">Engagement (open by default; can be collapsed)<a class="headerlink" href="#engagement-open-by-default-can-be-collapsed" title="Permanent link">&para;</a></h3>
+<p>These fill the header of the Summary sheet. <strong>A box you leave empty uses the matching <a href="#engagement-defaults-in-preferences">Preferences</a> value</strong>, which is shown in grey inside the box as its placeholder.</p>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Reference</strong></td>
+<td>empty (placeholder "e.g. C.3.1")</td>
+<td>Your workpaper reference. Shown as "Workpaper reference". Empty cells stay yellow for you to complete.</td>
+</tr>
+<tr>
+<td><strong>Client</strong></td>
+<td>empty, then Preferences &gt; Client</td>
+<td>The client. Also stored as the file's <em>Company</em> property.</td>
+</tr>
+<tr>
+<td><strong>Engagement</strong></td>
+<td>empty, then Preferences &gt; Engagement</td>
+<td>The engagement name.</td>
+</tr>
+<tr>
+<td><strong>Period</strong></td>
+<td>empty, then Preferences &gt; Period</td>
+<td>The period covered, as free text.</td>
+</tr>
+<tr>
+<td><strong>Prepared by</strong></td>
+<td>empty, then Preferences &gt; Prepared by, then your Windows user name</td>
+<td>The preparer. Also stored as the file's <em>Author</em> property.</td>
+</tr>
+<tr>
+<td><strong>Prepared on</strong></td>
+<td>empty (placeholder "today (YYYY-MM-DD)")</td>
+<td>The preparation date. Empty means the day of the Run. Anything that is not a valid <code>YYYY-MM-DD</code> date stops the run with <code>TD-OUT-012</code>.</td>
+</tr>
+<tr>
+<td><strong>Logo</strong> (with a <strong>Browse for logo image</strong> icon button)</td>
+<td>empty (placeholder "PNG or JPG"), then Preferences &gt; Logo</td>
+<td>An image shown at the top right of the Summary. PNG or JPG only. It is scaled to at most 200 by 36 pixels. A logo that cannot be read does not stop the workpaper; a line in <em>Notes and limitations</em> says "Logo not added: ...".</td>
+</tr>
+</tbody>
+</table>
+<h3 id="test">Test<a class="headerlink" href="#test" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Test name</strong></td>
+<td>empty</td>
+<td>The title of the workpaper (first line of the Summary) and "Test performed". If empty, the name from the <strong>S</strong> input is used for "Test performed", and the title says "Audit workpaper".</td>
+</tr>
+<tr>
+<td><strong>Objective</strong></td>
+<td>empty</td>
+<td>What the test is meant to show. Several lines allowed. An empty Objective leaves a yellow cell on the Summary for you to type in.</td>
+</tr>
+<tr>
+<td><strong>Procedure</strong></td>
+<td>empty</td>
+<td>What you did. Same behaviour as Objective.</td>
+</tr>
+<tr>
+<td><strong>Criteria</strong></td>
+<td>empty</td>
+<td>The rule applied. If empty, the <strong>S</strong> input's rule is used; if there is none, the cell says "Not provided - complete manually".</td>
+</tr>
+</tbody>
+</table>
+<h3 id="values">Values<a class="headerlink" href="#values" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Amount column</strong></td>
+<td>none (blank allowed)</td>
+<td>The column of the <strong>E</strong> input to total. It drives the <em>Value</em> column of the Results block and the formatting of that column on the Exceptions sheet. Pick a number column, or a text column that holds amounts (see <a href="#amounts">Amounts</a>). Hover text: "Column summed for the value statistics".</td>
+</tr>
+<tr>
+<td><strong>Decimals</strong></td>
+<td>2</td>
+<td>Decimal places (0 to 6) used to show values on the Summary and in the amount column.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sheets">Sheets<a class="headerlink" href="#sheets" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Row limit</strong></td>
+<td>100,000</td>
+<td>The most exception rows listed in the workbook (1 to 1,048,574). More than that is not cut silently: see <a href="#excels-limits-and-what-happens-at-them">Excel's limits</a>. Hint under the box: "Large workpapers can take minutes; this step may run up to 10 minutes."</td>
+</tr>
+<tr>
+<td><strong>Exceptions sheet</strong></td>
+<td><code>Exceptions</code></td>
+<td>The name of the listing sheet. Illegal characters (<code>[ ] : * ? / \</code>) become spaces, it is cut to 31 characters, and it cannot be <code>Summary</code>, <code>Run log</code>, <code>Workflow</code> or <code>Tests</code> (a number is added, for example <code>Summary (2)</code>).</td>
+</tr>
+<tr>
+<td><strong>Include run log</strong></td>
+<td>On</td>
+<td>Adds the <strong>Run log</strong> sheet.</td>
+</tr>
+<tr>
+<td><strong>Include workflow</strong></td>
+<td>On</td>
+<td>Adds the <strong>Workflow</strong> sheet.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="sources-collapsed-by-default">Sources (collapsed by default)<a class="headerlink" href="#sources-collapsed-by-default" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Control</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Extra source files</strong></td>
+<td>empty (placeholder "One path per line")</td>
+<td>Files that were read outside the workflow (for example a policy document or a manual extract). Each is listed on the Summary with its size, date and SHA-256, computed when the workpaper is written. Hover text: "Files read outside the workflow; they are hashed when the workpaper is written".</td>
+</tr>
+</tbody>
+</table>
+<p>The files read by the workflow itself (every File Input upstream of the node) are listed automatically.</p>
+<hr />
+<h2 id="engagement-defaults-in-preferences">Engagement defaults in Preferences<a class="headerlink" href="#engagement-defaults-in-preferences" title="Permanent link">&para;</a></h2>
+<p>Open <strong>Edit &gt; Settings</strong>, page <strong>General</strong>, section <strong>Engagement</strong>. Fill in once, and every Workpaper Output node and the export dialog start from these:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Placeholder</th>
+<th>Stored as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Client</strong></td>
+<td>Client name</td>
+<td><code>engagement/client_name</code></td>
+</tr>
+<tr>
+<td><strong>Engagement</strong></td>
+<td>Engagement or audit name</td>
+<td><code>engagement/engagement_name</code></td>
+</tr>
+<tr>
+<td><strong>Period</strong></td>
+<td>Period covered</td>
+<td><code>engagement/period</code></td>
+</tr>
+<tr>
+<td><strong>Prepared by</strong></td>
+<td>Defaults to your Windows user name</td>
+<td><code>engagement/preparer</code></td>
+</tr>
+<tr>
+<td><strong>Logo</strong> (with a <strong>Browse</strong> button)</td>
+<td>PNG or JPG shown on the Summary</td>
+<td><code>engagement/logo_path</code></td>
+</tr>
+</tbody>
+</table>
+<p>Each box is saved when you leave it. A value typed in the node always wins over the Preferences value. The folder last used for a workpaper is remembered as <code>export/workpaper_dir</code>. See <a href="../preferences/#engagement">Preferences</a>.</p>
+<p>A node picks up the Preferences values <strong>when you press Run</strong>, so a change in Preferences takes effect for the next Run without touching the node.</p>
+<hr />
+<h2 id="file-export-workpaper">File &gt; Export Workpaper...<a class="headerlink" href="#file-export-workpaper" title="Permanent link">&para;</a></h2>
+<p>Choose <strong>File &gt; Export Workpaper...</strong> (available while a workflow window is open). It writes a workpaper of the <strong>most recent recorded run</strong> of the workflow in front.</p>
+<ol>
+<li>If the workflow has no recorded run, a message says "There is no recorded run for this workflow yet. Run the workflow first (and keep run recording on in Preferences), then export the workpaper." Nothing is written.</li>
+<li>Otherwise the <strong>Export workpaper</strong> dialog asks for:</li>
+<li><strong>File</strong> (with a <strong>Browse for save location</strong> button). The suggestion is <code>&lt;workflow name&gt; workpaper.xlsx</code> in the last workpaper folder, or the workflow's own folder.</li>
+<li><strong>If it exists</strong>: New version (default), Replace or Stop with error, as above.</li>
+<li><strong>Engagement</strong>: <strong>Reference</strong>, <strong>Client</strong>, <strong>Engagement</strong>, <strong>Period</strong>, <strong>Prepared by</strong> (empty boxes use the Preferences values shown in grey).</li>
+<li><strong>Test</strong>: <strong>Objective</strong> and <strong>Procedure</strong>.</li>
+<li><strong>Export</strong> and <strong>Cancel</strong> buttons.</li>
+<li>On success a message gives the path. The logo comes from Preferences. The export never touches the run history: the sealed records are only read.</li>
+</ol>
+<p>The workbook has <strong>Summary</strong>, <strong>Run log</strong> and <strong>Workflow</strong>. Its Summary has a <strong>Test results</strong> table with one row per audit test of the run:</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Test</strong></td>
+<td>The test's name</td>
+</tr>
+<tr>
+<td><strong>Status</strong></td>
+<td><code>pass</code>, <code>warn</code>, <code>fail</code> or <code>error</code> (a failing status is shown in red)</td>
+</tr>
+<tr>
+<td><strong>Population rows</strong></td>
+<td>Rows tested</td>
+</tr>
+<tr>
+<td><strong>Exceptions</strong></td>
+<td>Rows flagged</td>
+</tr>
+<tr>
+<td><strong>Exception rate</strong></td>
+<td>Exceptions divided by population</td>
+</tr>
+<tr>
+<td><strong>Result</strong></td>
+<td>The rule and the outcome sentence of the test</td>
+</tr>
+</tbody>
+</table>
+<p>If the run had no audit test, the table says "No audit tests were recorded in this run." In this layout the <em>Test performed</em> row reads "Whole run: N tests" (counted from the run record; "Whole run: no audit tests recorded" when there are none) unless you typed a test name, and there are no tick marks (there is no exception list to tick).</p>
+<hr />
+<h2 id="what-each-sheet-contains">What each sheet contains<a class="headerlink" href="#what-each-sheet-contains" title="Permanent link">&para;</a></h2>
+<h3 id="summary">Summary<a class="headerlink" href="#summary" title="Permanent link">&para;</a></h3>
+<p>The first sheet, protected so the evidence cannot be changed by accident (no password: <strong>Review &gt; Unprotect Sheet</strong> removes it). Only the <strong>yellow cells</strong> can be edited. Top to bottom:</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>What is in it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Title and logo</strong></td>
+<td>The test name (or "Audit workpaper"), then "Audit workpaper generated by Trigger Designer <em>version</em> on <em>date time</em>". The logo sits at the top right.</td>
+</tr>
+<tr>
+<td><strong>Engagement</strong></td>
+<td>Workpaper reference, Client, Engagement, Period, Test performed, Prepared by, Prepared on, <strong>Reviewed by</strong> and <strong>Review date</strong> (always yellow, for the reviewer).</td>
+</tr>
+<tr>
+<td><strong>Objective and procedure</strong></td>
+<td>Objective, Procedure performed, Criteria applied.</td>
+</tr>
+<tr>
+<td><strong>Results</strong></td>
+<td>The table described below.</td>
+</tr>
+<tr>
+<td><strong>Conclusion</strong></td>
+<td>A drop-down: <em>No exceptions</em>, <em>Exceptions - explained</em> or <em>Exceptions - require follow-up</em>, and <strong>Auditor notes</strong> (free text).</td>
+</tr>
+<tr>
+<td><strong>Tick marks</strong></td>
+<td>The legend with a live count of how many rows you marked with each tick (see below).</td>
+</tr>
+<tr>
+<td><strong>Source files</strong></td>
+<td>One row per input file (see below).</td>
+</tr>
+<tr>
+<td><strong>Notes and limitations</strong></td>
+<td>Everything the writer changed or could not do, in plain sentences. "None." if nothing.</td>
+</tr>
+<tr>
+<td><strong>Workbook contents</strong></td>
+<td>The sheets of the workbook, and why a sheet was left out.</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Results</strong> columns: <strong>Measure</strong>, <strong>Rows</strong>, <strong>Value</strong>, <strong>% of population rows</strong>, <strong>% of population value</strong>, <strong>Basis</strong>. Its rows:</p>
+<table>
+<thead>
+<tr>
+<th>Row</th>
+<th>Rows / Value</th>
+<th>Basis column says</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Population tested</strong></td>
+<td>Counted from the <strong>P</strong> input; if there is none, taken from the <strong>S</strong> input; if neither, a yellow cell for you ("Not provided - enter manually"). Value is the total of the amount column on <strong>P</strong>, or "n/a" when no Amount column is set.</td>
+<td>"Counted from the Population input" / "Reported by the test node" / "Not provided - enter manually"</td>
+</tr>
+<tr>
+<td><strong>Exceptions found</strong></td>
+<td>Rows and value of the exceptions, as formulas (<code>=B24</code>) so they follow what the sheet lists. If the list is truncated, the true totals are written as numbers. The two percentages are exceptions divided by population (<code>n/a</code> when there is no population).</td>
+<td>"No exceptions noted" or "Counted from the Exceptions input"</td>
+</tr>
+<tr>
+<td><strong>Exceptions listed in this workbook</strong></td>
+<td><code>=COUNT(...)</code> and <code>=SUM(...)</code> over the Exceptions sheet.</td>
+<td>"All exceptions are listed", or <strong>"TRUNCATED: first N of M listed"</strong> in red</td>
+</tr>
+<tr>
+<td><strong>Full exception list (CSV)</strong></td>
+<td>Name, row count and SHA-256 of the CSV file, or "Not needed - all exceptions are listed in this workbook".</td>
+<td></td>
+</tr>
+<tr>
+<td><strong>Reconciliation to test result</strong></td>
+<td>Compares the exceptions received with the count the audit node reported on <strong>S</strong>: "Agrees to the test node (6 exceptions)", or in red "DIFFERENCE: the test node reported X exceptions but Y were received". With no <strong>S</strong>: "No test result supplied".</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Every figure has a <strong>cached value</strong> as well as the formula, so previewers that do not recalculate (a phone, a mail preview) still show numbers.</p>
+<p><strong>Tick marks</strong> are fixed: <strong>✓</strong> Agreed to source document, <strong>X</strong> Exception confirmed, <strong>E</strong> Explained - see comment, <strong>F</strong> Follow-up required, <strong>N/A</strong> Not applicable. You choose them from a drop-down in the Exceptions sheet; the Summary counts them with <code>COUNTIF</code>.</p>
+<p><strong>Source files</strong> columns: <strong>File</strong>, <strong>Sheet</strong>, <strong>Rows read</strong>, <strong>Size (bytes)</strong>, <strong>Modified (UTC)</strong>, <strong>SHA-256</strong>. The list is the input files recorded by the run (their fingerprints are taken <em>before</em> the file is read), then your <em>Extra source files</em>, de-duplicated. A file that has since been moved keeps its row, and the SHA-256 cell says "file not found or not computed". Files larger than 4 GB are not hashed. <em>Rows read</em> comes from the run record; while the run is still going (a single-test workpaper) the count is taken from the rows the input step produced, and says "not recorded" only when that is not known either (for example a folder of several files, where one count cannot be split).</p>
+<h3 id="exceptions">Exceptions<a class="headerlink" href="#exceptions" title="Permanent link">&para;</a></h3>
+<p>The listing of the <strong>E</strong> input.</p>
+<table>
+<thead>
+<tr>
+<th>Column</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A: Ref</strong></td>
+<td>1, 2, 3...: a stable reference to quote in comments.</td>
+</tr>
+<tr>
+<td><strong>B: Tick mark</strong></td>
+<td>A drop-down (✓, X, E, F, N/A) for you.</td>
+</tr>
+<tr>
+<td><strong>C: Auditor comment</strong></td>
+<td>Free text for you.</td>
+</tr>
+<tr>
+<td><strong>D onwards</strong></td>
+<td>Your columns, in their order.</td>
+</tr>
+</tbody>
+</table>
+<p>Row 1 is a banner: "Showing all 6 exception rows." (or "No exceptions noted."), or in red <strong>"TRUNCATED - showing the first N of M exception rows. The complete list is in <em>file</em>."</strong> (and the tab turns red). Row 2 holds the headers (a column called <code>Ref</code>, <code>Tick mark</code> or <code>Auditor comment</code> in your data gets " (data)" added; an unnamed column becomes <code>Column 3</code>). The headers, and the Ref column, are frozen; there are filter buttons; the sheet repeats its header when printed. <strong>This sheet is not protected</strong>, so you can sort, tick and comment.</p>
+<p>How values are shown: numbers as numbers, dates as <code>yyyy-mm-dd</code>, times and timestamps as Excel dates (time zones removed; the clock time is kept, and the Summary says which columns), durations as seconds (header ends "(seconds)"), blanks as truly empty cells, true/false as booleans. Whole-number columns whose name looks like an identifier (<code>id</code>, <code>no</code>, <code>number</code>, <code>ref</code>, <code>code</code>, <code>account</code>, <code>invoice</code>, <code>po</code>...) have no thousands separator. Whole numbers of 15 digits or more are kept as text, because Excel keeps only 15 significant digits.</p>
+<h4 id="amounts">Amounts<a class="headerlink" href="#amounts" title="Permanent link">&para;</a></h4>
+<p>The <strong>Amount column</strong> is shown with your <strong>Decimals</strong> and totalled. If the column is text, amounts such as <code>1,234.50</code>, <code>(12.00)</code> (read as -12) and <code>7</code> are read as numbers. European and Swiss forms are understood too: <code>12,5</code> and <code>1.234,50</code> are read as 12.5 and 1234.5, <code>1'234.50</code> as 1234.5. A single comma followed by exactly three digits (<code>1,234</code>) is a thousands separator. Values that cannot be read at all stay as text, are not totalled, and are counted in a line of <em>Notes and limitations</em>. The totals are sums of floating point numbers.</p>
+<h3 id="run-log">Run log<a class="headerlink" href="#run-log" title="Permanent link">&para;</a></h3>
+<p>The evidence of the run: who ran what, with what, and what each step did.</p>
+<table>
+<thead>
+<tr>
+<th>Block</th>
+<th>What it shows</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Banner</strong></td>
+<td>"Completed run." or "Snapshot taken while the workflow was running: steps up to and including <em>X</em> are listed; this step is listed as in progress at the end; later steps are not." The node's workpaper is written <em>during</em> the run, so it is a snapshot (status <code>running</code>, no finish time); the last row, <strong>Workpaper Output (this workpaper)</strong>, has the status "in progress" and stands for the workpaper step itself.</td>
+</tr>
+<tr>
+<td><strong>Run header</strong></td>
+<td>Run ID, Status, Started and Finished (UTC), Run by (<code>user@machine</code>), Application version, Python, Polars, Workflow file, <strong>Workflow SHA-256</strong>.</td>
+</tr>
+<tr>
+<td><strong>Files</strong></td>
+<td>One row per file: Role (<code>input</code> or <code>output</code>), Path, Sheet, Size, Modified (UTC), SHA-256.</td>
+</tr>
+<tr>
+<td><strong>Steps</strong></td>
+<td><strong>Step</strong>, <strong>Node</strong>, <strong>Type</strong>, <strong>Status</strong>, <strong>Started (UTC)</strong>, <strong>Duration (s)</strong>, <strong>Rows out</strong>, <strong>Message</strong> (the warnings, or for a failed step its plain-language error and hint; failed steps are shaded red). <em>Rows out</em> is "not counted" when the run did not count rows for that step.</td>
+</tr>
+</tbody>
+</table>
+<p>The sheet is protected like the Summary. When the run was not recorded, the sheet is <strong>left out</strong> and the Summary says why: "no run record is available (run recording is off or not installed)". Switching off <strong>Include run log</strong> leaves it out too ("turned off in the node settings").</p>
+<h3 id="workflow">Workflow<a class="headerlink" href="#workflow" title="Permanent link">&para;</a></h3>
+<p>"Steps that produced the data in this workpaper, in the order they ran." One row per step upstream of the node: <strong>Step</strong>, <strong>Node</strong>, <strong>Type</strong>, <strong>What it does (settings)</strong> (one <code>Label: value</code> line per setting, long values cut at 300 characters; a <strong>File Input</strong> step reads, for example, <code>Source</code>, <code>Source type</code>, <code>Delimiter</code>, <code>Encoding</code>, <code>Sheet</code> or <code>Sheets</code>, <code>Row limit</code> and the folder or pattern options, and leaves out internal bookkeeping) and <strong>Takes data from</strong> (the nodes feeding it). Below, under <strong>Notes in the workflow</strong>, every <strong>Comment</strong> node on the canvas is copied word for word, so your explanations travel with the evidence. Protected like the Summary. If no workflow information is supplied the sheet is left out with the reason on the Summary.</p>
+<hr />
+<h2 id="file-names-versions-and-replacing">File names, versions and replacing<a class="headerlink" href="#file-names-versions-and-replacing" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>New version</strong> (the default) never overwrites. The first Run writes <code>wp.xlsx</code>; the next writes <code>wp (2).xlsx</code>, then <code>wp (3).xlsx</code>. Your annotated copy is safe. The CSV list, when there is one, is versioned the same way.</li>
+<li><strong>Replace</strong> overwrites the workbook. If the old file is open in Excel (Excel makes a hidden <code>~$wp.xlsx</code> lock file next to it) the Run stops with <code>TD-OUT-002</code>, "open in Excel".</li>
+<li><strong>Stop with error</strong> refuses to write when <code>wp.xlsx</code> (or its CSV) exists: <code>TD-OUT-010</code>.</li>
+<li>The workbook is built in a temporary folder and moved into place <strong>last</strong>, so a failure never leaves a half-written file, and an existing file is never damaged by a failed Run.</li>
+<li>The run record names the workbook that was really written, with the version number (see <a href="#how-a-workpaper-ties-to-the-audit-trail">below</a>).</li>
+</ul>
+<hr />
+<h2 id="safe-by-construction-formulas-in-your-data">Safe by construction: formulas in your data<a class="headerlink" href="#safe-by-construction-formulas-in-your-data" title="Permanent link">&para;</a></h2>
+<p>Data from other people can contain text that Excel would run as a formula, for example <code>=HYPERLINK(...)</code>, or <code>-2+3</code>. Opening such a cell, or re-entering it, can run the formula, open a link or leak data. The workpaper protects you:</p>
+<ul>
+<li><strong>Every piece of text from your data is stored as text</strong>, never as a formula, number or link. The workbook is created with those conversions switched off.</li>
+<li><strong>Text that starts with <code>=</code>, <code>@</code>, a tab or a carriage return</strong>, or with <strong><code>+</code> or <code>-</code> followed by anything other than a plain number</strong>, also gets Excel's <em>quote prefix</em> format, so editing the cell and pressing Enter keeps it as text. A plain signed number such as <code>-12.50</code> or <code>+5</code> is not touched.</li>
+<li><strong>The CSV list gets the same treatment:</strong> the risky cells begin with an apostrophe (<code>'=1+1</code>).</li>
+<li>Control characters in text are replaced by the replacement character (U+FFFD) and a line in the Summary counts them.</li>
+<li>The only formulas in the workbook are the ones the writer itself created (the Summary's <code>COUNT</code>, <code>SUM</code>, <code>COUNTIF</code> and <code>IFERROR</code>).</li>
+</ul>
+<p>You can see it in the <a href="#worked-example">worked example</a>: a note <code>=1+1</code> in the data is still the text <code>=1+1</code> in the Exceptions sheet.</p>
+<hr />
+<h2 id="excels-limits-and-what-happens-at-them">Excel's limits and what happens at them<a class="headerlink" href="#excels-limits-and-what-happens-at-them" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Limit</th>
+<th>What the workpaper does</th>
+<th>Code</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Rows.</strong> A sheet holds 1,048,576 rows; the workpaper uses 2 for the banner and header, so at most <strong>1,048,574</strong> exceptions can be listed.</td>
+<td>The <strong>Row limit</strong> (default 100,000) lists the first rows. Above it the sheet lists the <strong>first N rows and says so</strong>: the red banner, the red tab, the red "TRUNCATED" line and the totals on the Summary, and a note. <strong>Every row</strong> is written to <code>&lt;workbook name&gt;_exceptions_full.csv</code> next to the workbook (its row count and SHA-256 are on the Summary). Nothing is dropped silently.</td>
+<td>none (a warning in the Logs)</td>
+</tr>
+<tr>
+<td><strong>Columns.</strong> 16,384 per sheet; the workpaper adds three.</td>
+<td>More than <strong>16,381</strong> data columns: the Run stops. Select fewer columns first.</td>
+<td><code>TD-OUT-011</code></td>
+</tr>
+<tr>
+<td><strong>Text in a cell.</strong> 32,767 characters.</td>
+<td>Longer text is shortened with a marker ("...[shortened from N characters; full text in the CSV file]"), a note is added, and the full list goes to the CSV even if the row limit was not reached.</td>
+<td>none</td>
+</tr>
+<tr>
+<td><strong>Sheet names.</strong> 31 characters, no <code>[ ] : * ? / \</code>.</td>
+<td>The name is cleaned and cut, and kept unique.</td>
+<td>none</td>
+</tr>
+<tr>
+<td><strong>Whole table to one sheet.</strong> (File Output as Excel, and the Data Preview export, not the workpaper.)</td>
+<td>Refused rather than cut: more than 1,048,575 data rows.</td>
+<td><code>TD-OUT-013</code></td>
+</tr>
+<tr>
+<td><strong>Excel cannot create the file</strong> (unusable cell content or sheet name).</td>
+<td>The Run stops; nothing is written.</td>
+<td><code>TD-OUT-014</code></td>
+</tr>
+</tbody>
+</table>
+<p>The workpaper never refuses for rows: it lists what fits and writes the rest to the CSV. <code>TD-OUT-013</code> applies to the one-sheet exports only.</p>
+<p>Size and time: a 500,000-row exception list (8 columns) took between 34 and 47 seconds and about 205 MB extra memory in the benchmark on the developer's machine (more than the editor's usual 30-second step limit, which is why this step gets 10 minutes); memory stays bounded however long the list is, because rows are written in batches. The editor stops most steps at <strong>30 seconds</strong> but waits up to <strong>10 minutes</strong> for Workpaper Output (<code>TD-RUN-001</code> if even that is exceeded); see <a href="../running-workflows/#time-and-memory-limits">Time and memory limits</a>. For a very long list, lower the <strong>Row limit</strong>, which keeps the workbook small and quick to open; the CSV still carries every row.</p>
+<hr />
+<h2 id="how-a-workpaper-ties-to-the-audit-trail">How a workpaper ties to the audit trail<a class="headerlink" href="#how-a-workpaper-ties-to-the-audit-trail" title="Permanent link">&para;</a></h2>
+<p>Every Run is recorded in the <a href="../run-history-and-audit-trail/">run history</a> (when <strong>Record every run</strong> is on). The Workpaper Output node adds to it:</p>
+<ul>
+<li>The <strong>workbook is an output of the run</strong>. The run record lists it with its <strong>SHA-256</strong>, the same value you get by hashing the file afterwards. Open <strong>Window &gt; Run History</strong>, select the run, and compare. If somebody edits the workbook later, its fingerprint no longer matches the record, so you can show which version came out of the run. (Annotating your own copy, of course, changes it: keep the original, which <strong>New version</strong> does for you.)</li>
+<li>The workpaper's <strong>Run log</strong> sheet carries the matching evidence: the run ID, the <strong>workflow's SHA-256</strong>, and the input files with the fingerprints taken before they were read.</li>
+<li>Because the node's workpaper is written <em>during</em> the run, its Run log is a snapshot. The sealed, final record is in Run History; <strong>File &gt; Export Workpaper...</strong> gives a workpaper of that final record.</li>
+</ul>
+<hr />
+<h2 id="worked-example">Worked example<a class="headerlink" href="#worked-example" title="Permanent link">&para;</a></h2>
+<p>This is a real run, with a small file, to show what comes out. The input <code>payments.csv</code> has ten payments, three of them paid twice, and two cells that would be dangerous in Excel:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>vendor,invoice_no,amount,paid_on,note
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>Acme Ltd,INV-1001,"1,250.00",2025-01-05,
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>Borealis,INV-2001,980.50,2025-01-06,
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>Acme Ltd,INV-1001,"1,250.00",2025-01-19,paid twice?
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>Zenith,INV-3003,4200.00,2025-01-20,
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>Zenith,INV-3003,4200.00,2025-01-27,=1+1
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>Cobalt,INV-4004,310.25,2025-02-02,
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>Cobalt,INV-4005,310.25,2025-02-03,
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>Borealis,INV-2001,980.50,2025-02-10,-2+3
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>Delta,INV-5005,75.00,2025-02-11,
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>Acme Ltd,INV-1002,640.00,2025-02-12,
+</span></code></pre></div>
+<p>The workflow:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>File Input --+--&gt; Duplicates (D) --------&gt; Workpaper Output  E
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>             |                  (S) -----&gt; Workpaper Output  S
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>             +--------------------------&gt;  Workpaper Output  P
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>Comment: "Reviewed with the AP manager."
+</span></code></pre></div>
+<p><strong>Duplicates</strong> has <em>Key columns</em> <code>vendor</code>, <code>invoice_no</code>, <code>amount</code>; <strong>Workpaper Output</strong> has Reference <code>C.3.1</code>, Client <code>Acme Holdings</code>, Engagement <code>FY2025 audit</code>, Period <code>Year ended 31 December 2025</code>, Prepared by <code>A. Auditor</code>, Prepared on <code>2026-03-31</code>, Test name <code>Duplicate vendor payments</code>, an Objective and a Procedure, and Amount column <code>amount</code>. After <strong>Run workflow</strong> the file <code>duplicate_payments.xlsx</code> appears, with the sheets <code>Summary</code>, <code>Exceptions</code>, <code>Run log</code>, <code>Workflow</code>.</p>
+<h3 id="summary-trimmed">Summary (trimmed)<a class="headerlink" href="#summary-trimmed" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>A1  Duplicate vendor payments
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>A2  Audit workpaper generated by Trigger Designer 0.1.0 on 2026-10-31 00:24
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>Engagement
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>  Workpaper reference   C.3.1
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>  Client                Acme Holdings
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>  Engagement            FY2025 audit
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>  Period                Year ended 31 December 2025
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>  Test performed        Duplicate vendor payments
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>  Prepared by           A. Auditor
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>  Prepared on           2026-03-31
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>  Reviewed by           (yellow)
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>  Review date           (yellow)
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>Objective and procedure
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>  Objective             Show that no invoice was paid twice.
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>  Procedure performed   Matched vendor, invoice number and amount across the 2025 payments file.
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>  Criteria applied      Rows with the same vendor, invoice_no and amount are duplicates
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>                        (spaces around text trimmed, case-sensitive).
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>Results
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>  Measure                              Rows     Value       % pop rows  % pop value  Basis
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>  Population tested                    10       14,196.50                            Counted from the Population input
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>  Exceptions found                     6        12,861.00   60.00%      90.59%       Counted from the Exceptions input
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>  Exceptions listed in this workbook   6        12,861.00                            All exceptions are listed
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>  Full exception list (CSV)            Not needed - all exceptions are listed in this workbook
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>  Reconciliation to test result        Agrees to the test node (6 exceptions)
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>Conclusion / Auditor notes             (yellow)
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>Tick marks   ✓ Agreed to source document 0 | X Exception confirmed 0 | E Explained - see comment 0 |
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>             F Follow-up required 0 | N/A Not applicable 0
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>Source files
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>  File: .../in/payments.csv   Rows read: 10   Size: 425
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>  Modified: 2026-10-30T18:54:32Z   SHA-256: 80f16f0f4b8c9db80f150b4ecb11a79d26b94eb89c1239162b699789ba1e48a6
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>Notes and limitations: Values are summed as floating point numbers.
+</span><span id="__span-2-39"><a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>Workbook contents:     Summary, Exceptions, Run log, Workflow
+</span></code></pre></div>
+<p>Behind the numbers: <code>B23</code> is <code>=B24</code>, <code>B24</code> is <code>=COUNT('Exceptions'!$A$3:$A$8)</code>, <code>C24</code> is <code>=SUM('Exceptions'!$F$3:$F$8)</code> and <code>D23</code> is <code>=IFERROR(B23/B22,"n/a")</code>. The amounts were read from text (<code>1,250.00</code> became 1250), which is why the value of the six exceptions is 12,861.00.</p>
+<h3 id="exceptions_1">Exceptions<a class="headerlink" href="#exceptions_1" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>A1  Showing all 6 exception rows.
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>Ref  Tick mark  Auditor comment  vendor    invoice_no  amount  paid_on     note          dup_group_id  dup_count
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>1                                Acme Ltd  INV-1001    1250    2025-01-05                1             2
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>2                                Acme Ltd  INV-1001    1250    2025-01-19  paid twice?   1             2
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>3                                Borealis  INV-2001    980.5   2025-01-06                2             2
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>4                                Borealis  INV-2001    980.5   2025-02-10  -2+3          2             2
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>5                                Zenith    INV-3003    4200    2025-01-20                3             2
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>6                                Zenith    INV-3003    4200    2025-01-27  =1+1          3             2
+</span></code></pre></div>
+<p><code>Tick mark</code> and <code>Auditor comment</code> are empty for you to fill in. In <code>note</code>, <code>-2+3</code> and <code>=1+1</code> are <strong>text</strong> with the quote prefix, not formulas (the cells show exactly what the data said).</p>
+<h3 id="run-log-trimmed">Run log (trimmed)<a class="headerlink" href="#run-log-trimmed" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>A2  Snapshot taken while the workflow was running: steps up to and including Duplicates are listed;
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    this step is listed as in progress at the end; later steps are not.
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>Run ID 7f65b31a2ec1481c94bbbf2359c6d8df   Status running   Started (UTC) 2026-10-30T18:54:34.890001Z
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>Run by alice@WORKSTATION01    Application version 0.1.0a1   Python 3.14.8   Polars 2.0.0
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>Workflow SHA-256  552818fbaf33ac0b7a1df9a9fbc5bf74289b7a4711518925cfdbfac934ce1555
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>Role   Path               Size  Modified (UTC)               SHA-256
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>input  .../in/payments.csv  425  2026-10-30T18:54:32.205544Z  80f16f0f4b8c9db80f150b4ecb11a79d26b94eb89c1239162b699789ba1e48a6
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>Step  Node        Type        Status  Started (UTC)                Duration (s)  Rows out
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>1     File Input  File Input  ok      2026-10-30T18:54:34.941898Z  0.00626       10
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>2     Duplicates  Duplicates  ok      2026-10-30T18:54:34.948224Z  0.00917       11
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>3     Workpaper Output (this workpaper)  in progress  (time of writing)  in progress  not counted
+</span></code></pre></div>
+<p>(<em>Rows out</em> of Duplicates is 11: 6 duplicates, 4 unique rows and the one-row summary.)</p>
+<h3 id="workflow-trimmed">Workflow (trimmed)<a class="headerlink" href="#workflow-trimmed" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Step  Node        What it does (settings)                                        Takes data from
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>1     File Input  Filepath: .../in/payments.csv, File type: csv, Delimiter: ...
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>2     Duplicates  Key columns: ["vendor", "invoice_no", "amount"]               File Input
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                  Mode: exact / Trim text: yes / Ignore case: no / Tolerance: 0.0 ...
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>Notes in the workflow
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>  Note  Reviewed with the AP manager.
+</span></code></pre></div>
+<h3 id="the-audit-trail">The audit trail<a class="headerlink" href="#the-audit-trail" title="Permanent link">&para;</a></h3>
+<p>After the Run, <strong>Window &gt; Run History</strong> lists the run with the workbook as an output. Its SHA-256 (<code>bce72a5c...8370a</code> in this run) is the SHA-256 of <code>duplicate_payments.xlsx</code>, as you can check with <code>certutil -hashfile duplicate_payments.xlsx SHA256</code>.</p>
+<h3 id="the-whole-run">The whole run<a class="headerlink" href="#the-whole-run" title="Permanent link">&para;</a></h3>
+<p><strong>File &gt; Export Workpaper...</strong> on the same run gives <code>Summary</code>, <code>Run log</code> and <code>Workflow</code> (no Exceptions). Its <strong>Test results</strong> table:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>Test        Status  Population rows  Exceptions  Exception rate  Result
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>Duplicates  fail    10               6           60.00%          Rows with the same vendor, invoice_no and amount are duplicates (spaces ...
+</span></code></pre></div>
+<p>and its Run log reads "Completed run.", Status <code>ok</code>, with all four steps, the Workpaper Output step among them, and the workbook as an <code>output</code> with its fingerprint.</p>
+<hr />
+<h2 id="from-the-command-line">From the command line<a class="headerlink" href="#from-the-command-line" title="Permanent link">&para;</a></h2>
+<p>A workflow with a Workpaper Output node runs unattended with <code>trigger-designer-cli</code> like any other (see <a href="../cli/">Command line</a>). Approve it once, then run it:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>&gt; trigger-designer-cli approve dup_payments.tds --yes
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>...
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>operations:
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>  audit.duplicates: 1
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>  input.file_input: 1
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>  input.workpaper_output: 1
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>  report.comment: 1
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>writes:
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>  ...\gui\duplicate_payments.xlsx
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>&gt; trigger-designer-cli run dup_payments.tds --output-dir D:\audit\out --create-output-dirs
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>... INFO    node.started node_id=... title=Workpaper Output op=input.workpaper_output index=2 total=4
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>... INFO    node.finished ... title=Workpaper Output status=ok duration_s=0.266
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>... INFO    output.committed path=...\duplicate_payments.xlsx size_bytes=11526 sha256=1823177c...
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>... INFO    run.finished status=ok exit_code=0 ... nodes_ok=4 nodes_failed=0
+</span></code></pre></div>
+<p>What was checked in a real run:</p>
+<ul>
+<li><strong><code>--output-dir</code> moves the workbook.</strong> The file was written to <code>D:\audit\out\duplicate_payments.xlsx</code> and not to the folder saved in the workflow. The <code>output.committed</code> line gives the SHA-256 of the workbook, and it equals the hash of the file.</li>
+<li><strong><code>approve</code> and <code>info</code> list the workbook</strong> under <code>writes</code>, so a reviewer approving the workflow sees where it will write.</li>
+<li><strong>The Exceptions, Summary and Workflow sheets are the same as from the editor.</strong> The workflow still carries the Comment notes. The Engagement defaults come from the Preferences of the Windows user who runs the command, unless the node has its own values.</li>
+<li><strong>The Run log sheet is there.</strong> The command line gives the workpaper a snapshot of the run in flight, exactly as the editor does: the steps before the workpaper with status, start time and duration. With <code>--no-record</code> the sheet is left out and the Summary says "The Run log sheet was omitted: no run record is available (run recording is off or not installed)". The command line also writes its own run record (<code>record_path</code> on the <code>run.finished</code> line).</li>
+<li><strong>A truncated list works as in the editor.</strong> When the exceptions exceed the <strong>Row limit</strong>, <code>duplicate_payments_exceptions_full.csv</code> is written next to the final workbook (in the <code>--output-dir</code> folder) and the Summary names it.</li>
+<li><strong>Versions work too.</strong> A second run with <strong>If it exists</strong> on <strong>New version</strong> writes <code>duplicate_payments (2).xlsx</code> and <code>duplicate_payments (2)_exceptions_full.csv</code> beside the first ones. The numbered name is chosen before the write, and <strong>Stop with error</strong> refuses an existing file before anything runs.</li>
+<li><strong>Extra source files follow <code>--input-dir</code></strong>, like a File Input.</li>
+</ul>
+<hr />
+<h2 id="errors-you-may-see">Errors you may see<a class="headerlink" href="#errors-you-may-see" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Code</th>
+<th>What it means</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TD-OUT-001</code></td>
+<td>The output folder does not exist.</td>
+<td>Create it, or choose an existing folder.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-002</code></td>
+<td>The workbook is open in Excel (or read-only).</td>
+<td>Close it and run again, or choose another name.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-003</code></td>
+<td>The Excel writer component (<code>xlsxwriter</code>) is missing from this installation.</td>
+<td>Export CSV or Parquet instead, or reinstall.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-010</code></td>
+<td><strong>A workpaper with this name already exists</strong> and <strong>If it exists</strong> is <strong>Stop with error</strong> (or the CSV list already exists).</td>
+<td>Choose another file name, or set <strong>If it exists</strong> to <strong>New version</strong>.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-011</code></td>
+<td><strong>Too many columns:</strong> the Exceptions input has more than 16,381 columns (16,384 less the three the workpaper adds).</td>
+<td>Select fewer columns before Workpaper Output.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-012</code></td>
+<td><strong>The settings are not valid:</strong> no file chosen, the file does not end in <code>.xlsx</code>, or <strong>Prepared on</strong> is not a <code>YYYY-MM-DD</code> date.</td>
+<td>Fix the named setting.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-013</code></td>
+<td><strong>A table is too large for an Excel sheet</strong> (more than 1,048,575 data rows). Raised by File Output as Excel and the Data Preview export. The workpaper lists what fits and writes the rest to a CSV instead.</td>
+<td>Save as CSV or Parquet.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-014</code></td>
+<td><strong>Excel could not create the workbook:</strong> a sheet name or cell content that Excel refuses.</td>
+<td>Rename the sheet (<strong>Exceptions sheet</strong>) or shorten the offending text.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-015</code></td>
+<td><strong>Excel output must use the .xlsx extension</strong> (File Output with Excel selected and a name ending in <code>.xls</code>; not raised by Workpaper Output, which reports <code>TD-OUT-012</code>).</td>
+<td>Rename the file to end in <code>.xlsx</code>.</td>
+</tr>
+<tr>
+<td><code>TD-OUT-005</code></td>
+<td>The disk is full.</td>
+<td>Free space or use another drive.</td>
+</tr>
+</tbody>
+</table>
+<p>Also: <em>Workpaper Output has no output file; choose one before running.</em> (a workflow with an empty <strong>File</strong> is flagged when it is opened and before Run). A Workpaper Output step that takes more than 10 minutes in the editor (30 seconds for other steps) stops with <code>TD-RUN-001</code> (<a href="../running-workflows/#time-and-memory-limits">Running workflows</a>); the workpaper step notices that the run has given up on it and does not write the workbook afterwards, so no file appears from a failed run. Lower the <strong>Row limit</strong> and run again.</p>
+<hr />
+<h2 id="tips">Tips<a class="headerlink" href="#tips" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Set your <strong>Preferences &gt; Engagement</strong> once per engagement, and leave the node's Client, Engagement, Period and Prepared by empty.</li>
+<li>Connect all three inputs when you can. <strong>P</strong> gives you the population and its value, <strong>S</strong> gives the rule and proves the exception count agrees.</li>
+<li>Fill <strong>Test name</strong>, <strong>Objective</strong> and <strong>Procedure</strong> in the node, so the workpaper needs only your conclusion.</li>
+<li>Keep <strong>If it exists</strong> on <strong>New version</strong> while you work and Replace only for a scratch file.</li>
+<li>Put a <strong>Comment</strong> node on the canvas near the steps you want to explain. It is copied to the Workflow sheet.</li>
+<li>Hash and keep the original: the version you annotate is a different file from the one in the run record.</li>
+<li>Do the sampling, then the workpaper: connect a <strong>Sample</strong> node's output to <strong>E</strong> to document the items selected for testing.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../../nodes/audit/risk-filters/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Risk Filters">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Risk Filters
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../cli/" class="md-footer__link md-footer__link--next" aria-label="Next: Command line">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Command line
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>

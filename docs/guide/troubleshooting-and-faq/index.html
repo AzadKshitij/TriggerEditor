@@ -1,0 +1,3645 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="User guide and node reference for Trigger Designer, a visual workbench for building data pipelines without writing code.">
+      
+      
+        <meta name="author" content="Azad Kshitij">
+      
+      
+        <link rel="canonical" href="https://azadkshitij.github.io/TriggerEditor/docs/guide/troubleshooting-and-faq/">
+      
+      
+      
+        <link rel="prev" href="../cli/">
+      
+      
+        <link rel="next" href="../../versions/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/logo.png">
+      <meta name="generator" content="zensical-0.0.74">
+    
+    
+      
+        <title>Troubleshooting and FAQ - Trigger Designer</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../../assets/stylesheets/modern/main.4ab2de0c.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/modern/palette.b60ce83d.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-hidden="true"></label>
+    <div data-md-component="skip">
+      <a href="#__skip" class="md-skip">
+        Skip to content
+      </a>
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Trigger Designer" class="md-header__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+      <span class="md-visually-hidden">Navigation</span>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Trigger Designer
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Troubleshooting and FAQ
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+          <span class="md-visually-hidden">Search</span>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="Search">
+  <button type="button" class="md-search__button">
+    Search
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+        <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Trigger Designer" class="md-nav__button md-logo" aria-label="Trigger Designer" data-md-component="logo">
+      
+  <img src="../../assets/logo.png" alt="Trigger Designer">
+
+    </a>
+    Trigger Designer
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/AzadKshitij/TriggerEditor" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.3.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2026 Fonticons, Inc.--><path fill="currentColor" d="M216.5 362.5c-66-8-112.5-55.5-112.5-117 0-25 9-52 24-70-6.5-16.5-5.5-51.5 2-66 20-2.5 47 8 63 22.5 19-6 39-9 63.5-9s44.5 3 62.5 8.5c15.5-14 43-24.5 63-22 7 13.5 8 48.5 1.5 65.5 16 19 24.5 44.5 24.5 70.5 0 61.5-46.5 108-113.5 116.5 17 11 28.5 35 28.5 62.5v52c0 15 12.5 23.5 27.5 17.5C441 459.5 512 369 512 257 512 115.5 397 0 255.5 0S0 115.5 0 257c0 111 70.5 203 165.5 237.5 13.5 5 26.5-4 26.5-17.5v-40c-7 3-16 5-24 5-33 0-52.5-18-66.5-51.5-5.5-13.5-11.5-21.5-23-23-6-.5-8-3-8-6 0-6 10-10.5 20-10.5 14.5 0 27 9 40 27.5 10 14.5 20.5 21 33 21s20.5-4.5 32-16c8.5-8.5 15-16 21-21"/></svg>
+  </div>
+  <div class="md-source__repository">
+    AzadKshitij/TriggerEditor
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://azadkshitij.github.io/TriggerEditor/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Project home
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-book-open" viewBox="0 0 24 24"><path d="M12 5v16M20.001 19A2 2 0 0 0 22 17V5a2 2 0 0 0-1.999-2L16 3.002A5 5 0 0 0 12 5a5 5 0 0 0-4-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 1.999 2H8a5 5 0 0 1 4 2 5 5 0 0 1 4-2z"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Documentation
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../install/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Install
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-rocket" viewBox="0 0 24 24"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"/><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Getting started
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../blog/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-newspaper" viewBox="0 0 24 24"><path d="M15 18h-5M18 14h-8M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2"/><rect width="8" height="4" x="10" y="6" rx="1"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Blog
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../release-notes/v0.1.0-alpha.1/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-tag" viewBox="0 0 24 24"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Release notes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Concepts
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Concepts
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../canvas-and-nodes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  The canvas and nodes
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../config-dock-and-preview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Config Dock, preview, logs and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../running-workflows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running workflows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../errors-and-problems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Errors and problems
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sql-expressions/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-database" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL expressions
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../files-and-formats/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Files and formats
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../run-history-and-audit-trail/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Run history and the audit trail
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../limits-and-performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Limits and performance
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../security-and-privacy/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Security and privacy
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../preferences/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preferences
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Nodes
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8" id="__nav_8_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_8_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Nodes
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_2" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/input-output/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Input and Output
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_2" id="__nav_8_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_2_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_2">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Input and Output
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-input/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Input
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/file-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  File Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/input-output/workpaper-output/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpaper Output
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_3" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/preparation/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Preparation
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_3" id="__nav_8_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_3_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_3">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Preparation
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/cleansing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Cleansing
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/filter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Filter
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/formula-reference/" class="md-nav__link">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-function-square" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3M9 11.2h5.7"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Formula reference
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/multi-field-formula/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Multi-Field Formula
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/aggregate/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Aggregate
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/sort/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sort
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/unique/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unique
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/split/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Split
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/rows/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Rows
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/normalize/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Normalize
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/record-id/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Record ID
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/select-records/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Select Records
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/find-and-replace/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Find and Replace
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/date-helper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Date Helper
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/preparation/text-to-columns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Text to Columns
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_4" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/join/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_4" id="__nav_8_4_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_4_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_4">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Join
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/join/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Join
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/append/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Append
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/union/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Union
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/reconcile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Reconcile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/join/fuzzy-match/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Fuzzy Match
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_5" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/transform/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transform
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_5" id="__nav_8_5_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_5_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_5">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Transform
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/count/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Count
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/running-total/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Running Total
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/transpose/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Transpose
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/pivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Pivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/unpivot/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Unpivot
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/window/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Window
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/transform/sql-query/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  SQL Query
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_6" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/report/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Report
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_6" id="__nav_8_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_6_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_6">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Report
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/graph/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Graph
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/data-profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Data Profile
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/report/comment/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Comment
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_8_7" >
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../nodes/audit/" class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Audit
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_8_7" id="__nav_8_7_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        
+          <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_8_7_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_8_7">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Audit
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/duplicates/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Duplicates
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/gaps/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Gaps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/benford/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Benford
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/sample/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Sample
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../nodes/audit/risk-filters/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Risk Filters
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../workpaper/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Workpapers
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Command line
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-life-buoy" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24"/><circle cx="12" cy="12" r="4"/></svg>
+  
+  <span class="md-ellipsis">
+    
+  
+  Troubleshooting and FAQ
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-file-is-locked-or-open-in-excel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A file is locked or open in Excel
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#my-numbers-are-treated-as-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        My numbers are treated as text
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#my-dates-are-not-recognised" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        My dates are not recognised
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-result-is-empty-or-has-fewer-rows-than-i-expect" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The result is empty or has fewer rows than I expect
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-test-found-nothing-in-the-editor-but-something-after-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A test found nothing in the editor but something after Run
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-run-is-slow-or-stops-after-30-seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A run is slow or stops after 30 seconds
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cannot-find-the-file-after-moving-a-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cannot find the file after moving a workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#odd-characters-or-everything-in-one-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Odd characters, or everything in one column
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#excel-export-is-missing-or-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Excel export is missing or fails
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-does-nothing-or-my-output-file-is-not-there" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run does nothing, or my output file is not there
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-logs-dock-and-the-log-file-are-quiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Logs dock and the log file are quiet
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#panels-and-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Panels and layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dialogs-you-may-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dialogs you may see
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quick FAQ
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Glossary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_12" >
+        
+          
+          <label class="md-nav__link" for="__nav_12" id="__nav_12_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Contributing
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        
+          <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_12_label" aria-expanded="false">
+            <label class="md-nav__title" for="__nav_12">
+              <span class="md-nav__icon md-icon"></span>
+              
+  
+  Contributing
+
+            </label>
+            <ul class="md-nav__list" data-md-scrollfix>
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../versions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Publishing the site
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../contributing/writing-style/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Writing node pages
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+                
+                  
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../DESIGN_SYSTEM/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  Design system
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+                
+              
+            </ul>
+          </nav>
+        
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#on-this-page" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        On this page
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-file-is-locked-or-open-in-excel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A file is locked or open in Excel
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#my-numbers-are-treated-as-text" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        My numbers are treated as text
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#my-dates-are-not-recognised" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        My dates are not recognised
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-result-is-empty-or-has-fewer-rows-than-i-expect" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The result is empty or has fewer rows than I expect
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-test-found-nothing-in-the-editor-but-something-after-run" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A test found nothing in the editor but something after Run
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#a-run-is-slow-or-stops-after-30-seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        A run is slow or stops after 30 seconds
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cannot-find-the-file-after-moving-a-workflow" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cannot find the file after moving a workflow
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#odd-characters-or-everything-in-one-column" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Odd characters, or everything in one column
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#excel-export-is-missing-or-fails" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Excel export is missing or fails
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#run-does-nothing-or-my-output-file-is-not-there" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Run does nothing, or my output file is not there
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-logs-dock-and-the-log-file-are-quiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        The Logs dock and the log file are quiet
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#panels-and-layout" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Panels and layout
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#dialogs-you-may-see" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dialogs you may see
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#quick-faq" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Quick FAQ
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glossary" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Glossary
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                <a id="__skip" tabindex="-1"></a>
+                
+                  
+  
+  <button type="button" title="Copy as Markdown" aria-label="Copy as Markdown" class="md-content__button md-icon" data-md-copy-url="https://raw.githubusercontent.com/AzadKshitij/TriggerEditor/main/docs/guide/troubleshooting-and-faq.md">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 21H8V7h11m0-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2m-3-4H4a2 2 0 0 0-2 2v14h2V3h12z"/></svg>
+  </button>
+
+
+
+<h1 id="troubleshooting-and-faq">Troubleshooting and FAQ<a class="headerlink" href="#troubleshooting-and-faq" title="Permanent link">&para;</a></h1>
+<p>The problems people meet most often, with the fix for each, followed by a list of the dialogs you may see and a glossary.</p>
+<p><a href="../">Back to the guide index</a></p>
+<h2 id="on-this-page">On this page<a class="headerlink" href="#on-this-page" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#a-file-is-locked-or-open-in-excel">A file is locked or open in Excel</a></li>
+<li><a href="#my-numbers-are-treated-as-text">My numbers are treated as text</a></li>
+<li><a href="#my-dates-are-not-recognised">My dates are not recognised</a></li>
+<li><a href="#the-result-is-empty-or-has-fewer-rows-than-i-expect">The result is empty or has fewer rows than I expect</a></li>
+<li><a href="#a-test-found-nothing-in-the-editor-but-something-after-run">A test found nothing in the editor but something after Run</a></li>
+<li><a href="#a-run-is-slow-or-stops-after-30-seconds">A run is slow or stops after 30 seconds</a></li>
+<li><a href="#cannot-find-the-file-after-moving-a-workflow">Cannot find the file after moving a workflow</a></li>
+<li><a href="#odd-characters-or-everything-in-one-column">Odd characters, or everything in one column</a></li>
+<li><a href="#excel-export-is-missing-or-fails">Excel export is missing or fails</a></li>
+<li><a href="#run-does-nothing-or-my-output-file-is-not-there">Run does nothing, or my output file is not there</a></li>
+<li><a href="#panels-and-layout">Panels and layout</a></li>
+<li><a href="#dialogs-you-may-see">Dialogs you may see</a></li>
+<li><a href="#quick-faq">Quick FAQ</a></li>
+<li><a href="#glossary">Glossary</a></li>
+</ul>
+<h2 id="a-file-is-locked-or-open-in-excel">A file is locked or open in Excel<a class="headerlink" href="#a-file-is-locked-or-open-in-excel" title="Permanent link">&para;</a></h2>
+<p><strong>What you see:</strong> <code>TD-IN-002</code> ("'orders.xlsx' cannot be read: it is open in another program or access is denied") when reading, or <code>TD-OUT-002</code> ("cannot be written: it is open in another program or read-only") when writing. A failed <strong>Export Excel...</strong> from the preview shows an <strong>Export failed</strong> dialog.</p>
+<p><strong>Why:</strong> Windows does not let two programs write a file at once, and Excel locks a workbook that it has open. A folder source also sees Excel's temporary <code>~$name.xlsx</code> files; those are excluded by default (the default exclude patterns include <code>~$*</code>).</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Close the file in Excel (or any program that has it open, including a preview pane in File Explorer).</li>
+<li>Run again. For an output, you can also give the File Output node another file name.</li>
+<li>If it is read-only, clear the read-only flag or write somewhere else.</li>
+<li>On a network drive, check that you still have the connection and permission.</li>
+</ol>
+<h2 id="my-numbers-are-treated-as-text">My numbers are treated as text<a class="headerlink" href="#my-numbers-are-treated-as-text" title="Permanent link">&para;</a></h2>
+<p><strong>What you see:</strong> sums fail with <code>TD-TYP-003</code> ("Column 'Amount' is text, so it cannot be ..."), a conversion fails with <code>TD-TYP-001</code>, a filter like <code>[Amount] &gt; 100</code> gives odd results, or sorting puts "1000" before "200".</p>
+<p><strong>Why:</strong> a CSV has no types. The app reads every CSV column as <strong>text</strong> on purpose, so that nothing is silently changed (a leading zero in an account number such as <code>00123</code> stays).</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Add a <strong>Select</strong> node after the File Input. In its table, set <strong>Data Type</strong> for the column: <code>Int64</code> for whole numbers, <code>Float64</code> or <code>Decimal</code> for amounts, <code>Date</code> or <code>Datetime</code> for dates, and keep <code>String</code> for identifiers.</li>
+<li>If some values cannot convert, the error names the first bad row and values (see <a href="../errors-and-problems/#row-numbers-values-and-did-you-mean">Row numbers and values</a>). Common culprits: a thousands separator or currency sign ("1,250.00", "USD 10"), a comma used as the decimal mark ("12,5"), text such as "n/a", or stray spaces. Clean those first with <strong>Cleansing</strong> or <strong>Find and Replace</strong>.</li>
+<li>In a <strong>Formula</strong>, <code>TRY_CAST([col] AS DOUBLE)</code> turns bad values into empty cells instead of stopping the node.</li>
+</ol>
+<p>Parquet, JSON and database inputs keep their own types and do not need this.</p>
+<h2 id="my-dates-are-not-recognised">My dates are not recognised<a class="headerlink" href="#my-dates-are-not-recognised" title="Permanent link">&para;</a></h2>
+<p>Dates in a CSV arrive as text. In <strong>Select</strong>, change the column to <code>Date</code> or <code>Datetime</code>, and where the node offers a date format, choose the one that matches the text (for example year-month-day versus day/month/year). Audit nodes that take a date column have their own <strong>Date format</strong> list; the text must match one of the formats. If values do not match, you get <code>TD-TYP-001</code> or an audit warning "N values could not be read as dates and were skipped" (<code>TD-AUDIT-102</code>).</p>
+<h2 id="the-result-is-empty-or-has-fewer-rows-than-i-expect">The result is empty or has fewer rows than I expect<a class="headerlink" href="#the-result-is-empty-or-has-fewer-rows-than-i-expect" title="Permanent link">&para;</a></h2>
+<p>Work through these in order:</p>
+<ol>
+<li><strong>Are you looking at the sample?</strong> While you edit, every node sees only the first <strong>100 rows</strong>. A filter for "Region = West" gives an empty preview if the first 100 rows contain no West. The preview's badge says "evaluated - not run". <strong>Run</strong> the workflow and check again.</li>
+<li><strong>Did the preview change after Run?</strong> If the badge says "from Run" and the table is still empty, the result really is empty.</li>
+<li><strong>Is it the filter?</strong> Check the case of text, spaces around values, and whether the column is text or a number (a number column does not equal the text "100"). Use <strong>Trim spaces</strong> and <strong>Ignore case</strong> where a node offers them.</li>
+<li><strong>Is it a join?</strong> Keys must match exactly. Check the key columns on both sides for type (text versus number), spaces and case. A join on <code>Customer_Id</code> (text) and <code>customer_id</code> (number) matches nothing. Add a <strong>Select</strong> or <strong>Normalize</strong> on each side so the types agree.</li>
+<li><strong>Is a header row being read as data, or the wrong sheet or delimiter?</strong> Check the File Input settings (first row holds field names, delimiter, sheet, start row).</li>
+<li><strong>Count at each step.</strong> Select a node and read the counts chip in the Data Preview, then move one node back.</li>
+<li><strong>After a Run, open Run History</strong>, select the run, and read the <strong>In</strong> and <strong>Out</strong> columns of the Nodes table: they show rows in and out of every node.</li>
+</ol>
+<h2 id="a-test-found-nothing-in-the-editor-but-something-after-run">A test found nothing in the editor but something after Run<a class="headerlink" href="#a-test-found-nothing-in-the-editor-but-something-after-run" title="Permanent link">&para;</a></h2>
+<p>This is expected, and it is the most common surprise with Audit nodes. In the editor an Audit node tests only the first 100 rows. Duplicates and gaps are rarely in the first 100 rows. Press <strong>Run</strong>; the test then runs on all rows and the result in the run record and the output tables is the real one. (In the example in the <a href="../#your-first-workflow-in-10-minutes">first-workflow tutorial</a>, the editor shows no duplicates and the Run finds 790 groups.)</p>
+<h2 id="a-run-is-slow-or-stops-after-30-seconds">A run is slow or stops after 30 seconds<a class="headerlink" href="#a-run-is-slow-or-stops-after-30-seconds" title="Permanent link">&para;</a></h2>
+<p>See <a href="../limits-and-performance/">Limits and performance</a>. In short:</p>
+<ul>
+<li>A single step may take at most <strong>30 seconds</strong>. Filter and drop columns early; write big results as Parquet or CSV.</li>
+<li>Excel and JSON inputs are read in full every time a workflow opens: convert them to CSV or Parquet.</li>
+<li>If a Run stops with "ran out of memory", set <strong>Row counts</strong> to <strong>Sinks only</strong> in Preferences, filter earlier, and avoid holding huge intermediate tables.</li>
+</ul>
+<h2 id="cannot-find-the-file-after-moving-a-workflow">Cannot find the file after moving a workflow<a class="headerlink" href="#cannot-find-the-file-after-moving-a-workflow" title="Permanent link">&para;</a></h2>
+<p><strong>What you see:</strong> <code>TD-IN-001</code> ("The file 'orders.csv' was not found"), with a "Looked for:" path, or a File Input with a red mark and "No file selected".</p>
+<p><strong>Why:</strong> a workflow stores each input twice: the full path, and the path relative to the workflow. When it opens, the relative path is tried first, then the full one. If you moved only the <code>.tds</code> (not the data), the relative path breaks, and if the data also moved or the drive letter differs, the full path breaks too.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li>Select the File Input node and click <strong>Browse for file</strong> (the folder icon next to <strong>Source</strong>). Pick the file again. Save the workflow so the new relative path is stored.</li>
+<li>To move a project, move the workflow <strong>and its data</strong> together, keeping the folder layout.</li>
+<li>Network drive letters can differ between computers; a UNC path (<code>\\server\share\...</code>) is more portable.</li>
+<li>Do the same for <strong>File Output</strong> nodes: their path is also a full path you may need to update.</li>
+</ol>
+<p>Records of earlier runs stay in the old <code>.runs</code> folder; move that folder with the workflow if you want the history to follow (see <a href="../run-history-and-audit-trail/#where-records-are-stored">Run history</a>).</p>
+<h2 id="odd-characters-or-everything-in-one-column">Odd characters, or everything in one column<a class="headerlink" href="#odd-characters-or-everything-in-one-column" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>You see</th>
+<th>Cause</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Question marks or strange letters (<code>CafÃ©</code>), or <code>TD-IN-004</code> "is not UTF-8 text"</td>
+<td>The file is in an older encoding (Latin-1 or Windows-1252), typical of old Excel exports.</td>
+<td>In File Input set <strong>Encoding</strong> to <strong>UTF-8 (replace bad bytes)</strong>, or re-save the file as "CSV UTF-8" from Excel.</td>
+</tr>
+<tr>
+<td>One wide column holding everything</td>
+<td>Wrong delimiter (for example a semicolon file read as comma).</td>
+<td>Set <strong>Delimiter</strong> in File Input (<code>;</code>, <code>\t</code> for tab, <code>\|</code>).</td>
+</tr>
+<tr>
+<td><code>TD-IN-007</code> "Some rows have more fields than the header"</td>
+<td>An unquoted delimiter inside a value, or the wrong delimiter.</td>
+<td>Check the delimiter, and that values containing it are wrapped in quotes.</td>
+</tr>
+<tr>
+<td>Column names have spaces or odd capitals</td>
+<td>The source headers.</td>
+<td>Add <strong>Normalize</strong> (trim spaces, spaces to underscores, optional case).</td>
+</tr>
+<tr>
+<td>A leading zero disappeared</td>
+<td>It was converted to a number somewhere.</td>
+<td>Keep the column as <code>String</code> in Select; in Excel, format the column as text before saving.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="excel-export-is-missing-or-fails">Excel export is missing or fails<a class="headerlink" href="#excel-export-is-missing-or-fails" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>In the Data Preview</strong>: choose <strong>Options &gt; Export Excel...</strong>. If it fails you get an <strong>Export failed</strong> dialog with the reason. A locked target file is the usual cause (see above).</li>
+<li><strong>In a File Output node</strong>: choose <strong>Excel</strong> in <strong>Format</strong> and a file name ending in <code>.xlsx</code>. If you get <code>TD-OUT-003</code> "Excel export is not available in this installation", the Excel writer is missing from the installation: write <strong>CSV</strong> or <strong>Parquet</strong> in the meantime and ask your administrator to reinstall the application.</li>
+<li><strong>Too big for Excel</strong>: a sheet holds at most <strong>1,048,575</strong> data rows and <strong>16,384</strong> columns (<code>TD-OUT-013</code>, <code>TD-OUT-011</code>). Write CSV or Parquet, or filter first.</li>
+<li><strong>Export from the preview writes only what the preview holds</strong> (up to 1,000 rows or 2 MB, and only the rows matching the preview's search box), not the whole result. Use a File Output node and Run to get everything.</li>
+<li>For a formatted workpaper (header block, index sheet), see <a href="../workpaper/">workpaper.md</a>.</li>
+</ul>
+<h2 id="run-does-nothing-or-my-output-file-is-not-there">Run does nothing, or my output file is not there<a class="headerlink" href="#run-does-nothing-or-my-output-file-is-not-there" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Check</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Is the stop button showing instead of play?</td>
+<td>A Run is in progress. Wait, or cancel.</td>
+</tr>
+<tr>
+<td>Did the Logs say "The workflow has a cycle"?</td>
+<td>Remove one connection of the loop (the loop's edges are selected).</td>
+</tr>
+<tr>
+<td>Is there a <strong>File Output</strong> node, connected, with a path?</td>
+<td>Without one, a Run writes nothing. See <a href="../running-workflows/#workflows-with-no-output-node">Workflows with no output node</a>.</td>
+</tr>
+<tr>
+<td>Did a node fail?</td>
+<td>The Logs dock opens by itself after a failed Run; fix the first problem.</td>
+</tr>
+<tr>
+<td>Is the file where you think?</td>
+<td>Open the File Output node and read the path in <strong>File</strong>. Use a full path so there is no doubt where it goes. Check the run record's <code>outputs</code>, which lists the exact paths written.</td>
+</tr>
+<tr>
+<td>Is the run record there?</td>
+<td>Run History lists it. "Run log saved: <path>" in the Logs says where it went.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="the-logs-dock-and-the-log-file-are-quiet">The Logs dock and the log file are quiet<a class="headerlink" href="#the-logs-dock-and-the-log-file-are-quiet" title="Permanent link">&para;</a></h2>
+<p>The program keeps routine detail out of the Logs dock and the log file. You see
+warnings, errors and the main steps of a Run. To see every detail, including the
+technical trace, start the program with the environment variable
+<code>TRIGGER_DESIGNER_LOG_LEVEL</code> set to <code>DEBUG</code>:</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">$env:TRIGGER_DESIGNER_LOG_LEVEL</span> <span class="p">=</span> <span class="s2">"DEBUG"</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="p">&amp;</span> <span class="s2">"C:\Tools\TriggerDesigner\TriggerEditor.exe"</span>
+</span></code></pre></div>
+<p>Use <code>TRACE</code> for the most detail. Any other value, or no value, means <code>INFO</code>. The
+setting applies to the Logs dock, the console and the log file written to
+<code>%APPDATA%\Trigger Designer\logs</code>. Set the variable only while you investigate:
+the trace is long.</p>
+<h2 id="panels-and-layout">Panels and layout<a class="headerlink" href="#panels-and-layout" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>The Config Dock, Logs or Preview has disappeared</td>
+<td>Open it from the <strong>Window</strong> menu, or <strong>Window &gt; Reset Layout</strong>.</td>
+</tr>
+<tr>
+<td>The window opens off-screen or too big</td>
+<td><strong>Window &gt; Reset Layout</strong>, or turn off <strong>Restore window and dock layout on startup</strong> in Preferences &gt; Layout.</td>
+</tr>
+<tr>
+<td>The text is too small</td>
+<td><strong>Edit &gt; Settings &gt; Appearance &gt; Application text</strong>.</td>
+</tr>
+<tr>
+<td>I want a lighter or darker look</td>
+<td><strong>Edit &gt; Settings &gt; Appearance</strong>, choose a theme.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="dialogs-you-may-see">Dialogs you may see<a class="headerlink" href="#dialogs-you-may-see" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Title</th>
+<th>When</th>
+<th>What to do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Welcome to Trigger Designer</strong></td>
+<td>At startup (can be switched off)</td>
+<td>Open a recent file, <strong>New Project</strong>, or <strong>Browse...</strong>.</td>
+</tr>
+<tr>
+<td><strong>Please wait</strong></td>
+<td>While a workflow opens ("Reading...", "Validating workflow...", "Evaluating workflow...")</td>
+<td>Wait; large workflows and Excel inputs take longer.</td>
+</tr>
+<tr>
+<td><strong>Error loading <file></strong></td>
+<td>The workflow could not be read</td>
+<td>See <a href="../files-and-formats/#opening-files-from-other-versions">Files and formats</a>.</td>
+</tr>
+<tr>
+<td><strong>Workflow Validation Warnings</strong></td>
+<td>After opening a file saved by a newer version, or one with unknown nodes, a loop or invalid settings</td>
+<td>Read it. Unknown nodes keep their settings; save under another name if unsure.</td>
+</tr>
+<tr>
+<td><strong>About to loose your work?</strong> (sic)</td>
+<td>Closing a workflow with unsaved changes</td>
+<td><strong>Save</strong>, <strong>Discard</strong> or <strong>Cancel</strong>.</td>
+</tr>
+<tr>
+<td><strong>Recent file not found</strong></td>
+<td>A file in <strong>Open Recent</strong> is gone</td>
+<td>It is removed from the list.</td>
+</tr>
+<tr>
+<td><strong>Set Node Label</strong></td>
+<td>Right-click a node &gt; Set Label...</td>
+<td>Type the label; empty removes it.</td>
+</tr>
+<tr>
+<td><strong>Export failed</strong></td>
+<td>An Excel export from the preview failed</td>
+<td>Close the target file, or choose another name.</td>
+</tr>
+<tr>
+<td><strong>Run log verification failed</strong></td>
+<td>After <strong>Verify run log</strong> found a problem</td>
+<td>See <a href="../run-history-and-audit-trail/#the-hash-chain-and-tamper-evidence">the hash chain</a>.</td>
+</tr>
+<tr>
+<td><strong>Check inputs</strong></td>
+<td>After <strong>Check inputs against selected run</strong></td>
+<td>Read the state of each file.</td>
+</tr>
+<tr>
+<td><strong>Export run as JSON / HTML report</strong></td>
+<td>Saving from Run History</td>
+<td>Choose a name.</td>
+</tr>
+<tr>
+<td><strong>Reset all preferences</strong></td>
+<td>Preferences &gt; General &gt; Reset</td>
+<td>Confirm to restore defaults. User themes are kept.</td>
+</tr>
+<tr>
+<td><strong>Theme unavailable</strong>, <strong>Import failed</strong>, <strong>Export failed</strong>, <strong>Delete theme</strong>, <strong>Duplicate Theme</strong></td>
+<td>Theme management in Preferences</td>
+<td>The message says what to fix.</td>
+</tr>
+<tr>
+<td><strong>Preferences</strong></td>
+<td><strong>Edit &gt; Settings</strong></td>
+<td>See <a href="../preferences/">Preferences</a>.</td>
+</tr>
+<tr>
+<td><strong>About</strong></td>
+<td><strong>Help &gt; About</strong></td>
+<td>Version information.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="quick-faq">Quick FAQ<a class="headerlink" href="#quick-faq" title="Permanent link">&para;</a></h2>
+<p><strong>Does Run change my input files?</strong> No. Inputs are only read. Databases are opened read-only.</p>
+<p><strong>Does Run overwrite my outputs?</strong> Yes, a File Output replaces a file of the same name without asking.</p>
+<p><strong>Does editing change my data?</strong> No. The workflow stores settings only. Editing shows you a preview computed from a sample.</p>
+<p><strong>Can I undo a Run?</strong> No: Run writes files and records. Undo covers edits to the workflow. Keep outputs in a folder per version, or use different file names.</p>
+<p><strong>Where is my work saved?</strong> Only when you save (<code>Ctrl+S</code>). The title shows an asterisk while there are unsaved changes. The app does not autosave workflows.</p>
+<p><strong>Can I run the same workflow without the window?</strong> Yes, with the command-line runner: see <a href="../cli/">cli.md</a>.</p>
+<p><strong>Is my data sent anywhere?</strong> No. See <a href="../security-and-privacy/">Security and privacy</a>.</p>
+<p><strong>How do I prove what I ran?</strong> Use <a href="../run-history-and-audit-trail/">Run History</a>: verify the chain, export the HTML report, and note the head hash.</p>
+<p><strong>Why did the preview change by itself?</strong> The preview follows your selection and your edits. <strong>Pin</strong> it to freeze it on one node.</p>
+<p><strong>How do I share a result with someone who does not have the app?</strong> Write a CSV, Parquet or Excel file with a File Output node, and send it together with the HTML report of the run.</p>
+<h2 id="glossary">Glossary<a class="headerlink" href="#glossary" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Audit node</strong></td>
+<td>A node that tests data for something an auditor looks for (duplicates, gaps, Benford conformity, risk filters, samples) and produces a pass/warn/fail summary as well as tables.</td>
+</tr>
+<tr>
+<td><strong>Badge</strong></td>
+<td>The small round sign on the bottom edge of a node: normal state, red "!" error, amber "!" warning or changes pending.</td>
+</tr>
+<tr>
+<td><strong>Canvas</strong></td>
+<td>The workspace where nodes and connections are drawn.</td>
+</tr>
+<tr>
+<td><strong>Chain (hash chain)</strong></td>
+<td>The link from each run record to the one before it, so that edits to the history can be detected.</td>
+</tr>
+<tr>
+<td><strong>Config Dock</strong></td>
+<td>The panel (Node Configuration) that shows the settings of the selected node.</td>
+</tr>
+<tr>
+<td><strong>Deferred evaluation</strong></td>
+<td>A node's recomputation waits until you leave the node; the amber "!" shows meanwhile.</td>
+</tr>
+<tr>
+<td><strong>Edge</strong></td>
+<td>A connection from one node's output to another node's input.</td>
+</tr>
+<tr>
+<td><strong>Eager / lazy</strong></td>
+<td>An eager node holds its whole table in memory; a lazy node describes work and lets data stream through.</td>
+</tr>
+<tr>
+<td><strong>Fingerprint (hash, SHA-256)</strong></td>
+<td>A code computed from a file's contents. Change one byte and the code changes completely, so it proves a file is the same one.</td>
+</tr>
+<tr>
+<td><strong>Group</strong></td>
+<td>A coloured box around nodes that belong together.</td>
+</tr>
+<tr>
+<td><strong>Head hash</strong></td>
+<td>The hash of the newest record in the chain; note it elsewhere to detect later removal of the latest records.</td>
+</tr>
+<tr>
+<td><strong>Knock-on error</strong></td>
+<td>An error shown on a node only because an earlier node failed.</td>
+</tr>
+<tr>
+<td><strong>Label</strong></td>
+<td>A short note floating above a node.</td>
+</tr>
+<tr>
+<td><strong>Live evaluation</strong></td>
+<td>The quick recomputation while you edit, on a 100-row sample.</td>
+</tr>
+<tr>
+<td><strong>Node</strong></td>
+<td>One step in a workflow.</td>
+</tr>
+<tr>
+<td><strong>Output / Input (socket)</strong></td>
+<td>The connection points on the right and left of a node.</td>
+</tr>
+<tr>
+<td><strong>Pin</strong></td>
+<td>Freeze the Data Preview on one node.</td>
+</tr>
+<tr>
+<td><strong>Plan</strong></td>
+<td>The description of the work a lazy node builds; data is read only when something at the end asks for it.</td>
+</tr>
+<tr>
+<td><strong>Logs dock</strong></td>
+<td>The log stream and the nodes that currently have an error or warning.</td>
+</tr>
+<tr>
+<td><strong>Record (run record)</strong></td>
+<td>The sealed file that describes one Run.</td>
+</tr>
+<tr>
+<td><strong>Run</strong></td>
+<td>Process the whole data with the workflow and write the outputs.</td>
+</tr>
+<tr>
+<td><strong>Sample (live sample)</strong></td>
+<td>The first 100 rows used while editing.</td>
+</tr>
+<tr>
+<td><strong>Sink</strong></td>
+<td>A node that writes data out (File Output).</td>
+</tr>
+<tr>
+<td><strong>Source badge</strong></td>
+<td>The tag on the Data Preview: "from Run" or "evaluated - not run".</td>
+</tr>
+<tr>
+<td><strong>Store</strong></td>
+<td>The folder holding one workflow's run records.</td>
+</tr>
+<tr>
+<td><strong>Test summary</strong></td>
+<td>The structured result an Audit node adds to the run record.</td>
+</tr>
+<tr>
+<td><strong>TD- code</strong></td>
+<td>A stable error code such as <code>TD-SCH-001</code>.</td>
+</tr>
+<tr>
+<td><strong><code>.tds</code></strong></td>
+<td>The workflow file.</td>
+</tr>
+<tr>
+<td><strong>Workpaper</strong></td>
+<td>A formatted Excel file produced for audit documentation; see <a href="../workpaper/">workpaper.md</a>.</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../cli/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Command line">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Command line
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../../versions/" class="md-footer__link md-footer__link--next" aria-label="Next: Publishing the site">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Publishing the site
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog" role="status" aria-atomic="true">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      
+      
+        
+        
+      <script id="__config" type="application/json">{"annotate":null,"base":"../..","features":["navigation.sections","navigation.indexes","navigation.top","navigation.footer","navigation.tracking","search.suggest","search.highlight","search.share","content.code.copy","content.code.select","content.tabs.link","content.tooltips","toc.follow"],"redirect":null,"search":"../../assets/javascripts/workers/search.719e0d91.min.js","tags":null,"translations":{"clipboard.copied":"Copied to clipboard","clipboard.copy":"Copy to clipboard","clipboard.error":"Could not copy to clipboard","search.result.more.one":"1 more on this page","search.result.more.other":"# more on this page","search.result.none":"No matching documents","search.result.one":"1 matching document","search.result.other":"# matching documents","search.result.placeholder":"Type to start searching","search.result.term.missing":"Missing","select.version":"Select version"},"version":null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.d31f0ffa.min.js"></script>
+      
+        <script src="../../javascripts/shortcuts.js"></script>
+      
+    
+  </body>
+</html>
