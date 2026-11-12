@@ -9,6 +9,7 @@ import polars as pl
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from tests.support.audit_demo import demo_graph
+from tests.support.flush import flush
 from trigger_designer.core.audit.duplicates import DuplicatesParams
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.docks.node_config import ConfigDock
@@ -119,6 +120,7 @@ def test_ticking_keys_reevaluates_and_each_click_is_one_undo_step(qtbot) -> None
     content.keys_list.checkboxes["inv"].setChecked(True)
     assert content.key_columns == ["vendor", "inv"]
     assert history.controller.count == 2
+    flush(node)
     assert not node.isInvalid()
     assert _height(node) == 5 and _height(node, 1) == 5
 
@@ -154,6 +156,7 @@ def test_trim_and_case_checks_are_discrete_undo_steps(qtbot) -> None:
     history = window.scene.history
     assert content.trim_check.isChecked() and not content.case_check.isChecked()
     content.case_check.setChecked(True)
+    flush(node)
     assert content.ignore_case is True and _height(node) == 6
     assert history.currentText() == "Duplicate Case Changed"
     content.trim_check.setChecked(False)
@@ -176,6 +179,7 @@ def test_mode_switch_shows_the_near_section_and_undo_hides_it(qtbot) -> None:
     assert not content.near_section.isHidden()
     assert history.currentText() == "Duplicate Match Type Changed"
     # Near with neither amount nor date chosen is a configuration error.
+    flush(node)
     assert node.isInvalid() and node.current_error.code == "TD-AUDIT-001"
     history.undo()
     assert content.mode == "exact" and content.mode_control.value() == "Exact"
@@ -198,6 +202,7 @@ def test_near_controls_commit_and_evaluate(qtbot) -> None:
     assert content.date_column == "date"
     content.window_spin.setValue(3)
     assert content.window_days == 3
+    flush(node)
     assert not node.isInvalid()
     assert _height(node) == 4  # rows 0, 1 (A,1) and 3, 4 (B,7)
 
@@ -241,6 +246,7 @@ def test_value_column_picker_is_blank_able_and_undoable(qtbot) -> None:
     content = node.content
     content.value_picker._toggle_name("amt")
     assert content.value_column == "amt"
+    flush(node)
     summary = node.value[2]["data"].collect().row(0, named=True)
     assert summary["population_value"] == 535.4
     assert (

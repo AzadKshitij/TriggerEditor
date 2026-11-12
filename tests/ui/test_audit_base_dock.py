@@ -12,6 +12,7 @@ import polars as pl
 from qtpy.QtWidgets import QPlainTextEdit, QVBoxLayout, QWidget
 
 from tests.support.audit_demo import DemoNode, demo_graph
+from tests.support.flush import flush
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.widgets.common import ColumnPicker, IconButton, TextButton
 from trigger_designer.qt.widgets.nodes.Audit._base import COUNT_TOOLTIP
@@ -37,6 +38,19 @@ def _dock(qtbot, **settings):
     dock.updateConfig([node.grNode])
     node.scene.history.storeHistory("Baseline")  # the first stamp is not a step
     return window, source, node, dock
+
+
+def _count_runs(content) -> list[str]:
+    """Record each live run: every evaluation calls ``build_result``."""
+    runs: list[str] = []
+    build = content.build_result
+
+    def counted():
+        runs.append("run")
+        return build()
+
+    content.build_result = counted
+    return runs
 
 
 def test_dock_builds_and_every_section_owns_its_undo(qtbot) -> None:
@@ -69,6 +83,7 @@ def test_single_picker_commits_evaluates_and_undoes_as_one_step(qtbot) -> None:
     assert picker.checked() == []
     picker._toggle_name("amount")  # what a click in the popup does
     assert content.column == "amount"
+    flush(node)
     assert not node.isInvalid()
     assert history.controller.count == 1  # exactly one step (baseline is not one)
     assert history.currentText() == "Amount Column Changed"
@@ -108,6 +123,7 @@ def test_a_saved_column_the_input_lost_stays_visible(qtbot) -> None:
     assert picker.checked() == ["gone"]  # shown, so the error is not a mystery
     assert "gone" in picker.column_names()
     picker._toggle_name("amount")
+    flush(node)
     assert node.content.column == "amount" and not node.isInvalid()
 
 
@@ -118,6 +134,7 @@ def test_segment_spin_check_and_combo_write_the_model(qtbot) -> None:
 
     content.mode_control._buttons["Below"].click()
     assert content.mode == "below"
+    flush(node)
     assert node.value[0]["data"].collect().height == 1  # only (5) is below 6
     history.undo()
     assert content.mode == "above" and content.mode_control.value() == "Above"
@@ -272,3 +289,108 @@ def test_add_checklist_binds_a_list_setting(qtbot) -> None:
     checklist = content.add_checklist("keys", "Keys Changed")
     assert list(checklist.checkboxes) == ["amount", "key", "other"]
     assert checklist.checked() == ["key"]
+
+
+def test_picker_spin_and_check_edits_wait_until_the_node_is_left(qtbot) -> None:
+    window, _source, node, dock = _dock(qtbot)
+    content = node.content
+    runs = _count_runs(content)
+    content.column_picker._toggle_name("amount")
+    content.threshold_spin.setValue(3.0)
+    content.strict_check.setChecked(True)
+    assert runs == [] and content._pending_evaluate is True
+    assert node.errors.changes_pending is True  # the yellow mark shows
+    assert node.isInvalid()  # the old result stands until the node is left
+    dock.updateConfig([DemoNode(window.scene).grNode])  # select another node
+    assert runs == ["run"] and content._pending_evaluate is False
+    assert node.errors.changes_pending is False and not node.isInvalid()
+
+
+def test_text_edit_waits_for_the_debounce_or_a_commit(qtbot) -> None:
+    _window, _source, node, _dock_unused = _dock(qtbot, column="amount")
+    content = node.content
+    runs = _count_runs(content)
+    content.note_edit.setText("typed")
+    assert content.note == "" and runs == []
+    content.commit_pending_dock_edits()
+    assert content.note == "typed" and runs == ["run"]
+    assert content._pending_evaluate is False
+
+
+def test_commit_without_evaluate_keeps_the_run_pending(qtbot) -> None:
+    _window, _source, node, _dock_unused = _dock(qtbot, column="amount")
+    content = node.content
+    runs = _count_runs(content)
+    content.note_edit.setText("typed")
+    content.commit_pending_dock_edits(evaluate=False)
+    assert content.note == "typed" and runs == []
+    assert content._pending_evaluate is True
+    content.commit_pending_dock_edits()
+    assert runs == ["run"] and content._pending_evaluate is False
+
+
+def test_several_edits_then_leaving_run_once(qtbot) -> None:
+    _window, _source, node, dock = _dock(qtbot)
+    content = node.content
+    runs = _count_runs(content)
+    content.column_picker._toggle_name("amount")
+    content.threshold_spin.setValue(3.0)
+    content.strict_check.setChecked(True)
+    content.note_edit.setText("typed")
+    assert runs == []
+    dock.updateConfig([])  # the user clicks the canvas
+    assert runs == ["run"]
+    assert content.note == "typed" and content.strict is True
+    assert not node.isInvalid()
+
+
+def test_undo_and_redo_leave_the_run_pending(qtbot) -> None:
+    window, _source, node, dock = _dock(qtbot, column="amount")
+    content = node.content
+    history = window.scene.history
+    window.scene.has_been_modified = False
+    content.threshold_spin.setValue(3.0)
+    assert window.scene.has_been_modified  # the document is dirty at once
+    steps = history.controller.count
+    emits: list[str] = []
+    content.evaluate.connect(lambda: emits.append("evaluate"))
+    history.undo()
+    assert content.threshold == 0.0 and content.threshold_spin.value() == 0.0
+    assert content._pending_evaluate is True
+    history.redo()
+    assert content.threshold == 3.0 and content._pending_evaluate is True
+    assert emits == [] and history.controller.count == steps  # a restore emits no run
+    dock.updateConfig([])  # leaving runs the pending evaluation, once
+    assert emits == ["evaluate"] and content._pending_evaluate is False
+
+
+def test_count_button_runs_a_pending_evaluation_first(qtbot) -> None:
+    _window, _source, node, dock = _dock(qtbot, column="amount", threshold=6.0)
+    content = node.content
+    button = next(
+        b
+        for b in dock.dock_widget.findChildren(IconButton)
+        if b.accessibleName() == COUNT_TOOLTIP
+    )
+    button.click()
+    assert content.summary_label.text().startswith("FAIL: 3 of 4 rows")
+    content.threshold_spin.setValue(100000.0)
+    assert "Not counted" in content.summary_label.text()
+    runs = _count_runs(content)
+    button.click()
+    assert runs == ["run"]
+    assert content.summary_label.text().startswith("PASS: 0 of 4 rows")
+    assert "above 100000" in content.summary_label.text()
+
+
+def test_cancel_pending_evaluation_drops_the_run(qtbot) -> None:
+    _window, _source, node, dock = _dock(qtbot, column="amount")
+    content = node.content
+    runs = _count_runs(content)
+    content.threshold_spin.setValue(3.0)
+    assert content._pending_evaluate is True
+    content.cancel_pending_evaluation()
+    assert content._pending_evaluate is False
+    assert node.errors.changes_pending is False
+    dock.updateConfig([])
+    assert runs == []

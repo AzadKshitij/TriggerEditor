@@ -45,7 +45,7 @@ Stratified sizes ignore Kind and Size. A row with an unreadable amount belongs t
 or unreadable amounts cannot be picked by Monetary unit, and the note says how many. Sample's status in
 the run record is always `pass`; the 103 code marks the capped draw.
 
-**Preview limit.** While you edit, a population over 200,000 rows is not sampled on the canvas. The Result
+**Preview limit.** In the preview, a population over 200,000 rows is not sampled on the canvas. The Result
 line says "Population has more than 200,000 rows: the sample is drawn when you Run." and the outputs are
 empty. Run always draws.
 

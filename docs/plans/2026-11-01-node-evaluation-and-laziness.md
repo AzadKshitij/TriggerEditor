@@ -9,7 +9,7 @@ Related plan: `Defer Formula and Filter SQL evaluation to focus-out` (OpenChambe
 ## Steps
 
 - [ ] Add a Config Dock level focus-out hook that applies pending edits when focus leaves the dock.
-- [ ] Make the Audit family use `DeferredEvaluation` and respect `commit_pending_dock_edits(evaluate=False)`.
+- [x] Make the Audit family use `DeferredEvaluation` and respect `commit_pending_dock_edits(evaluate=False)`.
 - [ ] Repair Formula, Filter and SQL Query focus-out evaluation, coalescing all SQL editors in one node.
 - [ ] Decide whether Data Profile stays live or follows the new deferred rule.
 - [ ] Add a shared lazy-contract test that fails when a node's `run_node` collects its input.

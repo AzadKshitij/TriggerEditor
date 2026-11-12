@@ -85,8 +85,8 @@ Dock, a worked example, and the messages it can show.
 
 You work on the canvas with a **preview**; you get the real answer when you press **Run**.
 
-**The preview is a 100-row sample.** As soon as a file is opened or a setting is changed, each node
-calculates its output so you can see the effect. To keep a large workbook responsive, File Input and every
+**The preview is a 100-row sample.** As soon as a file is opened, each node calculates its output so
+you can see the effect. To keep a large workbook responsive, File Input and every
 node after it work on the **first 100 rows** of each table in this preview, and show at most 100 rows of each
 output. The limit is the same for every node (`LIVE_SAMPLE_ROWS` in the code). In the preview, a Count says
 "100", a total is a total of the sample, and a Pivot may be missing a header that first appears on row 5,000.
@@ -104,8 +104,8 @@ select another node, click the empty canvas, or close the document, and then eve
 So after typing, click away to see the result. Save and Run keep the pending change in the workflow and
 Run recalculates everything anyway.
 
-Exceptions to the "click away" rule: the **Audit** nodes, **Data Profile** and **Comment** update as soon as
-you change a setting. A few nodes do not run on 100 rows even in the preview: Benford reads up to a million
+Exceptions to the "click away" rule: **Data Profile** and **Comment** update as soon as you change a
+setting. A few nodes do not run on 100 rows even in the preview: Benford reads up to a million
 rows, and Sample does not draw at all on more than 200,000 rows until you Run.
 
 If a preview result disagrees with the Run, believe the Run.
