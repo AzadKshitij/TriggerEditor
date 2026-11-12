@@ -47,7 +47,7 @@ At least 100 tested rows are needed for *first digit* and 1,000 for *first two d
 `pass` becomes `warn` and the code is `TD-AUDIT-101` ("Only n rows were tested; at least m are needed for
 a reliable result."). If no row has a usable amount the status is `warn` with the same code.
 
-**Preview limits.** While you edit, the node reads at most the first 1,000,000 rows of its input (in
+**Preview limits.** In the preview, the node reads at most the first 1,000,000 rows of its input (in
 practice the upstream node already hands over 100), and says so in the message. Run reads everything,
 so run the full file for the real result.
 

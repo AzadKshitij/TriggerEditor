@@ -53,15 +53,17 @@ The Excel workpaper of a test (Summary, Exceptions, Run log, Workflow) is descri
 letters in the table above. Connect any output to a *File Output*, a *Data Profile*, or another
 node. A node whose input is not connected shows "Input has no data" in its tooltip and passes nothing on.
 
-**Live preview versus Run.** While you edit, upstream nodes (File Input and the Transform and
+**Live preview versus Run.** In the preview, upstream nodes (File Input and the Transform and
 Preparation nodes) pass only the first 100 rows of each table, so every audit node tests that small
 sample and the numbers you see are a preview. Press **Run** and every audit node tests all rows.
 Benford and Sample have their own limits, noted in their sections. The Data Preview dock labels a
 table *evaluated · not run* (preview) or *from Run*. Details: [Live preview versus Run](../../nodes/index.md#preview-versus-run).
 
-**Settings apply at once.** Unlike the Transform and Preparation nodes, an audit node re-tests as soon
-as you change a setting (typing in a text box is applied after about a third of a second). There is no
-"click away to apply" step.
+**Changes apply when you leave the node.** Like the Transform and Preparation nodes, an audit node
+re-tests when you select another node or click the empty canvas, not after every change. Typing in a
+text box counts as a change after about a third of a second. Until the node re-tests it shows the yellow
+"!" mark, and its **Result** section does not show a result for the new settings (a node with a refresh
+button says "Not counted yet"). Save keeps your settings. Run keeps them too and re-tests every node anyway.
 
 **Reading the result.** Click the node, then look at the **Result** section at the bottom of the Config Dock.
 
@@ -69,8 +71,8 @@ as you change a setting (typing in a text box is applied after about a third of 
   every row. The Result line says "Not counted yet. Use the refresh button to count." Press the
   **refresh icon** (tooltip "Count exceptions now") beside the Result line. Any setting change
   clears the count again.
-- *Benford and Sample* show their result straight away and have no refresh button. Benford also draws a
-  chart.
+- *Benford and Sample* count every time the node re-tests, so their result appears once you leave the
+  node. They have no refresh button. Benford also draws a chart.
 - Click an output socket's data in the Data Preview dock to see the rows.
 
 A counted Result line reads `STATUS: message`, for example `FAIL: 4 of 6 rows are in 2 duplicate groups.`

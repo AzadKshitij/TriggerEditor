@@ -138,8 +138,8 @@ thing to understand before changing a node.
   *suspended* while a Run is going (both paths use Polars/DuckDB and must not
   overlap) and flushed afterwards.
 * **Deferred evaluation** (`DeferredEvaluation`, used by `ShapingContent`,
-  File Input, Union, Formula, Filter and Rows; `AuditContent.set_setting`
-  evaluates at once instead): a
+  `AuditContentMixin` (all five Audit nodes), File Input, Union, Formula,
+  Filter and Rows): a
   setting change updates the model and undo stack at once, shows the yellow
   "changes pending" mark, and the node runs when the user selects another
   node or clicks the canvas. `Run` and `Save` keep it pending (Run

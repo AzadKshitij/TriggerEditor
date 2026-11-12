@@ -8,6 +8,7 @@ import polars as pl
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from tests.support.audit_demo import demo_graph
+from tests.support.flush import flush
 from trigger_designer.core.audit.gaps import GapsParams
 from trigger_designer.core.node_configuration import (
     NODE_REGISTRIES,
@@ -98,6 +99,7 @@ def test_column_pick_evaluates_and_undoes_as_one_step(qtbot) -> None:
     assert node.isInvalid() and node.current_error.code == "TD-AUDIT-001"
 
     content.column_picker._toggle_name("je")
+    flush(node)
     assert content.sequence_column == "je" and not node.isInvalid()
     assert history.controller.count == 1
     assert history.currentText() == "Gaps Column Changed"
@@ -122,6 +124,7 @@ def test_mode_switch_shows_and_hides_sections_and_undoes(qtbot) -> None:
     assert content.mode == "date"
     assert content.report_section.isHidden() and content.range_section.isHidden()
     assert history.currentText() == "Gaps Type Changed"
+    flush(node)
     assert set(_found(node)["finding"]) == {"date_gap"}
     assert not content.dates_section.isHidden()
 
@@ -153,6 +156,7 @@ def test_group_checklist_all_none_and_undo(qtbot) -> None:
 
     content.group_list.checkboxes["led"].setChecked(True)
     assert content.group_columns == ["led"]
+    flush(node)
     assert "led" in _found(node).columns
     assert history.controller.count == before + 1
     assert history.currentText() == "Gaps Groups Changed"
@@ -179,10 +183,12 @@ def test_report_checks_write_the_model_and_the_findings(qtbot) -> None:
     history = window.scene.history
     content.duplicates_check.setChecked(False)
     assert content.report_duplicates is False
+    flush(node)
     assert "duplicate" not in set(_found(node)["finding"])
     assert history.currentText() == "Gaps Repeats Changed"
     content.order_check.setChecked(False)
     assert history.currentText() == "Gaps Order Changed"
+    flush(node)
     assert set(_found(node)["finding"]) == {"gap"}
     history.undo()
     history.undo()
@@ -224,6 +230,7 @@ def test_date_controls_commit_and_undo(qtbot) -> None:
     content.format_combo.setCurrentIndex(1)
     assert content.date_format == "%d/%m/%Y"
     assert history.currentText() == "Gaps Date Format Changed"
+    flush(node)
     assert node.value is not None  # a different reading still evaluates
     history.undo()
     assert content.date_format == "%Y-%m-%d"
@@ -231,6 +238,7 @@ def test_date_controls_commit_and_undo(qtbot) -> None:
 
     content.min_gap_spin.setValue(3)
     assert content.min_gap_days == 3 and content.min_gap_spin.suffix() == " days"
+    flush(node)
     assert _found(node)["count"].to_list() == [3, 5]
     assert history.currentText() == "Gaps Smallest Gap Changed"
     history.undo()
@@ -252,6 +260,7 @@ def test_holidays_commit_after_the_debounce_and_a_bad_one_fails_live(qtbot) -> N
 
     content.holidays_edit.setPlainText("soon")
     qtbot.waitUntil(lambda: content.holidays == ["soon"], timeout=2000)
+    flush(node)
     assert node.isInvalid() and node.current_error.code == "TD-AUDIT-004"
     # Typing in one burst is one step, so undo returns to where the burst began.
     assert history.controller.count == 1

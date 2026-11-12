@@ -7,6 +7,7 @@ import polars as pl
 from qtpy.QtWidgets import QPlainTextEdit, QSpinBox
 
 from tests.support.audit_demo import demo_graph
+from tests.support.flush import flush
 from trigger_designer.core.audit.risk_filters import LABELS, TEST_IDS
 from trigger_designer.core.node_configuration import (
     AuditNodes,
@@ -102,6 +103,7 @@ def test_switch_enables_only_its_own_options_and_keeps_values(qtbot) -> None:
     content.switches["holiday"].setChecked(True)
     assert content.holiday is True
     assert all(r.isEnabled() for r in content._test_bodies["holiday"])
+    flush(node)
     assert _flagged(node) == 2  # Saturday and 25 December
     assert window.scene.history.currentText() == "Risk Public-holiday posting Changed"
 
@@ -118,6 +120,7 @@ def test_switch_undo_redo_projects_back_onto_the_controls(qtbot) -> None:
     content.switches["round_amount"].setChecked(True)
     content.amount_picker._toggle_name("amount")
     assert content.amount_column == "amount" and content.round_amount
+    flush(node)
     assert _flagged(node) == 2  # the Saturday (5,000) and 1,000
 
     history.undo()
@@ -138,9 +141,11 @@ def test_column_pickers_and_optional_effective_date(qtbot) -> None:
     content = node.content
     assert node.current_error.code == "TD-AUDIT-001"
     content.date_picker._toggle_name("date")
+    flush(node)
     assert not node.isInvalid() and _flagged(node) == 2  # 2024-12-25 and 2024-04-03
     assert window.scene.history.currentText() == "Risk Date Column Changed"
     content.effective_picker._toggle_name("eff")
+    flush(node)
     assert content.effective_date_column == "eff" and _flagged(node) == 1
     assert window.scene.history.currentText() == "Risk Effective Column Changed"
     window.scene.history.undo()
@@ -154,6 +159,7 @@ def test_date_format_combo(qtbot) -> None:
     assert content.format_combo.currentData() == "%Y-%m-%d"
     content.format_combo.setCurrentIndex(content.format_combo.findData("%d/%m/%Y"))
     assert content.date_format == "%d/%m/%Y"
+    flush(node)
     assert _flagged(node) == 0  # ISO text does not read as day/month/year
     assert window.scene.history.currentText() == "Risk Date Format Changed"
     window.scene.history.undo()
@@ -170,6 +176,7 @@ def test_option_controls_commit_after_the_debounce_as_one_step(qtbot) -> None:
     before = history.controller.count
     content.limits_edit.setText("5000, 10000")
     qtbot.waitUntil(lambda: content.approval_limits == [5000.0, 10000.0], timeout=2000)
+    flush(node)
     assert not node.isInvalid() and _flagged(node) == 2  # 4,900 and 9,999.99
     assert history.controller.count == before + 1
     assert history.currentText() == "Risk Approval Limits Changed"
@@ -200,6 +207,7 @@ def test_lines_controls_and_round_multiple(qtbot) -> None:
     assert isinstance(content.keywords_edit, QPlainTextEdit)
     content.keywords_edit.setPlainText("reversal\n\n PLUG \n")
     qtbot.waitUntil(lambda: content.keywords == ["reversal", "PLUG"], timeout=2000)
+    flush(node)
     assert not node.isInvalid()
     assert _flagged(node) == 2  # rows 0 and 2
 
@@ -240,6 +248,7 @@ def test_weight_spins_write_the_whole_dict_and_undo(qtbot) -> None:
     assert content.weights["weekend"] == 4 and content.weights["holiday"] == 1
     assert history.controller.count == before + 1  # a spin burst is one step
     assert history.currentText() == "Risk Weight Changed"
+    flush(node)
     rows = node.value[0]["data"].collect()
     assert rows["risk_score"].to_list() == [4]
     history.undo()
@@ -283,6 +292,7 @@ def test_a_vanished_column_stays_visible_in_its_picker(qtbot) -> None:
     assert node.current_error.code == "TD-AUDIT-002"
     assert node.content.date_picker.checked() == ["gone"]
     node.content.date_picker._toggle_name("date")
+    flush(node)
     assert node.content.date_column == "date" and not node.isInvalid()
 
 

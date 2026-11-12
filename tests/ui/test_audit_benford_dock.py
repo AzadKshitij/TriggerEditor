@@ -10,6 +10,7 @@ from qtpy.QtTest import QTest
 
 from tests.support.audit_demo import demo_graph
 from tests.support.audit_ledger import make_ledger
+from tests.support.flush import flush
 from trigger_designer.core.audit.benford import BenfordChartData
 from trigger_designer.core.node_configuration import (
     AuditNodes,
@@ -108,6 +109,7 @@ def test_before_a_column_is_chosen_the_chart_is_empty(qtbot) -> None:
     history = window.scene.history
 
     content.column_picker._toggle_name("amount")
+    flush(node)
     assert content.amount_column == "amount" and not node.isInvalid()
     assert content.chart.data() is not None
     assert history.controller.count == 1
@@ -125,6 +127,7 @@ def test_digit_mode_switches_chart_checklist_and_summary(qtbot) -> None:
     history = window.scene.history
     content.digits_control._buttons["First two"].click()
     assert content.digits == 2
+    flush(node)
     assert len(content.chart.data().digits) == 90
     assert len(content.drill_list.checkboxes) == 90
     assert content.summary_label.text().startswith("PASS:")
@@ -161,6 +164,7 @@ def test_manual_drill_down_digits_are_sorted_and_undoable(qtbot) -> None:
     content.drill_auto_check.setChecked(False)
     assert content.drill_auto is False and content.drill_list.isEnabled()
     assert history.currentText() == "Benford Drill-down Mode Changed"
+    flush(node)
     assert node.value[2]["data"].collect().height == 0
 
     boxes = content.drill_list.checkboxes
@@ -168,6 +172,7 @@ def test_manual_drill_down_digits_are_sorted_and_undoable(qtbot) -> None:
     boxes["3"].setChecked(True)
     assert content.drill_digits == [3, 7]
     assert history.currentText() == "Benford Drill-down Digits Changed"
+    flush(node)
     drill = node.value[2]["data"].collect()
     assert set(drill["benford_digits"]) == {3, 7} and drill.height == 243 + 119
 

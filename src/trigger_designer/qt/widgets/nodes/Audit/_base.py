@@ -53,9 +53,10 @@ from trigger_designer.core.audit.test_summary import TestSummary
 from trigger_designer.core.codegen_safe import ident_part
 from trigger_designer.core.errors import translate_exception
 from trigger_designer.core.frames import frame_schema
-from trigger_designer.qt.node_content import ConfigContent
+from trigger_designer.qt.helpers.deferred_evaluation import DeferredEvaluation
 from trigger_designer.qt.helpers.state_mixin import SerializableContentMixin
 from trigger_designer.qt.node_base import TriggerGraphicsNode, TriggerNode
+from trigger_designer.qt.node_content import ConfigContent
 from trigger_designer.qt.undo.binding import DEFAULT_DEBOUNCE_MS
 from trigger_designer.qt.undo.protocol import is_syncing
 from trigger_designer.qt.widgets.common import (
@@ -109,7 +110,7 @@ def _signal_of(widget: QWidget, kind: str):
     return widget.textChanged  # text, lines, numlist, sizelist
 
 
-class AuditContentMixin(SerializableContentMixin):
+class AuditContentMixin(DeferredEvaluation, SerializableContentMixin):
     """Settings model, undo wiring, codegen and summary for one audit test.
 
     Put it **before** ``ConfigContent`` in the bases (``AuditContent`` does) so
@@ -251,9 +252,12 @@ class AuditContentMixin(SerializableContentMixin):
         *,
         merge_key: str | None = None,
         structural: bool = False,
-        evaluate: bool = True,
+        evaluate: bool | None = None,
     ) -> bool:
-        """Store a setting, re-evaluate, and record one undo step.
+        """Store a setting, mark the evaluation pending, and record one undo step.
+
+        ``evaluate`` forces the run (True) or only marks it pending (False). Left
+        as None the node defers it until the dock is left (``DeferredEvaluation``).
 
         Returns False (and does nothing) for a write-back from the model, for a
         restore, and when the value did not really change.
@@ -270,15 +274,22 @@ class AuditContentMixin(SerializableContentMixin):
         self._apply_visibility()
         self._show_summary()
         self.refresh_dock_context()
-        if evaluate:
-            self.evaluate.emit()  # 2. re-evaluate the graph
+        if evaluate is None:
+            self.request_evaluation()
+        elif evaluate:
+            self._pending_evaluate = False
+            self._show_changes_pending(False)
+            self.evaluate.emit()  # 2. run the graph now
+        else:
+            self._pending_evaluate = True
+            self._show_changes_pending(True)
         push = (
             self.push_list_change
             if structural and isinstance(new, list)
             else self.push_property_change
         )
-        # The command's redo re-projects widgets and would evaluate a second
-        # time; the emit above already ran the node on the new model.
+        # The command's redo re-projects widgets; the run was marked (or already
+        # ran) above, so the redo must not run the node a second time.
         previous = getattr(self, "_suspend_node_evaluation", False)
         self._suspend_node_evaluation = True
         try:
@@ -655,7 +666,12 @@ class AuditContentMixin(SerializableContentMixin):
         """Override: show or hide option rows for the current mode."""
 
     def commit_pending_dock_edits(self, *, evaluate: bool = True) -> None:
-        """Apply a text edit still inside its debounce (called when the dock closes)."""
+        """Apply text edits still inside their debounce, then the deferred run.
+
+        Called when the dock is left (``evaluate=True``: one run) and by Save and
+        Run (``evaluate=False``: the settings reach the model, the run stays
+        pending).
+        """
         for name, timer in list(self._timers.items()):
             try:
                 if not timer.isActive():
@@ -666,6 +682,7 @@ class AuditContentMixin(SerializableContentMixin):
             commit = self._commits.get(name)
             if commit is not None:
                 commit()
+        super().commit_pending_dock_edits(evaluate=evaluate)
 
     # ---- dock skeleton ----------------------------------------------------
     def create_layout(self, dock_layout: QVBoxLayout) -> None:
@@ -781,8 +798,12 @@ class AuditContentMixin(SerializableContentMixin):
         return True
 
     def count_exceptions(self) -> None:
-        """Count button: summarise the last live result. Never touches the undo stack."""
+        """Count button: run any pending evaluation, then summarise the result.
+
+        Never touches the undo stack.
+        """
         try:
+            self._evaluate_pending()  # never count the result of older settings
             self.collect_test_summary()
         except Exception as exc:  # noqa: BLE001 - show the reason, keep the app up
             self.test_summary = None

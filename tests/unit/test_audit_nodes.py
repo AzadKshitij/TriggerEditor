@@ -22,6 +22,7 @@ from tests.support.contract_helpers import (
     round_trip_settings,
     run_after_execution,
 )
+from tests.support.flush import flush
 from trigger_designer.core.audit.common import AuditConfigError
 from trigger_designer.core.audit.test_summary import TestSummary
 from trigger_designer.core.node_configuration import (
@@ -249,6 +250,7 @@ def test_set_setting_records_one_undo_step_and_evaluates_once() -> None:
 
     assert content.set_setting("threshold", 100.0, "Demo Threshold Changed") is True
     assert content.threshold == 100.0
+    flush(node)
     assert evaluations.count(node) == 1  # not once for the edit and once for redo
     assert node.value[0]["data"].collect().height == 2
     assert history.canUndo() and history.currentText() == "Demo Threshold Changed"

@@ -7,6 +7,7 @@ import polars as pl
 
 from tests.support.audit_demo import demo_graph
 from tests.support.audit_ledger import make_ledger
+from tests.support.flush import flush
 from trigger_designer.qt.design_window import TriggerSubWindow
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.widgets.common import ColumnPicker, IconButton, TextButton
@@ -114,6 +115,7 @@ def test_method_change_is_one_undo_step_and_redraws(qtbot) -> None:
     assert content.method == "systematic"
     assert history.controller.count == before + 1
     assert history.currentText() == "Sample Method Changed"
+    flush(node)
     assert "systematic" in content.summary_label.text()
     assert "Interval 24.13" in content.summary_label.text()
     history.undo()
@@ -133,6 +135,7 @@ def test_size_count_and_percent_edits(qtbot) -> None:
     before = history.controller.count
     for value in (10, 20, 30):
         content.size_spin.setValue(value)
+    flush(node)
     assert content.sample_size == 30 and _sample_height(node) == 30
     assert history.controller.count == before + 1  # one burst, one step
     assert history.currentText() == "Sample Size Changed"
@@ -140,6 +143,7 @@ def test_size_count_and_percent_edits(qtbot) -> None:
     content.size_kind_control._buttons["Percent"].click()
     assert history.currentText() == "Sample Size Kind Changed"
     content.percent_spin.setValue(12.5)
+    flush(node)
     assert content.sample_percent == 12.5 and _sample_height(node) == 302
     assert history.currentText() == "Sample Percent Changed"
     history.undo()
@@ -157,8 +161,10 @@ def test_seed_spin_and_the_new_seed_button(qtbot) -> None:
 
     content.seed_spin.setValue(43)
     assert content.seed == 43 and history.currentText() == "Sample Seed Changed"
+    flush(node)
     assert [o for o in node.value[0]["data"].collect()["je_number"]] != first
     content.seed_spin.setValue(42)  # the same seed gives the same rows back
+    flush(node)
     assert [o for o in node.value[0]["data"].collect()["je_number"]] == first
 
     steps = history.controller.count
@@ -182,6 +188,7 @@ def test_key_and_amount_pickers(qtbot) -> None:
     content.amount_picker._toggle_name("amount")
     assert content.amount_column == "amount"
     assert history.currentText() == "Sample Amount Changed"
+    flush(node)
     assert "Selected 100 of 2,413" in content.summary_label.text()
 
     content.key_picker._toggle_name("je_number")  # clear: every column is the key
@@ -198,8 +205,10 @@ def test_mus_without_an_amount_column_reports_the_error(qtbot) -> None:
     window, _source, node, _dock_unused = _dock(qtbot)
     content = node.content
     content.method_combo.setCurrentIndex(2)
+    flush(node)
     assert node.isInvalid() and node.current_error.code == "TD-AUDIT-001"
     content.amount_picker._toggle_name("amount")
+    flush(node)
     assert not node.isInvalid()
     assert _sample_height(node) == 100
     window.scene.history.undo()
@@ -211,12 +220,14 @@ def test_strata_lists_commit_after_the_pause_and_undo(qtbot) -> None:
     content = node.content
     history = window.scene.history
     content.method_combo.setCurrentIndex(3)
+    flush(node)
     assert node.current_error.code == "TD-AUDIT-009"  # one stratum, no sizes yet
 
     content.sizes_edit.setText("5, 6, all")
     qtbot.waitUntil(lambda: content.band_sizes == [5, 6, -1], timeout=2000)
     content.edges_edit.setText("1000, 10000")
     qtbot.waitUntil(lambda: content.band_edges == [1000.0, 10000.0], timeout=2000)
+    flush(node)
     assert not node.isInvalid()
     assert _sample_height(node) == 5 + 6 + 830
     assert (
