@@ -526,16 +526,21 @@ class TriggerWindow(
 
     def showWelcomeDialogIfNeeded(self) -> None:
         """Show the startup welcome dialog unless opted out."""
-        from trigger_designer.qt.dialogs.welcome_dialog import WelcomeDialog
+        from trigger_designer.qt.dialogs.welcome_dialog import SampleInfo, WelcomeDialog
+        from trigger_designer.qt.helpers import sample_workflow
         from trigger_designer.qt.helpers.recent_files import RecentFilesManager
 
         manager = RecentFilesManager()
         if not manager.is_welcome_enabled():
             return
+        sample = SampleInfo(
+            sample_workflow.SAMPLE_TITLE, sample_workflow.SAMPLE_DESCRIPTION
+        )
         dialog = WelcomeDialog(
             manager.recents(),
             show_on_startup=manager.is_welcome_enabled(),
             parent=self,
+            sample=sample,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
             manager.set_welcome_enabled(dialog.show_on_startup)
@@ -547,6 +552,23 @@ class TriggerWindow(
             self.onFileNew()
         elif dialog.action == "browse":
             self.onFileOpen()
+        elif dialog.action == "sample":
+            self._open_sample_workflow()
+
+    def _open_sample_workflow(self) -> None:
+        """Materialize the bundled example and open it as a document."""
+        from trigger_designer.qt.helpers import sample_workflow
+
+        try:
+            path = sample_workflow.sample_workflow_path()
+        except Exception as exc:  # noqa: BLE001 - give the reason, keep the app usable
+            logger.warning("could not open the sample workflow: {}", exc)
+            if self.statusBar() is not None:
+                self.statusBar().showMessage(
+                    "The sample workflow could not be unpacked", 5000
+                )
+            return
+        self.openFile(str(path))
 
     def about(self) -> None:
         from trigger_designer.qt.dialogs.about_dialog import AboutDialog

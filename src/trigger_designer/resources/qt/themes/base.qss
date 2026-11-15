@@ -1932,6 +1932,22 @@ QLabel#ConfigSectionInfo {{
   margin: 2px; }}
 QLabel#EmptyStateLabel {{
   color: {text_inactive}; }}
+
+/* Welcome dialog: the bundled example is one prominent row above the buttons. */
+QFrame#WelcomeSample {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 6px; }}
+QLabel#WelcomeSampleTitle {{
+  color: {text_primary};
+  font-size: 12px;
+  font-weight: 600; }}
+QLabel#WelcomeSampleDescription {{
+  color: {text_inactive};
+  font-size: 11px; }}
+QPushButton#OpenSampleButton {{
+  min-width: 132px; }}
+
 /* About dialog: the app identity sits above the details table. */
 QLabel#AboutTitle {{
   color: {text_primary};
