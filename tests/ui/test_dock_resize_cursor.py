@@ -38,17 +38,33 @@ def window() -> Iterator[TriggerWindow]:
     _APP.processEvents()
 
 
-def _move(window: TriggerWindow, point: QPoint) -> Qt.CursorShape:
-    """Deliver a real separator mouse move and read the resulting cursor."""
+def _send(
+    window: TriggerWindow,
+    kind: QEvent.Type,
+    point: QPoint,
+    button: Qt.MouseButton,
+    buttons: Qt.MouseButton,
+) -> None:
     event = QMouseEvent(
-        QEvent.Type.MouseMove,
+        kind,
         point,
         window.mapToGlobal(point),
-        Qt.MouseButton.NoButton,
-        Qt.MouseButton.NoButton,
+        button,
+        buttons,
         Qt.KeyboardModifier.NoModifier,
     )
     QApplication.sendEvent(window, event)
+
+
+def _move(window: TriggerWindow, point: QPoint) -> Qt.CursorShape:
+    """Deliver a real separator mouse move and read the resulting cursor."""
+    _send(
+        window,
+        QEvent.Type.MouseMove,
+        point,
+        Qt.MouseButton.NoButton,
+        Qt.MouseButton.NoButton,
+    )
     return window.cursor().shape()
 
 
@@ -112,3 +128,39 @@ def test_leaving_the_separator_restores_the_arrow(window: TriggerWindow) -> None
 
     assert _move(window, edge) == Qt.CursorShape.SizeHorCursor
     assert _move(window, inside) == Qt.CursorShape.ArrowCursor
+
+
+def test_dragging_the_edge_still_resizes_the_dock(window: TriggerWindow) -> None:
+    """The filter only rewrites the cursor; the separator move must survive."""
+    config = window.configDock.geometry()
+    canvas = window.mdiArea.geometry()
+    start = QPoint((config.right() + canvas.left()) // 2, config.top() + 80)
+    assert _move(window, start) == Qt.CursorShape.SizeHorCursor
+
+    _send(
+        window,
+        QEvent.Type.MouseButtonPress,
+        start,
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.LeftButton,
+    )
+    for step in range(1, 5):
+        _send(
+            window,
+            QEvent.Type.MouseMove,
+            start + QPoint(10 * step, 0),
+            Qt.MouseButton.NoButton,
+            Qt.MouseButton.LeftButton,
+        )
+        _APP.processEvents()
+        assert window.cursor().shape() == Qt.CursorShape.SizeHorCursor
+    _send(
+        window,
+        QEvent.Type.MouseButtonRelease,
+        start + QPoint(40, 0),
+        Qt.MouseButton.LeftButton,
+        Qt.MouseButton.NoButton,
+    )
+    _APP.processEvents()
+
+    assert window.configDock.width() > config.width()
