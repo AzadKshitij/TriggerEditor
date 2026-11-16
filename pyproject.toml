@@ -73,6 +73,7 @@ dependencies = [
     "pyqtgraph==0.14.0",
     "qt-material-icons==0.5.2",
     "rpytest>=0.1.2",
+    "pyside6-qtads==5.1.1.1",
 ]
 
 [project.scripts]

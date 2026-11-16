@@ -19,6 +19,10 @@ Sections: [Added](#added) · [Changed](#changed) ·
 
 ## Added
 
+### Docking
+
+- Docking: panels can be docked anywhere with drop indicators; Nodes palette is fixed; new default layout; old saved layouts are reset once.
+
 ### Audit nodes (new "Audit" family, Shift+A group)
 
 - A new node family `audit` with a shared base: stable `TD-AUDIT-nnn` errors, a

@@ -2,14 +2,16 @@
 
 One auto-saved layout, no named presets:
 
-* ``layout/geometry`` / ``layout/window_state`` - window geometry and
-  ``QMainWindow.saveState`` blob **and the dock objectName map**.
+* ``layout/geometry`` - window geometry.
+* ``layout/window_state`` / ``layout/state_version`` - the ``window.dockHost``
+  arrangement and its format version (``STATE_VERSION``). Blobs of other
+  versions, such as the old QMainWindow state, are ignored.
 * ``layout/session_files`` / ``layout/session_active`` - the files that were
   open at last close. They are only reopened when ``layout/session`` is on.
 * ``layout/restore`` - whether the saved layout is applied at startup.
 
-The old single-purpose ``data_preview_dock/visible`` flag is only consulted
-when no dock state exists yet (migration), then never written again.
+After ``restore`` a window with a dock host is always arranged: the saved
+state when it is usable, otherwise the default layout.
 """
 
 from __future__ import annotations
@@ -20,11 +22,13 @@ from typing import Any
 from loguru import logger
 from qtpy.QtCore import QPoint, QSize
 from qtpy.QtGui import QGuiApplication
-from qtpy.QtWidgets import QMainWindow, QWidget
+from qtpy.QtWidgets import QMainWindow
 
+from trigger_designer.qt.docking.layouts import DEFAULT_LAYOUT, LayoutSpec
 from trigger_designer.qt.preferences import Preferences, get_preferences
 
-STATE_VERSION = 2
+# 3: dock host (QtAds) blobs. Version 2 was QMainWindow.saveState and is ignored.
+STATE_VERSION = 3
 DEFAULT_WINDOW_SIZE = QSize(1280, 800)
 
 GEOMETRY_KEY = "layout/geometry"
@@ -112,10 +116,9 @@ class LayoutState:
         settings = self._prefs.settings
 
         geometry = settings.value(GEOMETRY_KEY, None)
-        state = settings.value(WINDOW_STATE_KEY, None)
         try:
             version = int(settings.value(STATE_VERSION_KEY, 0) or 0)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             version = 0
 
         geometry_restored = False
@@ -133,30 +136,32 @@ class LayoutState:
             if not self._on_screen(window):
                 self._center_default(window)
 
-        state_restored = False
-        if restore_enabled and state is not None and version == STATE_VERSION:
-            try:
-                state_restored = bool(window.restoreState(state, STATE_VERSION))
-            except TypeError:
-                state_restored = False
+        self._restore_dock_state(window, restore_enabled, version)
 
-        if not state_restored:
-            self._restore_preview_fallback(window)
-            self._migrate_layout(window, version)
+    def _restore_dock_state(
+        self, window: QMainWindow, restore_enabled: bool, version: int
+    ) -> None:
+        """Arrange the docks: the default first, the saved layout over it.
 
-    def _migrate_layout(self, window: QMainWindow, version: int) -> None:
-        """Bring an older saved layout forward.
-
-        Version 1 had a separate Problems tab. Restoring it would leave the
-        merged Logs dock hidden while the canvas can still show red nodes, so
-        the migration raises Logs and lets the rest of the layout default.
+        QtAds ``restoreState`` into a host whose panels were never placed
+        reports success yet places nothing, so the default always goes in
+        first. A saved layout that fails to restore then leaves a usable
+        window instead of an empty dock area.
         """
-        if version >= STATE_VERSION:
+        host = getattr(window, "dockHost", None)
+        if host is None:
             return
-        dock = getattr(window, "loggingDock", None)
-        if dock is not None:
-            dock.show()
-            dock.raise_()
+        try:
+            apply_default_layout(window)
+        except Exception as exc:  # noqa: BLE001 - the window must still open
+            logger.warning(f"Unable to apply default dock layout: {exc}")
+        blob = self._prefs.settings.value(WINDOW_STATE_KEY, None)
+        if restore_enabled and blob is not None and version == STATE_VERSION:
+            try:
+                if not host.restore_state(bytes(blob)):
+                    logger.warning("Saved dock layout was rejected; using the default")
+            except Exception as exc:  # noqa: BLE001 - a bad blob must not block startup
+                logger.warning(f"Unable to restore dock layout: {exc}")
 
     def _restore_legacy_geometry(self, window: QMainWindow) -> None:
         if not bool(self._prefs.get("layout/restore", True)):
@@ -168,23 +173,14 @@ class LayoutState:
         if pos is not None:
             window.move(pos)
 
-    def _restore_preview_fallback(self, window: QMainWindow) -> None:
-        """First run after upgrade: honour the old preview visibility flag."""
-        dock = getattr(window, "dataPreviewDock", None)
-        if dock is None:
-            return
-        if bool(self._prefs.get("layout/legacy_preview_visible", False)):
-            dock.show()
-            dock.raise_()
-
     def save(self, window: QMainWindow) -> None:
         """Persist geometry, dock state and the session file list."""
         try:
             self._prefs.set(GEOMETRY_KEY, window.saveGeometry(), sync=False)
-            self._prefs.set(
-                WINDOW_STATE_KEY, window.saveState(STATE_VERSION), sync=False
-            )
-            self._prefs.set(STATE_VERSION_KEY, STATE_VERSION, sync=False)
+            host = getattr(window, "dockHost", None)
+            if host is not None:
+                self._prefs.set(WINDOW_STATE_KEY, host.save_state(), sync=False)
+                self._prefs.set(STATE_VERSION_KEY, STATE_VERSION, sync=False)
         except Exception as exc:  # noqa: BLE001 - defensive
             logger.warning(f"Unable to save window layout: {exc}")
         self._prefs.sync()
@@ -236,36 +232,13 @@ class LayoutState:
         self._prefs.reset("layout")
 
 
-def apply_default_layout(window: QMainWindow) -> None:
-    """Restore the built-in dock arrangement (Nodes top, Config left, Logs+Preview bottom)."""
-    from qtpy.QtCore import Qt
+def apply_default_layout(window: QMainWindow, spec: LayoutSpec | None = None) -> None:
+    """Arrange the docks as ``spec`` (the built-in default when omitted).
 
-    default_areas = (
-        ("nodesDock", Qt.DockWidgetArea.TopDockWidgetArea),
-        ("configDock", Qt.DockWidgetArea.LeftDockWidgetArea),
-        ("loggingDock", Qt.DockWidgetArea.BottomDockWidgetArea),
-        ("dataPreviewDock", Qt.DockWidgetArea.BottomDockWidgetArea),
-        ("runHistoryDock", Qt.DockWidgetArea.BottomDockWidgetArea),
-    )
-    logging: QWidget | None = None
-    preview: QWidget | None = None
-    history: QWidget | None = None
-    for attribute, area in default_areas:
-        dock = getattr(window, attribute, None)
-        if dock is None:
-            continue
-        dock.setFloating(False)
-        dock.show()
-        window.addDockWidget(area, dock)
-        if attribute == "loggingDock":
-            logging = dock
-        elif attribute == "dataPreviewDock":
-            preview = dock
-        elif attribute == "runHistoryDock":
-            history = dock
-    if logging is not None and preview is not None:
-        window.tabifyDockWidget(logging, preview)
-    if logging is not None and history is not None:
-        window.tabifyDockWidget(logging, history)
-    if logging is not None:
-        logging.raise_()
+    A window without a ``dockHost`` attribute has no dock arrangement to set,
+    so this does nothing for it.
+    """
+    host = getattr(window, "dockHost", None)
+    if host is None:
+        return
+    host.apply_layout(spec if spec is not None else DEFAULT_LAYOUT)

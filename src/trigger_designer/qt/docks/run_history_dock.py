@@ -22,7 +22,6 @@ from qtpy.QtWidgets import (
     QAbstractItemView,
     QDialog,
     QDialogButtonBox,
-    QDockWidget,
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
@@ -173,7 +172,7 @@ def _merge_reports(reports: list[VerifyReport]) -> VerifyReport:
     )
 
 
-class RunHistoryDock(QDockWidget):
+class RunHistoryDock(QWidget):
     """Lists, verifies, compares and exports the runs of the active workflow."""
 
     #: Emits the ``VerifyReport`` of a finished verification (tests wait on it).
@@ -186,7 +185,8 @@ class RunHistoryDock(QDockWidget):
     reloaded = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(_TITLE, parent)
+        super().__init__(parent)
+        self.setWindowTitle(_TITLE)
         self.setObjectName("RunHistoryDock")
         self._window: TriggerSubWindow | None = None
         self._directory: Path | None = None
@@ -198,11 +198,6 @@ class RunHistoryDock(QDockWidget):
         self._tasks: set[AuditTask] = set()
         self._last_report: VerifyReport | None = None
         self._verified_at: str | None = None
-        self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-            | QDockWidget.DockWidgetFeature.DockWidgetClosable
-        )
         self._build()
         self.apply_theme()
 
@@ -318,7 +313,10 @@ class RunHistoryDock(QDockWidget):
         self.status_label.setObjectName("RunHistoryStatus")
         self.status_label.setAccessibleName("Run history status")
         root.addWidget(self.status_label)
-        self.setWidget(panel)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(panel)
 
         header = self.run_table.horizontalHeader()
         header.setStretchLastSection(False)

@@ -12,9 +12,12 @@ from trigger_designer.qt.docks.logging_dock import LoggingDock
 from trigger_designer.qt.docks.node_config import ConfigDock
 from trigger_designer.qt.docks.nodes_list import NodesDock
 from trigger_designer.qt.docks.run_history_dock import RunHistoryDock
-from trigger_designer.qt.helpers.dock_chrome import (
-    enable_tab_drag_out,
-    install_tab_only_chrome,
+from trigger_designer.qt.docking import (
+    PANEL_CONFIG,
+    PANEL_HISTORY,
+    PANEL_LOGS,
+    PANEL_PREVIEW,
+    Panel,
 )
 from trigger_designer.qt.helpers import node_arrange
 from trigger_designer.qt.helpers.recent_files import RecentFilesManager
@@ -142,26 +145,15 @@ class MainWindowMenuMixin:
         toolbar_nodes.triggered.connect(self.onWindowNodesToolbar)
         toolbar_nodes.setChecked(self.nodesDock.isVisible())
 
-        if hasattr(self, "loggingDock") and self.loggingDock is not None:
-            logger_action = self.loggingDock.toggleViewAction()
-            logger_action.setText("Logs")
-            self.windowMenu.addAction(logger_action)
-
-        if hasattr(self, "dataPreviewDock") and self.dataPreviewDock is not None:
-            preview_action = self.dataPreviewDock.toggleViewAction()
-            preview_action.setText("Data Preview")
-            preview_action.setShortcut(QKeySequence("Ctrl+Shift+D"))
-            self.windowMenu.addAction(preview_action)
-
-        if hasattr(self, "runHistoryDock") and self.runHistoryDock is not None:
-            history_action = self.runHistoryDock.toggleViewAction()
-            history_action.setText("Run History")
-            self.windowMenu.addAction(history_action)
-
-        if hasattr(self, "configDock") and self.configDock is not None:
-            config_action = self.configDock.toggleViewAction()
-            config_action.setText("Node Configuration")
-            self.windowMenu.addAction(config_action)
+        host = getattr(self, "dockHost", None)
+        if host is not None:
+            for panel_id in (PANEL_LOGS, PANEL_PREVIEW, PANEL_HISTORY, PANEL_CONFIG):
+                if panel_id not in host.panel_ids():
+                    continue
+                action = host.toggle_action(panel_id)
+                if panel_id == PANEL_PREVIEW:
+                    action.setShortcut(QKeySequence("Ctrl+Shift+D"))
+                self.windowMenu.addAction(action)
 
         self.windowMenu.addSeparator()
         self.windowMenu.addAction(self.actSaveLayout)
@@ -286,42 +278,48 @@ class MainWindowMenuMixin:
 class MainWindowDockMixin:
     """Mixin for dock creation helpers used by the main window."""
 
+    # Where each panel lands is decided by the dock host's layout
+    # (``LayoutState.restore`` -> saved arrangement or ``DEFAULT_LAYOUT``);
+    # these methods only create the panel widget and register it.
+
     def createNodesDock(self) -> None:
+        """The Nodes palette: a fixed strip above the host, never a panel."""
         self.nodesDock = NodesDock(self)
-        # Stable objectNames are required for QMainWindow.saveState/restoreState.
         self.nodesDock.setObjectName("NodesDock")
-        self.addDockWidget(Qt.TopDockWidgetArea, self.nodesDock)
 
     def createConfigDock(self) -> None:
         self.configDock = ConfigDock(self)
         self.configDock.setObjectName("ConfigDock")
-        self.addDockWidget(Qt.LeftDockWidgetArea, self.configDock)
+        self.dockHost.register(
+            Panel(
+                PANEL_CONFIG,
+                ConfigDock.BASE_TITLE,
+                self.configDock,
+                min_width=300,
+            )
+        )
 
     def createLoggingDock(self) -> None:
         """Create a single logging dock that shows logs for the active design window"""
         self.loggingDock = LoggingDock(self)
         self.loggingDock.setObjectName("LoggingDock")
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.loggingDock)
+        self.dockHost.register(Panel(PANEL_LOGS, "Logs", self.loggingDock))
 
     def createDataPreviewDock(self) -> None:
-        """Create the shared preview dock, tabified with the log dock."""
+        """Create the shared Data Preview panel."""
         self.dataPreviewDock = DataPreviewDock(self)
         self.dataPreviewDock.setObjectName("DataPreviewDock")
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.dataPreviewDock)
-        self.tabifyDockWidget(self.loggingDock, self.dataPreviewDock)
-        # The tab bar is this pair's chrome: each panel hides its own title bar
-        # while it is a tab, and a tab dragged out of the bar pops it out.
-        enable_tab_drag_out(self)
-        install_tab_only_chrome(self.loggingDock)
-        install_tab_only_chrome(self.dataPreviewDock)
+        self.dockHost.register(
+            Panel(PANEL_PREVIEW, "Data Preview", self.dataPreviewDock)
+        )
 
     def createRunHistoryDock(self) -> None:
-        """Create the Run History dock, tabified with the other bottom docks."""
+        """Create the Run History panel."""
         self.runHistoryDock = RunHistoryDock(self)
         self.runHistoryDock.setObjectName("RunHistoryDock")
-        self.addDockWidget(Qt.BottomDockWidgetArea, self.runHistoryDock)
-        self.tabifyDockWidget(self.loggingDock, self.runHistoryDock)
-        install_tab_only_chrome(self.runHistoryDock)
+        self.dockHost.register(
+            Panel(PANEL_HISTORY, "Run History", self.runHistoryDock)
+        )
 
     def switchRunHistoryDock(self, design_window) -> None:
         if hasattr(self, "runHistoryDock") and self.runHistoryDock:
@@ -346,8 +344,7 @@ class MainWindowDockMixin:
         dock = getattr(self, "loggingDock", None)
         if dock is None:
             return
-        dock.show()
-        dock.raise_()
+        self.dockHost.show_panel(PANEL_LOGS)
         dock.show_last_run(only_errors=True)
 
     def onDesignWindowClose(self, design_window, event) -> None:

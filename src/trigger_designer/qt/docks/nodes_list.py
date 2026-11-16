@@ -1,9 +1,11 @@
+from typing import Optional
+
 from qtpy.QtCore import QEvent, QTimer
 from qtpy.QtGui import QShowEvent
-from qtpy.QtWidgets import QDockWidget, QTabWidget, QWidget, QVBoxLayout, QSizePolicy
+from qtpy.QtWidgets import QSizePolicy, QTabWidget, QVBoxLayout, QWidget
+
 from trigger_designer.core.node_configuration import NodeTypes
 from trigger_designer.qt.widgets.node_drag_listbox import QTRDragListbox
-from typing import Optional
 
 #: Height cap tuned to the compact tab bar of the QSS themes. A style with a
 #: taller tab bar leaves the lists too short for their rows; _fit_height()
@@ -11,18 +13,10 @@ from typing import Optional
 BASE_HEIGHT = 105
 
 
-class NodesDock(QDockWidget):
+class NodesDock(QWidget):
     def __init__(self, parent: Optional[QWidget] = None) -> None:
         super().__init__(parent)
         self.initUI()
-        self.setFeatures(QDockWidget.DockWidgetFeature.NoDockWidgetFeatures)
-        self.setTitleBarWidget(QWidget())
-        self.setFloating(False)
-        self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-        )
-        # self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
 
     def initUI(self) -> None:
@@ -53,7 +47,9 @@ class NodesDock(QDockWidget):
 
         self._tab_widget = tab_widget
         self._lists = list(drag_list_boxes.values())
-        self.setWidget(tab_widget)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(tab_widget)
         tab_widget.setMaximumHeight(BASE_HEIGHT)
         self.adjustSize()
 
