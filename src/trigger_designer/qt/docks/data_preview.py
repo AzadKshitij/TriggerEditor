@@ -33,7 +33,6 @@ from typing import Any
 
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import (
-    QDockWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -63,11 +62,12 @@ def _trigger_node(item: Any) -> Any | None:
     return node if hasattr(node, "outputs") else None
 
 
-class DataPreviewDock(QDockWidget):
+class DataPreviewDock(QWidget):
     """A persistent Data Preview for the active design window's selection."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(_TITLE, parent)
+        super().__init__(parent)
+        self.setWindowTitle(_TITLE)
         self.setObjectName("DataPreviewDock")
 
         self.current_design_window_id: str | None = None
@@ -98,7 +98,11 @@ class DataPreviewDock(QDockWidget):
         self._build_options_menu()
 
         layout.addWidget(self.panel, 1)
-        self.setWidget(body)
+
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(body)
 
     def _build_options_menu(self) -> None:
         """Window actions on the panel's menu (it owns copy and export)."""

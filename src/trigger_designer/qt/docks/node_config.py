@@ -3,7 +3,6 @@ from typing import Any, List, Optional, TYPE_CHECKING
 
 from loguru import logger
 from qtpy.QtWidgets import (
-    QDockWidget,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -21,11 +20,12 @@ if TYPE_CHECKING:
     from trigger_designer.qt.node_base import TriggerNode
 
 
-class ConfigDock(QDockWidget):
+class ConfigDock(QWidget):
     BASE_TITLE = "Node Configuration"
 
     def __init__(self, parent: Optional[QWidget] = None) -> None:
-        super().__init__(self.BASE_TITLE, parent)
+        super().__init__(parent)
+        self.setWindowTitle(self.BASE_TITLE)
         self._current_key = None
         #: The node currently on display. Kept alongside ``_current_key`` so a
         #: caller can re-show it when the scene selection is empty - a history
@@ -96,9 +96,10 @@ class ConfigDock(QDockWidget):
         self.scroll_area.setWidget(self.content_widget)
         outer.addWidget(self.scroll_area)
 
-        self.setWidget(self.dock_widget)
-        self.setFloating(False)
-        self.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetMovable)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        root.addWidget(self.dock_widget)
 
     def updateConfig(self, nodes: List["TriggerNode"], force: bool = False) -> None:
         """Show ``nodes`` in the dock.

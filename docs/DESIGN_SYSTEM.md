@@ -163,17 +163,19 @@ Node colour identifies the **category**, never the state. State lives in the rin
 ```
 QMainWindow
 ├─ Window chrome (32) — app icon, menus, window controls, drag row
-├─ NodesDock (top, max height 105)
-├─ ConfigDock (left, min width 300)
-├─ QMdiArea / node canvas
-├─ LoggingDock + DataPreviewDock (bottom, tabbed)
+├─ NodesDock (top, fixed, max height 105; cannot be moved or closed)
+├─ Dock host (Advanced Docking System, qt/docking/)
+│   ├─ ConfigDock (left, full height, min width 300)
+│   └─ Canvas (QMdiArea / node canvas) over a tabbed group of
+│       LoggingDock, DataPreviewDock and RunHistoryDock
 └─ Status bar (20)
 ```
 
 - The window is frameless (`install_window_chrome`, `qt/widgets/common/window_chrome.py`): the real `QMenuBar`, the centred document title and the caption buttons share the row that used to hold the menu bar alone. The title is centred on the *window*, not on the gap the menus leave: `_balance_title` sizes a spacer before the buttons to cancel the surplus the left group needs. Alt, mnemonics and every shortcut stay native; drag and edge resize go through `startSystemMove` / `startSystemResize`.
-- The Config Dock spans the main work area; the bottom docks span the full width.
-- The preview and logs share one bottom dock area as tabs. The Preview panel owns its own 36px strip; the dock adds no second header.
-- A tabbed dock wears the tab bar as its only chrome: its own title bar (name, float and close buttons) is hidden while it is a tab, and returns when the panel floats. Dragging a tab out of the bar pops that panel out, into a window with a normal frame (`QMainWindow.DockOption.GroupedDragging`, `qt/helpers/dock_chrome.py`). A dock with no tab bar beside it keeps its title bar, the only handle that moves it.
+- The Config Dock runs the full height of the left column. The canvas sits above the bottom tab group on the right.
+- Logs, Data Preview and Run History share one tab group under the canvas. The Preview panel owns its own 36px strip; the dock adds no second header.
+- Dock chrome is the library's tab bar and title bar, styled through the `ads--*` rules in `resources/qt/themes/base.qss` (mirrored in `qss/_style.scss`). Tokens only, no inline QSS. `qt/helpers/dock_chrome.py` and `qt/helpers/dock_resize_cursor.py` no longer exist.
+- Any panel can be dragged to another panel's centre (tab), to a panel's edge (split), to a window edge (whole row or column), or out of the window (float). The workflow canvas is also a drop target. Drop indicators and a translucent preview show the landing area.
 - The canvas is the only surface that fills remaining space. Everything else is fixed-height chrome.
 - Window and dock titles label the surface: `Node Configuration (Select)`, `Logs`, `Data Preview`. The document name stays in the MDI window (no `.tds` suffix) and in the chrome row.
 
@@ -183,7 +185,7 @@ QMainWindow
 
 | Token | Value | Notes |
 |---|---|---|
-| Dock min width | `300` | `qt/docks/node_config.py` |
+| Dock min width | `300` | `qt/docks/node_config.py` (`setMinimumWidth`) |
 | Main `QVBoxLayout` | `spacing 2, margins 5,5,5,5` | `transpose.py:77`, `cleansing.py:173` |
 | Toolbar `QWidget + QHBoxLayout` | `fixedHeight 40, margins 0,0,0,0` | `select.py:158-161` |
 | Control height | `30` min (`QLineEdit`, `QPushButton`, `QComboBox`) | `select.py:168,175,205` |
