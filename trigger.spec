@@ -91,6 +91,7 @@ core_hiddenimports += collect_submodules("xlsxwriter")
 gui_datas = [
     ("src/trigger_designer/qt/resources.json", "trigger_designer/qt"),
     ("src/trigger_designer/resources/qt", "trigger_designer/resources/qt"),
+    ("src/trigger_designer/resources/samples", "trigger_designer/resources/samples"),
     ("src/trigger_designer/resources/Icon.ico", "trigger_designer/resources"),
     ("src/trigger_designer/resources/splash.png", "trigger_designer/resources"),
 ] + node_module_datas

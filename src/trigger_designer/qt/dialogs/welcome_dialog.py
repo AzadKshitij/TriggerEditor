@@ -1,11 +1,14 @@
-"""Startup welcome dialog: recents plus New and Browse actions."""
+"""Startup welcome dialog: recents, a bundled example, plus New and Browse actions."""
 
 from __future__ import annotations
+
+import dataclasses
 
 from qtpy.QtWidgets import (
     QCheckBox,
     QDialog,
     QDialogButtonBox,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QListWidget,
@@ -16,13 +19,25 @@ from qtpy.QtWidgets import (
 )
 
 
+@dataclasses.dataclass(frozen=True)
+class SampleInfo:
+    """Display copy for the bundled example workflow."""
+
+    title: str
+    description: str
+
+
 class WelcomeDialog(QDialog):
     """Pick a recent project, start a new one, or browse for a file.
 
     After :meth:`exec`, read :attr:`action` (``"open"``, ``"new"``,
-    ``"browse"``, or ``None`` when cancelled) and :attr:`selected_path`.
-    The checkbox state is exposed via :attr:`show_on_startup`; callers
-    persist it through ``RecentFilesManager``.
+    ``"browse"``, ``"sample"``, or ``None`` when cancelled) and
+    :attr:`selected_path`. The checkbox state is exposed via
+    :attr:`show_on_startup`; callers persist it through
+    ``RecentFilesManager``.
+
+    ``sample`` is the display copy for the bundled example workflow; pass
+    ``None`` to hide the example row (tests, or installs without the bundle).
     """
 
     def __init__(
@@ -30,6 +45,7 @@ class WelcomeDialog(QDialog):
         recents: list[str],
         show_on_startup: bool = True,
         parent: QWidget | None = None,
+        sample: SampleInfo | None = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Welcome to Trigger Designer")
@@ -64,6 +80,32 @@ class WelcomeDialog(QDialog):
             layout.addWidget(self.empty_label)
         else:
             self.empty_label = None
+
+        self.sample_panel = None
+        if sample is not None:
+            self.sample_panel = QFrame(self)
+            self.sample_panel.setObjectName("WelcomeSample")
+            sample_layout = QHBoxLayout(self.sample_panel)
+            sample_layout.setContentsMargins(10, 8, 10, 8)
+            sample_layout.setSpacing(10)
+
+            text_column = QVBoxLayout()
+            text_column.setSpacing(2)
+            title = QLabel(sample.title, self.sample_panel)
+            title.setObjectName("WelcomeSampleTitle")
+            description = QLabel(sample.description, self.sample_panel)
+            description.setObjectName("WelcomeSampleDescription")
+            description.setWordWrap(True)
+            text_column.addWidget(title)
+            text_column.addWidget(description)
+            sample_layout.addLayout(text_column, 1)
+
+            self.open_sample_button = QPushButton("Open Example", self.sample_panel)
+            self.open_sample_button.setObjectName("OpenSampleButton")
+            self.open_sample_button.setMinimumHeight(30)
+            self.open_sample_button.clicked.connect(self._on_sample)
+            sample_layout.addWidget(self.open_sample_button)
+            layout.addWidget(self.sample_panel)
 
         self.show_checkbox = QCheckBox("Show this dialog on startup", self)
         self.show_checkbox.setChecked(show_on_startup)
@@ -102,6 +144,11 @@ class WelcomeDialog(QDialog):
             return None
         data = item.data(256)
         return str(data) if data else item.text()
+
+    def _on_sample(self) -> None:
+        self.action = "sample"
+        self.selected_path = None
+        self.accept()
 
     def _on_open(self) -> None:
         path = self._current_path()
