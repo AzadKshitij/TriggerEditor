@@ -28,27 +28,17 @@ from collections.abc import Callable
 from typing import ClassVar
 
 from loguru import logger
-from qtpy.QtCore import (
-    QEvent,
-    QObject,
-    QPoint,
-    QPointF,
-    QRect,
-    QRectF,
-    QSize,
-    Qt,
-    QTimer,
-)
+from qtpy.QtCore import QEvent, QObject, QPoint, QPointF, QRect, QSize, Qt, QTimer
 from qtpy.QtGui import (
     QColor,
     QFontMetrics,
     QIcon,
     QPainter,
-    QPainterPath,
     QPaintEvent,
     QPalette,
     QPen,
     QPixmap,
+    QPolygonF,
     QShowEvent,
 )
 from qtpy.QtWidgets import (
@@ -73,7 +63,7 @@ from trigger_designer.qt.widgets.common.config_widgets import IconButton
 
 #: Chrome row height and caption-button hit area (docs/DESIGN_SYSTEM.md §17).
 CHROME_H = 32
-#: Caption glyphs are drawn in a 12px box; independent of IconButton.
+#: Caption glyphs are hand-drawn on a 12px grid; independent of IconButton.
 CAPTION_ICON_SIZE = 12
 CAPTION_BUTTON_W = 44
 #: Width of the edge zone that starts a native resize on a frameless window.
@@ -90,78 +80,32 @@ _NATIVE_WATCH_MS = 120
 
 # -- caption glyphs -----------------------------------------------------------
 #
-# Drawn here rather than shipped as bitmaps: the strokes follow the theme colour
-# and there are no new resource ids to keep in sync. Each pixmap is painted in
-# *physical* pixels, the way Windows draws its own caption, so a stroke is a
-# whole number of device pixels at every scale instead of a smeared 1.25px one:
-#
-# * the stroke is 1 device pixel up to 150%, 2 at 175-250%, and so on;
-# * straight edges sit on pixel centres (odd strokes) or pixel edges (even
-#   strokes), so they stay crisp with antialiasing on;
-# * antialiasing stays on for Close's diagonals and the squares' soft corners.
-
-#: Scales a pixmap is rendered for; Qt picks the closest for the screen.
-_GLYPH_DPRS = (1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0)
-#: The Windows caption glyph is 10x10 logical px, centred in the 12px box.
-_GLYPH_LOGICAL = 10
+# Drawn here rather than shipped as bitmaps: the strokes follow the theme
+# colour, stay crisp at any device-pixel ratio, and there are no new resource
+# ids to keep in sync. Geometry is the Windows caption grid (10x10 in a
+# 12px box, 1px strokes).
 
 
-class _Grid:
-    """One scale's glyph geometry, all in device pixels."""
-
-    def __init__(self, dpr: float) -> None:
-        self.dpr = dpr
-        self.stroke = max(1, int(dpr + 0.25))
-        self.canvas = round(CAPTION_ICON_SIZE * dpr)
-        self.size = max(self.stroke * 3, round(_GLYPH_LOGICAL * dpr))
-        self.origin = (self.canvas - self.size) // 2
-        # Stroke centre-lines of the glyph box: the outer edge of the stroke
-        # lands exactly on the box.
-        half = self.stroke / 2
-        self.lo = self.origin + half
-        self.hi = self.origin + self.size - half
-        self.radius = 1.5 * dpr
-        # How far the restore glyph's front square sits inside the back one.
-        self.inset = max(self.stroke + 1, round(2 * dpr))
+def _draw_minimize(painter: QPainter) -> None:
+    painter.drawLine(1, 6, 10, 6)
 
 
-def _draw_minimize(painter: QPainter, g: _Grid) -> None:
-    top = g.origin + (g.size - g.stroke) // 2
-    y = top + g.stroke / 2
-    painter.drawLine(QPointF(g.origin, y), QPointF(g.origin + g.size, y))
+def _draw_maximize(painter: QPainter) -> None:
+    painter.drawRect(1, 1, 9, 9)
 
 
-def _draw_maximize(painter: QPainter, g: _Grid) -> None:
-    painter.drawRoundedRect(
-        QRectF(g.lo, g.lo, g.hi - g.lo, g.hi - g.lo), g.radius, g.radius
-    )
+def _draw_restore(painter: QPainter) -> None:
+    painter.drawRect(1, 4, 6, 6)
+    painter.drawPolyline(QPolygonF([QPointF(3, 1), QPointF(10, 1), QPointF(10, 8)]))
+    painter.drawLine(3, 1, 3, 4)
 
 
-def _draw_restore(painter: QPainter, g: _Grid) -> None:
-    side = g.hi - g.lo - g.inset
-    painter.drawRoundedRect(
-        QRectF(g.lo, g.lo + g.inset, side, side), g.radius, g.radius
-    )
-    back = QPainterPath(QPointF(g.lo + g.inset, g.lo + g.inset))
-    back.lineTo(g.lo + g.inset, g.lo)
-    back.lineTo(g.hi, g.lo)
-    back.lineTo(g.hi, g.hi - g.inset)
-    back.lineTo(g.hi - g.inset, g.hi - g.inset)
-    painter.drawPath(back)
+def _draw_close(painter: QPainter) -> None:
+    painter.drawLine(1, 1, 10, 10)
+    painter.drawLine(10, 1, 1, 10)
 
 
-def _draw_close(painter: QPainter, g: _Grid) -> None:
-    # Diagonals are antialiased anyway, so they take the true scaled width
-    # (1.5px at 150%) rather than the whole-pixel stroke, which looked faint.
-    pen = painter.pen()
-    pen.setWidthF(max(float(g.stroke), g.dpr))
-    painter.setPen(pen)
-    near, far = g.origin, g.origin + g.size
-    painter.drawLine(QPointF(near, near), QPointF(far, far))
-    painter.drawLine(QPointF(far, near), QPointF(near, far))
-
-
-_GLYPH_PAINTERS: dict[str, Callable[[QPainter, _Grid], None]] = {
+_GLYPH_PAINTERS: dict[str, Callable[[QPainter], None]] = {
     "minimize": _draw_minimize,
     "maximize": _draw_maximize,
     "restore": _draw_restore,
@@ -169,33 +113,22 @@ _GLYPH_PAINTERS: dict[str, Callable[[QPainter, _Grid], None]] = {
 }
 
 
-def caption_pixmap(glyph: str, color: QColor, dpr: float) -> QPixmap:
-    """One caption glyph, painted in device pixels for scale ``dpr``."""
-    grid = _Grid(dpr)
-    pixmap = QPixmap(grid.canvas, grid.canvas)
-    pixmap.setDevicePixelRatio(dpr)
-    pixmap.fill(Qt.GlobalColor.transparent)
-    painter = QPainter(pixmap)
-    # The pixmap carries a device-pixel ratio, so the painter works in logical
-    # units; undo that to draw on the physical grid.
-    painter.scale(1 / dpr, 1 / dpr)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-    pen = QPen(color)
-    pen.setWidthF(float(grid.stroke))
-    pen.setCapStyle(Qt.PenCapStyle.FlatCap)
-    pen.setJoinStyle(Qt.PenJoinStyle.RoundJoin)
-    painter.setPen(pen)
-    painter.setBrush(Qt.BrushStyle.NoBrush)
-    _GLYPH_PAINTERS[glyph](painter, grid)
-    painter.end()
-    return pixmap
-
-
 def caption_icon(glyph: str, color: QColor) -> QIcon:
-    """One caption glyph as a multi-DPI ``QIcon``."""
+    """One 12px caption glyph as a multi-DPI ``QIcon``."""
     icon = QIcon()
-    for dpr in _GLYPH_DPRS:
-        icon.addPixmap(caption_pixmap(glyph, color, dpr))
+    for dpr in (1.0, 1.25, 1.5, 2.0):
+        pixmap = QPixmap(round(CAPTION_ICON_SIZE * dpr), round(CAPTION_ICON_SIZE * dpr))
+        pixmap.setDevicePixelRatio(dpr)
+        pixmap.fill(Qt.GlobalColor.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        pen = QPen(color)
+        pen.setWidthF(1.0)
+        pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+        painter.setPen(pen)
+        _GLYPH_PAINTERS[glyph](painter)
+        painter.end()
+        icon.addPixmap(pixmap)
     return icon
 
 
