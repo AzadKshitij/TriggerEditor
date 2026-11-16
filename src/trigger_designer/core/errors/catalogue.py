@@ -787,6 +787,36 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Look at the node that feeds it.",
         "error",
     ),
+    "TD-CLI-022": (
+        "A setting name or value is not valid for this node type.",
+        "Run `ops <node type>` to see each setting's type and default.",
+        "error",
+    ),
+    "TD-CLI-023": (
+        "That connection is not allowed.",
+        "Check the output and input numbers, that the input is free, and that it does not make a loop.",
+        "error",
+    ),
+    "TD-CLI-024": (
+        "A file setting points outside the folders an edit may use.",
+        'Use a path inside the workflow\'s folder, or ask the data owner to list the folder under "paths" in the policy file.',
+        "error",
+    ),
+    "TD-CLI-025": (
+        "The SQL was refused by the safety check.",
+        "Only one read-only SELECT is allowed: no files, no system or random functions, no changes.",
+        "error",
+    ),
+    "TD-CLI-026": (
+        "The workflow changed since it was read.",
+        "Read it again (`info` shows its sha256) and redo the edit.",
+        "error",
+    ),
+    "TD-CLI-027": (
+        "The edit is malformed or cannot be applied to this workflow.",
+        "Read the message: it names the edit and the field.",
+        "error",
+    ),
     "TD-IN-010": (
         "I could not read the data in this file",
         "Check the file type and delimiter; the details name the column.",

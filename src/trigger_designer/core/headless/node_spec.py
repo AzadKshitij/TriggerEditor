@@ -299,6 +299,29 @@ EXAMPLES: dict[str, dict[str, Any]] = {
         "expression": "",
     },
     "preparation.sort": {"keys": [{"column": "Amount", "order": "Descending"}]},
+    # ``dtype_custom: true`` is what makes the editor keep a chosen type; without
+    # it the editor resets the column to the type it arrives with.
+    "preparation.select": {
+        "columns": [
+            {
+                "name": "Amount",
+                "selected": True,
+                "dtype": "Float64",
+                "rename": "",
+                "date_format": "",
+                "dtype_custom": True,
+            },
+            {
+                "name": "InvoiceNo",
+                "selected": True,
+                "dtype": "String",
+                "rename": "",
+                "date_format": "",
+                "dtype_custom": False,
+            },
+        ],
+        "auto_accept_new_columns": True,
+    },
     "preparation.unique": {"selected_columns": ["InvoiceNo"]},
     "transform.sql_query": {
         "sql": 'SELECT "Vendor", SUM(TRY_CAST("Amount" AS DOUBLE)) AS total\n'

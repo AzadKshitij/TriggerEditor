@@ -107,6 +107,13 @@ def test_shaping_examples_really_run():
     assert sorted(out.collect().columns) == ["Vendor", "total"]
 
 
+def test_select_example_converts_text_to_the_type_it_names():
+    core = importlib.import_module("trigger_designer.core.shaping.select")
+    frame = pl.DataFrame({"Amount": ["2450.00", "18200.5"], "InvoiceNo": ["a", "b"]})
+    [out] = core.run_node([frame.lazy()], ns.EXAMPLES["preparation.select"])
+    assert out.collect().schema["Amount"] == pl.Float64
+
+
 def test_filter_example_selects_what_it_says():
     core = importlib.import_module("trigger_designer.core.shaping.filter")
     frame = pl.DataFrame({"Amount": [5, 20000, 30000]}).lazy()

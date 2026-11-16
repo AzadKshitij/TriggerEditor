@@ -14,7 +14,7 @@ The policy is decided by the person who owns the data and is read from a JSON
 file, never from the workflow itself, because a harness that can edit the
 workflow could otherwise grant itself more::
 
-    {"access": "rows", "max_rows": 20, "edit": false}
+    {"access": "rows", "max_rows": 20, "edit": false, "paths": []}
 
 Lookup order: ``--policy FILE``, the ``TRIGGER_DESIGNER_AGENT_POLICY``
 environment variable, then ``<workflow>.agent.json`` next to the workflow. The
@@ -46,8 +46,11 @@ class AccessPolicy:
     level: str = "schema_only"
     #: Row cap when ``level == "rows"``.
     max_rows: int = 0
-    #: May the harness change the workflow (used by the authoring API, phase 2).
+    #: May the harness change the workflow (the ``edit`` commands, ``--apply``).
     edit: bool = False
+    #: Extra folders an edit may point a file setting at, besides the
+    #: workflow's own folder.
+    paths: tuple[str, ...] = ()
     #: Where it came from: ``default`` or a file path.
     source: str = "default"
 
@@ -62,6 +65,7 @@ class AccessPolicy:
             "access": self.level,
             "max_rows": self.max_rows,
             "edit": self.edit,
+            "paths": list(self.paths),
             "source": self.source,
         }
 
@@ -100,10 +104,16 @@ def parse_policy(text: str, source: str) -> AccessPolicy:
     edit = data.get("edit", False)
     if not isinstance(edit, bool):
         raise _invalid(path, '"edit" must be true or false')
+    paths = data.get("paths", [])
+    if not isinstance(paths, list) or not all(
+        isinstance(p, str) and p.strip() for p in paths
+    ):
+        raise _invalid(path, '"paths" must be a list of folder paths')
     return AccessPolicy(
         level=level,
         max_rows=min(max_rows, HARD_MAX_ROWS) if level == "rows" else 0,
         edit=edit,
+        paths=tuple(p.strip() for p in paths),
         source=source,
     )
 
@@ -143,4 +153,22 @@ def require(policy: AccessPolicy, level: str, what: str) -> None:
         f"The access policy ({policy.level}) does not allow {what}.",
         f'It needs "access": "{level}" or higher. The data owner sets this in '
         f"the policy file ({where}).",
+    )
+
+
+def require_edit(policy: AccessPolicy) -> None:
+    """Raise a refusal unless ``policy`` lets a tool change the workflow."""
+    if policy.edit:
+        return
+    where = (
+        policy.source
+        if policy.source != "default"
+        else f"--policy, {ENV_VAR} or <workflow>{SIDECAR_SUFFIX}"
+    )
+    raise CliError(
+        ExitCode.REFUSED,
+        "TD-CLI-019",
+        "The access policy does not allow changing the workflow.",
+        "Without --apply an edit only shows its diff. To write, the data owner "
+        f'sets "edit": true in the policy file ({where}).',
     )

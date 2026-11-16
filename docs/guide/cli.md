@@ -21,6 +21,7 @@ This page is both the guide and the command reference.
 - [params](#params)
 - [paths](#paths)
 - [Machine-readable use and AI harnesses](#machine-readable-use-and-ai-harnesses)
+- [Changing a workflow from the command line](#changing-a-workflow-from-the-command-line)
 - [Parameters and path overrides](#parameters-and-path-overrides)
 - [Workpaper Output on the command line](#workpaper-output-on-the-command-line)
 - [Run records and verify-log](#run-records-and-verify-log)
@@ -212,6 +213,8 @@ trigger-designer-cli [--version] [--state-dir DIR] <command> [options]
 | `schema` | Column names and types at a node | yes |
 | `profile` | Aggregate statistics per column at a node | yes |
 | `preview` | The first rows at a node | yes |
+| `edit` | Add or remove nodes, connect, change settings, label, lay out, or apply a list of edits | no (writes only with `--apply`) |
+| `diff` | What differs between two workflows | no |
 
 Every command that reports something takes `--json` (the same as `--format json`; for `run` the same as `--log-format json`). Only `approve` (a person's decision) and `schedule add` / `schedule remove` print text alone. See [Machine-readable use and AI harnesses](#machine-readable-use-and-ai-harnesses).
 
@@ -494,7 +497,7 @@ trigger-designer-cli ops [OP] [--all] [--forms] [--json]
 
 The schemas are generated from the nodes themselves, and a test fails when the catalogue and the app disagree. `spec_version` is the version of the document's own shape; it changes only when that shape does. Top-level objects are closed (`additionalProperties: false`): a setting that is not listed is not read.
 
-Numbers read from a CSV are text until a Select node converts them. A Filter on a text column compares text, so convert first.
+Numbers read from a CSV are text until a Select node converts them. A Filter on a text column compares text, so convert first. In a Select node's `columns`, set the column's `dtype` (such as `Float64`) **and** `"dtype_custom": true`: without that flag the editor resets the column to the type it arrives with. `ops preparation.select` shows a complete column entry.
 
 ### schema, profile, preview: the data at a node
 
@@ -522,7 +525,7 @@ The data owner decides, in a small JSON file:
 { "access": "rows", "max_rows": 20, "edit": false }
 ```
 
-`access` is `schema_only`, `aggregates` or `rows`; `rows` needs `max_rows` (at most 1,000). `edit` is for the authoring commands that come later. The file is looked for, in this order:
+`access` is `schema_only`, `aggregates` or `rows`; `rows` needs `max_rows` (at most 1,000). `edit` lets the [`edit` command](#changing-a-workflow-from-the-command-line) write (`--apply`); without it a tool can only see the diff. `paths` is an optional list of extra folders a file setting may point into. The file is looked for, in this order:
 
 1. `--policy FILE` on the command;
 2. the `TRIGGER_DESIGNER_AGENT_POLICY` environment variable;
@@ -535,6 +538,78 @@ With none of them the access is `schema_only`. A file that cannot be read or is 
     The policy is kept out of the workflow so that a tool cannot change it by editing the workflow. A tool that can write any file, though, can write `WORKFLOW.agent.json`. For a real boundary, set `TRIGGER_DESIGNER_AGENT_POLICY` (or pass `--policy`) from outside the tool's reach, and point it at a file the tool cannot change. Whatever a tool is allowed to read is then sent wherever that tool sends its context: that part is the tool's, not this program's.
 
 New codes: `TD-CLI-019` (the access policy does not allow this), `TD-CLI-020` (the node was not found, or the name matches several nodes; use the id), `TD-CLI-021` (this node has no table to look at).
+
+## Changing a workflow from the command line
+
+```text
+trigger-designer-cli edit new         WORKFLOW
+trigger-designer-cli edit add-node    WORKFLOW TYPE [--set NAME=VALUE ...] [--settings JSON] [--title T] [--after NODE | --x X --y Y]
+trigger-designer-cli edit remove-node WORKFLOW NODE
+trigger-designer-cli edit connect     WORKFLOW FROM TO [--output N_OR_NAME] [--input N]
+trigger-designer-cli edit disconnect  WORKFLOW FROM TO [--output N_OR_NAME] [--input N]
+trigger-designer-cli edit set         WORKFLOW NODE [--set NAME=VALUE ...] [--settings JSON]
+trigger-designer-cli edit label       WORKFLOW NODE TEXT [--show | --hide]
+trigger-designer-cli edit layout      WORKFLOW
+trigger-designer-cli edit patch       WORKFLOW EDITS        (EDITS: @file.json, or - for standard input)
+trigger-designer-cli diff OLD NEW
+```
+
+All of them take `--json`, `--policy FILE`, `--expect-sha SHA256` and `--apply`. **Without `--apply` nothing is written:** the command prints the diff the edit would make. With `--apply` the file is rewritten atomically, and the first `WORKFLOW.tds.bak` is kept (a second edit does not overwrite it).
+
+`edit new WORKFLOW` creates an empty workflow (a new `.tds` name in an existing folder, with its own `workflow_uuid`). It never replaces a file that exists, and like every edit it only writes with `--apply`. A whole workflow can then be built with `edit patch` and checked with `validate`, with no editor window: `new`, `patch`, `validate`, `approve`, `run`.
+
+Safety rules, in the order they are checked:
+
+1. `--apply` needs `"edit": true` in the data owner's [policy file](#who-decides-what-a-tool-may-see); otherwise exit 6 with `TD-CLI-019`.
+2. `--expect-sha` (the `sha256` that `info` prints) refuses the edit if the file is not the one the tool read (`TD-CLI-026`). The file is checked again just before the write, so a save from the editor in the meantime is never overwritten.
+3. A node is named by its id, its title, a `ref` from earlier in the same patch, or its type id when only one node has it. A name that matches several nodes is an error (`TD-CLI-020`), never a guess.
+4. **Settings** must be settings of that node type (`ops NODE_TYPE`) with the type their default has. `--set NAME=VALUE` takes the setting's own type (`10000` is text for a text setting and a number for a number setting). Anything else is `TD-CLI-022`, with the names that exist as the hint. The editor's own choice lists are not loaded here; the node checks its choices when it runs.
+5. **File settings** (a File Input or Output path, a Workpaper's folders) may only point into the workflow's folder, or a folder in the policy's `paths` list. Anything else is refused with exit 6 and `TD-CLI-024`, so an edit cannot aim an output, or a read, somewhere else.
+6. **SQL** (the SQL Query node, a Filter expression, Formula and Multi-Field Formula text) goes through the read-only SQL guard before it is saved: one `SELECT`, no files, no system or random functions (`TD-CLI-025`).
+7. **Connections** must exist (`TD-CLI-023`): the output and the input are numbered from 0 (an output can also be named, such as `true`), an input that takes one connection must be free, and an edge cannot make a loop. A Union takes any number of inputs and keeps them numbered `#1`, `#2`, ... in order.
+8. The result must not have a new error in `validate`. A file saved by a newer version is refused (`TD-CLI-027`); so is changing the *settings* of a node still in the pre-v2 file format (it can be connected, not re-configured): open and save the workflow once in Trigger Designer.
+
+A new node takes the next free id above every id in the file, is placed under the node named by `--after` (or below the lowest node) where no node already is, and is written the way the editor would save it. `edit layout` re-arranges every connected node in rows by depth; it refuses a workflow that has groups.
+
+### patch: a whole sub-graph in one call
+
+```json
+[
+  {"op": "add_node", "type": "preparation.filter", "ref": "big",
+   "settings": {"column": "Amount", "operation": ">", "value": "10000"}},
+  {"op": "add_node", "type": "preparation.sort", "ref": "sorted", "after": "big"},
+  {"op": "connect", "from": 2176088583056, "to": "big"},
+  {"op": "connect", "from": "big", "output": "true", "to": "sorted"},
+  {"op": "label", "node": "sorted", "text": "Largest first", "visible": true}
+]
+```
+
+A new node's id is not known in advance, so `ref` gives it a name for the edits after it. The operations are `add_node`, `remove_node`, `connect`, `disconnect`, `set` (`node`, `settings`), `label` and `layout`; an unknown field is an error. The batch is **all or nothing**: the first failing edit stops it, the error names it (`edit 3 (connect): ...`), and nothing is written.
+
+### What the command returns
+
+With `--json`: `dry_run`, `applied`, `changed`, `sha256_before`, `sha256_after`, `backup`, `results` (one entry per edit, with an `action`; for `add_node` the new node's `id`) and `diff`:
+
+```json
+{
+  "empty": false,
+  "summary": {"nodes_added": 1, "nodes_removed": 0, "nodes_changed": 1,
+              "connections_added": 1, "connections_removed": 0},
+  "nodes": {"added": [{"id": 2976902487313, "title": "Sort", "op": "preparation.sort"}],
+            "removed": [],
+            "changed": [{"id": 2176088583056, "title": "Filter", "op": "preparation.filter",
+                         "changes": [{"path": "content.settings.value", "from": "x", "to": "10000"}]}]},
+  "connections": {"added": [{"from": {"node": 2176088583056, "output": 0},
+                             "to": {"node": 2976902487313, "input": 0}}],
+                  "removed": []}
+}
+```
+
+`diff OLD NEW` gives the same document for two files. A workflow holds settings, never data, so a diff never contains a cell value.
+
+!!! note "A changed workflow must be approved again"
+
+    An edit changes the file's hash, so a workflow that was [approved](#approve-and-the-approval-flow) to run is no longer approved. That is intended: a person looks at the diff and approves the new version.
 
 ## Parameters and path overrides
 

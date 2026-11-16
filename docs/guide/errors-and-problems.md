@@ -321,5 +321,11 @@ Raised by the command-line runner; see [cli.md](cli.md).
 | `TD-CLI-019` | The data owner's access policy does not allow this. | Ask the data owner to raise the access level in the policy file. |
 | `TD-CLI-020` | The node was not found, or the name matches several nodes. | Use the node's numeric id (see `info`). |
 | `TD-CLI-021` | This node has no table to look at. | Look at the node that feeds it. |
+| `TD-CLI-022` | A setting name or value is not valid for this node type. | Run `ops <node type>` to see each setting's type and default. |
+| `TD-CLI-023` | That connection is not allowed. | Check the output and input numbers, that the input is free, and that it does not make a loop. |
+| `TD-CLI-024` | A file setting points outside the folders an edit may use. | Use a path inside the workflow's folder, or ask the data owner to list the folder under `paths` in the policy file. |
+| `TD-CLI-025` | The SQL was refused by the safety check. | Only one read-only SELECT is allowed: no files, no system or random functions, no changes. |
+| `TD-CLI-026` | The workflow changed since it was read. | Read it again (`info` shows its sha256) and redo the edit. |
+| `TD-CLI-027` | The edit is malformed or cannot be applied to this workflow. | Read the message: it names the edit and the field. |
 
 <!-- END GENERATED ERROR TABLE -->

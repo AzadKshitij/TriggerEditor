@@ -59,6 +59,12 @@ CLI_CODES: dict[str, str] = {
     "TD-CLI-019": "The data owner's access policy does not allow this.",
     "TD-CLI-020": "The node named on the command line was not found, or is ambiguous.",
     "TD-CLI-021": "This node has no table to look at.",
+    "TD-CLI-022": "A setting name or value is not valid for this node type.",
+    "TD-CLI-023": "That connection is not allowed.",
+    "TD-CLI-024": "A file setting points outside the folders an edit may use.",
+    "TD-CLI-025": "The SQL was refused by the safety check.",
+    "TD-CLI-026": "The workflow changed since it was read.",
+    "TD-CLI-027": "The edit is malformed or cannot be applied to this workflow.",
 }
 
 
