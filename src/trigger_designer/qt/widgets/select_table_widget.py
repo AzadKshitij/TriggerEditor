@@ -572,6 +572,20 @@ class SelectFilterProxy(QSortFilterProxyModel):
         return False
 
 
+def paint_row_separator(painter, option) -> None:
+    """Draw the row hairline on the last pixel of ``option.rect``.
+
+    Every delegate of the Select table calls this: a delegate that overrides
+    ``paint`` replaces the view default, so a column without the call would
+    leave a gap in the row boundary.
+    """
+    painter.save()
+    painter.setPen(QPen(ResourceManager().get_theme_color("border_primary"), 1))
+    bottom = row_separator_y(option)
+    painter.drawLine(option.rect.left(), bottom, option.rect.right(), bottom)
+    painter.restore()
+
+
 class DtypeDelegate(QStyledItemDelegate):
     """Inline dtype dropdown; one click opens it, one pick commits."""
 
@@ -662,6 +676,7 @@ class DtypeDelegate(QStyledItemDelegate):
         painter.drawLine(cx - 3, cy - 1, cx, cy + 2)
         painter.drawLine(cx, cy + 2, cx + 3, cy - 1)
         painter.restore()
+        paint_row_separator(painter, option)
 
 
 class RenameDelegate(QStyledItemDelegate):
@@ -719,6 +734,7 @@ class RenameDelegate(QStyledItemDelegate):
         )
 
         if not value:
+            paint_row_separator(painter, option)
             return
         painter.save()
         painter.setPen(
@@ -740,6 +756,7 @@ class RenameDelegate(QStyledItemDelegate):
             elided,
         )
         painter.restore()
+        paint_row_separator(painter, option)
 
     def eventFilter(self, editor, event):
         if (
@@ -765,14 +782,7 @@ class RowSeparatorDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
         super().paint(painter, option, index)
-        # The cell under the pointer may be any one of the row's columns, so
-        # the hairline is drawn even when the index is one Qt hands to a
-        # blank corner.
-        painter.save()
-        painter.setPen(QPen(ResourceManager().get_theme_color("border_primary"), 1))
-        bottom = row_separator_y(option)
-        painter.drawLine(option.rect.left(), bottom, option.rect.right(), bottom)
-        painter.restore()
+        paint_row_separator(painter, option)
 
 
 class SelectTableView(QTableView):

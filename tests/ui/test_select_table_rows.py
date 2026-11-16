@@ -17,6 +17,7 @@ from qtpy.QtWidgets import QApplication, QStyleOptionViewItem
 
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.widgets.select_table_widget import (
+    DtypeDelegate,
     RenameDelegate,
     RowSeparatorDelegate,
     SelectTableView,
@@ -150,5 +151,46 @@ def test_rename_cell_leaves_the_row_background_alone() -> None:
                 f"the rename cell painted over the row at ({x}, {y})"
             )
         assert text.width() < option.rect.width()
+    finally:
+        _drop(view)
+
+
+def _real_cell_image(view: SelectTableView, delegate, column: int) -> QImage:
+    """Paint a real row's cell through ``delegate`` so its own paint path runs."""
+    model = view.model()
+    index = model.index(0, column)
+    option = _row_option(view)
+    image = QImage(option.rect.size(), QImage.Format.Format_ARGB32)
+    image.fill(BACKGROUND)
+    painter = QPainter(image)
+    try:
+        delegate.paint(painter, option, index)
+    finally:
+        painter.end()
+    return image
+
+
+def test_rename_and_dtype_cells_keep_the_row_hairline() -> None:
+    """Both delegates replace the view default, so each must draw the hairline."""
+    from qtpy.QtGui import QStandardItem, QStandardItemModel
+
+    view = _make_view()
+    try:
+        model = QStandardItemModel(1, 5)
+        for col in range(5):
+            model.setItem(0, col, QStandardItem("value"))
+        view.setModel(model)
+        option = _row_option(view)
+        y = row_separator_y(option)
+        for delegate in (DtypeDelegate(view), RenameDelegate(view)):
+            image = _real_cell_image(view, delegate, 2)
+            for x in (
+                option.rect.left(),
+                option.rect.center().x(),
+                option.rect.right(),
+            ):
+                assert image.pixelColor(x, y).rgba() == _separator_colour(), (
+                    f"{type(delegate).__name__} left a gap in the row hairline at x={x}"
+                )
     finally:
         _drop(view)
