@@ -817,6 +817,11 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Read the message: it names the edit and the field.",
         "error",
     ),
+    "TD-CLI-028": (
+        "That workflow is outside the folders this server may use.",
+        "Use a workflow inside the folders given with --workspace when the server was started.",
+        "error",
+    ),
     "TD-IN-010": (
         "I could not read the data in this file",
         "Check the file type and delimiter; the details name the column.",

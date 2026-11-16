@@ -327,5 +327,6 @@ Raised by the command-line runner; see [cli.md](cli.md).
 | `TD-CLI-025` | The SQL was refused by the safety check. | Only one read-only SELECT is allowed: no files, no system or random functions, no changes. |
 | `TD-CLI-026` | The workflow changed since it was read. | Read it again (`info` shows its sha256) and redo the edit. |
 | `TD-CLI-027` | The edit is malformed or cannot be applied to this workflow. | Read the message: it names the edit and the field. |
+| `TD-CLI-028` | The AI server was asked for a workflow outside the folders it may use. | Use a workflow inside a `--workspace` folder, or start the server with that folder added. |
 
 <!-- END GENERATED ERROR TABLE -->

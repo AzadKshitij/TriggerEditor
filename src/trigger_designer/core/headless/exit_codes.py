@@ -65,6 +65,7 @@ CLI_CODES: dict[str, str] = {
     "TD-CLI-025": "The SQL was refused by the safety check.",
     "TD-CLI-026": "The workflow changed since it was read.",
     "TD-CLI-027": "The edit is malformed or cannot be applied to this workflow.",
+    "TD-CLI-028": "That workflow is outside the folders this server may use.",
 }
 
 

@@ -22,6 +22,7 @@ This page is both the guide and the command reference.
 - [paths](#paths)
 - [Machine-readable use and AI harnesses](#machine-readable-use-and-ai-harnesses)
 - [Changing a workflow from the command line](#changing-a-workflow-from-the-command-line)
+- [Using it from an AI tool (MCP server)](#using-it-from-an-ai-tool-mcp-server)
 - [Parameters and path overrides](#parameters-and-path-overrides)
 - [Workpaper Output on the command line](#workpaper-output-on-the-command-line)
 - [Run records and verify-log](#run-records-and-verify-log)
@@ -610,6 +611,41 @@ With `--json`: `dry_run`, `applied`, `changed`, `sha256_before`, `sha256_after`,
 !!! note "A changed workflow must be approved again"
 
     An edit changes the file's hash, so a workflow that was [approved](#approve-and-the-approval-flow) to run is no longer approved. That is intended: a person looks at the diff and approves the new version.
+
+## Using it from an AI tool (MCP server)
+
+Tools such as Claude Code, Codex and Cursor speak the Model Context Protocol (MCP). `trigger-designer-mcp` is a small local server that lets them use the read-only parts of this page without parsing text. It talks over standard input and output only: it opens no port and sends nothing over the network.
+
+Install the optional extra, then add the server to the tool's MCP settings:
+
+```bash
+uv sync --extra agent
+```
+
+```json
+{
+  "mcpServers": {
+    "trigger-designer": {
+      "command": "uv",
+      "args": ["run", "trigger-designer-mcp",
+               "--workspace", "C:\audits\q3",
+               "--policy", "C:\audits\policy.json"]
+    }
+  }
+}
+```
+
+The data owner sets the boundary when the server starts, not the tool:
+
+| Option | Meaning |
+|---|---|
+| `--workspace DIR` | A folder whose `.tds` files may be used. Repeat it for more. Default: the folder the server starts in. A workflow anywhere else is refused (`TD-CLI-028`). |
+| `--policy FILE` | The [access policy](#who-decides-what-a-tool-may-see). Without it, `TRIGGER_DESIGNER_AGENT_POLICY`, then `WORKFLOW.agent.json`, then `schema_only`. |
+| `--timeout SEC` | Stop a data tool that runs longer than this (default 600). |
+
+This first version is read-only. The tools are `get_policy` (call it first), `list_ops`, `describe_op`, `read_workflow`, `validate`, `diff`, `get_schema`, `get_profile`, `get_preview` and `explain_error`. They return the same JSON as the commands above, and a refusal or failure comes back as `{"error": {"code", "message", "hint"}}` with a `TD-*` code. There is no tool to edit, approve or run a workflow yet.
+
+Data tools run the workflow's earlier nodes in a separate process, so a stuck node can be stopped and nothing it prints reaches the tool. The tool never gets more than the policy allows, whatever it asks for.
 
 ## Parameters and path overrides
 
