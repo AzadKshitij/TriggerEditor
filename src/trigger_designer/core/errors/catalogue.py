@@ -772,6 +772,21 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Add a File Output node.",
         "warning",
     ),
+    "TD-CLI-019": (
+        "The data owner's access policy does not allow this.",
+        "Ask the data owner to raise the access level in the policy file.",
+        "error",
+    ),
+    "TD-CLI-020": (
+        "The node was not found, or the name matches several nodes.",
+        "Use the node's numeric id (see `info`).",
+        "error",
+    ),
+    "TD-CLI-021": (
+        "This node has no table to look at.",
+        "Look at the node that feeds it.",
+        "error",
+    ),
     "TD-IN-010": (
         "I could not read the data in this file",
         "Check the file type and delimiter; the details name the column.",

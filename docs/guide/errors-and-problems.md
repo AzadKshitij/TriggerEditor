@@ -123,7 +123,7 @@ Add `--check` to see whether the page is out of date without changing it.
 
 <!-- BEGIN GENERATED ERROR TABLE (scripts/gen_error_reference.py) -->
 
-_117 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
+_120 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
 
 #### Reading input files (TD-IN)
 
@@ -318,5 +318,8 @@ Raised by the command-line runner; see [cli.md](cli.md).
 | `TD-CLI-016` | The scheduler could not be configured. | Check Windows Task Scheduler permissions. |
 | `TD-CLI-017` | The run log failed verification. | Treat the log as modified. |
 | `TD-CLI-018` | This workflow writes no files. _(warning)_ | Add a File Output node. |
+| `TD-CLI-019` | The data owner's access policy does not allow this. | Ask the data owner to raise the access level in the policy file. |
+| `TD-CLI-020` | The node was not found, or the name matches several nodes. | Use the node's numeric id (see `info`). |
+| `TD-CLI-021` | This node has no table to look at. | Look at the node that feeds it. |
 
 <!-- END GENERATED ERROR TABLE -->
