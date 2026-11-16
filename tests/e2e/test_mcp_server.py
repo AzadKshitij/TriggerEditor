@@ -34,7 +34,8 @@ CASE = next(c for c in FILE_OUTPUT_CASES if c.name == "filter")
 #: A value that is in the input data and nowhere in the catalogue or policy.
 CELL_VALUE = "sudoku"
 
-TOOLS = {
+EDIT_TOOLS = {"new_workflow", "patch_workflow"}
+TOOLS = EDIT_TOOLS | {
     "get_policy",
     "list_ops",
     "describe_op",
@@ -123,9 +124,11 @@ def test_every_tool_is_registered_and_marked_read_only(wf, tmp_path):
     tools = asyncio.run(go())
     assert {t.name for t in tools} == TOOLS
     for tool in tools:
-        assert tool.annotations.read_only_hint is True, tool.name
+        expected_read_only = tool.name not in EDIT_TOOLS
+        assert tool.annotations.read_only_hint is expected_read_only, tool.name
         assert tool.annotations.destructive_hint is False, tool.name
-    assert not {t.name for t in tools} & {"run", "edit", "apply", "approve"}
+    # Nothing can approve or run a workflow: that stays with a person.
+    assert not {t.name for t in tools} & {"run", "approve", "run_workflow"}
 
 
 def test_discovery_tools_return_structured_data(wf, tmp_path):
@@ -152,7 +155,12 @@ def test_get_policy_reports_what_the_owner_allows(wf, tmp_path):
     default = call(_tools(wf, tmp_path), "get_policy", {"workflow": wf.name})
     policy = default.structured_content
     assert policy["access"] == "schema_only" and policy["edit"] is False
-    assert policy["tools"] == {"schema": True, "profile": False, "preview": False}
+    assert policy["tools"] == {
+        "schema": True,
+        "profile": False,
+        "preview": False,
+        "apply_edits": False,
+    }
     rows = call(
         _tools(wf, tmp_path, access="rows", max_rows=3),
         "get_policy",
@@ -215,6 +223,130 @@ def test_the_workspace_guard_stops_data_tools_too(wf, tmp_path):
     other = tmp_path.parent / "other.tds"
     refused = call(tools, "get_preview", {"workflow": str(other), "node": "1"})
     assert error_of(refused)["code"] == "TD-CLI-028"
+
+
+# ---------------------------------------------------------------- edit tools
+ADD_SORT = [
+    {
+        "op": "add_node",
+        "type": "preparation.sort",
+        "ref": "s",
+        "settings": {"keys": [{"column": "amount", "order": "Descending"}]},
+    }
+]
+
+
+def _new(tools: AgentTools, name: str, apply: bool):
+    return call(tools, "new_workflow", {"workflow": name, "apply": apply})
+
+
+def test_edits_are_dry_runs_unless_apply_is_set(wf, tmp_path):
+    tools = _tools(wf, tmp_path, access="schema_only", edit=True)
+    before = wf.read_bytes()
+    dry = call(tools, "patch_workflow", {"workflow": wf.name, "edits": ADD_SORT})
+    body = dry.structured_content
+    assert not dry.is_error, dry.content
+    assert body["dry_run"] is True and body["applied"] is False
+    assert body["diff"]["summary"]["nodes_added"] == 1
+    assert wf.read_bytes() == before
+    fresh = _new(tools, "fresh.tds", apply=False)
+    assert fresh.structured_content["created"] is False
+    assert not (wf.parent / "fresh.tds").exists()
+
+
+def test_apply_is_refused_without_edit_in_the_policy(wf, tmp_path):
+    tools = _tools(wf, tmp_path, access="rows", max_rows=5)  # edit defaults to false
+    before = wf.read_bytes()
+    refused = call(
+        tools,
+        "patch_workflow",
+        {"workflow": wf.name, "edits": ADD_SORT, "apply": True},
+    )
+    assert error_of(refused)["code"] == "TD-CLI-019"
+    assert wf.read_bytes() == before and not list(wf.parent.glob("*.bak"))
+    assert error_of(_new(tools, "fresh.tds", apply=True))["code"] == "TD-CLI-019"
+    assert not (wf.parent / "fresh.tds").exists()
+
+
+def test_apply_writes_keeps_a_backup_and_changes_the_hash(wf, tmp_path):
+    tools = _tools(wf, tmp_path, access="schema_only", edit=True)
+    old_sha = call(tools, "read_workflow", {"workflow": wf.name}).structured_content[
+        "sha256"
+    ]
+    done = call(
+        tools,
+        "patch_workflow",
+        {
+            "workflow": wf.name,
+            "edits": ADD_SORT,
+            "apply": True,
+            "expect_sha256": old_sha,
+        },
+    )
+    body = done.structured_content
+    assert not done.is_error, done.content
+    assert body["applied"] is True and body["sha256_before"] == old_sha
+    assert body["sha256_after"] != old_sha and body["backup"]
+    assert Path(body["backup"]).exists()
+    again = call(tools, "read_workflow", {"workflow": wf.name}).structured_content
+    assert again["sha256"] == body["sha256_after"]
+    assert call(tools, "validate", {"workflow": wf.name}).structured_content["ok"]
+
+
+def test_a_stale_expect_sha256_is_refused_and_nothing_is_written(wf, tmp_path):
+    tools = _tools(wf, tmp_path, edit=True)
+    before = wf.read_bytes()
+    stale = call(
+        tools,
+        "patch_workflow",
+        {
+            "workflow": wf.name,
+            "edits": ADD_SORT,
+            "apply": True,
+            "expect_sha256": "0" * 64,
+        },
+    )
+    assert error_of(stale)["code"] == "TD-CLI-026"
+    assert wf.read_bytes() == before
+
+
+def test_a_bad_edit_is_a_structured_error_and_all_or_nothing(wf, tmp_path):
+    tools = _tools(wf, tmp_path, edit=True)
+    before = wf.read_bytes()
+    edits = [*ADD_SORT, {"op": "connect", "from": "s", "to": "no such node"}]
+    bad = call(
+        tools, "patch_workflow", {"workflow": wf.name, "edits": edits, "apply": True}
+    )
+    assert error_of(bad)["code"] in {"TD-CLI-020", "TD-CLI-027"}
+    assert wf.read_bytes() == before
+
+
+def test_new_workflow_creates_once_and_never_replaces(wf, tmp_path):
+    tools = _tools(wf, tmp_path, edit=True)
+    made = _new(tools, "fresh.tds", apply=True)
+    assert not made.is_error, made.content
+    assert made.structured_content["created"] is True
+    assert (wf.parent / "fresh.tds").exists()
+    assert error_of(_new(tools, "fresh.tds", apply=True))["code"] == "TD-CLI-027"
+    assert error_of(_new(tools, wf.name, apply=True))["code"] == "TD-CLI-027"
+
+
+def test_edit_tools_obey_the_workspace_guard(wf, tmp_path):
+    tools = _tools(wf, tmp_path, edit=True)
+    outside = str(tmp_path.parent / "elsewhere.tds")
+    assert error_of(_new(tools, outside, apply=True))["code"] == "TD-CLI-028"
+    refused = call(
+        tools,
+        "patch_workflow",
+        {"workflow": outside, "edits": ADD_SORT, "apply": True},
+    )
+    assert error_of(refused)["code"] == "TD-CLI-028"
+
+
+def test_get_policy_tells_the_harness_whether_it_may_apply(wf, tmp_path):
+    tools = _tools(wf, tmp_path, access="schema_only", edit=True)
+    policy = call(tools, "get_policy", {"workflow": wf.name}).structured_content
+    assert policy["tools"]["apply_edits"] is True
 
 
 # ------------------------------------------------------- real stdio process

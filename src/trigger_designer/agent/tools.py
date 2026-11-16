@@ -1,7 +1,9 @@
-"""The read-only tools an AI harness gets (Qt-free, MCP-free).
+"""The tools an AI harness gets (Qt-free, MCP-free).
 
 Every function returns plain JSON-able data or raises ``CliError``; the MCP
-layer (``server.py``) only registers them. Nothing here writes a file.
+layer (``server.py``) only registers them. Only ``new_workflow`` and
+``patch_workflow`` can write a file, and only with ``apply=True`` under a policy
+with ``"edit": true``; without ``apply`` they return the diff and write nothing.
 
 Safety, in the order a request meets it:
 
@@ -126,6 +128,7 @@ class AgentTools:
                 "schema": policy.allows("schema_only"),
                 "profile": policy.allows("aggregates"),
                 "preview": policy.allows("rows"),
+                "apply_edits": policy.edit,
             },
         }
 
@@ -191,6 +194,35 @@ class AgentTools:
             "hint": (entry or {}).get("hint", ""),
             "fixes": list(fixes),
         }
+
+    # ------------------------------------------------------------- editing
+    def _edit_args(self, path: str, apply: bool, expect_sha256: str | None):
+        return Namespace(
+            workflow=path,
+            policy=self.policy_file,
+            apply=bool(apply),
+            expect_sha=expect_sha256,
+        )
+
+    def new_workflow(self, workflow: str, apply: bool = False) -> dict:
+        """Create an empty workflow. Never replaces a file that exists."""
+        from trigger_designer.cli.commands.edit import run_new
+
+        path = self.workflow_path(workflow)
+        return run_new(self._edit_args(path, apply, None))
+
+    def patch_workflow(
+        self,
+        workflow: str,
+        edits: list[dict],
+        apply: bool = False,
+        expect_sha256: str | None = None,
+    ) -> dict:
+        """Apply a list of edits as one all-or-nothing batch (dry run by default)."""
+        from trigger_designer.cli.commands.edit import run_edit
+
+        path = self.workflow_path(workflow)
+        return run_edit(self._edit_args(path, apply, expect_sha256), edits, patch=True)
 
     # ------------------------------------------------- data (child process)
     def schema(self, workflow: str, node: str, output: str | None = None) -> dict:

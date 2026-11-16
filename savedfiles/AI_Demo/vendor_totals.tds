@@ -1,0 +1,297 @@
+{
+  "id": 1,
+  "scene_width": 64000,
+  "scene_height": 64000,
+  "nodes": [
+    {
+      "id": 2,
+      "title": "Invoices",
+      "pos_x": 0.0,
+      "pos_y": 0.0,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": 3,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "filePath": "invoices.csv",
+        "file_type": "csv",
+        "delimiter": ",",
+        "first_row_contains_field_names": true,
+        "encoding": "utf8",
+        "read_as_text": false,
+        "start_row": 1,
+        "record_limit": 0,
+        "selected_sheet": "",
+        "sheet_mode": "one",
+        "selected_sheets": [],
+        "add_sheet_name_column": false,
+        "sheet_name_column_name": "SheetName",
+        "include_patterns": [],
+        "exclude_patterns": [
+          "~$*",
+          ".*",
+          "Thumbs.db",
+          "desktop.ini"
+        ],
+        "recursive": false,
+        "file_order": "name",
+        "max_files": 10000,
+        "schema_mismatch": "union",
+        "on_file_error": "stop",
+        "output_filename_as_field": false,
+        "file_name_column_name": "FileName",
+        "file_name_value": "name",
+        "json_nested": "text",
+        "db_mode": "table",
+        "db_table": "",
+        "db_query": "",
+        "filePathRel": "invoices.csv"
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 3,
+      "node_type": "input",
+      "op": "input.file_input"
+    },
+    {
+      "id": 4,
+      "title": "Amount to number",
+      "pos_x": 0.0,
+      "pos_y": 200.0,
+      "inputs": [
+        {
+          "id": 5,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 6,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "columns": [
+            {
+              "name": "invoice_id",
+              "selected": true,
+              "dtype": "String",
+              "rename": "",
+              "date_format": "",
+              "dtype_custom": false
+            },
+            {
+              "name": "vendor",
+              "selected": true,
+              "dtype": "String",
+              "rename": "",
+              "date_format": "",
+              "dtype_custom": false
+            },
+            {
+              "name": "amount",
+              "selected": true,
+              "dtype": "Float64",
+              "rename": "",
+              "date_format": "",
+              "dtype_custom": true
+            },
+            {
+              "name": "posted",
+              "selected": true,
+              "dtype": "Date",
+              "rename": "",
+              "date_format": "",
+              "dtype_custom": true
+            }
+          ],
+          "auto_accept_new_columns": true
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 5,
+      "node_type": "preparation",
+      "op": "preparation.select"
+    },
+    {
+      "id": 7,
+      "title": "Total per vendor",
+      "pos_x": 0.0,
+      "pos_y": 400.0,
+      "inputs": [
+        {
+          "id": 8,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 9,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "actions": [
+            {
+              "field": "vendor",
+              "action": "GroupBy",
+              "output_name": "vendor"
+            },
+            {
+              "field": "amount",
+              "action": "Sum",
+              "output_name": "total"
+            },
+            {
+              "field": "invoice_id",
+              "action": "Count",
+              "output_name": "invoices"
+            }
+          ]
+        }
+      },
+      "label_text": "Sum of amount and invoice count per vendor",
+      "label_visible": true,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "preparation",
+      "op": "preparation.groupby"
+    },
+    {
+      "id": 10,
+      "title": "Biggest vendor first",
+      "pos_x": 0.0,
+      "pos_y": 600.0,
+      "inputs": [
+        {
+          "id": 11,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": 12,
+          "index": 0,
+          "multi_edges": true,
+          "position": 5,
+          "socket_type": 3
+        }
+      ],
+      "content": {
+        "settings": {
+          "keys": [
+            {
+              "column": "total",
+              "order": "Descending"
+            }
+          ]
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 6,
+      "node_type": "preparation",
+      "op": "preparation.sort"
+    },
+    {
+      "id": 13,
+      "title": "Vendor totals",
+      "pos_x": 0.0,
+      "pos_y": 800.0,
+      "inputs": [
+        {
+          "id": 14,
+          "index": 0,
+          "multi_edges": false,
+          "position": 2,
+          "socket_type": 1
+        }
+      ],
+      "outputs": [],
+      "content": {
+        "settings": {
+          "filePath": "output/vendor_totals.csv",
+          "file_format": "csv",
+          "delimiter": ",",
+          "include_bom": false,
+          "compression": "snappy"
+        }
+      },
+      "label_text": "",
+      "label_visible": false,
+      "label_offset": 10.0,
+      "node_code": 4,
+      "node_type": "input",
+      "op": "input.file_output"
+    }
+  ],
+  "edges": [
+    {
+      "id": 15,
+      "edge_type": 5,
+      "start": 3,
+      "end": 5,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 16,
+      "edge_type": 5,
+      "start": 6,
+      "end": 8,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 17,
+      "edge_type": 5,
+      "start": 9,
+      "end": 11,
+      "label": "",
+      "input_index": 0
+    },
+    {
+      "id": 18,
+      "edge_type": 5,
+      "start": 12,
+      "end": 14,
+      "label": "",
+      "input_index": 0
+    }
+  ],
+  "groups": [],
+  "comments": [],
+  "workflow_metadata": {
+    "schema_version": 2,
+    "app_version": "0.1.0a1",
+    "saved_at": "2026-11-16T19:15:55Z",
+    "workflow_uuid": "ef1bf0ba-c7c4-469f-84a4-ab00d322e876"
+  }
+}
