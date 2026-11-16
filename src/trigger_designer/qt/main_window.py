@@ -353,7 +353,8 @@ class TriggerWindow(
         Overrides the base implementation, which raises ``TypeError`` on
         valid JSON scalars (``true``, ``123``) instead of ignoring them.
         """
-        if self.getCurrentNodeEditorWidget() is None:
+        widget = self.getCurrentNodeEditorWidget()
+        if widget is None:
             return
         clipboard = QApplication.instance().clipboard()
         raw_text = clipboard.text() if clipboard is not None else ""
@@ -363,7 +364,23 @@ class TriggerWindow(
                 self.statusBar().showMessage(message, 5000)
             global_logger.warning(message)
             return
-        super().onEditPaste()
+        scene = getattr(widget, "scene", None)
+        bulk_load = getattr(scene, "beginBulkLoad", None)
+        bulk_done = getattr(scene, "endBulkLoad", None)
+        # Treat paste like a load: a node constructed from clipboard data has
+        # no settings yet, so a constructor-time eval would record a bogus
+        # error (e.g. File Input's "No file selected"). Hold those evals back
+        # and run one pass once every pasted node is fully restored.
+        if callable(bulk_load):
+            bulk_load()
+        try:
+            created = super().onEditPaste()
+        finally:
+            if callable(bulk_done):
+                bulk_done()
+        coordinator = getattr(scene, "evaluator", None)
+        if coordinator is not None and created:
+            coordinator.evaluate_nodes(created)
 
     def shutdown_background_work(self, timeout_ms: int = 5000) -> None:
         """Stop in-flight runs and previews before their panels are destroyed.
