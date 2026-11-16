@@ -129,6 +129,12 @@ class DialogChrome(QWidget):
         row.addWidget(self._title_label, 1)
 
         self._close_button = CaptionButton("close", "Close", danger=True, parent=self)
+        # A QDialog promotes its first autoDefault button to "default", which
+        # the Qlementine style paints solid blue; the close button is chrome,
+        # never the dialog's answer (Esc already rejects).
+        self._close_button.setAutoDefault(False)
+        self._close_button.setDefault(False)
+        self._close_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self._close_button.clicked.connect(dialog.reject)
         row.addWidget(self._close_button)
 

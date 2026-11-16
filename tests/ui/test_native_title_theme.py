@@ -62,21 +62,21 @@ def test_frameless_windows_are_skipped(filter_, calls, qtbot) -> None:
     assert calls == []
 
 
-def test_a_theme_change_rethemes_open_windows(filter_, calls, qtbot) -> None:
-    window = QWidget()
-    qtbot.addWidget(window)
-    window.show()
-    qtbot.waitExposed(window)
-    manager = get_theme_manager()
-    original = manager.active_theme().id
-    other = "catppuccin-mocha" if original != "catppuccin-mocha" else "catppuccin-latte"
-    calls.clear()
+def test_a_theme_change_rethemes_open_windows(isolated_theme, calls, qtbot) -> None:
+    isolated_theme.apply("catppuccin-latte", persist=False)
+    instance = module.NativeTitleTheme(QApplication.instance())
     try:
-        manager.apply(other)
+        window = QWidget()
+        qtbot.addWidget(window)
+        window.show()
+        qtbot.waitExposed(window)
+        calls.clear()
+        isolated_theme.apply("catppuccin-mocha", persist=False)
         assert calls
-        assert calls[-1]["dark"] == manager.is_dark()
+        assert calls[-1]["dark"] is True
     finally:
-        manager.apply(original)
+        QApplication.instance().removeEventFilter(instance)
+        instance.deleteLater()
 
 
 def test_nothing_is_installed_where_the_caption_is_not_native(

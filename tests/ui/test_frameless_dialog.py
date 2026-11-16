@@ -9,7 +9,6 @@ from qtpy.QtCore import QPoint, Qt, QTimer
 from qtpy.QtTest import QTest
 from qtpy.QtWidgets import QDialog, QLabel, QVBoxLayout
 
-from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.widgets.common.frameless_dialog import (
     DialogChrome,
     FramelessDialog,
@@ -74,6 +73,13 @@ def test_close_button_rejects_the_dialog(qtbot) -> None:
     assert dlg.exec() == QDialog.DialogCode.Rejected
 
 
+def test_close_button_is_never_the_default_or_focusable(dialog) -> None:
+    button = dialog.chrome.close_button()
+    assert not button.autoDefault()
+    assert not button.isDefault()
+    assert button.focusPolicy() == Qt.FocusPolicy.NoFocus
+
+
 def test_escape_rejects_the_dialog(qtbot) -> None:
     dlg = _Sample()
     qtbot.addWidget(dlg)
@@ -120,16 +126,16 @@ def test_drag_falls_back_to_a_manual_move_when_the_platform_refuses(dialog) -> N
     assert dialog.pos() != start
 
 
-def test_theme_change_repaints_the_close_glyph(dialog) -> None:
-    manager = get_theme_manager()
-    original = manager.active_theme().id
-    before = dialog.chrome.close_button().icon().cacheKey()
-    other = "catppuccin-mocha" if original != "catppuccin-mocha" else "catppuccin-latte"
-    try:
-        manager.apply(other)
-        assert dialog.chrome.close_button().icon().cacheKey() != before
-    finally:
-        manager.apply(original)
+def test_theme_change_repaints_the_close_glyph(isolated_theme, qtbot) -> None:
+    isolated_theme.apply("catppuccin-latte", persist=False)
+    dlg = _Sample()
+    qtbot.addWidget(dlg)
+    dlg.resize(360, 160)
+    dlg.show()
+    qtbot.waitExposed(dlg)
+    before = dlg.chrome.close_button().icon().cacheKey()
+    isolated_theme.apply("catppuccin-mocha", persist=False)
+    assert dlg.chrome.close_button().icon().cacheKey() != before
 
 
 def test_chrome_paints_through_the_style(dialog, monkeypatch) -> None:
