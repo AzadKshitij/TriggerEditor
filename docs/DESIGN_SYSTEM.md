@@ -665,7 +665,13 @@ ICON_SIZE = 16
 
 `IconButton`, `TextButton`, `Chip` and `StatusBadge` use these constants. Do not repeat the numbers in node files.
 
-`qt/widgets/common/window_chrome.py` owns the window row: `CHROME_H = 32`, `CAPTION_BUTTON_W = 44`, `RESIZE_MARGIN = 5`. Pure Qt on purpose: the 5px zone replaces the native border (no 1px hover assist), the frameless window gets no DWM shadow or rounded corners, and Win11's Snap Layouts flyout does not open from the maximize button. Those need Win32 calls and stay out until asked for.
+`qt/widgets/common/window_chrome.py` owns the window row: `CHROME_H = 32`, `CAPTION_BUTTON_W = 44`, `RESIZE_MARGIN = 5`. On Windows `qt/helpers/win_caption.py` hands the frameless window a real frame back (DWM shadow, rounded corners, Snap Layouts, native drag and resize) and answers `WM_NCCALCSIZE` / `WM_NCHITTEST`; elsewhere the Qt path (`startSystemMove` / `startSystemResize` and the 5px edge filter) does the same jobs.
+
+#### Dialogs and other windows
+
+- Every app dialog subclasses `FramelessDialog` (`qt/widgets/common/frameless_dialog.py`), never `QDialog`: a 32px `DialogChrome` row (title + close) replaces the OS caption so the bar follows the theme. Subclasses keep `QVBoxLayout(self)`; the base reserves the row with `setContentsMargins(0, CHROME_H, 0, 0)`. Pass `resizable=False` for a fixed-size dialog. `exec()` results and Esc are unchanged.
+- QSS owns the look (`#DialogChrome`, `#DialogChromeTitle`, `QDialog[frameless="true"]`; the close button reuses `WindowChromeButton`). QStyle owns the painting: both widgets draw their QSS box through `QStyleOption` + `drawPrimitive(PE_Widget)`, and theme changes go through `repolish()`.
+- Windows that keep an OS frame because Qt owns them - floating dock windows, `DataPreviewWindow`, Qt's own message / input / colour boxes - are recoloured by `qt/helpers/native_title_theme.py` (caption, text and border colours on Windows 11, the dark/light flag on Windows 10). It is installed once in `main.py`, skips frameless windows and re-applies on every theme change. The native file picker is an OS window and cannot be themed.
 
 ### ObjectName registry
 
@@ -680,7 +686,8 @@ ICON_SIZE = 16
 | `EmptyStateLabel` | shared | — |
 | `WindowChrome` | main window | — |
 | `WindowChromeIcon`, `WindowChromeTitle` | main window | — |
-| `WindowChromeButton` | main window | hover, pressed, `[danger="true"]` tone |
+| `WindowChromeButton` | main window, `FramelessDialog` | hover, pressed, `[danger="true"]` tone |
+| `DialogChrome`, `DialogChromeTitle` | `FramelessDialog` | — |
 | `PreviewStrip` → `ChromeStrip` | Preview / shared chrome | — |
 | `PreviewNodeChip` → `ChromeChip` | Preview / shared chrome | — |
 | `PreviewSearchEdit` → `ChromeSearch` | Preview / shared chrome | hover, focus, disabled |

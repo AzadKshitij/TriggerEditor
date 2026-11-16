@@ -16,7 +16,6 @@ from __future__ import annotations
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import (
-    QDialog,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -31,6 +30,7 @@ from trigger_designer.qt.widgets.common.config_widgets import (
     ConfigSection,
     TextButton,
 )
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
 
 REPOSITORY_URL = "https://github.com/AzadKshitij/TriggerEditor"
 
@@ -40,11 +40,11 @@ DESCRIPTION = "Build data-processing workflows as a graph of nodes, and run them
 LOGO_WIDTH = 48
 
 
-class AboutDialog(QDialog):
+class AboutDialog(FramelessDialog):
     """The application's own About box."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
+        super().__init__(parent, resizable=False)
         self.setWindowTitle("About Trigger Designer")
         self.setObjectName("AboutDialog")
         self.setMinimumWidth(420)

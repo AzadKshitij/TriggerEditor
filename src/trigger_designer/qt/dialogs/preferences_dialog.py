@@ -61,6 +61,7 @@ from trigger_designer.qt.widgets.common.config_widgets import (
     NoWheelComboBox,
     TextButton,
 )
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
 from trigger_designer.qt.widgets.common.theme_widgets import (
     ColorSwatchButton,
     ThemePreviewWidget,
@@ -93,7 +94,7 @@ _FONT_SIZE_MIN = 8
 _FONT_SIZE_MAX = 20
 
 
-class PreferencesDialog(QDialog):
+class PreferencesDialog(FramelessDialog):
     """One dialog for every user preference."""
 
     def __init__(self, parent: TriggerWindow | None = None) -> None:

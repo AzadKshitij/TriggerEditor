@@ -337,6 +337,25 @@ QPushButton#WindowChromeButton {{
     background-color: {danger};
     border: none; }}
 
+/* Frameless dialogs ------------------------------------------------------
+
+FramelessDialog (qt/widgets/common/frameless_dialog.py): the dialog's own
+title row replaces the OS caption so it follows the theme. The 1px border is
+what a native frame would have given on macOS / Linux; the close button reuses
+the WindowChromeButton rules above.
+
+--------------------------------------------------------------------------- */
+QDialog[frameless="true"] {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary}; }}
+#DialogChrome {{
+  background-color: {background_secondary};
+  border: none;
+  border-bottom: 1px solid {border_primary}; }}
+#DialogChromeTitle {{
+  background: transparent;
+  color: {text_primary}; }}
+
 /* QMenu ------------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qmenu
