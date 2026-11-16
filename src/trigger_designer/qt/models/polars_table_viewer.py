@@ -53,6 +53,10 @@ from trigger_designer.qt.resource_manager import ResourceManager
 ALL_COLUMNS_LABEL = "All Columns"
 
 
+#: Longest a column grows to fit its header; the user can drag past it.
+MAX_HEADER_WIDTH = 1000
+
+
 class PolarsTableModel(QAbstractTableModel):
     """
     Memory-efficient model for displaying Polars DataFrames using lazy loading
@@ -979,6 +983,25 @@ class PolarsTableViewer(QWidget):
             parent=self,
         )
         self.table_view.setModel(self.model)
+        # A model reset puts every column back to Qt's 100px default, which
+        # cuts "name (dtype)" headers short (issue #32).
+        self.model.modelReset.connect(self.fit_header_widths)
+        self.fit_header_widths()
+
+    def fit_header_widths(self) -> None:
+        """Widen each column so its whole header shows, up to a cap.
+
+        The header's own size hint covers the text, the stylesheet padding and
+        the sort indicator. Columns stay interactive: this only sets the start
+        width, never below the 100px default so short names keep room for data.
+        """
+        header = self.table_view.horizontalHeader()
+        floor = header.defaultSectionSize()
+        for column in range(self.model.columnCount()):
+            header.resizeSection(
+                column,
+                min(max(header.sectionSizeHint(column), floor), MAX_HEADER_WIDTH),
+            )
 
     def _setup_connections(self):
         """Setup signal connections."""
