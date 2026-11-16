@@ -16,8 +16,8 @@ from qtpy.QtWidgets import (
     QFileDialog,
     QMdiSubWindow,
     QMessageBox,
-    QTabWidget,
     QShortcut,
+    QVBoxLayout,
 )
 from qtpy.QtCore import Qt
 
@@ -34,7 +34,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowMenuMixin,
 )
 from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.helpers.dock_resize_cursor import install_dock_resize_cursor
+from trigger_designer.qt.docking.ads_host import AdsDockHost
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
 from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
 from trigger_designer.qt.models.preview_worker import wait_for_preview_workers
@@ -132,24 +132,25 @@ class TriggerWindow(
         self.mdiArea.setTabsClosable(True)
         self.mdiArea.setTabsMovable(True)
 
-        # Enable window tiling and docking behavior
-        self.setDockNestingEnabled(True)
-        self.setTabPosition(
-            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North
-        )
-        self.setCentralWidget(self.mdiArea)
+        # Free-form docking: the canvas is the dock host's central widget, so
+        # any panel can dock beside, above or below it (docs/plans/
+        # 2026-11-16-docking-system.md). The Nodes palette is not a panel: it
+        # is a fixed strip above the host.
+        self.dockHost = AdsDockHost(self)
+        self.dockHost.set_central(self.mdiArea)
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)
         self.mdiArea.subWindowActivated.connect(self.onSubWindowActivated)
 
         self.createActions()
 
-        # Docks
+        # Panels
         self.createNodesDock()
         self.createConfigDock()
         self.createLoggingDock()
         self.createDataPreviewDock()
         self.createRunHistoryDock()
+        self.setCentralWidget(self._buildCentralContainer())
 
         self.createMenus()
 
@@ -157,9 +158,6 @@ class TriggerWindow(
         # window row beside the caption buttons. Installed before
         # readSettings() so restored geometry already has no native frame.
         self.window_chrome = install_window_chrome(self)
-        # Dock edges are draggable; keep their pointer the same native resize
-        # arrow the window frame uses instead of Qt's split-cursor bitmap.
-        install_dock_resize_cursor(self)
 
         self.createToolBars()
         self.createStatusBar()
@@ -176,10 +174,19 @@ class TriggerWindow(
         self.setWindowTitle("Trigger Designer")
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
 
-        self.setDockNestingEnabled(True)
-
         # Initialize global logger with this main window
         global_logger.set_main_window(self)
+
+    def _buildCentralContainer(self) -> QWidget:
+        """Nodes palette on top, the dock host (canvas + panels) below."""
+        container = QWidget()
+        container.setObjectName("CentralContainer")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.nodesDock)
+        layout.addWidget(self.dockHost.widget(), 1)
+        return container
 
     def toggleFullScreen(self):
         if self.isFullScreen():

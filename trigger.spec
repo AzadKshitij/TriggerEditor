@@ -142,6 +142,10 @@ analysis = Analysis(
         "qtpy.QtWidgets",
         "PySide6",
         "shiboken6",
+        # Free-form docking (qt/docking/ads_host.py). A compiled extension that
+        # must ship beside the Qt DLLs; imported only there, so name it here
+        # rather than rely on the analysis alone.
+        "PySide6QtAds",
 
         # Visualization (qtagg is the Qt6 backend; keep qt5agg alias harmless)
         "matplotlib",

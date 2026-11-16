@@ -9,7 +9,7 @@ from pathlib import Path
 import orjson
 import pytest
 from qtpy.QtCore import QCoreApplication
-from qtpy.QtWidgets import QApplication, QDockWidget
+from qtpy.QtWidgets import QApplication
 
 from tests.support.audit_helpers import (
     build_window,
@@ -18,6 +18,12 @@ from tests.support.audit_helpers import (
     make_record,
 )
 from trigger_designer.core.audit.store import RunStore
+from trigger_designer.qt.docking import (
+    PANEL_CONFIG,
+    PANEL_HISTORY,
+    PANEL_LOGS,
+    PANEL_PREVIEW,
+)
 from trigger_designer.qt.docks import run_history_dock
 from trigger_designer.qt.docks.run_history_dock import RunHistoryDock
 from trigger_designer.qt.main_window import TriggerWindow
@@ -115,14 +121,15 @@ def test_dock_registered_tabified_and_in_the_window_menu(
     qtbot.addWidget(window)
     window.show()
     window.updateWindowMenu()
+    host = window.dockHost
     dock = window.runHistoryDock
     assert dock.objectName() == "RunHistoryDock"
     assert dock.windowTitle() == "Run History"
-    assert dock in window.tabifiedDockWidgets(window.loggingDock)
-    assert window.dockWidgetArea(dock) == window.dockWidgetArea(window.loggingDock)
+    assert host.area_widget(PANEL_HISTORY) is not None
+    assert host.area_widget(PANEL_HISTORY) is host.area_widget(PANEL_LOGS)
     texts = [a.text() for a in window.windowMenu.actions()]
     assert "Run History" in texts
-    assert isinstance(dock, QDockWidget)
+    assert host.toggle_action(PANEL_HISTORY) in window.windowMenu.actions()
 
 
 def test_default_layout_tabs_the_history_with_the_bottom_docks(
@@ -134,9 +141,15 @@ def test_default_layout_tabs_the_history_with_the_bottom_docks(
     qtbot.addWidget(window)
     window.show()
     apply_default_layout(window)
-    tabbed = window.tabifiedDockWidgets(window.loggingDock)
-    assert window.runHistoryDock in tabbed
-    assert window.dataPreviewDock in tabbed
+    QApplication.processEvents()
+    host = window.dockHost
+    logs_area = host.area_widget(PANEL_LOGS)
+    assert logs_area is not None
+    assert host.area_widget(PANEL_HISTORY) is logs_area
+    assert host.area_widget(PANEL_PREVIEW) is logs_area
+    config_area = host.area_widget(PANEL_CONFIG)
+    assert config_area is not None
+    assert config_area.height() > logs_area.height()
 
 
 def test_following_the_active_window(qtbot, theme_manager, clean_preferences, tmp_path):

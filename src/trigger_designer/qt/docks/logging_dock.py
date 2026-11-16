@@ -39,7 +39,6 @@ from qtpy.QtGui import (
 from qtpy.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
-    QDockWidget,
     QHBoxLayout,
     QLineEdit,
     QPushButton,
@@ -487,11 +486,12 @@ class _DiagnosticTree(QTreeView):
         super().keyPressEvent(event)
 
 
-class LoggingDock(QDockWidget):
+class LoggingDock(QWidget):
     """One list for log lines and node problems, following the active document."""
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(_TITLE, parent)
+        super().__init__(parent)
+        self.setWindowTitle(_TITLE)
         self.setObjectName("LoggingDock")
 
         self._window: TriggerSubWindow | None = None
@@ -643,13 +643,10 @@ class LoggingDock(QDockWidget):
         self.empty = EmptyStateLabel("No messages yet", panel)
         layout.addWidget(self.empty)
 
-        self.setWidget(panel)
-        self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-            | QDockWidget.DockWidgetFeature.DockWidgetClosable
-        )
-        self.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(panel)
 
         find_shortcut = QShortcut(
             QKeySequence.StandardKey.Find, self, self._focus_search
