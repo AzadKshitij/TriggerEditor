@@ -889,6 +889,20 @@ wheels = [
 ]
 
 [[package]]
+name = "pyside6-qlementine"
+version = "1.5.1.0.post1"
+source = { url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl" }
+dependencies = [
+    { name = "pyside6-essentials" },
+]
+wheels = [
+    { url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl", hash = "sha256:b03a8c114cba2b2ff72ab02c4ef96afeed839d26ff56484490903218570280c5" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pyside6-essentials", specifier = ">=6.12.0,<6.13" }]
+
+[[package]]
 name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1196,6 +1210,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pyqtgraph" },
     { name = "pyside6-essentials" },
+    { name = "pyside6-qlementine", marker = "platform_machine == 'AMD64' and sys_platform == 'win32'" },
     { name = "qt-material-icons" },
     { name = "qtpy" },
     { name = "rpytest" },
@@ -1241,6 +1256,7 @@ requires-dist = [
     { name = "pyarrow", specifier = "==26.0.0" },
     { name = "pyqtgraph", specifier = "==0.14.0" },
     { name = "pyside6-essentials", specifier = "==6.12.0" },
+    { name = "pyside6-qlementine", marker = "platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl" },
     { name = "qt-material-icons", specifier = "==0.5.2" },
     { name = "qtpy", specifier = "==2.4.3" },
     { name = "rpytest", specifier = ">=0.1.2" },

@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-light",
+    "name": "Qlementine Light",
+    "appearance": "light",
+    "engine": "qlementine",
+    "extends": "light",
+    "tokens": {}
+}

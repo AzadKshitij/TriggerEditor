@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-catppuccin-latte",
+    "name": "Qlementine Catppuccin Latte",
+    "appearance": "light",
+    "engine": "qlementine",
+    "extends": "catppuccin-latte",
+    "tokens": {}
+}

@@ -41,14 +41,18 @@ def _theme_data(name: str) -> dict:
 
 
 def _theme_tokens(name: str) -> dict:
+    """A theme's tokens over those of the theme it ``extends``, if any."""
     data = _theme_data(name)
     if isinstance(data.get("tokens"), dict):
-        return data["tokens"]
-    return {
-        key: value
-        for key, value in data.items()
-        if key not in {"schema", "id", "name", "appearance", "extends"}
-    }
+        tokens = data["tokens"]
+    else:
+        tokens = {
+            key: value
+            for key, value in data.items()
+            if key not in {"schema", "id", "name", "appearance", "extends", "engine"}
+        }
+    parent = data.get("extends")
+    return {**_theme_tokens(parent), **tokens} if parent else tokens
 
 
 def _builtin_theme_names() -> list[str]:
@@ -68,7 +72,9 @@ def test_theme_uses_new_schema(theme_name: str) -> None:
     assert data.get("id") == theme_name
     assert data.get("appearance") in {"dark", "light"}
     assert isinstance(data.get("name"), str) and data["name"]
-    assert isinstance(data.get("tokens"), dict) and data["tokens"]
+    assert isinstance(data.get("tokens"), dict)
+    assert data["tokens"] or data.get("extends"), "no tokens and nothing to inherit"
+    assert data.get("engine", "qss") in {"qss", "qlementine"}
 
 
 @pytest.mark.parametrize("theme_name", _builtin_theme_names())

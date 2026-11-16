@@ -16,7 +16,12 @@ The old flat schema (``{"name": "dark", "background_primary": ...}``) is
 still accepted and treated as ``tokens``, so a not-yet-migrated file keeps
 working.
 
-This module is the only place that calls ``QApplication.setStyleSheet``.
+A theme also names an ``engine``: ``qss`` (the default) or ``qlementine``, which
+swaps in the Qlementine ``QStyle`` instead of a stylesheet and falls back to
+``qss`` when that package is missing.
+
+This module is the only place that calls ``QApplication.setStyleSheet`` (and,
+through ``qlementine_style``, ``QApplication.setStyle``).
 """
 
 from __future__ import annotations
@@ -29,7 +34,7 @@ from typing import Any, cast
 
 import orjson as json
 from loguru import logger
-from qtpy.QtCore import QObject, Qt, Signal
+from qtpy.QtCore import QObject, Qt, QTimer, Signal
 from qtpy.QtGui import QColor, QGuiApplication, QPalette
 from qtpy.QtWidgets import QApplication, QWidget
 
@@ -41,12 +46,29 @@ from trigger_designer.qt.preferences import (
     get_preferences,
     user_themes_dir,
 )
+from trigger_designer.qt.qlementine_style import QlementineBackend
 
 SCHEMA_VERSION = 2
 SYSTEM_THEME_ID = "system"
-DEFAULT_THEME_ID = "dark"
+#: The theme a fresh install starts on, and the one a deleted theme falls back to.
+DEFAULT_THEME_ID = "qlementine-dark"
+#: The built-in theme whose tokens fill whatever a theme leaves out. It is a
+#: QSS-era file that carries every token itself (the Qlementine themes extend it).
+FALLBACK_BASE_ID = "dark"
 
-_META_KEYS = {"schema", "id", "name", "appearance", "extends", "tokens"}
+#: Theme engines. ``qss`` skins every widget from ``base.qss``; ``qlementine``
+#: paints with the Qlementine QStyle and applies no application stylesheet
+#: (Qlementine cannot run under one; see ``qlementine_style``). An unavailable
+#: engine falls back to ``qss``.
+ENGINE_QSS = "qss"
+ENGINE_QLEMENTINE = "qlementine"
+ENGINES = frozenset({ENGINE_QSS, ENGINE_QLEMENTINE})
+DEFAULT_ENGINE = ENGINE_QLEMENTINE
+ENGINE_PREF = "appearance/engine"
+#: Id prefix of the Qlementine twin of a built-in theme (``qlementine-nord``).
+_QLEMENTINE_PREFIX = "qlementine-"
+
+_META_KEYS = {"schema", "id", "name", "appearance", "extends", "tokens", "engine"}
 _BRACES_RE = re.compile(r"[{}]")
 _HEX_RE = re.compile(r"^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 _FUNC_COLOR_RE = re.compile(r"^(?:rgb|rgba|hsl|hsla)\(", re.IGNORECASE)
@@ -199,6 +221,7 @@ class Theme:
     builtin: bool = False
     error: str | None = None
     warnings: list[str] = field(default_factory=list)
+    engine: str = ENGINE_QSS
 
     @property
     def is_dark(self) -> bool:
@@ -256,6 +279,7 @@ class ThemeManager(QObject):
             else cast("QApplication | None", QApplication.instance())
         )
         self._preview_id: str | None = None
+        self._preview_engine: str | None = None
         self._cache: dict[str, Theme] = {}
         self._base_font_pt: float | None = None
         self._color_cache: dict[tuple[str, str], QColor] = {}
@@ -263,9 +287,10 @@ class ThemeManager(QObject):
         # so read them once per manager instead of on every stylesheet build.
         self._qss_text: str | None = None
         self._fallback_cache: dict[str, Any] | None = None
-        self._active_key: tuple[str, str] | None = None
+        self._active_key: tuple[str, str, str] | None = None
         self._active_cached: Theme | None = None
         self._system_following = False
+        self._qlementine = QlementineBackend()
         self._connect_system_scheme()
 
     # -- paths ------------------------------------------------------------
@@ -319,12 +344,14 @@ class ThemeManager(QObject):
         data: Mapping[str, Any],
         *,
         seen: set[str] | None = None,
-    ) -> tuple[dict[str, Any], list[str], list[str]]:
+    ) -> tuple[dict[str, Any], list[str], list[str], str]:
+        """Tokens, warnings, errors and the engine, merged along ``extends``."""
         warnings: list[str] = []
         errors: list[str] = []
         ancestors = set(seen or ())
         chain: list[str] = [theme_id]
         tokens = self._extract_tokens(data)
+        engine = data.get("engine")
         parent_id = data.get("extends")
         cursor = str(parent_id) if parent_id else None
         while cursor:
@@ -339,12 +366,18 @@ class ThemeManager(QObject):
             parent_data = self._read_data(parent_path)
             parent_tokens = self._extract_tokens(parent_data)
             tokens = {**parent_tokens, **tokens}
+            engine = engine or parent_data.get("engine")
             cursor = parent_data.get("extends")
             cursor = str(cursor) if cursor else None
+        engine = str(engine or ENGINE_QSS).strip().lower()
+        if engine not in ENGINES:
+            warnings.append(f"Unknown engine '{engine}'; using {ENGINE_QSS}")
+            engine = ENGINE_QSS
         return (
             self._validate_tokens(tokens, warnings=warnings),
             warnings,
             errors,
+            engine,
         )
 
     def _validate_tokens(
@@ -365,7 +398,7 @@ class ThemeManager(QObject):
 
     def _fallback_tokens(self) -> dict[str, Any]:
         if self._fallback_cache is None:
-            path = self._builtin_dir / f"{DEFAULT_THEME_ID}.json"
+            path = self._builtin_dir / f"{FALLBACK_BASE_ID}.json"
             try:
                 self._fallback_cache = self._extract_tokens(self._read_data(path))
             except ThemeError:
@@ -410,7 +443,7 @@ class ThemeManager(QObject):
         builtin = path.parent == self._builtin_dir
         try:
             data = self._read_data(path)
-            tokens, warnings, errors = self._resolve_tokens(theme_id, data)
+            tokens, warnings, errors, engine = self._resolve_tokens(theme_id, data)
             if errors:
                 raise ThemeError("; ".join(errors))
             if not tokens and not data.get("extends"):
@@ -434,7 +467,12 @@ class ThemeManager(QObject):
                 source=path,
                 builtin=builtin,
                 warnings=warnings,
+                engine=engine,
             )
+            if engine == ENGINE_QLEMENTINE and not self._qlementine.available:
+                theme.warnings.append(
+                    "Qlementine is not installed; using the classic QSS look"
+                )
             if warnings:
                 logger.warning(f"Theme '{theme_id}': {'; '.join(warnings)}")
         except ThemeError as exc:
@@ -501,7 +539,9 @@ class ThemeManager(QObject):
 
     def _system_theme(self) -> Theme:
         target = self._system_appearance()
-        base = self.theme(target if target in {"dark", "light"} else "dark")
+        if target not in {"dark", "light"}:
+            target = "dark"
+        base = self.theme(self._default_for(target, self.requested_engine()))
         theme = Theme(
             id=SYSTEM_THEME_ID,
             name="System",
@@ -511,6 +551,7 @@ class ThemeManager(QObject):
             builtin=True,
             error=base.error,
             warnings=list(base.warnings),
+            engine=base.engine,
         )
         return theme
 
@@ -537,6 +578,55 @@ class ThemeManager(QObject):
     def requested_theme_id(self) -> str:
         value = self._prefs.get("appearance/theme", DEFAULT_THEME_ID)
         return str(value) if value else DEFAULT_THEME_ID
+
+    @staticmethod
+    def _default_for(appearance: str, engine: str) -> str:
+        """The built-in theme of ``engine`` for a light or dark appearance."""
+        base = "light" if appearance == "light" else "dark"
+        return f"{_QLEMENTINE_PREFIX}{base}" if engine == ENGINE_QLEMENTINE else base
+
+    def _stored_engine(self) -> str:
+        value = str(self._prefs.get(ENGINE_PREF, DEFAULT_ENGINE) or "").lower()
+        return value if value in ENGINES else DEFAULT_ENGINE
+
+    def requested_engine(self) -> str:
+        """The engine in use: the chosen theme's own, or the stored choice.
+
+        System mode has no engine of its own, so it follows the choice made in
+        Preferences (``preview_engine`` while that dialog is open).
+        """
+        requested = self._preview_id or self.requested_theme_id()
+        if requested != SYSTEM_THEME_ID and self._find_file(requested) is not None:
+            return self.theme(requested).engine
+        return self._preview_engine or self._stored_engine()
+
+    def themes_for_engine(self, engine: str) -> list[Theme]:
+        """Every theme painted by ``engine``."""
+        return [t for t in self.available_themes() if t.engine == engine]
+
+    def counterpart_id(self, theme_id: str, engine: str) -> str:
+        """The theme to show for ``theme_id`` once ``engine`` is chosen.
+
+        A built-in keeps its look across engines (``nord`` <-> ``qlementine-nord``);
+        anything without a twin falls to the dark or light default of ``engine``.
+        """
+        if theme_id == SYSTEM_THEME_ID:
+            return SYSTEM_THEME_ID
+        if (
+            self._find_file(theme_id) is not None
+            and self.theme(theme_id).engine == engine
+        ):
+            return theme_id
+        base = theme_id.removeprefix(_QLEMENTINE_PREFIX)
+        twin = f"{_QLEMENTINE_PREFIX}{base}" if engine == ENGINE_QLEMENTINE else base
+        if self._find_file(twin) is not None and self.theme(twin).engine == engine:
+            return twin
+        return self._default_for(self.theme(theme_id).appearance, engine)
+
+    def preview_engine(self, engine: str) -> None:
+        """Choose ``engine`` for System mode without storing it (Cancel undoes)."""
+        self._preview_engine = engine if engine in ENGINES else None
+        self.invalidate(SYSTEM_THEME_ID)
 
     def requested_accent(self) -> str:
         value = self._prefs.get("appearance/accent", "")
@@ -575,7 +665,7 @@ class ThemeManager(QObject):
         """The theme currently applied, preview included and accent resolved."""
         requested = self._preview_id or self.requested_theme_id()
         accent = self.requested_accent()
-        key = (requested, accent)
+        key = (requested, accent, self.requested_engine())
         if self._active_cached is not None and self._active_key == key:
             return self._active_cached
         theme = self.resolved_theme(requested)
@@ -595,6 +685,7 @@ class ThemeManager(QObject):
             builtin=theme.builtin,
             error=theme.error,
             warnings=list(theme.warnings),
+            engine=theme.engine,
         )
 
     def stylesheet_for(self, theme_id: str) -> str:
@@ -622,13 +713,22 @@ class ThemeManager(QObject):
         return self.active_theme().is_dark
 
     # -- stylesheet + application ----------------------------------------
-    def stylesheet(self, theme: Theme | None = None) -> str:
-        theme = theme or self.active_theme()
-        qss = self._base_qss()
+    def _full_tokens(self, theme: Theme) -> dict[str, Any]:
+        """``theme``'s tokens over the default theme's, plus the derived ones."""
         tokens = dict(self._fallback_tokens())
         tokens.update(theme.tokens)
         tokens.setdefault("text_on_accent", _text_on(tokens["accent_primary"]))
         tokens.update(checkbox_tokens(tokens))
+        return tokens
+
+    def uses_qlementine(self, theme: Theme) -> bool:
+        """Whether ``theme`` is painted by Qlementine (and it can be)."""
+        return theme.engine == ENGINE_QLEMENTINE and self._qlementine.available
+
+    def stylesheet(self, theme: Theme | None = None) -> str:
+        theme = theme or self.active_theme()
+        qss = self._base_qss()
+        tokens = self._full_tokens(theme)
         try:
             return self._scale_font_sizes(qss.format(**tokens))
         except KeyError as exc:
@@ -676,6 +776,42 @@ class ThemeManager(QObject):
         for widget_class in ("QMenuBar", "QMenu", "QToolTip"):
             self._app.setFont(font, widget_class)
 
+    def _install_look(self, theme: Theme, *, refresh_font: bool) -> None:
+        """Put ``theme``'s widget style, stylesheet and font in place."""
+        app = self._app
+        if app is None:
+            return
+        self.base_font_size()  # capture the default before anything changes it
+        qlementine_tried = False
+        if self.uses_qlementine(theme):
+            # Qlementine cannot run under an application stylesheet, so the
+            # sheet goes first and none is applied while it is the style.
+            qlementine_tried = True
+            app.setStyleSheet("")
+            if self._install_qlementine(app, theme):
+                self._apply_font()
+                # The first install sets its own font again from the event
+                # loop; ours has to be the last word.
+                QTimer.singleShot(0, self._apply_font)
+                return
+        # A QSS theme, or Qlementine failed: stock style and the stylesheet.
+        font_touched = self._qlementine.uninstall(app) or qlementine_tried
+        app.setStyleSheet(self.stylesheet(theme))
+        if refresh_font or font_touched:
+            self._apply_font()
+
+    def _install_qlementine(self, app: QApplication, theme: Theme) -> bool:
+        size = self.requested_font_size() or self.base_font_size()
+        screen = app.primaryScreen()
+        dpi = screen.logicalDotsPerInchY() if screen is not None else 96.0
+        return self._qlementine.install(
+            app,
+            self._full_tokens(theme),
+            dark=theme.is_dark,
+            font_px=round(size * dpi / 72),
+            scale=self.font_scale(),
+        )
+
     def set_font_size(self, size: int, *, persist: bool = True) -> Theme:
         """Change the application font size (0 restores the default)."""
         if persist:
@@ -688,14 +824,12 @@ class ThemeManager(QObject):
             if persist:
                 self._prefs.set("appearance/theme", theme_id)
                 self._preview_id = None
+                self._store_engine()
             else:
                 # Session-only switch: the stored choice survives a restart.
                 self._preview_id = theme_id
         theme = self.active_theme()
-        if self._app is not None:
-            self.base_font_size()  # capture the default before it is changed
-            self._app.setStyleSheet(self.stylesheet(theme))
-            self._apply_font()
+        self._install_look(theme, refresh_font=True)
         self._color_cache.clear()
         self._active_cached = None
         self._invalidate_icon_cache()
@@ -707,8 +841,7 @@ class ThemeManager(QObject):
         self._preview_id = theme_id
         self._active_cached = None
         theme = self.active_theme()
-        if self._app is not None:
-            self._app.setStyleSheet(self.stylesheet(theme))
+        self._install_look(theme, refresh_font=False)
         self._color_cache.clear()
         self._invalidate_icon_cache()
         self.themeChanged.emit(theme)
@@ -726,14 +859,23 @@ class ThemeManager(QObject):
 
         ResourceManager._cache.clear()
 
+    def _store_engine(self) -> None:
+        """Remember the engine in use, so System mode keeps following it."""
+        self._prefs.set(ENGINE_PREF, self.requested_engine())
+
     def commit_preview(self) -> Theme:
         if self._preview_id is not None:
             self._prefs.set("appearance/theme", self._preview_id)
             self._preview_id = None
+        self._store_engine()
+        self._preview_engine = None
+        self.invalidate(SYSTEM_THEME_ID)
         return self.apply(persist=False)
 
     def cancel_preview(self) -> Theme:
         self._preview_id = None
+        self._preview_engine = None
+        self.invalidate(SYSTEM_THEME_ID)
         return self.apply(persist=False)
 
     def set_accent(self, accent: str, *, persist: bool = True) -> Theme:
@@ -759,6 +901,7 @@ class ThemeManager(QObject):
         tokens: Mapping[str, Any],
         *,
         extends: str | None = None,
+        engine: str | None = None,
     ) -> Theme:
         self._themes_dir.mkdir(parents=True, exist_ok=True)
         payload: dict[str, Any] = {
@@ -768,6 +911,8 @@ class ThemeManager(QObject):
             "appearance": "light" if appearance == "light" else "dark",
             "tokens": dict(tokens),
         }
+        if engine in ENGINES and engine != ENGINE_QSS:
+            payload["engine"] = engine
         if extends:
             payload["extends"] = extends
         path = self._themes_dir / f"{theme_id}.json"
@@ -797,7 +942,7 @@ class ThemeManager(QObject):
         theme_id = requested_id
         if (self._themes_dir / f"{theme_id}.json").is_file():
             theme_id = self.new_theme_id(requested_id)
-        tokens, _warnings, errors = self._resolve_tokens(theme_id, data)
+        tokens, _warnings, errors, engine = self._resolve_tokens(theme_id, data)
         if errors or not tokens:
             raise ThemeError("; ".join(errors) or f"{source.name} defines no tokens")
         extends = data.get("extends")
@@ -807,6 +952,7 @@ class ThemeManager(QObject):
             str(data.get("appearance") or "dark"),
             tokens,
             extends=str(extends) if extends else None,
+            engine=engine,
         )
 
     def export_theme(self, theme_id: str, path: str | Path) -> Path:
@@ -818,6 +964,8 @@ class ThemeManager(QObject):
             "appearance": theme.appearance,
             "tokens": dict(theme.tokens),
         }
+        if theme.engine != ENGINE_QSS:
+            payload["engine"] = theme.engine
         target = Path(path)
         target.write_bytes(json.dumps(payload, option=json.OPT_INDENT_2))
         return target
@@ -827,7 +975,9 @@ class ThemeManager(QObject):
         base = self.theme(theme_id)
         display = name or f"{base.name} Custom"
         new_id = self.new_theme_id(display)
-        return self.save_user_theme(new_id, display, base.appearance, base.tokens)
+        return self.save_user_theme(
+            new_id, display, base.appearance, base.tokens, engine=base.engine
+        )
 
 
 _instance: ThemeManager | None = None

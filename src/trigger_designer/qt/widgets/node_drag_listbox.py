@@ -28,6 +28,7 @@ from trigger_designer.core.node_configuration import (
     LISTBOX_MIMETYPE,
     NODE_REGISTRIES,
 )
+from trigger_designer.qt.widgets.common.config_widgets import FillCellDelegate
 
 
 class QTRDragListbox(QListWidget):
@@ -37,6 +38,7 @@ class QTRDragListbox(QListWidget):
         super().__init__(parent)
         self.node_type = node_type
         self.horizontal_spacing = 15
+        self.setItemDelegate(FillCellDelegate(self))
 
         self.initUI()
         self.setViewMode(QListWidget.IconMode)
