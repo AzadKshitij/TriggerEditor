@@ -12,8 +12,9 @@ import PySide6QtAds as QtAds
 from loguru import logger
 from qtpy.QtCore import QByteArray, QObject, Qt, QTimer, Signal
 from qtpy.QtGui import QAction, QGuiApplication
-from qtpy.QtWidgets import QMainWindow, QSplitter, QWidget
+from qtpy.QtWidgets import QAbstractButton, QMainWindow, QSplitter, QWidget
 
+from trigger_designer.qt.docking import dock_icons
 from trigger_designer.qt.docking.layouts import Area, LayoutSpec, Placement
 from trigger_designer.qt.docking.panel import CENTRAL, Panel
 from trigger_designer.qt.docking.screen_guard import rescue_offscreen
@@ -49,6 +50,10 @@ class AdsDockHost(QObject):
         self._manager.setStyleSheet("")
         # New splitters appear whenever a drop splits an area.
         self._manager.dockAreasAdded.connect(self._schedule_tidy_splitters)
+        # The title-bar glyphs are drawn from the theme's text colour.
+        from trigger_designer.qt.theme_manager import get_theme_manager
+
+        get_theme_manager().themeChanged.connect(self._on_theme_changed)
         # A floating panel left on a monitor that is unplugged would be
         # unreachable, so pull it back whenever a screen goes away.
         app = QGuiApplication.instance()
@@ -211,12 +216,51 @@ class AdsDockHost(QObject):
         # The splitter is created and filled after the signal; tidy next turn.
         QTimer.singleShot(0, self._tidy_splitters)
 
+    #: Title-bar button -> glyph. QtAds' own icons come from the style's
+    #: standard icons: dark grey on a dark theme, and different per style.
+    _TITLE_BAR_GLYPHS = (
+        (QtAds.TitleBarButtonTabsMenu, dock_icons.MENU),
+        (QtAds.TitleBarButtonUndock, dock_icons.UNDOCK),
+        (QtAds.TitleBarButtonClose, dock_icons.CLOSE),
+    )
+
+    def _on_theme_changed(self, *_args: object) -> None:
+        QTimer.singleShot(0, self.apply_icons)
+
+    def apply_icons(self) -> None:
+        """Give every dock title-bar button and tab close button a themed glyph."""
+        from trigger_designer.qt.theme_manager import get_theme_manager
+
+        color = get_theme_manager().color("text_secondary")
+        try:
+            for index in range(self._manager.dockAreaCount()):
+                area = self._manager.dockArea(index)
+                bar = area.titleBar() if area is not None else None
+                if bar is None:
+                    continue
+                for which, glyph in self._TITLE_BAR_GLYPHS:
+                    button = bar.button(which)
+                    if button is not None:
+                        button.setIcon(dock_icons.glyph_icon(glyph, color))
+            for dock in self._docks.values():
+                tab = dock.tabWidget()
+                close = (
+                    tab.findChild(QAbstractButton, "tabCloseButton")
+                    if tab is not None
+                    else None
+                )
+                if close is not None:
+                    close.setIcon(dock_icons.glyph_icon(dock_icons.CLOSE, color))
+        except RuntimeError:
+            logger.debug("Dock widgets are gone before their icons were set")
+
     def _tidy_splitters(self) -> None:
         """Clamp every dock separator to :attr:`HANDLE_THICKNESS`.
 
         The handle's size comes from the global ``QSplitter::handle`` rule, which
         QSS cannot override for dock splitters only, so the widget is clamped.
         """
+        self.apply_icons()
         try:
             for splitter in self._manager.findChildren(QSplitter):
                 horizontal = splitter.orientation() == Qt.Orientation.Horizontal

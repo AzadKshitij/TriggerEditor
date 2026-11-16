@@ -32,7 +32,12 @@ from typing import Any
 from loguru import logger
 from qtpy.QtCore import QJsonDocument
 from qtpy.QtGui import QColor, QFont, QPalette
-from qtpy.QtWidgets import QApplication, QStyle, QStyleFactory
+from qtpy.QtWidgets import (
+    QApplication,
+    QStyle,
+    QStyleFactory,
+    QStyleOptionToolButton,
+)
 
 from trigger_designer.qt.tab_indicator import ActiveTabMarks
 
@@ -54,6 +59,8 @@ CONTROL_HEIGHT = 30
 TAB_HEIGHT = 28
 #: Extra width given to each menu-bar item, so File / Edit / Window / Help breathe.
 MENU_BAR_ITEM_EXTRA_W = 6
+#: Qt class name of the QtAds title-bar buttons, which draw their own arrow.
+_NO_MENU_ARROW = "CTitleBarButton"
 
 
 def _px(value: Any, default: float) -> float:
@@ -274,6 +281,18 @@ if _q is not None:
             elif ct == QStyle.ContentsType.CT_MenuBarItem:
                 result.setWidth(result.width() + self.menu_item_extra_w)
             return result
+
+        def drawComplexControl(self, cc, option, painter, widget=None):
+            # QtAds draws its own arrow on the tabs-menu button; Qlementine adds
+            # a second one for the menu, so the menu flag is dropped there.
+            if (
+                cc == QStyle.ComplexControl.CC_ToolButton
+                and widget is not None
+                and widget.metaObject().className().endswith(_NO_MENU_ARROW)
+            ):
+                option = QStyleOptionToolButton(option)
+                option.features &= ~QStyleOptionToolButton.ToolButtonFeature.HasMenu
+            super().drawComplexControl(cc, option, painter, widget)
 
 else:
     _TriggerQlementineStyle = None
