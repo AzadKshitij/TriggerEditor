@@ -53,6 +53,11 @@ dependencies = [
     # imports only QtCore, QtGui, QtWidgets and QtTest.
     "PySide6-Essentials==6.12.0",
     "shiboken6==6.12.0",
+    # Qlementine QStyle for the "Qlementine" themes. Windows x64 only, and
+    # optional at runtime: without it those themes fall back to the QSS look.
+    # The PyPI wheel is built for PySide6 6.10.2 and fails to import on 6.12,
+    # so [tool.uv.sources] points at a 6.12 rebuild.
+    "PySide6-Qlementine==1.5.1.0.post1; sys_platform == 'win32' and platform_machine == 'AMD64'",
     "qtpy==2.4.3",
     # Node canvas. Published on PyPI as `nodeeditor-qtpy`; the import package
     # is `nodeeditor`. No extras needed: the Qt binding (PySide6) is already a
@@ -80,6 +85,11 @@ trigger-designer-cli = "trigger_designer.cli:main"
 # exists and `uv run trigger-designer` starts the app. Editable, so resource
 # files and the Qt resource modules still resolve from `src/` on disk.
 package = true
+
+[tool.uv.sources]
+# Fork of pyapp-kit/PyQlementine rebuilt against PySide6 6.12.0:
+# https://github.com/AzadKshitij/PyQlementine/blob/pyside6-6.12/PYSIDE6_6.12.md
+PySide6-Qlementine = { url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/trigger_designer"]

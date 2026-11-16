@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-rose-pine-dawn",
+    "name": "Qlementine Rose Pine Dawn",
+    "appearance": "light",
+    "engine": "qlementine",
+    "extends": "rose-pine-dawn",
+    "tokens": {}
+}

@@ -50,6 +50,8 @@ from trigger_designer.qt.preferences import app_data_dir, get_preferences
 from trigger_designer.qt.render_settings import ELEMENTS as RENDER_ELEMENTS
 from trigger_designer.qt.render_settings import MODES as RENDER_MODES
 from trigger_designer.qt.theme_manager import (
+    ENGINE_QLEMENTINE,
+    ENGINE_QSS,
     SYSTEM_THEME_ID,
     ThemeError,
     get_theme_manager,
@@ -199,6 +201,23 @@ class PreferencesDialog(QDialog):
         layout.addWidget(self.preview)
 
         theme_section = ConfigSection("Theme")
+        engine_row = QHBoxLayout()
+        engine_row.setSpacing(6)
+        engine_label = QLabel("Style engine")
+        engine_row.addWidget(engine_label)
+        self.engine_combo = NoWheelComboBox(self)
+        self.engine_combo.setObjectName("EngineCombo")
+        self.engine_combo.setToolTip(
+            "Qlementine draws the controls with a native-style engine; "
+            "Classic (QSS) skins them with a stylesheet"
+        )
+        self.engine_combo.setAccessibleName("Style engine")
+        self.engine_combo.addItem("Qlementine", ENGINE_QLEMENTINE)
+        self.engine_combo.addItem("Classic (QSS)", ENGINE_QSS)
+        self.engine_combo.currentIndexChanged.connect(self._on_engine_changed)
+        engine_label.setBuddy(self.engine_combo)
+        engine_row.addWidget(self.engine_combo, 1)
+        theme_section.addLayout(engine_row)
         theme_body = QHBoxLayout()
         theme_body.setSpacing(6)
         self.theme_list = QListWidget(self)
@@ -884,6 +903,7 @@ class PreferencesDialog(QDialog):
 
     # -- state loading ----------------------------------------------------
     def _load_pages(self) -> None:
+        self._set_engine_combo(self._manager.requested_engine())
         self._reload_theme_list(self._manager.requested_theme_id())
         self.restore_layout_check.setChecked(
             bool(self._prefs.get("layout/restore", True))
@@ -920,13 +940,35 @@ class PreferencesDialog(QDialog):
             self.stack.setCurrentIndex(row)
 
     # -- theme list -------------------------------------------------------
+    def _set_engine_combo(self, engine: str) -> None:
+        index = self.engine_combo.findData(engine)
+        self.engine_combo.blockSignals(True)
+        self.engine_combo.setCurrentIndex(max(index, 0))
+        self.engine_combo.blockSignals(False)
+
+    def _on_engine_changed(self, _index: int) -> None:
+        """Show the new engine's themes, keeping the same look where it has one."""
+        engine = self.engine_combo.currentData()
+        current = self._selected_theme_id() or self._manager.requested_theme_id()
+        self._manager.preview_engine(engine)
+        target = self._manager.counterpart_id(current, engine)
+        self._reload_theme_list(target)
+        try:
+            self._manager.preview(target)
+        except ThemeError as exc:
+            QMessageBox.warning(self, "Theme unavailable", str(exc))
+            return
+        self._refresh_preview()
+        self._update_theme_buttons()
+
     def _reload_theme_list(self, select_id: str | None = None) -> None:
         self.theme_list.blockSignals(True)
         self.theme_list.clear()
         system_item = QListWidgetItem("System — follow Windows appearance")
         system_item.setData(Qt.ItemDataRole.UserRole, SYSTEM_THEME_ID)
         self.theme_list.addItem(system_item)
-        for theme in self._manager.available_themes():
+        engine = self.engine_combo.currentData()
+        for theme in self._manager.themes_for_engine(engine):
             label = theme.name
             label += "  ·  Built-in" if theme.builtin else "  ·  My theme"
             if theme.error:
@@ -997,7 +1039,9 @@ class PreferencesDialog(QDialog):
         theme = self._manager.theme(theme_id)
         if theme_id == SYSTEM_THEME_ID or theme.builtin:
             base_id = (
-                ("light" if self._manager.system_appearance() == "light" else "dark")
+                self._manager.counterpart_id(
+                    self._manager.system_appearance(), self.engine_combo.currentData()
+                )
                 if theme_id == SYSTEM_THEME_ID
                 else theme_id
             )
@@ -1030,6 +1074,8 @@ class PreferencesDialog(QDialog):
             logger.error(f"Theme import failed: {exc}")
             QMessageBox.warning(self, "Import failed", str(exc))
             return
+        self._set_engine_combo(theme.engine)
+        self._manager.preview_engine(theme.engine)
         self._reload_theme_list(theme.id)
         self._manager.preview(theme.id)
         self._refresh_preview()

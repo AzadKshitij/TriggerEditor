@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (
     QPushButton,
     QScrollArea,
     QSizePolicy,
+    QStyledItemDelegate,
     QVBoxLayout,
     QWidget,
 )
@@ -1078,3 +1079,27 @@ class EmptyStateLabel(QLabel):
         self.setObjectName("EmptyStateLabel")
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.setWordWrap(True)
+
+
+class FillCellDelegate(QStyledItemDelegate):
+    """Let an item widget fill its whole cell.
+
+    The default delegate sizes an item widget from the style's text rectangle.
+    These items carry no text, and a style that computes that rectangle
+    tightly (Qlementine) hands back an empty one: the widget ends up 0x0.
+    """
+
+    def updateEditorGeometry(self, editor, option, _index) -> None:
+        resized = editor.size() != option.rect.size()
+        # Cap it at the cell: a combo box that re-measures itself (below, or
+        # on a style change) would otherwise grow to its own, taller hint and
+        # spill over the rows beneath until the next layout pass.
+        editor.setMaximumSize(option.rect.size())
+        editor.setGeometry(option.rect)
+        # A combo box caches its size hint, and Qlementine derives a cell
+        # combo's hint from its width at that moment (the 640 px default of a
+        # widget nobody has placed yet). The popup is then as wide as that
+        # hint, i.e. wider than the whole table. A style-change event makes
+        # the combo measure itself again at its real width.
+        if resized and isinstance(editor, QComboBox):
+            editor.event(QEvent(QEvent.Type.StyleChange))

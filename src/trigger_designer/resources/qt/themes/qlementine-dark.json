@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-dark",
+    "name": "Qlementine Dark",
+    "appearance": "dark",
+    "engine": "qlementine",
+    "extends": "dark",
+    "tokens": {}
+}

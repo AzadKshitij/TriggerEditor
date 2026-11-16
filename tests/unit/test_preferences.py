@@ -13,7 +13,7 @@ def _store(tmp_path, name: str = "preferences.ini"):
 
 def test_defaults_when_file_missing(tmp_path) -> None:
     prefs = _store(tmp_path)
-    assert prefs.get("appearance/theme") == "dark"
+    assert prefs.get("appearance/theme") == "qlementine-dark"
     assert prefs.get("appearance/accent") == ""
     assert prefs.get("layout/restore") is True
     assert prefs.get("layout/session") is False
@@ -106,7 +106,7 @@ def test_reset_restores_defaults(tmp_path) -> None:
     prefs.set("appearance/theme", "light")
     prefs.set("layout/session", True)
     prefs.reset()
-    assert prefs.get("appearance/theme") == "dark"
+    assert prefs.get("appearance/theme") == "qlementine-dark"
     assert prefs.get("layout/session") is False
     assert prefs.get("general/schema_version") == SCHEMA_VERSION
 

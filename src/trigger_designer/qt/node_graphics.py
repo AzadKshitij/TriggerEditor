@@ -168,6 +168,16 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._pen_selected.setCosmetic(True)
         self._pen_hovered.setCosmetic(True)
 
+    def initContent(self) -> None:
+        super().initContent()
+        # The node body is painted by this item; the content widget only
+        # carries the icon and must not fill a plate of its own. The QSS
+        # themes already say so; a QStyle that fills widgets from the palette
+        # (Qlementine) leaves a dark square behind every node otherwise.
+        if self.content is not None:
+            self.content.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+            self.content.setAutoFillBackground(False)
+
     def mouseMoveEvent(self, event) -> None:
         """Drag the node, then put it back on the grid.
 

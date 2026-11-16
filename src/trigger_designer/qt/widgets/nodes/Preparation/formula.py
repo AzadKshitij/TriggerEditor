@@ -8,8 +8,10 @@ from typing import Any
 
 import polars as pl
 from loguru import logger
-from qtpy.QtCore import Qt, QObject, QRunnable, QThreadPool, Signal
+from qtpy.QtCore import QEvent, QObject, QRectF, QRunnable, Qt, QThreadPool, Signal
+from qtpy.QtGui import QPainter
 from qtpy.QtWidgets import (
+    QApplication,
     QFrame,
     QHBoxLayout,
     QInputDialog,
@@ -31,6 +33,7 @@ from trigger_designer.qt.helpers.shaping_support import (
     ShapingNode,
     clear_layout,
 )
+from trigger_designer.qt.theme_manager import get_theme_manager
 from trigger_designer.qt.widgets.common import (
     EmptyStateLabel,
     IconButton,
@@ -65,6 +68,11 @@ def _dtype_label(dtype: Any) -> str:
     return "String"
 
 
+def _has_app_stylesheet() -> bool:
+    app = QApplication.instance()
+    return isinstance(app, QApplication) and bool(app.styleSheet())
+
+
 class _ResizeGrip(QFrame):
     """Drag handle adjusting one section editor's fixed height."""
 
@@ -76,10 +84,45 @@ class _ResizeGrip(QFrame):
         self._section_index = section_index
         self._editor = editor
         self.setObjectName("formulaResizeGrip")
-        self.setFixedHeight(4)
         self.setCursor(Qt.CursorShape.SizeVerCursor)
         self._press_y: int | None = None
         self._press_height = core.DEFAULT_EDITOR_HEIGHT
+        self._hovered = False
+        self._sync_for_style()
+
+    def _sync_for_style(self) -> None:
+        # No stylesheet (Qlementine): nothing paints the bar, so the grip draws a pill.
+        self.setFixedHeight(4 if _has_app_stylesheet() else 10)
+        self.update()
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.StyleChange:
+            self._sync_for_style()
+
+    def enterEvent(self, event) -> None:
+        super().enterEvent(event)
+        self._hovered = True
+        self.update()
+
+    def leaveEvent(self, event) -> None:
+        super().leaveEvent(event)
+        self._hovered = False
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        if _has_app_stylesheet():
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(Qt.PenStyle.NoPen)
+        token = "text_secondary" if self._hovered else "text_inactive"
+        painter.setBrush(get_theme_manager().color(token))
+        pill = QRectF(0, 0, 28, 3)
+        pill.moveCenter(QRectF(self.rect()).center())
+        painter.drawRoundedRect(pill, 1.5, 1.5)
+        painter.end()
 
     def mousePressEvent(self, event) -> None:
         self._press_y = event.globalPosition().toPoint().y()
@@ -101,6 +144,23 @@ class _ResizeGrip(QFrame):
             return
         self._press_y = None
         self._content._commit_height(self._section_index, self._editor.height())
+
+
+class _Separator(QFrame):
+    """One-pixel divider between formula sections."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setObjectName("formulaSeparator")
+        self.setFixedHeight(1)
+
+    def paintEvent(self, event) -> None:
+        if _has_app_stylesheet():
+            super().paintEvent(event)
+            return
+        painter = QPainter(self)
+        painter.fillRect(self.rect(), get_theme_manager().color("card_border"))
+        painter.end()
 
 
 class _FormulaCard(QFrame):
@@ -165,7 +225,7 @@ class _ValidationSignals(QObject):
     """
 
     finished = Signal(int, int, list)  # section_index, generation, errors
-    failed = Signal(int, int, str)     # section_index, generation, message
+    failed = Signal(int, int, str)  # section_index, generation, message
 
 
 class _ValidationRunner(QRunnable):
@@ -251,8 +311,13 @@ class _ValidationDispatcher:
         signals.failed.connect(self._failure_slot, Qt.ConnectionType.QueuedConnection)
 
         runner = _ValidationRunner(
-            section_index, sections_snap, schema_only, rows_snap,
-            cancel_token, generation, signals,
+            section_index,
+            sections_snap,
+            schema_only,
+            rows_snap,
+            cancel_token,
+            generation,
+            signals,
         )
         runner.setAutoDelete(True)
         self._active[(section_index, generation)] = (runner, signals)
@@ -417,10 +482,7 @@ class FormulaContent(ShapingContent):
         sections = self._section_list()
         for index, section in enumerate(sections):
             if index > 0:
-                separator = QFrame()
-                separator.setObjectName("formulaSeparator")
-                separator.setFixedHeight(1)
-                self.sections_layout.addWidget(separator)
+                self.sections_layout.addWidget(_Separator())
 
             card = _FormulaCard()
             target_selector = NoWheelComboBox()
@@ -463,7 +525,9 @@ class FormulaContent(ShapingContent):
             formula_input.set_available_columns(self._available_before(index))
             if section["formula_text"]:
                 formula_input.set_text(section["formula_text"])
-            formula_input.editor.schedule_validation = partial(self._dispatch_validation, index)
+            formula_input.editor.schedule_validation = partial(
+                self._dispatch_validation, index
+            )
             formula_input.textChanged.connect(self._mark_text_dirty)
             self._debounced(
                 formula_input.textChanged,
@@ -702,9 +766,13 @@ class FormulaContent(ShapingContent):
         sections_snap = self._section_list()
         schema_only = pl.DataFrame(schema=schema_of(self.frames[0]))
         rows_snap = core.sample_rows(self.frames[0])
-        self._dispatcher.dispatch(section_index, sections_snap, schema_only, rows_snap, text)
+        self._dispatcher.dispatch(
+            section_index, sections_snap, schema_only, rows_snap, text
+        )
 
-    def _on_validation_result(self, section_index: int, generation: int, errors: list) -> None:
+    def _on_validation_result(
+        self, section_index: int, generation: int, errors: list
+    ) -> None:
         self._dispatcher._active.pop((section_index, generation), None)
         if generation != self._dispatcher._generation:
             return
@@ -729,11 +797,15 @@ class FormulaContent(ShapingContent):
         except RuntimeError:
             pass
 
-    def _on_validation_failed(self, section_index: int, generation: int, message: str) -> None:
+    def _on_validation_failed(
+        self, section_index: int, generation: int, message: str
+    ) -> None:
         self._dispatcher._active.pop((section_index, generation), None)
         if generation != self._dispatcher._generation:
             return
-        logger.warning("Formula validation failed section %d: %s", section_index, message)
+        logger.warning(
+            "Formula validation failed section %d: %s", section_index, message
+        )
         if section_index >= len(self.section_widgets):
             return
         widget = self.section_widgets[section_index]
