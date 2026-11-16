@@ -280,6 +280,41 @@ def test_apply_form_describes_list_cards_and_flattens_pairs():
     assert schema["properties"]["keys"]["x-td-item-default"]["order"] == "Ascending"
 
 
+def test_form_choices_survive_item_schemas_already_described():
+    """``node_items`` describes list items first; the editor form must still add
+    its choices and column references to those same item properties."""
+    schema = {
+        "type": "object",
+        "properties": {
+            "keys": {
+                "type": "array",
+                "default": [],
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "column": {"type": "string", "description": "the column"},
+                        "order": {"type": "string", "description": "the direction"},
+                    },
+                },
+            }
+        },
+    }
+    card = _field(
+        "keys",
+        "list",
+        items=(
+            _field("column", "column"),
+            _field("order", "combo", options=("Ascending", "Descending")),
+        ),
+    )
+    ns.apply_form(schema, (SimpleNamespace(fields=(card,)),))
+    items = schema["properties"]["keys"]["items"]["properties"]
+    assert items["order"]["enum"] == ["Ascending", "Descending"]
+    assert items["order"]["description"] == "the direction"
+    assert items["column"]["x-td-ref"] == "column"
+    assert items["column"]["description"] == "the column"
+
+
 def test_conditional_fields_are_marked():
     schema = {"type": "object", "properties": {"v": {"type": "string"}}}
     spec = _field("v", "text", show_if=lambda s: True)

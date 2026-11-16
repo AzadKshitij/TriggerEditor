@@ -498,6 +498,8 @@ trigger-designer-cli ops [OP] [--all] [--forms] [--json]
 
 The schemas are generated from the nodes themselves, and a test fails when the catalogue and the app disagree. `spec_version` is the version of the document's own shape; it changes only when that shape does. Top-level objects are closed (`additionalProperties: false`): a setting that is not listed is not read.
 
+A setting that holds a list says what each item looks like: its keys, their types, the allowed choices (an `enum`, copied from the node) and a short `description`. `ops preparation.groupby` shows that `actions` is a list of `{field, action, output_name}` with `action` one of `GroupBy`, `Sum`, `Count` and so on. Nodes with list settings also carry an `example` that was run through the node itself. A few settings are documented as *not used* (for example `join_type` on Join, which always returns the J, L and R outputs).
+
 Numbers read from a CSV are text until a Select node converts them. A Filter on a text column compares text, so convert first. In a Select node's `columns`, set the column's `dtype` (such as `Float64`) **and** `"dtype_custom": true`: without that flag the editor resets the column to the type it arrives with. `ops preparation.select` shows a complete column entry.
 
 ### schema, profile, preview: the data at a node
@@ -643,7 +645,9 @@ The data owner sets the boundary when the server starts, not the tool:
 | `--policy FILE` | The [access policy](#who-decides-what-a-tool-may-see). Without it, `TRIGGER_DESIGNER_AGENT_POLICY`, then `WORKFLOW.agent.json`, then `schema_only`. |
 | `--timeout SEC` | Stop a data tool that runs longer than this (default 600). |
 
-This first version is read-only. The tools are `get_policy` (call it first), `list_ops`, `describe_op`, `read_workflow`, `validate`, `diff`, `get_schema`, `get_profile`, `get_preview` and `explain_error`. They return the same JSON as the commands above, and a refusal or failure comes back as `{"error": {"code", "message", "hint"}}` with a `TD-*` code. There is no tool to edit, approve or run a workflow yet.
+The read tools are `get_policy` (call it first), `list_ops`, `describe_op`, `read_workflow`, `validate`, `diff`, `get_schema`, `get_profile`, `get_preview` and `explain_error`. They return the same JSON as the commands above, and a refusal or failure comes back as `{"error": {"code", "message", "hint"}}` with a `TD-*` code.
+
+Two tools change files: `new_workflow` and `patch_workflow` (the [`edit` command](#changing-a-workflow-from-the-command-line) and its `patch` list). Both are **dry runs unless `apply` is true**, and writing needs `"edit": true` in the policy (`get_policy` reports it as `apply_edits`). A write keeps the first `.bak`, refuses a file that changed since it was read (`expect_sha256`), and, because the file's hash changes, cancels any approval to run it. There is no tool to approve or run a workflow: that stays with a person.
 
 Data tools run the workflow's earlier nodes in a separate process, so a stuck node can be stopped and nothing it prints reaches the tool. The tool never gets more than the policy allows, whatever it asks for.
 

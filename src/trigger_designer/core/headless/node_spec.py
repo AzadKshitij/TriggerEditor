@@ -28,6 +28,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from trigger_designer.core.headless import node_items
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.op_catalog import OPS, OpInfo
 
@@ -339,6 +340,11 @@ EXAMPLES: dict[str, dict[str, Any]] = {
 }
 
 
+# The list-valued ops' examples live next to their item schemas.
+for _op, _example in node_items.EXAMPLES.items():
+    EXAMPLES.setdefault(_op, _example)
+
+
 # --------------------------------------------------------------------- schema
 def infer_schema(value: Any) -> dict:
     """A JSON Schema fragment for a default value. ``bool`` is tested before
@@ -411,6 +417,7 @@ def settings_schema(op: str, forms: dict[str, tuple] | None = None) -> dict:
     properties = {}
     for key, value in defaults.items():
         prop = infer_schema(value)
+        prop.update(copy.deepcopy(node_items.PROPS.get((op, key), {})))
         prop["default"] = value
         properties[key] = prop
     schema = {
@@ -490,8 +497,21 @@ def _merge(target: dict, extra: dict) -> None:
     """Add ``extra`` to ``target``. The type inferred from the real default wins
     over a weaker form hint; everything else (choices, ranges, text) is added."""
     for key, value in extra.items():
-        nested = key in ("properties", "items")
-        if nested and isinstance(value, dict) and isinstance(target.get(key), dict):
+        if key == "properties" and isinstance(value, dict):
+            # Each property is itself a schema: merge it, do not let one that
+            # ``node_items`` already described hide the form's choices.
+            into = target.setdefault("properties", {})
+            for name, sub in value.items():
+                if isinstance(sub, dict) and isinstance(into.get(name), dict):
+                    _merge(into[name], sub)
+                else:
+                    into.setdefault(name, sub)
+            continue
+        if (
+            key == "items"
+            and isinstance(value, dict)
+            and isinstance(target.get(key), dict)
+        ):
             _merge(target[key], value)
             continue
         if key == "type" and key in target:

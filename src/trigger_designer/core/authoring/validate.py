@@ -49,7 +49,11 @@ def allowed_keys(op: str) -> list[str]:
 
 
 # -------------------------------------------------------------------- shape
-def _type_ok(kind: str, value: Any) -> bool:
+def _type_ok(kind: str | list[str], value: Any) -> bool:
+    if isinstance(kind, list):  # a union such as ["integer", "null"]
+        return any(_type_ok(one, value) for one in kind)
+    if kind == "null":
+        return value is None
     if kind == "boolean":
         return isinstance(value, bool)
     if kind == "integer":
@@ -75,7 +79,12 @@ def validate_value(schema: dict | None, value: Any, where: str) -> str | None:
         return None
     kind = schema.get("type")
     if kind and not _type_ok(kind, value):
-        return f"{where} must be {_article(kind)}, not {_describe(value)}"
+        wanted = (
+            " or ".join(_article(k) for k in kind)
+            if isinstance(kind, list)
+            else _article(kind)
+        )
+        return f"{where} must be {wanted}, not {_describe(value)}"
     if "enum" in schema and value not in schema["enum"]:
         return f"{where} must be one of {schema['enum']}, not {value!r}"
     if isinstance(value, (int, float)) and not isinstance(value, bool):
@@ -103,7 +112,7 @@ def validate_value(schema: dict | None, value: Any, where: str) -> str | None:
 
 
 def _article(kind: str) -> str:
-    return {"array": "a list", "object": "an object"}.get(
+    return {"array": "a list", "object": "an object", "null": "empty"}.get(
         kind, f"a {kind}" if kind != "integer" else "a whole number"
     )
 
