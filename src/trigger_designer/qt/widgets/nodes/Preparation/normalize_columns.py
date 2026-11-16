@@ -74,7 +74,7 @@ class NormalizeContent(ShapingContent):
 
 @register_node(PreparationNodes.NORMALIZE_COLUMNS, NodeTypes.PREPARATION)
 class TriggerNode_Normalize(ShapingNode):
-    icon = "node_select"
+    icon = "node_normalize"
     node_code = PreparationNodes.NORMALIZE_COLUMNS
     node_type = NodeTypes.PREPARATION
     node_title = "Normalize"
