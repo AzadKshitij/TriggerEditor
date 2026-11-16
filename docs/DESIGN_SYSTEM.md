@@ -214,6 +214,7 @@ QVBoxLayout (dock_layout)
     ├─ CaseInsensitive over name, rename and dtype
     ├─ ExtendedSelection + SelectRows, 28px rows, no row numbers
     ├─ Interactive data columns (checkbox fixed at 50), widths kept on the content
+    ├─ RowSeparatorDelegate, the view default (one hairline on the row's last pixel)
     ├─ DtypeDelegate (single-click dropdown)
     └─ RenameDelegate (Enter/focus-out commits, Escape cancels)
 ```
@@ -250,7 +251,7 @@ Import from `qt/widgets/common/__init__.py`:
 - `NoWheelComboBox` — drops wheel events unless popup open. Use everywhere a combo sits in a scrollable dock.
 - `IconButton` / `TextButton` — see §4.
 
-Table helpers: `SelectTableModel`, `RowData`, `SelectFilterProxy`, `DtypeDelegate`, `RenameDelegate` and `SelectTableView` in `qt/widgets/select_table_widget.py` — reuse the model/delegate split for any editable column list. `SelectTableWidget` and `ComboBoxDelegate` remain aliases for older imports.
+Table helpers: `SelectTableModel`, `RowData`, `SelectFilterProxy`, `RowSeparatorDelegate`, `DtypeDelegate`, `RenameDelegate` and `SelectTableView` in `qt/widgets/select_table_widget.py` — reuse the model/delegate split for any editable column list. `SelectTableWidget` and `ComboBoxDelegate` remain aliases for older imports.
 
 **Target shared primitives:** `Chip`, `StatusBadge` and `ToolbarStrip` belong in `config_widgets.py`, not in a node. Do not fork them per dock.
 
@@ -457,7 +458,9 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 | Dtype | 10px Micro after the column name | same |
 | Sort indicator | small chevron, accent | same |
 
-- Do not draw vertical grid lines. The row separator is enough.
+- Do not draw vertical grid lines. The row separator is enough: the Select
+  table's default `RowSeparatorDelegate` paints it on the row's last pixel, so
+  turning `showGrid` off never leaves a row without a boundary.
 - `QHeaderView::section` must use the theme tokens; no default Fusion header.
 - Editable tables keep the checkbox column fixed and every data column
   `Interactive`; keep the widths on the content so a dock rebuild does not

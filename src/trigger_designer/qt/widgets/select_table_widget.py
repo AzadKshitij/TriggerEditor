@@ -17,6 +17,7 @@ from qtpy.QtCore import (
     QEvent,
     QItemSelectionModel,
     QModelIndex,
+    QRect,
     QSortFilterProxyModel,
     Qt,
     QTimer,
@@ -571,8 +572,25 @@ class SelectFilterProxy(QSortFilterProxyModel):
         return False
 
 
+def paint_row_separator(painter, option) -> None:
+    """Draw the row hairline on the last pixel of ``option.rect``.
+
+    Every delegate of the Select table calls this: a delegate that overrides
+    ``paint`` replaces the view default, so a column without the call would
+    leave a gap in the row boundary.
+    """
+    painter.save()
+    painter.setPen(QPen(ResourceManager().get_theme_color("border_primary"), 1))
+    bottom = row_separator_y(option)
+    painter.drawLine(option.rect.left(), bottom, option.rect.right(), bottom)
+    painter.restore()
+
+
 class DtypeDelegate(QStyledItemDelegate):
     """Inline dtype dropdown; one click opens it, one pick commits."""
+
+    #: Room kept on the right for the chevron.
+    CHEVRON_W = 20
 
     def createEditor(self, parent, option, index):
         if index.column() != SelectTableModel.COL_DTYPE:
@@ -632,7 +650,7 @@ class DtypeDelegate(QStyledItemDelegate):
         text_color = option.palette.color(
             QPalette.ColorRole.HighlightedText if selected else QPalette.ColorRole.Text
         )
-        text_rect = option.rect.adjusted(6, 0, -20, 0)
+        text_rect = option.rect.adjusted(6, 0, -self.CHEVRON_W, 0)
 
         # Subtle field frame so the cell still reads as a dropdown.
         painter.save()
@@ -658,10 +676,16 @@ class DtypeDelegate(QStyledItemDelegate):
         painter.drawLine(cx - 3, cy - 1, cx, cy + 2)
         painter.drawLine(cx, cy + 2, cx + 3, cy - 1)
         painter.restore()
+        paint_row_separator(painter, option)
 
 
 class RenameDelegate(QStyledItemDelegate):
-    """Rename editor: Enter/focus-out commits, Escape reverts."""
+    """Rename editor: Enter/focus-out commits, Escape reverts.
+
+    The cell reads as an editable field, the same way the dtype cell reads as
+    a dropdown: without its own frame, a rename sat in the row with nothing
+    tying it to the column name beside it (issue #33).
+    """
 
     def createEditor(self, parent, option, index):
         editor = QLineEdit(parent)
@@ -685,6 +709,55 @@ class RenameDelegate(QStyledItemDelegate):
     def updateEditorGeometry(self, editor, option, index):
         editor.setGeometry(option.rect.adjusted(1, 1, -1, -1))
 
+    def paint(self, painter, option, index):
+        if not index.isValid():
+            return super().paint(painter, option, index)
+
+        value = str(index.data(Qt.ItemDataRole.DisplayRole) or "")
+        selected = bool(option.state & QStyle.StateFlag.State_Selected)
+
+        # The row background, hover tint, selection and missing-column
+        # warning come from the view's stylesheet; only the text is ours.
+        style_option = QStyleOptionViewItem(option)
+        self.initStyleOption(style_option, index)
+        style_option.text = ""
+        style = (
+            style_option.widget.style()
+            if style_option.widget is not None
+            else QApplication.style()
+        )
+        style.drawControl(
+            QStyle.ControlElement.CE_ItemViewItem,
+            style_option,
+            painter,
+            style_option.widget,
+        )
+
+        if not value:
+            paint_row_separator(painter, option)
+            return
+        painter.save()
+        painter.setPen(
+            QPen(
+                option.palette.color(
+                    QPalette.ColorRole.HighlightedText
+                    if selected
+                    else QPalette.ColorRole.Text
+                )
+            )
+        )
+        text_rect = rename_text_rect(option)
+        elided = option.fontMetrics.elidedText(
+            value, Qt.TextElideMode.ElideRight, text_rect.width()
+        )
+        painter.drawText(
+            text_rect,
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            elided,
+        )
+        painter.restore()
+        paint_row_separator(painter, option)
+
     def eventFilter(self, editor, event):
         if (
             isinstance(editor, QLineEdit)
@@ -696,6 +769,20 @@ class RenameDelegate(QStyledItemDelegate):
             )
             return True
         return super().eventFilter(editor, event)
+
+
+class RowSeparatorDelegate(QStyledItemDelegate):
+    """The table's default delegate: one hairline under every row.
+
+    The Select table turns Qt's grid off (one hairline per row, no vertical
+    lines - DESIGN_SYSTEM §11), so the row boundary has to be painted. The
+    hairline sits on the last pixel of the row, which keeps the row height and
+    therefore the dock's measured size unchanged.
+    """
+
+    def paint(self, painter, option, index):
+        super().paint(painter, option, index)
+        paint_row_separator(painter, option)
 
 
 class SelectTableView(QTableView):
@@ -723,6 +810,10 @@ class SelectTableView(QTableView):
         )
         self.setSortingEnabled(False)
         self.setCornerButtonEnabled(False)
+        # One hairline under every row, no vertical lines (DESIGN_SYSTEM §11).
+        # It rides on the row's last pixel, so the row height the dock sizes
+        # itself by does not change.
+        self.setItemDelegate(RowSeparatorDelegate(self))
         self.clicked.connect(self._open_dtype_editor)
         #: True while the view itself grows a column to fill spare width; the
         #: content must not treat that as a user-chosen width.
@@ -855,3 +946,16 @@ def _open_combo_popup(editor: QComboBox) -> None:
 # Compatibility aliases for imports written against the old table module.
 SelectTableWidget = SelectTableModel
 ComboBoxDelegate = DtypeDelegate
+
+
+def rename_text_rect(option: QStyleOptionViewItem) -> QRect:
+    """Where the Rename cell draws its text inside ``option.rect``.
+
+    Public so a test can probe a pixel the text never reaches.
+    """
+    return option.rect.adjusted(6, 0, -6, 0)
+
+
+def row_separator_y(option: QStyleOptionViewItem) -> int:
+    """The last pixel of ``option.rect``, where the row hairline is drawn."""
+    return option.rect.bottom()
