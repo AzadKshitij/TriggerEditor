@@ -130,7 +130,21 @@ def theme_manager(clean_preferences, tmp_path, monkeypatch):
     )
     # Widgets resolve the manager through the module-level singleton.
     monkeypatch.setattr(theme_manager, "_instance", manager)
-    return manager
+    app = manager._app
+    saved = None
+    if app is not None:
+        saved = (app.styleSheet(), app.palette(), app.font())
+    yield manager
+    # A test that applied or previewed a theme leaves its style on the shared
+    # application. Qlementine is the default engine, and a later test that sets
+    # a stylesheet over it overflows the stack in QComboBox.sizeHint (qlementine
+    # #155), so put the application back as it was.
+    if app is not None and saved is not None:
+        app.setStyleSheet("")
+        manager._qlementine.uninstall(app)
+        app.setStyleSheet(saved[0])
+        app.setPalette(saved[1])
+        app.setFont(saved[2])
 
 
 # -- Qt hygiene --------------------------------------------------------------

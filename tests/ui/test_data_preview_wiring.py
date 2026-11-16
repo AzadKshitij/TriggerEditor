@@ -9,6 +9,7 @@ from trigger_designer.core.node_configuration import (
     get_class_from_opcode,
 )
 from trigger_designer.qt.design_window import TriggerSubWindow
+from trigger_designer.qt.docking import PANEL_LOGS, PANEL_PREVIEW
 from trigger_designer.qt.main_window import TriggerWindow
 
 _APP = QApplication.instance() or QApplication([])
@@ -34,9 +35,11 @@ def _active_design_window(window: TriggerWindow) -> TriggerSubWindow:
 
 def test_preview_dock_is_created_and_tabified_with_logs():
     window = _main_window()
+    host = window.dockHost
 
     assert window.dataPreviewDock is not None
-    assert window.dataPreviewDock in window.tabifiedDockWidgets(window.loggingDock)
+    assert host.area_widget(PANEL_PREVIEW) is not None
+    assert host.area_widget(PANEL_PREVIEW) is host.area_widget(PANEL_LOGS)
     assert window.dataPreviewDock.windowTitle() == "Data Preview"
 
 

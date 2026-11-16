@@ -10,6 +10,7 @@ were written.
 | 2026-10-31 | [Trigger Designer bug hunt](2026-10-31-trigger-designer-bug-hunt.md) | Core shaping, audit, workpaper, input/output, Qt models, undo, CLI | 4 High, 10 Medium, 6 Low |
 | 2026-11-01 | [Node evaluation and LazyFrame](2026-11-01-node-evaluation-and-laziness.md) | Config Dock apply timing, audit deferral, SQL focus-out, lazy-first execution | 10-step implementation plan |
 | 2026-11-04 | [Second-pass bug hunt](2026-11-04-second-pass-bug-hunt.md) | Join, SQL rewriting, input discovery, headless CLI, layout persistence | 4 High, 6 Medium, 8 Low |
+| 2026-11-16 | [Free-form docking system](2026-11-16-docking-system.md) | Dock any panel anywhere, drop indicators, fixed Nodes strip, layout persistence | 6-phase plan (spike first) |
 
 The 2026-11-04 plan is the companion to the first pass and covers areas the
 first pass did not. The 2026-11-01 plan is separate: it tracks evaluation

@@ -267,7 +267,11 @@ class ThemeEditorDialog(FramelessDialog):
             return
         try:
             self._manager.save_user_theme(
-                self._theme_id, name, self._appearance, self._tokens
+                self._theme_id,
+                name,
+                self._appearance,
+                self._tokens,
+                engine=self._manager.theme(self._theme_id).engine,
             )
         except (OSError, ThemeError) as exc:
             logger.error(f"Unable to save theme '{self._theme_id}': {exc}")

@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-tokyo-night",
+    "name": "Qlementine Tokyo Night",
+    "appearance": "dark",
+    "engine": "qlementine",
+    "extends": "tokyo-night",
+    "tokens": {}
+}

@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-gruvbox-dark",
+    "name": "Qlementine Gruvbox Dark",
+    "appearance": "dark",
+    "engine": "qlementine",
+    "extends": "gruvbox-dark",
+    "tokens": {}
+}

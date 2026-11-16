@@ -162,10 +162,10 @@ def test_accent_override_derives_variants(
 def test_preview_does_not_persist_and_cancel_restores(
     theme_manager: ThemeManager, clean_preferences
 ) -> None:
-    assert theme_manager.requested_theme_id() == "dark"
+    assert theme_manager.requested_theme_id() == "qlementine-dark"
     theme_manager.preview("light")
     assert theme_manager.active_theme().appearance == "light"
-    assert clean_preferences.get("appearance/theme") == "dark"
+    assert clean_preferences.get("appearance/theme") == "qlementine-dark"
     theme_manager.cancel_preview()
     assert theme_manager.active_theme().appearance == "dark"
 
@@ -282,13 +282,13 @@ def test_apply_without_persist_switches_only_for_the_session(
     theme_manager: ThemeManager,
 ) -> None:
     """An id passed to apply() must be applied even when not remembered."""
-    assert theme_manager.requested_theme_id() == "dark"
+    assert theme_manager.requested_theme_id() == "qlementine-dark"
 
     theme = theme_manager.apply("light")
 
     assert theme.id == "light"
     assert theme_manager.active_theme().id == "light"
-    assert theme_manager.requested_theme_id() == "dark"
+    assert theme_manager.requested_theme_id() == "qlementine-dark"
 
 
 def test_workspace_frame_follows_theme(theme_manager: ThemeManager) -> None:
@@ -307,3 +307,243 @@ def test_workspace_frame_follows_theme(theme_manager: ThemeManager) -> None:
         window.mdiArea.background().color().name()
         == theme_manager.color("canvas_background").name()
     )
+
+
+# -- theme engines ------------------------------------------------------------
+
+
+def test_builtin_qlementine_themes_inherit_colours_and_name_the_engine(
+    theme_manager: ThemeManager,
+) -> None:
+    for theme_id, parent in (
+        ("qlementine-dark", "dark"),
+        ("qlementine-light", "light"),
+    ):
+        theme = theme_manager.theme(theme_id)
+        assert theme.error is None
+        assert theme.builtin
+        assert theme.engine == "qlementine"
+        assert theme.appearance == theme_manager.theme(parent).appearance
+        assert theme.tokens == theme_manager.theme(parent).tokens
+
+
+def test_classic_themes_default_to_the_qss_engine(theme_manager: ThemeManager) -> None:
+    assert theme_manager.theme("dark").engine == "qss"
+    assert theme_manager.theme("nord").engine == "qss"
+
+
+def test_qlementine_themes_are_listed(theme_manager: ThemeManager) -> None:
+    ids = {theme.id for theme in theme_manager.available_themes()}
+    assert {"qlementine-dark", "qlementine-light"} <= ids
+
+
+def test_a_theme_inherits_the_engine_it_extends(theme_manager: ThemeManager) -> None:
+    theme_manager.save_user_theme(
+        "mine", "Mine", "dark", {"accent_primary": "#ff0000"}, extends="qlementine-dark"
+    )
+    theme = theme_manager.theme("mine")
+    assert theme.engine == "qlementine"
+    assert theme.tokens["accent_primary"] == "#ff0000"
+
+
+def test_a_theme_can_override_the_engine_it_extends(
+    theme_manager: ThemeManager, tmp_path: Path
+) -> None:
+    theme_manager.user_dir.mkdir(parents=True, exist_ok=True)
+    (theme_manager.user_dir / "classic.json").write_text(
+        json.dumps(
+            {
+                "schema": 2,
+                "id": "classic",
+                "name": "Classic",
+                "appearance": "dark",
+                "engine": "qss",
+                "extends": "qlementine-dark",
+                "tokens": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert theme_manager.theme("classic").engine == "qss"
+
+
+def test_only_a_non_default_engine_is_written(theme_manager: ThemeManager) -> None:
+    theme_manager.save_user_theme("a", "A", "dark", {"text_primary": "#fff"})
+    theme_manager.save_user_theme(
+        "b", "B", "dark", {"text_primary": "#fff"}, engine="qlementine"
+    )
+    a = json.loads((theme_manager.user_dir / "a.json").read_text(encoding="utf-8"))
+    b = json.loads((theme_manager.user_dir / "b.json").read_text(encoding="utf-8"))
+    assert "engine" not in a
+    assert b["engine"] == "qlementine"
+    assert theme_manager.theme("b").engine == "qlementine"
+
+
+def test_duplicate_keeps_the_engine(theme_manager: ThemeManager) -> None:
+    copy = theme_manager.duplicate_theme("qlementine-dark", "My Q")
+    assert copy.engine == "qlementine"
+    assert theme_manager.duplicate_theme("dark", "My Classic").engine == "qss"
+
+
+def test_export_and_import_round_trip_the_engine(
+    theme_manager: ThemeManager, tmp_path: Path
+) -> None:
+    target = tmp_path / "q.json"
+    theme_manager.export_theme("qlementine-dark", target)
+    assert json.loads(target.read_text(encoding="utf-8"))["engine"] == "qlementine"
+
+    imported = theme_manager.import_theme(target)
+    assert imported.engine == "qlementine"
+    assert not imported.builtin
+
+
+def test_export_of_a_classic_theme_names_no_engine(
+    theme_manager: ThemeManager, tmp_path: Path
+) -> None:
+    target = tmp_path / "d.json"
+    theme_manager.export_theme("dark", target)
+    assert "engine" not in json.loads(target.read_text(encoding="utf-8"))
+
+
+def test_an_unknown_engine_falls_back_to_qss_with_a_warning(
+    theme_manager: ThemeManager,
+) -> None:
+    theme_manager.user_dir.mkdir(parents=True, exist_ok=True)
+    (theme_manager.user_dir / "weird.json").write_text(
+        json.dumps(
+            {
+                "schema": 2,
+                "id": "weird",
+                "name": "Weird",
+                "appearance": "dark",
+                "engine": "neon",
+                "extends": "dark",
+                "tokens": {},
+            }
+        ),
+        encoding="utf-8",
+    )
+    theme = theme_manager.theme("weird")
+    assert theme.engine == "qss"
+    assert any("Unknown engine" in warning for warning in theme.warnings)
+
+
+def test_a_missing_library_falls_back_to_the_qss_look(
+    theme_manager: ThemeManager, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from trigger_designer.qt import qlementine_style
+
+    monkeypatch.setattr(qlementine_style, "_q", None)
+    theme_manager.invalidate()
+
+    theme = theme_manager.theme("qlementine-dark")
+    assert theme.engine == "qlementine"
+    assert not theme_manager.uses_qlementine(theme)
+    assert any("not installed" in warning for warning in theme.warnings)
+
+
+def test_a_qlementine_theme_formats_the_same_qss_as_its_parent(
+    theme_manager: ThemeManager,
+) -> None:
+    """The engine decides whether the sheet is applied, not what it says."""
+    assert theme_manager.stylesheet_for(
+        "qlementine-dark"
+    ) == theme_manager.stylesheet_for("dark")
+
+
+# -- style engines ------------------------------------------------------------
+
+
+def test_a_fresh_install_starts_on_qlementine(theme_manager: ThemeManager) -> None:
+    assert theme_manager.requested_engine() == "qlementine"
+    assert theme_manager.active_theme().engine == "qlementine"
+
+
+def test_every_qss_theme_has_a_qlementine_twin_with_the_same_look(
+    theme_manager: ThemeManager,
+) -> None:
+    qss = {t.id: t for t in theme_manager.themes_for_engine("qss")}
+    qlementine = {t.id: t for t in theme_manager.themes_for_engine("qlementine")}
+
+    assert qss, "the classic themes are still shipped"
+    for theme_id, classic in qss.items():
+        if not classic.builtin:
+            continue
+        twin = qlementine[f"qlementine-{theme_id}"]
+        assert twin.appearance == classic.appearance
+        assert twin.tokens == classic.tokens, theme_id  # colours and metrics alike
+
+
+def test_the_engine_lists_do_not_overlap(theme_manager: ThemeManager) -> None:
+    qss = {t.id for t in theme_manager.themes_for_engine("qss")}
+    qlementine = {t.id for t in theme_manager.themes_for_engine("qlementine")}
+
+    assert qss.isdisjoint(qlementine)
+    assert {t.id for t in theme_manager.available_themes()} == qss | qlementine
+
+
+@pytest.mark.parametrize(
+    ("theme_id", "engine", "expected"),
+    [
+        ("nord", "qlementine", "qlementine-nord"),
+        ("qlementine-nord", "qss", "nord"),
+        ("qlementine-dracula", "qlementine", "qlementine-dracula"),
+        ("light", "qlementine", "qlementine-light"),
+        ("system", "qss", "system"),
+    ],
+)
+def test_switching_engine_keeps_the_same_theme_where_there_is_a_twin(
+    theme_manager: ThemeManager, theme_id: str, engine: str, expected: str
+) -> None:
+    assert theme_manager.counterpart_id(theme_id, engine) == expected
+
+
+def test_a_theme_without_a_twin_falls_back_to_its_appearance(
+    theme_manager: ThemeManager,
+) -> None:
+    theme_manager.save_user_theme("mine", "Mine", "light", {}, extends="light")
+
+    assert theme_manager.counterpart_id("mine", "qlementine") == "qlementine-light"
+
+
+def test_system_mode_follows_the_chosen_engine(
+    theme_manager: ThemeManager, clean_preferences, monkeypatch
+) -> None:
+    monkeypatch.setattr(theme_manager, "_system_appearance", lambda: "light")
+    clean_preferences.set("appearance/theme", "system")
+
+    clean_preferences.set("appearance/engine", "qss")
+    theme_manager.invalidate()
+    assert theme_manager.active_theme().engine == "qss"
+
+    clean_preferences.set("appearance/engine", "qlementine")
+    theme_manager.invalidate()
+    active = theme_manager.active_theme()
+    assert active.engine == "qlementine"
+    assert active.appearance == "light"
+
+
+def test_committing_a_preview_remembers_the_engine(
+    theme_manager: ThemeManager, clean_preferences
+) -> None:
+    theme_manager.preview("nord")
+    assert clean_preferences.get("appearance/engine") == "qlementine"  # not yet
+    assert theme_manager.requested_engine() == "qss"
+
+    theme_manager.commit_preview()
+
+    assert clean_preferences.get("appearance/engine") == "qss"
+    assert clean_preferences.get("appearance/theme") == "nord"
+
+
+def test_cancelling_an_engine_preview_restores_the_stored_one(
+    theme_manager: ThemeManager, clean_preferences
+) -> None:
+    clean_preferences.set("appearance/theme", "system")
+    theme_manager.preview_engine("qss")
+    assert theme_manager.requested_engine() == "qss"
+
+    theme_manager.cancel_preview()
+
+    assert theme_manager.requested_engine() == "qlementine"
+    assert clean_preferences.get("appearance/engine") == "qlementine"

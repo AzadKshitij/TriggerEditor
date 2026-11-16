@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-dracula",
+    "name": "Qlementine Dracula",
+    "appearance": "dark",
+    "engine": "qlementine",
+    "extends": "dracula",
+    "tokens": {}
+}

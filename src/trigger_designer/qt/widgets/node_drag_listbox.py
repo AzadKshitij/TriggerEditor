@@ -1,3 +1,5 @@
+import re
+
 from qtpy.QtGui import (
     QPixmap,
     QDrag,
@@ -28,6 +30,19 @@ from trigger_designer.core.node_configuration import (
     LISTBOX_MIMETYPE,
     NODE_REGISTRIES,
 )
+from trigger_designer.qt.widgets.common.config_widgets import FillCellDelegate
+
+
+def _alphanumeric_key(text: str) -> tuple:
+    """Case-insensitive sort key that orders digit runs by value.
+
+    ``"Step 2"`` sorts before ``"Step 10"`` instead of after it, which is what
+    "alpha-numerically" means for a palette a user scans by eye.
+    """
+    return tuple(
+        (1, int(part)) if part.isdigit() else (0, part.casefold())
+        for part in re.split(r"(\d+)", text)
+    )
 
 
 class QTRDragListbox(QListWidget):
@@ -37,6 +52,7 @@ class QTRDragListbox(QListWidget):
         super().__init__(parent)
         self.node_type = node_type
         self.horizontal_spacing = 15
+        self.setItemDelegate(FillCellDelegate(self))
 
         self.initUI()
         self.setViewMode(QListWidget.IconMode)
@@ -72,11 +88,15 @@ class QTRDragListbox(QListWidget):
         # Get registry for this node type
         node_registry = NODE_REGISTRIES[self.node_type]
 
-        # Sort keys for consistent ordering
-        keys = sorted(node_registry.keys())
+        # Sort by the displayed title rather than registration/opcode order so
+        # the palette is easy to scan and search (issue #42). The opcode is a
+        # stable tie-breaker for nodes that happen to share a title.
+        nodes = sorted(
+            node_registry.items(),
+            key=lambda item: (_alphanumeric_key(item[1].node_title), item[0]),
+        )
 
-        for key in keys:
-            node_class = node_registry[key]
+        for key, node_class in nodes:
             self.addMyItem(
                 name=node_class.node_title, icon=node_class.icon, node_code=key
             )

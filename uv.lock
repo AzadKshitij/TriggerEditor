@@ -889,6 +889,38 @@ wheels = [
 ]
 
 [[package]]
+name = "pyside6-qlementine"
+version = "1.5.1.0.post1"
+source = { url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl" }
+dependencies = [
+    { name = "pyside6-essentials" },
+]
+wheels = [
+    { url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl", hash = "sha256:b03a8c114cba2b2ff72ab02c4ef96afeed839d26ff56484490903218570280c5" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "pyside6-essentials", specifier = ">=6.12.0,<6.13" }]
+
+[[package]]
+name = "pyside6-qtads"
+version = "5.1.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyside6-essentials" },
+    { name = "shiboken6" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9b/48/13bc46fba02bba1c4e7588a1f5e8e5a9f10858da9ff97088c454a304f66b/pyside6_qtads-5.1.1.1.tar.gz", hash = "sha256:e310f551fb8966fa5bed64f28f873514d18d749e83f17df704e042e7e4a2e19a", size = 23504061, upload-time = "2026-10-22T07:04:13.086Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/55/7b/b732a5cbb274d007d22ae3c767c3edab2b556f8bb444ef263897a284ee28/pyside6_qtads-5.1.1.1-cp310-abi3-macosx_13_0_arm64.whl", hash = "sha256:081ffbbaa755a50bf3acf4ec475097e36d56b1996858961af0991acf91c22a1c", size = 504328, upload-time = "2026-10-22T07:04:04.297Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/40/02736d3a97a8fb9870b31aded2524e950393f46407abcdd85d4195db78e7/pyside6_qtads-5.1.1.1-cp310-abi3-macosx_13_0_x86_64.whl", hash = "sha256:448a2715b005af00948cc47f9e24751f002ebe5eb6f7053708784a2944b0273d", size = 515629, upload-time = "2026-10-22T07:04:05.596Z" },
+    { url = "https://files.pythonhosted.org/packages/74/11/2ee80e742498e1a07c615754d7c6ebb7693db7e7f9fb5783318c1ce57a22/pyside6_qtads-5.1.1.1-cp310-abi3-manylinux_2_34_x86_64.whl", hash = "sha256:22c9dd2f88b918a7bd76c7674dadb0ec874f684f21372127504dcb1d8dc5e333", size = 629032, upload-time = "2026-10-22T07:04:07.156Z" },
+    { url = "https://files.pythonhosted.org/packages/38/8d/ea726e1348b81b50b1bc23a2ae2a58429206ea0ef94f3d7b94425bb2b73a/pyside6_qtads-5.1.1.1-cp310-abi3-manylinux_2_39_aarch64.whl", hash = "sha256:0c4e2a5fae430dca3de71378c9b6d736134fe6d09e8c4020522074d8e999b616", size = 660399, upload-time = "2026-10-22T07:04:08.311Z" },
+    { url = "https://files.pythonhosted.org/packages/9c/89/39e37a9ae67562e961e1b606fdeab341f5bb494aa3b795103baf385f4d1c/pyside6_qtads-5.1.1.1-cp310-abi3-win_amd64.whl", hash = "sha256:8e6aea3f7046bc27afbf4d1d1dd9d372cebb14b1c00d19566dbd4c6a9530c25a", size = 425548, upload-time = "2026-10-22T07:04:09.587Z" },
+    { url = "https://files.pythonhosted.org/packages/61/85/9e029714ca7c9ec7f90065b1d0eb90337e601e562c0f850f9b5a765999ef/pyside6_qtads-5.1.1.1-cp310-abi3-win_arm64.whl", hash = "sha256:9787762e12d4a6a087c7b951d43c8ff32d6d2492d1f33f5efdf70f327833e0b6", size = 391983, upload-time = "2026-10-22T07:04:10.604Z" },
+]
+
+[[package]]
 name = "pytest"
 version = "9.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1196,6 +1228,8 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pyqtgraph" },
     { name = "pyside6-essentials" },
+    { name = "pyside6-qlementine", marker = "platform_machine == 'AMD64' and sys_platform == 'win32'" },
+    { name = "pyside6-qtads" },
     { name = "qt-material-icons" },
     { name = "qtpy" },
     { name = "rpytest" },
@@ -1241,6 +1275,8 @@ requires-dist = [
     { name = "pyarrow", specifier = "==26.0.0" },
     { name = "pyqtgraph", specifier = "==0.14.0" },
     { name = "pyside6-essentials", specifier = "==6.12.0" },
+    { name = "pyside6-qlementine", marker = "platform_machine == 'AMD64' and sys_platform == 'win32'", url = "https://github.com/AzadKshitij/PyQlementine/releases/download/pyside6-6.12-v1.5.1.0.post1/pyside6_qlementine-1.5.1.0.post1-cp310-abi3-win_amd64.whl" },
+    { name = "pyside6-qtads", specifier = "==5.1.1.1" },
     { name = "qt-material-icons", specifier = "==0.5.2" },
     { name = "qtpy", specifier = "==2.4.3" },
     { name = "rpytest", specifier = ">=0.1.2" },

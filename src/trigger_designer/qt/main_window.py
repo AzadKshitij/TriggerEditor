@@ -16,8 +16,8 @@ from qtpy.QtWidgets import (
     QFileDialog,
     QMdiSubWindow,
     QMessageBox,
-    QTabWidget,
     QShortcut,
+    QVBoxLayout,
 )
 from qtpy.QtCore import Qt
 
@@ -34,7 +34,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowMenuMixin,
 )
 from trigger_designer.qt.helpers import global_logger
-from trigger_designer.qt.helpers.dock_resize_cursor import install_dock_resize_cursor
+from trigger_designer.qt.docking.ads_host import AdsDockHost
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
 from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
 from trigger_designer.qt.models.preview_worker import wait_for_preview_workers
@@ -132,24 +132,25 @@ class TriggerWindow(
         self.mdiArea.setTabsClosable(True)
         self.mdiArea.setTabsMovable(True)
 
-        # Enable window tiling and docking behavior
-        self.setDockNestingEnabled(True)
-        self.setTabPosition(
-            Qt.DockWidgetArea.AllDockWidgetAreas, QTabWidget.TabPosition.North
-        )
-        self.setCentralWidget(self.mdiArea)
+        # Free-form docking: the canvas is the dock host's central widget, so
+        # any panel can dock beside, above or below it (docs/plans/
+        # 2026-11-16-docking-system.md). The Nodes palette is not a panel: it
+        # is a fixed strip above the host.
+        self.dockHost = AdsDockHost(self)
+        self.dockHost.set_central(self.mdiArea)
 
         self.mdiArea.subWindowActivated.connect(self.updateMenus)
         self.mdiArea.subWindowActivated.connect(self.onSubWindowActivated)
 
         self.createActions()
 
-        # Docks
+        # Panels
         self.createNodesDock()
         self.createConfigDock()
         self.createLoggingDock()
         self.createDataPreviewDock()
         self.createRunHistoryDock()
+        self.setCentralWidget(self._buildCentralContainer())
 
         self.createMenus()
 
@@ -157,9 +158,6 @@ class TriggerWindow(
         # window row beside the caption buttons. Installed before
         # readSettings() so restored geometry already has no native frame.
         self.window_chrome = install_window_chrome(self)
-        # Dock edges are draggable; keep their pointer the same native resize
-        # arrow the window frame uses instead of Qt's split-cursor bitmap.
-        install_dock_resize_cursor(self)
 
         self.createToolBars()
         self.createStatusBar()
@@ -176,10 +174,19 @@ class TriggerWindow(
         self.setWindowTitle("Trigger Designer")
         self.setWindowIcon(QIcon(str(self.rsm.get_full_path("app_icon"))))
 
-        self.setDockNestingEnabled(True)
-
         # Initialize global logger with this main window
         global_logger.set_main_window(self)
+
+    def _buildCentralContainer(self) -> QWidget:
+        """Nodes palette on top, the dock host (canvas + panels) below."""
+        container = QWidget()
+        container.setObjectName("CentralContainer")
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.nodesDock)
+        layout.addWidget(self.dockHost.widget(), 1)
+        return container
 
     def toggleFullScreen(self):
         if self.isFullScreen():
@@ -346,7 +353,8 @@ class TriggerWindow(
         Overrides the base implementation, which raises ``TypeError`` on
         valid JSON scalars (``true``, ``123``) instead of ignoring them.
         """
-        if self.getCurrentNodeEditorWidget() is None:
+        widget = self.getCurrentNodeEditorWidget()
+        if widget is None:
             return
         clipboard = QApplication.instance().clipboard()
         raw_text = clipboard.text() if clipboard is not None else ""
@@ -356,7 +364,23 @@ class TriggerWindow(
                 self.statusBar().showMessage(message, 5000)
             global_logger.warning(message)
             return
-        super().onEditPaste()
+        scene = getattr(widget, "scene", None)
+        bulk_load = getattr(scene, "beginBulkLoad", None)
+        bulk_done = getattr(scene, "endBulkLoad", None)
+        # Treat paste like a load: a node constructed from clipboard data has
+        # no settings yet, so a constructor-time eval would record a bogus
+        # error (e.g. File Input's "No file selected"). Hold those evals back
+        # and run one pass once every pasted node is fully restored.
+        if callable(bulk_load):
+            bulk_load()
+        try:
+            created = super().onEditPaste()
+        finally:
+            if callable(bulk_done):
+                bulk_done()
+        coordinator = getattr(scene, "evaluator", None)
+        if coordinator is not None and created:
+            coordinator.evaluate_nodes(created)
 
     def shutdown_background_work(self, timeout_ms: int = 5000) -> None:
         """Stop in-flight runs and previews before their panels are destroyed.

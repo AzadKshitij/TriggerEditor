@@ -1,0 +1,9 @@
+{
+    "schema": 2,
+    "id": "qlementine-solarized-light",
+    "name": "Qlementine Solarized Light",
+    "appearance": "light",
+    "engine": "qlementine",
+    "extends": "solarized-light",
+    "tokens": {}
+}
