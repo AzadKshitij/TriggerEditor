@@ -34,6 +34,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowMenuMixin,
 )
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.dock_resize_cursor import install_dock_resize_cursor
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
 from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
 from trigger_designer.qt.models.preview_worker import wait_for_preview_workers
@@ -156,6 +157,9 @@ class TriggerWindow(
         # window row beside the caption buttons. Installed before
         # readSettings() so restored geometry already has no native frame.
         self.window_chrome = install_window_chrome(self)
+        # Dock edges are draggable; keep their pointer the same native resize
+        # arrow the window frame uses instead of Qt's split-cursor bitmap.
+        install_dock_resize_cursor(self)
 
         self.createToolBars()
         self.createStatusBar()
