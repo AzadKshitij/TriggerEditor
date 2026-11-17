@@ -51,6 +51,7 @@ from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_inp
 from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
 from trigger_designer.qt.helpers.external_edit_mixin import ExternalEditMixin
+from trigger_designer.qt.helpers.workflow_drop import workflow_paths
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers import node_arrange
@@ -848,13 +849,24 @@ class TriggerSubWindow(
             self.shutdown_external_edit()
 
     def onDragEnter(self, event: QDragEnterEvent) -> None:
-        if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
+        if event.mimeData().hasFormat(LISTBOX_MIMETYPE) or workflow_paths(
+            event.mimeData()
+        ):
             event.acceptProposedAction()
         else:
             # print(" ... denied drag enter event")
             event.setAccepted(False)
 
     def onDrop(self, event: QDropEvent) -> None:
+        paths = workflow_paths(event.mimeData())
+        if paths:
+            # A workflow file dropped on the canvas opens in its own window (it
+            # is not a node); the main window opens it.
+            event.acceptProposedAction()
+            opener = getattr(self.window(), "open_dropped_workflows", None)
+            if callable(opener):
+                opener(paths)
+            return
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):
             eventData = event.mimeData().data(LISTBOX_MIMETYPE)
             dataStream = QDataStream(eventData, QIODevice.OpenModeFlag.ReadOnly)

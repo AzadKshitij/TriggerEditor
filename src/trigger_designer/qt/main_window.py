@@ -1,3 +1,5 @@
+import os
+
 from loguru import logger
 from nodeeditor.node_editor_widget import NodeEditorWidget
 from typing import Callable, Optional, cast, override
@@ -6,6 +8,9 @@ from qtpy.QtGui import (
     QIcon,
     QKeySequence,
     QCloseEvent,
+    QDragEnterEvent,
+    QDragMoveEvent,
+    QDropEvent,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -19,7 +24,7 @@ from qtpy.QtWidgets import (
     QShortcut,
     QVBoxLayout,
 )
-from qtpy.QtCore import Qt
+from qtpy.QtCore import Qt, QTimer
 
 import orjson as json
 from orjson import JSONDecodeError
@@ -34,6 +39,7 @@ from trigger_designer.qt.helpers.main_window_ui_mixin import (
     MainWindowMenuMixin,
 )
 from trigger_designer.qt.helpers import global_logger
+from trigger_designer.qt.helpers.workflow_drop import workflow_paths
 from trigger_designer.qt.docking.ads_host import AdsDockHost
 from trigger_designer.qt.layout_state import LayoutState, apply_default_layout
 from trigger_designer.qt.helpers.edge_validators import register_cycle_validator
@@ -96,6 +102,8 @@ class TriggerWindow(
         name_product: str = "Trigger Editor",
     ) -> None:
         super().__init__()
+        # Drop a .tds file anywhere on the window to open it.
+        self.setAcceptDrops(True)
 
         # We'll create a single logging dock in initUI
 
@@ -699,9 +707,56 @@ class TriggerWindow(
             ):
                 self.mdiArea.setActiveSubWindow(previous)
 
+    # ------------------------------------------------- drag and drop to open
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if workflow_paths(event.mimeData()):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dragMoveEvent(self, event: QDragMoveEvent) -> None:
+        if workflow_paths(event.mimeData()):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        paths = workflow_paths(event.mimeData())
+        if not paths:
+            event.ignore()
+            return
+        event.acceptProposedAction()
+        self.open_dropped_workflows(paths)
+
+    def open_dropped_workflows(self, paths: list[str]) -> None:
+        """Open the workflow files that were dropped on the window.
+
+        Opening is queued until the drop has returned: loading shows a progress
+        dialog, and the program that was dragged from (Explorer) is held up for
+        as long as the drop handler runs.
+        """
+
+        def _open() -> None:
+            for path in paths:
+                self.openFile(path)
+            self.raise_()
+            self.activateWindow()
+
+        QTimer.singleShot(0, _open)
+
+    @staticmethod
+    def _same_file(first: str | None, second: str | None) -> bool:
+        """Whether two paths name the same file however they are written
+        (relative or absolute, upper or lower case on Windows)."""
+        if not first or not second:
+            return False
+        return os.path.normcase(os.path.abspath(first)) == os.path.normcase(
+            os.path.abspath(second)
+        )
+
     def findMdiChild(self, filename):
         for window in self.mdiArea.subWindowList():
-            if window.widget().filename == filename:
+            if self._same_file(window.widget().filename, filename):
                 return window
         return None
 

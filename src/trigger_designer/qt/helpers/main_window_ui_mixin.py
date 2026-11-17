@@ -59,6 +59,7 @@ class MainWindowMenuMixin:
 
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpMenu.addAction(self.actOptionalModules)
+        self.helpMenu.addAction(self.actAssociateFiles)
         self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.actAbout)
 

@@ -10,6 +10,7 @@ Status: plan, nothing built yet. Written 2026-11-17 against `main` at `ca38cb3` 
 | D4 | The installer is built with **Inno Setup**. |
 | D9 | Builds ship **unsigned for now**, with a documented SmartScreen note. The build keeps an optional signing hook. |
 | D6 | Default install scope is **per user** (an all-users option stays in the setup dialog). |
+| D14 | **`.tds` files open in Trigger Designer** (double-click, Open with, drag and drop), in the installed and the portable version. The app side is built (see D14 below). |
 | D13 | **Short command names.** The command line is **`tds`**, and the AI-tool server is the subcommand **`tds mcp`** (one program, like `gh`). The long names `trigger-designer-cli` and `trigger-designer-mcp` stay as aliases. |
 
 Still open (defaults used until changed): D8 creates only a default policy file, no AI workspace folder; releases are a **draft pre-release** from a GitHub Actions run on a `v*` tag.
@@ -122,6 +123,14 @@ The installer says plainly that deselecting a component removes entry points, no
 
 **D11. Data, upgrade and uninstall.** Same `AppId` for upgrades in place (never downgrade without asking). User data lives outside the install folder (`%APPDATA%\Trigger Designer`: preferences, logs, optional modules; run records sit beside each workflow) and is **kept** on uninstall; the uninstaller offers to delete it. The uninstaller also removes the `PATH` entries and the file association.
 
+**D14 (decided, app side built). `.tds` files open in Trigger Designer.**
+
+- *In the app (done):* the editor opens every file named on its command line (the form Explorer uses, `"<exe>" "%1"`), the same file written two ways is recognised as one document, and a `.tds` dropped on the window or on the canvas opens (several at once). Other file types and web links are refused.
+- *Portable (done):* Help > "Open .tds files with Trigger Designer..." registers the file type for the current user (`core/file_association.py`, no administrator rights, removable).
+- *Installer (Phase 2):* register the ProgID `TriggerDesigner.Workflow` (display name, icon, `open` command), `OpenWithProgids`, an `Applications\TriggerEditor.exe` entry, and the `.tds` default **only if no other program owns it**; refresh the shell (`ChangesAssociations=yes`); remove all of it on uninstall. The current script registers only "Open with" and never sets the default.
+- *Known conflict:* Tableau uses `.tds` for its data sources. Windows protects a user's own choice, so when another program owns the type the user picks Trigger Designer once in Settings > Default apps; the portable menu entry opens that page.
+- *Recommended next (not built):* when the editor is already running, a second double-click starts a **second copy of the program**. Forwarding the file to the running copy would open it faster and in one window. It must not use `QtNetwork` (the network guard test forbids it); a small file-based hand-off with a `QFileSystemWatcher` in the data folder, or `QSharedMemory`, keeps it local. Decide before the first public release.
+
 **D12. No updater.** The program does not contact the internet, so an update means downloading a new installer or zip. The install page says so.
 
 ## Risks and the spikes that settle them
@@ -174,6 +183,8 @@ The installer says plainly that deselecting a component removes entry points, no
 | Upgrade over the previous version; downgrade is refused or asked | install old, then new |
 | Uninstall leaves no files, `PATH` entry or association; user data kept unless chosen | automated in `smoke_installer.ps1` |
 | An AI tool (Claude Code) configured from the printed snippet builds a workflow with the installed MCP server | manual, once per release |
+| Double-clicking a `.tds` opens it (installed; portable after the Help menu entry); "Open with" lists Trigger Designer; the icon shows; a path with spaces and non-ASCII letters opens; selecting several files and pressing Enter opens them | clean VMs, per-user and all-users installs |
+| Dragging one or several `.tds` files from Explorer onto an empty window and onto an open canvas opens them; a `.csv` is refused | manual, once per release |
 | `SHA256SUMS.txt` matches; the antivirus scan is clean | scripted |
 
 ## Open questions for the project owner

@@ -228,8 +228,31 @@ def _wait_for_background_workers(timeout_ms: int = 5000) -> None:
         logger.warning("A workflow thread is still running at exit")
 
 
+def files_from_argv(argv: list[str]) -> list[str]:
+    """The workflow files named on the command line, as absolute paths.
+
+    Windows starts the editor with ``"<path>"`` when a ``.tds`` file is opened
+    (double-click, "Open with", drag onto the exe). Option-like arguments (Qt's
+    own ``-platform ...`` and the like) and repeats are skipped, a relative path
+    is made absolute so the same file is recognised however it was spelled, and
+    several files are all returned, in order.
+    """
+    seen: set[str] = set()
+    files: list[str] = []
+    for raw in argv[1:]:
+        if not raw or raw.startswith("-"):
+            continue
+        path = os.path.abspath(os.path.expanduser(raw))
+        key = os.path.normcase(path)
+        if key not in seen:
+            seen.add(key)
+            files.append(path)
+    return files
+
+
 def main() -> None:
-    file_path: Optional[str] = sys.argv[1] if len(sys.argv) > 1 else None
+    files = files_from_argv(sys.argv)
+    file_path: Optional[str] = files[0] if files else None
 
     logger.info("Starting Trigger Designer...")
     logger.info(f"System arguments: {sys.argv}")
@@ -318,6 +341,10 @@ def main() -> None:
     )
     main_window.show()
     main_window.activateWindow()
+    # Several files named on the command line (a multi-selection opened from
+    # Explorer, or a terminal): the first is open already, open the rest.
+    for extra in files[1:]:
+        main_window.openFile(extra)
 
     # Every quit path (window close, File > Exit, Ctrl+Q) runs this before
     # the event loop stops, so a running workflow or preview is not left

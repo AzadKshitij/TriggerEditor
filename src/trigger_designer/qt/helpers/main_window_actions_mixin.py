@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from loguru import logger as glogger
-from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QAction, QDialog
+from qtpy.QtCore import QUrl
+from qtpy.QtGui import QDesktopServices, QKeySequence
+from qtpy.QtWidgets import QAction, QDialog, QMessageBox
 
 from trigger_designer.qt.dialogs.preferences_dialog import PreferencesDialog
 from trigger_designer.qt.helpers import node_arrange
@@ -101,6 +102,20 @@ class MainWindowActionsMixin:
         )
         self.actOptionalModules.setObjectName("actionOptionalModules")
 
+        from trigger_designer.core import file_association
+
+        self.actAssociateFiles = QAction(
+            "Open .tds files with Trigger Designer…",
+            self,
+            statusTip=(
+                "Make double-clicking a .tds workflow file open it here "
+                "(Windows, for your user only; no administrator rights needed)"
+            ),
+            triggered=self.associateTdsFiles,
+        )
+        self.actAssociateFiles.setObjectName("actionAssociateTdsFiles")
+        self.actAssociateFiles.setEnabled(file_association.is_supported())
+
         self.actAbout = QAction(
             "&About",
             self,
@@ -179,6 +194,38 @@ class MainWindowActionsMixin:
         dialog = PreferencesDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.loadSettings()
+
+    def associateTdsFiles(self) -> None:
+        """Help > Open .tds files with Trigger Designer: register the file type."""
+        from trigger_designer.core import file_association
+
+        try:
+            result = file_association.register()
+        except Exception as exc:  # noqa: BLE001 - tell the user, never crash a slot
+            glogger.exception("Could not register .tds files")
+            QMessageBox.warning(
+                self,
+                "Open .tds files",
+                f"Trigger Designer could not register .tds files:\n\n{exc}",
+            )
+            return
+        if result.is_default:
+            QMessageBox.information(
+                self,
+                "Open .tds files",
+                "Done. Double-clicking a .tds file now opens it in Trigger Designer.",
+            )
+            return
+        other = result.owner or "another program"
+        QMessageBox.information(
+            self,
+            "Open .tds files",
+            "Trigger Designer is now offered for .tds files, but Windows is set to "
+            f"open them with {other}.\n\nChoose Trigger Designer once, in Windows "
+            "Settings > Default apps (it opens next), or right-click a .tds file > "
+            "Open with > Choose another app > Always.",
+        )
+        QDesktopServices.openUrl(QUrl("ms-settings:defaultapps"))
 
     def showOptionalModules(self) -> None:
         """Help > Optional modules: install, verify or remove optional modules."""

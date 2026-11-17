@@ -23,9 +23,20 @@ A **workflow** is saved as a `.tds` file ("Trigger Designer Scene"). It holds th
 
 A `.tds` is plain text in the JSON format, written in **UTF-8**. You can open it in any text editor to see what it contains, but you should edit workflows in the app. Because it is text, it works well with version control, and you can send it by email.
 
-To open one: **File > Open** (`Ctrl+O`, the file filter says "Design (*.tds)"; you can select several files), **File > Open Recent**, the welcome dialog, or start the program with the file as its argument (`trigger-designer "C:\Work\Orders\orders_check.tds"`).
+To open one:
 
-Opening a workflow that is already open just brings its tab forward.
+- **Double-click it** in Windows Explorer, once `.tds` files are set to open with Trigger Designer (see [below](#double-click-to-open)).
+- **Drag it onto the program window** from Explorer. Drop it anywhere on the window, including the canvas; you can drop several files at once. Only `.tds` workflow files open this way; other files are refused (the pointer shows it), and a file dropped on the canvas opens as its own workflow, it is not added to the one you are editing.
+- **File > Open** (`Ctrl+O`, the file filter says "Design (*.tds)"; you can select several files), **File > Open Recent**, or the welcome dialog.
+- Start the program with the files as arguments (`TriggerEditor.exe "C:\Work\Orders\orders_check.tds"`; from source, `trigger-designer "..."`). Several files open together.
+
+Opening a workflow that is already open just brings its tab forward, however the path is written (relative or absolute, upper or lower case).
+
+### Double-click to open
+
+- **Installed version:** the installer registers `.tds` files, so double-clicking one opens it in Trigger Designer.
+- **Portable version (unzipped, not installed):** choose **Help > Open .tds files with Trigger Designer...** once. It registers the file type for your Windows user only and needs no administrator rights. If you move or delete the program folder later, the entry stops working; run the menu entry again from the new location.
+- **If another program already owns `.tds`.** Tableau also uses the `.tds` extension for its data sources. Windows keeps the choice you made, so Trigger Designer is added to **Open with** and the menu entry opens **Settings > Default apps**, where you pick Trigger Designer once. You can also right-click a `.tds` file, choose **Open with > Choose another app**, pick Trigger Designer and select **Always**.
 
 ## What is inside a .tds
 
