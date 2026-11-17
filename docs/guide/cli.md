@@ -617,6 +617,8 @@ With `--json`: `dry_run`, `applied`, `changed`, `sha256_before`, `sha256_after`,
 
 ## Using it from an AI tool (MCP server)
 
+> Step-by-step setup for Claude Code, Codex, Cursor and others is in [Using Trigger Designer from an AI tool (MCP)](mcp-server.md). This section is the short reference.
+
 Tools such as Claude Code, Codex and Cursor speak the Model Context Protocol (MCP). `trigger-designer-mcp` is a small local server that lets them use the read-only parts of this page without parsing text. It talks over standard input and output only: it opens no port and sends nothing over the network.
 
 Install the optional extra, then add the server to the tool's MCP settings:
