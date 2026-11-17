@@ -6,26 +6,32 @@ icon: lucide/download
 
 !!! warning "Alpha build"
 
-    Trigger Designer `0.1.0a1` is an **alpha** release for Windows. It is a first
-    public build: expect rough edges, and report what you find.
+    Trigger Designer `0.1.0-alpha.2` is an **alpha** release for Windows. Expect
+    rough edges, and report what you find.
 
 ## Download
 
 Go to the [GitHub releases page](https://github.com/AzadKshitij/TriggerEditor/releases)
-and open the newest **pre-release** named `v0.1.0-alpha.1`. Download:
+and open the newest **pre-release** named `v0.1.0-alpha.2`. Download:
 
-- `TriggerDesigner-0.1.0a1-windows-portable.zip` (the program)
+- `TriggerDesigner-0.1.0-alpha.2-windows-portable.zip` (the program)
 - `SHA256SUMS.txt` (to check the download, see below)
 
 The alpha has no installer. Unzip the archive anywhere you can write to, such as
 `C:\Tools\TriggerDesigner`, and keep the files together.
+
+!!! note "Not in the zip"
+
+    The portable build is the editor only. The [command-line program](guide/cli.md)
+    and the [AI tool (MCP) server](guide/mcp-server.md) run from the source code, not
+    from this download; each guide starts with how to install it.
 
 ## Check the download
 
 Open PowerShell in the folder with the files and run:
 
 ```powershell
-Get-FileHash .\TriggerDesigner-0.1.0a1-windows-portable.zip -Algorithm SHA256
+Get-FileHash .\TriggerDesigner-0.1.0-alpha.2-windows-portable.zip -Algorithm SHA256
 ```
 
 The hash it prints must match the line for that file in `SHA256SUMS.txt`. If it does
@@ -74,20 +80,25 @@ not mean the file is known to be harmful. You can check the hash above first.
 | Preferences and themes | `%APPDATA%\Trigger Designer` |
 | Log files | `%APPDATA%\Trigger Designer\logs` |
 | Run records (audit trail) | Next to each workflow, in a `<name>.runs` folder |
+| Optional modules (only if you add any) | `%APPDATA%\Trigger Designer\modules` |
 
 `%APPDATA%` is usually `C:\Users\<you>\AppData\Roaming`. Type `%APPDATA%` into the
 Explorer address bar to open it.
 
-The program does not check for updates and does not send data anywhere. See
+The program does not check for updates and does not send data anywhere. The one
+exception is an [optional module](guide/optional-modules.md) download that you start
+yourself, after a screen that names the source. See
 [Security and privacy](guide/security-and-privacy.md).
 
 ## Uninstall
 
-Delete the program folder. To remove your settings too, delete
-`%APPDATA%\Trigger Designer`. Your workflow files and their run records stay where
-you saved them.
+Delete the program folder. To remove your settings (and any optional modules) too,
+delete `%APPDATA%\Trigger Designer`. Your workflow files and their run records stay
+where you saved them.
 
-## Known issues in alpha 1
+## Known issues
+
+These were reported for alpha 1. Check the release notes for what has changed.
 
 - **Crash with code `0xC0000409`.** Under some heavy workloads (large files, many
   nodes running at once), the program can close without an error message. Windows
