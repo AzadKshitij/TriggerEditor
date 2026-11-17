@@ -11,7 +11,6 @@ from __future__ import annotations
 from loguru import logger
 from qtpy.QtGui import QColor
 from qtpy.QtWidgets import (
-    QDialog,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -32,6 +31,7 @@ from trigger_designer.qt.widgets.common.config_widgets import (
     NoWheelComboBox,
     TextButton,
 )
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
 from trigger_designer.qt.widgets.common.theme_widgets import (
     ColorSwatchButton,
     ThemePreviewWidget,
@@ -47,7 +47,7 @@ _CONTRAST_PAIRS = (
 )
 
 
-class ThemeEditorDialog(QDialog):
+class ThemeEditorDialog(FramelessDialog):
     """Duplicate/edit a user theme's colour tokens with a live preview."""
 
     def __init__(self, theme_id: str, parent: QWidget | None = None) -> None:

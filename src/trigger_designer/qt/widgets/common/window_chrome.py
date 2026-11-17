@@ -757,8 +757,8 @@ class _ResizeEdgeFilter(QObject):
 
     def __init__(
         self,
-        window: QMainWindow,
-        menu_bar: QMenuBar,
+        window: QWidget,
+        menu_bar: QMenuBar | None = None,
         margin: int = RESIZE_MARGIN,
     ) -> None:
         super().__init__(window)
@@ -792,7 +792,7 @@ class _ResizeEdgeFilter(QObject):
             return False
 
         edges = self._edges_at(event.globalPosition().toPoint())
-        if obj is self._menu_bar:
+        if self._menu_bar is not None and obj is self._menu_bar:
             # The bar owns its own top few pixels: a press near the top of a
             # menu must open it, not start a resize. The top edge stays
             # resizable left of, right of and behind the menus.

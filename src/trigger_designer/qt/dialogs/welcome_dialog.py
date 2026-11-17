@@ -6,7 +6,6 @@ import dataclasses
 
 from qtpy.QtWidgets import (
     QCheckBox,
-    QDialog,
     QDialogButtonBox,
     QFrame,
     QHBoxLayout,
@@ -18,6 +17,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
+
 
 @dataclasses.dataclass(frozen=True)
 class SampleInfo:
@@ -27,7 +28,7 @@ class SampleInfo:
     description: str
 
 
-class WelcomeDialog(QDialog):
+class WelcomeDialog(FramelessDialog):
     """Pick a recent project, start a new one, or browse for a file.
 
     After :meth:`exec`, read :attr:`action` (``"open"``, ``"new"``,

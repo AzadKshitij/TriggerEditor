@@ -75,6 +75,12 @@ WS_MAXIMIZEBOX = 0x00010000
 #: What a caption needs to be snap-capable and resizable.
 FRAME_STYLES = WS_THICKFRAME | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX
 
+
+def dialog_frame_styles(resizable: bool) -> int:
+    """Frame styles for a dialog: a real frame, but no min/max box."""
+    return WS_CAPTION | WS_SYSMENU | (WS_THICKFRAME if resizable else 0)
+
+
 SWP_NOSIZE = 0x0001
 SWP_NOMOVE = 0x0002
 SWP_NOZORDER = 0x0004
@@ -114,6 +120,11 @@ SM_CXPADDEDBORDER = 92
 DWMWA_USE_IMMERSIVE_DARK_MODE = 20
 DWMWA_WINDOW_CORNER_PREFERENCE = 33
 DWMWCP_ROUND = 2
+# Windows 11 (build 22000+) only; older builds answer E_INVALIDARG, which the
+# helper below ignores, leaving just the dark/light flag to do the work.
+DWMWA_BORDER_COLOR = 34
+DWMWA_CAPTION_COLOR = 35
+DWMWA_TEXT_COLOR = 36
 
 #: Hit-test code -> the caption button it identifies. Windows opens the Snap
 #: Layouts flyout from ``HTMAXBUTTON`` alone, however the button is drawn.
@@ -384,11 +395,45 @@ def _api() -> _Api:
     return _API
 
 
+def colorref(red: int, green: int, blue: int) -> int:
+    """A Win32 ``COLORREF`` (0x00BBGGRR) from 0-255 channels."""
+    return (blue & 0xFF) << 16 | (green & 0xFF) << 8 | (red & 0xFF)
+
+
+def apply_native_title_colors(
+    hwnd: int,
+    *,
+    dark: bool,
+    caption: int | None = None,
+    text: int | None = None,
+    border: int | None = None,
+) -> None:
+    """Recolour the OS caption of a framed window to follow the app theme.
+
+    ``dark`` flips the system's own dark/light caption (Windows 10 20H1+); the
+    three ``COLORREF`` values then paint it exactly (Windows 11). Either part
+    quietly does nothing where the OS does not know the attribute.
+    """
+    if hwnd == 0 or not native_caption_supported():
+        return
+    api = _api()
+    api.set_dwm_attribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, 1 if dark else 0)
+    if caption is not None:
+        api.set_dwm_attribute(hwnd, DWMWA_CAPTION_COLOR, caption)
+    if text is not None:
+        api.set_dwm_attribute(hwnd, DWMWA_TEXT_COLOR, text)
+    if border is not None:
+        api.set_dwm_attribute(hwnd, DWMWA_BORDER_COLOR, border)
+
+
 class WinCaption:
     """The Win32 half of the window chrome: frame styles and NC messages."""
 
-    def __init__(self, chrome: WindowChrome) -> None:
+    def __init__(self, chrome: WindowChrome, styles: int = FRAME_STYLES) -> None:
         self._chrome = chrome
+        #: Window styles to add; a dialog leaves out the min/max boxes so a
+        #: double-click on its row cannot maximize it.
+        self._styles = styles
         self._hwnd = 0
         self._dark: bool | None = None
 
@@ -408,7 +453,7 @@ class WinCaption:
         self._hwnd = hwnd
         api = _api()
         style = int(api.user32.GetWindowLongPtrW(hwnd, GWL_STYLE))
-        api.user32.SetWindowLongPtrW(hwnd, GWL_STYLE, style | FRAME_STYLES)
+        api.user32.SetWindowLongPtrW(hwnd, GWL_STYLE, style | self._styles)
         api.user32.SetWindowPos(hwnd, None, 0, 0, 0, 0, SWP_FRAME_ONLY)
         self._apply_dwm()
 
@@ -487,7 +532,8 @@ class WinCaption:
                 frame=self.frame_metrics(),
                 regions=self._chrome.caption_regions(),
                 size=(client.right / dpr, client.bottom / dpr),
-                resizable=not window.isFullScreen(),
+                resizable=bool(getattr(self._chrome, "resizable", True))
+                and not window.isFullScreen(),
             ),
         )
 

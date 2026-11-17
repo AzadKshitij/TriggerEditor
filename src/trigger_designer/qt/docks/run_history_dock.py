@@ -20,7 +20,6 @@ from qtpy.QtCore import QItemSelectionModel, Qt, QUrl, Signal
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (
     QAbstractItemView,
-    QDialog,
     QDialogButtonBox,
     QFileDialog,
     QHBoxLayout,
@@ -54,6 +53,7 @@ from trigger_designer.qt.widgets.common import (
     EmptyStateLabel,
     IconButton,
 )
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
 
 if TYPE_CHECKING:
     from trigger_designer.qt.design_window import TriggerSubWindow
@@ -86,7 +86,7 @@ def _icon(resource_id: str):
     return ResourceManager().get(resource_id)
 
 
-class InputCheckDialog(QDialog):
+class InputCheckDialog(FramelessDialog):
     """Result of "Check inputs": one row per recorded input file."""
 
     def __init__(self, checks: list[InputCheck], parent: QWidget | None = None) -> None:

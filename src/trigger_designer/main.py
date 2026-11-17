@@ -297,6 +297,13 @@ def main() -> None:
     except ThemeError as exc:
         logger.error(f"Theme failed to load; continuing with default: {exc}")
 
+    # Native captions (floating docks, Qt popups) follow the theme too (#45).
+    from trigger_designer.qt.helpers.native_title_theme import (
+        install_native_title_theme,
+    )
+
+    install_native_title_theme(app)
+
     app.processEvents()
 
     # Apply saved edge/socket colors before any workflow scene is created, so

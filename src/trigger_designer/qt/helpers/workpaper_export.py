@@ -33,6 +33,7 @@ from trigger_designer.qt.widgets.common import (
     IconButton,
     NoWheelComboBox,
 )
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
 
 TITLE = "Export workpaper"
 NO_RECORD = (
@@ -73,11 +74,11 @@ def default_output_path(workflow_path: str | None) -> str:
     )
 
 
-class WorkpaperExportDialog(QDialog):
+class WorkpaperExportDialog(FramelessDialog):
     """Asks for the engagement details and the file; nothing else."""
 
     def __init__(self, parent: QWidget | None, output_path: str) -> None:
-        super().__init__(parent)
+        super().__init__(parent, resizable=False)
         self.setObjectName("WorkpaperExportDialog")
         self.setWindowTitle(TITLE)
         self.setModal(True)
