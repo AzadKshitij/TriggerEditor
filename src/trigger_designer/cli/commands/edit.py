@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import sys
+from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,7 @@ from trigger_designer.core.headless.params import (
 )
 from trigger_designer.core.headless.workflow_file import (
     WorkflowDoc,
+    parse_workflow_bytes,
     read_workflow,
     static_validate,
 )
@@ -144,7 +146,43 @@ def _stale(doc: WorkflowDoc) -> bool:
         return True
 
 
-def run_edit(args, operations: Any, *, patch: bool) -> dict:
+def _validation(after: WorkflowDoc, folders: dict, check, payload: bytes) -> dict:
+    """What would stop the edited workflow from running, found before it is written.
+
+    The static checks always run (structure, node types, loops, input files,
+    output folders; a folder the edit will create is not a problem). ``check``,
+    when given, is a callable ``bytes -> {findings, checked}`` that also runs the
+    nodes that feed each output on a temporary copy (the MCP server supplies it).
+    """
+    from trigger_designer.cli.commands.validate import static_findings
+
+    args = Namespace(no_files=False, assume_folders=tuple(folders["creatable"]))
+    findings = [f.to_dict() for f in static_findings(after, args)]
+    checked = ["structure", "node types", "loops", "input files", "output folders"]
+    if check is not None and not any(f["level"] == "error" for f in findings):
+        deeper = check(payload)
+        findings, checked = deeper["findings"], deeper["checked"]
+    return {
+        "ok": not any(f["level"] == "error" for f in findings),
+        "checked": checked,
+        "findings": findings,
+    }
+
+
+def _refuse_invalid(validation: dict) -> None:
+    first = next(f for f in validation["findings"] if f["level"] == "error")
+    raise fail(
+        BAD_EDIT,
+        "The edit leaves the workflow with a problem and require_valid is set: "
+        + first["message"],
+        "Nothing was written. Fix it in the same edit, or apply without "
+        "require_valid to save an unfinished workflow.",
+    )
+
+
+def run_edit(
+    args, operations: Any, *, patch: bool, check=None, require_valid: bool = False
+) -> dict:
     """Shared body: read, check, edit a copy, diff, and write only on --apply."""
     doc = read_workflow(args.workflow)
     expect = getattr(args, "expect_sha", None)
@@ -176,6 +214,9 @@ def run_edit(args, operations: Any, *, patch: bool) -> dict:
     new_bytes = dump_workflow(editor.data)
     applied, backup = False, None
     folders = editor.output_folders()
+    validation = _validation(after, folders, check, new_bytes)
+    if args.apply and require_valid and not validation["ok"]:
+        _refuse_invalid(validation)
     created: list[str] = []
     if args.apply and not result["empty"]:
         if _stale(doc):
@@ -207,6 +248,7 @@ def run_edit(args, operations: Any, *, patch: bool) -> dict:
             "to_create": [] if created else folders["creatable"],
             "blocked": folders["blocked"],
         },
+        "validation": validation,
         "diff": result,
     }
 
@@ -238,8 +280,14 @@ def render_text(envelope: dict) -> None:
             out.note(f"{label}: {folder}")
 
 
-def run_new(args) -> dict:
-    """Create an empty workflow. Never replaces a file that exists."""
+def run_new(
+    args, operations: Any = None, *, check=None, require_valid: bool = False
+) -> dict:
+    """Create a workflow, empty or with ``operations`` applied in the same step.
+
+    Never replaces a file that exists. With operations the file is written once,
+    complete, or not at all: a failing edit leaves nothing behind.
+    """
     path = Path(args.workflow)
     if path.suffix.lower() != ".tds":
         raise fail(
@@ -263,8 +311,32 @@ def run_new(args) -> dict:
     if args.apply:
         require_edit(policy)
     data = new_workflow()
+    results: list = []
+    folders: dict = {"creatable": [], "blocked": []}
+    if operations is not None:
+        before = parse_workflow_bytes(dump_workflow(data), str(path))
+        editor = Editor(
+            data,
+            base_dir=os.path.dirname(os.path.abspath(path)),
+            extra_paths=policy.paths,
+        )
+        results = apply_patch(editor, operations)
+        data = editor.data
+        folders = editor.output_folders()
     payload = dump_workflow(data)
+    after = parse_workflow_bytes(payload, str(path))
+    if operations is not None:
+        broken = _new_errors(before, after)
+        if broken:
+            raise fail(
+                BAD_EDIT,
+                "The edit would leave the workflow invalid: " + broken[0].message,
+            )
+    validation = _validation(after, folders, check, payload)
+    if args.apply and require_valid and not validation["ok"]:
+        _refuse_invalid(validation)
     created = False
+    made: list[str] = []
     if args.apply:
         try:
             with open(path, "xb") as handle:
@@ -274,6 +346,9 @@ def run_new(args) -> dict:
                 BAD_EDIT, f"{path.name} was created by someone else just now."
             ) from None
         created = True
+        for folder in folders["creatable"]:
+            os.makedirs(folder, exist_ok=True)
+            made.append(folder)
     return {
         "workflow": os.path.abspath(path),
         "dry_run": not args.apply,
@@ -284,8 +359,16 @@ def run_new(args) -> dict:
         "sha256_after": hashlib.sha256(payload).hexdigest(),
         "workflow_uuid": data["workflow_metadata"]["workflow_uuid"],
         "backup": None,
-        "results": [],
-        "diff": diff_workflows(data, data),
+        "results": results,
+        "output_folders": {
+            "created": made,
+            "to_create": [] if made else folders["creatable"],
+            "blocked": folders["blocked"],
+        },
+        "validation": validation,
+        "diff": diff_workflows(new_workflow(), data)
+        if operations is not None
+        else diff_workflows(data, data),
     }
 
 

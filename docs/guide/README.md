@@ -91,6 +91,12 @@ This guide is for auditors and analysts who use the program. It is task-oriented
 
     Run a workflow unattended from the command line.
 
+-   :lucide-bot: **[AI tools (MCP)](mcp-server.md)**
+
+    ---
+
+    Let Claude Code, Codex or Cursor build and check workflows for you, within limits you set.
+
 -   :lucide-file-spreadsheet: **[Workpapers](workpaper.md)**
 
     ---

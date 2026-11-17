@@ -98,6 +98,12 @@ or change their shape.
 
     Run a saved workflow unattended and read the exit code.
 
+-   :lucide-bot: **[AI tools (MCP)](guide/mcp-server.md)**
+
+    ---
+
+    Use Trigger Designer from Claude Code, Codex or Cursor, with you in control.
+
 </div>
 
 ## Two habits that save trouble

@@ -37,13 +37,22 @@ def static_findings(doc, args) -> list[Finding]:
                     fn.node_id,
                 )
             )
-    findings.extend(output_findings(doc))
+    findings.extend(output_findings(doc, getattr(args, "assume_folders", ())))
     return findings
 
 
-def output_findings(doc) -> list[Finding]:
-    """Problems with where a File Output will write, found without running."""
+def output_findings(doc, assume: object = ()) -> list[Finding]:
+    """Problems with where a File Output will write, found without running.
+
+    ``assume`` is ``"all"`` or a list of folders that do not exist yet but
+    will be created before anything runs (a pre-write check of an edit).
+    """
     found: list[Finding] = []
+    skip = (
+        None
+        if assume == "all"
+        else {os.path.normcase(os.path.abspath(f)) for f in (assume or ())}
+    )
     for fn in file_nodes(doc):
         if fn.kind != "output" or not fn.raw_path:
             continue
@@ -63,6 +72,8 @@ def output_findings(doc) -> list[Finding]:
                 )
             )
         folder = os.path.dirname(resolved)
+        if skip is None or os.path.normcase(os.path.abspath(folder)) in skip:
+            continue
         if folder and not os.path.isdir(folder):
             found.append(
                 Finding(

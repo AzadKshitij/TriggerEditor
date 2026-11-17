@@ -26,7 +26,9 @@ from tests.support.corpus import FILE_OUTPUT_CASES
 from tests.support.workflows import materialize
 from trigger_designer.agent.server import build_server
 from trigger_designer.agent.tools import AgentTools
+from trigger_designer.core.authoring import Editor, new_workflow
 from trigger_designer.core.headless.exit_codes import CliError
+from trigger_designer.core.headless.params import dump_workflow
 
 pytestmark = pytest.mark.e2e
 
@@ -36,6 +38,8 @@ CELL_VALUE = "sudoku"
 
 EDIT_TOOLS = {"new_workflow", "patch_workflow"}
 TOOLS = EDIT_TOOLS | {
+    "list_files",
+    "profile_file",
     "get_policy",
     "list_ops",
     "describe_op",
@@ -319,7 +323,14 @@ def test_a_bad_edit_is_a_structured_error_and_all_or_nothing(wf, tmp_path):
     before = wf.read_bytes()
     edits = [*ADD_SORT, {"op": "connect", "from": "s", "to": "no such node"}]
     bad = call(
-        tools, "patch_workflow", {"workflow": wf.name, "edits": edits, "apply": True}
+        tools,
+        "patch_workflow",
+        {
+            "workflow": wf.name,
+            "edits": edits,
+            "apply": True,
+            "expect_sha256": tools.read_workflow(wf.name)["sha256"],
+        },
     )
     assert error_of(bad)["code"] in {"TD-CLI-020", "TD-CLI-027"}
     assert wf.read_bytes() == before
@@ -371,12 +382,11 @@ def _agent(ws, tmp_path, **policy):
     )
 
 
-def _patch(tools, edits, apply=True, name="flow.tds"):
-    return call(
-        tools,
-        "patch_workflow",
-        {"workflow": name, "edits": edits, "apply": apply},
-    )
+def _patch(tools, edits, apply=True, name="flow.tds", **extra):
+    args = {"workflow": name, "edits": edits, "apply": apply, **extra}
+    if apply and "expect_sha256" not in args:
+        args["expect_sha256"] = tools.read_workflow(name)["sha256"]
+    return call(tools, "patch_workflow", args)
 
 
 READ = {
@@ -570,6 +580,484 @@ def test_get_policy_explains_which_key_the_owner_changes(wf, tmp_path):
     policy = call(_tools(wf, tmp_path), "get_policy", {"workflow": wf.name})
     note = policy.structured_content["note"]
     assert '"edit"' in note and '"access"' in note and "data owner" in note
+
+
+# ------------------------------------------------ gaps found by a second agent
+def _workspace_with_invoices(tmp_path, name="ws"):
+    ws = tmp_path / name
+    ws.mkdir()
+    (ws / "invoices.csv").write_text(
+        "invoice_id,vendor,amount,posted\n"
+        "007,Acme,9999.50,2026-01-05\n"
+        "008,Acme,20000,2026-01-06\n"
+        "009,Birch,30000.25,2026-01-07\n",
+        encoding="utf-8",
+    )
+    return ws
+
+
+def test_applying_an_edit_needs_the_sha256_of_the_version_that_was_read(
+    tmp_path,
+):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    before = (ws / "flow.tds").read_bytes()
+
+    refused = call(
+        tools,
+        "patch_workflow",
+        {"workflow": "flow.tds", "edits": [READ], "apply": True},
+    )
+
+    error = error_of(refused)
+    assert error["code"] == "TD-CLI-027" and "expect_sha256" in error["message"]
+    assert (ws / "flow.tds").read_bytes() == before
+    # A dry run needs no hash, and the policy refusal still comes first.
+    assert not call(
+        tools, "patch_workflow", {"workflow": "flow.tds", "edits": [READ]}
+    ).is_error
+    no_edit = _agent(ws, tmp_path, edit=False)
+    again = call(
+        no_edit,
+        "patch_workflow",
+        {"workflow": "flow.tds", "edits": [READ], "apply": True},
+    )
+    assert error_of(again)["code"] == "TD-CLI-019"
+
+
+def test_the_sha256_of_one_edit_is_the_hash_to_give_the_next(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    first = _patch(tools, [READ]).structured_content
+    second = call(
+        tools,
+        "patch_workflow",
+        {
+            "workflow": "flow.tds",
+            "edits": [{"op": "label", "node": "Invoices", "text": "Source"}],
+            "apply": True,
+            "expect_sha256": first["sha256_after"],
+        },
+    )
+    assert not second.is_error, second.content
+    assert second.structured_content["sha256_before"] == first["sha256_after"]
+
+
+def test_new_workflow_can_create_the_whole_workflow_in_one_call(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    dry = call(
+        tools,
+        "new_workflow",
+        {"workflow": "flow.tds", "edits": [READ, SUM_TEXT, WRITE, *LINKS]},
+    )
+    assert not dry.is_error, dry.content
+    assert dry.structured_content["dry_run"] is True
+    assert dry.structured_content["diff"]["summary"]["nodes_added"] == 3
+    assert not (ws / "flow.tds").exists()
+
+    made = call(
+        tools,
+        "new_workflow",
+        {
+            "workflow": "flow.tds",
+            "edits": [READ, SUM_TEXT, WRITE, *LINKS],
+            "apply": True,
+        },
+    )
+    body = made.structured_content
+    assert not made.is_error, made.content
+    assert body["created"] is True and body["sha256_after"]
+    assert (ws / "output").is_dir()
+    saved = json.loads((ws / "flow.tds").read_text(encoding="utf-8"))
+    assert len(saved["nodes"]) == 3 and len(saved["edges"]) == 2
+    info = call(tools, "read_workflow", {"workflow": "flow.tds"}).structured_content
+    assert info["sha256"] == body["sha256_after"]
+
+
+def test_a_failing_edit_in_new_workflow_leaves_no_file_behind(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    bad = [READ, {"op": "connect", "from": "src", "to": "no such node"}]
+    refused = call(
+        tools, "new_workflow", {"workflow": "flow.tds", "edits": bad, "apply": True}
+    )
+    assert error_of(refused)["code"] in {"TD-CLI-020", "TD-CLI-027"}
+    assert not (ws / "flow.tds").exists()
+    assert not list(ws.glob(".check-*"))
+
+
+def test_read_workflow_returns_each_nodes_settings(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    _built(tools)
+
+    info = call(tools, "read_workflow", {"workflow": "flow.tds"}).structured_content
+
+    by_label = {n["label"]: n for n in info["nodes"]}
+    totals = by_label["Total per vendor"]["settings"]
+    assert [a["field"] for a in totals["actions"]] == ["vendor", "amount"]
+    source = by_label["Invoices"]["settings"]
+    assert source["file_type"] == "csv" and source["filePath"].endswith("invoices.csv")
+    assert "filePathRel" not in source  # stored-path bookkeeping is not a setting
+    assert by_label["Totals file"]["settings"]["file_format"] == "csv"
+
+
+def test_read_workflow_can_narrow_to_one_node_or_leave_settings_out(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    _built(tools)
+
+    one = call(
+        tools, "read_workflow", {"workflow": "flow.tds", "node": "Total per vendor"}
+    ).structured_content
+    assert [n["label"] for n in one["nodes"]] == ["Total per vendor"]
+    assert len(one["connections"]) == 2  # in from Invoices, out to Totals file
+
+    bare = call(
+        tools, "read_workflow", {"workflow": "flow.tds", "include_settings": False}
+    ).structured_content
+    assert len(bare["nodes"]) == 3 and all("settings" not in n for n in bare["nodes"])
+
+    missing = call(tools, "read_workflow", {"workflow": "flow.tds", "node": "Nope"})
+    assert error_of(missing)["code"] == "TD-CLI-020"
+
+
+def test_a_relative_name_is_found_in_whichever_workspace_has_it(tmp_path):
+    first, second = tmp_path / "one", tmp_path / "two"
+    first.mkdir()
+    second.mkdir()
+    editor = Editor(new_workflow(), base_dir=str(second))
+    editor.add_node("preparation.sort")
+    (second / "only_in_two.tds").write_bytes(dump_workflow(editor.data))
+    tools = AgentTools(workspaces=[str(first), str(second)])
+
+    found = call(tools, "read_workflow", {"workflow": "only_in_two.tds"})
+    assert not found.is_error, found.content
+    assert found.structured_content["node_count"] == 1
+
+
+def test_a_name_in_two_workspaces_is_ambiguous_and_a_new_name_goes_in_the_first(
+    tmp_path,
+):
+    first, second = tmp_path / "one", tmp_path / "two"
+    for folder in (first, second):
+        folder.mkdir()
+        editor = Editor(new_workflow(), base_dir=str(folder))
+        (folder / "same.tds").write_bytes(dump_workflow(editor.data))
+    tools = AgentTools(
+        policy_file=_policy_file(tmp_path, edit=True),
+        workspaces=[str(first), str(second)],
+    )
+
+    ambiguous = call(tools, "read_workflow", {"workflow": "same.tds"})
+    error = error_of(ambiguous)
+    assert error["code"] == "TD-CLI-006"
+    assert str(first) in error["hint"] and str(second) in error["hint"]
+    assert not call(
+        tools, "read_workflow", {"workflow": str(second / "same.tds")}
+    ).is_error  # the full path settles it
+
+    created = call(tools, "new_workflow", {"workflow": "fresh.tds", "apply": True})
+    assert not created.is_error, created.content
+    assert (first / "fresh.tds").exists() and not (second / "fresh.tds").exists()
+
+
+def test_get_policy_without_a_workflow_describes_the_launch_settings(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    explicit = _agent(ws, tmp_path, access="aggregates", edit=False)
+    body = call(explicit, "get_policy").structured_content
+    assert body["scope"] == "launch" and body["workflow"] is None
+    assert body["access"] == "aggregates" and body["edit"] is False
+    assert body["sidecar_can_override"] is False  # --policy beats any sidecar
+    assert body["workspaces"] == [str(ws.resolve())]
+    assert {"app_version", "workflow_schema_version", "node_spec_version"} <= set(
+        body["server"]
+    )
+
+    loose = call(AgentTools(workspaces=[str(ws)]), "get_policy").structured_content
+    assert loose["access"] == "schema_only" and loose["sidecar_can_override"] is True
+
+
+def test_an_edit_reports_what_would_stop_a_run_before_anything_is_written(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+
+    dry = _patch(tools, [READ, SUM_TEXT, WRITE, *LINKS], apply=False)
+
+    validation = dry.structured_content["validation"]
+    assert validation["ok"] is True  # the structure is fine, and the output folder
+    assert "output folders" in validation["checked"]  # is one the edit will create
+    assert not any(f["code"] == "TD-CLI-014" for f in validation["findings"])
+    assert not (ws / "output").exists()
+
+
+def test_static_validation_of_an_edit_flags_a_missing_input_file(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    missing = {**READ, "settings": {"filePath": "nothing_here.csv", "file_type": "csv"}}
+
+    dry = _patch(tools, [missing], apply=False).structured_content["validation"]
+
+    assert any(f["code"] == "TD-IN-001" for f in dry["findings"])
+
+
+def test_check_data_finds_the_text_column_before_the_edit_is_written(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    before = (ws / "flow.tds").read_bytes()
+
+    dry = _patch(
+        tools, [READ, SUM_TEXT, WRITE, *LINKS], apply=False, check_data=True
+    ).structured_content
+
+    validation = dry["validation"]
+    assert validation["ok"] is False
+    errors = [f for f in validation["findings"] if f["level"] == "error"]
+    assert (
+        errors
+        and errors[0]["code"] == "TD-TYP-003"
+        and "'amount'" in errors[0]["message"]
+    )
+    assert any("data types" in c for c in validation["checked"])
+    assert (ws / "flow.tds").read_bytes() == before
+    assert not list(ws.glob(".check-*"))  # the temporary copy is gone
+
+
+def test_require_valid_refuses_to_write_while_there_is_an_error(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    before = (ws / "flow.tds").read_bytes()
+
+    refused = _patch(
+        tools,
+        [READ, SUM_TEXT, WRITE, *LINKS],
+        check_data=True,
+        require_valid=True,
+    )
+
+    error = error_of(refused)
+    assert error["code"] == "TD-CLI-027" and "require_valid" in error["message"]
+    assert (ws / "flow.tds").read_bytes() == before
+    assert not (ws / "output").exists()  # nothing was created either
+    # Without the flag an unfinished workflow can still be saved, step by step.
+    saved = _patch(tools, [READ, SUM_TEXT, WRITE, *LINKS], check_data=True)
+    assert not saved.is_error and saved.structured_content["applied"] is True
+
+
+def test_list_files_names_what_is_there_and_never_reads_it(tmp_path):
+    ws = _workspace_with_invoices(tmp_path)
+    (ws / "sub").mkdir()
+    (ws / "sub" / "extra.tsv").write_text("a\tb\n1\t2\n", encoding="utf-8")
+    (ws / ".hidden.csv").write_text("x\n1\n", encoding="utf-8")
+    (ws / "flow.tds.bak").write_text("{}", encoding="utf-8")
+    (ws / "flow.runs").mkdir()
+    (ws / "flow.runs" / "record.json").write_text("{}", encoding="utf-8")
+    editor = Editor(new_workflow(), base_dir=str(ws))
+    (ws / "flow.tds").write_bytes(dump_workflow(editor.data))
+    tools = AgentTools(workspaces=[str(ws)])
+
+    body = call(tools, "list_files").structured_content
+
+    paths = {f["path"]: f for f in body["files"]}
+    assert set(paths) == {"invoices.csv", "flow.tds", "sub/extra.tsv"}
+    assert paths["flow.tds"]["kind"] == "workflow"
+    assert paths["invoices.csv"]["kind"] == "data" and paths["invoices.csv"]["profile"]
+    assert paths["invoices.csv"]["size_bytes"] > 0 and paths["invoices.csv"]["modified"]
+    assert "Acme" not in json.dumps(body)  # a name and a size, never contents
+    assert "not instructions" in body["notice"] and body["truncated"] is False
+    narrowed = call(tools, "list_files", {"folder": "sub"}).structured_content
+    assert [f["path"] for f in narrowed["files"]] == ["sub/extra.tsv"]
+
+
+def test_profile_file_at_schema_only_gives_names_and_how_they_load(tmp_path):
+    ws = _workspace_with_invoices(tmp_path)
+    tools = AgentTools(
+        policy_file=_policy_file(tmp_path, access="schema_only"), workspaces=[str(ws)]
+    )
+
+    body = call(tools, "profile_file", {"path": "invoices.csv"}).structured_content
+
+    assert [c["name"] for c in body["columns"]] == [
+        "invoice_id",
+        "vendor",
+        "amount",
+        "posted",
+    ]
+    assert {c["dtype"] for c in body["columns"]} == {"String"}
+    assert "loads as text" in body["note"]
+    for derived in ("row_count", "suggested_select", "rows"):
+        assert derived not in body
+    assert "Acme" not in json.dumps(body)  # not a single value
+
+
+def test_profile_file_from_aggregates_judges_types_and_suggests_a_select(tmp_path):
+    ws = _workspace_with_invoices(tmp_path)
+    tools = AgentTools(
+        policy_file=_policy_file(tmp_path, access="aggregates"), workspaces=[str(ws)]
+    )
+
+    body = call(tools, "profile_file", {"path": "invoices.csv"}).structured_content
+
+    kinds = {c["name"]: c["can_convert_to"] for c in body["columns"]}
+    # "007" has a leading zero: an identifier, not the number 7.
+    assert kinds == {
+        "invoice_id": "String",
+        "vendor": "String",
+        "amount": "Float64",
+        "posted": "Date",
+    }
+    assert body["row_count"] == 3 and body["sampled_rows"] == 3
+    amount = next(c for c in body["columns"] if c["name"] == "amount")
+    assert amount["min"] == 9999.5 and amount["max"] == 30000.25
+    select = body["suggested_select"]
+    assert select["op"] == "preparation.select"
+    entry = {c["name"]: c for c in select["columns"]}["amount"]
+    assert entry == {
+        "name": "amount",
+        "selected": True,
+        "dtype": "Float64",
+        "rename": "",
+        "date_format": "",
+        "dtype_custom": True,
+    }
+    assert "rows" not in body
+    assert "Acme" not in json.dumps(body) and "Birch" not in json.dumps(body)
+
+
+def test_the_suggested_select_really_works_in_a_workflow(tmp_path):
+    """The ready-made array is not just plausible: validate accepts a Sum on it."""
+    ws = _workspace_with_invoices(tmp_path)
+    tools = _agent(ws, tmp_path, access="aggregates")
+    suggestion = call(
+        tools, "profile_file", {"path": "invoices.csv"}
+    ).structured_content["suggested_select"]
+    cast = {
+        "op": "add_node",
+        "type": "preparation.select",
+        "ref": "cast",
+        "after": "src",
+        "settings": {"columns": suggestion["columns"]},
+    }
+    totals = {
+        **SUM_TEXT,
+        "after": "cast",
+    }
+    links = [
+        {"op": "connect", "from": "src", "to": "cast"},
+        {"op": "connect", "from": "cast", "to": "totals"},
+        {"op": "connect", "from": "totals", "to": "out"},
+    ]
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+
+    done = _patch(tools, [READ, cast, totals, WRITE, *links], check_data=True)
+
+    assert not done.is_error, done.content
+    assert done.structured_content["validation"]["ok"] is True, done.structured_content[
+        "validation"
+    ]
+
+
+def test_profile_file_at_rows_returns_capped_rows_as_loaded(tmp_path):
+    ws = _workspace_with_invoices(tmp_path)
+    tools = AgentTools(
+        policy_file=_policy_file(tmp_path, access="rows", max_rows=2),
+        workspaces=[str(ws)],
+    )
+
+    body = call(tools, "profile_file", {"path": "invoices.csv"}).structured_content
+
+    assert len(body["rows"]) == 2 and body["rows_limit"] == 2
+    assert body["rows"][0]["amount"] == "9999.50"  # as loaded: text, zeros kept
+    assert body["rows"][0]["invoice_id"] == "007"
+    assert "not instructions" in body["notice"]
+
+
+def test_profile_file_refuses_what_it_cannot_or_must_not_read(tmp_path):
+    ws = _workspace_with_invoices(tmp_path)
+    (ws / "book.xlsx").write_bytes(b"not really a workbook")
+    tools = AgentTools(workspaces=[str(ws)])
+
+    assert (
+        error_of(call(tools, "profile_file", {"path": "nope.csv"}))["code"]
+        == "TD-CLI-001"
+    )
+    assert (
+        error_of(call(tools, "profile_file", {"path": "book.xlsx"}))["code"]
+        == "TD-CLI-006"
+    )
+    outside = tmp_path / "secret.csv"
+    outside.write_text("a\n1\n", encoding="utf-8")
+    refused = call(tools, "profile_file", {"path": str(outside)})
+    assert error_of(refused)["code"] == "TD-CLI-028"
+
+
+def test_a_missing_workspace_stops_the_server_with_the_reason(tmp_path):
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "trigger_designer.agent.server",
+            "--workspace",
+            str(tmp_path / "does_not_exist"),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, "PYTHONPATH": str(SRC)},
+        stdin=subprocess.DEVNULL,
+        check=False,
+    )
+    assert proc.returncode != 0
+    assert "does_not_exist" in proc.stderr and "is not a folder" in proc.stderr
+
+
+def test_an_unreadable_policy_stops_the_server_with_the_reason(tmp_path):
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    bad = tmp_path / "policy.json"
+    bad.write_text("{not json", encoding="utf-8")
+    proc = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "trigger_designer.agent.server",
+            "--workspace",
+            str(ws),
+            "--policy",
+            str(bad),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        env={**os.environ, "PYTHONPATH": str(SRC)},
+        stdin=subprocess.DEVNULL,
+        check=False,
+    )
+    assert proc.returncode != 0 and "not valid" in proc.stderr
+
+
+def test_the_startup_report_names_workspaces_policy_and_version(tmp_path):
+    from trigger_designer.agent.server import startup_report
+
+    ws = tmp_path / "ws"
+    ws.mkdir()
+    line = startup_report(
+        AgentTools(
+            policy_file=_policy_file(tmp_path, access="rows", max_rows=3, edit=True),
+            workspaces=[str(ws)],
+        )
+    )
+    assert str(ws.resolve()) in line and "policy.json" in line
+    assert (
+        "access=rows" in line and "edit=True" in line and "trigger-designer-mcp" in line
+    )
 
 
 # ------------------------------------------------------- real stdio process

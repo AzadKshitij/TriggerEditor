@@ -131,6 +131,16 @@ The **policy** is a small JSON file that says how much the AI may see and whethe
 
 For a first try, `rows` with `max_rows` 5 and `edit` true is fine because the sample data is not sensitive. For real data start with `schema_only`.
 
+The policy file is read again on **every tool call**, so you can change `access`, `max_rows` or `edit` while the AI is working and the next call obeys it; no restart is needed. Only the `--workspace` and `--policy` arguments in your AI tool's configuration need a restart.
+
+Instead of `--policy` you can set the environment variable `TRIGGER_DESIGNER_AGENT_POLICY` to the policy file's path (the `--policy` argument wins if both are given). Use `--workspace` more than once to allow several folders:
+
+```text
+--workspace "C:\audits\q3" --workspace "C:\audits\shared-data"
+```
+
+A relative workflow name such as `big_vendors.tds` is looked for in every workspace. If the same name exists in more than one, the AI is asked to give the full path; a brand-new file goes in the first workspace listed.
+
 !!! warning "Keep the policy file out of the workspace"
     If no policy file is given at start-up, the server looks for a `<workflow>.agent.json` next to each workflow. An AI that can write files could change that. Always pass `--policy` and keep that file somewhere the AI cannot reach.
 
@@ -146,7 +156,7 @@ One command, from any terminal:
 claude mcp add trigger-designer --scope user -- "C:\tools\TriggerEditor\.venv\Scripts\trigger-designer-mcp.exe" --workspace "C:\audits\q3" --policy "C:\audits-policy\policy.json"
 ```
 
-Everything after the `--` is the command that starts the server. Then start Claude Code and type `/mcp`: `trigger-designer` should show as **connected** with 12 tools. Remove it later with `claude mcp remove trigger-designer`.
+Everything after the `--` is the command that starts the server. Then start Claude Code and type `/mcp`: `trigger-designer` should show as **connected** with 14 tools. Remove it later with `claude mcp remove trigger-designer`.
 
 ### Cursor, Claude Desktop and other tools that read a JSON file
 
@@ -226,7 +236,7 @@ More things to ask:
 
 ## 5. Review and run the result
 
-The AI leaves `big_vendors.tds` in the workspace, plus a `.bak` copy of the file as it was before the first change. Nothing has been run.
+The AI leaves `big_vendors.tds` in the workspace, plus a `.bak` copy of the file as it was before the first change. The workflow has not been run to produce its output. (`validate` and `check_data` do try out the steps that feed each output on your data to find mistakes early, but they write no file.)
 
 1. **Open it in Trigger Designer** (File > Open, or `trigger-designer "C:\audits\q3\big_vendors.tds"`). The nodes the AI created are named after what they do, shown under each node. Check the settings in the Config Dock as you would for any workflow.
 2. **Run it** with the Run button, or from the command line:
@@ -261,10 +271,11 @@ If the AI is still writing, or the file cannot be read as a workflow, the bar sa
 **It can:**
 
 - list the node types and read how each one is configured;
-- read a workflow in the workspace: its nodes, connections, input and output files;
+- find the data: list the workflow and data files in the workspace (names, sizes and dates only) and look at a CSV, TSV, text or Parquet file directly, without building a workflow, as far as your policy allows;
+- read a workflow in the workspace: its nodes **with their settings**, connections, input and output files;
 - look at the columns, statistics or first rows at any node (as far as your policy allows);
 - create a new workflow and change one (add, remove, connect, rename and set up nodes) when `edit` is true;
-- validate a workflow, which also runs the nodes that feed each output without writing anything, to find mistakes before you run it.
+- validate a workflow, which also runs the nodes that feed each output without writing anything, to find mistakes before you run it, and check an edit the same way **before** it is saved.
 
 **It cannot:**
 
@@ -275,6 +286,10 @@ If the AI is still writing, or the file cannot be read as a workflow, the bar sa
 - approve or run a workflow.
 
 Every change is a **dry run unless the AI says `apply`**. A good AI shows you the differences and asks before it writes.
+
+A change can only be written to the version of the file the AI has read. To write to an existing workflow the AI must pass that version's `sha256`, so an AI working from an old reading cannot overwrite something you saved in the meantime; it is told to read again. A new workflow can be created complete in a single step, which is all-or-nothing: if any part of it is wrong, no file is left behind.
+
+Every change comes back with a `validation` report: what would stop the workflow from running if it were saved as proposed (a missing input file, a loop, and so on). The AI can also ask for `check_data`, which tries out the steps that feed each output on a temporary copy, and for `require_valid`, which refuses to save while there is an error. By default an unfinished workflow can still be saved, because workflows are often built in stages.
 
 ### Two things worth knowing
 
@@ -287,18 +302,20 @@ You do not need this to use the server; the AI reads it automatically. It is her
 
 | Tool | What it does | Needs |
 |---|---|---|
-| `get_policy` | Shows what the policy allows for a workflow, and the workspace. | nothing |
+| `get_policy` | What the policy allows. With no workflow: the policy the server started with, the workspaces and the versions. With a workflow: the policy for it. | nothing |
 | `list_ops` | Lists every node type. | nothing |
 | `describe_op` | One node type in full: connections, every setting with its type and choices, an example. | nothing |
-| `read_workflow` | A workflow's nodes, connections, files, and approval status. | nothing |
+| `list_files` | The workflow and data files in the workspaces: path, size, modified time. Never contents. | nothing |
+| `profile_file` | Describes one CSV, TSV, text or Parquet file without a workflow. `schema_only`: column names and how they load (CSV columns always load as text). `aggregates`: also row count, statistics, the type each column can be converted to, and a ready-made `preparation.select` column list. `rows`: also the first rows. Uses the policy the server started with. | `schema_only` |
+| `read_workflow` | A workflow's nodes with their settings, connections, files and approval status. `node` returns just one node; `include_settings` can switch the settings off. | nothing |
 | `validate` | Everything that would stop a run: structure, node types, loops, input files, output folders, and (by default) a trial run of the nodes that feed each output. Returns `ok` and a list of findings. | `schema_only` |
 | `diff` | Differences between two workflows, node by node. Reads no data. | nothing |
 | `get_schema` | Column names and types at a node. | `schema_only` |
 | `get_profile` | Statistics per column at a node. | `aggregates` |
 | `get_preview` | The first rows at a node. | `rows` |
 | `explain_error` | Plain-language meaning and fix for an error code (`TD-...`). | nothing |
-| `new_workflow` | Creates an empty workflow. Never replaces a file. A dry run unless `apply` is true. | `edit` to apply |
-| `patch_workflow` | Applies a list of changes as one all-or-nothing batch (add node, remove node, connect, disconnect, set settings, name a node, lay out). A dry run unless `apply` is true. | `edit` to apply |
+| `new_workflow` | Creates a workflow, empty or built by `edits` in the same step. Never replaces a file. A dry run unless `apply` is true. | `edit` to apply |
+| `patch_workflow` | Applies a list of changes as one all-or-nothing batch (add node, remove node, connect, disconnect, set settings, name a node, lay out). A dry run unless `apply` is true; applying needs `expect_sha256`. Returns a `validation` report; `check_data` and `require_valid` are optional. | `edit` to apply |
 
 Workflow names are relative to the workspace folder: `big_vendors.tds`, not `workspace/big_vendors.tds`.
 
@@ -310,6 +327,9 @@ Workflow names are relative to the workspace folder: `big_vendors.tds`, not `wor
 | `trigger-designer: connected` but no tools | Restart the AI tool; some tools read their configuration only at start-up. |
 | `TD-CLI-019`: the access policy does not allow this | The AI asked for more than the policy permits (for example rows with `schema_only`, or a save with `edit` false). This is by design. Change the policy file if you want to allow it, then restart the AI tool. |
 | `TD-CLI-028`: not a workflow inside the folders this server may use | The AI used a path outside the workspace, or not a `.tds` file. Tell it to use a name like `sales.tds`. |
+| `TD-CLI-027` mentioning `expect_sha256` | The AI tried to write without saying which version it had read. It should call `read_workflow` and pass the `sha256`. |
+| `TD-CLI-006`: exists in more than one workspace | The same file name is in two of your workspace folders. The AI should use the full path. |
+| The server stops at start with "the workspace ... is not a folder" | A `--workspace` path does not exist (a typo, or `~` that your tool did not expand). Use a full path. The message shows what the path resolved to. |
 | `TD-CLI-026`: the workflow changed since it was read | Someone changed the file (you in the editor, or another tool) after the AI read it. Ask the AI to read it again and repeat the change. |
 | `TD-TYP-003` / `TD-TYP-004` from `validate` | A text column is being summed or compared as a number. The AI should add a Select node that sets the column to a number type; the message names the column. |
 | `TD-CLI-014`: the output folder does not exist | Apply a change (the folder is created), or create the folder yourself. |

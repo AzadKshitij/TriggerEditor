@@ -409,6 +409,15 @@ def build_parser() -> argparse.ArgumentParser:
     val.add_argument("workflow", metavar="WORKFLOW")
     val.add_argument("--deep", action="store_true", help="load it like the editor")
     val.add_argument(
+        "--assume-output-folders",
+        dest="assume_folders",
+        action="store_const",
+        const="all",
+        default=(),
+        help="treat a missing output folder as fine (it will be created before "
+        "the run); used to check an edit before it is written",
+    )
+    val.add_argument(
         "--check-data",
         action="store_true",
         help="also run what feeds each output (nothing is written) to find "

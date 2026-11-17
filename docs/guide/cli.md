@@ -297,6 +297,7 @@ Checks a workflow without running it. The default check is instant and does not 
 | `WORKFLOW` | required | The `.tds` file. |
 | `--deep` | off | Load it like the editor; resolve inputs; check each node's generated code. Takes a couple of seconds. |
 | `--check-data` | off | Run what feeds each output, writing nothing, so data problems are found now, not at run time. Reads the data; reports names and codes, never values. |
+| `--assume-output-folders` | off | Treat a missing output folder as fine. For checking an edit before it is written, when the edit will create the folder. |
 | `--no-files` | off | Skip the "input file exists" check. Useful on a build server that does not have the data. |
 | `--strict` | off | Treat warnings as errors. |
 | `--param`, `--input-dir`, `--output-dir` | none | Same meaning as for `run`; used by `--deep`. A required parameter must be given for `--deep` to pass. |
@@ -650,7 +651,7 @@ The data owner sets the boundary when the server starts, not the tool:
 
 The read tools are `get_policy` (call it first), `list_ops`, `describe_op`, `read_workflow`, `validate`, `diff`, `get_schema`, `get_profile`, `get_preview` and `explain_error`. They return the same JSON as the commands above, and a refusal or failure comes back as `{"error": {"code", "message", "hint"}}` with a `TD-*` code.
 
-`validate` runs the data check by default (`check_data`), so the checks above, including a text column used as a number, come back before anything is run; `read_workflow` also returns the nodes (with the names they were given) and the connections. Two tools change files: `new_workflow` and `patch_workflow` (the [`edit` command](#changing-a-workflow-from-the-command-line) and its `patch` list). Both are **dry runs unless `apply` is true**, and writing needs `"edit": true` in the policy (`get_policy` reports it as `apply_edits`). A write keeps the first `.bak`, refuses a file that changed since it was read (`expect_sha256`), and, because the file's hash changes, cancels any approval to run it. There is no tool to approve or run a workflow: that stays with a person.
+`validate` runs the data check by default (`check_data`), so the checks above, including a text column used as a number, come back before anything is run; `read_workflow` also returns the nodes (with the names they were given and their settings) and the connections. Two tools change files: `new_workflow` and `patch_workflow` (the [`edit` command](#changing-a-workflow-from-the-command-line) and its `patch` list). Both are **dry runs unless `apply` is true**, and writing needs `"edit": true` in the policy (`get_policy` reports it as `apply_edits`). A write keeps the first `.bak`, refuses a file that changed since it was read (`expect_sha256`), and, because the file's hash changes, cancels any approval to run it. There is no tool to approve or run a workflow: that stays with a person.
 
 Data tools run the workflow's earlier nodes in a separate process, so a stuck node can be stopped and nothing it prints reaches the tool. The tool never gets more than the policy allows, whatever it asks for.
 
