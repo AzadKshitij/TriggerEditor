@@ -191,6 +191,7 @@ QMainWindow
 | Control height | `30` min (`QLineEdit`, `QPushButton`, `QComboBox`) | `select.py:168,175,205` |
 | Icon button | `30x30`, icon `12x12` (`16x16` max for primary) | `select.py:172-180` |
 | Chrome strip | `36` high; chip `24`; search `26`; action `30` | `data_preview_panel.py` |
+| External edit banner | `36` high (`STRIP_H`); margins 6,3; actions `30x30`, icon `16` | `qt/widgets/external_edit_banner.py` |
 | Window chrome | `32` high; caption button `44x32`, icon `12x12`; app icon slot `32`; edge resize zone `5` | `window_chrome.py` |
 | Checkbox column width | `50` (`header.resizeSection(0, 50)`) | `select.py:249` |
 | Scroll threshold | `ColumnChecklist max_height 150-220` | `config_widgets.py:71`, `cleansing.py:173` |
@@ -528,6 +529,7 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 | Running | 2px `activity` | spinner/dot optional | No pulsing fill on the whole tile |
 | Executed | 2px `success` | success check, bottom edge (centred) | Clears when the node is dirtied |
 | Error | 2px `danger` | danger glyph, bottom edge (centred) | Tooltip carries the message; replaces the status glyph |
+| Changed externally | dashed 2px outline inset in the body (`info`); `connected` at 55% alpha | corner marker (`info`): dot for changed and connected, `+` for added | Session-only, never saved; cleared when the user reviews the change. The corner marker is the one exception to the single-indicator rule below: it never replaces the status glyph |
 
 - State is never colour alone: the ring plus dot/glyph plus tooltip.
 - One status glyph per node. An error or warning replaces the executed/dirty
@@ -730,6 +732,9 @@ ICON_SIZE = 16
 | `DiagnosticSearch` | logs | focus |
 | `DiagnosticTree` | logs | item hover, selected |
 | `FormulaCompleterPopup` | SQL editor | hover, selected |
+| `ExternalEditBanner` | external edit banner | `[tone="warning"]` |
+| `ExternalEditMessage`, `ExternalEditIcon` | external edit banner | — |
+| `ExternalChangeDialog`, `ExternalChangeText` | external change dialog | — |
 
 ### Guards
 

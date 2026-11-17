@@ -56,6 +56,16 @@ CLI_CODES: dict[str, str] = {
     "TD-CLI-016": "The Windows scheduler could not complete the request.",
     "TD-CLI-017": "The run record does not match the files it describes.",
     "TD-CLI-018": "This workflow writes no files, so a run produces nothing.",
+    "TD-CLI-019": "The data owner's access policy does not allow this.",
+    "TD-CLI-020": "The node named on the command line was not found, or is ambiguous.",
+    "TD-CLI-021": "This node has no table to look at.",
+    "TD-CLI-022": "A setting name or value is not valid for this node type.",
+    "TD-CLI-023": "That connection is not allowed.",
+    "TD-CLI-024": "A file setting points outside the folders an edit may use.",
+    "TD-CLI-025": "The SQL was refused by the safety check.",
+    "TD-CLI-026": "The workflow changed since it was read.",
+    "TD-CLI-027": "The edit is malformed or cannot be applied to this workflow.",
+    "TD-CLI-028": "That workflow is outside the folders this server may use.",
 }
 
 

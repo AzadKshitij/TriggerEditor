@@ -119,6 +119,60 @@ class TriggerSceneHistory(SceneHistory):
             self.restoreHistoryStamp(stamp)
             self._dispatch_stamp_data(stamp)
 
+    def replace_scene(self, data: dict, text: str = "External Edit") -> bool:
+        """Replace the whole scene with ``data`` as ONE undo step.
+
+        The live state, unsaved GUI edits included, is the step's undo target,
+        so undo returns to exactly what the user had before the file changed.
+
+        :return: ``True`` if the step was recorded; ``False``, with nothing
+            changed, while a restore is already running.
+        :raises RuntimeError: if the new state cannot be applied. The live
+            scene is put back and no step is recorded.
+        """
+        import copy
+
+        from loguru import logger as global_logger
+
+        if self.is_restoring_history:
+            return False
+
+        before = self.createHistoryStamp(text)  # the live state, unsaved edits too
+        after = {
+            "desc": text,
+            "merge_key": None,
+            "snapshot": copy.deepcopy(data),
+            "selection": self.captureCurrentSelection(),
+        }
+        try:
+            # Blocks "Selection Changed" stamps while the scene is rebuilt.
+            with self.restoring(is_undo=False):
+                # scene.deserialize reuses nodes by id.
+                self.restoreHistoryStamp(after)
+        except Exception as exc:
+            global_logger.exception("External edit could not be applied: {}", exc)
+            try:
+                self._apply_stamp(before, is_undo=True)
+                # The Config Dock may still show widgets the failed restore touched.
+                for callback in list(self._history_restored_listeners):
+                    callback()
+            except Exception as rollback_exc:  # noqa: BLE001 - best effort, logged
+                global_logger.exception(
+                    "Could not restore the scene after a failed external edit: {}",
+                    rollback_exc,
+                )
+            raise RuntimeError("External edit could not be applied") from exc
+
+        # After the with-block: push() refuses while restoring. The command is
+        # seeded, so the redo() that push() performs is a no-op.
+        pushed = self.controller.push(SceneSnapshotCommand(self, before, after, text))
+        self._fire_stored()
+        # Includes TriggerSubWindow.onHistoryRestored: it force-rebuilds the
+        # Config Dock and re-evaluates.
+        for callback in list(self._history_restored_listeners):
+            callback()
+        return pushed
+
     # ------------------------------------------------------------------
     # Traversal
     # ------------------------------------------------------------------

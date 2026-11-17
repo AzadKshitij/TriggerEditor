@@ -123,7 +123,7 @@ Add `--check` to see whether the page is out of date without changing it.
 
 <!-- BEGIN GENERATED ERROR TABLE (scripts/gen_error_reference.py) -->
 
-_117 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
+_136 codes. Generated from `core/errors/catalogue.py` and `core/shaping/common.py`; do not edit by hand._
 
 #### Reading input files (TD-IN)
 
@@ -318,5 +318,31 @@ Raised by the command-line runner; see [cli.md](cli.md).
 | `TD-CLI-016` | The scheduler could not be configured. | Check Windows Task Scheduler permissions. |
 | `TD-CLI-017` | The run log failed verification. | Treat the log as modified. |
 | `TD-CLI-018` | This workflow writes no files. _(warning)_ | Add a File Output node. |
+| `TD-CLI-019` | The data owner's access policy does not allow this. | Ask the data owner to raise the access level in the policy file. |
+| `TD-CLI-020` | The node was not found, or the name matches several nodes. | Use the node's numeric id (see `info`). |
+| `TD-CLI-021` | This node has no table to look at. | Look at the node that feeds it. |
+| `TD-CLI-022` | A setting name or value is not valid for this node type. | Run `ops <node type>` to see each setting's type and default. |
+| `TD-CLI-023` | That connection is not allowed. | Check the output and input numbers, that the input is free, and that it does not make a loop. |
+| `TD-CLI-024` | A file setting points outside the folders an edit may use. | Use a path inside the workflow's folder, or ask the data owner to list the folder under `paths` in the policy file. |
+| `TD-CLI-025` | The SQL was refused by the safety check. | Only one read-only SELECT is allowed: no files, no system or random functions, no changes. |
+| `TD-CLI-026` | The workflow changed since it was read. | Read it again (`info` shows its sha256) and redo the edit. |
+| `TD-CLI-027` | The edit is malformed or cannot be applied to this workflow. | Read the message: it names the edit and the field. |
+| `TD-CLI-028` | The AI server was asked for a workflow outside the folders it may use. | Use a workflow inside a `--workspace` folder, or start the server with that folder added. |
+
+#### Optional modules (TD-MOD)
+
+Adding, checking or removing an optional data pack, such as a local model.
+
+| Code | What it says | How to fix it |
+|---|---|---|
+| `TD-MOD-001` | A module description is not valid. | Update Trigger Designer, or ask the publisher for a corrected module list. |
+| `TD-MOD-002` | That module is not installed. | Check the module name, or list the installed modules. |
+| `TD-MOD-003` | The module was not approved for download. | Read the consent screen again and accept it to continue. Nothing was downloaded. |
+| `TD-MOD-004` | The download address is not allowed. | Modules are downloaded only from a secure (https) address of their publisher. Nothing was installed. |
+| `TD-MOD-005` | The module could not be downloaded. | Check the internet connection and try again. Nothing was installed. |
+| `TD-MOD-006` | A module file has the wrong size. | The download was stopped and discarded. Try again later, or report it to the publisher. |
+| `TD-MOD-007` | A module file failed its hash check. | The file was discarded and nothing was installed. Report it to the publisher. |
+| `TD-MOD-008` | The module could not be written to the data folder. | Check that the disk has free space and that the data folder is writable, then try again. |
+| `TD-MOD-009` | The module download was cancelled. _(warning)_ | Nothing was installed. Start the download again when you are ready. |
 
 <!-- END GENERATED ERROR TABLE -->

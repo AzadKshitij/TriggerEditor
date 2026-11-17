@@ -90,6 +90,17 @@ class MainWindowActionsMixin:
         self.actSeparator = QAction(self)
         self.actSeparator.setSeparator(True)
 
+        self.actOptionalModules = QAction(
+            "Optional modules…",
+            self,
+            statusTip=(
+                "Add or remove optional capability modules (the only feature that "
+                "connects to the internet, and only when you choose Install)"
+            ),
+            triggered=self.showOptionalModules,
+        )
+        self.actOptionalModules.setObjectName("actionOptionalModules")
+
         self.actAbout = QAction(
             "&About",
             self,
@@ -168,6 +179,16 @@ class MainWindowActionsMixin:
         dialog = PreferencesDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.loadSettings()
+
+    def showOptionalModules(self) -> None:
+        """Help > Optional modules: install, verify or remove optional modules."""
+        from trigger_designer.qt.dialogs.modules_dialog import ModulesDialog
+
+        dialog = ModulesDialog(self)
+        try:
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
     def loadSettings(self) -> None:
         glogger.debug("Loading settings...")

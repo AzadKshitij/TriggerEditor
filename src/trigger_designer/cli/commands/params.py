@@ -77,6 +77,18 @@ def _add(args, doc) -> int:
         }
     )
     bak = write_workflow_with_backup(doc.path, data)
+    if args.format == "json":
+        print_json(
+            {
+                "ok": True,
+                "action": "added",
+                "name": args.name,
+                "node_id": node["id"],
+                "setting": args.setting,
+                "backup": str(bak) if bak else None,
+            }
+        )
+        return 0
     print(
         f"Added parameter '{args.name}' -> node {node['id']}.{args.setting}"
         + (f" (backup: {bak})" if bak else "")
@@ -97,6 +109,16 @@ def _remove(args, doc) -> int:
     meta = data["workflow_metadata"]
     meta["parameters"] = [p for p in meta["parameters"] if p.get("name") != args.name]
     bak = write_workflow_with_backup(doc.path, data)
+    if args.format == "json":
+        print_json(
+            {
+                "ok": True,
+                "action": "removed",
+                "name": args.name,
+                "backup": str(bak) if bak else None,
+            }
+        )
+        return 0
     print(f"Removed parameter '{args.name}'" + (f" (backup: {bak})" if bak else ""))
     return 0
 

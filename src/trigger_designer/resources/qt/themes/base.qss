@@ -2583,6 +2583,31 @@ QComboBox#CellCombo {{
   min-height: 0px;
   padding: 0px 2px; }}
 
+/* External edit banner (qt/widgets/external_edit_banner.py) -----------------
+   A non-modal strip over the canvas when an outside tool rewrote the file.
+   Its buttons are IconButtons and are styled above (§4.5); only the strip,
+   its labels and the review text are styled here. */
+QFrame#ExternalEditBanner {{
+  background-color: {background_secondary};
+  border: 0px;
+  border-bottom: 1px solid {border_primary}; }}
+  QFrame#ExternalEditBanner[tone="warning"] {{
+    background-color: {background_warning}; }}
+QLabel#ExternalEditIcon, QLabel#ExternalEditMessage {{
+  background-color: transparent;
+  color: {text_secondary};
+  padding: 0px; }}
+QDialog#ExternalChangeDialog {{
+  background-color: {background_primary}; }}
+QPlainTextEdit#ExternalChangeText {{
+  background-color: {editor_background};
+  color: {text_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 4px;
+  padding: 6px;
+  font-family: "Cascadia Mono", "Consolas";
+  font-size: 11px; }}
+
 /* Preferences + theme editor ------------------------------------------------
    Dialogs are the one place text buttons are allowed (§4.3); these reuse the
    TextButton paint and add a primary and a destructive variant. Every

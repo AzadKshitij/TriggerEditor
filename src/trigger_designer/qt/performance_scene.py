@@ -177,6 +177,10 @@ class TriggerScene(Scene):
         #: not a QObject, so this follows the scene's own listener idiom
         #: (``addItemSelectedListener`` and friends) rather than a signal.
         self._node_evaluated_listeners: list[Callable[[object], None]] = []
+        #: The bytes this document was last read from or written to disk: the
+        #: baseline the external-edit watcher compares against. None until the
+        #: document has been on disk.
+        self.disk_bytes: bytes | None = None
 
     def getEdgeClass(self):
         return TriggerEdge
@@ -272,6 +276,7 @@ class TriggerScene(Scene):
             os.replace(tmp_path, filename)
             tmp_path = None
             self.filename = filename
+            self.disk_bytes = payload
             self.has_been_modified = False
         finally:
             self._save_target = None
@@ -286,6 +291,8 @@ class TriggerScene(Scene):
         legacy locale encoding for files the vendored saver wrote."""
         with open(filename, "rb") as handle:
             raw = handle.read()
+        # The bytes exactly as they sit on disk: the external-edit baseline.
+        self.disk_bytes = raw
         raw = raw.removeprefix(codecs.BOM_UTF8)
         try:
             data = orjson.loads(raw)

@@ -50,6 +50,10 @@ uv run trigger-designer-cli run workflow.tds
 
 See the [command-line guide](https://azadkshitij.github.io/TriggerEditor/docs/guide/cli/) for full usage.
 
+## Using it from an AI tool
+
+An AI tool such as Claude Code, Codex or Cursor can build and check workflows through a small local MCP server (stdio only, no network port), within the workspace and data-access limits you set. It cannot approve or run a workflow. See [Using Trigger Designer from an AI tool](https://azadkshitij.github.io/TriggerEditor/docs/guide/mcp-server/) (`docs/guide/mcp-server.md`).
+
 ## Building a Windows executable
 
 ```powershell

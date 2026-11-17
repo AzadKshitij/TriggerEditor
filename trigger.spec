@@ -94,6 +94,7 @@ gui_datas = [
     ("src/trigger_designer/resources/samples", "trigger_designer/resources/samples"),
     ("src/trigger_designer/resources/Icon.ico", "trigger_designer/resources"),
     ("src/trigger_designer/resources/splash.png", "trigger_designer/resources"),
+    ("src/trigger_designer/resources/modules", "trigger_designer/resources/modules"),
 ] + node_module_datas
 
 # Analysis configuration

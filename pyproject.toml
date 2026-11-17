@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "TriggerDesigner"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "A visual data processing tool with node-based workflow editor"
 readme = "README.md"
 requires-python = ">=3.14.0,<3.15"
@@ -76,9 +76,15 @@ dependencies = [
     "pyside6-qtads==5.1.1.1",
 ]
 
+# Optional: a local MCP server (stdio only) so an external AI harness can use
+# the workflow tools. Not imported by the app and left out of the bundle.
+[project.optional-dependencies]
+agent = ["mcp==2.3.0"]
+
 [project.scripts]
 trigger-designer = "trigger_designer.main:main"
 trigger-designer-cli = "trigger_designer.cli:main"
+trigger-designer-mcp = "trigger_designer.agent.server:main"
 
 [tool.uv]
 # Installed (editable) into the venv so the `trigger-designer` console script
@@ -143,6 +149,7 @@ markers = [
 
 [dependency-groups]
 dev = [
+    "mcp==2.3.0",
     "pre-commit==4.7.0",
     "pyinstaller==6.22.3",
     "pytest==9.1.1",

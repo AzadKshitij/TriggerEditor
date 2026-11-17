@@ -772,6 +772,101 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Add a File Output node.",
         "warning",
     ),
+    "TD-CLI-019": (
+        "The data owner's access policy does not allow this.",
+        "Ask the data owner to raise the access level in the policy file.",
+        "error",
+    ),
+    "TD-CLI-020": (
+        "The node was not found, or the name matches several nodes.",
+        "Use the node's numeric id (see `info`).",
+        "error",
+    ),
+    "TD-CLI-021": (
+        "This node has no table to look at.",
+        "Look at the node that feeds it.",
+        "error",
+    ),
+    "TD-CLI-022": (
+        "A setting name or value is not valid for this node type.",
+        "Run `ops <node type>` to see each setting's type and default.",
+        "error",
+    ),
+    "TD-CLI-023": (
+        "That connection is not allowed.",
+        "Check the output and input numbers, that the input is free, and that it does not make a loop.",
+        "error",
+    ),
+    "TD-CLI-024": (
+        "A file setting points outside the folders an edit may use.",
+        'Use a path inside the workflow\'s folder, or ask the data owner to list the folder under "paths" in the policy file.',
+        "error",
+    ),
+    "TD-CLI-025": (
+        "The SQL was refused by the safety check.",
+        "Only one read-only SELECT is allowed: no files, no system or random functions, no changes.",
+        "error",
+    ),
+    "TD-CLI-026": (
+        "The workflow changed since it was read.",
+        "Read it again (`info` shows its sha256) and redo the edit.",
+        "error",
+    ),
+    "TD-CLI-027": (
+        "The edit is malformed or cannot be applied to this workflow.",
+        "Read the message: it names the edit and the field.",
+        "error",
+    ),
+    "TD-CLI-028": (
+        "That workflow is outside the folders this server may use.",
+        "Use a workflow inside the folders given with --workspace when the server was started.",
+        "error",
+    ),
+    "TD-MOD-001": (
+        "A module description is not valid.",
+        "Update Trigger Designer, or ask the publisher for a corrected module list.",
+        "error",
+    ),
+    "TD-MOD-002": (
+        "That module is not installed.",
+        "Check the module name, or list the installed modules.",
+        "error",
+    ),
+    "TD-MOD-003": (
+        "The module was not approved for download.",
+        "Read the consent screen again and accept it to continue. Nothing was downloaded.",
+        "error",
+    ),
+    "TD-MOD-004": (
+        "The download address is not allowed.",
+        "Modules are downloaded only from a secure (https) address of their publisher. Nothing was installed.",
+        "error",
+    ),
+    "TD-MOD-005": (
+        "The module could not be downloaded.",
+        "Check the internet connection and try again. Nothing was installed.",
+        "error",
+    ),
+    "TD-MOD-006": (
+        "A module file has the wrong size.",
+        "The download was stopped and discarded. Try again later, or report it to the publisher.",
+        "error",
+    ),
+    "TD-MOD-007": (
+        "A module file failed its hash check.",
+        "The file was discarded and nothing was installed. Report it to the publisher.",
+        "error",
+    ),
+    "TD-MOD-008": (
+        "The module could not be written to the data folder.",
+        "Check that the disk has free space and that the data folder is writable, then try again.",
+        "error",
+    ),
+    "TD-MOD-009": (
+        "The module download was cancelled.",
+        "Nothing was installed. Start the download again when you are ready.",
+        "warning",
+    ),
     "TD-IN-010": (
         "I could not read the data in this file",
         "Check the file type and delimiter; the details name the column.",

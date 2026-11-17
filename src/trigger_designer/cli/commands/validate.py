@@ -37,7 +37,54 @@ def static_findings(doc, args) -> list[Finding]:
                     fn.node_id,
                 )
             )
+    findings.extend(output_findings(doc, getattr(args, "assume_folders", ())))
     return findings
+
+
+def output_findings(doc, assume: object = ()) -> list[Finding]:
+    """Problems with where a File Output will write, found without running.
+
+    ``assume`` is ``"all"`` or a list of folders that do not exist yet but
+    will be created before anything runs (a pre-write check of an edit).
+    """
+    found: list[Finding] = []
+    skip = (
+        None
+        if assume == "all"
+        else {os.path.normcase(os.path.abspath(f)) for f in (assume or ())}
+    )
+    for fn in file_nodes(doc):
+        if fn.kind != "output" or not fn.raw_path:
+            continue
+        try:
+            resolved = resolve_workflow_path(fn.raw_path, base_dir=doc.base_dir)
+        except CliError:
+            continue  # reported as an input/path problem elsewhere
+        if not os.path.isabs(os.path.expandvars(fn.raw_path)):
+            found.append(
+                Finding(
+                    "warning",
+                    "TD-CLI-006",
+                    f"'{fn.title}' saves a relative output path ({fn.raw_path}). "
+                    "The command line writes it next to the workflow but the "
+                    "editor writes it relative to the folder it was started in.",
+                    fn.node_id,
+                )
+            )
+        folder = os.path.dirname(resolved)
+        if skip is None or os.path.normcase(os.path.abspath(folder)) in skip:
+            continue
+        if folder and not os.path.isdir(folder):
+            found.append(
+                Finding(
+                    "error",
+                    "TD-CLI-014",
+                    f"output folder does not exist: {folder}. The editor refuses "
+                    "to run into it (TD-OUT-001).",
+                    fn.node_id,
+                )
+            )
+    return found
 
 
 def execute(args, ctx) -> int:
@@ -50,6 +97,12 @@ def execute(args, ctx) -> int:
             findings = deep_validate(doc, args, ctx)
     else:
         findings = static_findings(doc, args)
+    if getattr(args, "check_data", False) and not any(
+        f.level == "error" for f in findings
+    ):
+        from trigger_designer.core.headless.node_inspect import check_data
+
+        findings.extend(check_data(args, ctx, doc))
     errors = [f for f in findings if f.level == "error"]
     warnings = [f for f in findings if f.level == "warning"]
     failed = bool(errors) or (args.strict and bool(warnings))

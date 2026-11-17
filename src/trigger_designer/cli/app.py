@@ -6,6 +6,7 @@ import os
 import sys
 import traceback
 
+from trigger_designer.cli import render
 from trigger_designer.cli.output import print_error
 from trigger_designer.cli.parser import build_parser
 from trigger_designer.core.headless.context import CliContext
@@ -32,6 +33,20 @@ def load_command(name: str):
         from trigger_designer.cli.commands import paths as module
     elif name == "schedule":
         from trigger_designer.cli.commands import schedule as module
+    elif name == "ops":
+        from trigger_designer.cli.commands import ops as module
+    elif name == "schema":
+        from trigger_designer.cli.commands import schema as module
+    elif name == "profile":
+        from trigger_designer.cli.commands import profile as module
+    elif name == "preview":
+        from trigger_designer.cli.commands import preview as module
+    elif name == "edit":
+        from trigger_designer.cli.commands import edit as module
+    elif name == "diff":
+        from trigger_designer.cli.commands import diff as module
+    elif name == "modules":
+        from trigger_designer.cli.commands import modules as module
     else:  # pragma: no cover - argparse already rejected unknown commands
         raise KeyError(name)
     return module
@@ -66,6 +81,7 @@ def main(argv: list[str] | None = None, *, hard_exit: bool = True) -> int:
     configure_streams()
     parser = build_parser()
     args = parser.parse_args(argv)  # SystemExit(64) on usage errors
+    render.set_color(getattr(args, "color", None))
     try:
         module = load_command(args.command)
         ctx = make_context(args)
@@ -76,6 +92,11 @@ def main(argv: list[str] | None = None, *, hard_exit: bool = True) -> int:
         return int(exc.code)
     except KeyboardInterrupt:
         return int(ExitCode.CANCELLED)
-    except Exception:  # noqa: BLE001 - last line of defence
+    except Exception as exc:  # noqa: BLE001 - last line of defence
         traceback.print_exc(file=sys.stderr)
+        if getattr(args, "format", None) == "json":
+            print_error(
+                args,
+                CliError(ExitCode.INTERNAL, "TD-SYS-999", f"Internal error: {exc}"),
+            )
         return int(ExitCode.INTERNAL)

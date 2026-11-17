@@ -35,6 +35,13 @@ CASES = [
     (["paths", "{wf}"], QT_FREE),
     (["schedule", "list"], QT_FREE),
     (["verify-log"], ("PyQt6", "qtpy")),
+    # The node catalogue reads tables only: no data libraries for the list.
+    (["ops"], QT_FREE),
+    (["ops", "--json"], QT_FREE),
+    (["info", "{wf}", "--json"], QT_FREE),
+    # Describing one op imports its core module (Polars) but never an editor class.
+    (["ops", "preparation.filter", "--json"], ("PyQt6", "qtpy")),
+    (["ops", "--all", "--json"], ("PyQt6", "qtpy")),
 ]
 
 

@@ -39,6 +39,7 @@ nav = [
     { "Run history and the audit trail" = "guide/run-history-and-audit-trail.md" },
     { "Limits and performance" = "guide/limits-and-performance.md" },
     { "Security and privacy" = "guide/security-and-privacy.md" },
+    { "Optional modules" = "guide/optional-modules.md" },
     { "Preferences" = "guide/preferences.md" },
   ] },
   { "Nodes" = [
@@ -104,6 +105,7 @@ nav = [
   ] },
   { "Workpapers" = "guide/workpaper.md" },
   { "Command line" = "guide/cli.md" },
+  { "AI tools (MCP)" = "guide/mcp-server.md" },
   { "Troubleshooting and FAQ" = "guide/troubleshooting-and-faq.md" },
   { "Contributing" = [
     { "Publishing the site" = "versions.md" },

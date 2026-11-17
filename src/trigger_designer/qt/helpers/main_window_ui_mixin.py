@@ -58,6 +58,8 @@ class MainWindowMenuMixin:
         self.menuBar().addSeparator()
 
         self.helpMenu = self.menuBar().addMenu("&Help")
+        self.helpMenu.addAction(self.actOptionalModules)
+        self.helpMenu.addSeparator()
         self.helpMenu.addAction(self.actAbout)
 
         self.editMenu.aboutToShow.connect(self.updateEditMenu)
