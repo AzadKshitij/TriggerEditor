@@ -822,6 +822,51 @@ _PASSTHROUGH: dict[str, tuple[str, str, str]] = {
         "Use a workflow inside the folders given with --workspace when the server was started.",
         "error",
     ),
+    "TD-MOD-001": (
+        "A module description is not valid.",
+        "Update Trigger Designer, or ask the publisher for a corrected module list.",
+        "error",
+    ),
+    "TD-MOD-002": (
+        "That module is not installed.",
+        "Check the module name, or list the installed modules.",
+        "error",
+    ),
+    "TD-MOD-003": (
+        "The module was not approved for download.",
+        "Read the consent screen again and accept it to continue. Nothing was downloaded.",
+        "error",
+    ),
+    "TD-MOD-004": (
+        "The download address is not allowed.",
+        "Modules are downloaded only from a secure (https) address of their publisher. Nothing was installed.",
+        "error",
+    ),
+    "TD-MOD-005": (
+        "The module could not be downloaded.",
+        "Check the internet connection and try again. Nothing was installed.",
+        "error",
+    ),
+    "TD-MOD-006": (
+        "A module file has the wrong size.",
+        "The download was stopped and discarded. Try again later, or report it to the publisher.",
+        "error",
+    ),
+    "TD-MOD-007": (
+        "A module file failed its hash check.",
+        "The file was discarded and nothing was installed. Report it to the publisher.",
+        "error",
+    ),
+    "TD-MOD-008": (
+        "The module could not be written to the data folder.",
+        "Check that the disk has free space and that the data folder is writable, then try again.",
+        "error",
+    ),
+    "TD-MOD-009": (
+        "The module download was cancelled.",
+        "Nothing was installed. Start the download again when you are ready.",
+        "warning",
+    ),
     "TD-IN-010": (
         "I could not read the data in this file",
         "Check the file type and delimiter; the details name the column.",

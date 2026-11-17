@@ -69,6 +69,10 @@ FAMILIES: dict[str, tuple[str, str]] = {
         "Command line (TD-CLI)",
         "Raised by the command-line runner; see [cli.md](cli.md).",
     ),
+    "TD-MOD": (
+        "Optional modules (TD-MOD)",
+        "Adding, checking or removing an optional data pack, such as a local model.",
+    ),
 }
 
 # ``{n:,}`` and ``{path_name}`` style fields in the message templates.

@@ -145,6 +145,14 @@ DIFF_DESCRIPTION = """Show what differs between two workflows: nodes added, remo
 never data, so the diff never contains a cell value.
 """
 
+MODULES_DESCRIPTION = """\
+Optional data packs, such as a local model for Fuzzy Match. Adding one is done
+in the app (Help > Optional modules): its consent screen names the source, size and hashes,
+and nothing is downloaded until you accept. This command only lists, checks and
+removes what is installed, so it works offline. Removing a module deletes its
+folder completely.
+"""
+
 #: command -> module that implements ``execute(args, ctx) -> int``.
 COMMAND_MODULES = {
     "run": "trigger_designer.cli.commands.run",
@@ -161,6 +169,7 @@ COMMAND_MODULES = {
     "preview": "trigger_designer.cli.commands.preview",
     "edit": "trigger_designer.cli.commands.edit",
     "diff": "trigger_designer.cli.commands.diff",
+    "modules": "trigger_designer.cli.commands.modules",
 }
 
 
@@ -711,4 +720,32 @@ def build_parser() -> argparse.ArgumentParser:
     sshow.add_argument("name", metavar="NAME")
     srem = ssub.add_parser("remove", help="remove a scheduled run", allow_abbrev=False)
     srem.add_argument("name", metavar="NAME")
+
+    # -------------------------------------------------------------- modules
+    mod = _sub(
+        sub,
+        "modules",
+        "List, check or remove optional data packs (adding one is done in the app)",
+        MODULES_DESCRIPTION,
+        "Example:  trigger-designer-cli modules list --json\n",
+    )
+    msub = mod.add_subparsers(
+        dest="modules_cmd", metavar="list|verify|remove", parser_class=TdArgumentParser
+    )
+    msub.required = True
+    mlist = msub.add_parser(
+        "list", help="list installed and available modules", allow_abbrev=False
+    )
+    _add_format(mlist)
+    mver = msub.add_parser(
+        "verify", help="re-check the files of an installed module", allow_abbrev=False
+    )
+    mver.add_argument("id", metavar="ID", help="module id, e.g. fuzzy-model")
+    _add_format(mver)
+    mrem = msub.add_parser(
+        "remove", help="delete an installed module", allow_abbrev=False
+    )
+    mrem.add_argument("id", metavar="ID", help="module id, e.g. fuzzy-model")
+    mrem.add_argument("--yes", action="store_true", help="confirm the removal")
+    _add_format(mrem)
     return parser

@@ -45,6 +45,8 @@ def load_command(name: str):
         from trigger_designer.cli.commands import edit as module
     elif name == "diff":
         from trigger_designer.cli.commands import diff as module
+    elif name == "modules":
+        from trigger_designer.cli.commands import modules as module
     else:  # pragma: no cover - argparse already rejected unknown commands
         raise KeyError(name)
     return module

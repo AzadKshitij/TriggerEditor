@@ -4,8 +4,7 @@ This page says plainly what the app is built to guarantee, how it does it, and w
 
 !!! success "Nothing leaves this computer"
 
-    The program has no update check, no telemetry and no cloud feature, and it contains
-    no networking library. Your files, workflows and run records stay on your machine.
+    The program has no update check, no telemetry and no cloud feature. Your files, workflows and run records stay on your machine. The one exception is an optional module, and only when you press **Download** on its consent screen: the program then connects to the host named there, and nothing else. See [Optional modules](optional-modules.md).
 
 [Back to the guide index](README.md)
 
@@ -71,7 +70,11 @@ A **File Input** that reads an SQLite or a DuckDB file opens it **read-only** (S
 
 ## No network access
 
-The application does not contact the internet, a license server, or any other computer: it has no update check, no telemetry and no cloud features, and the code contains no networking library (the only use of `socket` is to read your computer's name for the run record). SQL and databases are sandboxed from the network as described above. Your input files can of course live on a network drive, and the app reads and writes them like any other path.
+The application does not contact the internet, a license server, or any other computer: it has no update check, no telemetry and no cloud features. SQL and databases are sandboxed from the network as described above. Your input files can of course live on a network drive, and the app reads and writes them like any other path.
+
+There is one exception, and you start it. An [optional module](optional-modules.md) is downloaded only after you press **Download** on its consent screen. That screen names the host, the size and the SHA-256 hash of every file. Each file is fetched by one HTTPS connection to the host named there, and the request carries no account, workflow or data. As with any download, the host can see your computer's internet address. Nothing is run or unpacked, and each file must match the size and hash shown before it is installed.
+
+The networking code is in one file, `core/modules/downloader.py`. The test suite fails if any other file imports a networking library or calls a connection function, and it checks that the main window makes no connection while a workflow is open and idle. Elsewhere in the program, `socket` is used only to read your computer's name for the run record.
 
 ## What the run records contain
 
