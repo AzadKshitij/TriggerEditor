@@ -9,7 +9,7 @@ Email **azadkshitij08302001@gmail.com** with the subject line
 
 Include:
 
-- the version (for example `0.1.0a1`), and how you obtained it;
+- the version (for example `0.1.0a2`), and how you obtained it;
 - the steps that trigger the problem, with a minimal `.tds` workflow if one is needed;
 - what you expected to happen and what happened instead.
 
