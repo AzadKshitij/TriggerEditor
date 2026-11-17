@@ -213,7 +213,8 @@ class _Task(QObject):
     forwards progress and ``cancelled()`` says whether the user asked to stop.
     """
 
-    progress = Signal(int, int)  # done, total
+    # Python ints, not C ints: a module may be several GiB, past 2**31 - 1.
+    progress = Signal(object, object)  # done, total
     finished = Signal(object)  # what the work returned
     failed = Signal(str, str, str)  # code, message, hint
 

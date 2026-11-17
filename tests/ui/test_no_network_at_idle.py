@@ -14,8 +14,9 @@ import socket
 
 import pytest
 
-from tests.support.cli import synthetic_workflow, write_workflow
 from tests.unit.test_network_isolation import CONNECTION_FUNCTIONS
+from trigger_designer.core.authoring import Editor, apply_patch, new_workflow
+from trigger_designer.core.headless.params import dump_workflow
 from trigger_designer.qt.main_window import TriggerWindow
 
 pytestmark = pytest.mark.ui
@@ -47,12 +48,33 @@ def test_an_open_workflow_opens_no_connection_while_idle(
 ):
     source = tmp_path / "in.csv"
     source.write_text("acct,amount\nA,10\nB,25\n", encoding="utf-8")
-    workflow = write_workflow(
-        tmp_path / "idle.tds",
-        synthetic_workflow(
-            input_path=str(source), output_path=str(tmp_path / "out.csv")
-        ),
+    editor = Editor(new_workflow(), base_dir=str(tmp_path))
+    apply_patch(
+        editor,
+        [
+            {
+                "op": "add_node",
+                "type": "input.file_input",
+                "ref": "src",
+                "settings": {"filePath": str(source), "file_type": "csv"},
+            },
+            {"op": "add_node", "type": "preparation.sort", "ref": "s", "after": "src"},
+            {
+                "op": "add_node",
+                "type": "input.file_output",
+                "ref": "out",
+                "after": "s",
+                "settings": {
+                    "filePath": str(tmp_path / "out.csv"),
+                    "file_format": "csv",
+                },
+            },
+            {"op": "connect", "from": "src", "to": "s"},
+            {"op": "connect", "from": "s", "to": "out"},
+        ],
     )
+    workflow = tmp_path / "idle.tds"
+    workflow.write_bytes(dump_workflow(editor.data))
 
     # Not qtbot.addWidget: closing a TriggerWindow saves the session and quits the
     # shared application (see tests/conftest.py), so the window is hidden and
