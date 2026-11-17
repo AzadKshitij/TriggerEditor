@@ -2,6 +2,17 @@
 
 Status: plan, nothing built yet. Written 2026-11-17 against `main` at `ca38cb3` (version `0.1.0a2`).
 
+## Decisions already made (2026-11-17)
+
+| # | Decision |
+|---|---|
+| D1 | Portable is a **folder zip** (editor, CLI, MCP). The **single-file GUI-only editor stays** as a second, lighter download. |
+| D4 | The installer is built with **Inno Setup**. |
+| D9 | Builds ship **unsigned for now**, with a documented SmartScreen note. The build keeps an optional signing hook. |
+| D6 | Default install scope is **per user** (an all-users option stays in the setup dialog). |
+
+Still open (defaults used until changed): D8 creates only a default policy file, no AI workspace folder; releases are a **draft pre-release** from a GitHub Actions run on a `v*` tag.
+
 ## Goal
 
 People can use Trigger Designer, its command-line program and its AI-tool (MCP) server **without installing Python or any developer tooling**, in one of two forms:
@@ -40,6 +51,7 @@ Non-goals for this plan: macOS or Linux builds, an automatic updater (the app st
 
 ```text
 TriggerDesigner-0.1.0-alpha.2-windows-portable.zip     (portable: folder layout, see below)
+TriggerDesigner-0.1.0-alpha.2-windows-editor-single-file.zip   (the existing single-file, editor-only exe; lighter, no CLI or MCP)
 TriggerDesigner-0.1.0-alpha.2-setup.exe                (installer)
 SHA256SUMS.txt
 ```
@@ -58,13 +70,13 @@ TriggerDesigner\
 
 ## Decisions (recommended answer first)
 
-**D1. Portable = a folder zip, not a single-file exe.** All three programs share one `_internal\`, so the zip is only a little larger than the editor alone. It starts fast (no extraction to a temp folder), is less likely to be flagged by antivirus, and the MCP server can find its sibling CLI. A single-file exe cannot be both the editor and a stdio tool. *Alternative:* keep today's single-file GUI-only build as a second, lighter download; it would still not include the CLI or MCP.
+**D1 (decided). Portable = a folder zip; the single-file editor stays as a second download.** All three programs share one `_internal\`, so the zip is only a little larger than the editor alone. It starts fast (no extraction to a temp folder), is less likely to be flagged by antivirus, and the MCP server can find its sibling CLI. A single-file exe cannot be both the editor and a stdio tool. The single-file GUI-only exe is kept as a lighter second download (named `-windows-editor-single-file.zip` so nobody mistakes it for the full package); it still does not include the CLI or MCP, and the download page says so.
 
 **D2. One shared runtime via PyInstaller `MERGE` with three programs** (editor, CLI, MCP). This is what the CLI already does. The CLI loads the editor's own classes headlessly (offscreen Qt), so even "CLI only" needs the Qt runtime; see D5.
 
 **D3. MCP finds the CLI explicitly.** A small `launcher` helper decides how to start a child CLI command: in development `[sys.executable, "-m", "trigger_designer.cli"]`; when frozen, the sibling `trigger-designer-cli.exe` in the same folder (with an environment override and a clear error if it is missing). The MCP server never calls itself recursively. *Alternative:* the MCP exe runs CLI code in-process by a hidden `__cli__` argument, which removes the dependency on a sibling file but couples the two entry points.
 
-**D4. Installer technology: Inno Setup 6.** It already exists in the repo, supports exactly the "choose what to install" screen (components), per-user installs without administrator rights, `PATH` tasks, file associations, and a clean uninstaller, and it needs no extra runtime. *Alternatives:* WiX (an MSI, better for enterprise deployment through Intune or Group Policy, but far more authoring work; listed under "Later"), NSIS (similar to Inno, less common now), MSIX (needs signing and restricts writing to the install folder).
+**D4 (decided). Installer technology: Inno Setup 6.** It already exists in the repo, supports exactly the "choose what to install" screen (components), per-user installs without administrator rights, `PATH` tasks, file associations, and a clean uninstaller, and it needs no extra runtime. *Alternatives:* WiX (an MSI, better for enterprise deployment through Intune or Group Policy, but far more authoring work; listed under "Later"), NSIS (similar to Inno, less common now), MSIX (needs signing and restricts writing to the install folder).
 
 **D5. What the components really control.** Because of D2, the shared runtime (the large part) is always installed. Components choose:
 
@@ -77,7 +89,7 @@ TriggerDesigner\
 
 The installer says plainly that deselecting a component removes entry points, not most of the disk space. Presets: **Full**, **Editor only**, **Command line and AI tools only**, **Custom**.
 
-**D6. Install scope.** Default **per user** (`%LOCALAPPDATA%\Programs\Trigger Designer`, no administrator needed); an "all users" option through the standard Inno dialog (`PrivilegesRequiredOverridesAllowed=dialog`, already in the script). Portable needs no rights at all.
+**D6 (decided). Install scope.** Default **per user** (`%LOCALAPPDATA%\Programs\Trigger Designer`, no administrator needed); an "all users" option through the standard Inno dialog (`PrivilegesRequiredOverridesAllowed=dialog`, already in the script). Portable needs no rights at all.
 
 **D7. `PATH` and file association.** `PATH` entries are tasks, unchecked by default, written for the right scope, de-duplicated, and **removed on uninstall**. The `.tds` association registers "Open with" and the default icon, as today. A new shell entry is not needed.
 
@@ -87,7 +99,7 @@ The installer says plainly that deselecting a component removes entry points, no
 - the installer (MCP component) creates a default policy file in `%APPDATA%\Trigger Designer\agent-policy.json` (`schema_only`, `edit` false, outside any workspace) and a Start Menu entry "AI tools setup" that opens the guide and prints the snippet;
 - the final installer page offers to open the guide. No third-party configuration is touched.
 
-**D9. Signing.** Sign `TriggerEditor.exe`, the two console exes, the installer and (if the tool allows) the uninstaller, with a timestamp. The build calls `signtool` only when a certificate is configured, so unsigned alpha builds still work and say so. *Needs a decision:* which certificate (OV, EV, or Azure Trusted Signing) and who holds it.
+**D9 (decided: unsigned for now).** Alpha builds ship unsigned, and the install page explains the SmartScreen warning (it already does for the editor). The build keeps an optional hook: when a certificate is configured it signs `TriggerEditor.exe`, the two console exes, the installer and the uninstaller with a timestamp. Choosing a certificate (OV, EV or Azure Trusted Signing) is a separate step before a non-alpha release. Because unsigned self-extracting exes are the most likely to be flagged by antivirus, the single-file editor is the artifact to scan first.
 
 **D10. Versions and names.** One source of truth: `core/constants.VERSION`. The installer gets it from the build (`/DMyAppVersion=...`), not from a hard-coded line. A test (already added) keeps `pyproject.toml`, `uv.lock` and the constant equal. Artifact names as above.
 
@@ -115,7 +127,7 @@ The installer says plainly that deselecting a component removes entry points, no
 2. `agent/launcher.py`: choose how to start a child CLI (D3); `AgentTools` uses it. Unit tests for both modes.
 3. `trigger-designer-mcp --print-config` (D8) with tests for every client.
 4. `scripts/smoke_dist.py`: runs against `dist\`, never against source: CLI `--version`, `validate --deep`, a headless `run`; the editor exe started offscreen with a `--smoke-test` flag that opens a sample workflow and exits 0; the MCP exe driven over stdio (list tools, `get_policy`, `list_files`, `get_schema` on a sample, a refused call).
-5. `package_windows.py`: the portable zip is the folder layout; add a `README.txt`; keep the single-file build only if D1's alternative is chosen.
+5. `package_windows.py`: the portable zip is the folder layout with a `README.txt`; the single-file editor is packaged separately under its own name.
 6. `build.bat` runs the smoke script and fails the build if it fails.
 
 **Phase 2: the installer.**
@@ -149,12 +161,9 @@ The installer says plainly that deselecting a component removes entry points, no
 
 ## Open questions for the project owner
 
-1. Portable as a **folder zip** (recommended), or also keep the single-file GUI-only exe?
-2. **Inno Setup** for the installer (recommended)? Is an MSI for enterprise needed soon?
-3. Default install scope: **per user** (recommended), all users, or ask?
-4. **Code signing:** is there a certificate, or should alpha builds ship unsigned with a documented SmartScreen note?
-5. Should the installer **create a default AI workspace folder** as well as the default policy file (it creates only the policy file in this plan)?
-6. Release flow: GitHub Actions on tags producing a **draft** pre-release for approval (recommended)?
+1. Should the installer **create a default AI workspace folder** as well as the default policy file (it creates only the policy file in this plan)?
+2. Release flow: GitHub Actions on tags producing a **draft** pre-release for approval (recommended)?
+3. Is an MSI for managed deployment needed soon, or is it fine as a later item?
 
 ## Later (not in this plan)
 
