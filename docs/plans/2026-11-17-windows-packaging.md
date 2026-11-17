@@ -87,7 +87,7 @@ TriggerDesigner\
 
 ## Decisions (recommended answer first)
 
-**D1 (decided). Portable = a folder zip; the single-file editor stays as a second download.** All three programs share one `_internal\`, so the zip is only a little larger than the editor alone. It starts fast (no extraction to a temp folder), is less likely to be flagged by antivirus, and the MCP server can find its sibling CLI. A single-file exe cannot be both the editor and a stdio tool. The single-file GUI-only exe is kept as a lighter second download (named `-windows-editor-single-file.zip` so nobody mistakes it for the full package); it still does not include the CLI or MCP, and the download page says so.
+**D1 (decided). Portable = a folder zip; the single-file editor stays as a second download.** Both programs (the editor and `tds.exe`) share one `_internal\`, so the zip is only a little larger than the editor alone. It starts fast (no extraction to a temp folder), is less likely to be flagged by antivirus, and the MCP server can find its sibling CLI. A single-file exe cannot be both the editor and a stdio tool. The single-file GUI-only exe is kept as a lighter second download (named `-windows-editor-single-file.zip` so nobody mistakes it for the full package); it still does not include the CLI or MCP, and the download page says so.
 
 **D2. One shared runtime via PyInstaller `MERGE` with two programs** (the editor and `tds.exe`, which carries the CLI and the MCP server). This is what the CLI already does. The CLI loads the editor's own classes headlessly (offscreen Qt), so even "CLI only" needs the Qt runtime; see D5.
 
