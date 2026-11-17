@@ -1,8 +1,9 @@
 """Canvas painting and theme state for a node.
 
 ``TriggerGraphicsNode`` owns geometry (body, badge and ring rectangles), the
-state-ring pens, the status and error badges and the low-detail fallback. It
-never imports ``node_base``; the node is only a type here.
+state-ring pens, the status and error badges, the session-only external-change
+cue and the low-detail fallback. It never imports ``node_base``; the node is
+only a type here.
 """
 
 from __future__ import annotations
@@ -11,8 +12,8 @@ from collections.abc import Mapping
 from typing import TYPE_CHECKING, Optional
 
 from nodeeditor.node_icon_graphics_node import QDMIconGraphicsNode
-from qtpy.QtCore import QRectF, Qt
-from qtpy.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
+from qtpy.QtCore import QPointF, QRectF, Qt
+from qtpy.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPixmap
 from qtpy.QtWidgets import (
     QGraphicsItem,
     QLabel,
@@ -40,6 +41,22 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
     #: declared rectangle has to account for half of it.
     RING_PEN_WIDTH = 5.0
 
+    #: The cue kinds ``set_external_cue`` accepts; any other value clears it.
+    EXTERNAL_CUE_KINDS = frozenset({"added", "changed", "connected"})
+    #: Width of the cue outline in device pixels (a cosmetic pen).
+    EXTERNAL_CUE_PEN_WIDTH = 2.0
+    #: Distance from the body edge to the outline, in scene units. The icon tile
+    #: sits 10 units inside the 120-unit body and the state ring reaches 2.5
+    #: units in, so the outline lives in the transparent margin between them.
+    EXTERNAL_CUE_INSET = 4.5
+    EXTERNAL_CUE_RADIUS = 8.0
+    #: The corner marker's centre sits this far inside the outline's corner.
+    EXTERNAL_CUE_MARKER_OFFSET = 3.0
+    EXTERNAL_CUE_MARKER_RADIUS = 3.5
+    EXTERNAL_CUE_CROSS_THICKNESS = 2.2
+    #: Opacity of the "connected" cue: the same colour, fainter.
+    EXTERNAL_CUE_CONNECTED_ALPHA = 0.55
+
     def __init__(
         self, node: "TriggerNode", parent: Optional[QGraphicsItem] = None
     ) -> None:
@@ -49,6 +66,10 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         self._detail_pixmap: QPixmap | None = None
         self._detail_pixmap_resolved = False
         self._error_badge = ""
+        # Session-only "changed outside" cue; never serialized (set_external_cue).
+        self._external_cue = ""
+        self._external_cue_tip = ""
+        self._external_pens: dict[str, QPen] = {}
         super().__init__(node, parent)
         self._pen_role = "default"
         self._rebuild_theme_pens()
@@ -135,6 +156,22 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
             "executed": self._executed_pen,
             "error": self._error_pen,
         }.get(self._pen_role, self._default_pen)
+        self._external_pens = self._external_cue_pens()
+
+    def _external_cue_pens(self) -> dict[str, QPen]:
+        """One dashed cosmetic pen per cue kind, in the ``info`` token."""
+        base = get_theme_manager().color("info", "#5ba8d6")
+        faint = QColor(base)
+        faint.setAlphaF(self.EXTERNAL_CUE_CONNECTED_ALPHA)
+        colours = {"added": base, "changed": base, "connected": faint}
+        pens: dict[str, QPen] = {}
+        for kind, colour in colours.items():
+            pen = QPen(colour)
+            pen.setCosmetic(True)
+            pen.setWidthF(self.EXTERNAL_CUE_PEN_WIDTH)
+            pen.setStyle(Qt.PenStyle.DashLine)
+            pens[kind] = pen
+        return pens
 
     def apply_theme(self) -> None:
         """Re-read state-ring colours after a theme change."""
@@ -258,6 +295,110 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
                 self.icons,
                 QRectF(offset, 0, side, side),
             )
+
+        self._paint_external_cue(painter)
+
+    def set_external_cue(self, kind: str, tip: str = "") -> None:
+        """Show, change or clear the session-only "changed outside" cue.
+
+        ``kind`` is ``"added"``, ``"changed"`` or ``"connected"``. ``""`` clears
+        the cue, and so does any other value. The cue is never serialized: it
+        lasts for this session, until the change is reviewed. ``tip`` is kept
+        for the integrator as :attr:`external_cue_tip`; the node does not write
+        it into its tooltip.
+        """
+        value = kind if kind in self.EXTERNAL_CUE_KINDS else ""
+        text = str(tip) if value else ""
+        if value == self._external_cue and text == self._external_cue_tip:
+            return
+        self._external_cue = value
+        self._external_cue_tip = text
+        self.update()
+
+    @property
+    def external_cue(self) -> str:
+        """The cue kind on screen, or ``""`` for none."""
+        return self._external_cue
+
+    @property
+    def external_cue_tip(self) -> str:
+        """The text attached with the cue, or ``""``."""
+        return self._external_cue_tip
+
+    def _paint_external_cue(self, painter: QPainter) -> None:
+        """Draw the cue: a dashed outline in the card's margin and a corner marker.
+
+        The card paints over this item, but it is transparent in the margin
+        round its icon tile, so the outline sits there and never under the
+        tile. The outline is inset by half its pen width in scene units, so at
+        low zoom it stays inside the body, as ``_paintLowDetailHighlight`` does.
+        Where the status badge sits on the bottom edge the outline is clipped
+        out, so no dash crosses the badge.
+        """
+        kind = self._external_cue
+        pen = self._external_pens.get(kind) if kind else None
+        if pen is None:
+            return
+
+        scale = abs(painter.worldTransform().m11()) or 1.0
+        inset = max(self.EXTERNAL_CUE_INSET, (pen.widthF() / 2.0) / scale)
+        rect = self.bodyRect().adjusted(inset, inset, -inset, -inset)
+        radius = min(self.EXTERNAL_CUE_RADIUS, rect.width() / 2.0, rect.height() / 2.0)
+        outline = QPainterPath()
+        outline.addRoundedRect(rect, radius, radius)
+
+        offset = inset + self.EXTERNAL_CUE_MARKER_OFFSET
+        marker = self._external_marker(kind, QPointF(offset, offset))
+
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        if self._status_badge_drawn():
+            painter.setClipPath(
+                self._outside_status_badge(), Qt.ClipOperation.IntersectClip
+            )
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(pen)
+        painter.drawPath(outline)
+        if kind == "connected":
+            # A hollow ring: it must differ from "changed" by shape, not only by
+            # transparency (state is never colour alone, DESIGN_SYSTEM §15).
+            ring = QPen(pen)
+            ring.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(ring)
+            painter.drawPath(marker)
+        else:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QBrush(pen.color()))
+            painter.drawPath(marker)
+        painter.restore()
+
+    def _external_marker(self, kind: str, centre: QPointF) -> QPainterPath:
+        """The corner marker: a plus (added), a filled dot (changed), a ring (connected)."""
+        path = QPainterPath()
+        radius = self.EXTERNAL_CUE_MARKER_RADIUS
+        if kind != "added":
+            path.addEllipse(centre, radius, radius)
+            return path
+        half_bar = self.EXTERNAL_CUE_CROSS_THICKNESS / 2.0
+        path.addRect(
+            QRectF(centre.x() - radius, centre.y() - half_bar, 2 * radius, 2 * half_bar)
+        )
+        path.addRect(
+            QRectF(centre.x() - half_bar, centre.y() - radius, 2 * half_bar, 2 * radius)
+        )
+        return path
+
+    def _outside_status_badge(self) -> QPainterPath:
+        """Everything but a 2-unit gap round the status badge (odd-even fill)."""
+        region = QPainterPath()
+        region.setFillRule(Qt.FillRule.OddEvenFill)
+        region.addRect(QRectF(-40.0, -40.0, self.width + 80.0, self.height + 80.0))
+        region.addEllipse(self.statusBadgeRect().adjusted(-2.0, -2.0, 2.0, 2.0))
+        return region
+
+    def _status_badge_drawn(self) -> bool:
+        """Whether ``paint`` drew a badge on the bottom edge this frame."""
+        return bool(self._error_badge) or bool(getattr(self, "_badge_visible", True))
 
     def set_error_badge(self, severity: str) -> None:
         value = severity if severity in {"error", "warning", "pending"} else ""

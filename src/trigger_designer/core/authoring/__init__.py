@@ -8,6 +8,18 @@ CLI (``edit`` / ``diff``) decides when to, and only with ``--apply``.
 from trigger_designer.core.authoring.blank import new_workflow
 from trigger_designer.core.authoring.diff import diff_workflows, render_lines
 from trigger_designer.core.authoring.edits import Editor
+from trigger_designer.core.authoring.external_edit import (
+    ExternalChange,
+    analyse_external_edit,
+)
 from trigger_designer.core.authoring.patch import apply_patch
 
-__all__ = ["Editor", "apply_patch", "diff_workflows", "new_workflow", "render_lines"]
+__all__ = [
+    "Editor",
+    "ExternalChange",
+    "analyse_external_edit",
+    "apply_patch",
+    "diff_workflows",
+    "new_workflow",
+    "render_lines",
+]

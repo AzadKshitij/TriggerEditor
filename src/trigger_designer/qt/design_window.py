@@ -49,6 +49,7 @@ from trigger_designer.qt.helpers.eval_progress import (
 from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
 from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
+from trigger_designer.qt.helpers.external_edit_mixin import ExternalEditMixin
 from trigger_designer.qt.helpers.workflow_execution_mixin import WorkflowExecutionMixin
 from trigger_designer.qt.helpers import global_logger
 from trigger_designer.qt.helpers import node_arrange
@@ -109,7 +110,9 @@ def check_output_header(src_root: "str | None") -> str:
     return CHECK_OUTPUT_HEADER + f"_td_sys.path.insert(0, {src_root!r})\n"
 
 
-class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidget):
+class TriggerSubWindow(
+    WorkflowExecutionMixin, ContextMenuMixin, ExternalEditMixin, NodeEditorWidget
+):
     Scene_class = TriggerScene
     itemSelected = Signal(object)
     #: Emitted when a run published fresh ``execution_results``: preview data
@@ -139,6 +142,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
 
         self.setTitle()
         self.addButtons()
+        self.init_external_edit()
 
         self.initNewNodeActions()
 
@@ -468,6 +472,8 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                     nodes = [shown]
         self.refreshConfigDock(nodes, force=True)
         self.doEvalOutputs()
+        # A restore can recreate node graphics: draw the external-edit cues again.
+        self.apply_external_cues()
 
     def _find_config_dock(self) -> Optional["ConfigDock"]:
         """Walk up the parent chain to the window that owns the Config Dock."""
@@ -547,6 +553,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
         """File > New: empty the scene and give the document a new identity."""
         super().fileNew()
         self.scene.reset_workflow_identity()
+        self.external_edit_retarget()
 
     def fileLoad(self, filename: str) -> bool:
         self.logInfo(f"Loading file: {filename}")
@@ -557,7 +564,10 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
             self.window(), f"Reading {os.path.basename(filename)}…"
         )
         try:
-            return self._load_with_dialog(filename, dialog)
+            loaded = self._load_with_dialog(filename, dialog)
+            if loaded:
+                self.external_edit_retarget()
+            return loaded
         finally:
             dialog.close()
             dialog.deleteLater()
@@ -730,6 +740,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 self.scene.saveToFile(target)
             finally:
                 QApplication.restoreOverrideCursor()
+            self.external_edit_after_save()
             return True
         except Exception as exc:  # noqa: BLE001 - any failure must reach the user
             dumpException(exc)
@@ -832,6 +843,7 @@ class TriggerSubWindow(WorkflowExecutionMixin, ContextMenuMixin, NodeEditorWidge
                 self.shutdown_workflow_worker()
             except Exception:  # noqa: BLE001 - a raising slot aborts the process
                 logger.exception("Failed to stop the workflow run while closing")
+            self.shutdown_external_edit()
 
     def onDragEnter(self, event: QDragEnterEvent) -> None:
         if event.mimeData().hasFormat(LISTBOX_MIMETYPE):

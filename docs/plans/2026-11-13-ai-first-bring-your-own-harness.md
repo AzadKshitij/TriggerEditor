@@ -64,3 +64,12 @@ Decision: the app will **not** ship an in-app assistant, chat dock, or LLM clien
 - Phase 4: e2e — external edit to an open workflow produces diff banner, one undo step, and undo restores prior state (extend `test_undo_integration.py`); manual check in the running app.
 - Phase 5: network-import guard test; zero requests at idle.
 - End-to-end manual: with Claude Code (or another harness) configured with the MCP server, build a "duplicate invoices > 10k" workflow on `savedfiles/` data, review in GUI, run headless, confirm run record tags the source.
+
+## Status (2026-11-17)
+- Phase 1 (machine-readable CLI) and Phase 2 (authoring API and `edit`) are built and tested.
+- Phase 3 (MCP server over stdio) is built and tested with a real harness: 12 tools, policy and workspace enforced in the server, edits behind `"edit": true`. Not built: a `run` tool, `verify_log`, doc resources. Guide: `docs/guide/mcp-server.md`.
+- Phase 4 (editor integration) is built, **tests written but not yet run**: external-change analysis (`core/authoring/external_edit.py`), file watcher, "External Edit" undo step (`TriggerSceneHistory.replace_scene`), banner and node cue, glue in `qt/helpers/external_edit_mixin.py`. Not built: the optional control channel (file watching was sufficient).
+- Phase 5 (optional modules) is built, **tests written but not yet run**: `core/modules/` (manifest, catalogue, store, consent, the single network file `downloader.py`), `modules` CLI (offline), Help > "Optional modules…" dialog, network-isolation guard tests. The shipped catalogue is empty.
+- Phase 6 (agent kit) is partly done: the MCP guide. Run records do not yet tag the source of a run (`gui`/`cli`/`mcp`).
+- Next: one combined test run of phases 4 and 5, fix what it finds, then manual checks in the running app (banner, undo, cues; the modules dialog).
+

@@ -2725,3 +2725,33 @@ QPushButton#PreviewPinButton {
         border: 1px solid $COLOR_ACCENT_3;
     }
 }
+
+/* External edit banner (qt/widgets/external_edit_banner.py).
+   This file is the dark palette, so the warning tone takes the dark value of
+   the background_warning token. The buttons are IconButtons, styled above. */
+QFrame#ExternalEditBanner {
+    background-color: $COLOR_BACKGROUND_3;
+    border-bottom: $BORDER_2;
+
+    &[tone="warning"] {
+        background-color: #4a3407;
+    }
+}
+QLabel#ExternalEditIcon,
+QLabel#ExternalEditMessage {
+    background-color: transparent;
+    color: $COLOR_TEXT_2;
+    padding: 0px;
+}
+QDialog#ExternalChangeDialog {
+    background-color: $COLOR_BACKGROUND_4;
+}
+QPlainTextEdit#ExternalChangeText {
+    background-color: $COLOR_BACKGROUND_2;
+    color: $COLOR_TEXT_2;
+    border: $BORDER_2;
+    border-radius: $SIZE_BORDER_RADIUS;
+    padding: 6px;
+    font-family: "Cascadia Mono", "Consolas";
+    font-size: 11px;
+}
