@@ -254,3 +254,23 @@ def test_a_node_the_outside_tool_removed_leaves_no_stale_dock(window, tmp_path):
     assert len(window.scene.nodes) == 2
     assert window.scene.getNodeByID(victim) is None
     assert victim not in window._external_cues
+
+
+def test_the_headless_session_never_watches_its_throwaway_copy(tmp_path):
+    """The command line loads a temporary copy of the workflow through the same
+    window class. A watcher on that folder only warns on stderr when the copy
+    is deleted, so a headless window must not start one."""
+    from trigger_designer.qt.headless import HeadlessSession
+
+    editor = Editor(new_workflow(), base_dir=str(tmp_path))
+    editor.add_node("preparation.sort")
+    path = tmp_path / "flow.tds"
+    path.write_bytes(dump_workflow(editor.data))
+
+    session = HeadlessSession()
+    try:
+        session.load(str(path), expect_nodes=1, expect_edges=0)
+        assert session.window.external_edit_enabled is False
+        assert session.window._external_watcher.path is None
+    finally:
+        session.close()

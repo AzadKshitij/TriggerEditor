@@ -65,7 +65,7 @@ def _silence_qpa_noise() -> None:
             return
         try:
             sys.stderr.write(message + "\n")
-        except (OSError, ValueError):  # a closed stderr must not abort Qt
+        except OSError, ValueError:  # a closed stderr must not abort Qt
             pass
 
     qInstallMessageHandler(handler)
@@ -171,6 +171,8 @@ class HeadlessSession:
     def __init__(self) -> None:
         self.app = ensure_app()
         self.window = make_window()
+        # Nobody watches this window: no file watcher on the throw-away copy.
+        self.window.external_edit_enabled = False
         self.report: LoadReport | None = None
 
     # -- loading -----------------------------------------------------------
@@ -286,6 +288,8 @@ class HeadlessSession:
         return self.window.getPyFile(self.report.nodes, path)
 
     def close(self) -> None:
+        with contextlib.suppress(Exception):
+            self.window.shutdown_external_edit()
         with contextlib.suppress(Exception):
             self.window.deleteLater()
 

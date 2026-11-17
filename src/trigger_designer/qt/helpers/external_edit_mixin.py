@@ -36,6 +36,11 @@ OVERLAY_TOP = 10
 class ExternalEditMixin:
     """Mixed into ``TriggerSubWindow``; see the module docstring."""
 
+    #: False for a window nobody looks at (the command line's headless session):
+    #: it loads a throw-away copy of the workflow, and a watcher on that folder
+    #: would only warn on stderr when the copy is deleted.
+    external_edit_enabled: bool = True
+
     # ----------------------------------------------------------------- setup
     def init_external_edit(self) -> None:
         """Create the banner (above the canvas) and the watcher. Call once,
@@ -78,7 +83,10 @@ class ExternalEditMixin:
         self._reset_external_state()
         watcher = getattr(self, "_external_watcher", None)
         if watcher is not None:
-            watcher.watch(self.filename, self.scene.disk_bytes)
+            if self.external_edit_enabled:
+                watcher.watch(self.filename, self.scene.disk_bytes)
+            else:
+                watcher.stop()
 
     def external_edit_after_save(self) -> None:
         """The app wrote the file itself: its bytes are the new baseline, and a
@@ -87,7 +95,7 @@ class ExternalEditMixin:
             return
         self._reset_external_state()
         watcher = getattr(self, "_external_watcher", None)
-        if watcher is not None:
+        if watcher is not None and self.external_edit_enabled:
             # Retargets too: "Save as" gives the document a new file.
             watcher.watch(self.filename, self.scene.disk_bytes)
 
