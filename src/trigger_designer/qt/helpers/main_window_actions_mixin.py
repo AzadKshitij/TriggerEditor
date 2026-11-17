@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import sys
+
 from loguru import logger as glogger
-from qtpy.QtCore import QUrl
+from qtpy.QtCore import QProcess, QUrl
 from qtpy.QtGui import QDesktopServices, QKeySequence
 from qtpy.QtWidgets import QAction, QDialog, QMessageBox
 
@@ -104,6 +106,15 @@ class MainWindowActionsMixin:
 
         from trigger_designer.core import file_association
 
+        self.actNewWindow = QAction(
+            "New &Window",
+            self,
+            shortcut="Ctrl+Shift+N",
+            statusTip="Open a second, separate Trigger Designer window",
+            triggered=self.showNewWindow,
+        )
+        self.actNewWindow.setObjectName("actionNewWindow")
+
         self.actAssociateFiles = QAction(
             "Open .tds files with Trigger Designer…",
             self,
@@ -194,6 +205,14 @@ class MainWindowActionsMixin:
         dialog = PreferencesDialog(self)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.loadSettings()
+
+    def showNewWindow(self) -> None:
+        """File > New Window: start a second, separate copy of the editor."""
+        program, args = sys.executable, []
+        if not getattr(sys, "frozen", False):
+            args = ["-m", "trigger_designer.main"]
+        if not QProcess.startDetached(program, args):
+            self.statusBar().showMessage("A new window could not be started.", 8000)
 
     def associateTdsFiles(self) -> None:
         """Help > Open .tds files with Trigger Designer: register the file type."""

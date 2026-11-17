@@ -184,3 +184,34 @@ def test_help_menu_offers_to_register_tds_files(window):
     assert action.objectName() == "actionAssociateTdsFiles"
     assert "Open .tds files" in action.text()
     assert action in window.helpMenu.actions()
+
+
+def test_file_menu_has_new_window(window):
+    action = window.actNewWindow
+    assert action.objectName() == "actionNewWindow"
+    assert action.shortcut().toString() == "Ctrl+Shift+N"
+    assert action in window.fileMenu.actions()
+
+
+def test_new_window_starts_a_separate_copy_of_the_editor(window, monkeypatch):
+    started = []
+    monkeypatch.setattr(
+        "trigger_designer.qt.helpers.main_window_actions_mixin.QProcess.startDetached",
+        lambda program, args: started.append((program, list(args))) or True,
+    )
+
+    window.actNewWindow.trigger()
+
+    assert len(started) == 1
+    assert started[0][1][-2:] == ["-m", "trigger_designer.main"]  # from source
+
+
+def test_a_new_window_that_cannot_start_says_so(window, monkeypatch):
+    monkeypatch.setattr(
+        "trigger_designer.qt.helpers.main_window_actions_mixin.QProcess.startDetached",
+        lambda program, args: False,
+    )
+
+    window.showNewWindow()
+
+    assert "could not be started" in window.statusBar().currentMessage()

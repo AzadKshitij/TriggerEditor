@@ -32,6 +32,7 @@ class MainWindowMenuMixin:
     def createMenus(self) -> None:  # noqa: N802 (Qt naming style)
         super().createMenus()
 
+        self.fileMenu.insertAction(self.actOpen, self.actNewWindow)
         self.openRecentMenu = QMenu("&Open Recent", self)
         self.fileMenu.insertMenu(self.actSave, self.openRecentMenu)
         self.openRecentMenu.aboutToShow.connect(self._rebuild_recent_menu)

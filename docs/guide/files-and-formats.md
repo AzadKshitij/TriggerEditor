@@ -32,6 +32,8 @@ To open one:
 
 Opening a workflow that is already open just brings its tab forward, however the path is written (relative or absolute, upper or lower case).
 
+**Several workflows, several windows.** A `.tds` file you open from Windows Explorer starts its own Trigger Designer window, so workflows opened that way do not share a window. To open a second, empty window yourself, use **File > New Window** (`Ctrl+Shift+N`). Dragging a file onto a window opens it in that window.
+
 ### Double-click to open
 
 - **Installed version:** the installer registers `.tds` files, so double-clicking one opens it in Trigger Designer.
