@@ -9,6 +9,7 @@ import traceback
 from trigger_designer.cli import render
 from trigger_designer.cli.output import print_error
 from trigger_designer.cli.parser import build_parser
+from trigger_designer.cli.subprograms import SUBPROGRAMS
 from trigger_designer.core.headless.context import CliContext
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.state import state_dir
@@ -79,6 +80,9 @@ def configure_streams() -> None:
 
 def main(argv: list[str] | None = None, *, hard_exit: bool = True) -> int:
     configure_streams()
+    words = sys.argv[1:] if argv is None else argv
+    if words and words[0] in SUBPROGRAMS:
+        return SUBPROGRAMS[words[0]](list(words[1:]))
     parser = build_parser()
     args = parser.parse_args(argv)  # SystemExit(64) on usage errors
     render.set_color(getattr(args, "color", None))

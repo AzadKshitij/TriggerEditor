@@ -90,7 +90,7 @@ if %ERRORLEVEL% NEQ 0 (
 if "%MODE%"=="portable" goto VerifyPortable
 
 REM Verify the folder build. The onedir layout writes dist\TriggerEditor\
-REM with the CLI beside the GUI.
+REM with tds.exe beside the editor.
 if not exist "dist\TriggerEditor\TriggerEditor.exe" (
 	echo Build failed: dist\TriggerEditor\TriggerEditor.exe missing.
 	exit /b 1
@@ -104,16 +104,16 @@ if not exist "dist\TriggerEditor\_internal\trigger_designer\resources\qt\themes\
 	echo WARNING: theme assets missing in bundle; check datas in trigger.spec.
 )
 
-if not exist "dist\TriggerEditor\trigger-designer-cli.exe" (
-	echo Build failed: dist\TriggerEditor\trigger-designer-cli.exe missing.
+if not exist "dist\TriggerEditor\tds.exe" (
+	echo Build failed: dist\TriggerEditor\tds.exe missing.
 	exit /b 1
 )
-"dist\TriggerEditor\trigger-designer-cli.exe" --version
+"dist\TriggerEditor\tds.exe" --version
 if %ERRORLEVEL% NEQ 0 (
 	echo Build failed: the command-line program does not start.
 	exit /b 1
 )
-"dist\TriggerEditor\trigger-designer-cli.exe" validate "savedfiles\0. All Node- Test.tds" --deep --no-files
+"dist\TriggerEditor\tds.exe" validate "savedfiles\0. All Node- Test.tds" --deep --no-files
 if %ERRORLEVEL% NEQ 0 (
 	echo Build failed: deep validation of the sample workflow failed.
 	exit /b 1
@@ -157,7 +157,7 @@ if not exist "dist\TriggerEditor.exe" (
 )
 echo.
 echo Packaging the single-file build...
-uv run --no-sync --project . python scripts\package_windows.py --layout portable
+uv run --no-sync --project . python scripts\package_windows.py --layout single-file
 if %ERRORLEVEL% NEQ 0 (
 	echo Build failed: could not package dist\TriggerEditor.exe.
 	exit /b 1

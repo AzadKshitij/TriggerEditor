@@ -13,7 +13,7 @@ def test_version_flag():
     assert result.code == 0
     assert (
         result.stdout.strip()
-        == "trigger-designer-cli 0.1.0-alpha.2 (workflow schema 2)"
+        == "trigger-designer-cli 0.1.0-alpha.3 (workflow schema 2)"
     )
 
 

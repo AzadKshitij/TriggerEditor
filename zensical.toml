@@ -28,7 +28,10 @@ nav = [
   { "Install" = "install.md" },
   { "Getting started" = "guide/README.md" },
   { "Blog" = "blog/index.md" },
-  { "Release notes" = "release-notes/v0.1.0-alpha.1.md" },
+  { "Release notes" = [
+    { "Alpha 3" = "release-notes/v0.1.0-alpha.3.md" },
+    { "Alpha 1" = "release-notes/v0.1.0-alpha.1.md" }
+  ] },
   { "Concepts" = [
     { "The canvas and nodes" = "guide/canvas-and-nodes.md" },
     { "Config Dock, preview, logs and problems" = "guide/config-dock-and-preview.md" },

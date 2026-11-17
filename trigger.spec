@@ -7,7 +7,7 @@ from pathlib import Path
 from PyInstaller.building.api import COLLECT, EXE, MERGE, PYZ
 from PyInstaller.building.build_main import Analysis
 from PyInstaller.building.osx import BUNDLE
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, copy_metadata
 
 # Parse command line arguments
 parser = ArgumentParser(description="Build TriggerEditor with PyInstaller")
@@ -240,8 +240,10 @@ if not options.portable:
         ["src/trigger_designer/cli_entry.py"],
         pathex=[],
         binaries=[],
-        datas=list(gui_datas),
-        hiddenimports=list(analysis.hiddenimports) + ["trigger_designer.qt.headless"],
+        datas=list(gui_datas) + copy_metadata("mcp"),
+        hiddenimports=list(analysis.hiddenimports)
+        + ["trigger_designer.qt.headless", "trigger_designer.agent.server"]
+        + collect_submodules("mcp", filter=lambda name: not name.startswith("mcp.cli")),
         hookspath=[],
         hooksconfig={},
         excludes=list(analysis.excludes),
@@ -253,10 +255,10 @@ if not options.portable:
     cli_analysis.datas = [e for e in cli_analysis.datas if not _is_qt_bloat(e)]
     MERGE(
         (analysis, "main", app_name),
-        (cli_analysis, "cli_entry", "trigger-designer-cli"),
+        (cli_analysis, "cli_entry", "tds"),
     )
 else:
-    print("Note: the portable build does not include trigger-designer-cli.")
+    print("Note: the single-file build does not include tds (the command line and MCP).")
 
 # Python bytecode archive
 pyz = PYZ(analysis.pure)
@@ -310,7 +312,7 @@ if cli_analysis is not None:
         debug=False,
         strip=False,
         upx=False,
-        name="trigger-designer-cli",
+        name="tds",
         icon=icon_path,
         exclude_binaries=True,
         argv_emulation=False,

@@ -1,4 +1,4 @@
-"""The ``trigger-designer-cli`` command line (plan 08 3.3, Appendix B).
+"""The ``tds`` command line (plan 08 3.3, Appendix B).
 
 Stdlib ``argparse`` only: ``--help`` and ``--version`` start in tens of
 milliseconds because nothing heavy is imported here.
@@ -12,7 +12,7 @@ import sys
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
 from trigger_designer.core.headless.exit_codes import ExitCode
 
-PROG = "trigger-designer-cli"
+PROG = "tds" if getattr(sys, "frozen", False) else "trigger-designer-cli"
 
 TOP_EPILOG = """\
 exit codes: 0 ok, 1 node failed, 2 invalid workflow/input, 3 internal error,
@@ -25,9 +25,13 @@ output: tables are plain ASCII when piped; on a terminal they use colour if the
   NO_COLOR (any value) and TRIGGER_DESIGNER_COLOR=never|always are honoured.
   --json output is never styled.
 
-Run `trigger-designer-cli <command> --help` for the options of one command.
+AI tools and the editor (not workflow commands):
+  tds mcp [--workspace DIR] [--policy FILE]  start the AI-tool (MCP) server
+  tds open [FILE.tds ...]                    start the editor on workflows
+
+Run `tds <command> --help` for the options of one command.
 Example:
-  trigger-designer-cli run sales.tds --param input_file=D:\\in\\today.csv
+  tds run sales.tds --param input_file=D:\\in\\today.csv
 """
 
 RUN_DESCRIPTION = """\
@@ -42,7 +46,7 @@ running cannot be interrupted; after --cancel-grace seconds the process exits
 
 RUN_EPILOG = """\
 Example:
-  trigger-designer-cli run sales.tds --param input_file=D:\\in\\today.csv --log-format json
+  tds run sales.tds --param input_file=D:\\in\\today.csv --log-format json
 """
 
 VALIDATE_DESCRIPTION = """\
@@ -62,9 +66,9 @@ Show what the workflow reads and writes, then record its SHA-256 as approved.
 Any change to the file (even re-saving it) needs a new approval. Approvals are
 stored per user and are not signed. Scheduled runs require approval.
 
-usage: trigger-designer-cli approve WORKFLOW [--yes] [--note TEXT]
-       trigger-designer-cli approve --list
-       trigger-designer-cli approve --revoke WORKFLOW
+usage: tds approve WORKFLOW [--yes] [--note TEXT]
+       tds approve --list
+       tds approve --revoke WORKFLOW
 """
 
 VERIFY_DESCRIPTION = """\
@@ -404,7 +408,7 @@ def build_parser() -> argparse.ArgumentParser:
         "validate",
         "Check a workflow file (add --deep to load it like the editor)",
         VALIDATE_DESCRIPTION,
-        "Example:  trigger-designer-cli validate sales.tds --deep --strict\n",
+        "Example:  tds validate sales.tds --deep --strict\n",
     )
     val.add_argument("workflow", metavar="WORKFLOW")
     val.add_argument("--deep", action="store_true", help="load it like the editor")
@@ -444,7 +448,7 @@ def build_parser() -> argparse.ArgumentParser:
         "info",
         "Show what a workflow reads, writes and needs",
         INFO_DESCRIPTION,
-        "Example:  trigger-designer-cli info sales.tds --format json\n",
+        "Example:  tds info sales.tds --format json\n",
     )
     info.add_argument("workflow", metavar="WORKFLOW")
     _add_format(info)
@@ -455,7 +459,7 @@ def build_parser() -> argparse.ArgumentParser:
         "approve",
         "Pin a reviewed workflow file so it may run unattended",
         APPROVE_DESCRIPTION,
-        'Example:  trigger-designer-cli approve sales.tds --note "reviewed 2026-10-21"\n',
+        'Example:  tds approve sales.tds --note "reviewed 2026-10-21"\n',
     )
     app.add_argument("workflow", metavar="WORKFLOW", nargs="?")
     app.add_argument("--yes", action="store_true", help="do not ask")
@@ -472,7 +476,7 @@ def build_parser() -> argparse.ArgumentParser:
         "verify-log",
         "Check a run record against the files it describes",
         VERIFY_DESCRIPTION,
-        "Example:  trigger-designer-cli verify-log 3f2a....json --workflow sales.tds\n",
+        "Example:  tds verify-log 3f2a....json --workflow sales.tds\n",
     )
     ver.add_argument("record", metavar="RECORD_OR_FOLDER", nargs="?")
     ver.add_argument("--workflow", metavar="WORKFLOW")
@@ -485,7 +489,7 @@ def build_parser() -> argparse.ArgumentParser:
         "params",
         "List, add or remove run-time parameters stored in a workflow",
         PARAMS_DESCRIPTION,
-        "Example:  trigger-designer-cli params add sales.tds --name input_file "
+        "Example:  tds params add sales.tds --name input_file "
         '--node "File Input" --setting filePath --required\n',
     )
     psub = par.add_subparsers(
@@ -516,7 +520,7 @@ def build_parser() -> argparse.ArgumentParser:
         "paths",
         "Show saved file paths; optionally make them relative",
         PATHS_DESCRIPTION,
-        "Example:  trigger-designer-cli paths sales.tds --relativize --write\n",
+        "Example:  tds paths sales.tds --relativize --write\n",
     )
     pth.add_argument("workflow", metavar="WORKFLOW")
     pth.add_argument("--relativize", action="store_true")
@@ -529,7 +533,7 @@ def build_parser() -> argparse.ArgumentParser:
         "ops",
         "List node types, or describe one as data",
         OPS_DESCRIPTION,
-        "Example:  trigger-designer-cli ops preparation.filter --json\n",
+        "Example:  tds ops preparation.filter --json\n",
     )
     ops.add_argument("op", metavar="OP", nargs="?", help="op id, e.g. join.join")
     ops.add_argument("--all", action="store_true", help="every op, fully described")
@@ -543,7 +547,7 @@ def build_parser() -> argparse.ArgumentParser:
         "schema",
         "Column names and types at a node (no values)",
         SCHEMA_DESCRIPTION,
-        "Example:  trigger-designer-cli schema sales.tds Filter --json\n",
+        "Example:  tds schema sales.tds Filter --json\n",
     )
     _add_node_args(scm)
 
@@ -552,7 +556,7 @@ def build_parser() -> argparse.ArgumentParser:
         "profile",
         "Aggregate statistics per column at a node (no rows)",
         PROFILE_DESCRIPTION,
-        "Example:  trigger-designer-cli profile sales.tds 102 --json\n",
+        "Example:  tds profile sales.tds 102 --json\n",
     )
     _add_node_args(prof)
 
@@ -561,7 +565,7 @@ def build_parser() -> argparse.ArgumentParser:
         "preview",
         "The first rows at a node (needs rows access)",
         PREVIEW_DESCRIPTION,
-        "Example:  trigger-designer-cli preview sales.tds 102 --rows 5 --json\n",
+        "Example:  tds preview sales.tds 102 --rows 5 --json\n",
     )
     _add_node_args(prev)
     prev.add_argument("--rows", type=int, default=10, metavar="N")
@@ -572,7 +576,7 @@ def build_parser() -> argparse.ArgumentParser:
         "edit",
         "Change a workflow: nodes, connections, settings (dry run unless --apply)",
         EDIT_DESCRIPTION,
-        "Example:  trigger-designer-cli edit add-node sales.tds preparation.filter "
+        "Example:  tds edit add-node sales.tds preparation.filter "
         '--set column=Amount --set operation=">" --set value=10000 --apply\n',
     )
     esub = edt.add_subparsers(
@@ -686,7 +690,7 @@ def build_parser() -> argparse.ArgumentParser:
         "diff",
         "Show what differs between two workflows",
         DIFF_DESCRIPTION,
-        "Example:  trigger-designer-cli diff before.tds after.tds --json\n",
+        "Example:  tds diff before.tds after.tds --json\n",
     )
     dif.add_argument("old", metavar="OLD")
     dif.add_argument("new", metavar="NEW")
@@ -698,7 +702,7 @@ def build_parser() -> argparse.ArgumentParser:
         "schedule",
         "Create, list or remove Windows scheduled runs",
         SCHEDULE_DESCRIPTION,
-        "Example:  trigger-designer-cli schedule add nightly sales.tds --daily 02:30 "
+        "Example:  tds schedule add nightly sales.tds --daily 02:30 "
         "--param input_file=D:\\in\\today.csv\n",
     )
     ssub = sch.add_subparsers(
@@ -736,7 +740,7 @@ def build_parser() -> argparse.ArgumentParser:
         "modules",
         "List, check or remove optional data packs (adding one is done in the app)",
         MODULES_DESCRIPTION,
-        "Example:  trigger-designer-cli modules list --json\n",
+        "Example:  tds modules list --json\n",
     )
     msub = mod.add_subparsers(
         dest="modules_cmd", metavar="list|verify|remove", parser_class=TdArgumentParser

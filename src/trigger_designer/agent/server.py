@@ -287,7 +287,7 @@ def build_server(tools: AgentTools) -> MCPServer:
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        prog="trigger-designer-mcp",
+        prog="tds mcp" if getattr(sys, "frozen", False) else "trigger-designer-mcp",
         description="MCP server for Trigger Designer (stdio only): look at "
         "workflows and their data and, when the policy allows, edit workflows.",
     )

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "TriggerDesigner"
-version = "0.1.0a2"
+version = "0.1.0a3"
 description = "A visual data processing tool with node-based workflow editor"
 readme = "README.md"
 requires-python = ">=3.14.0,<3.15"
@@ -83,6 +83,7 @@ agent = ["mcp==2.3.0"]
 
 [project.scripts]
 trigger-designer = "trigger_designer.main:main"
+tds = "trigger_designer.cli:main"
 trigger-designer-cli = "trigger_designer.cli:main"
 trigger-designer-mcp = "trigger_designer.agent.server:main"
 

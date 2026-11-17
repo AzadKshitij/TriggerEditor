@@ -29,13 +29,13 @@ import difflib
 import json
 import os
 import subprocess
-import sys
 import tempfile
 from argparse import Namespace
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, ClassVar
 
+from trigger_designer.agent.launcher import cli_command
 from trigger_designer.core.authoring.model import BAD_EDIT, fail
 from trigger_designer.core.headless.access_policy import (
     ENV_VAR,
@@ -90,7 +90,7 @@ class AgentTools:
         roots = workspaces or [os.getcwd()]
         self.workspaces = [Path(r).expanduser().resolve() for r in roots]
         self.policy_file = policy_file
-        self.python = python or sys.executable
+        self.python = python
         self.timeout_s = timeout_s
 
     # ------------------------------------------------------------ guards
@@ -506,7 +506,7 @@ class AgentTools:
         env = {**os.environ, "QT_QPA_PLATFORM": "offscreen", "PYTHONUTF8": "1"}
         try:
             proc = subprocess.run(
-                [self.python, "-m", "trigger_designer.cli", *argv, "--json"],
+                [*cli_command(self.python), *argv, "--json"],
                 stdin=subprocess.DEVNULL,
                 capture_output=True,
                 text=True,
