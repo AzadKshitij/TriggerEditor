@@ -20,9 +20,7 @@ from qtpy.QtCore import QItemSelectionModel, Qt, QUrl, Signal
 from qtpy.QtGui import QDesktopServices
 from qtpy.QtWidgets import (
     QAbstractItemView,
-    QDialog,
     QDialogButtonBox,
-    QDockWidget,
     QFileDialog,
     QHBoxLayout,
     QHeaderView,
@@ -55,6 +53,7 @@ from trigger_designer.qt.widgets.common import (
     EmptyStateLabel,
     IconButton,
 )
+from trigger_designer.qt.widgets.common.frameless_dialog import FramelessDialog
 
 if TYPE_CHECKING:
     from trigger_designer.qt.design_window import TriggerSubWindow
@@ -87,7 +86,7 @@ def _icon(resource_id: str):
     return ResourceManager().get(resource_id)
 
 
-class InputCheckDialog(QDialog):
+class InputCheckDialog(FramelessDialog):
     """Result of "Check inputs": one row per recorded input file."""
 
     def __init__(self, checks: list[InputCheck], parent: QWidget | None = None) -> None:
@@ -173,7 +172,7 @@ def _merge_reports(reports: list[VerifyReport]) -> VerifyReport:
     )
 
 
-class RunHistoryDock(QDockWidget):
+class RunHistoryDock(QWidget):
     """Lists, verifies, compares and exports the runs of the active workflow."""
 
     #: Emits the ``VerifyReport`` of a finished verification (tests wait on it).
@@ -186,7 +185,8 @@ class RunHistoryDock(QDockWidget):
     reloaded = Signal()
 
     def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(_TITLE, parent)
+        super().__init__(parent)
+        self.setWindowTitle(_TITLE)
         self.setObjectName("RunHistoryDock")
         self._window: TriggerSubWindow | None = None
         self._directory: Path | None = None
@@ -198,11 +198,6 @@ class RunHistoryDock(QDockWidget):
         self._tasks: set[AuditTask] = set()
         self._last_report: VerifyReport | None = None
         self._verified_at: str | None = None
-        self.setFeatures(
-            QDockWidget.DockWidgetFeature.DockWidgetMovable
-            | QDockWidget.DockWidgetFeature.DockWidgetFloatable
-            | QDockWidget.DockWidgetFeature.DockWidgetClosable
-        )
         self._build()
         self.apply_theme()
 
@@ -318,7 +313,10 @@ class RunHistoryDock(QDockWidget):
         self.status_label.setObjectName("RunHistoryStatus")
         self.status_label.setAccessibleName("Run history status")
         root.addWidget(self.status_label)
-        self.setWidget(panel)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
+        outer.addWidget(panel)
 
         header = self.run_table.horizontalHeader()
         header.setStretchLastSection(False)

@@ -38,7 +38,9 @@ LEGACY_SCOPES: tuple[tuple[str, str], ...] = (
 
 DEFAULTS: dict[str, Any] = {
     "general/schema_version": SCHEMA_VERSION,
-    "appearance/theme": "dark",
+    "appearance/theme": "qlementine-dark",
+    # Rendering engine: "qlementine" (QStyle) or "qss" (classic stylesheet).
+    "appearance/engine": "qlementine",
     "appearance/accent": "",
     # Application font size in points; 0 keeps the system default.
     "appearance/font_size": 0,

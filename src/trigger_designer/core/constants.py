@@ -4,7 +4,7 @@
 # URL: https://github.com/AzadKshitij/TriggerEditor
 
 
-VERSION: str = "0.1.0a1"  # PEP 440 form; the release tag is v0.1.0-alpha.1
+VERSION: str = "0.1.0-alpha.2"  # PEP 440 form; the release tag is v0.1.0-alpha.2
 WORKFLOW_SCHEMA_VERSION: int = 2
 APP_NAME: str = "TriggerDesigner"
 VERSION_BRANCH: str = ""

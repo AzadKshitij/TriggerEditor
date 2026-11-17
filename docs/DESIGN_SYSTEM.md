@@ -163,17 +163,19 @@ Node colour identifies the **category**, never the state. State lives in the rin
 ```
 QMainWindow
 ├─ Window chrome (32) — app icon, menus, window controls, drag row
-├─ NodesDock (top, max height 105)
-├─ ConfigDock (left, min width 300)
-├─ QMdiArea / node canvas
-├─ LoggingDock + DataPreviewDock (bottom, tabbed)
+├─ NodesDock (top, fixed, max height 105; cannot be moved or closed)
+├─ Dock host (Advanced Docking System, qt/docking/)
+│   ├─ ConfigDock (left, full height, min width 300)
+│   └─ Canvas (QMdiArea / node canvas) over a tabbed group of
+│       LoggingDock, DataPreviewDock and RunHistoryDock
 └─ Status bar (20)
 ```
 
 - The window is frameless (`install_window_chrome`, `qt/widgets/common/window_chrome.py`): the real `QMenuBar`, the centred document title and the caption buttons share the row that used to hold the menu bar alone. The title is centred on the *window*, not on the gap the menus leave: `_balance_title` sizes a spacer before the buttons to cancel the surplus the left group needs. Alt, mnemonics and every shortcut stay native; drag and edge resize go through `startSystemMove` / `startSystemResize`.
-- The Config Dock spans the main work area; the bottom docks span the full width.
-- The preview and logs share one bottom dock area as tabs. The Preview panel owns its own 36px strip; the dock adds no second header.
-- A tabbed dock wears the tab bar as its only chrome: its own title bar (name, float and close buttons) is hidden while it is a tab, and returns when the panel floats. Dragging a tab out of the bar pops that panel out, into a window with a normal frame (`QMainWindow.DockOption.GroupedDragging`, `qt/helpers/dock_chrome.py`). A dock with no tab bar beside it keeps its title bar, the only handle that moves it.
+- The Config Dock runs the full height of the left column. The canvas sits above the bottom tab group on the right.
+- Logs, Data Preview and Run History share one tab group under the canvas. The Preview panel owns its own 36px strip; the dock adds no second header.
+- Dock chrome is the library's tab bar and title bar, styled through the `ads--*` rules in `resources/qt/themes/base.qss` (mirrored in `qss/_style.scss`). Tokens only, no inline QSS. `qt/helpers/dock_chrome.py` and `qt/helpers/dock_resize_cursor.py` no longer exist.
+- Any panel can be dragged to another panel's centre (tab), to a panel's edge (split), to a window edge (whole row or column), or out of the window (float). The workflow canvas is also a drop target. Drop indicators and a translucent preview show the landing area.
 - The canvas is the only surface that fills remaining space. Everything else is fixed-height chrome.
 - Window and dock titles label the surface: `Node Configuration (Select)`, `Logs`, `Data Preview`. The document name stays in the MDI window (no `.tds` suffix) and in the chrome row.
 
@@ -183,7 +185,7 @@ QMainWindow
 
 | Token | Value | Notes |
 |---|---|---|
-| Dock min width | `300` | `qt/docks/node_config.py` |
+| Dock min width | `300` | `qt/docks/node_config.py` (`setMinimumWidth`) |
 | Main `QVBoxLayout` | `spacing 2, margins 5,5,5,5` | `transpose.py:77`, `cleansing.py:173` |
 | Toolbar `QWidget + QHBoxLayout` | `fixedHeight 40, margins 0,0,0,0` | `select.py:158-161` |
 | Control height | `30` min (`QLineEdit`, `QPushButton`, `QComboBox`) | `select.py:168,175,205` |
@@ -215,6 +217,7 @@ QVBoxLayout (dock_layout)
     ├─ CaseInsensitive over name, rename and dtype
     ├─ ExtendedSelection + SelectRows, 28px rows, no row numbers
     ├─ Interactive data columns (checkbox fixed at 50), widths kept on the content
+    ├─ RowSeparatorDelegate, the view default (one hairline on the row's last pixel)
     ├─ DtypeDelegate (single-click dropdown)
     └─ RenameDelegate (Enter/focus-out commits, Escape cancels)
 ```
@@ -251,7 +254,7 @@ Import from `qt/widgets/common/__init__.py`:
 - `NoWheelComboBox` — drops wheel events unless popup open. Use everywhere a combo sits in a scrollable dock.
 - `IconButton` / `TextButton` — see §4.
 
-Table helpers: `SelectTableModel`, `RowData`, `SelectFilterProxy`, `DtypeDelegate`, `RenameDelegate` and `SelectTableView` in `qt/widgets/select_table_widget.py` — reuse the model/delegate split for any editable column list. `SelectTableWidget` and `ComboBoxDelegate` remain aliases for older imports.
+Table helpers: `SelectTableModel`, `RowData`, `SelectFilterProxy`, `RowSeparatorDelegate`, `DtypeDelegate`, `RenameDelegate` and `SelectTableView` in `qt/widgets/select_table_widget.py` — reuse the model/delegate split for any editable column list. `SelectTableWidget` and `ComboBoxDelegate` remain aliases for older imports.
 
 **Target shared primitives:** `Chip`, `StatusBadge` and `ToolbarStrip` belong in `config_widgets.py`, not in a node. Do not fork them per dock.
 
@@ -364,7 +367,7 @@ Never hand a bare `QStyleOptionComboBox` to `drawComplexControl` — with no `pa
 
 ### Themes, user themes and preferences
 
-- `qt/theme_manager.py` is the **only** owner of `QApplication.setStyleSheet()`; every other surface listens to `ThemeManager.themeChanged` (`TriggerWindow.apply_appearance`, `LoggingDock.apply_theme`, `SQLFormulaEditor.apply_theme`, `NodeBase.apply_theme`). Never call `setStyleSheet` on the application or a window directly.
+- `qt/theme_manager.py` is the **only** owner of `QApplication.setStyleSheet()` (and, through `qt/qlementine_style.py`, of `QApplication.setStyle()`); every other surface listens to `ThemeManager.themeChanged` (`TriggerWindow.apply_appearance`, `LoggingDock.apply_theme`, `SQLFormulaEditor.apply_theme`, `NodeBase.apply_theme`). Never call `setStyleSheet` on the application or a window directly.
 - Theme files are schema 2 — a flat token dictionary is still read, but new files use:
 
   ```json
@@ -373,13 +376,28 @@ Never hand a bare `QStyleOptionComboBox` to `drawComplexControl` — with no `pa
   ```
 
   `extends` inherits a parent's tokens; a token missing from a user theme falls back to built-in dark with a warning. `appearance` (`dark`/`light`) drives System mode and the title-bar contrast, not the tokens.
-- Built-ins live in `src/trigger_designer/resources/qt/themes/` (twelve ship: Dark, Light, and the Nord, Dracula, Monokai, Gruvbox Dark, Gruvbox Light, Tokyo Night, Catppuccin Mocha, Catppuccin Latte, Solarized Light and Rose Pine Dawn palettes; every one carries the full token set, and a new built-in is just another JSON file there — discovery is a glob). User themes live in `%APPDATA%\Trigger Designer\themes` (env override `TRIGGER_DESIGNER_DATA_DIR`) and shadow a built-in with the same id. `duplicate_theme` is the supported way to fork a built-in; a shadowing theme must not `extends` the id it shadows (that resolves to itself and is reported as circular).
+- Built-ins live in `src/trigger_designer/resources/qt/themes/` (fourteen ship: Dark, Light, and the Nord, Dracula, Monokai, Gruvbox Dark, Gruvbox Light, Tokyo Night, Catppuccin Mocha, Catppuccin Latte, Solarized Light and Rose Pine Dawn palettes, each carrying the full token set, plus Qlementine Dark and Light, which `extends` Dark and Light and only switch the engine; a new built-in is just another JSON file there — discovery is a glob). User themes live in `%APPDATA%\Trigger Designer\themes` (env override `TRIGGER_DESIGNER_DATA_DIR`) and shadow a built-in with the same id. `duplicate_theme` is the supported way to fork a built-in; a shadowing theme must not `extends` the id it shadows (that resolves to itself and is reported as circular).
 - Everything the editor exposes is a **colour** token. Geometry, spacing, control heights and radius are design-system-owned (§§1, 4.1) and intentionally not themeable.
 - Preferences are one INI at `%APPDATA%\Trigger Designer\preferences.ini` (`qt/preferences.py`); the first run migrates the legacy `QSettings` scopes (`Blue Octa/Trigger Designer`, `Trigger/Trigger Designer`, `Trigger/NodeEditor`). Do not add new `QSettings` scopes.
 - The canvas rendering settings live in the same INI under `editor/render_detail_*` and are applied by `qt/render_settings.py`: one threshold (`render_detail_threshold`, a percentage of full size) plus a mode per element (`render_detail_card`, `_sockets`, `_label`, `_indicator`), each `always`, `auto` or `never`. The scene owns the policy (`QDMGraphicsScene.set_detail_policy`) and resolves it into one on/off map per element; the status indicator is painted by this application, so it is registered as the `badge` element.
 - Layout is one auto-saved record (`qt/layout_state.py`): `saveGeometry()` plus `saveState(1)` over stable dock objectNames (`NodesDock`, `ConfigDock`, `LoggingDock`, `DataPreviewDock`), with Window ▸ Save Current Layout / Reset Layout. There are no layout presets and no named workspaces.
 - The last session's file list is captured on close but only reopened when `layout/session` is on; it defaults off ("layout on, files off").
 - `QMdiArea` paints its own `background` brush, which no stylesheet rule reaches: `TriggerWindow._theme_mdi_background()` sets it from `canvas_background`.
+
+### Theme engines: QSS and Qlementine
+
+A theme names an `engine` — `"qss"` (default) or `"qlementine"` — in its JSON; it is inherited through `extends` like the tokens, so every built-in QSS theme has a Qlementine twin (`qlementine-<id>`) that is a two-line file over it, so colours and metrics (`border_radius`, `border_width`, `spacing_*`) are shared and cannot drift.
+
+**Choosing an engine.** Preferences → Appearance has a *Style engine* selector (`appearance/engine`, default `qlementine`); the theme list below it shows only that engine's themes, and switching engine keeps the same look through `ThemeManager.counterpart_id` (`nord` ↔ `qlementine-nord`; a theme with no twin falls to the dark or light default). *System* follows the selected engine. A fresh install starts on `qlementine-dark`; an existing stored theme is kept as it is. The engine is stored with the theme on OK and dropped on Cancel. `Theme.engine`, `ThemeManager.uses_qlementine()` and `duplicate_theme`/`export_theme`/`import_theme` carry it.
+
+- **`qss`** is everything above: `base.qss` skins every widget.
+- **`qlementine`** swaps in the [Qlementine](https://github.com/oclero/qlementine) `QStyle` (`PySide6-Qlementine`, Windows x64) and builds its theme from the *same colour tokens* (`qt/qlementine_style.py::theme_dict`, which is pure and unit-tested). Accent and font-size preferences still apply. The package is optional: without it the theme falls back to the QSS look and says so in `Theme.warnings`.
+- **No application stylesheet is applied while Qlementine is the style.** Qlementine does not support proxy styles and `QStyleSheetStyle` is one: with any sheet active a `QComboBox` overflows the stack in `sizeHint()` (oclero/qlementine#155, #125). `ThemeManager` therefore clears the sheet *before* installing Qlementine and applies none. Consequence: the `objectName` rules of §§4–14 do not apply under Qlementine, so those widgets take Qlementine's look (for example secondary captions render at body size). A widget-level `setStyleSheet` brings the proxy back for that widget **and its children** — do not add one.
+- The style object is created once and kept alive for the process (replacing a style deletes it while delegates still point at it, qlementine#133); leaving Qlementine restores the original style, palette and font.
+- **Code for both engines.** Do not hard-code geometry tuned to QSS metrics: measure it (`NodesDock._fit_height`, `WindowChrome._fit_menu_bar` re-fit on style/font change and never touch the classic result). Paint transparency in code rather than relying on a QSS rule (`WA_TranslucentBackground` on node content). An index widget in an item view needs a delegate that sizes it to its cell (`FillCellDelegate` in `qt/widgets/common/config_widgets.py`, used by the node palette and by table cell widgets such as the Aggregate node's Action column): Qlementine returns an empty text rectangle for text-less items. Use the context overload `QTimer.singleShot(0, self, fn)` for deferred layout fixes so they die with the widget.
+- **A widget whose whole look is one QSS rule is invisible under Qlementine**, so give it a `paintEvent` that draws itself when `QApplication.styleSheet()` is empty and falls through to `super()` otherwise (classic stays pixel-identical): the Formula `_ResizeGrip` and `_Separator`, the `WindowChrome` hairline and caption-button hover, and `_MenuBarEdgeMask`, which hides the rules Qlementine draws along its menu bar. A combo placed as a cell widget must also re-measure itself once it has its real width (`FillCellDelegate` does this), or its popup is as wide as a stale 640 px hint.
+- **Tab bars:** Qlementine draws only the selected tab, in the window colour, on a tab-bar band. The band colour is therefore the whole selected-tab cue; `theme_dict` makes it clearly lighter than the window on dark themes and 12% darker on light ones.
+- `uv` resolves `PySide6-Qlementine` from a fork rebuilt for PySide6 6.12 (`[tool.uv.sources]` in `pyproject.toml`; the PyPI wheel is built for 6.10.2 and does not import on 6.12). Bumping PySide6 means rebuilding that wheel: see the fork's `PYSIDE6_6.12.md`.
 
 ---
 
@@ -458,7 +476,9 @@ Target objectNames: `ChromeStrip`, `ChromeChip`, `ChromeChipDot`, `ChromeSearch`
 | Dtype | 10px Micro after the column name | same |
 | Sort indicator | small chevron, accent | same |
 
-- Do not draw vertical grid lines. The row separator is enough.
+- Do not draw vertical grid lines. The row separator is enough: the Select
+  table's default `RowSeparatorDelegate` paints it on the row's last pixel, so
+  turning `showGrid` off never leaves a row without a boundary.
 - `QHeaderView::section` must use the theme tokens; no default Fusion header.
 - Editable tables keep the checkbox column fixed and every data column
   `Interactive`; keep the widths on the content so a dock rebuild does not
@@ -664,7 +684,13 @@ ICON_SIZE = 16
 
 `IconButton`, `TextButton`, `Chip` and `StatusBadge` use these constants. Do not repeat the numbers in node files.
 
-`qt/widgets/common/window_chrome.py` owns the window row: `CHROME_H = 32`, `CAPTION_BUTTON_W = 44`, `RESIZE_MARGIN = 5`. Pure Qt on purpose: the 5px zone replaces the native border (no 1px hover assist), the frameless window gets no DWM shadow or rounded corners, and Win11's Snap Layouts flyout does not open from the maximize button. Those need Win32 calls and stay out until asked for.
+`qt/widgets/common/window_chrome.py` owns the window row: `CHROME_H = 32`, `CAPTION_BUTTON_W = 44`, `RESIZE_MARGIN = 5`. On Windows `qt/helpers/win_caption.py` hands the frameless window a real frame back (DWM shadow, rounded corners, Snap Layouts, native drag and resize) and answers `WM_NCCALCSIZE` / `WM_NCHITTEST`; elsewhere the Qt path (`startSystemMove` / `startSystemResize` and the 5px edge filter) does the same jobs.
+
+#### Dialogs and other windows
+
+- Every app dialog subclasses `FramelessDialog` (`qt/widgets/common/frameless_dialog.py`), never `QDialog`: a 32px `DialogChrome` row (title + close) replaces the OS caption so the bar follows the theme. Subclasses keep `QVBoxLayout(self)`; the base reserves the row with `setContentsMargins(0, CHROME_H, 0, 0)`. Pass `resizable=False` for a fixed-size dialog. `exec()` results and Esc are unchanged.
+- QSS owns the look (`#DialogChrome`, `#DialogChromeTitle`, `QDialog[frameless="true"]`; the close button reuses `WindowChromeButton`). QStyle owns the painting: both widgets draw their QSS box through `QStyleOption` + `drawPrimitive(PE_Widget)`, and theme changes go through `repolish()`.
+- Windows that keep an OS frame because Qt owns them - floating dock windows, `DataPreviewWindow`, Qt's own message / input / colour boxes - are recoloured by `qt/helpers/native_title_theme.py` (caption, text and border colours on Windows 11, the dark/light flag on Windows 10). It is installed once in `main.py`, skips frameless windows and re-applies on every theme change. The native file picker is an OS window and cannot be themed.
 
 ### ObjectName registry
 
@@ -679,7 +705,8 @@ ICON_SIZE = 16
 | `EmptyStateLabel` | shared | — |
 | `WindowChrome` | main window | — |
 | `WindowChromeIcon`, `WindowChromeTitle` | main window | — |
-| `WindowChromeButton` | main window | hover, pressed, `[danger="true"]` tone |
+| `WindowChromeButton` | main window, `FramelessDialog` | hover, pressed, `[danger="true"]` tone |
+| `DialogChrome`, `DialogChromeTitle` | `FramelessDialog` | — |
 | `PreviewStrip` → `ChromeStrip` | Preview / shared chrome | — |
 | `PreviewNodeChip` → `ChromeChip` | Preview / shared chrome | — |
 | `PreviewSearchEdit` → `ChromeSearch` | Preview / shared chrome | hover, focus, disabled |

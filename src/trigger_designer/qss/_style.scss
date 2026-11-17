@@ -1958,6 +1958,76 @@ QDockWidget {
     }
 }
 
+/* Dock host (Qt Advanced Docking System) ---------------------------------
+
+Mirror of the block in resources/qt/themes/base.qss (keep them in agreement).
+
+--------------------------------------------------------------------------- */
+ads--CDockContainerWidget { background: $COLOR_BACKGROUND_1; }
+ads--CDockAreaWidget {
+    background: $COLOR_BACKGROUND_1;
+    border: $BORDER_2;
+    border-radius: $SIZE_BORDER_RADIUS;
+}
+ads--CDockAreaTitleBar {
+    background: $COLOR_BACKGROUND_3;
+    border: 0;
+    border-bottom: $BORDER_2;
+}
+ads--CDockWidget { background: $COLOR_BACKGROUND_1; border: 0; }
+ads--CDockAreaTabBar {
+    background: transparent;
+    border: 0;
+    padding: 0;
+    margin: 0;
+}
+ads--CDockWidgetTab {
+    background: transparent;
+    border: 0;
+    border-right: 1px solid $COLOR_BACKGROUND_4;
+    border-bottom: 2px solid transparent;
+    padding: 0 10px;
+    min-height: 26px;
+    &:hover {
+        background: $COLOR_BACKGROUND_5;
+        border-bottom: 2px solid $COLOR_TEXT_2;
+    }
+    &[activeTab="true"] {
+        background: $COLOR_BACKGROUND_1;
+        border-bottom: 2px solid $COLOR_ACCENT_2;
+    }
+    QLabel { background: transparent; color: $COLOR_TEXT_3; }
+    &:hover QLabel { color: $COLOR_TEXT_1; }
+    &[activeTab="true"] QLabel { color: $COLOR_TEXT_1; font-weight: 600; }
+}
+ads--CTitleBarButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0;
+    &:hover { background: $COLOR_BACKGROUND_5; border: $BORDER_2; }
+    &:pressed { background: $COLOR_BACKGROUND_6; border: $BORDER_2; }
+}
+ads--CDockWidgetTab QPushButton#tabCloseButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 3px;
+    padding: 0;
+    &:hover { background: $COLOR_BACKGROUND_5; border: $BORDER_2; }
+    &:pressed { background: $COLOR_BACKGROUND_6; border: $BORDER_2; }
+}
+ads--CDockSplitter {
+    qproperty-handleWidth: 1;
+    background: $COLOR_BACKGROUND_4;
+}
+ads--CDockOverlayCross {
+    qproperty-iconFrameColor: $COLOR_BACKGROUND_4;
+    qproperty-iconBackgroundColor: $COLOR_BACKGROUND_1;
+    qproperty-iconOverlayColor: $COLOR_ACCENT_2;
+    qproperty-iconArrowColor: $COLOR_TEXT_1;
+    qproperty-iconShadowColor: $COLOR_BACKGROUND_3;
+}
+
 /* QTreeView QListView QTableView -----------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtreeview

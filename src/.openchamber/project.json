@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "projectActions": [
+    {
+      "id": "4e7af43d-ae5b-4c1e-9ec0-767872a3c36b",
+      "name": "Run App",
+      "command": "uv run trigger-designer",
+      "icon": "play"
+    }
+  ]
+}

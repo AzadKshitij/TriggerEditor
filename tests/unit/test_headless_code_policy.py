@@ -106,6 +106,12 @@ FUTURE = [
         "import json\nfrom trigger_designer.core.shaping.file_output import write_node as _w\n"
         '_w([df], json.loads(\'{"filePath": "C:/data/.out.tdtmp-ab12cd34.csv"}\'))'
     ),
+    # A reshape node imports its own runtime function, not the generic one.
+    (
+        "import json\nfrom trigger_designer.core.shaping.reshape import run_unpivot as _run_node\n"
+        '_run_node([df], json.loads(\'{"id_columns": ["a"], "value_columns": ["b"]}\'))'
+    ),
+    "from trigger_designer.core.shaping.reshape import run_pivot as _run_node\n",
     "from datetime import datetime, timedelta\nimport os",
 ]
 
@@ -120,6 +126,8 @@ TAMPERED = [
     "d = {'output_path': 'C:/elsewhere/x.xlsx'}",
     'import json\njson.loads(\'{"filePath": "C:/elsewhere/x.csv"}\')',
     "from trigger_designer.core.shaping.Evil import run_node",
+    # The name is allowed for the package, but not every export of it is.
+    "from trigger_designer.core.shaping.reshape import run_something_else",
     "from trigger_designer.core.input_source import open_anything",
     (
         "from trigger_designer.core.excel.frame_export import write_frame_xlsx\n"

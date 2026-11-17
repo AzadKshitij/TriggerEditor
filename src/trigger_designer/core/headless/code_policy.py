@@ -41,9 +41,17 @@ GENERATED_IMPORTS: dict[str, set[str] | None] = {
     "trigger_designer.core.excel.frame_export": {"write_frame_xlsx"},
     "trigger_designer.core.workpaper.node_runner": {"run_workpaper"},
 }
-#: module prefix -> names (module part must match ``[a-z_]+``).
+#: package prefix -> names generated code may import from its modules (the
+#: module part must match ``[a-z_]+``). A node imports the runtime function it
+#: was built around - ``shaping.reshape`` exports ``run_unpivot`` next to
+#: ``run_node`` - so the list names exports, not modules.
 GENERATED_IMPORT_PREFIXES: dict[str, set[str]] = {
-    "trigger_designer.core.shaping.": {"run_node", "write_node"},
+    "trigger_designer.core.shaping.": {
+        "run_node",
+        "write_node",
+        "run_pivot",
+        "run_unpivot",
+    },
 }
 PATH_KEYS = frozenset({"filePath", "output_path", "db_path"})
 

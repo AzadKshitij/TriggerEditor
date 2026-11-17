@@ -34,9 +34,12 @@ from qtpy.QtGui import (
     QFontMetrics,
     QIcon,
     QPainter,
+    QPaintEvent,
+    QPalette,
     QPen,
     QPixmap,
     QPolygonF,
+    QShowEvent,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -67,6 +70,11 @@ CAPTION_BUTTON_W = 44
 RESIZE_MARGIN = 5
 #: App-icon slot: the 16px icon plus the gap before the menus.
 _ICON_SLOT_W = 32
+#: Width the menu bar is measured at: wide enough that no menu wraps.
+_MENU_PROBE_W = 4096
+#: A menu bar this much shorter than the row (or more) is centred in it.
+_CENTER_MENU_MIN_GAP = 6
+_QWIDGETSIZE_MAX = 16777215
 #: How often a lit caption button re-checks where the pointer is, in ms.
 _NATIVE_WATCH_MS = 120
 
@@ -145,8 +153,30 @@ class CaptionButton(IconButton):
         if danger:
             self.setProperty("danger", True)
         self.setFixedSize(QSize(CAPTION_BUTTON_W, CHROME_H))
+        self.setFlat(True)
         self._glyph = glyph
         self.apply_theme()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        # Windows reports hover and press for these buttons (see
+        # set_native_visual); base.qss paints them for the QSS themes, here
+        # they are painted under a style that has no stylesheet.
+        if not QApplication.instance().styleSheet():
+            fill = self._native_fill()
+            if fill is not None:
+                painter = QPainter(self)
+                painter.fillRect(self.rect(), fill)
+                painter.end()
+        super().paintEvent(event)
+
+    def _native_fill(self) -> QColor | None:
+        pressed = bool(self.property("nativePress"))
+        if not (pressed or bool(self.property("nativeHover"))):
+            return None
+        manager = get_theme_manager()
+        if self.property("danger"):
+            return manager.color("danger", "#e0686c")
+        return manager.color("background_pressed" if pressed else "background_hover")
 
     def set_glyph(self, glyph: str, tooltip: str) -> None:
         """Swap the painted glyph (maximize <-> restore) and its labels."""
@@ -183,6 +213,46 @@ class CaptionButton(IconButton):
     def apply_theme(self) -> None:
         color = get_theme_manager().color("text_secondary", "#c6cdd5")
         self.setIcon(caption_icon(self._glyph, color))
+
+
+class _MenuBarEdgeMask(QWidget):
+    """Hides the hairlines a style draws along the top and bottom of a menu bar.
+
+    Qlementine paints its menu bar panel with a rule on both long edges, as it
+    expects the bar to span the window. Inside this row the bar is a small
+    passenger, and the two rules read as stray lines. They are drawn by the
+    style, so this click-through sibling repaints those two pixel rows in the
+    row's own colour. QSS themes have no such lines and are left alone.
+    """
+
+    def __init__(self, chrome: QWidget, bar: QMenuBar) -> None:
+        super().__init__(chrome)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self._bar = bar
+        bar.installEventFilter(self)
+        self._follow_bar()
+
+    def eventFilter(self, obj: QObject, event: QEvent) -> bool:
+        if obj is self._bar and event.type() in (
+            QEvent.Type.Move,
+            QEvent.Type.Resize,
+            QEvent.Type.Show,
+        ):
+            self._follow_bar()
+        return False
+
+    def _follow_bar(self) -> None:
+        self.setGeometry(self._bar.geometry())
+        self.raise_()
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        if QApplication.instance().styleSheet():
+            return
+        painter = QPainter(self)
+        color = self.palette().color(QPalette.ColorRole.Window)
+        painter.fillRect(0, 0, self.width(), 1, color)
+        painter.fillRect(0, self.height() - 1, self.width(), 1, color)
+        painter.end()
 
 
 class WindowChrome(QWidget):
@@ -223,6 +293,7 @@ class WindowChrome(QWidget):
         # presses there start the window drag instead of landing on the bar.
         menu_bar.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
         row.addWidget(menu_bar)
+        self._bar_edges = _MenuBarEdgeMask(self, menu_bar)
 
         row.addStretch(1)
         self._title_label = QLabel(self)
@@ -304,6 +375,88 @@ class WindowChrome(QWidget):
 
     # -- theme and labels -----------------------------------------------------
 
+    def showEvent(self, event: QShowEvent) -> None:
+        super().showEvent(event)
+        # The menus exist by now; measure the bar once the window is laid out.
+        QTimer.singleShot(0, self, self._fit_menu_bar)
+
+    def changeEvent(self, event: QEvent) -> None:
+        super().changeEvent(event)
+        # Menu widths follow the font and the style, and both change after the
+        # theme-changed signal that re-themes this row.
+        if event.type() in (
+            QEvent.Type.FontChange,
+            QEvent.Type.ApplicationFontChange,
+            QEvent.Type.StyleChange,
+        ):
+            QTimer.singleShot(0, self, self._fit_menu_bar)
+
+    def paintEvent(self, event: QPaintEvent) -> None:
+        super().paintEvent(event)
+        if QApplication.instance().styleSheet():
+            return  # the QSS themes draw the row and its hairline themselves
+        painter = QPainter(self)
+        painter.fillRect(
+            0,
+            self.height() - 1,
+            self.width(),
+            1,
+            get_theme_manager().color("border_primary"),
+        )
+        painter.end()
+
+    def _fit_menu_bar(self) -> None:
+        # Re-balancing re-lays the row out, which makes an open menu bar drop
+        # its active action: only do it when the bar's width really changed.
+        widened = self._unwrap_menu_bar()
+        self._center_menu_bar()
+        if widened:
+            self._balance_title()
+
+    def _unwrap_menu_bar(self) -> bool:
+        """Give the menu bar the width of its menus on one row.
+
+        A ``QMenuBar`` wraps its menus to its *current* width and this row
+        sizes it to its hint, so a bar first laid out too narrow stays
+        wrapped (a style whose menus are wider, such as Qlementine, loses
+        "Help" to a second row). Laid out wide, the menus' own widths add up
+        to the room they need; the hint is no use there, because a wide bar
+        also pushes the Help menu to its far edge. A bar whose menus already
+        share one row is left exactly as the style made it. Returns whether
+        the bar was resized.
+        """
+        bar = self._menu_bar
+        rects = [r for r in map(bar.actionGeometry, bar.actions()) if r.width() > 0]
+        if len({r.y() for r in rects}) < 2:
+            return False
+        bar.setMinimumWidth(0)
+        bar.resize(_MENU_PROBE_W, bar.height())
+        rects = [r for r in map(bar.actionGeometry, bar.actions()) if r.width() > 0]
+        needed = sum(r.width() for r in rects) + 2 * rects[0].x()
+        bar.setMinimumWidth(needed)
+        # Leave the bar at its real width: _balance_title() reads it.
+        bar.resize(needed, bar.height())
+        self.layout().invalidate()
+        return True
+
+    def _center_menu_bar(self) -> None:
+        """Centre a menu bar that is clearly shorter than the row.
+
+        The row stretches the bar to its full height and a ``QMenuBar`` keeps
+        its menus at the top, so a style with a short bar (Qlementine: 22 px
+        in a 32 px row) leaves them riding high next to the title. A bar
+        nearly as tall as the row (the QSS themes: 28 px) is left stretched.
+        """
+        bar = self._menu_bar
+        height = bar.sizeHint().height()
+        if 0 < height <= CHROME_H - _CENTER_MENU_MIN_GAP:
+            bar.setFixedHeight(height)
+            self.layout().setAlignment(bar, Qt.AlignmentFlag.AlignVCenter)
+        else:
+            bar.setMinimumHeight(0)
+            bar.setMaximumHeight(_QWIDGETSIZE_MAX)
+            self.layout().setAlignment(bar, Qt.AlignmentFlag(0))
+
     def apply_theme(self) -> None:
         for button in (
             self._minimize_button,
@@ -312,6 +465,7 @@ class WindowChrome(QWidget):
         ):
             button.apply_theme()
         self._refresh_icon()
+        self._fit_menu_bar()
         # Menu padding is themed: the left group may have changed width.
         self._balance_title()
         if self.caption is not None:
@@ -603,8 +757,8 @@ class _ResizeEdgeFilter(QObject):
 
     def __init__(
         self,
-        window: QMainWindow,
-        menu_bar: QMenuBar,
+        window: QWidget,
+        menu_bar: QMenuBar | None = None,
         margin: int = RESIZE_MARGIN,
     ) -> None:
         super().__init__(window)
@@ -638,7 +792,7 @@ class _ResizeEdgeFilter(QObject):
             return False
 
         edges = self._edges_at(event.globalPosition().toPoint())
-        if obj is self._menu_bar:
+        if self._menu_bar is not None and obj is self._menu_bar:
             # The bar owns its own top few pixels: a press near the top of a
             # menu must open it, not start a resize. The top edge stays
             # resizable left of, right of and behind the menus.

@@ -123,8 +123,7 @@ _LAZY_NODE_SPECS = [
         "node_code": PreparationNodes.NORMALIZE_COLUMNS,
         "node_type": NodeTypes.PREPARATION,
         "node_title": "Normalize",
-        # Reuses the Select glyph until a dedicated icon ships.
-        "icon": "node_select",
+        "icon": "node_normalize",
     },
     {
         "module_path": "Report.graph",

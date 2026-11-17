@@ -1,12 +1,13 @@
 # The Config Dock, Data Preview, Logs and Problems
 
-Around the canvas there are three panels. The **Node Configuration** dock (the Config Dock) is where you set up a node. The bottom panels (**Data Preview**, **Logs** and **Run History**) share one tab bar and show what the workflow is doing and what it produced.
+Around the canvas there are three panels. The **Node Configuration** dock (the Config Dock) is where you set up a node. The panels under the canvas (**Data Preview**, **Logs** and **Run History**) share one tab group and show what the workflow is doing and what it produced.
 
 [Back to the guide index](README.md)
 
 ## On this page
 
 - [Show, hide and arrange the panels](#show-hide-and-arrange-the-panels)
+- [Arranging panels](#arranging-panels)
 - [Config Dock](#config-dock)
 - [Data Preview](#data-preview)
 - [Logs](#logs)
@@ -21,14 +22,28 @@ All panels are in the **Window** menu.
 
 | Menu entry | Panel | Where it opens |
 |---|---|---|
-| Node Configuration | Config Dock | Left of the canvas |
-| Show Logger | Logs | Bottom |
-| Data Preview (`Ctrl+Shift+D`) | Data Preview | Bottom, in the same tab bar as Logs |
-| Problems | Problems | Bottom, in the same tab bar |
-| Run History | Run History | Bottom, in the same tab bar |
-| Nodes Toolbar | The node palette | Top |
+| Node Configuration | Config Dock | Left, full height |
+| Show Logger | Logs | Under the canvas |
+| Data Preview (`Ctrl+Shift+D`) | Data Preview | Under the canvas, as a tab with Logs |
+| Problems | Problems | Under the canvas, as a tab with Logs |
+| Run History | Run History | Under the canvas, as a tab with Logs |
+| Nodes Toolbar | The node palette | Top, fixed (cannot be moved or closed) |
 
-You can drag a panel's tab out of the tab bar to float it, or drag a panel to another edge. The app remembers the layout when you close it (switch this off in **Edit > Settings > Layout**). **Window > Save Current Layout** stores the arrangement now; **Window > Reset Layout** puts everything back where it started.
+The app remembers the layout when you close it (switch this off in **Edit > Settings > Layout**). **Window > Save Current Layout** stores the arrangement now; **Window > Reset Layout** puts everything back where it started. Saved layouts from earlier versions are not carried over: the first start after an upgrade shows the default layout.
+
+### Arranging panels
+
+Drag a panel by its tab or title bar. While you drag, the places it can land are highlighted, and a translucent outline shows the area it will take.
+
+- **Centre of another panel**: the panel becomes a tab with that panel.
+- **Top, bottom, left or right of a panel**: the panel is split next to that panel.
+- **Edge of the window**: the panel takes a whole row or column across the window.
+- **Outside the window**: the panel floats in its own window.
+- **The workflow canvas**: the canvas is a drop target too, so a panel can sit beside or below it.
+
+The **Nodes** palette at the top is fixed. You cannot drag it or close it.
+
+The default layout puts **Node Configuration** down the whole left side. The canvas is on the top right, and **Logs**, **Data Preview** and **Run History** are tabs below it.
 
 Every panel follows the workflow window that is in front. If you have two workflows open, switching tabs switches what the panels show. Each workflow has its own logs, problems and preview.
 
@@ -150,5 +165,5 @@ More on reading and fixing errors is in [Errors and problems](errors-and-problem
 | The preview and my output file differ in row count | The preview is capped at 1,000 rows or 2 MB. Open the output file, or look at the counts chip for the true total. |
 | Export Excel fails | Close the target file in Excel, or pick another name. If the message mentions that Excel export is not available, use Export CSV instead and tell your administrator. |
 | Logs are too noisy | Raise **Level** to INFO or WARNING. |
-| A panel has vanished | **Window > ...** and tick it again, or **Window > Reset Layout**. |
+| A panel has vanished | Open it again from the **Window** menu. If that does not bring it back, use **Window > Reset Layout**. |
 | The Config Dock layout looks stale after loading a very old file | Click another node and then the first one again. |

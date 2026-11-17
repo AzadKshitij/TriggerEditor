@@ -337,6 +337,25 @@ QPushButton#WindowChromeButton {{
     background-color: {danger};
     border: none; }}
 
+/* Frameless dialogs ------------------------------------------------------
+
+FramelessDialog (qt/widgets/common/frameless_dialog.py): the dialog's own
+title row replaces the OS caption so it follows the theme. The 1px border is
+what a native frame would have given on macOS / Linux; the close button reuses
+the WindowChromeButton rules above.
+
+--------------------------------------------------------------------------- */
+QDialog[frameless="true"] {{
+  background-color: {background_primary};
+  border: 1px solid {border_primary}; }}
+#DialogChrome {{
+  background-color: {background_secondary};
+  border: none;
+  border-bottom: 1px solid {border_primary}; }}
+#DialogChromeTitle {{
+  background: transparent;
+  color: {text_primary}; }}
+
 /* QMenu ------------------------------------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qmenu
@@ -1543,6 +1562,89 @@ QDockWidget {{
     QDockWidget::float-button:pressed {{
       image: url(":/qss_icons/dark/rc/window_undock_pressed.png"); }}
 
+/* Dock host (Qt Advanced Docking System) ---------------------------------
+
+Chrome of the free-form docking system (qt/docking/). Base borders stay a
+constant 1px so hover and the active tab never shift the layout.
+Overlay icon colours are Q_PROPERTYs set here, not painted in Python.
+
+--------------------------------------------------------------------------- */
+ads--CDockContainerWidget {{
+  background: {background_primary}; }}
+ads--CDockAreaWidget {{
+  background: {background_primary};
+  border: 1px solid {border_primary};
+  border-radius: 4px; }}
+ads--CDockAreaTitleBar {{
+  background: {background_secondary};
+  border: 0;
+  border-bottom: 1px solid {border_primary}; }}
+ads--CDockWidget {{
+  background: {background_primary};
+  border: 0; }}
+/* The tab strip is a QScrollArea; the global scroll-area frame would inset
+   and clip the tabs (their underline), so it is flattened here. */
+ads--CDockAreaTabBar {{
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0; }}
+ads--CDockWidgetTab {{
+  background: transparent;
+  border: 0;
+  border-right: 1px solid {border_primary};
+  border-bottom: 2px solid transparent;
+  padding: 0 10px;
+  min-height: 26px; }}
+  ads--CDockWidgetTab:hover {{
+    background: {background_hover};
+    border-bottom: 2px solid {text_secondary}; }}
+  ads--CDockWidgetTab[activeTab="true"] {{
+    background: {background_primary};
+    border-bottom: 2px solid {accent_primary}; }}
+  ads--CDockWidgetTab QLabel {{
+    background: transparent;
+    color: {text_inactive}; }}
+  ads--CDockWidgetTab:hover QLabel {{
+    color: {text_primary}; }}
+  ads--CDockWidgetTab[activeTab="true"] QLabel {{
+    color: {text_primary};
+    font-weight: 600; }}
+ads--CTitleBarButton {{
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 0; }}
+  ads--CTitleBarButton:hover {{
+    background: {background_hover};
+    border: 1px solid {border_primary}; }}
+  ads--CTitleBarButton:pressed {{
+    background: {background_pressed};
+    border: 1px solid {border_primary}; }}
+ads--CDockWidgetTab QPushButton#tabCloseButton {{
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  padding: 0; }}
+  ads--CDockWidgetTab QPushButton#tabCloseButton:hover {{
+    background: {background_hover};
+    border: 1px solid {border_primary}; }}
+  ads--CDockWidgetTab QPushButton#tabCloseButton:pressed {{
+    background: {background_pressed};
+    border: 1px solid {border_primary}; }}
+/* Only ``qproperty-handleWidth`` reaches dock splitters: their handle is
+   painted by the global ``QSplitter::handle`` rule, and its size is clamped in
+   ``AdsDockHost._tidy_splitters``. */
+ads--CDockSplitter {{
+  qproperty-handleWidth: 1;
+  background: {border_primary}; }}
+ads--CDockOverlayCross {{
+  qproperty-iconFrameColor: {border_primary};
+  qproperty-iconBackgroundColor: {background_primary};
+  qproperty-iconOverlayColor: {accent_primary};
+  qproperty-iconArrowColor: {text_primary};
+  qproperty-iconShadowColor: {background_secondary}; }}
+
 /* QTreeView QListView QTableView -----------------------------------------
 
 https://doc.qt.io/qt-5/stylesheet-examples.html#customizing-qtreeview
@@ -1932,6 +2034,22 @@ QLabel#ConfigSectionInfo {{
   margin: 2px; }}
 QLabel#EmptyStateLabel {{
   color: {text_inactive}; }}
+
+/* Welcome dialog: the bundled example is one prominent row above the buttons. */
+QFrame#WelcomeSample {{
+  background-color: {background_secondary};
+  border: 1px solid {border_primary};
+  border-radius: 6px; }}
+QLabel#WelcomeSampleTitle {{
+  color: {text_primary};
+  font-size: 12px;
+  font-weight: 600; }}
+QLabel#WelcomeSampleDescription {{
+  color: {text_inactive};
+  font-size: 11px; }}
+QPushButton#OpenSampleButton {{
+  min-width: 132px; }}
+
 /* About dialog: the app identity sits above the details table. */
 QLabel#AboutTitle {{
   color: {text_primary};

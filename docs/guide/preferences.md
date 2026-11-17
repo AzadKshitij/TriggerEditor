@@ -37,13 +37,22 @@ The values are read each time they are needed: error settings take effect on the
 
 | Setting | Default | Meaning |
 |---|---|---|
-| Theme | Dark | The colour scheme. **System - follow Windows appearance** switches between a light and a dark theme with Windows. Built in: Dark, Light, Catppuccin Latte, Catppuccin Mocha, Dracula, Gruvbox Dark, Gruvbox Light, Monokai, Nord, Rose Pine Dawn, Solarized Light, Tokyo Night. Built-in themes are read-only. |
+| Style engine | Qlementine | How controls are drawn. **Qlementine** uses the Qlementine widget style; **Classic (QSS)** uses a stylesheet. The theme list shows the themes of the chosen engine, and switching engine keeps the same theme where it has a counterpart. |
+| Theme | Qlementine Dark | The colour scheme. **System - follow Windows appearance** switches between a light and a dark theme with Windows. Built in, for each engine (Qlementine ones are prefixed *Qlementine*): Dark, Light, Catppuccin Latte, Catppuccin Mocha, Dracula, Gruvbox Dark, Gruvbox Light, Monokai, Nord, Rose Pine Dawn, Solarized Light, Tokyo Night. Built-in themes are read-only. |
 | Customize... | | Makes an editable copy of the selected theme and opens the theme editor. |
 | Import... / Export... / Delete | | Share a theme as a `.json` file; delete one of your own themes. |
 | Accent | Theme default | The highlight colour. Choose one of seven swatches or a custom colour; **Theme Default** clears it. |
 | Application text (font size) | System default | 8 to 20 pt. **Default** goes back to the system size. |
 
 Stored as `appearance/theme`, `appearance/accent` (empty means the theme's own) and `appearance/font_size` (0 means the system size).
+
+### Qlementine themes
+
+**Qlementine Dark** and **Qlementine Light** use the same colours as Dark and Light but draw the controls (buttons, menus, tabs, scroll bars, text boxes) with the Qlementine widget style: rounder, animated and drawn by the system rather than by a stylesheet. Pick one in the theme list like any other; the accent, font size, **Customize...** and Import/Export all work with it, and a customised copy stays a Qlementine theme.
+
+- They need the Qlementine component, which ships for 64-bit Windows. Where it is missing, the theme list still shows them but they look like Dark or Light.
+- A few touches of the standard look are not part of Qlementine's design and are drawn plainly instead, such as the smaller grey captions under some panels.
+- You can switch between a Qlementine theme and any other at any time, with a workflow open.
 
 ## Layout
 

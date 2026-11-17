@@ -25,6 +25,7 @@ from trigger_designer.qt.widgets.common import (
     IconButton,
     NoWheelComboBox,
 )
+from trigger_designer.qt.widgets.common.config_widgets import FillCellDelegate
 
 
 class AggregateContent(ShapingContent):
@@ -108,6 +109,7 @@ class AggregateContent(ShapingContent):
         table.setColumnWidth(0, 180)
         table.setColumnWidth(1, 120)
         table.setColumnWidth(2, 240)
+        table.setItemDelegateForColumn(1, FillCellDelegate(table))
         table.itemChanged.connect(self._on_alias_edited)
         self.actions_table = table
 

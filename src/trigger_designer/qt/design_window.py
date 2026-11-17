@@ -46,6 +46,7 @@ from trigger_designer.qt.helpers.eval_progress import (
     eval_progress_dialog,
     make_progress_dialog,
 )
+from trigger_designer.qt.canvas_view import TriggerGraphicsView
 from trigger_designer.qt.performance_scene import TriggerScene, settle_multi_input_nodes
 from trigger_designer.qt.render_settings import apply_render_settings_to_scene
 from trigger_designer.qt.resource_manager import ResourceManager
@@ -114,6 +115,7 @@ class TriggerSubWindow(
     WorkflowExecutionMixin, ContextMenuMixin, ExternalEditMixin, NodeEditorWidget
 ):
     Scene_class = TriggerScene
+    GraphicsView_class = TriggerGraphicsView
     itemSelected = Signal(object)
     #: Emitted when a run published fresh ``execution_results``: preview data
     #: for a node lives there, not in ``node.value``.
