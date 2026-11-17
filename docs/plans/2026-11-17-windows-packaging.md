@@ -1,4 +1,4 @@
-# Windows packaging: a portable zip and an installer, both with the editor, the CLI and the AI (MCP) server
+# Windows packaging: a portable zip and an installer, both with the editor, the `tds` command line and the AI (MCP) server
 
 Status: plan, nothing built yet. Written 2026-11-17 against `main` at `ca38cb3` (version `0.1.0a2`).
 
@@ -10,6 +10,7 @@ Status: plan, nothing built yet. Written 2026-11-17 against `main` at `ca38cb3` 
 | D4 | The installer is built with **Inno Setup**. |
 | D9 | Builds ship **unsigned for now**, with a documented SmartScreen note. The build keeps an optional signing hook. |
 | D6 | Default install scope is **per user** (an all-users option stays in the setup dialog). |
+| D13 | **Short command names.** The command line is **`tds`**, and the AI-tool server is the subcommand **`tds mcp`** (one program, like `gh`). The long names `trigger-designer-cli` and `trigger-designer-mcp` stay as aliases. |
 
 Still open (defaults used until changed): D8 creates only a default policy file, no AI workspace folder; releases are a **draft pre-release** from a GitHub Actions run on a `v*` tag.
 
@@ -17,7 +18,7 @@ Still open (defaults used until changed): D8 creates only a default policy file,
 
 People can use Trigger Designer, its command-line program and its AI-tool (MCP) server **without installing Python or any developer tooling**, in one of two forms:
 
-1. **Portable**: download one zip, unzip anywhere, run. Contains the editor, `trigger-designer-cli` and `trigger-designer-mcp`. Writes nothing outside its own folder and the user's data folder, and needs no administrator rights.
+1. **Portable**: download one zip, unzip anywhere, run. Contains the editor and `tds.exe` (the command line, which also starts the AI-tool server with `tds mcp`). Writes nothing outside its own folder and the user's data folder, and needs no administrator rights.
 2. **Installer** (Windows 10/11, 64-bit): a setup program that lets the user choose **what to install**: the editor, the command-line program, the AI-tool server. It adds Start Menu entries, optionally puts the command-line tools on `PATH`, registers `.tds` files, and uninstalls cleanly.
 
 Non-goals for this plan: macOS or Linux builds, an automatic updater (the app stays offline by design), code-signing infrastructure beyond what is needed to sign the two artifacts, an MSI for enterprise deployment (listed under "Later").
@@ -35,9 +36,9 @@ Non-goals for this plan: macOS or Linux builds, an automatic updater (the app st
 
 ## Gaps this plan has to close
 
-1. **The MCP server cannot run from a frozen build as it is.** The data tools start `[sys.executable, "-m", "trigger_designer.cli", ...]`. In a PyInstaller exe `sys.executable` is the exe itself and `-m` is not understood. Nothing in `src/` branches on `sys.frozen`.
-2. **No spec entry, hidden imports or smoke test for the MCP server.** The `mcp` package pulls in `starlette`, `uvicorn`, `httpx2`, `pydantic`, `anyio`, `pyjwt`, `pywin32` and more; their PyInstaller behaviour is untested.
-3. **The "portable" build excludes the CLI** (and would exclude MCP) because it is single-file and GUI-only (`console=False`). A GUI-subsystem exe is the wrong host for stdio tools.
+1. **The MCP server cannot run from a frozen build as it is.** The data tools start `[sys.executable, "-m", "trigger_designer.cli", ...]`. In a PyInstaller exe `sys.executable` is the exe itself and `-m` is not understood. Nothing in `src/` branches on `sys.frozen`. (With D13 this is solved by construction: when frozen, the helper is `tds.exe` itself.)
+2. **No hidden imports or smoke test for the MCP server inside the program that will carry it (`tds.exe`).** The `mcp` package pulls in `starlette`, `uvicorn`, `httpx2`, `pydantic`, `anyio`, `pyjwt`, `pywin32` and more; their PyInstaller behaviour is untested.
+3. **The single-file build excludes the CLI** (and would exclude MCP) because it is GUI-only (`console=False`). A GUI-subsystem exe is the wrong host for stdio tools, which is why the full package is a folder (D1).
 4. **The installer script has problems:**
    - the version (`0.1.0`) and publisher text are hard-coded and stale;
    - the `PATH` check reads `HKCU` while the entry is written under `HKA`, so an all-users install can add the folder twice;
@@ -46,6 +47,23 @@ Non-goals for this plan: macOS or Linux builds, an automatic updater (the app st
    - it lives in `savedfiles\`, which holds sample data.
 5. **No signing.** Unsigned executables get a SmartScreen "unrecognised app" warning, and unsigned self-extracting exes are the most likely to be flagged by antivirus.
 6. **No automation and no check of the built artifacts** beyond the CLI smoke test: the editor exe is never started, and nothing exercises the packaged MCP server.
+
+## Command names (D13)
+
+Today's names are long to type and to put in an AI tool's configuration. One short program replaces them in everything a person types or copies:
+
+| Today | New | Example |
+|---|---|---|
+| `trigger-designer-cli run flow.tds` | `tds run flow.tds` | |
+| `trigger-designer-cli validate flow.tds --deep` | `tds validate flow.tds --deep` | |
+| `trigger-designer-mcp --workspace D --policy P` | `tds mcp --workspace D --policy P` | AI-tool config: command `tds`, args `["mcp", "--workspace", "D", "--policy", "P"]` |
+| `trigger-designer file.tds` (the editor) | `tds open file.tds` (starts the editor) and the editor exe itself | |
+| `trigger-designer-mcp --print-config ...` | `tds mcp --print-config ...` | |
+
+- `tds` is a free name on the machine checked, matches the `.tds` file type and is one word to remember.
+- The long names stay for compatibility (existing scripts, the source install's `pyproject.toml` entry points, the docs written so far) and the new `tds` entry is added beside them, so nothing breaks. New documentation uses `tds`.
+- `tds mcp` imports the MCP package only when that subcommand runs, so every other `tds` command stays as light as today (an existing test guards the CLI's import weight; the `mcp` subcommand must not break it).
+- `tds open` is a convenience: it starts the editor exe (beside it when installed, `trigger-designer` from source) and returns immediately.
 
 ## The artifacts
 
@@ -61,10 +79,9 @@ Portable layout (the zip contains one folder, `TriggerDesigner\`):
 ```text
 TriggerDesigner\
   TriggerEditor.exe              the editor (GUI)
-  trigger-designer-cli.exe       command line
-  trigger-designer-mcp.exe       AI-tool server (stdio)
-  _internal\                     the shared runtime (one copy, used by all three)
-  README.txt                     three lines: what each exe is, where the guides are
+  tds.exe                        command line, and `tds mcp` for AI tools (console program)
+  _internal\                     the shared runtime (one copy, used by both)
+  README.txt                     a few lines: what each exe is, where the guides are
   LICENSE
 ```
 
@@ -72,9 +89,9 @@ TriggerDesigner\
 
 **D1 (decided). Portable = a folder zip; the single-file editor stays as a second download.** All three programs share one `_internal\`, so the zip is only a little larger than the editor alone. It starts fast (no extraction to a temp folder), is less likely to be flagged by antivirus, and the MCP server can find its sibling CLI. A single-file exe cannot be both the editor and a stdio tool. The single-file GUI-only exe is kept as a lighter second download (named `-windows-editor-single-file.zip` so nobody mistakes it for the full package); it still does not include the CLI or MCP, and the download page says so.
 
-**D2. One shared runtime via PyInstaller `MERGE` with three programs** (editor, CLI, MCP). This is what the CLI already does. The CLI loads the editor's own classes headlessly (offscreen Qt), so even "CLI only" needs the Qt runtime; see D5.
+**D2. One shared runtime via PyInstaller `MERGE` with two programs** (the editor and `tds.exe`, which carries the CLI and the MCP server). This is what the CLI already does. The CLI loads the editor's own classes headlessly (offscreen Qt), so even "CLI only" needs the Qt runtime; see D5.
 
-**D3. MCP finds the CLI explicitly.** A small `launcher` helper decides how to start a child CLI command: in development `[sys.executable, "-m", "trigger_designer.cli"]`; when frozen, the sibling `trigger-designer-cli.exe` in the same folder (with an environment override and a clear error if it is missing). The MCP server never calls itself recursively. *Alternative:* the MCP exe runs CLI code in-process by a hidden `__cli__` argument, which removes the dependency on a sibling file but couples the two entry points.
+**D3. The MCP server starts its helper steps through one launcher.** A small `launcher` helper decides how to start a child CLI command: in development `[sys.executable, "-m", "trigger_designer.cli"]`; when frozen, `[sys.executable]`, which is `tds.exe` itself (it runs the CLI when given a CLI command, so `tds mcp` calls `tds schema ...`). No sibling file to find, nothing to go missing, and it works from the single folder or an installed copy alike.
 
 **D4 (decided). Installer technology: Inno Setup 6.** It already exists in the repo, supports exactly the "choose what to install" screen (components), per-user installs without administrator rights, `PATH` tasks, file associations, and a clean uninstaller, and it needs no extra runtime. *Alternatives:* WiX (an MSI, better for enterprise deployment through Intune or Group Policy, but far more authoring work; listed under "Later"), NSIS (similar to Inno, less common now), MSIX (needs signing and restricts writing to the install folder).
 
@@ -83,8 +100,8 @@ TriggerDesigner\
 | Component | Installs | Adds |
 |---|---|---|
 | **Trigger Designer (editor)** | `TriggerEditor.exe` | Start Menu entry, optional desktop icon, `.tds` association |
-| **Command-line tools** | `trigger-designer-cli.exe` | optional "add to PATH" task |
-| **AI tool server (MCP)** | `trigger-designer-mcp.exe` and the AI setup helper (D8) | optional "add to PATH" task; a default policy file |
+| **Command-line tools** | `tds.exe` | optional "add `tds` to PATH" task |
+| **AI tool setup (MCP)** | the default policy file, the "AI tools setup" Start Menu entry and the guide shortcut (D8). `tds mcp` itself lives in `tds.exe`, so this component **requires** the command-line tools and selects them automatically | the same "add to PATH" task (an AI tool config can also use the full path) |
 | *Runtime (hidden, always)* | `_internal\`, licence | the uninstaller |
 
 The installer says plainly that deselecting a component removes entry points, not most of the disk space. Presets: **Full**, **Editor only**, **Command line and AI tools only**, **Custom**.
@@ -95,7 +112,7 @@ The installer says plainly that deselecting a component removes entry points, no
 
 **D8. AI setup helper, not automatic edits of other tools' settings.** Rewriting Claude Code, Cursor or Codex configuration files from an installer is intrusive and fragile. Instead:
 
-- add `trigger-designer-mcp --print-config --client {claude-code,cursor,codex,claude-desktop} [--workspace DIR] [--policy FILE]`, which prints the exact command or JSON/TOML snippet with the **installed, absolute paths**;
+- add `tds mcp --print-config --client {claude-code,cursor,codex,claude-desktop} [--workspace DIR] [--policy FILE]`, which prints the exact command or JSON/TOML snippet with the **installed, absolute paths** (or plain `tds` when it is on `PATH`);
 - the installer (MCP component) creates a default policy file in `%APPDATA%\Trigger Designer\agent-policy.json` (`schema_only`, `edit` false, outside any workspace) and a Start Menu entry "AI tools setup" that opens the guide and prints the snippet;
 - the final installer page offers to open the guide. No third-party configuration is touched.
 
@@ -111,10 +128,10 @@ The installer says plainly that deselecting a component removes entry points, no
 
 | Risk | Spike (first, one afternoon each) | Pass criterion |
 |---|---|---|
-| `mcp` and its dependencies do not freeze cleanly (hidden imports, `pydantic`, `importlib.metadata`, pywin32 DLLs) | Add the third program to `trigger.spec`; build; run `trigger-designer-mcp.exe` and drive it with the SDK's stdio client | `initialize`, `list_tools`, `get_policy` and `list_ops` succeed from the built exe |
+| `mcp` and its dependencies do not freeze cleanly (hidden imports, `pydantic`, `importlib.metadata`, pywin32 DLLs) | Add the `mcp` subcommand and its imports to the CLI program in `trigger.spec`; build; run `tds.exe mcp` and drive it with the SDK's stdio client | `initialize`, `list_tools`, `get_policy` and `list_ops` succeed from the built exe |
 | MCP bundles HTTP server libraries (`uvicorn`, `starlette`, `httpx2`) although it uses stdio only | Try excluding the HTTP transports; otherwise accept and document | Either excluded, or documented that they are present but never used; the network guard test still passes |
-| Child CLI process from a frozen MCP | Implement the launcher (D3); run `get_schema` through the built MCP exe | A data tool returns a schema in the built folder, from a path containing spaces and non-ASCII characters |
-| Size and startup of three programs with `MERGE` | Build and measure | Zip size and cold start reported; MCP adds only a modest amount |
+| Child CLI process from a frozen MCP | Implement the launcher (D3); run `get_schema` through the built `tds.exe mcp` | A data tool returns a schema in the built folder, from a path containing spaces and non-ASCII characters |
+| Size and startup with the MCP packages added to `tds.exe` | Build and measure; also confirm the other `tds` commands still start as fast (the MCP imports must stay lazy) | Zip size and cold start reported; `tds --version` is no slower than today |
 | Antivirus false positives | Scan the portable zip and installer (VirusTotal, Windows Defender) | No detections, or the vendors are contacted before release |
 | Installer component logic | Prototype the Inno `[Components]` and `[Tasks]` with each preset | Each preset installs exactly its files; uninstall leaves nothing behind |
 
@@ -123,10 +140,10 @@ The installer says plainly that deselecting a component removes entry points, no
 **Phase 0: spikes (above).** Output: a short findings note and go/no-go on D1 to D3.
 
 **Phase 1: build the portable folder.**
-1. Add `src/trigger_designer/agent/server_entry.py` and the MCP program to `trigger.spec` (three-way `MERGE`); add the MCP package's hidden imports and data.
+1. **Names (D13):** add `mcp` and `open` subcommands to the CLI (`mcp` imports the server lazily); add the `tds` entry point to `pyproject.toml` beside the long names; rename the frozen CLI exe to `tds.exe` in `trigger.spec`; add the MCP package's hidden imports. Tests: the subcommands exist, `tds mcp --help` works, the import-weight test still passes.
 2. `agent/launcher.py`: choose how to start a child CLI (D3); `AgentTools` uses it. Unit tests for both modes.
-3. `trigger-designer-mcp --print-config` (D8) with tests for every client.
-4. `scripts/smoke_dist.py`: runs against `dist\`, never against source: CLI `--version`, `validate --deep`, a headless `run`; the editor exe started offscreen with a `--smoke-test` flag that opens a sample workflow and exits 0; the MCP exe driven over stdio (list tools, `get_policy`, `list_files`, `get_schema` on a sample, a refused call).
+3. `tds mcp --print-config` (D8) with tests for every client.
+4. `scripts/smoke_dist.py`: runs against `dist\`, never against source: `tds --version`, `tds validate --deep`, a headless `tds run`; the editor exe started offscreen with a `--smoke-test` flag that opens a sample workflow and exits 0; `tds mcp` driven over stdio (list tools, `get_policy`, `list_files`, `get_schema` on a sample, a refused call).
 5. `package_windows.py`: the portable zip is the folder layout with a `README.txt`; the single-file editor is packaged separately under its own name.
 6. `build.bat` runs the smoke script and fails the build if it fails.
 
@@ -142,8 +159,8 @@ The installer says plainly that deselecting a component removes entry points, no
 
 **Phase 4: documentation and release checklist.**
 - `docs/install.md`: two downloads, how to pick, the installer pages, silent install, uninstall, antivirus note.
-- `docs/guide/mcp-server.md`: the installed path variant next to the source variant.
-- `docs/guide/cli.md`: the installed path and `PATH`.
+- `docs/guide/mcp-server.md`: configuration with `tds mcp`, the installed-path variant, and the source variant.
+- `docs/guide/cli.md` and every guide that shows `trigger-designer-cli`: use `tds`, and note that the long names still work.
 - `docs/release-notes/v0.1.0-alpha.2.md` and the navigation entry.
 - A release checklist in `docs/contributing/` (version bump, build, smoke, sign, scan, publish).
 
