@@ -15,7 +15,7 @@ import contextlib
 import datetime as dt
 import math
 import shutil
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass, field
 from decimal import Decimal
 from pathlib import Path
@@ -42,6 +42,9 @@ class NodeView:
     title: str
     op: str
     outputs: list[OutputTable] = field(default_factory=list)
+    #: Problems that do not stop a run but make its result wrong (see
+    #: ``lint_nodes``): ``(node id, node title, code, message)``.
+    lint: list[tuple[int, str, str, str]] = field(default_factory=list)
 
     def header(self) -> dict:
         return {"id": self.node_id, "title": self.title, "op": self.op}
@@ -50,6 +53,12 @@ class NodeView:
 # ---------------------------------------------------------------- pure helpers
 def _title(node: dict) -> str:
     return str(node.get("title") or node.get("node_title") or node.get("id") or "?")
+
+
+def _label_title(node: dict) -> str:
+    """``Title "label"`` when the node has a visible name chosen by someone."""
+    label = str(node.get("label_text") or "").strip()
+    return f'{_title(node)} "{label}"' if label else _title(node)
 
 
 def resolve_node(doc: WorkflowDoc, ref: str) -> dict:
@@ -62,13 +71,20 @@ def resolve_node(doc: WorkflowDoc, ref: str) -> dict:
         matches = [n for n in nodes if n.get("id") == int(text)]
     if not matches:
         wanted = text.casefold()
+        matches = [
+            n
+            for n in nodes
+            if str(n.get("label_text") or "").strip().casefold() == wanted
+        ]
+    if not matches:
+        wanted = text.casefold()
         matches = [n for n in nodes if _title(n).casefold() == wanted]
     if not matches:
         matches = [n for n in nodes if node_op(n) == text]
     if len(matches) == 1:
         return matches[0]
     listing = "; ".join(
-        f"{n.get('id')} = {_title(n)} ({node_op(n) or '?'})" for n in nodes[:40]
+        f"{n.get('id')} = {_label_title(n)} ({node_op(n) or '?'})" for n in nodes[:40]
     )
     if matches:
         raise CliError(
@@ -76,7 +92,7 @@ def resolve_node(doc: WorkflowDoc, ref: str) -> dict:
             "TD-CLI-020",
             f"'{ref}' matches {len(matches)} nodes.",
             "Use the numeric id instead: "
-            + "; ".join(f"{n.get('id')} = {_title(n)}" for n in matches),
+            + "; ".join(f"{n.get('id')} = {_label_title(n)}" for n in matches),
         )
     raise CliError(
         ExitCode.INVALID,
@@ -247,7 +263,153 @@ def node_error(result: Any, node: Any) -> dict:
         "node_id": err.get("node_id"),
         "node_title": err.get("node_title"),
         "op": err.get("op"),
+        "params": err.get("params", {}),
     }
+
+
+#: Codes whose text names a column the headless path cannot know on its own.
+_COLUMN_CODES = ("TD-TYP-003",)
+
+
+def _strings_in(value: Any) -> list[str]:
+    """Every text value inside a settings structure, in order."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, dict):
+        return [s for item in value.values() for s in _strings_in(item)]
+    if isinstance(value, (list, tuple)):
+        return [s for item in value for s in _strings_in(item)]
+    return []
+
+
+def columns_the_node_reads(op: str, settings: dict) -> list[str]:
+    """Columns named in a node's settings that its calculation reads.
+
+    For Aggregate that is the fields given a numeric action (a text column may
+    only be counted, grouped, first/last or listed); for any other node, every
+    column named anywhere in its settings.
+    """
+    if op == "preparation.groupby":
+        from trigger_designer.core.shaping.aggregate import TEXT_ACTIONS
+
+        return [
+            str(a.get("field"))
+            for a in settings.get("actions") or []
+            if isinstance(a, dict)
+            and a.get("action") not in TEXT_ACTIONS
+            and a.get("action") != "GroupBy"
+        ]
+    return _strings_in(settings)
+
+
+def lint_nodes(
+    specs: list, edges: list, context: dict
+) -> list[tuple[int, str, str, str]]:
+    """Mistakes that run without an error and return wrong rows.
+
+    A Filter that orders (greater/less than, between) a text column compares
+    letters, so ``"9999"`` is greater than ``"10000"``. The editor's builder
+    never offers that for a text column, but a file written by a tool can ask
+    for it, and every CSV column arrives as text.
+    """
+    from trigger_designer.core.shaping.filter import (
+        _NUMERIC_OPERATIONS,
+        _STRING_OPERATIONS,
+    )
+
+    ordering = [op for op in _NUMERIC_OPERATIONS if op not in _STRING_OPERATIONS]
+    found: list[tuple[int, str, str, str]] = []
+    for spec in specs:
+        settings = spec.settings if isinstance(spec.settings, dict) else {}
+        if (
+            spec.op != "preparation.filter"
+            or settings.get("mode") != "builder"
+            or settings.get("operation") not in ordering
+            or not str(settings.get("column") or "")
+        ):
+            continue
+        column = str(settings["column"])
+        schema = input_schema_of(spec.node_id, specs, edges, context)
+        if schema.get(column) != "String":
+            continue
+        found.append(
+            (
+                spec.node_id,
+                spec.title or "Filter",
+                "TD-TYP-004",
+                (
+                    f"Column '{column}' is text, so '{settings['operation']}' "
+                    'compares letters, not numbers ("9999" sorts after "10000"), '
+                    "and the rows kept are wrong. CSV columns load as text: "
+                    "before this node add a preparation.select node and set "
+                    f"'{column}' to dtype Float64 (or Int64, Date) with "
+                    '"dtype_custom": true.'
+                ),
+            )
+        )
+    return found
+
+
+def name_the_columns(
+    error: dict, schema: dict[str, str], read: list[str] | None = None
+) -> dict:
+    """Fill the column a type error leaves blank when no editor state is there.
+
+    The editor's translator learns the offending column from the frames on the
+    node's input edges; a headless run has none, so the message read
+    ``Column '' is text``. ``schema`` is the failing node's first input
+    (column -> dtype). Only text columns qualify for a "text" error.
+    """
+    from trigger_designer.core.errors.catalogue import render_entry
+
+    code = str(error.get("code") or "")
+    params = dict(error.get("params") or {})
+    if code not in _COLUMN_CODES or params.get("column") or not schema:
+        return error
+    text = [name for name, dtype in schema.items() if dtype == "String"]
+    candidates = [name for name in dict.fromkeys(read or []) if name in text] or text
+    if not candidates:
+        return error
+    params["column"] = candidates[0]
+    params["columns"] = tuple(candidates)
+    title, detail, fixes = render_entry(code, params)
+    # CSV and text files load every column as text; a Select node converts it.
+    convert = (
+        f"CSV columns load as text. Before this node add a preparation.select "
+        f"node and set '{params['column']}' to dtype Float64 (or Int64, Date) "
+        'with "dtype_custom": true; `ops preparation.select` shows an entry.'
+    )
+    return {
+        **error,
+        "title": title or error.get("title"),
+        "detail": detail or error.get("detail"),
+        "hint": convert,
+        "columns": candidates,
+        "params": {**params, "columns": candidates},
+        "suggested_fixes": [
+            convert,
+            *(list(fixes) or error.get("suggested_fixes", [])),
+        ],
+    }
+
+
+def input_schema_of(
+    node_id: int, specs: list, edges: list, context: dict
+) -> dict[str, str]:
+    """Column -> dtype of the first table that feeds ``node_id`` (or ``{}``)."""
+    import polars as pl
+
+    names = {spec.node_id: spec.output_variables for spec in specs}
+    for edge in sorted(
+        (e for e in edges if e.dst_node_id == node_id), key=lambda e: e.dst_socket
+    ):
+        variables = names.get(edge.src_node_id, ())
+        value = context.get(variables[edge.src_socket]) if variables else None
+        if isinstance(value, pl.DataFrame):
+            value = value.lazy()
+        if isinstance(value, pl.LazyFrame):
+            return {k: str(v) for k, v in value.collect_schema().items()}
+    return {}
 
 
 class NodeFailed(CliError):
@@ -278,8 +440,19 @@ class NodeFailed(CliError):
 
 
 @contextlib.contextmanager
-def open_node(args: Any, ctx: Any, doc: WorkflowDoc, node: dict) -> Iterator[NodeView]:
-    """Load ``doc`` like the editor, run what ``node`` needs, yield its tables."""
+def open_node(
+    args: Any,
+    ctx: Any,
+    doc: WorkflowDoc,
+    node: dict,
+    *,
+    extra_needed: Iterable[int] = (),
+) -> Iterator[NodeView]:
+    """Load ``doc`` like the editor, run what ``node`` needs, yield its tables.
+
+    ``extra_needed`` adds nodes (and everything they read) to the run, so one
+    pass can check several branches; the yielded tables are still ``node``'s.
+    """
     import polars as pl
 
     from trigger_designer.core.ExecutionCheck.executor import (
@@ -298,6 +471,8 @@ def open_node(args: Any, ctx: Any, doc: WorkflowDoc, node: dict) -> Iterator[Nod
     op = check_inspectable(node)
     target_id = node["id"]
     needed = upstream_ids(doc, target_id)
+    for extra in extra_needed:
+        needed |= upstream_ids(doc, extra)
     opts = RunOptions.from_args(args)
     plan = build_run_plan(opts, doc, ctx.state, mode="validate", check_files=False)
     session = None
@@ -344,7 +519,21 @@ def open_node(args: Any, ctx: Any, doc: WorkflowDoc, node: dict) -> Iterator[Nod
             executor.shutdown()
             if failures:
                 node_, result = failures[0]
-                raise NodeFailed(node_error(result, node_))
+                error = node_error(result, node_)
+                with contextlib.suppress(Exception):
+                    specs_, edges_ = session.specs()
+                    content = getattr(node_, "content", None)
+                    error = name_the_columns(
+                        error,
+                        input_schema_of(
+                            node_.id, specs_, edges_, executor.execution_context
+                        ),
+                        columns_the_node_reads(
+                            str(error.get("op") or ""),
+                            dict(getattr(content, "settings", None) or {}),
+                        ),
+                    )
+                raise NodeFailed(error)
             if errors:
                 node_, exc = errors[0]
                 from trigger_designer.core.audit.errors_adapter import (
@@ -382,6 +571,9 @@ def open_node(args: Any, ctx: Any, doc: WorkflowDoc, node: dict) -> Iterator[Nod
                     "Check that the node is connected and complete.",
                 )
         view = NodeView(target_id, _title(node), op, outputs)
+        with contextlib.suppress(Exception):
+            specs_, edges_ = session.specs()
+            view.lint = lint_nodes(specs_, edges_, executor.execution_context)
         with route_stray_stdout():
             yield view
     finally:
@@ -391,6 +583,48 @@ def open_node(args: Any, ctx: Any, doc: WorkflowDoc, node: dict) -> Iterator[Nod
         shutil.rmtree(plan.work_dir, ignore_errors=True)
         with contextlib.suppress(Exception):
             Path(ctx.state).joinpath("work").rmdir()
+
+
+def check_data(args: Any, ctx: Any, doc: WorkflowDoc) -> list:
+    """Run everything that feeds a file output (writing nothing) and report what
+    would fail: a text column that is summed or compared as a number, a missing
+    column, bad settings. The findings carry no values, only names and codes.
+    """
+    from trigger_designer.core.headless.workflow_file import Finding, file_nodes
+
+    writers = {fn.node_id for fn in file_nodes(doc) if fn.kind == "output"}
+    wanted: set[int] = set()
+    for writer in writers:
+        wanted |= upstream_ids(doc, writer) - {writer}
+    if not writers:
+        wanted = {
+            n["id"]
+            for n in doc.nodes
+            if isinstance(n.get("id"), int)
+            and (known_op(node_op(n) or "") is not None)
+            and node_op(n) not in _NO_TABLE_OPS
+        }
+    ordered = [n for n in doc.nodes if n.get("id") in wanted]
+    if not ordered:
+        return []
+    target = ordered[-1]
+    try:
+        with open_node(
+            args, ctx, doc, target, extra_needed=[n["id"] for n in ordered]
+        ) as view:
+            return [
+                Finding("error", code, f"'{title}': {message}", node_id)
+                for node_id, title, code, message in view.lint
+            ]
+    except NodeFailed as exc:
+        error = exc.error
+        where = f"'{error.get('node_title') or target.get('title')}'"
+        hint = str(error.get("hint") or "")
+        text = f"{where}: {error.get('title')}" + (f" {hint}" if hint else "")
+        return [Finding("error", str(exc.td_code), text, error.get("node_id"))]
+    except CliError as exc:
+        return [Finding("error", exc.td_code, exc.message)]
+    return []
 
 
 def _output_name(op: str, index: int) -> str:

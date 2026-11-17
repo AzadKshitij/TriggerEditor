@@ -169,6 +169,7 @@ def require_edit(policy: AccessPolicy) -> None:
         ExitCode.REFUSED,
         "TD-CLI-019",
         "The access policy does not allow changing the workflow.",
-        "Without --apply an edit only shows its diff. To write, the data owner "
+        "Without applying (--apply on the command line, apply=true in MCP) an "
+        "edit only shows its diff. To write, the data owner "
         f'sets "edit": true in the policy file ({where}).',
     )

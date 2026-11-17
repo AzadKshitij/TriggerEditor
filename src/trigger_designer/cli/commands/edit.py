@@ -175,6 +175,8 @@ def run_edit(args, operations: Any, *, patch: bool) -> dict:
     result = diff_workflows(doc.data, editor.data)
     new_bytes = dump_workflow(editor.data)
     applied, backup = False, None
+    folders = editor.output_folders()
+    created: list[str] = []
     if args.apply and not result["empty"]:
         if _stale(doc):
             raise fail(
@@ -184,6 +186,11 @@ def run_edit(args, operations: Any, *, patch: bool) -> dict:
             )
         backup = write_workflow_with_backup(doc.path, editor.data)
         applied = True
+        # An output node cannot run into a folder that does not exist (the
+        # editor refuses, TD-OUT-001), so the edit makes the ones it may.
+        for folder in folders["creatable"]:
+            os.makedirs(folder, exist_ok=True)
+            created.append(folder)
     return {
         "workflow": os.path.abspath(doc.path),
         "dry_run": not args.apply,
@@ -195,6 +202,11 @@ def run_edit(args, operations: Any, *, patch: bool) -> dict:
         else doc.sha256,
         "backup": backup,
         "results": results,
+        "output_folders": {
+            "created": created,
+            "to_create": [] if created else folders["creatable"],
+            "blocked": folders["blocked"],
+        },
         "diff": result,
     }
 
@@ -216,6 +228,14 @@ def render_text(envelope: dict) -> None:
             out.line(f"new node id: {item['id']}  ({item['title']})")
     if envelope["backup"]:
         out.note(f"backup: {envelope['backup']}")
+    folders = envelope.get("output_folders") or {}
+    for label, key in (
+        ("created folder", "created"),
+        ("would create folder (with --apply)", "to_create"),
+        ("output folder is outside the allowed folders, not created", "blocked"),
+    ):
+        for folder in folders.get(key, []):
+            out.note(f"{label}: {folder}")
 
 
 def run_new(args) -> dict:

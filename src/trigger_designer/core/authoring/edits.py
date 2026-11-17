@@ -34,6 +34,7 @@ from trigger_designer.core.authoring.model import (
 from trigger_designer.core.authoring.validate import (
     MAX_LABEL_CHARS,
     MAX_TITLE_CHARS,
+    _inside,
     check_settings,
     coerce_raw,
 )
@@ -152,14 +153,62 @@ class Editor:
         ids = [self.pool.take() for _ in range(sockets.inputs + len(sockets.outputs))]
         node = templates.new_node(op, node_id, ids, px, py)
         if title:
-            node["title"] = title.strip()
+            # The editor always shows a node's own type name as its title and
+            # ignores a different one saved in the file, so a name the caller
+            # chose is stored as the label drawn under the node.
+            node["label_text"] = title.strip()
+            node["label_visible"] = True
         if settings:
+            settings = self._complete_paths(op, settings)
             self._holder(node).update(copy.deepcopy(settings))
             self._sync_stored_paths(node, settings)
         self.data.setdefault("nodes", []).append(node)
         if ref is not None:
             self.aliases[ref] = node_id
         return describe(node)
+
+    def _complete_paths(self, op: str, settings: dict) -> dict:
+        """File settings as complete paths.
+
+        A relative path means different things to different callers (the
+        command line reads it from the workflow's folder, the editor from the
+        folder it was started in), so it is stored in full. ``check_settings``
+        has already kept it inside the allowed folders.
+        """
+        info = OPS[op]
+        keys = {*info.input_keys, *info.output_keys}
+        out = dict(settings)
+        for key in keys & out.keys():
+            value = out[key]
+            if isinstance(value, str) and value.strip():
+                out[key] = os.path.normpath(os.path.join(self.base_dir, value.strip()))
+        return out
+
+    def output_folders(self) -> dict[str, list[str]]:
+        """Folders of this workflow's file outputs that do not exist yet.
+
+        ``creatable`` are inside the allowed folders (the edit may make them);
+        ``blocked`` are not (it will not).
+        """
+        creatable: list[str] = []
+        blocked: list[str] = []
+        roots = (self.base_dir, *self.extra_paths)
+        for node in nodes_of(self.data):
+            info = OPS.get(str(node.get("op") or ""))
+            if info is None:
+                continue
+            holder = self._holder(node)
+            for key in info.output_keys:
+                value = holder.get(key)
+                if not isinstance(value, str) or not value.strip():
+                    continue
+                path = os.path.normpath(os.path.join(self.base_dir, value.strip()))
+                folder = os.path.dirname(path)
+                if os.path.isdir(folder) or folder in creatable or folder in blocked:
+                    continue
+                inside = any(_inside(folder, root) for root in roots)
+                (creatable if inside else blocked).append(folder)
+        return {"creatable": creatable, "blocked": blocked}
 
     def _sync_stored_paths(self, node: dict, settings: dict) -> None:
         """Keep a File Input's ``filePathRel`` as the editor does.
@@ -333,6 +382,7 @@ class Editor:
         check_settings(
             op, settings, base_dir=self.base_dir, extra_paths=self.extra_paths
         )
+        settings = self._complete_paths(op, settings)
         holder = self._holder(node)
         changed = []
         for key, value in settings.items():

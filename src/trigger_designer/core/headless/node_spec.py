@@ -204,14 +204,14 @@ SOCKETS: dict[str, Sockets] = {
 }
 
 DESCRIPTIONS: dict[str, str] = {
-    "input.file_input": "Reads a CSV, Excel, JSON, Parquet, text or database source (or a folder of files) into a table.",
+    "input.file_input": 'Reads a CSV, Excel, JSON, Parquet, text or database source (or a folder of files) into a table. IMPORTANT: every column of a CSV or text file loads as text (String), including numbers and dates. Before a Filter with <, >, between, a numeric Sort, Sum/Mean or any maths, add a Select node that sets those columns to Float64, Int64 or Date (dtype plus "dtype_custom": true; see ops preparation.select).',
     "input.file_output": "Writes its input table to a file. Files are written only by a real run, never while editing.",
     "input.workpaper_output": "Writes an audit workpaper (Excel) with the test result, exceptions, the run log and the workflow.",
     "preparation.cleansing": "Cleans text columns: trims spaces, fixes case, removes unwanted characters.",
-    "preparation.filter": "Splits a table into rows that meet a condition (true) and rows that do not (false). Comparisons follow the column type: text compares as text, so convert numbers stored as text with Select first.",
+    "preparation.filter": 'Splits a table into rows that meet a condition (true) and rows that do not (false). Greater/Less Than and In Between need a number or date column: on a text column they compare letters, not numbers ("9999" sorts after "10000") and keep the wrong rows without any error (validate reports TD-TYP-004), so convert numbers stored as text (all CSV columns) with a Select node first. Text columns support Equals, Not Equals and Contains.',
     "preparation.formula": "Adds or replaces columns using SQL expressions.",
-    "preparation.groupby": "Groups rows and calculates sums, counts, means and other aggregates per group.",
-    "preparation.select": "Chooses, renames, reorders and retypes columns.",
+    "preparation.groupby": "Groups rows and calculates sums, counts, means and other aggregates per group. Sum, Mean, Std and similar need a number column; a text column can only be grouped, counted, or given Min/Max/First/Last/List (convert CSV numbers with a Select node first).",
+    "preparation.select": 'Chooses, renames, reorders and retypes columns. This is how text columns from a CSV become numbers or dates: set the column dtype and "dtype_custom": true.',
     "preparation.sort": "Sorts rows by one or more columns.",
     "preparation.unique": "Splits rows into first occurrences (unique) and every row of a repeated key (duplicates).",
     "preparation.split": "Splits rows randomly into an estimation set and a validation set.",

@@ -93,11 +93,15 @@ def op_of(node: dict) -> str:
 
 
 def describe(node: dict) -> dict:
-    return {
+    out = {
         "id": node.get("id"),
         "title": node.get("title"),
         "op": node_op(node),
     }
+    label = str(node.get("label_text") or "").strip()
+    if label:
+        out["label"] = label
+    return out
 
 
 def resolve_node(data: dict, ref: Any, aliases: dict[str, int] | None = None) -> dict:
@@ -113,8 +117,8 @@ def resolve_node(data: dict, ref: Any, aliases: dict[str, int] | None = None) ->
         for node in nodes:
             if node.get("id") == wanted:
                 return node
-    for field in ("title", "op"):
-        matches = [n for n in nodes if str(n.get(field) or "") == text]
+    for field in ("label_text", "title", "op"):
+        matches = [n for n in nodes if str(n.get(field) or "").strip() == text]
         if field == "op":
             matches = [n for n in nodes if node_op(n) == text]
         if len(matches) == 1:
@@ -126,7 +130,12 @@ def resolve_node(data: dict, ref: Any, aliases: dict[str, int] | None = None) ->
                 f"'{text}' matches {len(matches)} nodes (ids {ids}).",
                 "Use the node's numeric id (see `info`).",
             )
-    titles = [str(n.get("title")) for n in nodes if n.get("title")]
+    titles = [
+        str(n.get(field))
+        for n in nodes
+        for field in ("label_text", "title")
+        if n.get(field)
+    ]
     near = difflib.get_close_matches(text, titles, n=3, cutoff=0.5)
     hint = "Use the node's numeric id (see `info`)."
     if near:

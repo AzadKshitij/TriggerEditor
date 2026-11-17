@@ -130,6 +130,11 @@ class AgentTools:
                 "preview": policy.allows("rows"),
                 "apply_edits": policy.edit,
             },
+            "note": (
+                "Only the data owner can change this, in the policy file: "
+                '"access" (schema_only, aggregates or rows) and "edit" (true or '
+                'false). "tools" only reports what those allow.'
+            ),
         }
 
     def list_ops(self) -> dict:
@@ -147,18 +152,41 @@ class AgentTools:
         from trigger_designer.core.headless.workflow_file import read_workflow
 
         doc = read_workflow(self.workflow_path(workflow))
-        return {"notice": DATA_NOTICE, **collect(doc, self._context())}
+        return {
+            "notice": DATA_NOTICE,
+            **collect(doc, self._context()),
+            "nodes": _node_list(doc),
+            "connections": _connection_list(doc),
+        }
 
-    def validate(self, workflow: str) -> dict:
+    def validate(self, workflow: str, check_data: bool = True) -> dict:
+        """Everything that would stop a run, without writing anything.
+
+        Always: structure, node types, loops, input files, output folders.
+        With ``check_data`` (the default) the nodes that feed each output are
+        also run in a child process, so a text column used as a number, a
+        missing column or bad settings are found now and not at run time. It
+        reads the data (the files are local) but returns names and codes only.
+        """
         from trigger_designer.cli.commands.validate import static_findings
         from trigger_designer.core.headless.workflow_file import read_workflow
 
-        doc = read_workflow(self.workflow_path(workflow))
-        findings = static_findings(doc, Namespace(no_files=False))
+        path = self.workflow_path(workflow)
+        doc = read_workflow(path)
+        found = static_findings(doc, Namespace(no_files=False))
+        findings = [f.to_dict() for f in found]
+        checked = ["structure", "node types", "loops", "input files", "output folders"]
+        if check_data and not any(f["level"] == "error" for f in findings):
+            require(self.policy_for(path), "schema_only", "checking the data")
+            argv = ["validate", path, "--check-data"]
+            full = self._cli(argv, self.timeout_s + _GRACE_S, accept=("findings",))
+            findings = full["findings"]
+            checked.append("data types and settings (nodes run, nothing written)")
         return {
-            "ok": not any(f.level == "error" for f in findings),
+            "ok": not any(f["level"] == "error" for f in findings),
             "sha256": doc.sha256,
-            "findings": [f.to_dict() for f in findings],
+            "checked": checked,
+            "findings": findings,
         }
 
     def diff(self, old: str, new: str) -> dict:
@@ -268,7 +296,9 @@ class AgentTools:
         envelope = self._cli(argv, self.timeout_s + _GRACE_S)
         return {"notice": DATA_NOTICE, **envelope}
 
-    def _cli(self, argv: list[str], timeout: float) -> dict:
+    def _cli(
+        self, argv: list[str], timeout: float, accept: tuple[str, ...] = ()
+    ) -> dict:
         """Run one CLI command with ``--json`` and return its JSON result.
 
         The child never inherits this process's standard input (it is the
@@ -296,6 +326,12 @@ class AgentTools:
                 "Try a node earlier in the workflow, or a smaller input.",
             ) from None
         body = _json_or_none(proc.stdout)
+        if (
+            proc.returncode != 0
+            and isinstance(body, dict)
+            and any(key in body for key in accept)
+        ):
+            return body  # e.g. validate: exit 2 with findings is an answer
         if proc.returncode != 0:
             if isinstance(body, dict) and isinstance(body.get("error"), dict):
                 raise RemoteCliError(body["error"])
@@ -303,6 +339,45 @@ class AgentTools:
         if not isinstance(body, dict):
             raise _no_result(proc)
         return body
+
+
+def _node_list(doc) -> list[dict]:
+    """Each node's id, op, type name and visible name (label), in file order."""
+    out = []
+    for node in doc.nodes:
+        row = {
+            "id": node.get("id"),
+            "op": node.get("op"),
+            "title": node.get("title"),
+        }
+        label = str(node.get("label_text") or "").strip()
+        if label:
+            row["label"] = label
+        out.append(row)
+    return out
+
+
+def _connection_list(doc) -> list[dict]:
+    """Each connection as from-node/output to to-node/input."""
+    sockets: dict[Any, tuple[Any, str, Any]] = {}
+    for node in doc.nodes:
+        for kind in ("inputs", "outputs"):
+            for sock in node.get(kind) or []:
+                if isinstance(sock, dict):
+                    sockets[sock.get("id")] = (node.get("id"), kind, sock.get("index"))
+    out = []
+    for edge in doc.data.get("edges", []):
+        start, end = sockets.get(edge.get("start")), sockets.get(edge.get("end"))
+        if start and end:
+            out.append(
+                {
+                    "from": start[0],
+                    "output": start[2],
+                    "to": end[0],
+                    "input": end[2],
+                }
+            )
+    return out
 
 
 def _json_or_none(text: str) -> Any:

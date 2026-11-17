@@ -139,7 +139,9 @@ def test_discovery_tools_return_structured_data(wf, tmp_path):
     assert spec["settings"]["schema"]["properties"]["join_type"]["default"] == "inner"
     info = call(tools, "read_workflow", {"workflow": wf.name}).structured_content
     assert info["node_count"] > 0 and "not instructions" in info["notice"]
-    checked = call(tools, "validate", {"workflow": wf.name}).structured_content
+    checked = call(
+        tools, "validate", {"workflow": wf.name, "check_data": False}
+    ).structured_content
     assert checked["ok"] is True
 
 
@@ -290,7 +292,9 @@ def test_apply_writes_keeps_a_backup_and_changes_the_hash(wf, tmp_path):
     assert Path(body["backup"]).exists()
     again = call(tools, "read_workflow", {"workflow": wf.name}).structured_content
     assert again["sha256"] == body["sha256_after"]
-    assert call(tools, "validate", {"workflow": wf.name}).structured_content["ok"]
+    assert call(
+        tools, "validate", {"workflow": wf.name, "check_data": False}
+    ).structured_content["ok"]
 
 
 def test_a_stale_expect_sha256_is_refused_and_nothing_is_written(wf, tmp_path):
@@ -347,6 +351,225 @@ def test_get_policy_tells_the_harness_whether_it_may_apply(wf, tmp_path):
     tools = _tools(wf, tmp_path, access="schema_only", edit=True)
     policy = call(tools, "get_policy", {"workflow": wf.name}).structured_content
     assert policy["tools"]["apply_edits"] is True
+
+
+# ------------------------------------- the pitfalls a real harness fell into
+def _invoice_workspace(tmp_path):
+    ws = tmp_path / "pitfalls"
+    ws.mkdir()
+    (ws / "invoices.csv").write_text(
+        "invoice_id,vendor,amount\nA1,Acme,9999\nA2,Acme,20000\nB1,Birch,30000\n",
+        encoding="utf-8",
+    )
+    return ws
+
+
+def _agent(ws, tmp_path, **policy):
+    policy = {"access": "schema_only", "edit": True, **policy}
+    return AgentTools(
+        policy_file=_policy_file(tmp_path, **policy), workspaces=[str(ws)]
+    )
+
+
+def _patch(tools, edits, apply=True, name="flow.tds"):
+    return call(
+        tools,
+        "patch_workflow",
+        {"workflow": name, "edits": edits, "apply": apply},
+    )
+
+
+READ = {
+    "op": "add_node",
+    "type": "input.file_input",
+    "ref": "src",
+    "title": "Invoices",
+    "settings": {"filePath": "invoices.csv", "file_type": "csv"},
+}
+SUM_TEXT = {
+    "op": "add_node",
+    "type": "preparation.groupby",
+    "ref": "totals",
+    "after": "src",
+    "title": "Total per vendor",
+    "settings": {
+        "actions": [
+            {"field": "vendor", "action": "GroupBy", "output_name": "vendor"},
+            {"field": "amount", "action": "Sum", "output_name": "total"},
+        ]
+    },
+}
+WRITE = {
+    "op": "add_node",
+    "type": "input.file_output",
+    "ref": "out",
+    "after": "totals",
+    "title": "Totals file",
+    "settings": {"filePath": "output/totals.csv", "file_format": "csv"},
+}
+LINKS = [
+    {"op": "connect", "from": "src", "to": "totals"},
+    {"op": "connect", "from": "totals", "to": "out"},
+]
+
+
+def _built(tools):
+    assert not call(
+        tools, "new_workflow", {"workflow": "flow.tds", "apply": True}
+    ).is_error
+    done = _patch(tools, [READ, SUM_TEXT, WRITE, *LINKS])
+    assert not done.is_error, done.content
+    return done.structured_content
+
+
+def test_a_new_output_folder_is_created_and_files_are_stored_complete(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    dry = _patch(tools, [READ, SUM_TEXT, WRITE, *LINKS], apply=False)
+    assert not dry.is_error, dry.content
+    folders = dry.structured_content["output_folders"]
+    assert folders["created"] == [] and len(folders["to_create"]) == 1
+    assert not (ws / "output").exists()
+    done = _patch(tools, [READ, SUM_TEXT, WRITE, *LINKS])
+    assert (ws / "output").is_dir()
+    assert done.structured_content["output_folders"]["created"] == [str(ws / "output")]
+    saved = json.loads((ws / "flow.tds").read_text(encoding="utf-8"))
+    out = next(n for n in saved["nodes"] if n["op"] == "input.file_output")
+    assert out["content"]["settings"]["filePath"] == str(ws / "output" / "totals.csv")
+
+
+def test_a_name_given_to_a_node_is_what_the_editor_and_the_tools_show(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    _built(tools)
+    info = call(tools, "read_workflow", {"workflow": "flow.tds"}).structured_content
+    names = {n["label"]: n for n in info["nodes"] if "label" in n}
+    assert set(names) == {"Invoices", "Total per vendor", "Totals file"}
+    assert names["Total per vendor"]["title"] == "Aggregate"
+    assert len(info["connections"]) == 2
+    schema = call(
+        tools, "get_schema", {"workflow": "flow.tds", "node": "Invoices"}
+    ).structured_content
+    assert [c["name"] for c in schema["outputs"][0]["columns"]][:2] == [
+        "invoice_id",
+        "vendor",
+    ]
+
+
+def test_validate_finds_the_text_column_before_any_run(tmp_path):
+    """The mistake a real harness made: summing a CSV column that is text."""
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    _built(tools)
+    result = call(tools, "validate", {"workflow": "flow.tds"}).structured_content
+    assert result["ok"] is False
+    errors = [f for f in result["findings"] if f["level"] == "error"]
+    assert errors and errors[0]["code"] == "TD-TYP-003"
+    assert "'amount'" in errors[0]["message"]  # the real column, not ''
+    assert "preparation.select" in errors[0]["message"]
+    assert "dtype_custom" in errors[0]["message"]
+    assert any("data types" in c for c in result["checked"])
+    # Without the data check the structure alone looks fine, and says so.
+    quick = call(
+        tools, "validate", {"workflow": "flow.tds", "check_data": False}
+    ).structured_content
+    assert quick["ok"] is True and not any("data types" in c for c in quick["checked"])
+
+
+def test_validate_passes_once_the_column_is_converted(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    _built(tools)
+    fix = [
+        {
+            "op": "add_node",
+            "type": "preparation.select",
+            "ref": "cast",
+            "title": "Amount to number",
+            "settings": {
+                "columns": [
+                    {
+                        "name": n,
+                        "selected": True,
+                        "dtype": t,
+                        "rename": "",
+                        "date_format": "",
+                        "dtype_custom": t != "String",
+                    }
+                    for n, t in (
+                        ("invoice_id", "String"),
+                        ("vendor", "String"),
+                        ("amount", "Float64"),
+                    )
+                ]
+            },
+        },
+        # In a later batch a node is found by the name it was given.
+        {"op": "disconnect", "from": "Invoices", "to": "Total per vendor"},
+        {"op": "connect", "from": "Invoices", "to": "cast"},
+        {"op": "connect", "from": "cast", "to": "Total per vendor"},
+    ]
+    assert not _patch(tools, fix).is_error
+    result = call(tools, "validate", {"workflow": "flow.tds"}).structured_content
+    assert result["ok"] is True, result["findings"]
+
+
+def test_validate_flags_a_filter_that_compares_text_as_numbers(tmp_path):
+    """Greater-than on a text column runs without error and keeps wrong rows."""
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    call(tools, "new_workflow", {"workflow": "flow.tds", "apply": True})
+    edits = [
+        READ,
+        {
+            "op": "add_node",
+            "type": "preparation.filter",
+            "ref": "big",
+            "after": "src",
+            "title": "Over 10,000",
+            "settings": {
+                "column": "amount",
+                "operation": "Greater Than",
+                "value": "10000",
+            },
+        },
+        {
+            "op": "add_node",
+            "type": "input.file_output",
+            "ref": "out",
+            "after": "big",
+            "title": "Big invoices",
+            "settings": {"filePath": "output/big.csv", "file_format": "csv"},
+        },
+        {"op": "connect", "from": "src", "to": "big"},
+        {"op": "connect", "from": "big", "output": "true", "to": "out"},
+    ]
+    assert not _patch(tools, edits).is_error
+    result = call(tools, "validate", {"workflow": "flow.tds"}).structured_content
+    assert result["ok"] is False
+    [finding] = [f for f in result["findings"] if f["level"] == "error"]
+    assert finding["code"] == "TD-TYP-004"
+    assert "'amount'" in finding["message"] and "Greater Than" in finding["message"]
+    assert "preparation.select" in finding["message"]
+
+
+def test_validate_reports_a_missing_output_folder(tmp_path):
+    ws = _invoice_workspace(tmp_path)
+    tools = _agent(ws, tmp_path)
+    _built(tools)
+    (ws / "output").rmdir()
+    result = call(
+        tools, "validate", {"workflow": "flow.tds", "check_data": False}
+    ).structured_content
+    assert result["ok"] is False
+    assert any(f["code"] == "TD-CLI-014" for f in result["findings"])
+
+
+def test_get_policy_explains_which_key_the_owner_changes(wf, tmp_path):
+    policy = call(_tools(wf, tmp_path), "get_policy", {"workflow": wf.name})
+    note = policy.structured_content["note"]
+    assert '"edit"' in note and '"access"' in note and "data owner" in note
 
 
 # ------------------------------------------------------- real stdio process

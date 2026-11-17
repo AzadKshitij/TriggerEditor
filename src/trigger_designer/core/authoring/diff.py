@@ -109,17 +109,23 @@ def _short(value: Any, limit: int = 60) -> str:
     return text if len(text) <= limit else text[: limit - 3] + "..."
 
 
+def _name(node: dict) -> str:
+    """``Title "name"`` when the node has a name its author gave it."""
+    label = node.get("label")
+    return f'{node["title"]} "{label}"' if label else str(node["title"])
+
+
 def render_lines(result: dict) -> list[str]:
     """The diff as plain lines for a terminal."""
     if result["empty"]:
         return ["(no differences)"]
     lines: list[str] = []
     for node in result["nodes"]["added"]:
-        lines.append(f"+ node {node['id']} {node['title']} ({node['op']})")
+        lines.append(f"+ node {node['id']} {_name(node)} ({node['op']})")
     for node in result["nodes"]["removed"]:
-        lines.append(f"- node {node['id']} {node['title']} ({node['op']})")
+        lines.append(f"- node {node['id']} {_name(node)} ({node['op']})")
     for node in result["nodes"]["changed"]:
-        lines.append(f"~ node {node['id']} {node['title']} ({node['op']})")
+        lines.append(f"~ node {node['id']} {_name(node)} ({node['op']})")
         for change in node["changes"]:
             lines.append(
                 f"    {change['path']}: {_short(change['from'])} -> {_short(change['to'])}"

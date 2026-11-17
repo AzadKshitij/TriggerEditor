@@ -496,7 +496,8 @@ def test_a_file_input_path_also_sets_the_relative_path_the_editor_reads(tmp_path
     editor = Editor(empty(), base_dir=str(tmp_path))
     info = editor.add_node("input.file_input", settings={"filePath": "data/in.csv"})
     content = editor.node(info["id"])["content"]
-    assert content["filePath"] == "data/in.csv"
+    # Stored complete: the editor and the command line then agree on the file.
+    assert content["filePath"] == str(tmp_path / "data" / "in.csv")
     assert content["filePathRel"] == "data/in.csv"
     absolute = str(tmp_path / "other" / "x.csv")
     editor.set_settings(info["id"], {"filePath": absolute})
@@ -509,3 +510,46 @@ def test_filePathRel_cannot_be_set_directly(tmp_path):
     editor = Editor(empty(), base_dir=str(tmp_path))
     info = editor.add_node("input.file_input")
     err("TD-CLI-022", editor.set_settings, info["id"], {"filePathRel": "x.csv"})
+
+
+# -------------------------------------------- names, complete paths, folders
+def test_a_title_becomes_the_visible_label_the_editor_shows(tmp_path):
+    """The editor ignores a ``title`` saved in the file, so a name is a label."""
+    editor = Editor(empty(), base_dir=str(tmp_path))
+    info = editor.add_node("preparation.sort", title="Biggest first")
+    node = editor.node(info["id"])
+    assert node["title"] == "Sort"
+    assert node["label_text"] == "Biggest first" and node["label_visible"] is True
+    assert info["label"] == "Biggest first"
+
+
+def test_a_node_can_be_found_by_the_name_it_was_given(tmp_path):
+    editor = Editor(empty(), base_dir=str(tmp_path))
+    first = editor.add_node("preparation.sort", title="Biggest first")
+    editor.add_node("preparation.sort", title="Oldest first")
+    assert editor.node("Biggest first")["id"] == first["id"]
+    assert editor.node("Oldest first")["label_text"] == "Oldest first"
+    err("TD-CLI-020", editor.node, "Sort")  # two nodes share the type name
+
+
+def test_file_settings_are_stored_as_complete_paths(tmp_path):
+    editor = Editor(empty(), base_dir=str(tmp_path))
+    out = editor.add_node(
+        "input.file_output", settings={"filePath": "output/result.csv"}
+    )
+    stored = editor.node(out["id"])["content"]["settings"]["filePath"]
+    assert stored == str(tmp_path / "output" / "result.csv")
+    editor.set_settings(out["id"], {"filePath": "other/x.csv"})
+    assert editor.node(out["id"])["content"]["settings"]["filePath"] == str(
+        tmp_path / "other" / "x.csv"
+    )
+
+
+def test_output_folders_that_do_not_exist_are_reported_not_created(tmp_path):
+    editor = Editor(empty(), base_dir=str(tmp_path))
+    editor.add_node("input.file_output", settings={"filePath": "output/r.csv"})
+    folders = editor.output_folders()
+    assert folders == {"creatable": [str(tmp_path / "output")], "blocked": []}
+    assert not (tmp_path / "output").exists()
+    (tmp_path / "output").mkdir()
+    assert editor.output_folders() == {"creatable": [], "blocked": []}

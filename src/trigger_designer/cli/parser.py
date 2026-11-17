@@ -400,6 +400,12 @@ def build_parser() -> argparse.ArgumentParser:
     val.add_argument("workflow", metavar="WORKFLOW")
     val.add_argument("--deep", action="store_true", help="load it like the editor")
     val.add_argument(
+        "--check-data",
+        action="store_true",
+        help="also run what feeds each output (nothing is written) to find "
+        "failures such as a text column used as a number",
+    )
+    val.add_argument(
         "--no-files", action="store_true", help="skip the input-exists check"
     )
     val.add_argument("--strict", action="store_true", help="treat warnings as errors")

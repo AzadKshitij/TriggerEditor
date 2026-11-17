@@ -287,15 +287,16 @@ trigger-designer-cli run sales.tds --param input_file=D:\in\today.csv --log-form
 ## validate
 
 ```text
-trigger-designer-cli validate WORKFLOW [--deep] [--no-files] [--strict] [--param NAME=VALUE] [--input-dir DIR] [--output-dir DIR] [--format {text,json}]
+trigger-designer-cli validate WORKFLOW [--deep] [--check-data] [--no-files] [--strict] [--param NAME=VALUE] [--input-dir DIR] [--output-dir DIR] [--format {text,json}]
 ```
 
-Checks a workflow without running it. The default check is instant and does not load the data engine: the file is valid JSON, the version is not newer than this program, every node type is known, there is no loop, and each File Input exists. `--deep` also loads the workflow the way the editor does and checks the code each node would run against the [safety policy](#safety).
+Checks a workflow without running it. The default check is instant and does not load the data engine: the file is valid JSON, the version is not newer than this program, every node type is known, there is no loop, and each File Input exists. A missing output folder is an error (`TD-CLI-014`; the editor refuses to run into it too), and a relative output path is a warning, because the command line writes it next to the workflow while the editor writes it relative to the folder it was started in. `--deep` also loads the workflow the way the editor does and checks the code each node would run against the [safety policy](#safety). `--check-data` runs the nodes that feed each File Output (nothing is written) and reports what would fail or give wrong rows, with the column named: a text column that is summed (`TD-TYP-003`), or a Filter that compares a text column with greater than, less than or between (`TD-TYP-004`; text compares letters, so "9999" sorts after "10000").
 
 | Option | Default | Meaning |
 |---|---|---|
 | `WORKFLOW` | required | The `.tds` file. |
 | `--deep` | off | Load it like the editor; resolve inputs; check each node's generated code. Takes a couple of seconds. |
+| `--check-data` | off | Run what feeds each output, writing nothing, so data problems are found now, not at run time. Reads the data; reports names and codes, never values. |
 | `--no-files` | off | Skip the "input file exists" check. Useful on a build server that does not have the data. |
 | `--strict` | off | Treat warnings as errors. |
 | `--param`, `--input-dir`, `--output-dir` | none | Same meaning as for `run`; used by `--deep`. A required parameter must be given for `--deep` to pass. |
@@ -565,7 +566,7 @@ Safety rules, in the order they are checked:
 
 1. `--apply` needs `"edit": true` in the data owner's [policy file](#who-decides-what-a-tool-may-see); otherwise exit 6 with `TD-CLI-019`.
 2. `--expect-sha` (the `sha256` that `info` prints) refuses the edit if the file is not the one the tool read (`TD-CLI-026`). The file is checked again just before the write, so a save from the editor in the meantime is never overwritten.
-3. A node is named by its id, its title, a `ref` from earlier in the same patch, or its type id when only one node has it. A name that matches several nodes is an error (`TD-CLI-020`), never a guess.
+3. A node is named by its id, the name given to it with `--title` (shown under the node in the editor), its type name, a `ref` from earlier in the same patch, or its type id when only one node has it. The editor always shows a node's type as its title and ignores a different one saved in the file, so `--title` is stored as the node's visible label. A name that matches several nodes is an error (`TD-CLI-020`), never a guess.
 4. **Settings** must be settings of that node type (`ops NODE_TYPE`) with the type their default has. `--set NAME=VALUE` takes the setting's own type (`10000` is text for a text setting and a number for a number setting). Anything else is `TD-CLI-022`, with the names that exist as the hint. The editor's own choice lists are not loaded here; the node checks its choices when it runs.
 5. **File settings** (a File Input or Output path, a Workpaper's folders) may only point into the workflow's folder, or a folder in the policy's `paths` list. Anything else is refused with exit 6 and `TD-CLI-024`, so an edit cannot aim an output, or a read, somewhere else.
 6. **SQL** (the SQL Query node, a Filter expression, Formula and Multi-Field Formula text) goes through the read-only SQL guard before it is saved: one `SELECT`, no files, no system or random functions (`TD-CLI-025`).
@@ -587,7 +588,7 @@ A new node takes the next free id above every id in the file, is placed under th
 ]
 ```
 
-A new node's id is not known in advance, so `ref` gives it a name for the edits after it. The operations are `add_node`, `remove_node`, `connect`, `disconnect`, `set` (`node`, `settings`), `label` and `layout`; an unknown field is an error. The batch is **all or nothing**: the first failing edit stops it, the error names it (`edit 3 (connect): ...`), and nothing is written.
+File settings are stored as complete paths: a relative path you give is taken from the workflow's folder, so the command line and the editor always write to the same place. Applying an edit creates a missing output folder (inside the workflow's folder or a folder the policy lists under `paths`), and the result lists `output_folders`. A new node's id is not known in advance, so `ref` gives it a name for the edits after it. The operations are `add_node`, `remove_node`, `connect`, `disconnect`, `set` (`node`, `settings`), `label` and `layout`; an unknown field is an error. The batch is **all or nothing**: the first failing edit stops it, the error names it (`edit 3 (connect): ...`), and nothing is written.
 
 ### What the command returns
 
@@ -647,7 +648,7 @@ The data owner sets the boundary when the server starts, not the tool:
 
 The read tools are `get_policy` (call it first), `list_ops`, `describe_op`, `read_workflow`, `validate`, `diff`, `get_schema`, `get_profile`, `get_preview` and `explain_error`. They return the same JSON as the commands above, and a refusal or failure comes back as `{"error": {"code", "message", "hint"}}` with a `TD-*` code.
 
-Two tools change files: `new_workflow` and `patch_workflow` (the [`edit` command](#changing-a-workflow-from-the-command-line) and its `patch` list). Both are **dry runs unless `apply` is true**, and writing needs `"edit": true` in the policy (`get_policy` reports it as `apply_edits`). A write keeps the first `.bak`, refuses a file that changed since it was read (`expect_sha256`), and, because the file's hash changes, cancels any approval to run it. There is no tool to approve or run a workflow: that stays with a person.
+`validate` runs the data check by default (`check_data`), so the checks above, including a text column used as a number, come back before anything is run; `read_workflow` also returns the nodes (with the names they were given) and the connections. Two tools change files: `new_workflow` and `patch_workflow` (the [`edit` command](#changing-a-workflow-from-the-command-line) and its `patch` list). Both are **dry runs unless `apply` is true**, and writing needs `"edit": true` in the policy (`get_policy` reports it as `apply_edits`). A write keeps the first `.bak`, refuses a file that changed since it was read (`expect_sha256`), and, because the file's hash changes, cancels any approval to run it. There is no tool to approve or run a workflow: that stays with a person.
 
 Data tools run the workflow's earlier nodes in a separate process, so a stuck node can be stopped and nothing it prints reaches the tool. The tool never gets more than the policy allows, whatever it asks for.
 

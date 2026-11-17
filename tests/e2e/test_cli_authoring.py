@@ -294,7 +294,8 @@ def test_diff_compares_two_files(wf, tmp_path):
     )
     out = _json(_cli(tmp_path, "diff", str(original), str(wf), "--json"))
     assert not out["empty"] and out["summary"]["nodes_added"] == 1
-    assert out["nodes"]["added"][0]["title"] == "Biggest first"
+    added = out["nodes"]["added"][0]
+    assert added["title"] == "Sort" and added["label"] == "Biggest first"
     text = _cli(tmp_path, "diff", str(original), str(wf)).stdout
     assert "+ node" in text and "Biggest first" in text
     same = _json(_cli(tmp_path, "diff", str(original), str(original), "--json"))
