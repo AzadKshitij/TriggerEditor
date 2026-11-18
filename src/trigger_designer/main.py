@@ -343,11 +343,6 @@ def main() -> None:
             warmup.start_in_background()
 
         window.open_startup_work()
-        # Several files named on the command line (a multi-selection opened
-        # from Explorer, or a terminal): the first is open already, open the
-        # rest.
-        for extra in files[1:]:
-            window.openFile(extra)
 
         if not file_path:
             try:
