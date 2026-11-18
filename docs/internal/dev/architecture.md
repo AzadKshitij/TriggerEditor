@@ -288,7 +288,7 @@ The brief described `main` at `71b4041`. These statements no longer hold on
 
 | Brief | Now |
 |---|---|
-| Binding is PyQt6, `qtpy-nodeeditor` from a git fork outside the lock; "do not run bare `uv sync`" | PySide6-Essentials 6.12.0 via `qtpy`, `nodeeditor-qtpy==0.8.2` from PyPI and in `uv.lock`. `qt_api = "pyside6"` in pytest config. |
+| Binding is PyQt6, `qtpy-nodeeditor` from a git fork outside the lock; "do not run bare `uv sync`" | PySide6-Essentials 6.12.0 via `qtpy`, `nodeeditor-qtpy==0.9.0` from PyPI and in `uv.lock`. `qt_api = "pyside6"` in pytest config. |
 | Python 3.13.12, Polars 1.44.2, DuckDB 1.5.5 | Python `>=3.14,<3.15` (venv 3.14.8), Polars 2.0.0, DuckDB 2.0.0, pyarrow 26.0.0. Python 3.14 syntax appears: `except A, B:` without parentheses (PEP 758). |
 | `xlsxwriter` missing | Declared (`xlsxwriter==3.3.0`) and installed; wrapped by `core/excel`. |
 | Fact 3: Run does not re-evaluate; unevaluated nodes emit fallback code | `executeWorkflow` calls `_reevaluate_for_run` first. |

@@ -1,57 +1,34 @@
 """Canvas view overrides for the installed ``nodeeditor`` package.
 
-``QDMCutLine`` builds its bounding rectangle from ``line_points``, but the
-library replaces that list without calling ``prepareGeometryChange``. Qt then
-repaints the item's *new* bounds only: while a CTRL-drag grows the stroke the
-old pixels stay inside the new rectangle, but when the stroke ends the list is
-emptied first, so the area the line covered is never repainted and the line
-stays on the canvas until something else redraws the viewport (issue #34).
+``TriggerCutLine`` keeps the library's cut stroke and takes the theme's text
+colour when no stylesheet is set, because the library draws it white. The view
+draws the drag-selection box itself, since Qlementine draws no ``QRubberBand``.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 from typing import TYPE_CHECKING
 
 from nodeeditor.node_graphics_cutline import QDMCutLine
 from nodeeditor.node_graphics_view import QDMGraphicsView
-from qtpy.QtCore import QMargins, QPointF, QRect, QRectF
+from qtpy.QtCore import QMargins, QRect, QRectF
 from qtpy.QtGui import QColor, QPainter, QPalette, QPen
 from qtpy.QtWidgets import QApplication
 
 if TYPE_CHECKING:
     from nodeeditor.node_graphics_scene import QDMGraphicsScene
-    from qtpy.QtWidgets import QGraphicsItem, QWidget
+    from qtpy.QtWidgets import QWidget
 
 
 class TriggerCutLine(QDMCutLine):
-    """A cut line that reports its geometry change before it happens.
+    """The library's cut stroke, in the theme's text colour when unstyled.
 
-    Replacing the points moves ``boundingRect``, and Qt only repaints the area
-    the item declared before the change. Declaring it covers the stroke that
-    the release would otherwise leave behind.
+    The library paints the stroke white, which vanishes on a light canvas once
+    no stylesheet is set (Qlementine). Take the theme's text colour then; the
+    classic themes keep the library's colour.
     """
 
-    def __init__(self, parent: QGraphicsItem | None = None) -> None:
-        # Set first: ``QDMCutLine.__init__`` assigns ``line_points`` itself.
-        self._points: list[QPointF] = []
-        super().__init__(parent)
-
-    @property
-    def line_points(self) -> list[QPointF]:
-        return self._points
-
-    @line_points.setter
-    def line_points(self, points: Iterable[QPointF]) -> None:
-        points = list(points)
-        if points == self._points:
-            return
-        self.prepareGeometryChange()
-        self._points = points
-
     def paint(self, painter, option, widget=None) -> None:
-        # The library draws white, which vanishes on a light canvas. Without a
-        # stylesheet (Qlementine) take the theme's text colour; classic is as it was.
         if not QApplication.instance().styleSheet():
             self._pen.setColor(
                 QApplication.palette().color(QPalette.ColorRole.WindowText)
@@ -64,7 +41,7 @@ BAND_FILL_ALPHA = 56
 
 
 class TriggerGraphicsView(QDMGraphicsView):
-    """The canvas view, drawing the repaint-safe cut line and selection box."""
+    """The canvas view, drawing the cut line and the selection box."""
 
     CutLine_class = TriggerCutLine
 

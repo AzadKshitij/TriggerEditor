@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """The cut stroke has to leave the canvas when the stroke ends.
 
-``QDMCutLine`` derives its bounding rectangle from ``line_points``. The library
-empties that list and then repaints the item's *new* rectangle, which is an
-empty one at the origin, so the dashed stroke stayed on screen until something
-else repainted the viewport - a scene re-render (issue #34). The canvas view
-therefore draws ``TriggerCutLine``, which declares the geometry change first.
+``QDMCutLine`` derives its bounding rectangle from ``line_points``. Replacing the
+points has to declare the geometry change first, or Qt repaints only the new,
+empty rectangle and the dashed stroke stays on screen until something else
+repaints the viewport (issue #34). nodeeditor's ``line_points`` setter declares
+the change, and ``TriggerCutLine`` inherits that setter.
 """
 
 from __future__ import annotations

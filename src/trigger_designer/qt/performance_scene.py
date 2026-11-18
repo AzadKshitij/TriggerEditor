@@ -22,41 +22,20 @@ from trigger_designer.qt.undo.history import TriggerSceneHistory
 
 
 class CachedGraphicsEdge(QDMGraphicsEdge):
-    def __init__(self, edge: Edge, parent=None) -> None:
-        self._cached_path = None
-        self._path_dirty = True
-        super().__init__(edge, parent)
+    """The app's edge item. The route cache is nodeeditor's own.
 
-    def _invalidate_cached_path(self) -> None:
-        self._path_dirty = True
-        self._cached_path = None
+    nodeeditor drops its cached route in ``setPositions``, which ``setSource``,
+    ``setDestination`` and every node move go through, so this class adds no
+    cache. A new path calculator is the one change it does not invalidate:
+    ``createEdgePathCalculator`` keeps the old route. ``Edge.edge_type``
+    re-positions a visible edge straight away, but a hidden one (an internal edge
+    of a collapsed group) is skipped, so the override re-adopts the current ends.
+    """
 
     def createEdgePathCalculator(self):
         calculator = super().createEdgePathCalculator()
-        self._invalidate_cached_path()
+        self.setPositions(self.posSource, self.posDestination)
         return calculator
-
-    def setSource(self, x: float, y: float) -> None:
-        # Invalidate first: the base setter adopts the recomputed path, and it
-        # must not adopt the cache from the previous position.
-        self._invalidate_cached_path()
-        super().setSource(x, y)
-
-    def setDestination(self, x: float, y: float) -> None:
-        self._invalidate_cached_path()
-        super().setDestination(x, y)
-
-    def setPositions(self, source, destination) -> None:
-        # A node move sets both ends; invalidate once and let the base setter
-        # adopt the recomputed path once.
-        self._invalidate_cached_path()
-        super().setPositions(source, destination)
-
-    def calcPath(self):
-        if self._path_dirty or self._cached_path is None:
-            self._cached_path = self.pathCalculator.calcPath()
-            self._path_dirty = False
-        return self._cached_path
 
 
 class TriggerEdge(Edge):

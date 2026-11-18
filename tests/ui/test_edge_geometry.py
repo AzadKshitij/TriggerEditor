@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 """Edge geometry honesty: what an edge declares must cover what it draws.
 
-The canvas showed smeared arcs and loops while a node was dragged. An edge was
-painting a stroke that reached outside its own ``boundingRect``: the outer band
-of the previous stroke was therefore never repainted, and each frame of a drag
-left another band behind. Two things made the item dishonest.
-
-1. ``QDMGraphicsEdge.boundingRect`` returned the bare path rect, while ``paint``
-   strokes that path with pens up to 5px wide. Qt's own ``QGraphicsPathItem``
-   inflates for the pen; the override dropped that.
-2. The path was only adopted inside ``paint``, so a repaint invalidated the
-   previous geometry and drew the new one.
+The canvas used to show smeared arcs and loops while a node was dragged: an edge
+painted a stroke that reached outside its own ``boundingRect``, so the outer band
+of the previous stroke was never repainted. nodeeditor declares a stroke margin
+for every pen and adopts the route in ``setPositions``; these tests pin both for
+the app's edges (``TriggerEdge`` -> ``CachedGraphicsEdge``).
 """
 
 from __future__ import annotations
@@ -76,7 +71,7 @@ def edge(window: TriggerSubWindow):
 
 
 def test_qt_itself_inflates_a_path_item_rect_for_the_pen() -> None:
-    """The invariant the override has to keep: a stroke reaches past the path."""
+    """The invariant the declared rect has to keep: a stroke reaches past the path."""
     path = _curve((0.0, 0.0), (40.0, 90.0), (120.0, -60.0), (160.0, 20.0))
     item = QGraphicsPathItem(path)
     pen = QPen(QColor("green"))
@@ -86,7 +81,7 @@ def test_qt_itself_inflates_a_path_item_rect_for_the_pen() -> None:
     stroke = _stroke_of(path, 5.0)
 
     assert item.boundingRect().contains(stroke)
-    # And the bare path rect, which the override used to return, does not.
+    # The bare path rect does not contain it, so an edge must not declare that.
     assert not path.boundingRect().contains(stroke)
 
 

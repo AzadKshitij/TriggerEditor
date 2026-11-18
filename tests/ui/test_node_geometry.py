@@ -2,10 +2,11 @@
 """Node geometry honesty: what a node declares must cover what it draws.
 
 A node paints two things outside its own body: the status badge, centred on the
-bottom edge, and the state ring, stroked with a 5px pen. ``boundingRect`` used to
-return the body alone, so Qt never repainted the badge's lower half and every
-frame of a drag left another copy of it behind - the trail of green check badges
-under a dragged node.
+bottom edge, and the state ring, stroked with a 5px pen. nodeeditor's
+``boundingRect`` covers the body, its outline and the label, but not these two,
+so ``TriggerGraphicsNode`` declares them. Without that, Qt never repainted the
+badge's lower half and every frame of a drag left another copy of it behind -
+the trail of green check badges under a dragged node.
 """
 
 from __future__ import annotations

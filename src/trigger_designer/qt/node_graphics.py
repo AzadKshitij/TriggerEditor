@@ -86,19 +86,13 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
     def boundingRect(self) -> QRectF:
         """The body, the badge below it, the state ring, and the floating label.
 
-        Two things ``paint`` draws reach outside the body: the badge is centred
-        on the bottom edge, so half of it is below, and the state ring strokes
-        the body path with a 5px pen, so half of it is outside every edge. A
-        ``boundingRect`` that stopped at the body was smaller than what the item
-        drew; Qt repaints by the declared rectangle, so what fell outside was
-        never cleared and every frame of a drag left another copy behind - the
-        trail of green check badges and ring fragments under a dragged node.
-
-        The label above the node counts for the same reason, and it cannot be
-        part of the cached rectangle because its text sets its width. Qt dirties
-        a moved item by its rectangle at the old position and its children only
-        at the new one, so a label left out of it stayed painted where the node
-        had been: the stack of plates above a dragged node.
+        nodeeditor's rectangle covers the body, its outline and the floating
+        label, but not two things only ``paint`` draws: the badge, centred on the
+        bottom edge so half of it is below, and the state ring, stroked with a
+        5px pen. Qt repaints by the declared rectangle, so anything painted
+        outside it is never cleared, and every frame of a drag leaves another
+        copy behind - the trail of green check badges and ring fragments under a
+        dragged node. Those two are declared here.
         """
         if self._bounding_rect is None:
             margin = self.RING_PEN_WIDTH / 2.0 + 1.0
@@ -109,13 +103,10 @@ class TriggerGraphicsNode(QDMIconGraphicsNode):
         # rewrite the item's bounds, and Qt then culled the item as if it sat at
         # twice its position.
         rect = QRectF(self._bounding_rect)
-        # Only the body/badge/ring rectangle is cached here. ``labelRect``
-        # caches itself in nodeeditor and drops that cache whenever the text,
-        # visibility or font changes, so the union stays cheap but current.
-        label_rect = getattr(self, "labelRect", None)
-        if label_rect is not None:  # nodeeditor before 0.8.2
-            rect = rect.united(label_rect())
-        return rect
+        # The label is a child of this item, so Qt dirties it only where it is
+        # now. Declaring it here keeps its old plate in the repainted region when
+        # the node moves. nodeeditor caches the label box and drops it on change.
+        return rect.united(self.labelRect())
 
     def shape(self) -> QPainterPath:
         """The node's hit/selection shape, built once.
