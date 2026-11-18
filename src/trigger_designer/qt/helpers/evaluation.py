@@ -10,6 +10,7 @@ closure in dependency order exactly once.
 
 from __future__ import annotations
 
+import time
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager
 from typing import Any
@@ -152,6 +153,68 @@ class EvaluationCoordinator:
             )
         finally:
             self._flushing = False
+
+    def evaluate_all_incrementally(
+        self,
+        *,
+        budget_ms: float = 12.0,
+        report: Callable[[str], None] | None = None,
+        on_progress: Callable[[int, int], None] | None = None,
+        on_done: Callable[[], None] | None = None,
+    ) -> None:
+        """Evaluate every node once, a few at a time, between event-loop turns.
+
+        Same nodes, same order and same result as :meth:`evaluate_all`, but the
+        window stays usable: each slice evaluates nodes for about ``budget_ms``
+        and then hands control back to Qt. Anything that resets the pending
+        work (a Run, an undo restore, closing the window, another full pass)
+        ends this pass without finishing it, because each of those brings its
+        own full evaluation. ``on_done`` runs only when the pass completes.
+        """
+        self.reset_pending()
+        generation = self._generation
+        ordered = self._ordered(set(getattr(self.scene, "nodes", ())), report)
+        for node in ordered:
+            if not node.isDirty():
+                node.markDirty()
+        total = len(ordered)
+        state = {"next": 0}
+
+        def step() -> None:
+            if generation != self._generation:
+                return  # superseded: a Run, a restore or a close took over
+            if (
+                self._suspended
+                or self._flushing
+                or getattr(self.scene, "_bulk_loading", False)
+                or getattr(self.scene, "_eval_depth", 0) > 0
+            ):
+                QTimer.singleShot(50, step)  # a run or another pass is busy
+                return
+            live = set(getattr(self.scene, "nodes", ()))
+            deadline = time.perf_counter() + budget_ms / 1000.0
+            self._flushing = True
+            try:
+                with self.batch_evaluation():
+                    # At least one node per slice, however small the budget,
+                    # so the pass always makes progress.
+                    while state["next"] < total:
+                        node = ordered[state["next"]]
+                        state["next"] += 1
+                        if node in live:
+                            node.eval()
+                        if time.perf_counter() >= deadline:
+                            break
+            finally:
+                self._flushing = False
+            if on_progress is not None:
+                on_progress(state["next"], total)
+            if state["next"] < total:
+                QTimer.singleShot(0, step)
+            elif on_done is not None:
+                on_done()
+
+        QTimer.singleShot(0, step)
 
     def evaluate_nodes(
         self,

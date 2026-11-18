@@ -695,15 +695,15 @@ wheels = [
 
 [[package]]
 name = "nodeeditor-qtpy"
-version = "0.8.2"
+version = "0.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "orjson" },
     { name = "qtpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/56/a1/bc4e706cf3195ae6c12ecd2b042a32d52fcdc7826232976fd77aa120e5a2/nodeeditor_qtpy-0.8.2.tar.gz", hash = "sha256:a82b1b616a4345c69dc31b5017055a19c6dfe15a3fd2b892a5c1fef3a019ebf3", size = 465385, upload-time = "2026-10-25T12:53:24.41Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/cc/07/078b2721fbcaa6c8581fa62a255459a195fe30c0e007c456b6999750d240/nodeeditor_qtpy-0.9.0.tar.gz", hash = "sha256:aec302b804364ef5473d331ed1f849932174a0ba0c17051001adb32e642c2802", size = 468611, upload-time = "2026-11-17T10:49:02.07Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/71/4d255975d62c68181e8c16c8cdff9e9a892a222752a15fc0f3e39a83bd49/nodeeditor_qtpy-0.8.2-py3-none-any.whl", hash = "sha256:60a543c72b94cfacb7becf3eee3a6e784d7677e23912d11cc053f695679714f4", size = 135221, upload-time = "2026-10-25T12:53:22.673Z" },
+    { url = "https://files.pythonhosted.org/packages/86/76/4370a6c04f02286255ccf7c16ce0529b0a728c117201c3e2894b3c6a02d4/nodeeditor_qtpy-0.9.0-py3-none-any.whl", hash = "sha256:b033abc828375e79141a3f8bf1dde3a1a80107bcb54d9a1043c0a5e6fd0fa60a", size = 136490, upload-time = "2026-11-17T10:49:00.726Z" },
 ]
 
 [[package]]
@@ -1642,7 +1642,7 @@ requires-dist = [
     { name = "loguru", specifier = "==0.7.3" },
     { name = "matplotlib", specifier = "==3.11.2" },
     { name = "mcp", marker = "extra == 'agent'", specifier = "==2.3.0" },
-    { name = "nodeeditor-qtpy", specifier = "==0.8.2" },
+    { name = "nodeeditor-qtpy", specifier = "==0.9.0" },
     { name = "numpy", specifier = "==2.5.4" },
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "orjson", specifier = "==3.13.0" },

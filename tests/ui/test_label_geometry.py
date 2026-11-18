@@ -5,7 +5,8 @@ The label paints a rounded plate padded by 6x3 px around its text. Qt repaints a
 moved item by the rectangle it declared at the old position, and dirties its
 children only at the new one, so a label left out of the node's rectangle stayed
 painted wherever the node had been - the stack of plates above a dragged node.
-``boundingRect`` used to return the body, the badge and the ring only.
+nodeeditor declares the plate and unites the label into ``boundingRect``; these
+tests pin that for the app's nodes.
 """
 
 from __future__ import annotations
@@ -17,17 +18,11 @@ from qtpy.QtCore import QPointF, QRectF
 from qtpy.QtWidgets import QApplication
 
 from trigger_designer.qt.design_window import TriggerSubWindow
-from trigger_designer.qt.node_base import TriggerGraphicsNode
 from trigger_designer.qt.widgets.nodes.Preparation.select import (
     TriggerNode_Select as SelectNode,
 )
 
 _APP = QApplication.instance() or QApplication([])
-
-pytestmark = pytest.mark.skipif(
-    not hasattr(TriggerGraphicsNode, "labelRect"),
-    reason="needs nodeeditor >= 0.8.2, which declares the floating label",
-)
 
 
 @pytest.fixture

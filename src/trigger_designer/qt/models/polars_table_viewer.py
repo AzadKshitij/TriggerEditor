@@ -15,8 +15,9 @@ tint, so the model supplies the even/odd row background from the active
 theme's tokens via ``Qt.BackgroundRole``.
 """
 
-import polars as pl
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, Tuple
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -46,7 +47,15 @@ from loguru import logger
 import time
 from datetime import datetime, date
 
+from trigger_designer.core.lazy_import import lazy_module
 from trigger_designer.qt.resource_manager import ResourceManager
+
+if TYPE_CHECKING:
+    import polars as pl
+else:
+    # Imported on first use: this module loads with the main window, and the
+    # viewer only needs Polars once a table is shown.
+    pl = lazy_module("polars")
 
 # Label of the "search every column" entry. Shared with hosts that build their
 # own search row (the Data Preview panel) so the wording cannot drift.
@@ -85,7 +94,10 @@ class PolarsTableModel(QAbstractTableModel):
         """
         super().__init__(parent)
 
-        self._dataframe = dataframe if dataframe is not None else pl.DataFrame()
+        # ``None`` means "no data yet". The Data Preview builds this model when
+        # the main window is built, and an empty ``pl.DataFrame()`` here would
+        # import Polars before the window can show.
+        self._dataframe: pl.DataFrame | None = dataframe
         self.chunk_size = chunk_size
         self.cache_size = cache_size
 
@@ -120,7 +132,7 @@ class PolarsTableModel(QAbstractTableModel):
 
     def _update_column_info(self):
         """Update cached column information."""
-        if self._dataframe.width > 0:
+        if self._dataframe is not None and self._dataframe.width > 0:
             self._column_names = self._dataframe.columns
             self._column_types = dict(
                 zip(self._dataframe.columns, self._dataframe.dtypes)
@@ -182,6 +194,8 @@ class PolarsTableModel(QAbstractTableModel):
 
     def current_frame(self) -> pl.DataFrame:
         """The frame the model holds, in its current sort order."""
+        if self._dataframe is None:
+            return pl.DataFrame()
         return self._dataframe
 
     @property
@@ -225,7 +239,7 @@ class PolarsTableModel(QAbstractTableModel):
         """
         if column < 0 or column >= len(self._column_names):
             return
-        if self._dataframe.is_empty():
+        if self._dataframe is None or self._dataframe.is_empty():
             return
 
         name = self._column_names[column]
@@ -305,6 +319,8 @@ class PolarsTableModel(QAbstractTableModel):
         Returns:
             Polars DataFrame containing the chunk data
         """
+        if self._dataframe is None:
+            return pl.DataFrame()
         try:
             end_row = min(start_row + self.chunk_size, self._total_rows)
 

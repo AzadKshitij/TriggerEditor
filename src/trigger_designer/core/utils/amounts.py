@@ -6,7 +6,14 @@ node: ``1,50`` is 1.5, not 150. See ``amount_expr``.
 
 from __future__ import annotations
 
-import polars as pl
+from typing import TYPE_CHECKING
+
+from trigger_designer.core.lazy_import import lazy_module
+
+if TYPE_CHECKING:
+    import polars as pl
+else:
+    pl = lazy_module("polars")
 
 
 def amount_expr(name: str, dtype: pl.DataType) -> pl.Expr:

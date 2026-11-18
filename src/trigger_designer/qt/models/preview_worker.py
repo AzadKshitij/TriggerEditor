@@ -11,18 +11,25 @@ collect that outlives a closed preview is dropped by Qt instead of being
 delivered into a deleted object.
 """
 
+from __future__ import annotations
+
 import time
 from functools import partial
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import polars as pl
 from loguru import logger
 from qtpy.QtCore import QObject, QThread, Signal
 
+from trigger_designer.core.lazy_import import lazy_module
 from trigger_designer.qt.models.preview_sampling import (
     PreviewWindow,
     collect_preview,
 )
+
+if TYPE_CHECKING:
+    import polars as pl
+else:
+    pl = lazy_module("polars")
 
 # Qt aborts the process when a QThread is destroyed while still running, and
 # these workers are owned by Python (they have no Qt parent), so a host that

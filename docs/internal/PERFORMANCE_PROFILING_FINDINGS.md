@@ -168,7 +168,9 @@ Important finding:
 
 Implementation:
 
-- Added an app-owned `CachedGraphicsEdge` in `qt/performance_scene.py`.
+- Added an app-owned `CachedGraphicsEdge` in `qt/performance_scene.py`. Since
+  nodeeditor 0.9.0 the library caches the route itself, so the app keeps no cache
+  of its own (see "Upstream status" after round seven).
 - The expensive path calculator now runs only when edge endpoints or edge type change.
 - Repeated `boundingRect()` or `shape()` queries reuse the cached path.
 
@@ -435,7 +437,8 @@ resize, a selection pass). It then stayed there: the next drags kept invalidatin
 narrow rectangles that never covered it. Every frame of a drag added another
 band, and the bands are the smeared arcs in the screenshot.
 
-The fix:
+The fix (the library side is in nodeeditor 0.9.0, see "Upstream status" after
+round seven; the app-side part is the last bullet):
 
 - `QDMGraphicsEdge.strokeMargin()` returns half the widest pen the item can paint
   with plus one pixel for antialiasing, and `boundingRect()` inflates by it.
@@ -449,11 +452,10 @@ The fix:
   showed up as a drag regression (0.56x against the previous round) until the two
   setters were folded into one call. `setSource` and `setDestination` now
   delegate to it, so a single-end change still adopts.
-- `CachedGraphicsEdge.setSource` / `setDestination` invalidate the cached path
-  *before* calling the base setter, so the setter adopts the fresh path rather
-  than the previous position's cache. `paint()` keeps its `setPath` call as the
-  fallback for consumers that only ever paint; it is a no-op once the geometry is
-  current.
+- `CachedGraphicsEdge.setSource` / `setDestination` used to invalidate the app's
+  cached path *before* calling the base setter, so the setter adopted the fresh
+  path rather than the previous position's cache. nodeeditor 0.9.0 drops its
+  cached route inside `setPositions` itself, so those overrides are gone.
 
 Evidence: `tests/ui/test_edge_geometry.py`. It asserts that Qt itself inflates a
 path item for the pen, that the declared rectangle contains the stroked path for
@@ -565,7 +567,9 @@ position, and its children are dirtied only at the new position. The label is a
 child of the node, so its new plate was cleared and its old one was not, even
 though the plate itself now fitted inside the label's rectangle.
 
-The fix therefore has three parts:
+The fix therefore has three parts. nodeeditor 0.9.0 carries all three; the app's
+`TriggerGraphicsNode.boundingRect` only unites the library's `labelRect()` into
+the rectangle it builds (see "Upstream status" below):
 
 - `QDMGraphicsNodeLabel.boundingRect()` is the text united with the padding and
   the border, and `textRect()` keeps the text rectangle on its own.
@@ -582,7 +586,8 @@ the drawn pixels did not move.
 
 `QDMGraphicsCutline` had the same defect one size smaller: it declared the bare
 polyline while stroking it with a 2px pen, so a moving cut line left the outer
-half of the stroke behind. Its rectangle now accounts for the pen.
+half of the stroke behind. The library's rectangle accounts for the pen now, and
+its `line_points` setter declares the change before the stroke clears (0.9.0).
 
 Evidence: `tests/test_210_label_geometry.py` in the package runs six assertions
 of the contract, and `tests/ui/test_label_geometry.py` covers the application:
@@ -625,6 +630,27 @@ Pattern to reuse:
   `tests/test_210_label_geometry.py` caught.
 - A twelve-frame walk of a real node reports both the old and the new plate
   inside the changed region on every frame.
+
+### Upstream status (nodeeditor 0.9.0)
+
+nodeeditor 0.9.0 carries the library side of rounds five to seven, so the app
+keeps only what the library does not provide.
+
+- Removed from the app: the `TriggerCutLine.line_points` override (the library's
+  setter declares the change before it clears the stroke); the label fallback for
+  nodeeditor before 0.8.2 in `TriggerGraphicsNode.boundingRect`; and
+  `CachedGraphicsEdge`'s own route cache with its `setSource`, `setDestination` and
+  `setPositions` overrides (`setPositions` drops the library's cached route and
+  adopts the new one once).
+- Kept, because the library does not provide them:
+  - `TriggerGraphicsNode.boundingRect` declares the status badge and the state
+    ring, which only this app paints.
+  - `CachedGraphicsEdge.createEdgePathCalculator` re-adopts the current ends. The
+    library swaps the calculator without dropping its cached route, and the app's
+    `updatePositions` skips a hidden internal edge of a collapsed group.
+  - `TriggerCutLine.paint` takes the theme's text colour; the library draws white.
+  - The drag-selection box in `TriggerGraphicsView`; Qlementine draws no
+    `QRubberBand`.
 
 ## Remaining Major Hotspots
 

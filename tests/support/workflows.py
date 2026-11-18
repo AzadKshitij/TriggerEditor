@@ -113,16 +113,14 @@ def nodes_titled(window, title: str) -> list:
     return [node for node in window.getAllNodes() if node.title == title]
 
 
-def executed_frame(window, node, index: int = 0):
-    """The frame a finished node's output ``index`` produced in the last run.
+def _executed_result(window, node, index: int = 0):
+    """What the last run stored for ``node``'s output ``index``.
 
     Loading evaluated the node's ``processInputs`` into ``node.value``: a list
     of ``{"data", "variable_name"}``, one per output socket. The run defines
     the same variable names in its execution context, so the name links the
     output the test wants to the frame the generated code computed.
     """
-    import polars as pl
-
     outputs = node.value
     if not isinstance(outputs, list):
         raise TypeError(f"{node.title!r}: no evaluated outputs to map")
@@ -142,8 +140,43 @@ def executed_frame(window, node, index: int = 0):
             f"{node.title!r}: the run produced no variable {name!r}; "
             f"got {sorted(variables)}"
         )
-    value = variables[name]
+    return variables[name]
+
+
+def executed_frame(window, node, index: int = 0):
+    """The frame a finished node's output ``index`` produced in the last run.
+
+    A run keeps each result as its preview rows plus the exact total, not the
+    whole table. A small result is complete; for a bigger one this raises, so
+    a test that needs every row reads the node's output file instead, or asks
+    :func:`executed_row_count` when the count is all it needs.
+    """
+    import polars as pl
+
+    from trigger_designer.qt.models.preview_sampling import CachedPreview
+
+    value = _executed_result(window, node, index)
+    if isinstance(value, CachedPreview):
+        if value.total_rows > value.frame.height:
+            raise AssertionError(
+                f"{node.title!r}: the run kept {value.frame.height} of "
+                f"{value.total_rows} rows as a preview; read the node's output "
+                "file, or use executed_row_count for the row count"
+            )
+        return value.frame
     return value.collect() if isinstance(value, pl.LazyFrame) else value
+
+
+def executed_row_count(window, node, index: int = 0) -> int:
+    """How many rows a finished node's output ``index`` produced in the last run."""
+    import polars as pl
+
+    from trigger_designer.qt.models.preview_sampling import CachedPreview
+
+    value = _executed_result(window, node, index)
+    if isinstance(value, CachedPreview):
+        return value.total_rows
+    return value.collect().height if isinstance(value, pl.LazyFrame) else value.height
 
 
 def _basename(raw: str) -> str:

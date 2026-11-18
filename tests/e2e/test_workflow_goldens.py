@@ -32,6 +32,7 @@ from tests.support.workflows import (
     REPO_ROOT,
     WorkflowCase,
     executed_frame,
+    executed_row_count,
     materialize,
     nodes_titled,
     run_workflow_and_wait,
@@ -175,5 +176,5 @@ def test_load_samples_the_input_and_run_reads_every_row(
     run_workflow_and_wait(qtbot, window)
     _assert_run_clean(window)
     for title in ("File Input", "Select"):
-        frame = executed_frame(window, nodes_titled(window, title)[0])
-        assert frame.height == total, title
+        rows = executed_row_count(window, nodes_titled(window, title)[0])
+        assert rows == total, title

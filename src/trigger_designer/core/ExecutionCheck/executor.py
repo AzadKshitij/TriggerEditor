@@ -5,6 +5,8 @@ comprehensive error reporting.
 All imports and functions are allowed for maximum flexibility.
 """
 
+from __future__ import annotations
+
 import os
 import queue
 import re
@@ -16,13 +18,19 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
-import polars as pl
 from loguru import logger
 
+from trigger_designer.core.lazy_import import lazy_module
 from trigger_designer.qt.helpers import global_logger
 
 if TYPE_CHECKING:
+    import polars as pl
+
     from trigger_designer.qt.node_base import TriggerNode
+else:
+    # Imported on first use: the editor loads this module before its first
+    # window, and a run is the first thing that needs Polars.
+    pl = lazy_module("polars")
 
 
 @dataclass
