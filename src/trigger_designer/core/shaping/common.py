@@ -3,13 +3,24 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
-import duckdb
-import polars as pl
-
+from trigger_designer.core.lazy_import import lazy_module
 from trigger_designer.core.utils.amounts import amount_expr
 
-Frame = pl.LazyFrame | pl.DataFrame
+if TYPE_CHECKING:
+    import duckdb
+    import polars as pl
+
+    Frame = pl.LazyFrame | pl.DataFrame
+else:
+    # Both libraries are imported on first use, not when a node module loads:
+    # the editor loads these modules before its first window.
+    duckdb = lazy_module("duckdb")
+    pl = lazy_module("polars")
+    #: Only ever read as a type hint (every module using it has postponed
+    #: annotations); a real union would import Polars right here.
+    Frame = "pl.LazyFrame | pl.DataFrame"
 
 #: DuckDB workers can enter Polars' ``LazyFrame.collect`` off the Qt main
 #: thread. Formula and Filter live evaluation crashed in that path, and one

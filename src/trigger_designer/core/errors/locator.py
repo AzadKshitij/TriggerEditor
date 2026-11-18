@@ -6,8 +6,14 @@ import logging
 import re
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-import polars as pl
+# Polars costs about half a second to import, and this module is reached from
+# the error and diagnostics layer that the editor loads before its first
+# window. Only the type hints need it up front; the functions import it when
+# they run (a row search after a failed cast), by which time it is loaded.
+if TYPE_CHECKING:
+    import polars as pl
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +26,8 @@ class LocateResult:
 
 
 def polars_dtype_from_name(name: str) -> pl.DataType | None:
+    import polars as pl
+
     value = (name or "").strip()
     low = value.lower()
     aliases = {
@@ -63,6 +71,8 @@ def polars_dtype_from_name(name: str) -> pl.DataType | None:
 def probe_expr(
     column: str, target: pl.DataType, *, date_format: str | None = None
 ) -> pl.Expr:
+    import polars as pl
+
     source = pl.col(column)
     if target == pl.Date:
         return source.str.to_date(format=date_format, strict=False)
@@ -93,6 +103,8 @@ def locate_conversion_failures(
     max_chars: int = 80,
 ) -> LocateResult:
     try:
+        import polars as pl
+
         chosen = None
         schema = {}
         for frame in frames or ():

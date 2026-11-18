@@ -94,18 +94,26 @@ class TriggerWindow(
         file_path: Optional[str] = None,
         name_company: str = "Trigger",
         name_product: str = "Trigger Editor",
+        defer_startup_open: bool = False,
     ) -> None:
         super().__init__()
 
         # We'll create a single logging dock in initUI
 
-        self.openFile(file_path)
+        # ``defer_startup_open`` lets the caller show the window first: opening
+        # a workflow (or restoring the last session) blocks for as long as it
+        # takes to load, and until the window shows nothing else can paint. The
+        # caller then runs :meth:`open_startup_work` once the window is up.
+        self._startup_file = file_path
+        self._startup_open_pending = defer_startup_open
+        if not defer_startup_open:
+            self.openFile(file_path)
         self.name_company = name_company
         self.name_product = name_product
 
         self.setObjectName("MainWindow")
 
-        if not file_path:
+        if not file_path and not defer_startup_open:
             self._restore_last_session()
 
         self.shortcut = QShortcut(QKeySequence("F11"), self)
@@ -251,6 +259,20 @@ class TriggerWindow(
         self.apply_appearance()
         if self.statusBar() is not None:
             self.statusBar().showMessage("Layout reset", 3000)
+
+    def open_startup_work(self) -> None:
+        """Open the file named at launch, or restore the last session.
+
+        Only does anything for a window built with ``defer_startup_open``, and
+        only once; the launcher calls it after the window is on screen.
+        """
+        if not self._startup_open_pending:
+            return
+        self._startup_open_pending = False
+        if self._startup_file:
+            self.openFile(self._startup_file)
+        else:
+            self._restore_last_session()
 
     def _restore_last_session(self) -> None:
         """Reopen last-session files only when the preference is on."""
@@ -452,6 +474,7 @@ class TriggerWindow(
                 else:
                     # we need to create new subWindow and open the file
                     nodeeditor = TriggerSubWindow()
+                    nodeeditor.defer_load_evaluation = True
                     if nodeeditor.fileLoad(fname):
                         if self.statusBar() is not None:
                             self.statusBar().showMessage("File %s loaded" % fname, 5000)
@@ -482,6 +505,7 @@ class TriggerWindow(
                     else:
                         # we need to create new subWindow and open the file
                         nodeeditor = TriggerSubWindow()
+                        nodeeditor.defer_load_evaluation = True
                         if nodeeditor.fileLoad(fname):
                             if self.statusBar() is not None:
                                 self.statusBar().showMessage(

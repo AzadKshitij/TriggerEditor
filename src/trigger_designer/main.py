@@ -11,6 +11,13 @@ from typing import Optional, TextIO
 # Add the src directory to the Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+# The editor works on small samples and previews, so it does not need one Polars
+# worker thread per core: each thread keeps its own allocator heap and stack, and
+# a 16-core machine pays for sixteen. Eight keeps the run time the same here and
+# saves memory. The ``tds`` command and the MCP server run big jobs and keep the
+# default. Must be set before polars is imported; a value already set wins.
+os.environ.setdefault("POLARS_MAX_THREADS", str(min(8, os.cpu_count() or 4)))
+
 from loguru import logger
 from qtpy.QtGui import QIcon, QGuiApplication, QScreen
 from qtpy.QtWidgets import QApplication
@@ -264,21 +271,11 @@ def main() -> None:
     splash.show()
     app.processEvents()
 
-    # Perform first-use Arrow/Pandas initialization outside the GUI thread.
-    # The splash remains responsive; opening a file after startup does not
-    # need to pay this cold import cost in its first Filter/Formula node.
-    def _warm_data_backend() -> None:
-        try:
-            from trigger_designer.core.warmup import warm_duckdb_polars
-
-            warm_duckdb_polars()
-        except Exception as exc:
-            logger.debug(f"Data backend warm-up skipped: {exc}")
-
-    if os.getenv("TRIGGER_DISABLE_DATA_WARMUP") != "1":
-        threading.Thread(
-            target=_warm_data_backend, daemon=True, name="data-warmup"
-        ).start()
+    # The data libraries (Polars, DuckDB, Arrow) are NOT loaded here any more:
+    # nothing needed to draw the first window uses them, and importing them on
+    # a second thread while the window modules import only makes both slower.
+    # They load in the background right after the window is on screen (see
+    # ``_after_first_paint`` below).
 
     # Heavy imports deferred until the splash is visible
     import trigger_designer.qt.darkstyle_rc  # noqa: F401
@@ -310,11 +307,18 @@ def main() -> None:
     # every node/edge/socket is built with the user's colors from the start.
     apply_node_editor_colors(load_node_editor_colors())
 
-    # Create and show main window
+    # Create and show main window. The file named at launch (or the last
+    # session) is NOT opened yet: loading a workflow blocks for as long as it
+    # takes, and the window must be on screen first.
+    from functools import partial
+
+    from qtpy.QtCore import QTimer
+
     main_window = TriggerWindow(
         file_path=file_path,
         name_company=name_company,
         name_product=name_product,
+        defer_startup_open=True,
     )
     main_window.show()
     main_window.activateWindow()
@@ -324,14 +328,34 @@ def main() -> None:
     # alive while Qt tears its widgets down.
     app.aboutToQuit.connect(main_window.shutdown_background_work)
 
-    # Hide splash screen
+    # Hide splash screen, and let the window paint before anything else runs.
     splash.finish(main_window)
+    app.processEvents()
 
-    if not file_path:
-        try:
-            main_window.showWelcomeDialogIfNeeded()
-        except Exception as exc:
-            logger.warning(f"Welcome dialog skipped: {exc}")
+    def _after_first_paint(window: TriggerWindow) -> None:
+        """Everything that can wait until the user is looking at the window."""
+        # Load Polars, DuckDB and Arrow on their own thread. A workflow opened
+        # below evaluates only once they are ready, so the canvas never waits
+        # on an import.
+        if os.getenv("TRIGGER_DISABLE_DATA_WARMUP") != "1":
+            from trigger_designer.core import warmup
+
+            warmup.start_in_background()
+
+        window.open_startup_work()
+        # Several files named on the command line (a multi-selection opened
+        # from Explorer, or a terminal): the first is open already, open the
+        # rest.
+        for extra in files[1:]:
+            window.openFile(extra)
+
+        if not file_path:
+            try:
+                window.showWelcomeDialogIfNeeded()
+            except Exception as exc:
+                logger.warning(f"Welcome dialog skipped: {exc}")
+
+    QTimer.singleShot(0, partial(_after_first_paint, main_window))
 
     logger.info("Trigger Designer started successfully")
 

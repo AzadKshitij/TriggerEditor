@@ -4,12 +4,22 @@ Pure Polars/pandas - no Qt, no widgets - so the collector worker and its tests
 can run without a QApplication.
 """
 
+from __future__ import annotations
+
 import sys
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import polars as pl
 from loguru import logger
+
+from trigger_designer.core.lazy_import import lazy_module
+
+if TYPE_CHECKING:
+    import polars as pl
+else:
+    # Imported on first use: the Data Preview module loads with the main
+    # window, and nothing here needs Polars until a table is shown.
+    pl = lazy_module("polars")
 
 # Rows collected from a LazyFrame to measure its per-row memory footprint.
 _SAMPLE_ROWS = 10
@@ -29,7 +39,9 @@ def is_previewable(data: Any) -> bool:
     Hosts use this to tell "no data on this socket" apart from "a value the
     preview cannot show" (a Series, a graph payload) before requesting.
     """
-    return isinstance(data, (pl.DataFrame, pl.LazyFrame)) or _is_pandas_dataframe(data)
+    return isinstance(
+        data, (pl.DataFrame, pl.LazyFrame, CachedPreview)
+    ) or _is_pandas_dataframe(data)
 
 
 @dataclass
@@ -45,6 +57,19 @@ class PreviewWindow:
     total_rows: int | None
     limited: bool
     is_lazy: bool
+
+
+@dataclass
+class CachedPreview:
+    """A run result kept as its preview only: the first rows and the row count.
+
+    ``frame`` owns its own buffers (see ``snapshot_for_cache``), so holding a
+    ``CachedPreview`` never keeps the full table it came from alive.
+    ``total_rows`` is exact: the run measured it before the table was released.
+    """
+
+    frame: pl.DataFrame
+    total_rows: int
 
 
 def estimate_frame_bytes(frame: pl.DataFrame) -> int:
@@ -115,6 +140,18 @@ def collect_preview(
     max_size_bytes = max_size_mb * 1024 * 1024
     max_rows = max(0, max_rows)
 
+    if isinstance(data, CachedPreview):
+        # Already bounded and counted: re-apply the caller's caps to the cached
+        # rows (a smaller window may be asked for) and report the exact total.
+        effective = min(max_rows, _memory_row_cap(data.frame, max_size_bytes))
+        frame = data.frame.head(effective)
+        return PreviewWindow(
+            frame=frame,
+            total_rows=data.total_rows,
+            limited=data.total_rows > frame.height,
+            is_lazy=False,
+        )
+
     if _is_pandas_dataframe(data):
         data = pl.from_pandas(data)
 
@@ -145,3 +182,48 @@ def collect_preview(
         "collect_preview expects a Polars DataFrame/LazyFrame or pandas "
         f"DataFrame, got {type(data).__name__}"
     )
+
+
+def _is_in_memory_plan(frame: pl.LazyFrame) -> bool:
+    """True when ``frame``'s plan reads only in-memory data (no file or scan).
+
+    Such a plan can be counted and sampled without touching a source again; a
+    plan that still scans a file is left alone so the deferred count keeps
+    deciding when that pass is worth it.
+    """
+    return "SCAN" not in frame.explain(optimized=False)
+
+
+def snapshot_for_cache(
+    data: Any,
+    max_rows: int = 1000,
+    max_size_mb: float = 2.0,
+) -> CachedPreview | None:
+    """Reduce a run result to its preview rows and exact row count.
+
+    The point is to let the full table be freed after a run. Slicing is not
+    enough: ``head``, ``clone``, ``rechunk`` and even a gather by position all
+    keep sharing buffers with the parent (long strings live in shared data
+    buffers), so the whole table would stay alive behind a handful of rows.
+    Rebuilding the few preview rows from their values, with the same schema,
+    gives a frame that owns all its memory.
+
+    Returns ``None`` when ``data`` must be kept as it is: not a Polars frame,
+    a lazy plan that still scans a file, or any failure (the caller then keeps
+    the original value, so a preview never gets worse than before).
+    """
+    try:
+        if isinstance(data, pl.LazyFrame):
+            if not _is_in_memory_plan(data):
+                return None
+            total = int(data.select(pl.len()).collect().item())
+        elif isinstance(data, pl.DataFrame):
+            total = int(data.height)
+        else:
+            return None
+        head = collect_preview(data, max_rows, max_size_mb).frame
+        detached = pl.DataFrame(head.to_dict(as_series=False), schema=head.schema)
+        return CachedPreview(frame=detached, total_rows=total)
+    except Exception as e:  # noqa: BLE001 - caching is best effort; keep the original
+        logger.debug(f"Result not cached as a preview ({type(e).__name__}: {e})")
+        return None

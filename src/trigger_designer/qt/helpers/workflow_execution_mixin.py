@@ -571,8 +571,8 @@ class WorkflowExecutionMixin:
             clear = getattr(node, "clear_error", None)
             if callable(clear):
                 clear("run")
-            self.execution_results[node] = self._prune_node_results(
-                node, result.variables
+            self.execution_results[node] = self._compact_node_results(
+                self._prune_node_results(node, result.variables)
             )
             node.grNode.setPenExecuted()
             node.grNode.update()
@@ -718,6 +718,13 @@ class WorkflowExecutionMixin:
         except Exception:  # noqa: BLE001 - the export must never skip the cleanup
             logger.exception("Could not write the generated script")
         self._seal_run_record(success)
+        # The executor's shared namespace holds every node's full output table
+        # until now (downstream nodes read from it). The run is over and
+        # ``execution_results`` keeps the previews, so release the tables. The
+        # executor itself is tiny and stays, for anything that inspects it.
+        finished_executor = getattr(self, "_workflow_executor", None)
+        if finished_executor is not None:
+            finished_executor.execution_context.clear()
         if getattr(self, "_skipped_nodes", None):
             if self.is_enrichment_settled():
                 self._mark_skipped_nodes()
@@ -885,6 +892,24 @@ class WorkflowExecutionMixin:
             if self._is_previewable_value(value)
         }
         return previewable or variables
+
+    @staticmethod
+    def _compact_node_results(results: dict[str, Any]) -> dict[str, Any]:
+        """Keep each table result as its preview rows plus its exact row count.
+
+        After a run the Data Preview only ever shows a bounded window of a
+        node's output, so holding the whole table for every node (the full
+        working set of the workflow, again) buys nothing. Values that are not
+        in-memory tables, and tables that cannot be reduced, are kept as they
+        are.
+        """
+        from trigger_designer.qt.models.preview_sampling import snapshot_for_cache
+
+        compact: dict[str, Any] = {}
+        for name, value in results.items():
+            cached = snapshot_for_cache(value)
+            compact[name] = value if cached is None else cached
+        return compact
 
     @staticmethod
     def _is_previewable_value(value: Any) -> bool:

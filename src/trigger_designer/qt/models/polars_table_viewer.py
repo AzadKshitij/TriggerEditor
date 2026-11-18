@@ -15,8 +15,9 @@ tint, so the model supplies the even/odd row background from the active
 theme's tokens via ``Qt.BackgroundRole``.
 """
 
-import polars as pl
-from typing import Any, Callable, Dict, List, Optional, Union, Tuple
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Union, Tuple
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -46,7 +47,15 @@ from loguru import logger
 import time
 from datetime import datetime, date
 
+from trigger_designer.core.lazy_import import lazy_module
 from trigger_designer.qt.resource_manager import ResourceManager
+
+if TYPE_CHECKING:
+    import polars as pl
+else:
+    # Imported on first use: this module loads with the main window, and the
+    # viewer only needs Polars once a table is shown.
+    pl = lazy_module("polars")
 
 # Label of the "search every column" entry. Shared with hosts that build their
 # own search row (the Data Preview panel) so the wording cannot drift.

@@ -122,6 +122,14 @@ class TriggerSubWindow(
     executionResultsChanged = Signal()
     #: Emitted with the saved path once a Run's record is sealed on disk.
     runRecorded = Signal(str)
+    #: When True, opening a workflow does not evaluate it inside ``fileLoad``.
+    #: The evaluation runs right afterwards, a few nodes at a time between
+    #: event-loop turns, so the window is usable at once instead of frozen for
+    #: the length of a full pass. Interactive opens (Open, recent files, drag
+    #: and drop, launch) turn it on; scripts, tests and the CLI keep the
+    #: synchronous load and its guarantee that every node is evaluated on
+    #: return.
+    defer_load_evaluation: bool = False
 
     def __init__(self, parent: Union[QWidget, "TriggerWindow"] = None) -> None:
         super().__init__(parent)
@@ -410,7 +418,16 @@ class TriggerSubWindow(
             return TriggerNode_Unknown
         return TriggerNode_Unknown
 
+    @property
+    def evaluation_settled(self) -> bool:
+        """False while a deferred open is still evaluating its nodes."""
+        return getattr(self, "_deferred_eval_token", None) is None
+
     def doEvalOutputs(self, dialog=None) -> None:
+        # A full pass supersedes a deferred open that has not finished: this
+        # evaluates every node itself (Run and undo restore come through here).
+        self._deferred_eval_token = None
+
         # The loader and undo restore need every node in one ordered pass. A
         # cyclic graph cannot be sorted; the coordinator reports it once and
         # falls back to creation order instead of failing the load.
@@ -595,12 +612,75 @@ class TriggerSubWindow(
                     ),
                 )
 
-            self.doEvalOutputs(dialog=dialog)
+            if self.defer_load_evaluation:
+                self._start_deferred_evaluation()
+            else:
+                self.doEvalOutputs(dialog=dialog)
             self.logInfo(f"File '{filename}' loaded and initialized successfully")
             return True
 
         self.logError(f"Failed to load file: {filename}")
         return False
+
+    def _start_deferred_evaluation(self) -> None:
+        """Evaluate the freshly loaded workflow in the background.
+
+        Waits until the data libraries have finished loading (they import on
+        their own thread after the window appears), then evaluates every node
+        in slices so the canvas stays responsive. A Run, an undo restore or
+        closing the window ends it early, since each does its own full
+        evaluation. Status shows in the main window's status bar.
+        """
+        from trigger_designer.core import warmup
+
+        coordinator = getattr(self.scene, "evaluator", None)
+        if coordinator is None:
+            return
+        token = object()
+        self._deferred_eval_token = token
+
+        def show(message: str, timeout_ms: int = 0) -> None:
+            bar_owner = self.window()
+            status_bar = getattr(bar_owner, "statusBar", None)
+            if callable(status_bar) and status_bar() is not None:
+                status_bar().showMessage(message, timeout_ms)
+
+        def finished() -> None:
+            if getattr(self, "_deferred_eval_token", None) is token:
+                self._deferred_eval_token = None
+            try:
+                # Same flat-pass flag the synchronous path settles under.
+                with coordinator.batch_evaluation():
+                    settle_multi_input_nodes(self.scene)
+                # A node picked while the pass was still running showed what
+                # it had at that moment; redraw it with the evaluated inputs.
+                self.refreshConfigDock(self.getSelectedItems(), force=True)
+            except RuntimeError:  # the window was closed meanwhile
+                return
+            self.logInfo("Workflow evaluated")
+            show("Workflow ready", 3000)
+
+        def begin() -> None:
+            if getattr(self, "_deferred_eval_token", None) is not token:
+                return  # closed, or another workflow was opened since
+            try:
+                if not warmup.is_ready():
+                    QTimer.singleShot(40, begin)
+                    return
+                show("Evaluating workflow…")
+                coordinator.evaluate_all_incrementally(
+                    report=lambda message: self.logWarning(
+                        f"{message} Evaluating in creation order."
+                    ),
+                    on_progress=lambda done, total: show(
+                        f"Evaluating workflow… {done}/{total}"
+                    ),
+                    on_done=finished,
+                )
+            except RuntimeError:  # the Qt object is already gone
+                return
+
+        QTimer.singleShot(0, begin)
 
     def validateLoadedWorkflow(self) -> list[str]:
         validation_messages: list[str] = []
@@ -837,6 +917,7 @@ class TriggerSubWindow(
         for callback in list(self._close_event_listeners):
             callback(self, event)
         if event.isAccepted():
+            self._deferred_eval_token = None
             self.cancel_pending_config_edits()
             evaluator = getattr(self.scene, "evaluator", None)
             if evaluator is not None:

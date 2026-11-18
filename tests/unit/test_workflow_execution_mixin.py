@@ -163,8 +163,12 @@ def test_workflow_worker_keeps_previewable_frames_without_declarations() -> None
 
     _run_worker_synchronously(window, [node], executor)
 
-    # No declared outputs: keep the previewable frame, drop the scratch value.
-    assert window.execution_results[node] == {"result": frame}
+    # No declared outputs: keep the previewable frame (as its cached preview:
+    # the rows plus the exact total), drop the scratch value.
+    stored = window.execution_results[node]
+    assert set(stored) == {"result"}
+    assert stored["result"].total_rows == 1
+    assert stored["result"].frame.equals(frame)
 
 
 def test_workflow_worker_reports_unexpected_exceptions() -> None:
