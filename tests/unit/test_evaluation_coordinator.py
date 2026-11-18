@@ -352,3 +352,114 @@ def test_timer_after_reset_is_noop() -> None:
         assert window.scene.evaluator.pending == set()
     finally:
         window.close()
+
+
+# --- incremental full pass (a deferred open evaluates in slices) --------------
+
+
+def _pump(predicate, timeout: float = 5.0) -> None:
+    """Run the Qt event loop until ``predicate()`` holds."""
+    import time
+
+    deadline = time.monotonic() + timeout
+    while not predicate():
+        assert time.monotonic() < deadline, "timed out waiting for the event loop"
+        APP.processEvents()
+        time.sleep(0.005)
+
+
+def _chain(window):
+    a = CountingNode(window.scene, inputs=[], outputs=[1], key="a")
+    b = CountingNode(window.scene, inputs=[1], outputs=[1], key="b")
+    c = CountingNode(window.scene, inputs=[1], outputs=[], key="c")
+    _edge(window, a.outputs[0], b.inputs[0])
+    _edge(window, b.outputs[0], c.inputs[0])
+    return a, b, c
+
+
+def test_incremental_pass_evaluates_every_node_in_order_and_reports_progress() -> None:
+    window = TriggerSubWindow()
+    try:
+        a, b, c = _chain(window)
+        order: list[str] = []
+        for node in (a, b, c):
+            original = node.processInputs
+
+            def traced(values, original=original, key=node.key):
+                order.append(key)
+                return original(values)
+
+            node.processInputs = traced
+        _reset(a, b, c)
+        progress: list[tuple[int, int]] = []
+        done: list[bool] = []
+
+        window.scene.evaluator.evaluate_all_incrementally(
+            budget_ms=0.0,  # one node per slice: the worst case for the loop
+            on_progress=lambda finished, total: progress.append((finished, total)),
+            on_done=lambda: done.append(True),
+        )
+        assert (a.computes, b.computes, c.computes) == (0, 0, 0)  # nothing yet
+
+        _pump(lambda: done)
+        assert order == ["a", "b", "c"]
+        assert progress == [(1, 3), (2, 3), (3, 3)]
+        assert done == [True]
+    finally:
+        window.close()
+
+
+def test_a_full_pass_supersedes_an_unfinished_incremental_one() -> None:
+    window = TriggerSubWindow()
+    try:
+        a, b, c = _chain(window)
+        _reset(a, b, c)
+        progress: list[tuple[int, int]] = []
+        done: list[bool] = []
+
+        window.scene.evaluator.evaluate_all_incrementally(
+            budget_ms=0.0,
+            on_progress=lambda finished, total: progress.append((finished, total)),
+            on_done=lambda: done.append(True),
+        )
+        _pump(lambda: progress)  # the first slice ran
+        window.doEvalOutputs()  # a Run or an undo restore: its own full pass
+        for _ in range(20):
+            APP.processEvents()
+
+        assert done == []  # the superseded pass never finishes
+        assert len(progress) == 1
+        # the superseding full pass evaluated every node itself
+        assert all(node.computes >= 1 for node in (a, b, c))
+    finally:
+        window.close()
+
+
+def test_incremental_pass_waits_while_the_evaluator_is_suspended() -> None:
+    window = TriggerSubWindow()
+    try:
+        a, b, c = _chain(window)
+        _reset(a, b, c)
+        progress: list[tuple[int, int]] = []
+        done: list[bool] = []
+        evaluator = window.scene.evaluator
+
+        evaluator.suspend()  # a workflow run owns Polars/DuckDB
+        evaluator.evaluate_all_incrementally(
+            budget_ms=0.0,
+            on_progress=lambda finished, total: progress.append((finished, total)),
+            on_done=lambda: done.append(True),
+        )
+        import time
+
+        end = time.monotonic() + 0.2
+        while time.monotonic() < end:
+            APP.processEvents()
+            time.sleep(0.005)
+        assert progress == []  # held back while suspended
+
+        evaluator.resume()
+        _pump(lambda: done)
+        assert progress[-1] == (3, 3)
+    finally:
+        window.close()

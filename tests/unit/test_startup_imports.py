@@ -21,14 +21,17 @@ import json, sys
 from qtpy.QtWidgets import QApplication
 app = QApplication([])
 import trigger_designer.main
-import trigger_designer.qt.main_window
+from trigger_designer.qt.main_window import TriggerWindow
+window = TriggerWindow(defer_startup_open=True)
+window.show()
+app.processEvents()
 loaded = [name for name in %r if name in sys.modules]
 sys.__stdout__.write("PROBE:" + json.dumps(loaded) + ":END")
 sys.__stdout__.flush()
 """
 
 
-def test_window_modules_do_not_import_the_data_libraries():
+def test_building_and_showing_the_main_window_does_not_import_the_data_libraries():
     env = {
         **os.environ,
         "QT_QPA_PLATFORM": "offscreen",
@@ -50,7 +53,7 @@ def test_window_modules_do_not_import_the_data_libraries():
     )
     loaded = json.loads(done.stdout[marker + len("PROBE:") :].split(":END")[0])
     assert loaded == [], (
-        f"importing the main window pulled in {loaded}; make the module that "
-        "imports it at module level load it on first use instead "
+        f"building the main window pulled in {loaded}; make the code that "
+        "loads it at import or construction time wait for first use instead "
         "(trigger_designer.core.lazy_import)"
     )
