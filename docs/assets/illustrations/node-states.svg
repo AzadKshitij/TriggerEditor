@@ -1,0 +1,93 @@
+<svg viewBox="0 0 780 190" xmlns="http://www.w3.org/2000/svg" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+  <rect width="780" height="190" fill="#0E1115" rx="10"/>
+
+  <!-- === IDLE === -->
+  <g transform="translate(15,46)">
+    <rect width="110" height="68" rx="7" fill="#191E22" stroke="#2F363D" stroke-width="1.5"/>
+    <rect x="10" y="10" width="28" height="28" rx="5" fill="#3F9E63"/>
+    <text x="24" y="29" fill="#ffffff" font-size="14" text-anchor="middle" font-weight="700">∑</text>
+    <text x="50" y="22" fill="#C6CDD5" font-size="10.5" font-weight="500">Formula</text>
+    <text x="50" y="34" fill="#919BA6" font-size="9">3 of 5</text>
+    <circle cx="0" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="110" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="55" cy="68" r="5" fill="#2F363D" stroke="#101418" stroke-width="1"/>
+    <circle cx="55" cy="68" r="2" fill="#919BA6"/>
+    <text x="55" y="90" fill="#5C6672" font-size="9.5" text-anchor="middle">Idle</text>
+  </g>
+
+  <!-- === SELECTED (orange ring) === -->
+  <g transform="translate(140,46)">
+    <rect x="-2.5" y="-2.5" width="115" height="73" rx="8.5" fill="none" stroke="#FFA637" stroke-width="2.5"/>
+    <rect width="110" height="68" rx="7" fill="#191E22" stroke="#2F363D" stroke-width="1.5"/>
+    <rect x="10" y="10" width="28" height="28" rx="5" fill="#3F9E63"/>
+    <text x="24" y="29" fill="#ffffff" font-size="14" text-anchor="middle" font-weight="700">∑</text>
+    <text x="50" y="22" fill="#C6CDD5" font-size="10.5" font-weight="500">Formula</text>
+    <text x="50" y="34" fill="#919BA6" font-size="9">3 of 5</text>
+    <circle cx="0" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="110" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="55" cy="68" r="5" fill="#2F363D" stroke="#101418" stroke-width="1"/>
+    <circle cx="55" cy="68" r="2" fill="#919BA6"/>
+    <text x="55" y="90" fill="#5C6672" font-size="9.5" text-anchor="middle">Selected</text>
+  </g>
+
+  <!-- === RUNNING (purple ring) === -->
+  <g transform="translate(265,46)">
+    <rect x="-2.5" y="-2.5" width="115" height="73" rx="8.5" fill="none" stroke="#9B7BD4" stroke-width="2.5"/>
+    <rect width="110" height="68" rx="7" fill="#191E22" stroke="#2F363D" stroke-width="1.5"/>
+    <rect x="10" y="10" width="28" height="28" rx="5" fill="#3F9E63"/>
+    <text x="24" y="29" fill="#ffffff" font-size="14" text-anchor="middle" font-weight="700">∑</text>
+    <text x="50" y="22" fill="#C6CDD5" font-size="10.5" font-weight="500">Formula</text>
+    <text x="50" y="34" fill="#919BA6" font-size="9">3 of 5</text>
+    <circle cx="0" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="110" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="55" cy="68" r="6" fill="#9B7BD4" stroke="#101418" stroke-width="1"/>
+    <text x="55" y="90" fill="#5C6672" font-size="9.5" text-anchor="middle">Running</text>
+  </g>
+
+  <!-- === COMPLETED (green ring + badge) === -->
+  <g transform="translate(390,46)">
+    <rect x="-2.5" y="-2.5" width="115" height="73" rx="8.5" fill="none" stroke="#48A878" stroke-width="2.5"/>
+    <rect width="110" height="68" rx="7" fill="#191E22" stroke="#2F363D" stroke-width="1.5"/>
+    <rect x="10" y="10" width="28" height="28" rx="5" fill="#3F9E63"/>
+    <text x="24" y="29" fill="#ffffff" font-size="14" text-anchor="middle" font-weight="700">∑</text>
+    <text x="50" y="22" fill="#C6CDD5" font-size="10.5" font-weight="500">Formula</text>
+    <text x="50" y="34" fill="#919BA6" font-size="9">3 of 5</text>
+    <circle cx="0" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="110" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="55" cy="68" r="6" fill="#48A878" stroke="#101418" stroke-width="1"/>
+    <text x="55" y="72" fill="#ffffff" font-size="9" text-anchor="middle" font-weight="700">✓</text>
+    <text x="55" y="90" fill="#5C6672" font-size="9.5" text-anchor="middle">Completed</text>
+  </g>
+
+  <!-- === ERROR (red ring + badge) === -->
+  <g transform="translate(515,46)">
+    <rect x="-2.5" y="-2.5" width="115" height="73" rx="8.5" fill="none" stroke="#E0686C" stroke-width="2.5"/>
+    <rect width="110" height="68" rx="7" fill="#191E22" stroke="#2F363D" stroke-width="1.5"/>
+    <rect x="10" y="10" width="28" height="28" rx="5" fill="#3F9E63"/>
+    <text x="24" y="29" fill="#ffffff" font-size="14" text-anchor="middle" font-weight="700">∑</text>
+    <text x="50" y="22" fill="#C6CDD5" font-size="10.5" font-weight="500">Formula</text>
+    <text x="50" y="34" fill="#919BA6" font-size="9">3 of 5</text>
+    <circle cx="0" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="110" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="55" cy="68" r="7" fill="#E0686C" stroke="#101418" stroke-width="1"/>
+    <text x="55" y="72.5" fill="#ffffff" font-size="11" text-anchor="middle" font-weight="700">!</text>
+    <text x="55" y="90" fill="#5C6672" font-size="9.5" text-anchor="middle">Error</text>
+  </g>
+
+  <!-- === WARNING (amber badge, no ring) === -->
+  <g transform="translate(640,46)">
+    <rect width="110" height="68" rx="7" fill="#191E22" stroke="#2F363D" stroke-width="1.5"/>
+    <rect x="10" y="10" width="28" height="28" rx="5" fill="#3F9E63"/>
+    <text x="24" y="29" fill="#ffffff" font-size="14" text-anchor="middle" font-weight="700">∑</text>
+    <text x="50" y="22" fill="#C6CDD5" font-size="10.5" font-weight="500">Formula</text>
+    <text x="50" y="34" fill="#919BA6" font-size="9">3 of 5</text>
+    <circle cx="0" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="110" cy="34" r="4.5" fill="#101418" stroke="#919BA6" stroke-width="1.5"/>
+    <circle cx="55" cy="68" r="7" fill="#D9A441" stroke="#101418" stroke-width="1"/>
+    <text x="55" y="72.5" fill="#ffffff" font-size="11" text-anchor="middle" font-weight="700">!</text>
+    <text x="55" y="90" fill="#5C6672" font-size="9.5" text-anchor="middle">Warning</text>
+  </g>
+
+  <!-- Footer -->
+  <text x="390" y="178" fill="#5C6672" font-size="9" text-anchor="middle">Ring colour signals the node's current state · Badge colour signals message severity</text>
+</svg>
