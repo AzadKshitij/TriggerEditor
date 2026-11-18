@@ -51,7 +51,6 @@ NODE_CODES: dict[str, int] = {
     "transform.sql_query": 8,
     "report.graph": 1,
     "report.data_profile": 2,
-    "report.comment": 3,
     "audit.benford": 3,
     "audit.gaps": 2,
     "audit.duplicates": 1,

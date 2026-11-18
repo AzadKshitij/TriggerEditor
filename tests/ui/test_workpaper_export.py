@@ -11,7 +11,6 @@ from tests.support.workpaper import load
 from trigger_designer.core.node_configuration import (
     IONodes,
     NodeTypes,
-    ReportNodes,
     get_class_from_opcode,
 )
 from trigger_designer.qt.design_window import TriggerSubWindow
@@ -145,8 +144,7 @@ def test_export_writes_the_run_workpaper(env, clean_preferences):
     scene = window.scene
     fin = get_class_from_opcode(IONodes.FILE_INPUT, NodeTypes.IO)(scene)
     fin.id = 0
-    note = get_class_from_opcode(ReportNodes.COMMENT, NodeTypes.REPORT)(scene)
-    note.content.settings["text"] = "Reviewed with the client"
+    scene.addComment("Reviewed with the client", x=0, y=0)
     path = export_workpaper(FakeMain(window), dialog_class=FakeDialog)
     assert Path(path) == tmp / "run.xlsx"
     assert box.calls[-1][0] == "information"

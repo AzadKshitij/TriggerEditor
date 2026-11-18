@@ -79,7 +79,6 @@ class TransformNodes(IntEnum):
 class ReportNodes(IntEnum):
     GRAPH = auto()
     DATA_PROFILE = auto()
-    COMMENT = auto()
 
 
 class AuditNodes(IntEnum):

@@ -14,6 +14,7 @@ from typing import Any
 from trigger_designer.core.constants import WORKFLOW_SCHEMA_VERSION
 from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.op_catalog import OPS, known_op, node_op
+from trigger_designer.core.shaping.comments import migrate_legacy_comment_nodes
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,9 @@ def parse_workflow_bytes(raw: bytes, path: str = "") -> WorkflowDoc:
             "TD-CLI-001",
             f"{shown} has no 'nodes' and 'edges' lists.",
         )
+    # Legacy report.comment nodes become canvas comments, so no caller of the
+    # CLI, the MCP server or the external-edit check ever sees the removed op.
+    data = migrate_legacy_comment_nodes(data)
     meta = data.get("workflow_metadata")
     version = meta.get("schema_version", 0) if isinstance(meta, dict) else 0
     return WorkflowDoc(

@@ -41,6 +41,7 @@ class MainWindowMenuMixin:
         self.fileMenu.insertSeparator(self.actExit)
 
         self.editMenu.addSeparator()
+        self.editMenu.addAction(self.actAddComment)
         self.arrangeMenu = self.editMenu.addMenu("&Arrange")
         for command in node_arrange.COMMANDS:
             action = getattr(self, command.action, None)
@@ -88,6 +89,7 @@ class MainWindowMenuMixin:
             has_mdi_child = active is not None
 
             self.actPaste.setEnabled(has_mdi_child)
+            self.actAddComment.setEnabled(has_mdi_child)
 
             self.actCut.setEnabled(has_mdi_child and active.hasSelectedItems())
             self.actCopy.setEnabled(has_mdi_child and active.hasSelectedItems())

@@ -1,7 +1,7 @@
 """Scene -> plain dicts for the workpaper (GUI thread only).
 
 ``collect_workflow(node)`` lists the nodes that produced the data of ``node``
-(ancestors, dependencies first) and then every Comment node of the scene, as
+(ancestors, dependencies first) and then every canvas comment of the scene, as
 plain dicts the Qt-free writer renders on the Workflow sheet. ``collect_sources``
 lists the files those ancestors read. Neither touches file contents.
 """
@@ -13,7 +13,10 @@ from typing import Any
 
 from loguru import logger
 
-from trigger_designer.core.shaping.comments import comments_from_nodes
+from trigger_designer.core.shaping.comments import (
+    LEGACY_COMMENT_OP,
+    comments_from_scene,
+)
 from trigger_designer.qt.helpers.audit_bridge import (
     _input_files,
     _op_of,
@@ -100,26 +103,27 @@ def _step(node: Any, number: int) -> dict:
 
 
 def _comment_steps(scene: Any) -> list[dict]:
-    steps = []
-    for note in comments_from_nodes(list(getattr(scene, "nodes", ()) or ())):
-        steps.append(
-            {
-                "step": None,
-                "node_id": note.node_id,
-                "title": "Comment",
-                "label": None,
-                "op": "report.comment",
-                "kind": "comment",
-                "settings": [],
-                "inputs": [],
-                "comment": note.text,
-            }
-        )
-    return steps
+    """One step per non-blank canvas comment. ``node_id`` holds the comment's id
+    (the key is kept so the step shape does not change). ``op`` is only a label:
+    the Workflow sheet branches on ``kind``, never on ``op``, for these steps."""
+    return [
+        {
+            "step": None,
+            "node_id": note.comment_id,
+            "title": "Comment",
+            "label": None,
+            "op": LEGACY_COMMENT_OP,
+            "kind": "comment",
+            "settings": [],
+            "inputs": [],
+            "comment": note.text,
+        }
+        for note in comments_from_scene(scene)
+    ]
 
 
 def collect_workflow(node: Any) -> list[dict]:
-    """Ancestors of ``node`` in run order, then every Comment node of the scene."""
+    """Ancestors of ``node`` in run order, then every canvas comment of the scene."""
     steps = [_step(parent, number) for number, parent in enumerate(ancestors(node), 1)]
     return steps + _comment_steps(getattr(node, "scene", None))
 
@@ -128,10 +132,8 @@ def collect_scene_workflow(
     scene: Any, order_ids: list[int] | None = None
 ) -> list[dict]:
     """Every executable node of ``scene`` (``order_ids`` first, as the run ordered
-    them), then the Comment nodes. Used by the whole-run workpaper."""
-    nodes = [
-        n for n in getattr(scene, "nodes", ()) or () if _op_of(n) != "report.comment"
-    ]
+    them), then the canvas comments. Used by the whole-run workpaper."""
+    nodes = list(getattr(scene, "nodes", ()) or ())
     rank = {node_id: i for i, node_id in enumerate(order_ids or [])}
     if order_ids:
         nodes = [n for n in nodes if getattr(n, "id", None) in rank]

@@ -5,6 +5,7 @@ import time
 from typing import Any, Dict, Optional
 
 from loguru import logger
+from qtpy.QtCore import QPointF
 from qtpy.QtGui import QContextMenuEvent, QCursor
 from qtpy.QtWidgets import QAction, QGraphicsProxyWidget, QInputDialog, QMenu
 
@@ -13,6 +14,7 @@ from nodeeditor.node_edge import (
     EDGE_TYPE_DIRECT,
     EDGE_TYPE_SQUARE,
 )
+from nodeeditor.node_comment import Comment
 from nodeeditor.node_group import Group
 from nodeeditor.utils import dumpException
 
@@ -28,6 +30,20 @@ from trigger_designer.qt.widgets.node_searchable_menu import SearchableMenu
 #: for working on the app itself, so they stay out of the everyday menu
 #: unless the environment asks for them.
 SHOW_DEV_ACTIONS = os.environ.get("TRIGGER_DEV_ACTIONS") == "1"
+
+
+#: ``action.data()`` of the "Add Comment" entry. Node actions carry
+#: ``[node_code, node_type]``; this marker lets the same menu add a canvas note.
+COMMENT_ACTION_DATA = ["comment"]
+
+
+def comment_at(item) -> Comment | None:
+    """The canvas comment ``item`` is, or sits inside (its text child), if any."""
+    while item is not None:
+        if isinstance(item, Comment):
+            return item
+        item = item.parentItem()
+    return None
 
 
 class ContextMenuMixin:
@@ -63,6 +79,10 @@ class ContextMenuMixin:
                 action.setData([node_code, node_type])
                 self.node_actions[action_key] = action
 
+        self.comment_action = QAction("Add Comment", self)
+        self.comment_action.setData(COMMENT_ACTION_DATA)
+        self.comment_action.setStatusTip("Add a sticky note to the canvas")
+
     def _get_action_icon(self, category: str, icon_id: str):
         from qtpy.QtGui import QIcon, QPixmap  # Local import to avoid circular deps
 
@@ -96,6 +116,10 @@ class ContextMenuMixin:
                 submenu.addAction(action)
                 context_menu.all_actions[category].append(action)
 
+        # Listed with the nodes so the search box finds it too.
+        context_menu.addAction(self.comment_action)
+        context_menu.all_actions["Annotation"] = [self.comment_action]
+
         return context_menu
 
     # --- Node creation helpers -----------------------------------------------------
@@ -119,6 +143,11 @@ class ContextMenuMixin:
         self._last_add_node_ts = now
         self._last_add_node_data = list(self.selected_action_data)
 
+        if list(self.selected_action_data) == COMMENT_ACTION_DATA:
+            cursor_pos = self.mapFromGlobal(QCursor.pos())
+            self.add_comment(self.scene.getView().mapToScene(cursor_pos))
+            return
+
         node_code, node_type = self.selected_action_data
         new_calc_node = get_class_from_opcode(node_code, node_type)(self.scene)
         cursor_pos = self.mapFromGlobal(QCursor.pos())
@@ -128,6 +157,25 @@ class ContextMenuMixin:
             new_calc_node, node_arrange.grid_size(self.scene)
         )
         self.scene.history.storeHistory("Created %s" % new_calc_node.__class__.__name__)
+
+    def add_comment(self, scene_pos: QPointF | None = None) -> Comment:
+        """Drop a sticky note at ``scene_pos`` (default: the viewport centre).
+
+        One undo step ("Comment Added"), then the note opens for typing; the
+        text is its own step when the editor commits.
+        """
+        view = self.scene.getView()
+        if scene_pos is None:
+            scene_pos = view.mapToScene(view.viewport().rect().center())
+        comment = self.scene.addComment(
+            x=scene_pos.x() - Comment.DEFAULT_WIDTH / 2,
+            y=scene_pos.y() - Comment.DEFAULT_HEIGHT / 2,
+        )
+        self.scene.history.storeHistory("Comment Added", setModified=True)
+        self.scene.grScene.clearSelection()
+        comment.setSelected(True)
+        comment.begin_edit()
+        return comment
 
     # --- Context menu handlers -----------------------------------------------------
     def contextMenuEvent(self, event: QContextMenuEvent) -> None:
@@ -141,6 +189,10 @@ class ContextMenuMixin:
             if isinstance(item, QGraphicsProxyWidget):
                 item = item.widget()
 
+            if comment_at(item) is not None:
+                # The note has its own menu (edit, stacking, delete).
+                super().contextMenuEvent(event)
+                return
             if isinstance(item, Group):
                 # Upstream Group paints its own header menu
                 # (collapse/rename/recolor/ungroup/delete) - let it through.

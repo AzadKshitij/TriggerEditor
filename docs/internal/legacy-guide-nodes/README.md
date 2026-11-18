@@ -78,7 +78,6 @@ Page: [report.md](report.md)
 |---|---|---|
 | ![Graph](../../../src/trigger_designer/resources/qt/images/node_icons/Report/Graph.svg) | **Graph** | Charts the incoming data in its own window after a successful Run; passes the data through unchanged. |
 | ![Data Profile](../../../src/trigger_designer/resources/qt/images/node_icons/Report/Data%20Profile.svg) | **Data Profile** | Profiles every column: empty cells, distinct values, ranges, common values and data-quality flags. |
-| ![Comment](../../../src/trigger_designer/resources/qt/images/node_icons/Report/Comment.svg) | **Comment** | A note on the canvas. It has no sockets and never runs. |
 
 ## Audit
 

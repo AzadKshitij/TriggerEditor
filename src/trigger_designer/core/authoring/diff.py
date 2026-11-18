@@ -2,8 +2,9 @@
 
 Nodes are matched by id. Reported: nodes added or removed, per-node changes
 (title, label, position, each setting by dotted path) and connections added or
-removed (as ``node.output -> node.input``). A workflow holds settings, never
-data, so the diff never contains a cell value.
+removed (as ``node.output -> node.input``). Canvas comments are matched by id
+too and reported only when one was added, removed, edited or moved. A workflow
+holds settings, never data, so the diff never contains a cell value.
 """
 
 from __future__ import annotations
@@ -73,6 +74,46 @@ def _connections(data: dict) -> dict[tuple, dict]:
     return out
 
 
+def _comments(data: dict) -> dict[Any, dict]:
+    return {c.get("id"): c for c in data.get("comments") or [] if isinstance(c, dict)}
+
+
+def _comment_view(comment: dict) -> dict:
+    return {
+        "id": comment.get("id"),
+        "text": comment.get("text", ""),
+        "position": [comment.get("x", 0.0), comment.get("y", 0.0)],
+    }
+
+
+def _comment_changes(old: dict, new: dict) -> list[dict]:
+    changes: list[dict] = []
+    if old.get("text", "") != new.get("text", ""):
+        changes.append(
+            {"path": "text", "from": old.get("text", ""), "to": new.get("text", "")}
+        )
+    ox, oy = old.get("x", 0.0), old.get("y", 0.0)
+    nx, ny = new.get("x", 0.0), new.get("y", 0.0)
+    if abs(ox - nx) > MOVE_EPSILON or abs(oy - ny) > MOVE_EPSILON:
+        changes.append({"path": "position", "from": [ox, oy], "to": [nx, ny]})
+    return changes
+
+
+def _diff_comments(old: dict, new: dict) -> dict:
+    before, after = _comments(old), _comments(new)
+    changed = []
+    for comment_id, comment in after.items():
+        if comment_id in before:
+            changes = _comment_changes(before[comment_id], comment)
+            if changes:
+                changed.append({**_comment_view(comment), "changes": changes})
+    return {
+        "added": [_comment_view(after[i]) for i in after if i not in before],
+        "removed": [_comment_view(before[i]) for i in before if i not in after],
+        "changed": changed,
+    }
+
+
 def diff_workflows(old: dict, new: dict) -> dict:
     """The differences from ``old`` to ``new`` as plain data."""
     old_nodes = {n.get("id"): n for n in nodes_of(old)}
@@ -89,8 +130,12 @@ def diff_workflows(old: dict, new: dict) -> dict:
     before, after = _connections(old), _connections(new)
     edges_added = [after[k] for k in after if k not in before]
     edges_removed = [before[k] for k in before if k not in after]
-    empty = not (added or removed or changed or edges_added or edges_removed)
-    return {
+    comments = _diff_comments(old, new)
+    comments_differ = any(comments.values())
+    empty = not (
+        added or removed or changed or edges_added or edges_removed or comments_differ
+    )
+    result = {
         "empty": empty,
         "summary": {
             "nodes_added": len(added),
@@ -102,6 +147,12 @@ def diff_workflows(old: dict, new: dict) -> dict:
         "nodes": {"added": added, "removed": removed, "changed": changed},
         "connections": {"added": edges_added, "removed": edges_removed},
     }
+    if comments_differ:  # absent otherwise, so a file without notes diffs as before
+        result["summary"].update(
+            {f"comments_{kind}": len(items) for kind, items in comments.items()}
+        )
+        result["comments"] = comments
+    return result
 
 
 def _short(value: Any, limit: int = 60) -> str:
@@ -134,6 +185,17 @@ def render_lines(result: dict) -> list[str]:
         lines.append(f"+ {_edge(edge)}")
     for edge in result["connections"]["removed"]:
         lines.append(f"- {_edge(edge)}")
+    comments = result.get("comments") or {}
+    for comment in comments.get("added", []):
+        lines.append(f"+ comment {comment['id']} {_short(comment['text'])}")
+    for comment in comments.get("removed", []):
+        lines.append(f"- comment {comment['id']} {_short(comment['text'])}")
+    for comment in comments.get("changed", []):
+        lines.append(f"~ comment {comment['id']}")
+        for change in comment["changes"]:
+            lines.append(
+                f"    {change['path']}: {_short(change['from'])} -> {_short(change['to'])}"
+            )
     return lines
 
 

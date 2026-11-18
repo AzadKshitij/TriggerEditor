@@ -92,7 +92,6 @@ nav = [
       "nodes/report/index.md",
       { "Graph" = "nodes/report/graph.md" },
       { "Data Profile" = "nodes/report/data-profile.md" },
-      { "Comment" = "nodes/report/comment.md" },
     ] },
     { "Audit" = [
       "nodes/audit/index.md",

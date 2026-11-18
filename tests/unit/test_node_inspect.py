@@ -66,10 +66,9 @@ def test_a_node_that_writes_a_file_cannot_be_inspected():
     assert exc.value.td_code == "TD-CLI-021" and exc.value.code == ExitCode.INVALID
 
 
-def test_a_chart_or_note_has_no_table():
-    for op in ("report.comment", "report.graph"):
-        with pytest.raises(CliError):
-            ni.check_inspectable({"id": 1, "op": op, "title": "x"})
+def test_a_chart_has_no_table():
+    with pytest.raises(CliError):
+        ni.check_inspectable({"id": 1, "op": "report.graph", "title": "x"})
 
 
 def test_jsonable_handles_what_orjson_cannot():

@@ -76,7 +76,7 @@ Run workflow (GUI thread)
   _run_before_run_hooks(sorted_nodes)          each content.before_run()
       WorkpaperOutputContent.before_run:       snapshot ON THE GUI THREAD
           _engagement = engagement_from_preferences()
-          _workflow   = collect_workflow(node)     # ancestors, run order, + Comment nodes
+          _workflow   = collect_workflow(node)     # ancestors, run order, + canvas comments
           _sources    = collect_sources(node)      # files the ancestors read (no hashing)
   worker thread: for each node, get_code() -> exec
       get_code() -> node_logic.build_code(effective_spec(...), input_vars, workflow, sources)
@@ -335,7 +335,7 @@ CSV sidecar to carry the rest.
    history, not the in-flight record); no record -> an information box (`NO_RECORD`), return.
 2. `WorkpaperExportDialog` (File, If it exists, Engagement fields, Test text) -> `settings()`.
 3. `collect_scene_workflow(scene, order_ids)`: every executable node of the scene in the order
-   of the record's `nodes[*].node_id`, then the Comment nodes.
+   of the record's `nodes[*].node_id`, then the canvas comments.
 4. `build_spec` -> `node_logic.effective_spec({**DEFAULTS, **settings}, engagement_defaults(),
    app_version=VERSION)`; `write_run_workpaper(spec, run_record=record, workflow=workflow)`.
 5. On success the folder is stored in `export/workpaper_dir` and a message box shows the path;

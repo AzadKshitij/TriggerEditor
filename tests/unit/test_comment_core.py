@@ -1,40 +1,81 @@
-"""Comment node: label rule, readers, generated code and node identity."""
+"""Canvas comments: the Qt-free reader, the legacy migration and the loaders."""
 
 from __future__ import annotations
 
+import copy
+import hashlib
+import json
 import subprocess
 import sys
+from pathlib import Path
+from types import SimpleNamespace
 
-import polars as pl
 import pytest
+from nodeeditor import node_comment
 
+from trigger_designer.core.authoring.blank import new_workflow
+from trigger_designer.core.authoring.model import iter_ids
+from trigger_designer.core.headless import node_inspect as ni
+from trigger_designer.core.headless.exit_codes import CliError
+from trigger_designer.core.headless.op_catalog import OPS, node_op
+from trigger_designer.core.headless.workflow_file import read_workflow
 from trigger_designer.core.node_configuration import (
-    NodeTypes,
+    OpCodeNotRegistered,
     ReportNodes,
     get_class_from_op,
-    get_class_from_opcode,
 )
-from trigger_designer.core.shaping import comments
 from trigger_designer.core.shaping.comments import (
-    COMMENT_OP,
-    LABEL_MAX,
-    NOT_EXECUTABLE_OPS,
+    CANVAS_COMMENT_VERSION,
+    LEGACY_COMMENT_OP,
+    MIGRATED_HEIGHT,
+    MIGRATED_WIDTH,
+    MIGRATED_Z,
     CommentRecord,
-    comments_from_nodes,
+    comments_from_scene,
     comments_from_scene_dict,
-    label_for,
+    migrate_legacy_comment_nodes,
 )
-from trigger_designer.qt.design_window import TriggerSubWindow
+from trigger_designer.qt.performance_scene import TriggerScene
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _node_dict(node_id, op, text, x=0.0, y=0.0):
-    return {
+def _legacy_node(node_id: int, text: str, x: float = 0.0, y: float = 0.0, **extra):
+    """A ``report.comment`` node as the editor saved it before canvas comments."""
+    node = {
         "id": node_id,
-        "op": op,
+        "title": "Comment",
         "pos_x": x,
         "pos_y": y,
+        "inputs": [],
+        "outputs": [],
         "content": {"settings": {"text": text}},
+        "label_text": "",
+        "label_visible": False,
+        "label_offset": 10.0,
+        "node_code": 3,
+        "node_type": "report",
+        "op": LEGACY_COMMENT_OP,
     }
+    node.update(extra)
+    return node
+
+
+def _scene(nodes=(), edges=(), **extra):
+    data = new_workflow()
+    data["nodes"] = list(nodes)
+    data["edges"] = list(edges)
+    data.update(extra)
+    return data
+
+
+def _note(comment_id: int, text: str, x: float, y: float):
+    """A live canvas comment, duck-typed for ``comments_from_scene``."""
+    return SimpleNamespace(
+        id=comment_id,
+        text=lambda: text,
+        pos=lambda: SimpleNamespace(x=lambda: x, y=lambda: y),
+    )
 
 
 def test_no_qt_import_in_core() -> None:
@@ -48,166 +89,275 @@ def test_no_qt_import_in_core() -> None:
     assert out.stdout.strip().endswith("False")
 
 
-def test_constants() -> None:
-    assert COMMENT_OP == "report.comment"
-    assert NOT_EXECUTABLE_OPS == frozenset({"report.comment"})
-    assert comments.DEFAULTS == {"text": ""}
+def test_the_comment_node_is_gone() -> None:
+    assert LEGACY_COMMENT_OP not in OPS
+    assert not hasattr(ReportNodes, "COMMENT")
+    with pytest.raises(OpCodeNotRegistered):
+        get_class_from_op(LEGACY_COMMENT_OP)
 
 
-@pytest.mark.parametrize(
-    ("text", "label"),
-    [
-        ("", ""),
-        (None, ""),
-        ("   \n  ", ""),
-        ("Check cut-off", "Check cut-off"),
-        ("  First  \nSecond", "First"),
-        ("\n\nafter blanks\nnext", "after blanks"),
-        ("x" * 200, "x" * LABEL_MAX),
-        ("short\n" + "y" * 200, "short"),
-    ],
-)
-def test_label_for(text, label) -> None:
-    assert label_for(text) == label
+def test_constants_match_the_library() -> None:
+    assert CANVAS_COMMENT_VERSION == node_comment.COMMENT_SERIALIZATION_VERSION
+    assert MIGRATED_WIDTH == node_comment.Comment.DEFAULT_WIDTH
+    assert MIGRATED_HEIGHT == node_comment.Comment.DEFAULT_HEIGHT
+    assert MIGRATED_Z == node_comment.Comment.DEFAULT_Z_VALUE
 
 
-def test_scene_dict_reading_order_trimmed_blank_and_other_ops_skipped() -> None:
+# ----------------------------------------------------------------- readers
+
+
+def test_saved_reader_orders_trims_and_skips_blank_notes() -> None:
     scene = {
-        "nodes": [
-            _node_dict(2, COMMENT_OP, "Second", y=100),
-            _node_dict(1, COMMENT_OP, " First ", y=10),
-            _node_dict(3, COMMENT_OP, "   ", y=50),
-            _node_dict(4, "preparation.record_id", "not a comment", y=0),
+        "comments": [
+            {"id": 2, "text": "Second", "x": 0, "y": 100},
+            {"id": 1, "text": " First ", "x": 0, "y": 10},
+            {"id": 3, "text": "   ", "x": 0, "y": 50},
+            {"id": 4, "text": None, "x": 0, "y": 60},
+            "not a comment",
         ]
     }
-    found = comments_from_scene_dict(scene)
-    assert [(c.node_id, c.text) for c in found] == [(1, "First"), (2, "Second")]
-    assert found[0] == CommentRecord(1, "First", 0.0, 10.0)
+    assert comments_from_scene_dict(scene) == [
+        CommentRecord(1, "First", 0.0, 10.0),
+        CommentRecord(2, "Second", 0.0, 100.0),
+    ]
 
 
-def test_scene_dict_same_row_orders_by_x_then_id() -> None:
+def test_saved_reader_breaks_a_row_by_x_then_id() -> None:
     scene = {
-        "nodes": [
-            _node_dict(5, COMMENT_OP, "c", x=30, y=1),
-            _node_dict(4, COMMENT_OP, "b", x=20, y=1),
-            _node_dict(3, COMMENT_OP, "a", x=20, y=1),
+        "comments": [
+            {"id": 5, "text": "c", "x": 30, "y": 1},
+            {"id": 4, "text": "b", "x": 20, "y": 1},
+            {"id": 3, "text": "a", "x": 20, "y": 1},
         ]
     }
-    assert [c.node_id for c in comments_from_scene_dict(scene)] == [3, 4, 5]
+    assert [c.comment_id for c in comments_from_scene_dict(scene)] == [3, 4, 5]
 
 
-def test_scene_dict_tolerates_missing_content() -> None:
-    scene = {
-        "nodes": [
-            {"id": 1, "op": COMMENT_OP},
-            {"id": 2, "op": COMMENT_OP, "content": None},
-        ]
-    }
-    assert comments_from_scene_dict(scene) == []
+def test_saved_reader_tolerates_missing_keys() -> None:
     assert comments_from_scene_dict({}) == []
+    assert comments_from_scene_dict({"comments": None}) == []
+    assert comments_from_scene_dict({"comments": [{"text": "no id"}]}) == [
+        CommentRecord(0, "no id", 0.0, 0.0)
+    ]
 
 
-def test_registry_identity() -> None:
-    cls = get_class_from_opcode(ReportNodes.COMMENT, NodeTypes.REPORT)
-    assert cls.node_title == "Comment"
-    assert cls.icon == "node_comment"
-    assert cls.node_code == ReportNodes.COMMENT
-    assert get_class_from_op(COMMENT_OP) is cls
+def test_live_reader_uses_text_pos_and_id_only() -> None:
+    scene = SimpleNamespace(
+        comments=[
+            _note(2, "Later", 0, 200),
+            _note(1, "   ", 0, 5),
+            _note(3, " Earlier ", 0, 20),
+        ]
+    )
+    assert comments_from_scene(scene) == [
+        CommentRecord(3, "Earlier", 0.0, 20.0),
+        CommentRecord(2, "Later", 0.0, 200.0),
+    ]
+    assert comments_from_scene(None) == []
 
 
-def _comment(window):
-    cls = get_class_from_opcode(ReportNodes.COMMENT, NodeTypes.REPORT)
-    return cls(window.scene)
+def test_live_reader_agrees_with_the_saved_reader() -> None:
+    scene = TriggerScene()
+    scene.addComment("First line\nsecond", x=10, y=300)
+    scene.addComment("Top", x=50, y=20)
+    scene.addComment("   ", x=0, y=0)
+    live = comments_from_scene(scene)
+    saved = comments_from_scene_dict(scene.serialize())
+    assert [c.text for c in live] == ["Top", "First line\nsecond"]
+    assert live == saved
 
 
-def test_node_has_no_sockets_and_no_outputs() -> None:
-    node = _comment(TriggerSubWindow())
-    assert node.inputs == []
-    assert node.outputs == []
-    assert node.content.output_variables == []
-    assert node.content.ready() is True
+# --------------------------------------------------------------- migration
 
 
-def test_eval_returns_empty_list_and_is_valid() -> None:
-    node = _comment(TriggerSubWindow())
-    assert node.eval() == []
-    assert not node.isInvalid()
-    assert node.content.compute() == []
+def test_migration_moves_text_and_position_into_a_canvas_comment() -> None:
+    original = _scene([_legacy_node(10, "Check cut-off\nsecond", x=40.0, y=25.0)])
+    before = copy.deepcopy(original)
+
+    migrated = migrate_legacy_comment_nodes(original)
+
+    assert original == before
+    assert migrated["nodes"] == []
+    (note,) = migrated["comments"]
+    assert note == {
+        "id": note["id"],
+        "type": "Comment",
+        "version": CANVAS_COMMENT_VERSION,
+        "text": "Check cut-off\nsecond",
+        "x": 40.0,
+        "y": 25.0,
+        "w": MIGRATED_WIDTH,
+        "h": MIGRATED_HEIGHT,
+        "z": MIGRATED_Z,
+    }
+    assert "style" not in note
+    assert comments_from_scene_dict(migrated) == [
+        CommentRecord(note["id"], "Check cut-off\nsecond", 40.0, 25.0)
+    ]
 
 
-def test_get_code_is_a_successful_noop() -> None:
-    node = _comment(TriggerSubWindow())
-    node.content.settings["text"] = 'quote " and \n newline\nimport os; os.system("x")'
-    code = node.get_code()
-    assert code == "# Comment (not executed)\n"
-    namespace: dict = {}
-    exec(code, {"__name__": "__main__", "pl": pl}, namespace)  # noqa: S102
-    assert namespace == {}
+def test_migrated_ids_are_new_and_unique_in_the_file() -> None:
+    original = _scene(
+        [
+            {
+                "id": 100,
+                "title": "Filter",
+                "pos_x": 0.0,
+                "pos_y": 0.0,
+                "inputs": [{"id": 300, "index": 0}],
+                "outputs": [{"id": 999, "index": 0}],
+                "content": {},
+                "op": "preparation.filter",
+            },
+            _legacy_node(200, "note"),
+        ],
+        edges=[{"id": 400, "start": 999, "end": 301}],
+        groups=[{"id": 700}],
+        comments=[{"id": 800, "text": "old", "x": 0, "y": 0}],
+    )
+    migrated = migrate_legacy_comment_nodes(original)
+
+    (note,) = [c for c in migrated["comments"] if c["text"] == "note"]
+    assert note["id"] == max(iter_ids(original)) + 1 == 1000
+    ids = list(iter_ids(migrated))
+    assert len(ids) == len(set(ids))
+    # The edge from a surviving node's socket is not touched.
+    assert migrated["edges"] == original["edges"]
 
 
-def test_unwired_defines_every_output_variable() -> None:
-    node = _comment(TriggerSubWindow())
-    namespace: dict = {}
-    exec(node.get_code(), {"__name__": "__main__", "pl": pl}, namespace)  # noqa: S102
-    for variable in node.content.output_variables:
-        assert variable in namespace
+def test_blank_legacy_notes_are_dropped_and_take_no_id() -> None:
+    original = _scene(
+        [_legacy_node(10, ""), _legacy_node(11, "  \n "), _legacy_node(12, "kept")]
+    )
+    migrated = migrate_legacy_comment_nodes(original)
+    assert migrated["nodes"] == []
+    (note,) = migrated["comments"]
+    assert note["text"] == "kept"
+    assert note["id"] == max(iter_ids(original)) + 1
 
 
-def test_label_follows_text_and_empty_text_clears_it() -> None:
-    node = _comment(TriggerSubWindow())
-    content = node.content
-    content.set_setting("text", "Check cut-off\nsecond line", "Comment Text Changed")
-    assert node.getNodeLabel() == "Check cut-off"
-    long_text = "z" * 150
-    content.set_setting("text", long_text, "Comment Text Changed")
-    assert node.getNodeLabel() == "z" * LABEL_MAX
-    assert content.settings["text"] == long_text  # stored whole
-    content.set_setting("text", "", "Comment Text Changed")
-    assert node.getNodeLabel() == ""
+def test_edges_into_the_removed_sockets_are_dropped_only() -> None:
+    legacy = _legacy_node(10, "note")
+    legacy["outputs"] = [{"id": 50, "index": 0}]
+    other = {
+        "id": 20,
+        "title": "Filter",
+        "pos_x": 0.0,
+        "pos_y": 0.0,
+        "inputs": [{"id": 60, "index": 0}],
+        "outputs": [],
+        "content": {},
+        "op": "preparation.filter",
+    }
+    edges = [
+        {"id": 70, "start": 50, "end": 60},
+        {"id": 71, "start": 61, "end": 60},
+        {"id": 72, "start": "odd", "end": None},
+    ]
+    original = _scene([legacy, other], edges=edges)
+    before = copy.deepcopy(original)
+
+    migrated = migrate_legacy_comment_nodes(original)
+
+    assert [e["id"] for e in migrated["edges"]] == [71, 72]
+    assert original == before
 
 
-def test_manual_label_is_overwritten_by_next_text_change() -> None:
-    node = _comment(TriggerSubWindow())
-    node.setNodeLabel("manual", store_history=False)
-    node.content.set_setting("text", "From text", "Comment Text Changed")
-    assert node.getNodeLabel() == "From text"
+def test_migration_is_idempotent_and_clean_scenes_come_back_equal() -> None:
+    original = _scene([_legacy_node(10, "one", x=1, y=2), _legacy_node(11, "two")])
+    once = migrate_legacy_comment_nodes(original)
+    assert migrate_legacy_comment_nodes(once) == once
+    clean = _scene([{"id": 5, "op": "preparation.filter", "content": {}}])
+    result = migrate_legacy_comment_nodes(clean)
+    assert result == clean and result is not clean
 
 
-def test_serialize_round_trip_keeps_op_text_and_label() -> None:
-    window = TriggerSubWindow()
-    node = _comment(window)
-    node.content.set_setting("text", "Check cut-off", "Comment Text Changed")
-    data = node.serialize()
-    assert data["op"] == COMMENT_OP
-    assert data["content"]["settings"]["text"] == "Check cut-off"
+def test_existing_canvas_comments_are_kept_and_new_ones_follow() -> None:
+    existing = {
+        "id": 500,
+        "type": "Comment",
+        "version": CANVAS_COMMENT_VERSION,
+        "text": "already here",
+        "x": 0.0,
+        "y": 0.0,
+        "w": MIGRATED_WIDTH,
+        "h": MIGRATED_HEIGHT,
+        "z": MIGRATED_Z,
+    }
+    original = _scene([_legacy_node(10, "moved")], comments=[existing])
 
-    other = TriggerSubWindow()
-    clone = _comment(other)
-    clone.deserialize(data, {})
-    assert clone.content.settings["text"] == "Check cut-off"
-    assert clone.getNodeLabel() == "Check cut-off"
+    migrated = migrate_legacy_comment_nodes(original)
 
-
-def test_comments_from_nodes_matches_scene_dict() -> None:
-    window = TriggerSubWindow()
-    first = _comment(window)
-    second = _comment(window)
-    blank = _comment(window)
-    first.content.set_setting("text", " Later ", "t")
-    second.content.set_setting("text", "Earlier", "t")
-    first.setPos(0, 200)
-    second.setPos(0, 20)
-    assert blank.content.settings["text"] == ""
-    live = comments_from_nodes(window.getAllNodes())
-    assert [c.text for c in live] == ["Earlier", "Later"]
-    saved = comments_from_scene_dict(window.scene.serialize())
-    assert [(c.node_id, c.text) for c in saved] == [(c.node_id, c.text) for c in live]
+    assert migrated["comments"][0] == existing
+    assert migrated["comments"][1]["text"] == "moved"
+    assert original["comments"] == [existing]
 
 
-def test_comment_never_a_sink_requirement() -> None:
-    """Loading a scene with a lone Comment evaluates without error."""
-    window = TriggerSubWindow()
-    node = _comment(window)
-    node.content.set_setting("text", "note", "t")
-    window.scene.history.storeHistory("baseline")
-    assert node.eval() == []
+def test_only_the_stored_op_marks_a_legacy_note() -> None:
+    """Without a stored op the loader resolves the v1 table, where
+    ("report", 3) is report.graph. The migration must agree with it."""
+    graph_like = {
+        "id": 10,
+        "title": "Graph",
+        "pos_x": 0.0,
+        "pos_y": 0.0,
+        "inputs": [],
+        "outputs": [],
+        "content": {"settings": {"text": "x"}},
+        "node_type": "report",
+        "node_code": 3,
+    }
+    assert node_op(graph_like) == "report.graph"
+    migrated = migrate_legacy_comment_nodes(_scene([graph_like]))
+    assert migrated["nodes"] == [graph_like]
+    assert migrated["comments"] == []
+
+
+def test_scene_loader_builds_no_note_node() -> None:
+    scene = TriggerScene()
+    assert scene.deserialize(_scene([_legacy_node(10, "moved", x=40, y=25)])) is True
+    assert scene.nodes == []
+    (note,) = scene.comments
+    assert note.text() == "moved"
+    assert (note.pos().x(), note.pos().y()) == (40.0, 25.0)
+
+
+# ------------------------------------------------------- headless reading
+
+
+def test_headless_reader_migrates_and_keeps_the_file_hash(tmp_path) -> None:
+    path = tmp_path / "legacy.tds"
+    path.write_text(
+        json.dumps(_scene([_legacy_node(10, "Check cut-off", x=40, y=25)])),
+        encoding="utf-8",
+    )
+    doc = read_workflow(str(path))
+    assert doc.nodes == []
+    assert [c.text for c in comments_from_scene_dict(doc.data)] == ["Check cut-off"]
+    assert doc.sha256 == hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def test_a_chart_has_no_table_and_the_removed_note_is_unknown() -> None:
+    with pytest.raises(CliError):
+        ni.check_inspectable({"id": 1, "op": "report.graph", "title": "x"})
+    with pytest.raises(CliError) as exc:
+        ni.check_inspectable({"id": 1, "op": LEGACY_COMMENT_OP, "title": "x"})
+    assert exc.value.td_code == "TD-CLI-003"
+
+
+def test_no_shipped_workflow_still_carries_the_removed_node() -> None:
+    shipped: list[Path] = []
+    for pattern in ("src/**/*.tds", "savedfiles/**/*.tds", "tests/**/*.tds"):
+        shipped.extend(REPO_ROOT.glob(pattern))
+    assert shipped
+    offenders = []
+    for path in shipped:
+        try:
+            data = json.loads(path.read_bytes().decode("utf-8-sig"))
+        except ValueError:
+            continue  # not a workflow (an invalid-file fixture)
+        nodes = data.get("nodes") if isinstance(data, dict) else None
+        nodes = nodes or []
+        if any(node_op(n) == LEGACY_COMMENT_OP for n in nodes if isinstance(n, dict)):
+            offenders.append(path.relative_to(REPO_ROOT).as_posix())
+    assert offenders == []

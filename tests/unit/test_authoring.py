@@ -553,3 +553,36 @@ def test_output_folders_that_do_not_exist_are_reported_not_created(tmp_path):
     assert not (tmp_path / "output").exists()
     (tmp_path / "output").mkdir()
     assert editor.output_folders() == {"creatable": [], "blocked": []}
+
+
+def _with_comments(*comments):
+    data = empty()
+    data["comments"] = list(comments)
+    return data
+
+
+def test_diff_reports_canvas_comments():
+    note = {"id": 7, "type": "Comment", "text": "check totals", "x": 10.0, "y": 20.0}
+    old = _with_comments(note, {**note, "id": 8, "text": "drop me"})
+    new = _with_comments(
+        {**note, "text": "check the totals", "x": 90.0},
+        {**note, "id": 9, "text": "new note"},
+    )
+    result = diff_workflows(old, new)
+    assert not result["empty"]
+    assert [c["id"] for c in result["comments"]["added"]] == [9]
+    assert [c["id"] for c in result["comments"]["removed"]] == [8]
+    (changed,) = result["comments"]["changed"]
+    assert {c["path"] for c in changed["changes"]} == {"text", "position"}
+    assert result["summary"]["comments_added"] == 1
+    lines = render_lines(result)
+    assert any(line.startswith("+ comment 9") for line in lines)
+    assert any(line.startswith("- comment 8") for line in lines)
+    assert any(line.startswith("~ comment 7") for line in lines)
+
+
+def test_diff_without_comment_changes_has_no_comments_key():
+    note = {"id": 7, "type": "Comment", "text": "same", "x": 1.0, "y": 2.0}
+    result = diff_workflows(_with_comments(note), _with_comments(dict(note)))
+    assert result["empty"] and "comments" not in result
+    assert "comments_added" not in result["summary"]

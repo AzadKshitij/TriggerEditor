@@ -1,12 +1,11 @@
 # Report nodes
 
-Report nodes help you look at data and explain your work. They do not change your data: **Graph** and **Data Profile** pass the table through untouched, and **Comment** is a note that is not connected to anything.
+Report nodes help you look at data. They do not change your data: **Graph** and **Data Profile** pass the table through untouched. To leave a note on the canvas, add a [canvas comment](../../guide/canvas-and-nodes.md#canvas-comments); a canvas comment is not a node.
 
 | If you want to... | Use |
 |---|---|
 | Draw a line, bar or scatter chart of a table | [Graph](graph.md) |
 | Check the quality of a table: nulls, distinct values, text that should be numbers, odd values | [Data Profile](data-profile.md) |
-| Leave a note for yourself or the reviewer on the canvas | [Comment](comment.md) |
 
 ## Nodes in this family
 
@@ -23,12 +22,6 @@ Report nodes help you look at data and explain your work. They do not change you
     ---
 
     Profiles every column: empty cells, distinct values, ranges, common values and data-quality flags.
-
--   ![Comment](../../assets/node_icons/Report/Comment.svg){ .middle } **[Comment](comment.md)**
-
-    ---
-
-    A note on the canvas. It has no sockets and never runs.
 
 </div>
 

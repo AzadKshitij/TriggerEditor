@@ -125,7 +125,7 @@ The node also shows "Workpaper Output has no output file; choose one before runn
 - Fill in Preferences > Engagement once and leave the node's Engagement section empty.
 - Connect **P** and **S** whenever you can: the population, the rule and the reconciliation line then fill themselves in.
 - Keep **New version** while you work: your annotated copy is never overwritten.
-- Add a [Comment](../report/comment.md) to the canvas to explain a step; it is copied to the Workflow sheet.
+- Add a [canvas comment](../../guide/canvas-and-nodes.md#canvas-comments) to explain a step; it is copied to the Workflow sheet.
 
 
 Back to the [Input and Output node index](index.md).

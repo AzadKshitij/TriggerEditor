@@ -8049,25 +8049,6 @@
       "op": "transform.sql_query"
     },
     {
-      "id": 2068695018112,
-      "title": "Comment",
-      "pos_x": -1240.0,
-      "pos_y": -360.0,
-      "inputs": [],
-      "outputs": [],
-      "content": {
-        "settings": {
-          "text": ""
-        }
-      },
-      "label_text": "",
-      "label_visible": false,
-      "label_offset": 10.0,
-      "node_code": 3,
-      "node_type": "report",
-      "op": "report.comment"
-    },
-    {
       "id": 2068646575104,
       "title": "Gaps",
       "pos_x": -500.0,

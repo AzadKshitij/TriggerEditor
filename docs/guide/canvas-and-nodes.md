@@ -10,6 +10,7 @@ The canvas is where you build a workflow. Each box on it is a **node** (one step
 - [Connect nodes](#connect-nodes)
 - [Select, move, copy and delete](#select-move-copy-and-delete)
 - [Labels and groups](#labels-and-groups)
+- [Canvas comments](#canvas-comments)
 - [Arrange, grid and snapping](#arrange-grid-and-snapping)
 - [Zoom and move around](#zoom-and-move-around)
 - [Undo and redo](#undo-and-redo)
@@ -104,6 +105,15 @@ A label with no text is never shown.
 | Delete group and nodes | Select the group header and press `Del`. |
 
 The single-letter shortcuts are ignored while you are typing in a text box.
+
+## Canvas comments
+
+A **canvas comment** is a sticky note you can place among the nodes, to explain the work to whoever reads the workflow later: why a filter or a tolerance was chosen, a step to review, or a question for the reviewer.
+
+- A canvas comment is not a node. It has no inputs or outputs, never runs and has no effect on the data.
+- Its text and position are saved with the workflow.
+- Every comment with text is copied word for word into the **Notes in the workflow** part of a [workpaper](workpaper.md)'s Workflow sheet.
+- A workflow saved with the old **Comment** node opens with each of its notes as a canvas comment. A note with no text is dropped.
 
 ## Arrange, grid and snapping
 

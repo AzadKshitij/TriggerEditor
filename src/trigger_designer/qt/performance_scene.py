@@ -17,6 +17,7 @@ from nodeeditor.node_scene import InvalidFile, Scene
 from nodeeditor.utils_no_qt import dumpException
 
 from trigger_designer.core.constants import VERSION, WORKFLOW_SCHEMA_VERSION
+from trigger_designer.core.shaping.comments import migrate_legacy_comment_nodes
 from trigger_designer.qt.helpers.evaluation import EvaluationCoordinator
 from trigger_designer.qt.undo.history import TriggerSceneHistory
 
@@ -297,6 +298,8 @@ class TriggerScene(Scene):
             dumpException(exc)
 
     def deserialize(self, data, hashmap=None, restore_id: bool = True, *args, **kwargs):
+        # Legacy report.comment nodes become canvas comments before any node is built.
+        data = migrate_legacy_comment_nodes(data)
         self.loaded_workflow_metadata = data.get(
             "workflow_metadata",
             {"schema_version": 0, "app_version": None},

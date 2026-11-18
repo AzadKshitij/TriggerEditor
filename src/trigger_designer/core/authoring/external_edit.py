@@ -60,6 +60,9 @@ SUMMARY_PARTS = (
     ("nodes_removed", "node", "nodes", "removed"),
     ("connections_added", "connection", "connections", "added"),
     ("connections_removed", "connection", "connections", "removed"),
+    ("comments_added", "comment", "comments", "added"),
+    ("comments_changed", "comment", "comments", "changed"),
+    ("comments_removed", "comment", "comments", "removed"),
 )
 
 _BANNER = "The file was changed outside Trigger Designer"

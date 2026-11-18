@@ -257,7 +257,7 @@ The sheet is protected like the Summary. When the run was not recorded, the shee
 
 ### Workflow
 
-"Steps that produced the data in this workpaper, in the order they ran." One row per step upstream of the node: **Step**, **Node**, **Type**, **What it does (settings)** (one `Label: value` line per setting, long values cut at 300 characters; a **File Input** step reads, for example, `Source`, `Source type`, `Delimiter`, `Encoding`, `Sheet` or `Sheets`, `Row limit` and the folder or pattern options, and leaves out internal bookkeeping) and **Takes data from** (the nodes feeding it). Below, under **Notes in the workflow**, every **Comment** node on the canvas is copied word for word, so your explanations travel with the evidence. Protected like the Summary. If no workflow information is supplied the sheet is left out with the reason on the Summary.
+"Steps that produced the data in this workpaper, in the order they ran." One row per step upstream of the node: **Step**, **Node**, **Type**, **What it does (settings)** (one `Label: value` line per setting, long values cut at 300 characters; a **File Input** step reads, for example, `Source`, `Source type`, `Delimiter`, `Encoding`, `Sheet` or `Sheets`, `Row limit` and the folder or pattern options, and leaves out internal bookkeeping) and **Takes data from** (the nodes feeding it). Below, under **Notes in the workflow**, every [canvas comment](canvas-and-nodes.md#canvas-comments) that has text is copied word for word, so your explanations travel with the evidence. Protected like the Summary. If no workflow information is supplied the sheet is left out with the reason on the Summary.
 
 ---
 
@@ -461,7 +461,6 @@ operations:
   audit.duplicates: 1
   input.file_input: 1
   input.workpaper_output: 1
-  report.comment: 1
 writes:
   ...\gui\duplicate_payments.xlsx
 
@@ -476,7 +475,7 @@ What was checked in a real run:
 
 - **`--output-dir` moves the workbook.** The file was written to `D:\audit\out\duplicate_payments.xlsx` and not to the folder saved in the workflow. The `output.committed` line gives the SHA-256 of the workbook, and it equals the hash of the file.
 - **`approve` and `info` list the workbook** under `writes`, so a reviewer approving the workflow sees where it will write.
-- **The Exceptions, Summary and Workflow sheets are the same as from the editor.** The workflow still carries the Comment notes. The Engagement defaults come from the Preferences of the Windows user who runs the command, unless the node has its own values.
+- **The Exceptions, Summary and Workflow sheets are the same as from the editor.** The workflow still carries the canvas comments. The Engagement defaults come from the Preferences of the Windows user who runs the command, unless the node has its own values.
 - **The Run log sheet is there.** The command line gives the workpaper a snapshot of the run in flight, exactly as the editor does: the steps before the workpaper with status, start time and duration. With `--no-record` the sheet is left out and the Summary says "The Run log sheet was omitted: no run record is available (run recording is off or not installed)". The command line also writes its own run record (`record_path` on the `run.finished` line).
 - **A truncated list works as in the editor.** When the exceptions exceed the **Row limit**, `duplicate_payments_exceptions_full.csv` is written next to the final workbook (in the `--output-dir` folder) and the Summary names it.
 - **Versions work too.** A second run with **If it exists** on **New version** writes `duplicate_payments (2).xlsx` and `duplicate_payments (2)_exceptions_full.csv` beside the first ones. The numbered name is chosen before the write, and **Stop with error** refuses an existing file before anything runs.
@@ -509,6 +508,6 @@ Also: *Workpaper Output has no output file; choose one before running.* (a workf
 - Connect all three inputs when you can. **P** gives you the population and its value, **S** gives the rule and proves the exception count agrees.
 - Fill **Test name**, **Objective** and **Procedure** in the node, so the workpaper needs only your conclusion.
 - Keep **If it exists** on **New version** while you work and Replace only for a scratch file.
-- Put a **Comment** node on the canvas near the steps you want to explain. It is copied to the Workflow sheet.
+- Add a [canvas comment](canvas-and-nodes.md#canvas-comments) near the steps you want to explain. It is copied to the Workflow sheet.
 - Hash and keep the original: the version you annotate is a different file from the one in the run record.
 - Do the sampling, then the workpaper: connect a **Sample** node's output to **E** to document the items selected for testing.

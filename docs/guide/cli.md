@@ -512,7 +512,7 @@ trigger-designer-cli profile  WORKFLOW NODE [--output N_OR_NAME] [--json]
 trigger-designer-cli preview  WORKFLOW NODE [--output N_OR_NAME] [--rows N] [--json]
 ```
 
-`NODE` is a node id (see `info`), a title, or an op id. The command loads the workflow like `run`, executes only the nodes that `NODE` depends on, and reports on the tables `NODE` produces (a Filter has two). It never runs a File Output, and the work copy it loads writes nothing to your folders. `NODE` cannot be a File Output, a Graph or a Comment: ask for the node that feeds it.
+`NODE` is a node id (see `info`), a title, or an op id. The command loads the workflow like `run`, executes only the nodes that `NODE` depends on, and reports on the tables `NODE` produces (a Filter has two). It never runs a File Output, and the work copy it loads writes nothing to your folders. `NODE` cannot be a File Output or a Graph: ask for the node that feeds it.
 
 | Command | Returns | Needs access |
 |---|---|---|

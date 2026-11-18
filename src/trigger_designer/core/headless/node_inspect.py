@@ -25,8 +25,8 @@ from trigger_designer.core.headless.exit_codes import CliError, ExitCode
 from trigger_designer.core.headless.op_catalog import known_op, node_op
 from trigger_designer.core.headless.workflow_file import WorkflowDoc, _socket_owner
 
-#: Nodes whose output is not a table (a chart, a note).
-_NO_TABLE_OPS = ("report.comment", "report.graph")
+#: Nodes whose output is not a table (a chart).
+_NO_TABLE_OPS = ("report.graph",)
 
 
 @dataclass

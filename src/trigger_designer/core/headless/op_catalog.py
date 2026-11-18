@@ -67,7 +67,6 @@ OPS: dict[str, OpInfo] = dict(
         _row("transform.sql_query", "SQL Query"),
         _row("report.graph", "Graph"),
         _row("report.data_profile", "Data Profile"),
-        _row("report.comment", "Comment"),
         _row("audit.duplicates", "Duplicates"),
         _row("audit.gaps", "Gaps"),
         _row("audit.benford", "Benford"),

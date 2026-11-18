@@ -272,6 +272,7 @@ class _FakeMainWindow(MainWindowMenuMixin):
         self.actUndo = _Action()
         self.actRedo = _Action()
         self.actPaste = self.actCut = self.actCopy = self.actDelete = _Action()
+        self.actAddComment = _Action()
         self._editor = editor
 
     def getCurrentNodeEditorWidget(self):

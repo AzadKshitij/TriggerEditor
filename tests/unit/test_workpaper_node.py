@@ -14,7 +14,6 @@ from trigger_designer.core.headless.code_policy import validate_generated_code
 from trigger_designer.core.node_configuration import (
     IONodes,
     NodeTypes,
-    ReportNodes,
     get_class_from_opcode,
 )
 from trigger_designer.core.workpaper import node_logic
@@ -230,8 +229,7 @@ def test_workflow_snapshot_lists_ancestors_and_comments(qtbot, tmp_path):
     fin.content.file_type = "csv"
     wp = get_class_from_opcode(IONodes.WORKPAPER_OUTPUT, NodeTypes.IO)(scene)
     Edge(scene, fin.outputs[0], wp.inputs[0])
-    note = get_class_from_opcode(ReportNodes.COMMENT, NodeTypes.REPORT)(scene)
-    note.content.settings["text"] = "Reviewed with the client"
+    scene.addComment("Reviewed with the client", x=0, y=0)
     steps = collect_workflow(wp)
     assert [s["title"] for s in steps] == ["File Input", "Comment"]
     assert steps[0]["step"] == 1 and steps[0]["op"] == "input.file_input"

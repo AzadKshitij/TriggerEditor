@@ -135,6 +135,13 @@ class MainWindowActionsMixin:
             )
             setattr(self, command.action, action)
 
+        self.actAddComment = QAction(
+            "Add &Comment",
+            self,
+            statusTip="Add a sticky note to the middle of the canvas",
+            triggered=self.addComment,
+        )
+
         self.actToggleSnap = QAction("Snap to Grid", self)
         self.actToggleSnap.setCheckable(True)
         self.actToggleSnap.setStatusTip("Snap nodes to the canvas grid while dragging")
@@ -154,6 +161,12 @@ class MainWindowActionsMixin:
         if command is not None and self.statusBar() is not None:
             self.statusBar().showMessage(command.label, 2000)
         self.updateEditMenu()
+
+    def addComment(self) -> None:
+        """Edit > Add Comment: a sticky note in the middle of the active canvas."""
+        active = self.getCurrentNodeEditorWidget()
+        if active is not None:
+            active.add_comment()
 
     def onToggleSnap(self, checked: bool) -> None:
         active = self.getCurrentNodeEditorWidget()

@@ -24,7 +24,6 @@ from trigger_designer.core.node_configuration import (
     AuditNodes,
     IONodes,
     NodeTypes,
-    ReportNodes,
     get_class_from_opcode,
 )
 from trigger_designer.qt.design_window import TriggerSubWindow
@@ -76,8 +75,7 @@ def _build(root: Path, source: Path, **wp_settings):
         amount_column="amount",
         **wp_settings,
     )
-    note = get_class_from_opcode(ReportNodes.COMMENT, NodeTypes.REPORT)(scene)
-    note.content.settings["text"] = "Duplicates reviewed with the AP manager."
+    scene.addComment("Duplicates reviewed with the AP manager.", x=0, y=0)
     Edge(scene, file_input.outputs[0], dups.inputs[0])
     Edge(scene, dups.outputs[0], csv_out.inputs[0])
     Edge(scene, dups.outputs[1], xlsx_out.inputs[0])
